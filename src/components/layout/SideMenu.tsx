@@ -12,14 +12,14 @@ const items: Item[] = [
   { icon: Users, label: "Following", sub: "Creators You Follow", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/", color: "text-primary" },
   { icon: Heart, label: "Prescribe Me", sub: "Personalized Picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
-  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/", color: "text-[oklch(0.7_0.25_340)]" },
+  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/inbox", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/create", color: "text-[oklch(0.7_0.25_340)]" },
 ];
 
 const creatorItems: Item[] = [
-  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/", color: "text-primary" },
-  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/", color: "text-[oklch(0.82_0.15_215)]" },
+  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/u/$uid", color: "text-primary" },
+  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/u/$uid", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/u/$uid", color: "text-[oklch(0.82_0.15_215)]" },
 ];
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
