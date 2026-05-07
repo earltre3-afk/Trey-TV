@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
-import { Sparkles, X, Send, Wand2, Heart, BarChart3, Mic, Image as ImageIcon } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Sparkles, X, Send, Wand2, Heart, BarChart3, Mic, Image as ImageIcon, Move } from "lucide-react";
 
 type Msg = { id: string; from: "you" | "ai"; text: string; time: string };
 
 const seed: Msg[] = [
-  { id: "1", from: "ai", text: "Hey Trey 👋 I'm Trey-I — your creative co-pilot. Ask me to draft a caption, prescribe a vibe, or remix your last drop.", time: "now" },
+  { id: "1", from: "ai", text: "Hey 👋 I'm Trey-I — your creative co-pilot. Drag me anywhere. Ask me to draft a caption, prescribe a vibe, or remix your last drop.", time: "now" },
 ];
 
 const quick = [
@@ -14,15 +14,83 @@ const quick = [
   { icon: ImageIcon, label: "Generate a thumbnail" },
 ];
 
+const POS_KEY = "treyi_pos_v1";
+const SIZE = 56;
+const PAD = 12;
+
+function clampToViewport(x: number, y: number) {
+  if (typeof window === "undefined") return { x, y };
+  const maxX = Math.max(PAD, window.innerWidth - SIZE - PAD);
+  const maxY = Math.max(PAD, window.innerHeight - SIZE - PAD);
+  return {
+    x: Math.min(Math.max(PAD, x), maxX),
+    y: Math.min(Math.max(PAD, y), maxY),
+  };
+}
+
+function defaultPos() {
+  if (typeof window === "undefined") return { x: 16, y: 200 };
+  const isMobile = window.innerWidth < 1024;
+  const x = window.innerWidth - SIZE - 16;
+  const y = window.innerHeight - SIZE - (isMobile ? 100 : 24);
+  return clampToViewport(x, y);
+}
+
 export function TreyIWidget() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [text, setText] = useState("");
+  const [pos, setPos] = useState(() => {
+    if (typeof window === "undefined") return { x: 16, y: 200 };
+    try {
+      const raw = localStorage.getItem(POS_KEY);
+      if (raw) return clampToViewport(...(Object.values(JSON.parse(raw)) as [number, number]));
+    } catch {}
+    return defaultPos();
+  });
+  const [dragging, setDragging] = useState(false);
+  const dragInfo = useRef<{ dx: number; dy: number; moved: boolean }>({ dx: 0, dy: 0, moved: false });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, open]);
+
+  // persist & re-clamp on resize
+  useEffect(() => {
+    try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
+  }, [pos]);
+  useEffect(() => {
+    const onResize = () => setPos((p) => clampToViewport(p.x, p.y));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    dragInfo.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, moved: false };
+    setDragging(true);
+  }, [pos.x, pos.y]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging) return;
+    const nx = e.clientX - dragInfo.current.dx;
+    const ny = e.clientY - dragInfo.current.dy;
+    if (Math.abs(nx - pos.x) + Math.abs(ny - pos.y) > 4) dragInfo.current.moved = true;
+    setPos(clampToViewport(nx, ny));
+  }, [dragging, pos.x, pos.y]);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    setDragging(false);
+    // snap to nearest horizontal edge for tidy parking
+    setPos((p) => {
+      const w = window.innerWidth;
+      const snapX = p.x + SIZE / 2 < w / 2 ? PAD : w - SIZE - PAD;
+      return clampToViewport(snapX, p.y);
+    });
+    if (!dragInfo.current.moved) setOpen(true);
+    e.stopPropagation();
+  }, []);
 
   const send = (raw?: string) => {
     const value = (raw ?? text).trim();
@@ -31,39 +99,49 @@ export function TreyIWidget() {
     setMsgs((m) => [...m, youMsg]);
     setText("");
     setTimeout(() => {
-      setMsgs((m) => [
-        ...m,
-        {
-          id: crypto.randomUUID(),
-          from: "ai",
-          text: aiReply(value),
-          time: "now",
-        },
-      ]);
+      setMsgs((m) => [...m, { id: crypto.randomUUID(), from: "ai", text: aiReply(value), time: "now" }]);
     }, 700);
   };
+
+  // panel position: anchor near launcher, but flipped so it stays on screen
+  const panelStyle = (() => {
+    if (typeof window === "undefined") return { left: pos.x, top: pos.y };
+    const W = 380, H = Math.min(560, window.innerHeight * 0.75);
+    const onLeft = pos.x + SIZE / 2 < window.innerWidth / 2;
+    const left = onLeft ? Math.min(pos.x, window.innerWidth - W - PAD) : Math.max(PAD, pos.x + SIZE - W);
+    const top = Math.max(PAD, Math.min(pos.y - H + SIZE, window.innerHeight - H - PAD));
+    return { left, top, width: Math.min(W, window.innerWidth - 2 * PAD) };
+  })();
 
   return (
     <>
       {/* Floating launcher */}
       <button
-        onClick={() => setOpen(true)}
-        aria-label="Open Trey-I assistant"
-        className={`fixed z-40 bottom-24 lg:bottom-6 right-4 lg:right-6 size-14 rounded-full grid place-items-center transition-all duration-500 hover:scale-110 active:scale-95 ${
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        aria-label="Open Trey-I assistant — drag to move"
+        style={{ left: pos.x, top: pos.y, touchAction: "none" }}
+        className={`fixed z-40 size-14 rounded-full grid place-items-center select-none transition-shadow duration-300 ${
           open ? "opacity-0 pointer-events-none scale-50" : "opacity-100"
-        }`}
+        } ${dragging ? "scale-110 cursor-grabbing shadow-[0_24px_60px_-10px_oklch(0.7_0.25_340_/_0.6)]" : "hover:scale-110 active:scale-95 cursor-grab"}`}
       >
-        {/* Conic aurora halo */}
         <span aria-hidden className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340),oklch(0.65_0.22_300),oklch(0.82_0.15_215),oklch(0.82_0.16_85))] animate-conic-spin opacity-90 blur-[1px]" />
         <span aria-hidden className="absolute inset-0.5 rounded-full bg-background" />
         <span aria-hidden className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-glow-pulse" />
         <Sparkles className="relative size-6 text-primary drop-shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
         <span className="absolute -top-1 -right-1 size-3 rounded-full bg-[oklch(0.7_0.25_340)] ring-2 ring-background animate-glow-pulse" />
+        {dragging && (
+          <span className="absolute -bottom-1 -left-1 size-5 grid place-items-center rounded-full bg-background/90 ring-1 ring-white/20">
+            <Move className="size-3 text-primary" />
+          </span>
+        )}
       </button>
 
-      {/* Panel */}
+      {/* Panel — anchored to launcher position */}
       <div
-        className={`fixed z-50 bottom-24 lg:bottom-6 right-3 lg:right-6 w-[calc(100vw-1.5rem)] sm:w-[380px] max-h-[75vh] flex flex-col rounded-3xl glass-strong neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
+        style={panelStyle}
+        className={`fixed z-50 max-h-[75vh] flex flex-col rounded-3xl liquid-glass neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
         }`}
       >
@@ -109,15 +187,10 @@ export function TreyIWidget() {
           ))}
         </div>
 
-        {/* Quick actions */}
         {msgs.length <= 2 && (
           <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto no-scrollbar">
             {quick.map((q) => (
-              <button
-                key={q.label}
-                onClick={() => send(q.label)}
-                className="shrink-0 px-3 py-1.5 rounded-full text-[11px] glass border border-white/10 hover:bg-white/5 flex items-center gap-1.5 tilt-press"
-              >
+              <button key={q.label} onClick={() => send(q.label)} className="shrink-0 px-3 py-1.5 rounded-full text-[11px] glass border border-white/10 hover:bg-white/5 flex items-center gap-1.5 tilt-press">
                 <q.icon className="size-3 text-primary" />
                 {q.label}
               </button>
@@ -125,7 +198,6 @@ export function TreyIWidget() {
           </div>
         )}
 
-        {/* Composer */}
         <div className="p-3 border-t border-white/5">
           <div className="flex items-center gap-2 rounded-2xl glass border border-white/10 px-3 py-2 focus-within:border-primary/50 transition">
             <button className="text-muted-foreground hover:text-primary"><Mic className="size-4" /></button>
@@ -136,13 +208,7 @@ export function TreyIWidget() {
               placeholder="Ask Trey-I anything…"
               className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
             />
-            <button
-              onClick={() => send()}
-              disabled={!text.trim()}
-              className={`size-8 grid place-items-center rounded-xl transition ${
-                text.trim() ? "bg-primary text-primary-foreground glow-gold tilt-press" : "bg-white/5 text-muted-foreground"
-              }`}
-            >
+            <button onClick={() => send()} disabled={!text.trim()} className={`size-8 grid place-items-center rounded-xl transition ${text.trim() ? "bg-primary text-primary-foreground glow-gold tilt-press" : "bg-white/5 text-muted-foreground"}`}>
               <Send className="size-4" />
             </button>
           </div>
