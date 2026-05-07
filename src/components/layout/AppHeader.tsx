@@ -1,23 +1,27 @@
 import { Menu, Search, Bell, SlidersHorizontal } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
+import { toast } from "sonner";
 
 const tabs = [
-  { id: "for-you", label: "For You", to: "/" },
-  { id: "following", label: "Following", to: "/" },
-  { id: "latest", label: "Latest", to: "/" },
-  { id: "prescribe", label: "Prescribe Me", to: "/prescribe-me" },
+  { id: "for-you", label: "For You" },
+  { id: "following", label: "Following" },
+  { id: "latest", label: "Latest" },
+  { id: "prescribe", label: "Prescribe Me" },
 ] as const;
 
 export function AppHeader({
   activeTab = "for-you",
+  onTabChange,
   onMenuClick,
 }: {
   activeTab?: string;
+  onTabChange?: (tab: string) => void;
   onMenuClick?: () => void;
 }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const computed =
     location.pathname === "/prescribe-me" ? "prescribe" : activeTab;
 
@@ -32,13 +36,13 @@ export function AppHeader({
           <Menu className="size-5" />
         </button>
 
-        <Logo className="h-9" />
+        <Link to="/" className="shrink-0"><Logo className="h-14" /></Link>
 
         <div className="flex items-center gap-2">
-          <button aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+          <button onClick={() => navigate({ to: "/explore" })} aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Search className="size-5" />
           </button>
-          <button aria-label="Notifications" className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+          <button onClick={() => navigate({ to: "/inbox" })} aria-label="Notifications" className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Bell className="size-5" />
             <span className="absolute -top-1 -right-1 size-5 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">8</span>
           </button>
@@ -50,11 +54,19 @@ export function AppHeader({
 
       <nav className="flex items-center gap-1 px-2 pb-2 overflow-x-auto no-scrollbar">
         {tabs.map((t) => {
-          const active = computed === t.id || (computed === "for-you" && t.id === "for-you" && location.pathname === "/");
+          const active = computed === t.id;
+          const handleClick = () => {
+            if (t.id === "prescribe") {
+              navigate({ to: "/prescribe-me" });
+            } else {
+              if (location.pathname !== "/") navigate({ to: "/" });
+              onTabChange?.(t.id);
+            }
+          };
           return (
-            <Link
+            <button
               key={t.id}
-              to={t.to}
+              onClick={handleClick}
               className={`relative px-3 py-2 text-sm whitespace-nowrap transition ${
                 active ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
               }`}
@@ -63,10 +75,10 @@ export function AppHeader({
               {active && (
                 <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-primary shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
               )}
-            </Link>
+            </button>
           );
         })}
-        <button className="ml-auto size-9 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground" aria-label="Filters">
+        <button onClick={() => toast("Filters coming soon")} className="ml-auto size-9 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground" aria-label="Filters">
           <SlidersHorizontal className="size-5" />
         </button>
       </nav>

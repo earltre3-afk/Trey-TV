@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Bell, MoreHorizontal, MapPin, Link2, Share2, Copy, Grid3x3, Play } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser, prescribed } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
@@ -83,17 +84,20 @@ function PublicProfile() {
             <div className="text-[10px] tracking-[0.2em] text-muted-foreground">TREY TV ID</div>
             <div className="font-mono text-sm mt-1 flex items-center gap-2">
               {uid.replace(/(.{4})/g, "$1 ").trim()}
-              <button aria-label="copy" className="text-muted-foreground hover:text-primary"><Copy className="size-3.5" /></button>
+              <button onClick={() => { navigator.clipboard?.writeText(uid); toast.success("UID copied"); }} aria-label="copy" className="text-muted-foreground hover:text-primary"><Copy className="size-3.5" /></button>
             </div>
             <div className="absolute right-3 bottom-2 text-[9px] tracking-widest text-primary/70 font-bold">TREY · TV</div>
           </div>
           <div className="col-span-2 grid grid-cols-3 gap-2">
             {[
-              { icon: Share2, label: "Share" },
-              { icon: Link2, label: "Copy" },
-              { icon: MoreHorizontal, label: "More" },
+              { icon: Share2, label: "Share", onClick: async () => {
+                try { await navigator.share?.({ title: currentUser.name, url: location.href }); }
+                catch { await navigator.clipboard?.writeText(location.href); toast("Link copied"); }
+              }},
+              { icon: Link2, label: "Copy", onClick: () => { navigator.clipboard?.writeText(location.href); toast.success("Profile link copied"); } },
+              { icon: MoreHorizontal, label: "More", onClick: () => toast("More options") },
             ].map((a) => (
-              <button key={a.label} className="rounded-2xl glass border border-white/10 flex flex-col items-center justify-center py-2 hover:bg-white/5">
+              <button key={a.label} onClick={a.onClick} className="rounded-2xl glass border border-white/10 flex flex-col items-center justify-center py-2 hover:bg-white/5">
                 <a.icon className="size-4" />
                 <span className="text-[10px] mt-1 text-muted-foreground">{a.label}</span>
               </button>

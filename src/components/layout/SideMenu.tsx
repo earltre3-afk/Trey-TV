@@ -1,6 +1,7 @@
 import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 
@@ -12,14 +13,14 @@ const items: Item[] = [
   { icon: Users, label: "Following", sub: "Creators You Follow", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/", color: "text-primary" },
   { icon: Heart, label: "Prescribe Me", sub: "Personalized Picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
-  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/", color: "text-[oklch(0.7_0.25_340)]" },
+  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/inbox", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/create", color: "text-[oklch(0.7_0.25_340)]" },
 ];
 
 const creatorItems: Item[] = [
-  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/", color: "text-primary" },
-  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/", color: "text-[oklch(0.82_0.15_215)]" },
+  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/u/$uid", color: "text-primary" },
+  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/u/$uid", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/u/$uid", color: "text-[oklch(0.82_0.15_215)]" },
 ];
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -65,7 +66,13 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
 
           <div className="px-3 space-y-1">
             {creatorItems.map((i) => (
-              <Link key={i.label} to={i.to} onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5">
+              <Link
+                key={i.label}
+                to="/u/$uid"
+                params={{ uid: currentUser.uid }}
+                onClick={onClose}
+                className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5"
+              >
                 <div className="size-10 rounded-xl grid place-items-center bg-white/5">
                   <i.icon className={`size-5 ${i.color}`} />
                 </div>
@@ -84,7 +91,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <div className="text-sm font-bold">Trey TV Premium</div>
               <div className="text-xs text-muted-foreground">Unlock exclusive tools, insights & features.</div>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
+            <button onClick={() => { onClose(); toast.success("Premium coming soon — you're on the list"); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
               Upgrade
             </button>
           </div>
