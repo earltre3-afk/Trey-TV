@@ -18,9 +18,9 @@ const items: Item[] = [
 ];
 
 const creatorItems: Item[] = [
-  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/u/$uid", color: "text-primary" },
-  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/u/$uid", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/u/$uid", color: "text-[oklch(0.82_0.15_215)]" },
+  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/creator-hub", color: "text-primary" },
+  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/analytics", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/settings", color: "text-[oklch(0.82_0.15_215)]" },
 ];
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
