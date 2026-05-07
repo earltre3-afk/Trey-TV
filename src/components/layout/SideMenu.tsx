@@ -1,6 +1,7 @@
 import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 
@@ -90,7 +91,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <div className="text-sm font-bold">Trey TV Premium</div>
               <div className="text-xs text-muted-foreground">Unlock exclusive tools, insights & features.</div>
             </div>
-            <button className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
+            <button onClick={() => { onClose(); toast.success("Premium coming soon — you're on the list"); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
               Upgrade
             </button>
           </div>
