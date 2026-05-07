@@ -111,7 +111,7 @@ function CreatorHub() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {tools.map((t, i) => {
-              const isStudio = t.label === "Trey-I Studio";
+              const isStudio = t.label === "Trey-I Studio" || t.label === "Upload Episode";
               const onClick = isStudio
                 ? () => navigate({ to: "/creator-hub/studio" })
                 : () => toast(`${t.label} coming soon`);
