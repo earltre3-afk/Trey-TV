@@ -23,6 +23,7 @@ import { Route as GoLiveRouteImport } from './routes/go-live'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
+import { Route as CreatorStudioRouteImport } from './routes/creator-studio'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CollectionsRouteImport } from './routes/collections'
@@ -124,6 +125,11 @@ const EditProfileRoute = EditProfileRouteImport.update({
   path: '/edit-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorStudioRoute = CreatorStudioRouteImport.update({
+  id: '/creator-studio',
+  path: '/creator-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorHubRoute = CreatorHubRouteImport.update({
   id: '/creator-hub',
   path: '/creator-hub',
@@ -160,9 +166,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorStudioIndexRoute = CreatorStudioIndexRouteImport.update({
-  id: '/creator-studio/',
-  path: '/creator-studio/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -378,6 +385,7 @@ export interface FileRoutesById {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -426,6 +434,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/creator-studio'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -518,6 +527,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/creator-studio'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -565,6 +575,7 @@ export interface RootRouteChildren {
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
+  CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
@@ -581,7 +592,6 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
-  CreatorStudioIndexRoute: typeof CreatorStudioIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -684,6 +694,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator-studio': {
+      id: '/creator-studio'
+      path: '/creator-studio'
+      fullPath: '/creator-studio'
+      preLoaderRoute: typeof CreatorStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-hub': {
       id: '/creator-hub'
       path: '/creator-hub'
@@ -735,10 +752,10 @@ declare module '@tanstack/react-router' {
     }
     '/creator-studio/': {
       id: '/creator-studio/'
-      path: '/creator-studio'
+      path: '/'
       fullPath: '/creator-studio/'
       preLoaderRoute: typeof CreatorStudioIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/watch/$id': {
       id: '/watch/$id'
@@ -940,6 +957,40 @@ const CreatorHubRouteWithChildren = CreatorHubRoute._addFileChildren(
   CreatorHubRouteChildren,
 )
 
+interface CreatorStudioRouteChildren {
+  CreatorStudioAnalyticsRoute: typeof CreatorStudioAnalyticsRoute
+  CreatorStudioChannelRoute: typeof CreatorStudioChannelRoute
+  CreatorStudioEditRoute: typeof CreatorStudioEditRoute
+  CreatorStudioFansRoute: typeof CreatorStudioFansRoute
+  CreatorStudioInteractionsRoute: typeof CreatorStudioInteractionsRoute
+  CreatorStudioRewardsRoute: typeof CreatorStudioRewardsRoute
+  CreatorStudioScheduleRoute: typeof CreatorStudioScheduleRoute
+  CreatorStudioSettingsRoute: typeof CreatorStudioSettingsRoute
+  CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
+  CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
+  CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
+  CreatorStudioIndexRoute: typeof CreatorStudioIndexRoute
+}
+
+const CreatorStudioRouteChildren: CreatorStudioRouteChildren = {
+  CreatorStudioAnalyticsRoute: CreatorStudioAnalyticsRoute,
+  CreatorStudioChannelRoute: CreatorStudioChannelRoute,
+  CreatorStudioEditRoute: CreatorStudioEditRoute,
+  CreatorStudioFansRoute: CreatorStudioFansRoute,
+  CreatorStudioInteractionsRoute: CreatorStudioInteractionsRoute,
+  CreatorStudioRewardsRoute: CreatorStudioRewardsRoute,
+  CreatorStudioScheduleRoute: CreatorStudioScheduleRoute,
+  CreatorStudioSettingsRoute: CreatorStudioSettingsRoute,
+  CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
+  CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
+  CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
+  CreatorStudioIndexRoute: CreatorStudioIndexRoute,
+}
+
+const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
+  CreatorStudioRouteChildren,
+)
+
 interface OnboardingRouteChildren {
   OnboardingVoiceRoute: typeof OnboardingVoiceRoute
 }
@@ -960,6 +1011,7 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
   CreatorHubRoute: CreatorHubRouteWithChildren,
+  CreatorStudioRoute: CreatorStudioRouteWithChildren,
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
@@ -976,7 +1028,6 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
-  CreatorStudioIndexRoute: CreatorStudioIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
