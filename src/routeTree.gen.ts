@@ -38,6 +38,11 @@ import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio
 import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
 import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
+import { Route as AdminVideosRouteImport } from './routes/admin.videos'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminRecommendationsRouteImport } from './routes/admin.recommendations'
+import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
@@ -187,6 +192,31 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => CreatorHubRoute,
 } as any)
+const AdminVideosRoute = AdminVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRecommendationsRoute = AdminRecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCreatorsRoute = AdminCreatorsRouteImport.update({
+  id: '/creators',
+  path: '/creators',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContentApprovalRoute = AdminContentApprovalRouteImport.update({
   id: '/content-approval',
   path: '/content-approval',
@@ -221,6 +251,11 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -254,6 +289,11 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -288,6 +328,11 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -323,6 +368,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -356,6 +406,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -389,6 +444,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -635,6 +695,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorHubStudioRouteImport
       parentRoute: typeof CreatorHubRoute
     }
+    '/admin/videos': {
+      id: '/admin/videos'
+      path: '/videos'
+      fullPath: '/admin/videos'
+      preLoaderRoute: typeof AdminVideosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/recommendations': {
+      id: '/admin/recommendations'
+      path: '/recommendations'
+      fullPath: '/admin/recommendations'
+      preLoaderRoute: typeof AdminRecommendationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/creators': {
+      id: '/admin/creators'
+      path: '/creators'
+      fullPath: '/admin/creators'
+      preLoaderRoute: typeof AdminCreatorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/content-approval': {
       id: '/admin/content-approval'
       path: '/content-approval'
@@ -665,10 +760,20 @@ const AdminContentApprovalRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
+  AdminCreatorsRoute: typeof AdminCreatorsRoute
+  AdminRecommendationsRoute: typeof AdminRecommendationsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVideosRoute: typeof AdminVideosRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
+  AdminCreatorsRoute: AdminCreatorsRoute,
+  AdminRecommendationsRoute: AdminRecommendationsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVideosRoute: AdminVideosRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -729,3 +834,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
