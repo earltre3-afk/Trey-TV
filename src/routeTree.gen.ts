@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -26,6 +27,8 @@ import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
@@ -39,6 +42,11 @@ const SignupRoute = SignupRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RewardsRoute = RewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrescribeMeRoute = PrescribeMeRouteImport.update({
@@ -116,6 +124,16 @@ const AnalyticsRoute = AnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityRoute = ActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -139,6 +157,8 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -154,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -162,6 +183,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -177,6 +200,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -186,6 +210,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activity': typeof ActivityRoute
+  '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -201,6 +227,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -211,6 +238,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activity'
+    | '/admin'
     | '/analytics'
     | '/collections'
     | '/create'
@@ -226,6 +255,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/premium'
     | '/prescribe-me'
+    | '/rewards'
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
@@ -234,6 +264,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activity'
+    | '/admin'
     | '/analytics'
     | '/collections'
     | '/create'
@@ -249,6 +281,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/premium'
     | '/prescribe-me'
+    | '/rewards'
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
@@ -257,6 +290,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/activity'
+    | '/admin'
     | '/analytics'
     | '/collections'
     | '/create'
@@ -272,6 +307,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/premium'
     | '/prescribe-me'
+    | '/rewards'
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
@@ -281,6 +317,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivityRoute: typeof ActivityRoute
+  AdminRoute: typeof AdminRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
@@ -296,6 +334,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRouteWithChildren
   PremiumRoute: typeof PremiumRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
+  RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   UUidRoute: typeof UUidRoute
@@ -315,6 +354,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rewards': {
+      id: '/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof RewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prescribe-me': {
@@ -422,6 +468,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity': {
+      id: '/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof ActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -479,6 +539,8 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivityRoute: ActivityRoute,
+  AdminRoute: AdminRoute,
   AnalyticsRoute: AnalyticsRoute,
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
@@ -494,6 +556,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRouteWithChildren,
   PremiumRoute: PremiumRoute,
   PrescribeMeRoute: PrescribeMeRoute,
+  RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   UUidRoute: UUidRoute,
@@ -501,3 +564,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
