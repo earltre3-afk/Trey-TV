@@ -9,18 +9,19 @@ import {
 import { currentUser } from "@/lib/mock-data";
 import { CreatorStatusBadge } from "@/components/creator/CreatorPrimitives";
 
-const NAV = [
+type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/creator-studio", icon: LayoutDashboard, label: "Dashboard", exact: true },
   { to: "/creator-studio/edit", icon: Upload, label: "Upload & Edit" },
   { to: "/creator-studio/submissions", icon: Film, label: "Content" },
-  { to: "/creator-studio/fans" as any, icon: Users, label: "Fans" },
-  { to: "/creator-studio/interactions" as any, icon: MessageSquare, label: "Interactions" },
-  { to: "/creator-studio/analytics" as any, icon: BarChart3, label: "Analytics" },
-  { to: "/creator-studio/rewards" as any, icon: Gem, label: "Rewards" },
-  { to: "/creator-studio/schedule" as any, icon: Calendar, label: "Schedule" },
-  { to: "/creator-studio/channel" as any, icon: Tv, label: "Channel" },
-  { to: "/creator-studio/settings" as any, icon: Settings, label: "Settings" },
-] as const;
+  { to: "/creator-studio/fans", icon: Users, label: "Fans" },
+  { to: "/creator-studio/interactions", icon: MessageSquare, label: "Interactions" },
+  { to: "/creator-studio/analytics", icon: BarChart3, label: "Analytics" },
+  { to: "/creator-studio/rewards", icon: Gem, label: "Rewards" },
+  { to: "/creator-studio/schedule", icon: Calendar, label: "Schedule" },
+  { to: "/creator-studio/channel", icon: Tv, label: "Channel" },
+  { to: "/creator-studio/settings", icon: Settings, label: "Settings" },
+];
 
 export function CreatorStudioLayout({
   title,
