@@ -69,8 +69,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
             {creatorItems.map((i, idx) => (
               <Link
                 key={i.label}
-                to="/u/$uid"
-                params={{ uid: currentUser.uid }}
+                to={i.to}
                 onClick={onClose}
                 style={{ animationDelay: `${(idx + items.length) * 50}ms` }}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 hover:translate-x-1 transition-all duration-300 ${open ? "animate-rise" : ""}`}
