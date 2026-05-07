@@ -51,9 +51,9 @@ export function DesktopSidebar() {
             <div className="text-sm font-bold">Trey TV Premium</div>
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">Unlock pro analytics & monetization.</div>
-          <button className="mt-2 w-full px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
+          <Link to="/premium" className="mt-2 w-full inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
             Upgrade
-          </button>
+          </Link>
         </div>
 
         <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="flex items-center gap-3 p-2 rounded-2xl glass neon-border hover-lift">
