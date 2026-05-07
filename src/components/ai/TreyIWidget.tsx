@@ -103,14 +103,17 @@ export function TreyIWidget() {
     }, 700);
   };
 
-  // panel position: anchor near launcher, but flipped so it stays on screen
+  // panel position: pop out beside launcher horizontally
   const panelStyle = (() => {
     if (typeof window === "undefined") return { left: pos.x, top: pos.y };
-    const W = 380, H = Math.min(560, window.innerHeight * 0.75);
+    const W = Math.min(380, window.innerWidth - 2 * PAD);
+    const H = Math.min(560, window.innerHeight * 0.75);
     const onLeft = pos.x + SIZE / 2 < window.innerWidth / 2;
-    const left = onLeft ? Math.min(pos.x, window.innerWidth - W - PAD) : Math.max(PAD, pos.x + SIZE - W);
-    const top = Math.max(PAD, Math.min(pos.y - H + SIZE, window.innerHeight - H - PAD));
-    return { left, top, width: Math.min(W, window.innerWidth - 2 * PAD) };
+    const left = onLeft
+      ? Math.min(pos.x + SIZE + 10, window.innerWidth - W - PAD)
+      : Math.max(PAD, pos.x - W - 10);
+    const top = Math.max(PAD, Math.min(pos.y + SIZE / 2 - H / 2, window.innerHeight - H - PAD));
+    return { left, top, width: W };
   })();
 
   return (
@@ -123,8 +126,8 @@ export function TreyIWidget() {
         aria-label="Open Trey-I assistant — drag to move"
         style={{ left: pos.x, top: pos.y, touchAction: "none" }}
         className={`fixed z-40 size-14 rounded-full grid place-items-center select-none transition-shadow duration-300 ${
-          open ? "opacity-0 pointer-events-none scale-50" : "opacity-100"
-        } ${dragging ? "scale-110 cursor-grabbing shadow-[0_24px_60px_-10px_oklch(0.7_0.25_340_/_0.6)]" : "hover:scale-110 active:scale-95 cursor-grab"}`}
+          dragging ? "scale-110 cursor-grabbing shadow-[0_24px_60px_-10px_oklch(0.7_0.25_340_/_0.6)]" : "hover:scale-110 active:scale-95 cursor-grab"
+        } ${open ? "ring-2 ring-primary/60 shadow-[0_0_30px_oklch(0.82_0.16_85_/_0.6)]" : ""}`}
       >
         <span aria-hidden className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340),oklch(0.65_0.22_300),oklch(0.82_0.15_215),oklch(0.82_0.16_85))] animate-conic-spin opacity-90 blur-[1px]" />
         <span aria-hidden className="absolute inset-0.5 rounded-full bg-background" />
