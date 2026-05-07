@@ -2,8 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { currentUser as defaultUser } from "@/lib/mock-data";
 
 export type Role = "guest" | "user" | "creator" | "admin";
+export type CreatorStatus = "not_applied" | "pending" | "approved" | "rejected";
 
 export type SessionUser = {
+  creatorStatus?: CreatorStatus;
   name: string;
   handle: string;
   uid: string;
@@ -25,6 +27,9 @@ type AuthCtx = {
   isGuest: boolean;
   isCreator: boolean;
   isAdmin: boolean;
+  creatorStatus: CreatorStatus;
+  isApprovedCreator: boolean;
+  setCreatorStatus: (s: CreatorStatus) => void;
   signIn: (role?: Exclude<Role, "guest">) => void;
   signOut: () => void;
   setRole: (r: Role) => void;
@@ -39,6 +44,7 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   banner: "",
   accent: "gold",
   role,
+  creatorStatus: role === "creator" || role === "admin" ? "approved" : "not_applied",
   rewards: { points: 12480, tier: "GOLD" },
 });
 
@@ -82,6 +88,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isGuest: role === "guest",
       isCreator: role === "creator" || role === "admin",
       isAdmin: role === "admin",
+      creatorStatus: user?.creatorStatus ?? (role === "creator" || role === "admin" ? "approved" : "not_applied"),
+      isApprovedCreator: (user?.creatorStatus ?? (role === "creator" || role === "admin" ? "approved" : "not_applied")) === "approved" && (role === "creator" || role === "admin"),
+      setCreatorStatus: (s) => setUser((prev) => prev ? { ...prev, creatorStatus: s } : prev),
       signIn, signOut, setRole, updateUser,
     }}>
       {children}
