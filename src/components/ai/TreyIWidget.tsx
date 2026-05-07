@@ -67,27 +67,24 @@ export function TreyIWidget() {
   }, []);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     dragInfo.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, moved: false };
     setDragging(true);
   }, [pos.x, pos.y]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
+    e.preventDefault();
     const nx = e.clientX - dragInfo.current.dx;
     const ny = e.clientY - dragInfo.current.dy;
-    if (Math.abs(nx - pos.x) + Math.abs(ny - pos.y) > 4) dragInfo.current.moved = true;
+    if (Math.abs(nx - pos.x) + Math.abs(ny - pos.y) > 3) dragInfo.current.moved = true;
     setPos(clampToViewport(nx, ny));
   }, [dragging, pos.x, pos.y]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
+    (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
     setDragging(false);
-    // snap to nearest horizontal edge for tidy parking
-    setPos((p) => {
-      const w = window.innerWidth;
-      const snapX = p.x + SIZE / 2 < w / 2 ? PAD : w - SIZE - PAD;
-      return clampToViewport(snapX, p.y);
-    });
     if (!dragInfo.current.moved) setOpen((o) => !o);
     e.stopPropagation();
   }, []);
