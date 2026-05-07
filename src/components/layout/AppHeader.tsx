@@ -1,8 +1,10 @@
 import { Menu, Search, Bell, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 const tabs = [
   { id: "for-you", label: "For You" },
