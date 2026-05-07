@@ -30,6 +30,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
 import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
@@ -37,6 +38,8 @@ import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio
 import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
 import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
+import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
+import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -143,6 +146,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchIdRoute = WatchIdRouteImport.update({
+  id: '/watch/$id',
+  path: '/watch/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UUidRoute = UUidRouteImport.update({
   id: '/u/$uid',
   path: '/u/$uid',
@@ -179,11 +187,21 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => CreatorHubRoute,
 } as any)
+const AdminContentApprovalRoute = AdminContentApprovalRouteImport.update({
+  id: '/content-approval',
+  path: '/content-approval',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminContentApprovalRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -202,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -209,11 +228,13 @@ export interface FileRoutesByFullPath {
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -232,6 +253,7 @@ export interface FileRoutesByTo {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -239,12 +261,14 @@ export interface FileRoutesByTo {
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -263,6 +287,7 @@ export interface FileRoutesById {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
@@ -270,6 +295,8 @@ export interface FileRoutesById {
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -295,6 +322,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -302,6 +330,8 @@ export interface FileRouteTypes {
     | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -325,6 +355,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -332,6 +363,8 @@ export interface FileRouteTypes {
     | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   id:
     | '__root__'
     | '/'
@@ -355,6 +388,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
     | '/creator-studio/submissions'
@@ -362,12 +396,14 @@ export interface FileRouteTypes {
     | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
@@ -391,6 +427,7 @@ export interface RootRouteChildren {
   CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
   CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
   UUidRoute: typeof UUidRoute
+  WatchIdRoute: typeof WatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -542,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch/$id': {
+      id: '/watch/$id'
+      path: '/watch/$id'
+      fullPath: '/watch/$id'
+      preLoaderRoute: typeof WatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/u/$uid': {
       id: '/u/$uid'
       path: '/u/$uid'
@@ -591,8 +635,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorHubStudioRouteImport
       parentRoute: typeof CreatorHubRoute
     }
+    '/admin/content-approval': {
+      id: '/admin/content-approval'
+      path: '/content-approval'
+      fullPath: '/admin/content-approval'
+      preLoaderRoute: typeof AdminContentApprovalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-approval/$id': {
+      id: '/admin/content-approval/$id'
+      path: '/$id'
+      fullPath: '/admin/content-approval/$id'
+      preLoaderRoute: typeof AdminContentApprovalIdRouteImport
+      parentRoute: typeof AdminContentApprovalRoute
+    }
   }
 }
+
+interface AdminContentApprovalRouteChildren {
+  AdminContentApprovalIdRoute: typeof AdminContentApprovalIdRoute
+}
+
+const AdminContentApprovalRouteChildren: AdminContentApprovalRouteChildren = {
+  AdminContentApprovalIdRoute: AdminContentApprovalIdRoute,
+}
+
+const AdminContentApprovalRouteWithChildren =
+  AdminContentApprovalRoute._addFileChildren(AdminContentApprovalRouteChildren)
+
+interface AdminRouteChildren {
+  AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CreatorHubRouteChildren {
   CreatorHubStudioRoute: typeof CreatorHubStudioRoute
@@ -621,7 +700,7 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
@@ -645,7 +724,18 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
   CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
   UUidRoute: UUidRoute,
+  WatchIdRoute: WatchIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
