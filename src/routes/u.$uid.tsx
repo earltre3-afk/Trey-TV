@@ -41,8 +41,8 @@ function PublicProfile() {
             </div>
           </div>
 
-          <div className="absolute left-1/2 -translate-x-1/2 top-12 size-32 rounded-full p-1 ring-neon-gold animate-glow-pulse bg-background">
-            <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-12 size-32 rounded-full conic-ring bg-background animate-float">
+            <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover ring-2 ring-white/20" />
           </div>
         </div>
 
