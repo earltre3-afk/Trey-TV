@@ -36,7 +36,23 @@ export function AppHeader({
           <Menu className="size-5" />
         </button>
 
-        <Link to="/" className="shrink-0"><Logo className="h-14" /></Link>
+        <Link
+          to="/"
+          className="shrink-0 relative group"
+          aria-label="Trey TV home"
+        >
+          {/* Aurora glow halo */}
+          <span
+            aria-hidden
+            className="absolute inset-0 -m-3 rounded-full blur-2xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85_/_0.55),oklch(0.7_0.25_340_/_0.45),oklch(0.65_0.22_300_/_0.5),oklch(0.82_0.15_215_/_0.45),oklch(0.82_0.16_85_/_0.55))] animate-conic-spin"
+          />
+          {/* Inner soft glow */}
+          <span
+            aria-hidden
+            className="absolute inset-0 -m-1 rounded-full bg-primary/30 blur-xl animate-glow-pulse"
+          />
+          <Logo className="relative h-20 transition-transform duration-500 group-hover:scale-110 group-active:scale-95 drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.7)]" />
+        </Link>
 
         <div className="flex items-center gap-2">
           <button onClick={() => navigate({ to: "/explore" })} aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
