@@ -23,6 +23,7 @@ import { Route as GoLiveRouteImport } from './routes/go-live'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
+import { Route as CreatorStudioRouteImport } from './routes/creator-studio'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CollectionsRouteImport } from './routes/collections'
@@ -30,7 +31,6 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
@@ -124,6 +124,11 @@ const EditProfileRoute = EditProfileRouteImport.update({
   path: '/edit-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorStudioRoute = CreatorStudioRouteImport.update({
+  id: '/creator-studio',
+  path: '/creator-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorHubRoute = CreatorHubRouteImport.update({
   id: '/creator-hub',
   path: '/creator-hub',
@@ -159,11 +164,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CreatorStudioIndexRoute = CreatorStudioIndexRouteImport.update({
-  id: '/creator-studio/',
-  path: '/creator-studio/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
   path: '/watch/$id',
@@ -180,61 +180,61 @@ const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   getParentRoute: () => OnboardingRoute,
 } as any)
 const CreatorStudioSubmittedRoute = CreatorStudioSubmittedRouteImport.update({
-  id: '/creator-studio/submitted',
-  path: '/creator-studio/submitted',
-  getParentRoute: () => rootRouteImport,
+  id: '/submitted',
+  path: '/submitted',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioSubmitRoute = CreatorStudioSubmitRouteImport.update({
-  id: '/creator-studio/submit',
-  path: '/creator-studio/submit',
-  getParentRoute: () => rootRouteImport,
+  id: '/submit',
+  path: '/submit',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioSubmissionsRoute =
   CreatorStudioSubmissionsRouteImport.update({
-    id: '/creator-studio/submissions',
-    path: '/creator-studio/submissions',
-    getParentRoute: () => rootRouteImport,
+    id: '/submissions',
+    path: '/submissions',
+    getParentRoute: () => CreatorStudioRoute,
   } as any)
 const CreatorStudioSettingsRoute = CreatorStudioSettingsRouteImport.update({
-  id: '/creator-studio/settings',
-  path: '/creator-studio/settings',
-  getParentRoute: () => rootRouteImport,
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioScheduleRoute = CreatorStudioScheduleRouteImport.update({
-  id: '/creator-studio/schedule',
-  path: '/creator-studio/schedule',
-  getParentRoute: () => rootRouteImport,
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioRewardsRoute = CreatorStudioRewardsRouteImport.update({
-  id: '/creator-studio/rewards',
-  path: '/creator-studio/rewards',
-  getParentRoute: () => rootRouteImport,
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioInteractionsRoute =
   CreatorStudioInteractionsRouteImport.update({
-    id: '/creator-studio/interactions',
-    path: '/creator-studio/interactions',
-    getParentRoute: () => rootRouteImport,
+    id: '/interactions',
+    path: '/interactions',
+    getParentRoute: () => CreatorStudioRoute,
   } as any)
 const CreatorStudioFansRoute = CreatorStudioFansRouteImport.update({
-  id: '/creator-studio/fans',
-  path: '/creator-studio/fans',
-  getParentRoute: () => rootRouteImport,
+  id: '/fans',
+  path: '/fans',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioEditRoute = CreatorStudioEditRouteImport.update({
-  id: '/creator-studio/edit',
-  path: '/creator-studio/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioChannelRoute = CreatorStudioChannelRouteImport.update({
-  id: '/creator-studio/channel',
-  path: '/creator-studio/channel',
-  getParentRoute: () => rootRouteImport,
+  id: '/channel',
+  path: '/channel',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorStudioAnalyticsRoute = CreatorStudioAnalyticsRouteImport.update({
-  id: '/creator-studio/analytics',
-  path: '/creator-studio/analytics',
-  getParentRoute: () => rootRouteImport,
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => CreatorStudioRoute,
 } as any)
 const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   id: '/studio',
@@ -285,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -320,7 +321,6 @@ export interface FileRoutesByFullPath {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
-  '/creator-studio/': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesByTo {
@@ -331,6 +331,7 @@ export interface FileRoutesByTo {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -366,7 +367,6 @@ export interface FileRoutesByTo {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
-  '/creator-studio': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesById {
@@ -378,6 +378,7 @@ export interface FileRoutesById {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -413,7 +414,6 @@ export interface FileRoutesById {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
-  '/creator-studio/': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRouteTypes {
@@ -426,6 +426,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/creator-studio'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -461,7 +462,6 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
-    | '/creator-studio/'
     | '/admin/content-approval/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -472,6 +472,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/creator-studio'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -507,7 +508,6 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
-    | '/creator-studio'
     | '/admin/content-approval/$id'
   id:
     | '__root__'
@@ -518,6 +518,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/creator-studio'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -553,7 +554,6 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
-    | '/creator-studio/'
     | '/admin/content-approval/$id'
   fileRoutesById: FileRoutesById
 }
@@ -565,6 +565,7 @@ export interface RootRouteChildren {
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
+  CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
@@ -579,20 +580,8 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
-  CreatorStudioAnalyticsRoute: typeof CreatorStudioAnalyticsRoute
-  CreatorStudioChannelRoute: typeof CreatorStudioChannelRoute
-  CreatorStudioEditRoute: typeof CreatorStudioEditRoute
-  CreatorStudioFansRoute: typeof CreatorStudioFansRoute
-  CreatorStudioInteractionsRoute: typeof CreatorStudioInteractionsRoute
-  CreatorStudioRewardsRoute: typeof CreatorStudioRewardsRoute
-  CreatorStudioScheduleRoute: typeof CreatorStudioScheduleRoute
-  CreatorStudioSettingsRoute: typeof CreatorStudioSettingsRoute
-  CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
-  CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
-  CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
-  CreatorStudioIndexRoute: typeof CreatorStudioIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -695,6 +684,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator-studio': {
+      id: '/creator-studio'
+      path: '/creator-studio'
+      fullPath: '/creator-studio'
+      preLoaderRoute: typeof CreatorStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-hub': {
       id: '/creator-hub'
       path: '/creator-hub'
@@ -744,13 +740,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/creator-studio/': {
-      id: '/creator-studio/'
-      path: '/creator-studio'
-      fullPath: '/creator-studio/'
-      preLoaderRoute: typeof CreatorStudioIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/watch/$id': {
       id: '/watch/$id'
       path: '/watch/$id'
@@ -774,80 +763,80 @@ declare module '@tanstack/react-router' {
     }
     '/creator-studio/submitted': {
       id: '/creator-studio/submitted'
-      path: '/creator-studio/submitted'
+      path: '/submitted'
       fullPath: '/creator-studio/submitted'
       preLoaderRoute: typeof CreatorStudioSubmittedRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/submit': {
       id: '/creator-studio/submit'
-      path: '/creator-studio/submit'
+      path: '/submit'
       fullPath: '/creator-studio/submit'
       preLoaderRoute: typeof CreatorStudioSubmitRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/submissions': {
       id: '/creator-studio/submissions'
-      path: '/creator-studio/submissions'
+      path: '/submissions'
       fullPath: '/creator-studio/submissions'
       preLoaderRoute: typeof CreatorStudioSubmissionsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/settings': {
       id: '/creator-studio/settings'
-      path: '/creator-studio/settings'
+      path: '/settings'
       fullPath: '/creator-studio/settings'
       preLoaderRoute: typeof CreatorStudioSettingsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/schedule': {
       id: '/creator-studio/schedule'
-      path: '/creator-studio/schedule'
+      path: '/schedule'
       fullPath: '/creator-studio/schedule'
       preLoaderRoute: typeof CreatorStudioScheduleRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/rewards': {
       id: '/creator-studio/rewards'
-      path: '/creator-studio/rewards'
+      path: '/rewards'
       fullPath: '/creator-studio/rewards'
       preLoaderRoute: typeof CreatorStudioRewardsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/interactions': {
       id: '/creator-studio/interactions'
-      path: '/creator-studio/interactions'
+      path: '/interactions'
       fullPath: '/creator-studio/interactions'
       preLoaderRoute: typeof CreatorStudioInteractionsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/fans': {
       id: '/creator-studio/fans'
-      path: '/creator-studio/fans'
+      path: '/fans'
       fullPath: '/creator-studio/fans'
       preLoaderRoute: typeof CreatorStudioFansRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/edit': {
       id: '/creator-studio/edit'
-      path: '/creator-studio/edit'
+      path: '/edit'
       fullPath: '/creator-studio/edit'
       preLoaderRoute: typeof CreatorStudioEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/channel': {
       id: '/creator-studio/channel'
-      path: '/creator-studio/channel'
+      path: '/channel'
       fullPath: '/creator-studio/channel'
       preLoaderRoute: typeof CreatorStudioChannelRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-studio/analytics': {
       id: '/creator-studio/analytics'
-      path: '/creator-studio/analytics'
+      path: '/analytics'
       fullPath: '/creator-studio/analytics'
       preLoaderRoute: typeof CreatorStudioAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorStudioRoute
     }
     '/creator-hub/studio': {
       id: '/creator-hub/studio'
@@ -951,6 +940,38 @@ const CreatorHubRouteWithChildren = CreatorHubRoute._addFileChildren(
   CreatorHubRouteChildren,
 )
 
+interface CreatorStudioRouteChildren {
+  CreatorStudioAnalyticsRoute: typeof CreatorStudioAnalyticsRoute
+  CreatorStudioChannelRoute: typeof CreatorStudioChannelRoute
+  CreatorStudioEditRoute: typeof CreatorStudioEditRoute
+  CreatorStudioFansRoute: typeof CreatorStudioFansRoute
+  CreatorStudioInteractionsRoute: typeof CreatorStudioInteractionsRoute
+  CreatorStudioRewardsRoute: typeof CreatorStudioRewardsRoute
+  CreatorStudioScheduleRoute: typeof CreatorStudioScheduleRoute
+  CreatorStudioSettingsRoute: typeof CreatorStudioSettingsRoute
+  CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
+  CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
+  CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
+}
+
+const CreatorStudioRouteChildren: CreatorStudioRouteChildren = {
+  CreatorStudioAnalyticsRoute: CreatorStudioAnalyticsRoute,
+  CreatorStudioChannelRoute: CreatorStudioChannelRoute,
+  CreatorStudioEditRoute: CreatorStudioEditRoute,
+  CreatorStudioFansRoute: CreatorStudioFansRoute,
+  CreatorStudioInteractionsRoute: CreatorStudioInteractionsRoute,
+  CreatorStudioRewardsRoute: CreatorStudioRewardsRoute,
+  CreatorStudioScheduleRoute: CreatorStudioScheduleRoute,
+  CreatorStudioSettingsRoute: CreatorStudioSettingsRoute,
+  CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
+  CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
+  CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
+}
+
+const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
+  CreatorStudioRouteChildren,
+)
+
 interface OnboardingRouteChildren {
   OnboardingVoiceRoute: typeof OnboardingVoiceRoute
 }
@@ -971,6 +992,7 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
   CreatorHubRoute: CreatorHubRouteWithChildren,
+  CreatorStudioRoute: CreatorStudioRouteWithChildren,
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
@@ -985,21 +1007,19 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
-  CreatorStudioAnalyticsRoute: CreatorStudioAnalyticsRoute,
-  CreatorStudioChannelRoute: CreatorStudioChannelRoute,
-  CreatorStudioEditRoute: CreatorStudioEditRoute,
-  CreatorStudioFansRoute: CreatorStudioFansRoute,
-  CreatorStudioInteractionsRoute: CreatorStudioInteractionsRoute,
-  CreatorStudioRewardsRoute: CreatorStudioRewardsRoute,
-  CreatorStudioScheduleRoute: CreatorStudioScheduleRoute,
-  CreatorStudioSettingsRoute: CreatorStudioSettingsRoute,
-  CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
-  CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
-  CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
-  CreatorStudioIndexRoute: CreatorStudioIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
