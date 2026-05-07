@@ -1,89 +1,282 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { AppShell } from "@/components/layout/AppShell";
+import { useEffect, useMemo, useState } from "react";
+import { CreatorStudioLayout } from "@/components/layout/CreatorStudioLayout";
 import { useAuth } from "@/lib/auth";
-import { useSubmissions, STATUS_LABEL, STATUS_TONE } from "@/lib/submissions-store";
-import { Crown, Pencil, Trash2, Eye, MessageSquare, Upload } from "lucide-react";
+import {
+  useSubmissions, STATUS_LABEL, STATUS_TONE, type SubmissionStatus, type Submission,
+} from "@/lib/submissions-store";
 import { posts } from "@/lib/mock-data";
+import {
+  Pencil, Trash2, Eye, MessageSquare, Upload, Search, LayoutGrid, List as ListIcon,
+  Filter, Film, CheckSquare, Square, Calendar, Clock, MoreVertical, Copy, Share2,
+} from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/creator-studio/submissions")({
   component: SubmissionsPage,
   head: () => ({
     meta: [
-      { title: "My Submissions — Trey TV" },
-      { name: "description", content: "Track your Trey TV submissions, admin feedback, and approval status." },
+      { title: "Content Library — Trey TV" },
+      { name: "description", content: "Track every Trey TV submission, draft, episode, and approval status." },
     ],
   }),
 });
 
+const FILTERS: { id: "all" | SubmissionStatus; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "draft", label: "Drafts" },
+  { id: "pending", label: "Pending" },
+  { id: "needs_changes", label: "Needs changes" },
+  { id: "approved", label: "Approved" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "published", label: "Published" },
+  { id: "rejected", label: "Rejected" },
+];
+
 function SubmissionsPage() {
-  const { isGuest, isCreator, user } = useAuth();
+  const { isGuest, user } = useAuth();
   const navigate = useNavigate();
   const store = useSubmissions();
-
   useEffect(() => { if (isGuest) navigate({ to: "/login" }); }, [isGuest, navigate]);
-  if (isGuest) return null;
-  if (!isCreator) return (
-    <AppShell wide><div className="rounded-3xl glass neon-border p-8 text-center"><Crown className="mx-auto size-8 text-primary mb-3" /><h1 className="text-xl font-bold">Creator-only area</h1></div></AppShell>
-  );
+
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  const [q, setQ] = useState("");
+  const [view, setView] = useState<"grid" | "list">("grid");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const mine = user ? store.byCreator(user.uid) : store.submissions;
 
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { all: mine.length };
+    mine.forEach((s) => { c[s.status] = (c[s.status] ?? 0) + 1; });
+    return c;
+  }, [mine]);
+
+  const filtered = useMemo(() => {
+    return mine
+      .filter((s) => filter === "all" || s.status === filter)
+      .filter((s) => !q || `${s.title} ${s.show_title} ${s.tags.join(" ")}`.toLowerCase().includes(q.toLowerCase()))
+      .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""));
+  }, [mine, filter, q]);
+
+  const toggleSel = (id: string) => setSelected((s) => {
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const clearSel = () => setSelected(new Set());
+
+  const bulkDelete = () => {
+    selected.forEach((id) => {
+      const s = mine.find((x) => x.content_id === id);
+      if (s?.status === "draft") store.remove(id);
+    });
+    toast.success(`${selected.size} item(s) processed`);
+    clearSel();
+  };
+
   return (
-    <AppShell wide>
-      <div className="space-y-5">
-        <div className="rounded-3xl glass neon-border p-5 flex items-center gap-3">
-          <div className="size-12 rounded-2xl glass grid place-items-center glow-gold"><Crown className="size-6 text-primary" /></div>
-          <div className="flex-1">
-            <div className="text-[10px] tracking-[0.3em] text-primary">CREATOR SUBMISSIONS</div>
-            <h1 className="text-2xl font-bold text-gradient-gold">My Submissions</h1>
-            <p className="text-xs text-muted-foreground">Approval status, admin feedback, and revision history.</p>
-          </div>
-          <Link to="/creator-studio/edit" className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold flex items-center gap-2"><Upload className="size-4" /> New</Link>
+    <CreatorStudioLayout
+      title="Content Library"
+      subtitle="Every draft, submission, and published episode in one place."
+      actions={
+        <Link
+          to="/creator-studio/edit"
+          className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold flex items-center gap-2 tilt-press"
+        >
+          <Upload className="size-4" /> New upload
+        </Link>
+      }
+    >
+      {/* Toolbar */}
+      <div className="rounded-2xl glass neon-border p-3 flex flex-col md:flex-row gap-3 md:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search by title, show, or tag…"
+            className="w-full pl-9 pr-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
+          />
         </div>
-
-        {mine.length === 0 && (
-          <div className="rounded-3xl glass neon-border p-8 text-center text-sm text-muted-foreground">
-            You haven't submitted anything yet. Head to the <Link to="/creator-studio/edit" className="text-primary">Edit Studio</Link> to create your first episode.
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-2 gap-3">
-          {mine.map((s) => (
-            <article key={s.content_id} className="rounded-3xl glass neon-border overflow-hidden hover-lift">
-              <div className="relative aspect-video">
-                <img src={s.thumbnail_url || posts[0].media} className="absolute inset-0 size-full object-cover" alt="" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full border ${STATUS_TONE[s.status]}`}>{STATUS_LABEL[s.status]}</span>
-                <span className="absolute bottom-2 left-2 text-xs font-semibold drop-shadow">{s.title || "Untitled"}</span>
-              </div>
-              <div className="p-3 space-y-2">
-                <div className="text-xs text-muted-foreground">{s.show_title || "—"} · S{s.season_number} E{s.episode_number}</div>
-                {s.admin_feedback && (
-                  <div className="text-xs rounded-xl bg-[oklch(0.7_0.25_340_/_0.1)] border border-[oklch(0.7_0.25_340_/_0.3)] p-2 flex gap-2">
-                    <MessageSquare className="size-3.5 text-[oklch(0.78_0.25_340)] shrink-0 mt-0.5" />
-                    <div><span className="font-semibold text-[oklch(0.78_0.25_340)]">Admin: </span>{s.admin_feedback}</div>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {s.status === "needs_changes" && (
-                    <Link to="/creator-studio/submit" search={{ id: s.content_id } as any} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground"><Pencil className="inline size-3 mr-1" />Edit & resubmit</Link>
-                  )}
-                  {s.status === "draft" && (
-                    <Link to="/creator-studio/submit" search={{ id: s.content_id } as any} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10"><Pencil className="inline size-3 mr-1" />Continue draft</Link>
-                  )}
-                  {(s.status === "approved" || s.status === "published") && (
-                    <Link to="/watch/$id" params={{ id: s.content_id }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10"><Eye className="inline size-3 mr-1" />View</Link>
-                  )}
-                  {s.status === "draft" && (
-                    <button onClick={() => store.remove(s.content_id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10 text-muted-foreground hover:text-[oklch(0.78_0.24_15)]"><Trash2 className="inline size-3 mr-1" />Delete</button>
-                  )}
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setView("grid")}
+            className={`size-9 grid place-items-center rounded-xl border ${view === "grid" ? "bg-primary/15 text-primary border-primary/40 glow-gold" : "border-white/10 text-muted-foreground"}`}
+            aria-label="Grid view"
+          ><LayoutGrid className="size-4" /></button>
+          <button
+            onClick={() => setView("list")}
+            className={`size-9 grid place-items-center rounded-xl border ${view === "list" ? "bg-primary/15 text-primary border-primary/40 glow-gold" : "border-white/10 text-muted-foreground"}`}
+            aria-label="List view"
+          ><ListIcon className="size-4" /></button>
         </div>
       </div>
-    </AppShell>
+
+      {/* Filter chips */}
+      <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-1 px-1 py-1">
+        <Filter className="size-3.5 text-muted-foreground shrink-0" />
+        {FILTERS.map((f) => {
+          const active = filter === f.id;
+          const n = counts[f.id] ?? 0;
+          return (
+            <button
+              key={f.id}
+              onClick={() => { setFilter(f.id); clearSel(); }}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition ${
+                active ? "bg-primary/15 text-primary border-primary/40 glow-gold" : "border-white/10 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f.label}
+              <span className={`ml-1.5 text-[10px] tabular-nums ${active ? "text-primary" : "text-muted-foreground"}`}>{n}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="rounded-2xl glass neon-border p-3 flex items-center gap-3 animate-fade-in">
+          <span className="text-sm font-semibold">{selected.size} selected</span>
+          <button onClick={bulkDelete} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[oklch(0.65_0.24_15_/_0.18)] text-[oklch(0.85_0.22_15)] border border-[oklch(0.65_0.24_15_/_0.4)] flex items-center gap-1">
+            <Trash2 className="size-3.5" /> Delete drafts
+          </button>
+          <button onClick={clearSel} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10 ml-auto">Clear</button>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="rounded-3xl glass neon-border p-10 text-center space-y-3">
+          <div className="mx-auto size-14 rounded-2xl glass grid place-items-center glow-gold"><Film className="size-7 text-primary" /></div>
+          <h3 className="text-lg font-bold text-gradient-gold">No content here yet</h3>
+          <p className="text-sm text-muted-foreground">
+            {filter === "all"
+              ? "Upload your first episode and it will live here forever."
+              : `No items matching "${FILTERS.find((f) => f.id === filter)?.label}".`}
+          </p>
+          <Link to="/creator-studio/edit" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold">
+            <Upload className="size-4" /> Upload an episode
+          </Link>
+        </div>
+      )}
+
+      {/* Grid */}
+      {view === "grid" && filtered.length > 0 && (
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+          {filtered.map((s) => (
+            <SubmissionCard key={s.content_id} s={s} selected={selected.has(s.content_id)} onSelect={() => toggleSel(s.content_id)} />
+          ))}
+        </div>
+      )}
+
+      {/* List */}
+      {view === "list" && filtered.length > 0 && (
+        <div className="rounded-3xl glass neon-border overflow-hidden divide-y divide-white/5">
+          {filtered.map((s) => (
+            <SubmissionRow key={s.content_id} s={s} selected={selected.has(s.content_id)} onSelect={() => toggleSel(s.content_id)} />
+          ))}
+        </div>
+      )}
+    </CreatorStudioLayout>
+  );
+}
+
+function SubmissionCard({ s, selected, onSelect }: { s: Submission; selected: boolean; onSelect: () => void }) {
+  return (
+    <article className={`group relative rounded-3xl glass neon-border overflow-hidden hover-lift transition ${selected ? "ring-2 ring-primary glow-gold" : ""}`}>
+      <button
+        onClick={onSelect}
+        aria-label="Select"
+        className="absolute top-2 left-2 z-10 size-7 rounded-md grid place-items-center bg-black/50 backdrop-blur opacity-0 group-hover:opacity-100 transition data-[on=true]:opacity-100"
+        data-on={selected}
+      >
+        {selected ? <CheckSquare className="size-4 text-primary" /> : <Square className="size-4 text-white" />}
+      </button>
+      <div className="relative aspect-video">
+        <img src={s.thumbnail_url || posts[0].media} className="absolute inset-0 size-full object-cover" alt="" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+        <span className={`absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full border ${STATUS_TONE[s.status]}`}>{STATUS_LABEL[s.status]}</span>
+        <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold drop-shadow truncate">{s.title || "Untitled"}</div>
+            <div className="text-[11px] text-white/70 truncate">{s.show_title || "—"} · S{s.season_number} E{s.episode_number}</div>
+          </div>
+          <span className="text-[10px] tabular-nums px-1.5 py-0.5 rounded bg-black/50 border border-white/10">{s.duration}</span>
+        </div>
+      </div>
+
+      <div className="p-3 space-y-2">
+        {s.admin_feedback && (
+          <div className="text-xs rounded-xl bg-[oklch(0.7_0.25_340_/_0.1)] border border-[oklch(0.7_0.25_340_/_0.3)] p-2 flex gap-2">
+            <MessageSquare className="size-3.5 text-[oklch(0.78_0.25_340)] shrink-0 mt-0.5" />
+            <div className="line-clamp-2"><span className="font-semibold text-[oklch(0.78_0.25_340)]">Admin: </span>{s.admin_feedback}</div>
+          </div>
+        )}
+        {s.scheduled_at && (
+          <div className="text-[11px] text-[oklch(0.78_0.22_300)] flex items-center gap-1.5">
+            <Calendar className="size-3" /> Scheduled {new Date(s.scheduled_at).toLocaleString()}
+          </div>
+        )}
+        <RowActions s={s} />
+      </div>
+    </article>
+  );
+}
+
+function SubmissionRow({ s, selected, onSelect }: { s: Submission; selected: boolean; onSelect: () => void }) {
+  return (
+    <div className={`flex items-center gap-3 p-3 hover:bg-white/5 transition ${selected ? "bg-primary/5" : ""}`}>
+      <button onClick={onSelect} aria-label="Select" className="size-7 grid place-items-center rounded-md hover:bg-white/5">
+        {selected ? <CheckSquare className="size-4 text-primary" /> : <Square className="size-4 text-muted-foreground" />}
+      </button>
+      <div className="relative size-16 rounded-lg overflow-hidden shrink-0 ring-1 ring-white/10">
+        <img src={s.thumbnail_url || posts[0].media} className="absolute inset-0 size-full object-cover" alt="" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold truncate">{s.title || "Untitled"}</span>
+          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${STATUS_TONE[s.status]}`}>{STATUS_LABEL[s.status]}</span>
+        </div>
+        <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
+          <span>{s.show_title || "—"} · S{s.season_number} E{s.episode_number}</span>
+          <span className="opacity-50">·</span>
+          <Clock className="size-3" /> <span>{s.duration}</span>
+          <span className="opacity-50">·</span>
+          <span>{new Date(s.updated_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+      <RowActions s={s} compact />
+    </div>
+  );
+}
+
+function RowActions({ s, compact }: { s: Submission; compact?: boolean }) {
+  const store = useSubmissions();
+  const cls = compact ? "px-2.5 py-1.5 rounded-lg text-[11px]" : "px-3 py-1.5 rounded-lg text-xs";
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {s.status === "needs_changes" && (
+        <Link to="/creator-studio/submit" search={{ id: s.content_id } as any} className={`${cls} font-semibold bg-primary text-primary-foreground glow-gold`}>
+          <Pencil className="inline size-3 mr-1" />Edit & resubmit
+        </Link>
+      )}
+      {s.status === "draft" && (
+        <Link to="/creator-studio/submit" search={{ id: s.content_id } as any} className={`${cls} font-semibold glass border border-white/10`}>
+          <Pencil className="inline size-3 mr-1" />Continue
+        </Link>
+      )}
+      {(s.status === "approved" || s.status === "published" || s.status === "scheduled") && (
+        <Link to="/watch/$id" params={{ id: s.content_id }} className={`${cls} font-semibold glass border border-white/10`}>
+          <Eye className="inline size-3 mr-1" />View
+        </Link>
+      )}
+      <button onClick={() => { navigator.clipboard?.writeText(`${location.origin}/watch/${s.content_id}`); toast.success("Link copied"); }} className={`${cls} font-semibold glass border border-white/10 text-muted-foreground hover:text-foreground`}>
+        <Share2 className="inline size-3 mr-1" />Share
+      </button>
+      {s.status === "draft" && (
+        <button onClick={() => store.remove(s.content_id)} className={`${cls} font-semibold glass border border-white/10 text-muted-foreground hover:text-[oklch(0.78_0.24_15)]`}>
+          <Trash2 className="size-3" />
+        </button>
+      )}
+    </div>
   );
 }
