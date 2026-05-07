@@ -1,43 +1,430 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, Heart, MessageCircle, UserPlus, Sparkles } from "lucide-react";
+import { useMemo, useRef, useEffect, useState } from "react";
+import {
+  Bell, Heart, MessageCircle, UserPlus, Sparkles, Search, Send, Plus,
+  Phone, Video, MoreHorizontal, Smile, Image as ImageIcon, Mic, Check,
+  CheckCheck, ArrowLeft, Pin, Filter, Inbox as InboxIcon, Star, Wand2,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { creators } from "@/lib/mock-data";
+import { creators, currentUser } from "@/lib/mock-data";
+import { VerifiedBadge } from "@/components/brand/Badge";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
-  head: () => ({ meta: [{ title: "Inbox — Trey TV" }] }),
+  head: () => ({
+    meta: [
+      { title: "Inbox — Trey TV" },
+      { name: "description", content: "Connect with creators and fans across Trey TV. DMs, activity, requests and Trey-I co-pilot." },
+    ],
+  }),
 });
 
-const items = [
+type Tab = "all" | "dms" | "requests" | "activity";
+
+type Conversation = {
+  id: string;
+  who: typeof creators[number];
+  preview: string;
+  time: string;
+  unread: number;
+  pinned?: boolean;
+  online?: boolean;
+  typing?: boolean;
+  reaction?: string;
+};
+
+type ChatMsg = {
+  id: string;
+  from: "me" | "them";
+  text?: string;
+  attachment?: { kind: "image" | "audio"; src?: string; len?: string };
+  time: string;
+  status?: "sent" | "delivered" | "read";
+  reactions?: string[];
+};
+
+const conversations: Conversation[] = [
+  { id: "c1", who: creators[0], preview: "Yo that BTS clip is fire 🔥 you down to swap reels?", time: "2m", unread: 3, pinned: true, online: true, typing: true },
+  { id: "c2", who: creators[1], preview: "Just dropped a new beat — wanna preview?", time: "12m", unread: 1, online: true, reaction: "🔥" },
+  { id: "c3", who: creators[2], preview: "voice message · 0:42", time: "1h", unread: 0 },
+  { id: "c4", who: creators[3], preview: "Booking confirmed for the Friday set 🎧", time: "3h", unread: 0 },
+  { id: "c5", who: creators[4], preview: "Sent you the moodboard ✨", time: "1d", unread: 0, online: false },
+];
+
+const activity = [
   { icon: Heart, color: "text-[oklch(0.65_0.24_15)]", who: creators[0], text: "liked your latest post", time: "2m" },
   { icon: UserPlus, color: "text-primary", who: creators[1], text: "started following you", time: "12m" },
   { icon: MessageCircle, color: "text-[oklch(0.82_0.15_215)]", who: creators[2], text: "commented: 'This is fire 🔥'", time: "1h" },
   { icon: Sparkles, color: "text-[oklch(0.7_0.25_340)]", who: creators[3], text: "prescribed your post to 124 fans", time: "3h" },
+  { icon: Star, color: "text-primary", who: creators[4], text: "added you to their VIP list", time: "5h" },
 ];
 
+const requests = creators.slice(2, 5).map((c, i) => ({
+  who: c,
+  msg: ["Hey, big fan — would love to collab on a track ✨", "Saw your last drop — interested in a feature?", "Is your management open right now?"][i],
+}));
+
+const seedThread: Record<string, ChatMsg[]> = {
+  c1: [
+    { id: "m1", from: "them", text: "Yooo just watched the BTS — that lighting setup is unreal 🔥", time: "10:24" },
+    { id: "m2", from: "me", text: "Appreciate it 🙏 took 4 hours to dial the rig", time: "10:25", status: "read" },
+    { id: "m3", from: "them", text: "Reels swap? I'll plug your show on my channel tomorrow", time: "10:26" },
+    { id: "m4", from: "them", attachment: { kind: "audio", len: "0:18" }, time: "10:27" },
+    { id: "m5", from: "me", text: "Bet — send the cut over and I'll mix it into Late Night S2 promo", time: "10:28", status: "delivered", reactions: ["🔥"] },
+  ],
+};
+
 function Inbox() {
+  const [tab, setTab] = useState<Tab>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [thread, setThread] = useState<ChatMsg[]>(seedThread.c1);
+  const [draft, setDraft] = useState("");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const filtered = useMemo(
+    () => conversations.filter((c) => c.who.name.toLowerCase().includes(query.toLowerCase())),
+    [query]
+  );
+  const open = conversations.find((c) => c.id === openId);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [thread, openId]);
+
+  const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
+
+  const send = () => {
+    if (!draft.trim()) return;
+    setThread((t) => [...t, { id: crypto.randomUUID(), from: "me", text: draft, time: "now", status: "sent" }]);
+    setDraft("");
+    setTimeout(() => {
+      setThread((t) => t.map((m) => (m.from === "me" ? { ...m, status: "read" } : m)));
+    }, 900);
+  };
+
   return (
-    <AppShell>
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <Bell className="size-5 text-primary" />
-          <h1 className="text-xl font-bold">Inbox</h1>
-        </div>
-        {items.map((i, idx) => (
-          <div key={idx} className="rounded-2xl glass border border-white/10 p-3 flex items-center gap-3">
-            <div className="relative">
-              <img src={i.who.avatar} className="size-11 rounded-full object-cover" alt="" />
-              <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-background grid place-items-center border border-white/10">
-                <i.icon className={`size-3.5 ${i.color}`} />
+    <AppShell wide>
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:h-[calc(100vh-7rem)]">
+        {/* Conversation list */}
+        <section className={`${openId ? "hidden lg:flex" : "flex"} flex-col rounded-3xl glass neon-border overflow-hidden`}>
+          {/* Header */}
+          <div className="p-4 border-b border-white/5 relative overflow-hidden">
+            <div className="absolute -top-10 -right-10 size-32 rounded-full bg-[radial-gradient(circle,oklch(0.7_0.25_340_/_0.4),transparent_70%)] blur-2xl" />
+            <div className="relative flex items-center justify-between">
+              <div>
+                <div className="text-[10px] tracking-[0.3em] text-primary flex items-center gap-2"><InboxIcon className="size-3.5" /> INBOX</div>
+                <h1 className="text-2xl font-bold mt-0.5"><span className="text-gradient-gold">Connect</span></h1>
+                <div className="text-[11px] text-muted-foreground">{totalUnread} unread · {conversations.filter((c) => c.online).length} online now</div>
               </div>
+              <button onClick={() => toast("New chat")} className="size-10 grid place-items-center rounded-full bg-primary text-primary-foreground glow-gold tilt-press">
+                <Plus className="size-5" />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm"><span className="font-semibold">{i.who.name}</span> {i.text}</div>
-              <div className="text-xs text-muted-foreground">{i.time} ago</div>
+
+            {/* Search */}
+            <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl glass border border-white/10 focus-within:border-primary/40">
+              <Search className="size-4 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search creators, fans, messages…"
+                className="flex-1 bg-transparent text-sm focus:outline-none"
+              />
+              <button onClick={() => toast("Filters")} className="text-muted-foreground"><Filter className="size-4" /></button>
+            </div>
+
+            {/* Tabs */}
+            <div className="mt-3 flex gap-1 overflow-x-auto no-scrollbar">
+              {([
+                { id: "all", label: "All" },
+                { id: "dms", label: "Messages", n: totalUnread },
+                { id: "requests", label: "Requests", n: requests.length },
+                { id: "activity", label: "Activity", n: activity.length },
+              ] as const).map((t) => {
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`relative px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition tilt-press ${
+                      active ? "bg-primary/15 text-primary border border-primary/40 glow-gold" : "glass border border-white/10 text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t.label}
+                    {t.n ? (
+                      <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[oklch(0.7_0.25_340)] text-white">{t.n}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </div>
-        ))}
+
+          {/* Online rail */}
+          {tab !== "activity" && tab !== "requests" && (
+            <div className="px-3 py-3 border-b border-white/5">
+              <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-2 px-1">ACTIVE NOW</div>
+              <div className="flex gap-3 overflow-x-auto no-scrollbar">
+                {creators.map((c) => (
+                  <button key={c.id} onClick={() => setOpenId(conversations.find((x) => x.who.id === c.id)?.id ?? "c1")} className="shrink-0 flex flex-col items-center gap-1 tilt-press">
+                    <div className="relative size-12 rounded-full conic-ring">
+                      <img src={c.avatar} className="size-12 rounded-full object-cover" alt="" />
+                      <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />
+                    </div>
+                    <span className="text-[10px] truncate max-w-[60px]">{c.name.split(" ")[0]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lists */}
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            {(tab === "all" || tab === "dms") && (
+              <ul className="p-2 space-y-1">
+                {filtered.map((c, i) => {
+                  const active = openId === c.id;
+                  return (
+                    <li key={c.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
+                      <button
+                        onClick={() => setOpenId(c.id)}
+                        className={`w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition ${
+                          active ? "bg-white/8 ring-1 ring-white/15" : "hover:bg-white/5"
+                        }`}
+                      >
+                        <div className="relative size-12 rounded-full conic-ring shrink-0">
+                          <img src={c.who.avatar} className="size-12 rounded-full object-cover" alt="" />
+                          {c.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm font-semibold truncate flex items-center gap-1">
+                              {c.who.name}
+                              <VerifiedBadge kind={c.who.verified} className="!size-3.5" />
+                              {c.pinned && <Pin className="size-3 text-primary" />}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{c.time}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-0.5">
+                            <p className={`text-xs truncate ${c.unread ? "text-foreground" : "text-muted-foreground"} ${c.typing ? "text-[oklch(0.82_0.15_215)] italic" : ""}`}>
+                              {c.typing ? "typing…" : c.preview}
+                            </p>
+                            {c.unread ? (
+                              <span className="size-5 grid place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground glow-gold">{c.unread}</span>
+                            ) : c.reaction ? (
+                              <span className="text-xs">{c.reaction}</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {tab === "requests" && (
+              <ul className="p-3 space-y-2">
+                {requests.map((r, i) => (
+                  <li key={r.who.id} style={{ animationDelay: `${i * 60}ms` }} className="animate-rise rounded-2xl glass border border-white/10 p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="relative size-11 rounded-full conic-ring shrink-0">
+                        <img src={r.who.avatar} className="size-11 rounded-full object-cover" alt="" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold flex items-center gap-1">{r.who.name} <VerifiedBadge kind={r.who.verified} className="!size-3.5" /></div>
+                        <div className="text-[11px] text-muted-foreground truncate">{r.msg}</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => toast.success("Request accepted")} className="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Accept</button>
+                      <button onClick={() => toast("Request dismissed")} className="flex-1 py-1.5 rounded-lg text-xs glass border border-white/10">Decline</button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {tab === "activity" && (
+              <ul className="p-3 space-y-2">
+                {activity.map((a, i) => (
+                  <li key={i} style={{ animationDelay: `${i * 50}ms` }} className="animate-rise rounded-2xl glass border border-white/10 p-3 flex items-center gap-3">
+                    <div className="relative">
+                      <img src={a.who.avatar} className="size-11 rounded-full object-cover" alt="" />
+                      <div className="absolute -bottom-1 -right-1 size-6 rounded-full bg-background grid place-items-center border border-white/10">
+                        <a.icon className={`size-3.5 ${a.color}`} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm"><span className="font-semibold">{a.who.name}</span> {a.text}</div>
+                      <div className="text-[11px] text-muted-foreground">{a.time} ago</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        {/* Chat panel */}
+        <section className={`${openId ? "flex" : "hidden lg:flex"} flex-col rounded-3xl glass neon-border overflow-hidden relative`}>
+          {open ? (
+            <>
+              {/* Chat header */}
+              <div className="p-3 md:p-4 border-b border-white/5 flex items-center gap-3">
+                <button onClick={() => setOpenId(null)} className="lg:hidden size-9 grid place-items-center rounded-full hover:bg-white/5">
+                  <ArrowLeft className="size-4" />
+                </button>
+                <div className="relative size-11 rounded-full conic-ring shrink-0">
+                  <img src={open.who.avatar} className="size-11 rounded-full object-cover" alt="" />
+                  {open.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold flex items-center gap-1">{open.who.name} <VerifiedBadge kind={open.who.verified} className="!size-3.5" /></div>
+                  <div className="text-[11px] text-muted-foreground">@{open.who.handle} · {open.online ? "Active now" : "Last seen 3h ago"}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <IconBtn icon={Phone} onClick={() => toast("Calling…")} />
+                  <IconBtn icon={Video} onClick={() => toast("Video call")} />
+                  <IconBtn icon={MoreHorizontal} onClick={() => toast("Conversation options")} />
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar relative">
+                <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,oklch(0.2_0.07_290_/_0.3),transparent_60%)]" />
+                <div className="text-center text-[10px] tracking-[0.2em] text-muted-foreground py-2">TODAY</div>
+                {thread.map((m, i) => {
+                  const mine = m.from === "me";
+                  const prevSameSide = thread[i - 1]?.from === m.from;
+                  return (
+                    <div key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} animate-rise`}>
+                      {!mine && !prevSameSide && (
+                        <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
+                      )}
+                      {!mine && prevSameSide && <div className="w-7 shrink-0" />}
+                      <div className={`max-w-[70%] relative ${mine ? "items-end" : "items-start"} flex flex-col`}>
+                        {m.text && (
+                          <div
+                            className={`px-3.5 py-2 text-sm leading-relaxed rounded-2xl ${
+                              mine
+                                ? "bg-primary text-primary-foreground rounded-br-sm shadow-[0_0_18px_oklch(0.82_0.16_85_/_0.35)]"
+                                : "glass border border-white/10 rounded-bl-sm"
+                            }`}
+                          >
+                            {m.text}
+                          </div>
+                        )}
+                        {m.attachment?.kind === "audio" && (
+                          <div className={`px-3 py-2 rounded-2xl flex items-center gap-3 ${mine ? "bg-primary/15 border border-primary/30" : "glass border border-white/10"}`}>
+                            <button className="size-8 rounded-full grid place-items-center bg-primary text-primary-foreground"><Mic className="size-4" /></button>
+                            <div className="flex items-center gap-px h-6 w-32">
+                              {Array.from({ length: 28 }).map((_, j) => (
+                                <span key={j} className="flex-1 bg-foreground/40 rounded-full" style={{ height: `${20 + Math.sin(j * 0.7) * 30 + Math.random() * 30}%` }} />
+                              ))}
+                            </div>
+                            <span className="text-[10px] tabular-nums text-muted-foreground">{m.attachment.len}</span>
+                          </div>
+                        )}
+                        {m.reactions && (
+                          <div className={`absolute -bottom-2 ${mine ? "left-1" : "right-1"} px-1.5 py-0.5 rounded-full glass-strong border border-white/10 text-xs`}>
+                            {m.reactions.join(" ")}
+                          </div>
+                        )}
+                        <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "justify-end" : ""}`}>
+                          <span>{m.time}</span>
+                          {mine && (m.status === "read" ? <CheckCheck className="size-3 text-[oklch(0.82_0.15_215)]" /> : m.status === "delivered" ? <CheckCheck className="size-3" /> : <Check className="size-3" />)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {open.typing && (
+                  <div className="flex items-end gap-2 animate-rise">
+                    <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
+                    <div className="px-3.5 py-2 rounded-2xl glass border border-white/10 flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce" />
+                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:120ms]" />
+                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:240ms]" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* AI suggestions */}
+              <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto no-scrollbar">
+                {["🔥 I'm in", "Send the cut", "Let's hop on a call", "Drafting reply…"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => s.includes("Drafting") ? toast("Trey-I drafting reply…") : setDraft(s)}
+                    className="shrink-0 px-3 py-1.5 rounded-full text-[11px] glass border border-white/10 hover:bg-white/5 flex items-center gap-1 tilt-press"
+                  >
+                    {s.includes("Drafting") && <Wand2 className="size-3 text-primary" />}
+                    {s}
+                  </button>
+                ))}
+              </div>
+
+              {/* Composer */}
+              <div className="p-3 border-t border-white/5">
+                <div className="flex items-end gap-2 rounded-2xl glass border border-white/10 px-3 py-2 focus-within:border-primary/50 transition">
+                  <button className="text-muted-foreground hover:text-primary"><Plus className="size-5" /></button>
+                  <button className="text-muted-foreground hover:text-primary"><ImageIcon className="size-5" /></button>
+                  <button className="text-muted-foreground hover:text-primary"><Smile className="size-5" /></button>
+                  <input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && send()}
+                    placeholder={`Message ${open.who.name.split(" ")[0]}…`}
+                    className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground py-1"
+                  />
+                  {draft.trim() ? (
+                    <button onClick={send} className="size-9 grid place-items-center rounded-xl bg-primary text-primary-foreground glow-gold tilt-press">
+                      <Send className="size-4" />
+                    </button>
+                  ) : (
+                    <button onClick={() => toast("Recording voice note…")} className="size-9 grid place-items-center rounded-xl glass border border-white/10 tilt-press">
+                      <Mic className="size-4 text-primary" />
+                    </button>
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground text-center mt-1.5 flex items-center justify-center gap-1">
+                  <Sparkles className="size-3 text-primary" /> End-to-end encrypted · Trey-I assist enabled
+                </div>
+              </div>
+            </>
+          ) : (
+            <EmptyState />
+          )}
+        </section>
       </div>
     </AppShell>
+  );
+}
+
+function IconBtn({ icon: Icon, onClick }: { icon: typeof Phone; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="size-9 grid place-items-center rounded-full hover:bg-white/5 tilt-press">
+      <Icon className="size-4" />
+    </button>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex-1 grid place-items-center p-8 text-center">
+      <div className="max-w-sm space-y-3">
+        <div className="relative mx-auto size-20 rounded-full conic-ring">
+          <div className="size-20 rounded-full bg-background grid place-items-center">
+            <MessageCircle className="size-8 text-primary" />
+          </div>
+        </div>
+        <h2 className="text-xl font-bold"><span className="text-gradient-gold">Pick a thread</span></h2>
+        <p className="text-sm text-muted-foreground">Connect with creators and fans across your network. Trey-I drafts replies, summarizes long DMs and surfaces hot collabs.</p>
+        <button className="px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold">Start a new conversation</button>
+      </div>
+    </div>
   );
 }
