@@ -11,7 +11,7 @@ import {
   Film, Plus, ArrowUpRight, Bell, ChevronRight,
 } from "lucide-react";
 
-export const Route = createFileRoute("/creator-studio")({
+export const Route = createFileRoute("/creator-studio/")({
   component: CreatorStudioDashboard,
   head: () => ({
     meta: [
