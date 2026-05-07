@@ -71,7 +71,7 @@ function CreatorHub() {
               <p className="text-sm text-muted-foreground mt-1">@{currentUser.handle} · {currentUser.stats.followers} followers · {currentUser.stats.posts} posts</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={() => toast.success("New episode uploader opened")} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold hover-lift tilt-press flex items-center gap-2">
+              <button onClick={() => navigate({ to: "/creator-hub/studio" })} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold hover-lift tilt-press flex items-center gap-2">
                 <Upload className="size-4" /> Upload
               </button>
               <button onClick={() => toast("Going live…")} className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover-lift tilt-press flex items-center gap-2">
@@ -111,7 +111,7 @@ function CreatorHub() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {tools.map((t, i) => {
-              const isStudio = t.label === "Trey-I Studio";
+              const isStudio = t.label === "Trey-I Studio" || t.label === "Upload Episode";
               const onClick = isStudio
                 ? () => navigate({ to: "/creator-hub/studio" })
                 : () => toast(`${t.label} coming soon`);
