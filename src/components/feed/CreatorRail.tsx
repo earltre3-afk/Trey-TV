@@ -2,12 +2,6 @@ import { Radio } from "lucide-react";
 import { toast } from "sonner";
 import { creators } from "@/lib/mock-data";
 
-const ringClass: Record<string, string> = {
-  magenta: "ring-neon-magenta",
-  cyan: "ring-neon-cyan",
-  purple: "ring-neon-purple",
-  gold: "ring-neon-gold",
-};
 
 export function CreatorRail() {
   return (
