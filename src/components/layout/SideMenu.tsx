@@ -102,9 +102,11 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
             to="/u/$uid"
             params={{ uid: currentUser.uid }}
             onClick={onClose}
-            className="mx-3 my-3 p-3 rounded-2xl glass flex items-center gap-3 hover:bg-white/5"
+            className="mx-3 my-3 p-3 rounded-2xl glass neon-border flex items-center gap-3 hover:bg-white/5 hover-lift"
           >
-            <img src={currentUser.avatar} alt="" className="size-12 rounded-full object-cover ring-neon-purple" />
+            <div className="relative size-12 rounded-full conic-ring shrink-0">
+              <img src={currentUser.avatar} alt="" className="size-12 rounded-full object-cover" />
+            </div>
             <div className="flex-1 min-w-0">
               <div className="font-semibold">{currentUser.name}</div>
               <div className="text-xs text-muted-foreground">@{currentUser.handle}</div>
