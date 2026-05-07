@@ -273,11 +273,11 @@ function Form({ draft }: { draft: Submission }) {
         <Section title="Monetization / Access" icon={DollarSign}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {([
-              { v: "free", label: "Free" },
-              { v: "subscribers", label: "Subscribers only" },
+              { v: "free", label: "Free", soon: false },
+              { v: "subscribers", label: "Subscribers only", soon: false },
               { v: "premium", label: "Premium purchase", soon: true },
               { v: "gift", label: "Gift-supported", soon: true },
-            ] as const).map((o) => (
+            ] as { v: Submission["access_type"]; label: string; soon: boolean }[]).map((o) => (
               <button
                 key={o.v}
                 disabled={o.soon}

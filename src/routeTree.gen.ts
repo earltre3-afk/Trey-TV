@@ -32,6 +32,9 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
+import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
+import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
+import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
 import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 
@@ -150,6 +153,22 @@ const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   path: '/voice',
   getParentRoute: () => OnboardingRoute,
 } as any)
+const CreatorStudioSubmittedRoute = CreatorStudioSubmittedRouteImport.update({
+  id: '/creator-studio/submitted',
+  path: '/creator-studio/submitted',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioSubmitRoute = CreatorStudioSubmitRouteImport.update({
+  id: '/creator-studio/submit',
+  path: '/creator-studio/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioSubmissionsRoute =
+  CreatorStudioSubmissionsRouteImport.update({
+    id: '/creator-studio/submissions',
+    path: '/creator-studio/submissions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CreatorStudioEditRoute = CreatorStudioEditRouteImport.update({
   id: '/creator-studio/edit',
   path: '/creator-studio/edit',
@@ -185,6 +204,9 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -212,6 +234,9 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -240,6 +265,9 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -269,6 +297,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
@@ -296,6 +327,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
   id:
@@ -323,6 +357,9 @@ export interface FileRouteTypes {
     | '/signup'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesById: FileRoutesById
@@ -350,6 +387,9 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   CreatorStudioEditRoute: typeof CreatorStudioEditRoute
+  CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
+  CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
+  CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
   UUidRoute: typeof UUidRoute
 }
 
@@ -516,6 +556,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingVoiceRouteImport
       parentRoute: typeof OnboardingRoute
     }
+    '/creator-studio/submitted': {
+      id: '/creator-studio/submitted'
+      path: '/creator-studio/submitted'
+      fullPath: '/creator-studio/submitted'
+      preLoaderRoute: typeof CreatorStudioSubmittedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/submit': {
+      id: '/creator-studio/submit'
+      path: '/creator-studio/submit'
+      fullPath: '/creator-studio/submit'
+      preLoaderRoute: typeof CreatorStudioSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/submissions': {
+      id: '/creator-studio/submissions'
+      path: '/creator-studio/submissions'
+      fullPath: '/creator-studio/submissions'
+      preLoaderRoute: typeof CreatorStudioSubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-studio/edit': {
       id: '/creator-studio/edit'
       path: '/creator-studio/edit'
@@ -580,6 +641,9 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   CreatorStudioEditRoute: CreatorStudioEditRoute,
+  CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
+  CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
+  CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
   UUidRoute: UUidRoute,
 }
 export const routeTree = rootRouteImport
