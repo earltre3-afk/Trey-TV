@@ -18,6 +18,7 @@ import { Route as CreateRouteImport } from './routes/create'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
+import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -64,27 +65,34 @@ const UUidRoute = UUidRouteImport.update({
   path: '/u/$uid',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => CreatorHubRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
-  '/creator-hub': typeof CreatorHubRoute
+  '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
-  '/creator-hub': typeof CreatorHubRoute
+  '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesById {
@@ -92,11 +100,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
-  '/creator-hub': typeof CreatorHubRoute
+  '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/prescribe-me'
     | '/settings'
+    | '/creator-hub/studio'
     | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/prescribe-me'
     | '/settings'
+    | '/creator-hub/studio'
     | '/u/$uid'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/prescribe-me'
     | '/settings'
+    | '/creator-hub/studio'
     | '/u/$uid'
   fileRoutesById: FileRoutesById
 }
@@ -139,7 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CreateRoute: typeof CreateRoute
-  CreatorHubRoute: typeof CreatorHubRoute
+  CreatorHubRoute: typeof CreatorHubRouteWithChildren
   ExploreRoute: typeof ExploreRoute
   InboxRoute: typeof InboxRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
@@ -212,14 +224,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UUidRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator-hub/studio': {
+      id: '/creator-hub/studio'
+      path: '/studio'
+      fullPath: '/creator-hub/studio'
+      preLoaderRoute: typeof CreatorHubStudioRouteImport
+      parentRoute: typeof CreatorHubRoute
+    }
   }
 }
+
+interface CreatorHubRouteChildren {
+  CreatorHubStudioRoute: typeof CreatorHubStudioRoute
+}
+
+const CreatorHubRouteChildren: CreatorHubRouteChildren = {
+  CreatorHubStudioRoute: CreatorHubStudioRoute,
+}
+
+const CreatorHubRouteWithChildren = CreatorHubRoute._addFileChildren(
+  CreatorHubRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   CreateRoute: CreateRoute,
-  CreatorHubRoute: CreatorHubRoute,
+  CreatorHubRoute: CreatorHubRouteWithChildren,
   ExploreRoute: ExploreRoute,
   InboxRoute: InboxRoute,
   PrescribeMeRoute: PrescribeMeRoute,

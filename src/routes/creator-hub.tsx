@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser, posts, creators } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
@@ -48,6 +48,7 @@ const tools = [
 ];
 
 function CreatorHub() {
+  const navigate = useNavigate();
   return (
     <AppShell wide>
       <div className="space-y-8">
@@ -109,20 +110,29 @@ function CreatorHub() {
             <h2 className="text-lg font-semibold flex items-center gap-2"><Sparkles className="size-4 text-primary" /> Studio Tools</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {tools.map((t, i) => (
-              <button
-                key={t.label}
-                onClick={() => toast(`${t.label} coming soon`)}
-                style={{ animationDelay: `${i * 50}ms` }}
-                className="group relative rounded-2xl p-4 glass neon-border hover-lift tilt-press text-left animate-rise overflow-hidden"
-              >
-                <div className="size-10 rounded-xl grid place-items-center bg-white/5 group-hover:scale-110 transition">
-                  <t.icon className="size-5 text-primary" />
-                </div>
-                <div className="mt-3 text-sm font-semibold">{t.label}</div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</div>
-              </button>
-            ))}
+            {tools.map((t, i) => {
+              const isStudio = t.label === "Trey-I Studio";
+              const onClick = isStudio
+                ? () => navigate({ to: "/creator-hub/studio" })
+                : () => toast(`${t.label} coming soon`);
+              return (
+                <button
+                  key={t.label}
+                  onClick={onClick}
+                  style={{ animationDelay: `${i * 50}ms` }}
+                  className={`group relative rounded-2xl p-4 glass neon-border hover-lift tilt-press text-left animate-rise overflow-hidden ${isStudio ? "ring-1 ring-primary/40 glow-gold" : ""}`}
+                >
+                  <div className="size-10 rounded-xl grid place-items-center bg-white/5 group-hover:scale-110 transition">
+                    <t.icon className="size-5 text-primary" />
+                  </div>
+                  <div className="mt-3 text-sm font-semibold flex items-center gap-1">
+                    {t.label}
+                    {isStudio && <span className="text-[9px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-bold">OPEN</span>}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
