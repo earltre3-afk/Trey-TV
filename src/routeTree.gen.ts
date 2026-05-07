@@ -9,13 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrescribeMeRoute = PrescribeMeRouteImport.update({
   id: '/prescribe-me',
   path: '/prescribe-me',
@@ -31,9 +39,19 @@ const ExploreRoute = ExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorHubRoute = CreatorHubRouteImport.update({
+  id: '/creator-hub',
+  path: '/creator-hub',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -49,61 +67,95 @@ const UUidRoute = UUidRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
+  '/creator-hub': typeof CreatorHubRoute
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/settings': typeof SettingsRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
+  '/creator-hub': typeof CreatorHubRoute
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/settings': typeof SettingsRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/analytics': typeof AnalyticsRoute
   '/create': typeof CreateRoute
+  '/creator-hub': typeof CreatorHubRoute
   '/explore': typeof ExploreRoute
   '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
+  '/settings': typeof SettingsRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/analytics'
     | '/create'
+    | '/creator-hub'
     | '/explore'
     | '/inbox'
     | '/prescribe-me'
+    | '/settings'
     | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create' | '/explore' | '/inbox' | '/prescribe-me' | '/u/$uid'
+  to:
+    | '/'
+    | '/analytics'
+    | '/create'
+    | '/creator-hub'
+    | '/explore'
+    | '/inbox'
+    | '/prescribe-me'
+    | '/settings'
+    | '/u/$uid'
   id:
     | '__root__'
     | '/'
+    | '/analytics'
     | '/create'
+    | '/creator-hub'
     | '/explore'
     | '/inbox'
     | '/prescribe-me'
+    | '/settings'
     | '/u/$uid'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   CreateRoute: typeof CreateRoute
+  CreatorHubRoute: typeof CreatorHubRoute
   ExploreRoute: typeof ExploreRoute
   InboxRoute: typeof InboxRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
+  SettingsRoute: typeof SettingsRoute
   UUidRoute: typeof UUidRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/prescribe-me': {
       id: '/prescribe-me'
       path: '/prescribe-me'
@@ -125,11 +177,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator-hub': {
+      id: '/creator-hub'
+      path: '/creator-hub'
+      fullPath: '/creator-hub'
+      preLoaderRoute: typeof CreatorHubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/create': {
       id: '/create'
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -151,10 +217,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AnalyticsRoute: AnalyticsRoute,
   CreateRoute: CreateRoute,
+  CreatorHubRoute: CreatorHubRoute,
   ExploreRoute: ExploreRoute,
   InboxRoute: InboxRoute,
   PrescribeMeRoute: PrescribeMeRoute,
+  SettingsRoute: SettingsRoute,
   UUidRoute: UUidRoute,
 }
 export const routeTree = rootRouteImport

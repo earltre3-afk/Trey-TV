@@ -18,9 +18,9 @@ const items: Item[] = [
 ];
 
 const creatorItems: Item[] = [
-  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/u/$uid", color: "text-primary" },
-  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/u/$uid", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/u/$uid", color: "text-[oklch(0.82_0.15_215)]" },
+  { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/creator-hub", color: "text-primary" },
+  { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/analytics", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/settings", color: "text-[oklch(0.82_0.15_215)]" },
 ];
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -69,8 +69,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
             {creatorItems.map((i, idx) => (
               <Link
                 key={i.label}
-                to="/u/$uid"
-                params={{ uid: currentUser.uid }}
+                to={i.to}
                 onClick={onClose}
                 style={{ animationDelay: `${(idx + items.length) * 50}ms` }}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 hover:translate-x-1 transition-all duration-300 ${open ? "animate-rise" : ""}`}
