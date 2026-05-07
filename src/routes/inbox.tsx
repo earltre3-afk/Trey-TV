@@ -138,7 +138,7 @@ function Inbox() {
             {/* Tabs */}
             <div className="mt-3 flex gap-1 overflow-x-auto no-scrollbar">
               {([
-                { id: "all", label: "All" },
+                { id: "all", label: "All", n: 0 },
                 { id: "dms", label: "Messages", n: totalUnread },
                 { id: "requests", label: "Requests", n: requests.length },
                 { id: "activity", label: "Activity", n: activity.length },
