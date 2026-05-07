@@ -9,10 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
 import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LatestRouteImport } from './routes/latest'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as GoLiveRouteImport } from './routes/go-live'
@@ -25,8 +28,14 @@ import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
+import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -42,9 +51,19 @@ const PremiumRoute = PremiumRouteImport.update({
   path: '/premium',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LatestRoute = LatestRouteImport.update({
@@ -107,6 +126,11 @@ const UUidRoute = UUidRouteImport.update({
   path: '/u/$uid',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
+  id: '/voice',
+  path: '/voice',
+  getParentRoute: () => OnboardingRoute,
+} as any)
 const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   id: '/studio',
   path: '/studio',
@@ -125,11 +149,15 @@ export interface FileRoutesByFullPath {
   '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
+  '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesByTo {
@@ -144,11 +172,15 @@ export interface FileRoutesByTo {
   '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
+  '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesById {
@@ -164,11 +196,15 @@ export interface FileRoutesById {
   '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
+  '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
+  '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRouteTypes {
@@ -185,11 +221,15 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/inbox'
     | '/latest'
+    | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/premium'
     | '/prescribe-me'
     | '/settings'
+    | '/signup'
     | '/creator-hub/studio'
+    | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -204,11 +244,15 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/inbox'
     | '/latest'
+    | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/premium'
     | '/prescribe-me'
     | '/settings'
+    | '/signup'
     | '/creator-hub/studio'
+    | '/onboarding/voice'
     | '/u/$uid'
   id:
     | '__root__'
@@ -223,11 +267,15 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/inbox'
     | '/latest'
+    | '/login'
     | '/notifications'
+    | '/onboarding'
     | '/premium'
     | '/prescribe-me'
     | '/settings'
+    | '/signup'
     | '/creator-hub/studio'
+    | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesById: FileRoutesById
 }
@@ -243,15 +291,25 @@ export interface RootRouteChildren {
   GoLiveRoute: typeof GoLiveRoute
   InboxRoute: typeof InboxRoute
   LatestRoute: typeof LatestRoute
+  LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
+  OnboardingRoute: typeof OnboardingRouteWithChildren
   PremiumRoute: typeof PremiumRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
   SettingsRoute: typeof SettingsRoute
+  SignupRoute: typeof SignupRoute
   UUidRoute: typeof UUidRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -273,11 +331,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PremiumRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notifications': {
       id: '/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/latest': {
@@ -364,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UUidRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/onboarding/voice': {
+      id: '/onboarding/voice'
+      path: '/voice'
+      fullPath: '/onboarding/voice'
+      preLoaderRoute: typeof OnboardingVoiceRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
     '/creator-hub/studio': {
       id: '/creator-hub/studio'
       path: '/studio'
@@ -386,6 +465,18 @@ const CreatorHubRouteWithChildren = CreatorHubRoute._addFileChildren(
   CreatorHubRouteChildren,
 )
 
+interface OnboardingRouteChildren {
+  OnboardingVoiceRoute: typeof OnboardingVoiceRoute
+}
+
+const OnboardingRouteChildren: OnboardingRouteChildren = {
+  OnboardingVoiceRoute: OnboardingVoiceRoute,
+}
+
+const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
+  OnboardingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
@@ -398,12 +489,25 @@ const rootRouteChildren: RootRouteChildren = {
   GoLiveRoute: GoLiveRoute,
   InboxRoute: InboxRoute,
   LatestRoute: LatestRoute,
+  LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
+  OnboardingRoute: OnboardingRouteWithChildren,
   PremiumRoute: PremiumRoute,
   PrescribeMeRoute: PrescribeMeRoute,
   SettingsRoute: SettingsRoute,
+  SignupRoute: SignupRoute,
   UUidRoute: UUidRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
