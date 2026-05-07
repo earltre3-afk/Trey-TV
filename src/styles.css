@@ -46,6 +46,12 @@
   --animate-slide-in-left: slide-in-left 0.3s ease-out;
   --animate-glow-pulse: glow-pulse 2.4s ease-in-out infinite;
   --animate-orb-spin: orb-spin 18s linear infinite;
+  --animate-conic-spin: conic-spin 6s linear infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-aurora: aurora 8s ease-in-out infinite;
+  --animate-float: float 5s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-burst: burst 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root {
