@@ -27,10 +27,12 @@ export function Composer() {
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
   return (
-    <div className="rounded-3xl p-4 glass border border-primary/20 shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden">
+    <div className="rounded-3xl p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift">
       <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_80%_-20%,oklch(0.7_0.25_340_/_0.4),transparent_60%)]" />
       <button onClick={() => navigate({ to: "/create" })} className="relative flex items-center gap-3 w-full text-left">
-        <img src={currentUser.avatar} alt="" className="size-11 rounded-full object-cover ring-neon-purple shrink-0" />
+        <div className="relative size-11 rounded-full conic-ring shrink-0">
+          <img src={currentUser.avatar} alt="" className="size-11 rounded-full object-cover" />
+        </div>
         <p className="text-muted-foreground text-sm flex-1">What's on your mind, {currentUser.name}?</p>
       </button>
 
