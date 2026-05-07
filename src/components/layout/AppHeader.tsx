@@ -32,7 +32,7 @@ export function AppHeader({
           <Menu className="size-5" />
         </button>
 
-        <Logo className="h-9" />
+        <Link to="/" className="shrink-0"><Logo className="h-14" /></Link>
 
         <div className="flex items-center gap-2">
           <button aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">

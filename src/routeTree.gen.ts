@@ -10,12 +10,30 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
+import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as CreateRouteImport } from './routes/create'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 
 const PrescribeMeRoute = PrescribeMeRouteImport.update({
   id: '/prescribe-me',
   path: '/prescribe-me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -31,30 +49,55 @@ const UUidRoute = UUidRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/explore': typeof ExploreRoute
+  '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/explore': typeof ExploreRoute
+  '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/explore': typeof ExploreRoute
+  '/inbox': typeof InboxRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/u/$uid': typeof UUidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/prescribe-me' | '/u/$uid'
+  fullPaths:
+    | '/'
+    | '/create'
+    | '/explore'
+    | '/inbox'
+    | '/prescribe-me'
+    | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/prescribe-me' | '/u/$uid'
-  id: '__root__' | '/' | '/prescribe-me' | '/u/$uid'
+  to: '/' | '/create' | '/explore' | '/inbox' | '/prescribe-me' | '/u/$uid'
+  id:
+    | '__root__'
+    | '/'
+    | '/create'
+    | '/explore'
+    | '/inbox'
+    | '/prescribe-me'
+    | '/u/$uid'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreateRoute: typeof CreateRoute
+  ExploreRoute: typeof ExploreRoute
+  InboxRoute: typeof InboxRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
   UUidRoute: typeof UUidRoute
 }
@@ -66,6 +109,27 @@ declare module '@tanstack/react-router' {
       path: '/prescribe-me'
       fullPath: '/prescribe-me'
       preLoaderRoute: typeof PrescribeMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -87,9 +151,22 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreateRoute: CreateRoute,
+  ExploreRoute: ExploreRoute,
+  InboxRoute: InboxRoute,
   PrescribeMeRoute: PrescribeMeRoute,
   UUidRoute: UUidRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
