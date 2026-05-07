@@ -88,7 +88,7 @@ export function TreyIWidget() {
       const snapX = p.x + SIZE / 2 < w / 2 ? PAD : w - SIZE - PAD;
       return clampToViewport(snapX, p.y);
     });
-    if (!dragInfo.current.moved) setOpen(true);
+    if (!dragInfo.current.moved) setOpen((o) => !o);
     e.stopPropagation();
   }, []);
 
