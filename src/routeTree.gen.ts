@@ -30,6 +30,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
@@ -151,6 +152,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorStudioIndexRoute = CreatorStudioIndexRouteImport.update({
+  id: '/creator-studio/',
+  path: '/creator-studio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WatchIdRoute = WatchIdRouteImport.update({
   id: '/watch/$id',
   path: '/watch/$id',
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
+  '/creator-studio/': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesByTo {
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
+  '/creator-studio': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesById {
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
+  '/creator-studio/': typeof CreatorStudioIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRouteTypes {
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
+    | '/creator-studio/'
     | '/admin/content-approval/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
+    | '/creator-studio'
     | '/admin/content-approval/$id'
   id:
     | '__root__'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/u/$uid'
     | '/watch/$id'
+    | '/creator-studio/'
     | '/admin/content-approval/$id'
   fileRoutesById: FileRoutesById
 }
@@ -488,6 +500,7 @@ export interface RootRouteChildren {
   CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
+  CreatorStudioIndexRoute: typeof CreatorStudioIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/': {
+      id: '/creator-studio/'
+      path: '/creator-studio'
+      fullPath: '/creator-studio/'
+      preLoaderRoute: typeof CreatorStudioIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/watch/$id': {
@@ -830,6 +850,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
+  CreatorStudioIndexRoute: CreatorStudioIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
