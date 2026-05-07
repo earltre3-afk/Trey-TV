@@ -28,6 +28,10 @@ const creatorItems: Item[] = [
 ];
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { user, isGuest, isCreator, isAdmin, signOut } = useAuth();
+  const profile = user ?? currentUser;
+  const visibleCreatorItems = isCreator ? creatorItems : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
+
   return (
     <>
       <div
@@ -35,7 +39,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
       <aside
-        className={`fixed left-0 top-0 bottom-0 z-50 w-[86%] max-w-[360px] glass-strong border-r border-white/10 transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed left-0 top-0 bottom-0 z-50 w-[86%] max-w-[360px] liquid-glass border-r border-white/10 transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{ borderTopRightRadius: 32, borderBottomRightRadius: 32 }}
       >
         <div className="h-full flex flex-col overflow-y-auto safe-bottom">
@@ -70,7 +74,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           <div className="my-4 mx-5 h-px bg-white/10" />
 
           <div className="px-3 space-y-1">
-            {creatorItems.map((i, idx) => (
+            {visibleCreatorItems.map((i, idx) => (
               <Link
                 key={i.label}
                 to={i.to}
@@ -88,6 +92,16 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
                 <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
               </Link>
             ))}
+
+            {isAdmin && (
+              <Link to="/admin" onClick={onClose} className="group flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 transition">
+                <div className="size-10 rounded-xl grid place-items-center bg-[oklch(0.7_0.25_340_/_0.15)] text-[oklch(0.7_0.25_340)]">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div className="flex-1"><div className="text-sm font-semibold">Admin Console</div><div className="text-xs text-muted-foreground">Moderation & site ops</div></div>
+                <ChevronRight className="size-4 text-muted-foreground" />
+              </Link>
+            )}
           </div>
 
           <div className="mx-3 mt-4 p-4 rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple flex items-center gap-3">
@@ -101,26 +115,40 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
             </Link>
           </div>
 
-          <Link
-            to="/u/$uid"
-            params={{ uid: currentUser.uid }}
-            onClick={onClose}
-            className="mx-3 my-3 p-3 rounded-2xl glass neon-border flex items-center gap-3 hover:bg-white/5 hover-lift"
-          >
-            <div className="relative size-12 rounded-full conic-ring shrink-0">
-              <img src={currentUser.avatar} alt="" className="size-12 rounded-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold">{currentUser.name}</div>
-              <div className="text-xs text-muted-foreground">@{currentUser.handle}</div>
-              <div className="mt-1 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40">
-                <VerifiedBadge kind="creator" className="!size-3" /> Verified Creator
+          {isGuest ? (
+            <div className="mx-3 my-3 p-4 rounded-2xl liquid-glass neon-border space-y-2">
+              <div className="text-sm font-bold">Guest mode</div>
+              <div className="text-xs text-muted-foreground">Sign up to react, save, follow and earn rewards.</div>
+              <div className="flex gap-2">
+                <Link to="/onboarding" onClick={onClose} className="flex-1 text-center px-3 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground glow-gold">Sign up</Link>
+                <Link to="/login" onClick={onClose} className="flex-1 text-center px-3 py-2 rounded-lg text-xs font-bold liquid-glass border border-white/15 inline-flex items-center justify-center gap-1"><LogIn className="size-3" /> Log in</Link>
               </div>
             </div>
-            <ChevronRight className="size-4 text-muted-foreground" />
-          </Link>
+          ) : (
+            <Link
+              to="/u/$uid"
+              params={{ uid: profile.uid }}
+              onClick={onClose}
+              className="mx-3 my-3 p-3 rounded-2xl liquid-glass neon-border flex items-center gap-3 hover:bg-white/5 liquid-hover"
+            >
+              <div className="relative size-12 rounded-full conic-ring shrink-0">
+                <img src={profile.avatar} alt="" className="size-12 rounded-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold">{profile.name}</div>
+                <div className="text-xs text-muted-foreground">@{profile.handle}</div>
+                <div className="mt-1 inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40">
+                  <VerifiedBadge kind="creator" className="!size-3" /> {isAdmin ? "Admin" : isCreator ? "Verified Creator" : "Member"}
+                </div>
+              </div>
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); signOut(); onClose(); }} className="size-8 grid place-items-center rounded-lg hover:bg-white/5 text-muted-foreground" title="Sign out">
+                <LogOut className="size-4" />
+              </button>
+            </Link>
+          )}
         </div>
       </aside>
     </>
   );
 }
+
