@@ -43,21 +43,22 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           </div>
 
           <div className="px-3 space-y-1">
-            {items.map((i) => (
+            {items.map((i, idx) => (
               <Link
                 key={i.label}
                 to={i.to}
                 onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-3 rounded-2xl transition ${i.active ? "bg-primary/10 ring-1 ring-primary/40 glow-gold" : "hover:bg-white/5"}`}
+                style={{ animationDelay: `${idx * 50}ms` }}
+                className={`group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 hover:translate-x-1 ${open ? "animate-rise" : ""} ${i.active ? "bg-primary/10 ring-1 ring-primary/40 glow-gold" : "hover:bg-white/5"}`}
               >
-                <div className="size-10 rounded-xl grid place-items-center bg-white/5">
+                <div className={`size-10 rounded-xl grid place-items-center bg-white/5 transition-transform group-hover:scale-110 ${i.active ? "shadow-[0_0_18px_oklch(0.82_0.16_85_/_0.5)]" : ""}`}>
                   <i.icon className={`size-5 ${i.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm font-semibold ${i.active ? "text-primary" : "text-foreground"}`}>{i.label}</div>
                   <div className="text-xs text-muted-foreground truncate">{i.sub}</div>
                 </div>
-                {i.active ? <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_var(--gold)]" /> : <ChevronRight className="size-4 text-muted-foreground" />}
+                {i.active ? <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_var(--gold)] animate-glow-pulse" /> : <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />}
               </Link>
             ))}
           </div>
