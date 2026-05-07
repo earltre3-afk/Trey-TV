@@ -69,6 +69,7 @@ export function AppHeader({
             <img src={currentUser.avatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
           </Link>
         </div>
+        <NotificationsPopover open={notifOpen} onClose={() => setNotifOpen(false)} />
       </div>
 
       <nav className="flex items-center gap-1 px-2 pb-2 overflow-x-auto no-scrollbar">
