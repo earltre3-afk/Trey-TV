@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { Heart, MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause } from "lucide-react";
+import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
+import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
+import { useAuth } from "@/lib/auth";
+import { useNavigate } from "@tanstack/react-router";
 
 type Post = (typeof Posts)[number];
 
@@ -11,25 +14,40 @@ function fmt(n: number) {
 }
 
 export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const { reactions, saves, setReaction, toggleSave, logShare } = useActivity();
+  const { isGuest } = useAuth();
+  const nav = useNavigate();
+
+  const reaction = reactions[post.id] ?? null;
+  const saved = !!saves[post.id];
   const [reshared, setReshared] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [burst, setBurst] = useState(false);
 
-  const likeCount = post.likes + (liked ? 1 : 0);
+  const likeCount = post.likes + (reaction ? 1 : 0);
   const saveCount = post.saves + (saved ? 1 : 0);
   const reshareCount = post.reshares + (reshared ? 1 : 0);
 
-  const onLike = () => {
-    setLiked((v) => !v);
+  const meta = { title: post.text.split("\n")[0].slice(0, 60), creator: post.creator.handle, thumb: post.media };
+
+  const requireAuth = (fn: () => void) => () => {
+    if (isGuest) { toast("Sign up to interact"); nav({ to: "/onboarding" }); return; }
+    fn();
+  };
+
+  const onReactionPick = (k: ReactionKey) => {
+    setReaction(post.id, reaction === k ? null : k, meta);
     setBurst(true);
+    setPickerOpen(false);
     setTimeout(() => setBurst(false), 600);
   };
 
+  const current = reaction ? REACTIONS.find((r) => r.key === reaction) : null;
+
   return (
     <article
-      className="group rounded-3xl glass neon-border overflow-hidden shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] hover-lift animate-rise"
+      className="group rounded-3xl liquid-glass neon-border overflow-hidden shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover animate-rise"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
@@ -65,27 +83,55 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-5 py-3 text-sm">
-        <button onClick={onLike} className={`flex items-center gap-1.5 transition tilt-press ${liked ? "text-[oklch(0.65_0.24_15)]" : "text-muted-foreground hover:text-foreground"}`}>
-          <Heart className={`size-5 ${liked ? "fill-current" : ""} ${burst ? "animate-burst" : ""}`} /> {fmt(likeCount)}
-        </button>
+      <div className="relative flex items-center justify-between px-5 py-3 text-sm">
+        {/* Reaction button + picker */}
+        <div className="relative">
+          <button
+            onClick={requireAuth(() => setPickerOpen((v) => !v))}
+            onMouseEnter={() => !isGuest && setPickerOpen(true)}
+            className={`flex items-center gap-1.5 transition tilt-press ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
+            style={current ? { color: current.color } : undefined}
+          >
+            <span className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}>
+              {current?.emoji ?? "🔥"}
+            </span>
+            <span className="text-xs font-semibold">{fmt(likeCount)}</span>
+          </button>
+
+          {pickerOpen && !isGuest && (
+            <div
+              onMouseLeave={() => setPickerOpen(false)}
+              className="absolute bottom-full left-0 mb-2 z-20 flex items-center gap-1 px-2 py-1.5 rounded-full liquid-glass border border-white/10 reaction-pop shadow-[0_20px_40px_-15px_oklch(0_0_0_/_0.7)]"
+            >
+              {REACTIONS.map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => onReactionPick(r.key)}
+                  title={r.label}
+                  className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform ${reaction === r.key ? "bg-white/10" : ""}`}
+                  style={{ filter: `drop-shadow(0 0 8px ${r.color})` }}
+                >
+                  {r.emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <button onClick={() => toast("Comments coming soon")} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground tilt-press">
           <MessageCircle className="size-5" /> {post.comments}
         </button>
-        <button onClick={() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); }} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+        <button onClick={requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
         </button>
-        <button onClick={() => setSaved((v) => !v)} className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+        <button onClick={requireAuth(() => toggleSave(post.id, meta))} className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Bookmark className={`size-5 ${saved ? "fill-current animate-burst" : ""}`} /> {fmt(saveCount)}
         </button>
         <button
           onClick={async () => {
-            try {
-              await navigator.share?.({ title: post.creator.name, text: post.text });
-            } catch {
-              await navigator.clipboard?.writeText(`${post.creator.name}: ${post.text}`);
-              toast("Link copied");
-            }
+            logShare(post.id, meta);
+            try { await navigator.share?.({ title: post.creator.name, text: post.text }); }
+            catch { await navigator.clipboard?.writeText(`${post.creator.name}: ${post.text}`); toast("Link copied"); }
           }}
           className="text-muted-foreground hover:text-foreground tilt-press"
           aria-label="share"
