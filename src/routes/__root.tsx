@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TreyIWidget } from "@/components/ai/TreyIWidget";
 import { AuthProvider } from "@/lib/auth";
 import { ActivityProvider } from "@/lib/activity-store";
+import { SubmissionsProvider } from "@/lib/submissions-store";
 
 import appCss from "../styles.css?url";
 
@@ -123,9 +124,11 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ActivityProvider>
-          <Outlet />
-          <TreyIWidget />
-          <Toaster />
+          <SubmissionsProvider>
+            <Outlet />
+            <TreyIWidget />
+            <Toaster />
+          </SubmissionsProvider>
         </ActivityProvider>
       </AuthProvider>
     </QueryClientProvider>
