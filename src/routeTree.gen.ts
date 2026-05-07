@@ -37,7 +37,14 @@ import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
 import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
 import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
 import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
+import { Route as CreatorStudioSettingsRouteImport } from './routes/creator-studio.settings'
+import { Route as CreatorStudioScheduleRouteImport } from './routes/creator-studio.schedule'
+import { Route as CreatorStudioRewardsRouteImport } from './routes/creator-studio.rewards'
+import { Route as CreatorStudioInteractionsRouteImport } from './routes/creator-studio.interactions'
+import { Route as CreatorStudioFansRouteImport } from './routes/creator-studio.fans'
 import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
+import { Route as CreatorStudioChannelRouteImport } from './routes/creator-studio.channel'
+import { Route as CreatorStudioAnalyticsRouteImport } from './routes/creator-studio.analytics'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -188,9 +195,45 @@ const CreatorStudioSubmissionsRoute =
     path: '/creator-studio/submissions',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CreatorStudioSettingsRoute = CreatorStudioSettingsRouteImport.update({
+  id: '/creator-studio/settings',
+  path: '/creator-studio/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioScheduleRoute = CreatorStudioScheduleRouteImport.update({
+  id: '/creator-studio/schedule',
+  path: '/creator-studio/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioRewardsRoute = CreatorStudioRewardsRouteImport.update({
+  id: '/creator-studio/rewards',
+  path: '/creator-studio/rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioInteractionsRoute =
+  CreatorStudioInteractionsRouteImport.update({
+    id: '/creator-studio/interactions',
+    path: '/creator-studio/interactions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const CreatorStudioFansRoute = CreatorStudioFansRouteImport.update({
+  id: '/creator-studio/fans',
+  path: '/creator-studio/fans',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorStudioEditRoute = CreatorStudioEditRouteImport.update({
   id: '/creator-studio/edit',
   path: '/creator-studio/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioChannelRoute = CreatorStudioChannelRouteImport.update({
+  id: '/creator-studio/channel',
+  path: '/creator-studio/channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioAnalyticsRoute = CreatorStudioAnalyticsRouteImport.update({
+  id: '/creator-studio/analytics',
+  path: '/creator-studio/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
@@ -263,7 +306,14 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
+  '/creator-studio/channel': typeof CreatorStudioChannelRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/fans': typeof CreatorStudioFansRoute
+  '/creator-studio/interactions': typeof CreatorStudioInteractionsRoute
+  '/creator-studio/rewards': typeof CreatorStudioRewardsRoute
+  '/creator-studio/schedule': typeof CreatorStudioScheduleRoute
+  '/creator-studio/settings': typeof CreatorStudioSettingsRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
@@ -302,7 +352,14 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
+  '/creator-studio/channel': typeof CreatorStudioChannelRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/fans': typeof CreatorStudioFansRoute
+  '/creator-studio/interactions': typeof CreatorStudioInteractionsRoute
+  '/creator-studio/rewards': typeof CreatorStudioRewardsRoute
+  '/creator-studio/schedule': typeof CreatorStudioScheduleRoute
+  '/creator-studio/settings': typeof CreatorStudioSettingsRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
@@ -342,7 +399,14 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
+  '/creator-studio/channel': typeof CreatorStudioChannelRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/fans': typeof CreatorStudioFansRoute
+  '/creator-studio/interactions': typeof CreatorStudioInteractionsRoute
+  '/creator-studio/rewards': typeof CreatorStudioRewardsRoute
+  '/creator-studio/schedule': typeof CreatorStudioScheduleRoute
+  '/creator-studio/settings': typeof CreatorStudioSettingsRoute
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
@@ -383,7 +447,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/videos'
     | '/creator-hub/studio'
+    | '/creator-studio/analytics'
+    | '/creator-studio/channel'
     | '/creator-studio/edit'
+    | '/creator-studio/fans'
+    | '/creator-studio/interactions'
+    | '/creator-studio/rewards'
+    | '/creator-studio/schedule'
+    | '/creator-studio/settings'
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
@@ -422,7 +493,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/videos'
     | '/creator-hub/studio'
+    | '/creator-studio/analytics'
+    | '/creator-studio/channel'
     | '/creator-studio/edit'
+    | '/creator-studio/fans'
+    | '/creator-studio/interactions'
+    | '/creator-studio/rewards'
+    | '/creator-studio/schedule'
+    | '/creator-studio/settings'
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
@@ -461,7 +539,14 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/videos'
     | '/creator-hub/studio'
+    | '/creator-studio/analytics'
+    | '/creator-studio/channel'
     | '/creator-studio/edit'
+    | '/creator-studio/fans'
+    | '/creator-studio/interactions'
+    | '/creator-studio/rewards'
+    | '/creator-studio/schedule'
+    | '/creator-studio/settings'
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
@@ -494,7 +579,14 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  CreatorStudioAnalyticsRoute: typeof CreatorStudioAnalyticsRoute
+  CreatorStudioChannelRoute: typeof CreatorStudioChannelRoute
   CreatorStudioEditRoute: typeof CreatorStudioEditRoute
+  CreatorStudioFansRoute: typeof CreatorStudioFansRoute
+  CreatorStudioInteractionsRoute: typeof CreatorStudioInteractionsRoute
+  CreatorStudioRewardsRoute: typeof CreatorStudioRewardsRoute
+  CreatorStudioScheduleRoute: typeof CreatorStudioScheduleRoute
+  CreatorStudioSettingsRoute: typeof CreatorStudioSettingsRoute
   CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
   CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
   CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
@@ -701,11 +793,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorStudioSubmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator-studio/settings': {
+      id: '/creator-studio/settings'
+      path: '/creator-studio/settings'
+      fullPath: '/creator-studio/settings'
+      preLoaderRoute: typeof CreatorStudioSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/schedule': {
+      id: '/creator-studio/schedule'
+      path: '/creator-studio/schedule'
+      fullPath: '/creator-studio/schedule'
+      preLoaderRoute: typeof CreatorStudioScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/rewards': {
+      id: '/creator-studio/rewards'
+      path: '/creator-studio/rewards'
+      fullPath: '/creator-studio/rewards'
+      preLoaderRoute: typeof CreatorStudioRewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/interactions': {
+      id: '/creator-studio/interactions'
+      path: '/creator-studio/interactions'
+      fullPath: '/creator-studio/interactions'
+      preLoaderRoute: typeof CreatorStudioInteractionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/fans': {
+      id: '/creator-studio/fans'
+      path: '/creator-studio/fans'
+      fullPath: '/creator-studio/fans'
+      preLoaderRoute: typeof CreatorStudioFansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-studio/edit': {
       id: '/creator-studio/edit'
       path: '/creator-studio/edit'
       fullPath: '/creator-studio/edit'
       preLoaderRoute: typeof CreatorStudioEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/channel': {
+      id: '/creator-studio/channel'
+      path: '/creator-studio/channel'
+      fullPath: '/creator-studio/channel'
+      preLoaderRoute: typeof CreatorStudioChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/analytics': {
+      id: '/creator-studio/analytics'
+      path: '/creator-studio/analytics'
+      fullPath: '/creator-studio/analytics'
+      preLoaderRoute: typeof CreatorStudioAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator-hub/studio': {
@@ -844,7 +985,14 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  CreatorStudioAnalyticsRoute: CreatorStudioAnalyticsRoute,
+  CreatorStudioChannelRoute: CreatorStudioChannelRoute,
   CreatorStudioEditRoute: CreatorStudioEditRoute,
+  CreatorStudioFansRoute: CreatorStudioFansRoute,
+  CreatorStudioInteractionsRoute: CreatorStudioInteractionsRoute,
+  CreatorStudioRewardsRoute: CreatorStudioRewardsRoute,
+  CreatorStudioScheduleRoute: CreatorStudioScheduleRoute,
+  CreatorStudioSettingsRoute: CreatorStudioSettingsRoute,
   CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
   CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
   CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
