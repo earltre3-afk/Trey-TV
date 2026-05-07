@@ -10,11 +10,11 @@ type Item = { icon: typeof Home; label: string; sub: string; to: string; color: 
 const items: Item[] = [
   { icon: Home, label: "Home", sub: "For You", to: "/", color: "text-primary", active: true },
   { icon: Search, label: "Explore", sub: "Discover Creators & Content", to: "/explore", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Users, label: "Following", sub: "Creators You Follow", to: "/", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/", color: "text-primary" },
+  { icon: Users, label: "Following", sub: "Creators You Follow", to: "/following", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/latest", color: "text-primary" },
   { icon: Heart, label: "Prescribe Me", sub: "Personalized Picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
-  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/inbox", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/create", color: "text-[oklch(0.7_0.25_340)]" },
+  { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/collections", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/go-live", color: "text-[oklch(0.7_0.25_340)]" },
 ];
 
 const creatorItems: Item[] = [
@@ -92,9 +92,9 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <div className="text-sm font-bold">Trey TV Premium</div>
               <div className="text-xs text-muted-foreground">Unlock exclusive tools, insights & features.</div>
             </div>
-            <button onClick={() => { onClose(); toast.success("Premium coming soon — you're on the list"); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
+            <Link to="/premium" onClick={onClose} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)]">
               Upgrade
-            </button>
+            </Link>
           </div>
 
           <Link
