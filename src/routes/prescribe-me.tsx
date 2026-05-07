@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Sparkles, Wand2, ChevronRight, Film, Users, LayoutGrid, Clock, Brain, Heart, TrendingUp, Infinity, Zap, Leaf, Smile, Target, Star, Flame, Cloud } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { moods, prescribed } from "@/lib/mock-data";
 import orb from "@/assets/prescribe-orb.jpg";
@@ -32,7 +33,7 @@ const cardTint: Record<string, string> = {
 
 function FilterCard({ icon: Icon, title, sub, kind }: { icon: typeof Film; title: string; sub: string; kind: keyof typeof cardTint }) {
   return (
-    <button className={`w-full p-3 rounded-2xl glass border bg-gradient-to-br ${cardTint[kind]} flex items-center gap-3 text-left hover:bg-white/[0.04]`}>
+    <button onClick={() => toast(`${title} filter`)} className={`w-full p-3 rounded-2xl glass border bg-gradient-to-br ${cardTint[kind]} flex items-center gap-3 text-left hover:bg-white/[0.04]`}>
       <div className="size-10 rounded-xl grid place-items-center bg-white/5">
         <Icon className="size-5" />
       </div>
@@ -107,7 +108,7 @@ function PrescribeMe() {
             <div className="text-sm font-bold tracking-wide">AI PRESCRIBE ME</div>
             <div className="text-xs text-muted-foreground">Let Trey-I analyze your vibe and prescribe the perfect content.</div>
           </div>
-          <button className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
+          <button onClick={() => toast.success(`Trey-I prescribed picks for "${moods.find(m=>m.id===active)?.label}"`)} className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
             Get My Prescription <ChevronRight className="size-3" />
           </button>
         </div>
