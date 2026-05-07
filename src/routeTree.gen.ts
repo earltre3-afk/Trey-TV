@@ -30,10 +30,21 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
+import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
+import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
+import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
 import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
+import { Route as AdminVideosRouteImport } from './routes/admin.videos'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminRecommendationsRouteImport } from './routes/admin.recommendations'
+import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
+import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
+import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -140,6 +151,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchIdRoute = WatchIdRouteImport.update({
+  id: '/watch/$id',
+  path: '/watch/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UUidRoute = UUidRouteImport.update({
   id: '/u/$uid',
   path: '/u/$uid',
@@ -150,6 +166,22 @@ const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   path: '/voice',
   getParentRoute: () => OnboardingRoute,
 } as any)
+const CreatorStudioSubmittedRoute = CreatorStudioSubmittedRouteImport.update({
+  id: '/creator-studio/submitted',
+  path: '/creator-studio/submitted',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioSubmitRoute = CreatorStudioSubmitRouteImport.update({
+  id: '/creator-studio/submit',
+  path: '/creator-studio/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreatorStudioSubmissionsRoute =
+  CreatorStudioSubmissionsRouteImport.update({
+    id: '/creator-studio/submissions',
+    path: '/creator-studio/submissions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const CreatorStudioEditRoute = CreatorStudioEditRouteImport.update({
   id: '/creator-studio/edit',
   path: '/creator-studio/edit',
@@ -160,11 +192,46 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => CreatorHubRoute,
 } as any)
+const AdminVideosRoute = AdminVideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRecommendationsRoute = AdminRecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCreatorsRoute = AdminCreatorsRouteImport.update({
+  id: '/creators',
+  path: '/creators',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentApprovalRoute = AdminContentApprovalRouteImport.update({
+  id: '/content-approval',
+  path: '/content-approval',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminContentApprovalRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -183,15 +250,26 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -210,16 +288,27 @@ export interface FileRoutesByTo {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activity': typeof ActivityRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
@@ -238,10 +327,21 @@ export interface FileRoutesById {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
+  '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
+  '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/recommendations': typeof AdminRecommendationsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/admin/videos': typeof AdminVideosRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/edit': typeof CreatorStudioEditRoute
+  '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
+  '/creator-studio/submit': typeof CreatorStudioSubmitRoute
+  '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
+  '/watch/$id': typeof WatchIdRoute
+  '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -267,10 +367,21 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -294,10 +405,21 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   id:
     | '__root__'
     | '/'
@@ -321,16 +443,27 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/content-approval'
+    | '/admin/creators'
+    | '/admin/recommendations'
+    | '/admin/reports'
+    | '/admin/users'
+    | '/admin/videos'
     | '/creator-hub/studio'
     | '/creator-studio/edit'
+    | '/creator-studio/submissions'
+    | '/creator-studio/submit'
+    | '/creator-studio/submitted'
     | '/onboarding/voice'
     | '/u/$uid'
+    | '/watch/$id'
+    | '/admin/content-approval/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivityRoute: typeof ActivityRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
@@ -350,7 +483,11 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
   CreatorStudioEditRoute: typeof CreatorStudioEditRoute
+  CreatorStudioSubmissionsRoute: typeof CreatorStudioSubmissionsRoute
+  CreatorStudioSubmitRoute: typeof CreatorStudioSubmitRoute
+  CreatorStudioSubmittedRoute: typeof CreatorStudioSubmittedRoute
   UUidRoute: typeof UUidRoute
+  WatchIdRoute: typeof WatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -502,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch/$id': {
+      id: '/watch/$id'
+      path: '/watch/$id'
+      fullPath: '/watch/$id'
+      preLoaderRoute: typeof WatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/u/$uid': {
       id: '/u/$uid'
       path: '/u/$uid'
@@ -515,6 +659,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding/voice'
       preLoaderRoute: typeof OnboardingVoiceRouteImport
       parentRoute: typeof OnboardingRoute
+    }
+    '/creator-studio/submitted': {
+      id: '/creator-studio/submitted'
+      path: '/creator-studio/submitted'
+      fullPath: '/creator-studio/submitted'
+      preLoaderRoute: typeof CreatorStudioSubmittedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/submit': {
+      id: '/creator-studio/submit'
+      path: '/creator-studio/submit'
+      fullPath: '/creator-studio/submit'
+      preLoaderRoute: typeof CreatorStudioSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/creator-studio/submissions': {
+      id: '/creator-studio/submissions'
+      path: '/creator-studio/submissions'
+      fullPath: '/creator-studio/submissions'
+      preLoaderRoute: typeof CreatorStudioSubmissionsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/creator-studio/edit': {
       id: '/creator-studio/edit'
@@ -530,8 +695,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorHubStudioRouteImport
       parentRoute: typeof CreatorHubRoute
     }
+    '/admin/videos': {
+      id: '/admin/videos'
+      path: '/videos'
+      fullPath: '/admin/videos'
+      preLoaderRoute: typeof AdminVideosRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/recommendations': {
+      id: '/admin/recommendations'
+      path: '/recommendations'
+      fullPath: '/admin/recommendations'
+      preLoaderRoute: typeof AdminRecommendationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/creators': {
+      id: '/admin/creators'
+      path: '/creators'
+      fullPath: '/admin/creators'
+      preLoaderRoute: typeof AdminCreatorsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-approval': {
+      id: '/admin/content-approval'
+      path: '/content-approval'
+      fullPath: '/admin/content-approval'
+      preLoaderRoute: typeof AdminContentApprovalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/content-approval/$id': {
+      id: '/admin/content-approval/$id'
+      path: '/$id'
+      fullPath: '/admin/content-approval/$id'
+      preLoaderRoute: typeof AdminContentApprovalIdRouteImport
+      parentRoute: typeof AdminContentApprovalRoute
+    }
   }
 }
+
+interface AdminContentApprovalRouteChildren {
+  AdminContentApprovalIdRoute: typeof AdminContentApprovalIdRoute
+}
+
+const AdminContentApprovalRouteChildren: AdminContentApprovalRouteChildren = {
+  AdminContentApprovalIdRoute: AdminContentApprovalIdRoute,
+}
+
+const AdminContentApprovalRouteWithChildren =
+  AdminContentApprovalRoute._addFileChildren(AdminContentApprovalRouteChildren)
+
+interface AdminRouteChildren {
+  AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
+  AdminCreatorsRoute: typeof AdminCreatorsRoute
+  AdminRecommendationsRoute: typeof AdminRecommendationsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminVideosRoute: typeof AdminVideosRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
+  AdminCreatorsRoute: AdminCreatorsRoute,
+  AdminRecommendationsRoute: AdminRecommendationsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminVideosRoute: AdminVideosRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CreatorHubRouteChildren {
   CreatorHubStudioRoute: typeof CreatorHubStudioRoute
@@ -560,7 +805,7 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivityRoute: ActivityRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
@@ -580,7 +825,11 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
   CreatorStudioEditRoute: CreatorStudioEditRoute,
+  CreatorStudioSubmissionsRoute: CreatorStudioSubmissionsRoute,
+  CreatorStudioSubmitRoute: CreatorStudioSubmitRoute,
+  CreatorStudioSubmittedRoute: CreatorStudioSubmittedRoute,
   UUidRoute: UUidRoute,
+  WatchIdRoute: WatchIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

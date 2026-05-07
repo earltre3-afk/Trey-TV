@@ -1,4 +1,4 @@
-import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut } from "lucide-react";
+import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Inbox, Upload } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
 
@@ -22,6 +22,7 @@ const items: Item[] = [
 
 const creatorItems: Item[] = [
   { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/creator-hub", color: "text-primary" },
+  { icon: Upload, label: "My Submissions", sub: "Approval status & feedback", to: "/creator-studio/submissions", color: "text-[oklch(0.82_0.16_85)]" },
   { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/analytics", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: Pencil, label: "Edit Profile", sub: "Polish your presence", to: "/edit-profile", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/settings", color: "text-[oklch(0.82_0.15_215)]" },
@@ -39,10 +40,10 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
       <aside
-        className={`fixed left-0 top-0 bottom-0 z-50 w-[86%] max-w-[360px] liquid-glass border-r border-white/10 transition-transform duration-300 ${open ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ borderTopRightRadius: 32, borderBottomRightRadius: 32 }}
+        className={`fixed left-0 right-0 top-0 z-50 max-h-[92vh] liquid-glass border-b border-white/10 transition-transform duration-300 ${open ? "translate-y-0" : "-translate-y-full"}`}
+        style={{ borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
       >
-        <div className="h-full flex flex-col overflow-y-auto safe-bottom">
+        <div className="h-full max-h-[92vh] flex flex-col overflow-y-auto safe-bottom">
           <div className="flex items-start justify-between p-5">
             <Logo className="h-12" />
             <button onClick={onClose} aria-label="Close" className="size-9 grid place-items-center rounded-full glass">

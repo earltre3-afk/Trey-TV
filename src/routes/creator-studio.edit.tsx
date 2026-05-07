@@ -233,10 +233,10 @@ function Studio() {
               )}
             </div>
             <button
-              onClick={() => setShowExport(true)}
+              onClick={() => navigate({ to: "/creator-studio/submit", search: { id: undefined } as any })}
               className="px-3 md:px-5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift flex items-center gap-1.5"
             >
-              <Download className="size-4" /> Export
+              <Download className="size-4" /> <span className="hidden sm:inline">Next:</span> Content Details
             </button>
           </div>
         </div>
