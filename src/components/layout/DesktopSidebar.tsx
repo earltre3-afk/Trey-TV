@@ -22,9 +22,9 @@ const creator = [
 ] as const;
 
 const collections = [
-  { to: "/inbox", icon: Bookmark, label: "Saved" },
-  { to: "/create", icon: Radio, label: "Go Live" },
-  { to: "/explore", icon: Users, label: "Following" },
+  { to: "/collections", icon: Bookmark, label: "Saved" },
+  { to: "/go-live", icon: Radio, label: "Go Live" },
+  { to: "/following", icon: Users, label: "Following" },
 ] as const;
 
 export function DesktopSidebar() {
