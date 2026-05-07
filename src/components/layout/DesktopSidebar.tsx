@@ -6,6 +6,7 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
 const primary = [
   { to: "/", icon: Home, label: "Home" },
@@ -38,6 +39,7 @@ export function DesktopSidebar() {
         <Logo className="relative h-24 transition-transform duration-500 group-hover:scale-105" />
       </Link>
 
+      <div className="px-3 mb-2"><CreatorGoldNavButton className="w-full justify-center" /></div>
       <Section label="Discover" items={primary} isActive={isActive} />
       <div className="my-3 mx-5 h-px bg-white/10" />
       <Section label="Creator Studio" items={creator} isActive={isActive} accent="gold" />

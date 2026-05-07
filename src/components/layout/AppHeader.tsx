@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
+import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
 const tabs = [
   { id: "for-you", label: "For You" },
@@ -58,6 +59,7 @@ export function AppHeader({
         </Link>
 
         <div className="flex items-center gap-2">
+          <CreatorGoldNavButton compact />
           <button onClick={() => navigate({ to: "/explore" })} aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Search className="size-5" />
           </button>
