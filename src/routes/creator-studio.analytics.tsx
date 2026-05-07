@@ -31,6 +31,8 @@ function AnalyticsPage() {
   const episodes = useMemo(() =>
     store.submissions.filter((s) => s.status === "approved" || s.status === "published" || s.status === "scheduled").slice(0, 8)
   , [store.submissions]);
+  const epSeries = useSeries(11, Math.max(episodes.length, 1) * 14, 200, 140);
+  const hourly = useSeries(99, 24, 50, 50);
 
   return (
     <CreatorStudioLayout
