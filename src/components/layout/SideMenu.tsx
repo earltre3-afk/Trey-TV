@@ -1,7 +1,7 @@
 import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
+
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 
