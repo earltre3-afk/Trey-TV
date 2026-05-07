@@ -42,10 +42,10 @@ function EditProfile() {
   });
 
   const [previewing, setPreviewing] = useState(false);
-  const avatarFile = useRef<HTMLInputElement>(null);
-  const bannerFile = useRef<HTMLInputElement>(null);
+  const avatarFile = useRef<HTMLInputElement | null>(null);
+  const bannerFile = useRef<HTMLInputElement | null>(null);
 
-  const pickFile = (ref: React.RefObject<HTMLInputElement>, key: "avatar" | "banner") => {
+  const pickFile = (ref: React.RefObject<HTMLInputElement | null>, key: "avatar" | "banner") => {
     ref.current?.click();
     const input = ref.current;
     if (!input) return;
