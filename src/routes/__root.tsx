@@ -9,6 +9,8 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { TreyIWidget } from "@/components/ai/TreyIWidget";
+import { AuthProvider } from "@/lib/auth";
+import { ActivityProvider } from "@/lib/activity-store";
 
 import appCss from "../styles.css?url";
 
@@ -119,9 +121,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <TreyIWidget />
-      <Toaster />
+      <AuthProvider>
+        <ActivityProvider>
+          <Outlet />
+          <TreyIWidget />
+          <Toaster />
+        </ActivityProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
