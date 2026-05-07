@@ -46,8 +46,8 @@ export function AppHeader({
             <Bell className="size-5" />
             <span className="absolute -top-1 -right-1 size-5 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">8</span>
           </button>
-          <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="size-10 rounded-full overflow-hidden ring-neon-purple shrink-0">
-            <img src={currentUser.avatar} alt="profile" className="size-full object-cover" loading="lazy" />
+          <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="relative size-10 rounded-full conic-ring shrink-0">
+            <img src={currentUser.avatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
           </Link>
         </div>
       </div>
