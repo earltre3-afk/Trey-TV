@@ -27,21 +27,24 @@ function PublicProfile() {
     <AppShell>
       <div className="space-y-5 -mt-3">
         {/* Hero */}
-        <div className="relative rounded-3xl overflow-hidden border border-white/10">
-          <img src={banner} alt="" className="w-full h-48 object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        <div className="relative pb-20">
+          <div className="relative rounded-3xl overflow-hidden border border-white/10">
+            <img src={banner} alt="" className="w-full h-44 sm:h-48 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            <Link to="/" className="size-9 grid place-items-center rounded-full glass">
-              <ArrowLeft className="size-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <button className="size-9 grid place-items-center rounded-full glass"><Bell className="size-4" /></button>
-              <button className="size-9 grid place-items-center rounded-full glass"><MoreHorizontal className="size-4" /></button>
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+              <Link to="/" className="size-9 grid place-items-center rounded-full glass">
+                <ArrowLeft className="size-4" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <button className="size-9 grid place-items-center rounded-full glass"><Bell className="size-4" /></button>
+                <button className="size-9 grid place-items-center rounded-full glass"><MoreHorizontal className="size-4" /></button>
+              </div>
             </div>
           </div>
 
-          <div className="absolute left-1/2 -translate-x-1/2 top-12 size-32 rounded-full conic-ring bg-background animate-float">
+          {/* Avatar — outside the overflow-hidden hero so it never clips */}
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 size-28 sm:size-32 rounded-full conic-ring bg-background animate-float">
             <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover ring-2 ring-white/20" />
           </div>
         </div>
