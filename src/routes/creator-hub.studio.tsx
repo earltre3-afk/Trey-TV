@@ -20,7 +20,10 @@ export const Route = createFileRoute("/creator-hub/studio")({
   }),
 });
 
-const primaryTools = [
+type LucideIcon = typeof Scissors;
+type Tool = { id: string; label: string; icon: LucideIcon; badge?: string; accent?: boolean; destructive?: boolean; free?: boolean };
+
+const primaryTools: Tool[] = [
   { id: "edit", label: "Edit", icon: Scissors },
   { id: "audio", label: "Audio", icon: Music },
   { id: "text", label: "Text", icon: Type },
@@ -36,16 +39,16 @@ const primaryTools = [
   { id: "aspect", label: "Aspect Ratio", icon: Square },
   { id: "background", label: "Background", icon: ImagePlus },
   { id: "templates", label: "Templates", icon: LayoutTemplate },
-] as const;
+];
 
-const editSubTools = [
+const editSubTools: Tool[] = [
   { id: "split", label: "Split", icon: Scissors },
   { id: "ai-image", label: "AI Image", icon: ImagePlus },
   { id: "ai-video", label: "AI Video", icon: Film },
   { id: "quality", label: "Video Quality", icon: Sparkles, badge: "HD" },
   { id: "delete", label: "Delete", icon: X, destructive: true },
   { id: "change-bg", label: "Change BG", icon: ImagePlus, free: true },
-] as const;
+];
 
 function Studio() {
   const navigate = useNavigate();
