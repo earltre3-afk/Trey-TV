@@ -12,7 +12,17 @@ export const Route = createFileRoute("/creator-studio/channel")({
 function ChannelPage() {
   const { user } = useAuth();
   return (
-    <CreatorStudioLayout title="Channel management" subtitle="Your public face on Trey TV.">
+    <CreatorStudioLayout
+      title="Channel management"
+      subtitle="Your public face on Trey TV."
+      actions={
+        user && (
+          <a href={`/channel/${user.handle}`} className="px-3 py-2 rounded-xl text-xs font-bold glass border border-primary/40 text-primary glow-gold inline-flex items-center gap-1.5">
+            <Eye className="size-3.5" /> View public channel
+          </a>
+        )
+      }
+    >
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-3xl glass neon-border p-4 md:p-5 space-y-3">
           <SectionHeader icon={Tv} title="Channel details" />
