@@ -64,11 +64,11 @@ function WatchPage() {
               <span className="text-[10px] text-muted-foreground">{s.show_title} · S{s.season_number} E{s.episode_number}</span>
             </div>
             <h1 className="text-2xl font-bold text-gradient-gold">{s.title}</h1>
-            <Link to="/u/$uid" params={{ uid: s.creator_id }} className="inline-flex items-center gap-2">
+            <Link to="/channel/$handle" params={{ handle: s.creator_handle }} className="inline-flex items-center gap-2 hover:opacity-90">
               <img src={s.creator_avatar} className="size-9 rounded-full object-cover" alt="" />
               <div>
                 <div className="text-sm font-semibold flex items-center gap-1">{s.creator_name} <Crown className="size-3 text-primary" /></div>
-                <div className="text-[11px] text-muted-foreground">@{s.creator_handle}</div>
+                <div className="text-[11px] text-muted-foreground">@{s.creator_handle} · View channel</div>
               </div>
             </Link>
             <div className="flex gap-2 pt-1">
