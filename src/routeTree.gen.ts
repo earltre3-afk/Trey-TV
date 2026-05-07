@@ -32,6 +32,7 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
+import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.edit'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 
 const SignupRoute = SignupRouteImport.update({
@@ -149,6 +150,11 @@ const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   path: '/voice',
   getParentRoute: () => OnboardingRoute,
 } as any)
+const CreatorStudioEditRoute = CreatorStudioEditRouteImport.update({
+  id: '/creator-studio/edit',
+  path: '/creator-studio/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   id: '/studio',
   path: '/studio',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
+  '/creator-studio/edit': typeof CreatorStudioEditRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/u/$uid': typeof UUidRoute
 }
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
+    | '/creator-studio/edit'
     | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesByTo: FileRoutesByTo
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
+    | '/creator-studio/edit'
     | '/onboarding/voice'
     | '/u/$uid'
   id:
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/creator-hub/studio'
+    | '/creator-studio/edit'
     | '/onboarding/voice'
     | '/u/$uid'
   fileRoutesById: FileRoutesById
@@ -337,6 +349,7 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  CreatorStudioEditRoute: typeof CreatorStudioEditRoute
   UUidRoute: typeof UUidRoute
 }
 
@@ -503,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingVoiceRouteImport
       parentRoute: typeof OnboardingRoute
     }
+    '/creator-studio/edit': {
+      id: '/creator-studio/edit'
+      path: '/creator-studio/edit'
+      fullPath: '/creator-studio/edit'
+      preLoaderRoute: typeof CreatorStudioEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-hub/studio': {
       id: '/creator-hub/studio'
       path: '/studio'
@@ -559,6 +579,7 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  CreatorStudioEditRoute: CreatorStudioEditRoute,
   UUidRoute: UUidRoute,
 }
 export const routeTree = rootRouteImport
