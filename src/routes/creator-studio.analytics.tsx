@@ -117,7 +117,7 @@ function AnalyticsPage() {
             <tbody className="divide-y divide-white/5">
               {episodes.map((e, i) => {
                 const v = 8000 + (i * 3700) + (i % 3) * 1200;
-                const series = useSeriesValue(i + 11, 14, 200, 140);
+                const series = epSeries.slice(i * 14, (i + 1) * 14);
                 return (
                   <tr key={e.content_id} className="hover:bg-white/5">
                     <td className="p-2 font-semibold truncate max-w-[200px]">{e.title || "Untitled"}</td>
@@ -139,7 +139,7 @@ function AnalyticsPage() {
 
       <section className="rounded-3xl glass neon-border p-4 md:p-5">
         <SectionHeader icon={Clock} title="When your fans watch" />
-        <MiniBars values={useSeriesValue(99, 24, 50, 50)} />
+        <MiniBars values={hourly} />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
           <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
         </div>
@@ -156,11 +156,6 @@ function MetricWithSpark(props: React.ComponentProps<typeof CreatorMetricCard> &
       <div className="h-8 px-1"><Sparkline values={series} height={32} /></div>
     </div>
   );
-}
-
-// useSeries inline so multiple callers don't share refs
-function useSeriesValue(seed: number, length: number, base: number, variance: number) {
-  return useSeries(seed, length, base, variance);
 }
 
 function fmt(n: number) {
