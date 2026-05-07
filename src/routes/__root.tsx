@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { TreyIWidget } from "@/components/ai/TreyIWidget";
 
 import appCss from "../styles.css?url";
 
@@ -119,6 +120,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <TreyIWidget />
       <Toaster />
     </QueryClientProvider>
   );
