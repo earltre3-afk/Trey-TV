@@ -1,9 +1,10 @@
-import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight } from "lucide-react";
+import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
 
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { useAuth } from "@/lib/auth";
 
 type Item = { icon: typeof Home; label: string; sub: string; to: string; color: string; active?: boolean };
 
@@ -14,12 +15,15 @@ const items: Item[] = [
   { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/latest", color: "text-primary" },
   { icon: Heart, label: "Prescribe Me", sub: "Personalized Picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/collections", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Activity, label: "Activity", sub: "Your interactions", to: "/activity", color: "text-[oklch(0.82_0.15_215)]" },
+  { icon: Gem, label: "Rewards", sub: "Points · Gifts · Perks", to: "/rewards", color: "text-primary" },
   { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/go-live", color: "text-[oklch(0.7_0.25_340)]" },
 ];
 
 const creatorItems: Item[] = [
   { icon: Crown, label: "Creator Hub", sub: "Manage Your Brand", to: "/creator-hub", color: "text-primary" },
   { icon: BarChart3, label: "Analytics", sub: "Track Your Growth", to: "/analytics", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Pencil, label: "Edit Profile", sub: "Polish your presence", to: "/edit-profile", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Settings, label: "Settings", sub: "Account & Preferences", to: "/settings", color: "text-[oklch(0.82_0.15_215)]" },
 ];
 
