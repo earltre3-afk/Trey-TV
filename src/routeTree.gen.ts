@@ -18,6 +18,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as GoLiveRouteImport } from './routes/go-live'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
+import { Route as EditProfileRouteImport } from './routes/edit-profile'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as CollectionsRouteImport } from './routes/collections'
@@ -71,6 +72,11 @@ const ExploreRoute = ExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditProfileRoute = EditProfileRouteImport.update({
+  id: '/edit-profile',
+  path: '/edit-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorHubRoute = CreatorHubRouteImport.update({
   id: '/creator-hub',
   path: '/creator-hub',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/go-live': typeof GoLiveRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/go-live': typeof GoLiveRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/go-live': typeof GoLiveRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/edit-profile'
     | '/explore'
     | '/following'
     | '/go-live'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/edit-profile'
     | '/explore'
     | '/following'
     | '/go-live'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/collections'
     | '/create'
     | '/creator-hub'
+    | '/edit-profile'
     | '/explore'
     | '/following'
     | '/go-live'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
+  EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
   GoLiveRoute: typeof GoLiveRoute
@@ -302,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExploreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/edit-profile': {
+      id: '/edit-profile'
+      path: '/edit-profile'
+      fullPath: '/edit-profile'
+      preLoaderRoute: typeof EditProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-hub': {
       id: '/creator-hub'
       path: '/creator-hub'
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
   CreatorHubRoute: CreatorHubRouteWithChildren,
+  EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
   GoLiveRoute: GoLiveRoute,
