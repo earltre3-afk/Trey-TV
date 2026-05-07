@@ -65,7 +65,13 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
 
           <div className="px-3 space-y-1">
             {creatorItems.map((i) => (
-              <Link key={i.label} to={i.to} onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5">
+              <Link
+                key={i.label}
+                to="/u/$uid"
+                params={{ uid: currentUser.uid }}
+                onClick={onClose}
+                className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5"
+              >
                 <div className="size-10 rounded-xl grid place-items-center bg-white/5">
                   <i.icon className={`size-5 ${i.color}`} />
                 </div>
