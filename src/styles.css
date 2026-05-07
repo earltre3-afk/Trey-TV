@@ -46,6 +46,12 @@
   --animate-slide-in-left: slide-in-left 0.3s ease-out;
   --animate-glow-pulse: glow-pulse 2.4s ease-in-out infinite;
   --animate-orb-spin: orb-spin 18s linear infinite;
+  --animate-conic-spin: conic-spin 6s linear infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-aurora: aurora 8s ease-in-out infinite;
+  --animate-float: float 5s ease-in-out infinite;
+  --animate-rise: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-burst: burst 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root {
@@ -158,6 +164,89 @@
   .ring-neon-magenta { box-shadow: 0 0 0 2px var(--neon-magenta), 0 0 18px oklch(0.7 0.25 340 / 0.55); }
 
   .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+
+  /* Conic neon ring around avatars/borders */
+  .conic-ring {
+    position: relative;
+    isolation: isolate;
+  }
+  .conic-ring::before {
+    content: "";
+    position: absolute;
+    inset: -3px;
+    border-radius: inherit;
+    padding: 2px;
+    background: conic-gradient(from 0deg,
+      var(--gold), var(--neon-magenta), var(--neon-purple),
+      var(--neon-cyan), var(--neon-green), var(--gold));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: conic-spin 6s linear infinite;
+    z-index: -1;
+    filter: drop-shadow(0 0 8px oklch(0.7 0.22 320 / 0.45));
+  }
+  .conic-ring::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+    border-radius: inherit;
+    background: conic-gradient(from 0deg,
+      oklch(0.82 0.16 85 / 0.5), transparent 30%, transparent 70%,
+      oklch(0.7 0.22 300 / 0.5));
+    filter: blur(14px);
+    z-index: -2;
+    animation: conic-spin 6s linear infinite reverse;
+    opacity: 0.7;
+  }
+
+  /* Animated gradient border (cards) */
+  .neon-border {
+    position: relative;
+    isolation: isolate;
+  }
+  .neon-border::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(130deg,
+      oklch(0.82 0.16 85 / 0.6),
+      oklch(0.7 0.22 300 / 0.5),
+      oklch(0.82 0.15 215 / 0.5),
+      oklch(0.82 0.16 85 / 0.6));
+    background-size: 300% 300%;
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    animation: aurora 8s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  /* Sweeping shimmer overlay */
+  .shimmer-sweep {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-sweep::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.12) 50%, transparent 70%);
+    transform: translateX(-100%);
+    animation: shimmer 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .hover-lift { transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease; }
+  .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 18px 40px -18px oklch(0.65 0.22 300 / 0.5); }
+
+  .tilt-press { transition: transform 0.15s ease; }
+  .tilt-press:active { transform: scale(0.96); }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
 }
 
 @keyframes fade-in {
@@ -179,4 +268,28 @@
 @keyframes orb-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+@keyframes conic-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(120%); }
+}
+@keyframes aurora {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes burst {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
 }
