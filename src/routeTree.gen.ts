@@ -47,6 +47,7 @@ import { Route as CreatorStudioEditRouteImport } from './routes/creator-studio.e
 import { Route as CreatorStudioChannelRouteImport } from './routes/creator-studio.channel'
 import { Route as CreatorStudioAnalyticsRouteImport } from './routes/creator-studio.analytics'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
+import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -247,6 +248,11 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => CreatorHubRoute,
 } as any)
+const ChannelHandleRoute = ChannelHandleRouteImport.update({
+  id: '/channel/$handle',
+  path: '/channel/$handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminVideosRoute = AdminVideosRouteImport.update({
   id: '/videos',
   path: '/videos',
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
   '/creator-studio/channel': typeof CreatorStudioChannelRoute
@@ -358,6 +365,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
   '/creator-studio/channel': typeof CreatorStudioChannelRoute
@@ -406,6 +414,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
   '/creator-studio/channel': typeof CreatorStudioChannelRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
+    | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
     | '/creator-studio/channel'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
+    | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
     | '/creator-studio/channel'
@@ -548,6 +559,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
+    | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
     | '/creator-studio/channel'
@@ -590,6 +602,7 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
+  ChannelHandleRoute: typeof ChannelHandleRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
 }
@@ -862,6 +875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreatorHubStudioRouteImport
       parentRoute: typeof CreatorHubRoute
     }
+    '/channel/$handle': {
+      id: '/channel/$handle'
+      path: '/channel/$handle'
+      fullPath: '/channel/$handle'
+      preLoaderRoute: typeof ChannelHandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/videos': {
       id: '/admin/videos'
       path: '/videos'
@@ -1026,6 +1046,7 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
+  ChannelHandleRoute: ChannelHandleRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
 }
