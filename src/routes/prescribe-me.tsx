@@ -120,7 +120,7 @@ function PrescribeMe() {
               <h2 className="text-sm font-semibold tracking-wide">YOUR PRESCRIBED FOR YOU</h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[oklch(0.65_0.22_300_/_0.2)] text-[oklch(0.7_0.25_340)] border border-[oklch(0.65_0.22_300_/_0.5)]">Fresh Picks</span>
             </div>
-            <button className="text-xs text-muted-foreground flex items-center gap-1">See all <ChevronRight className="size-3" /></button>
+            <button onClick={() => toast("Loading more prescriptions…")} className="text-xs text-muted-foreground flex items-center gap-1">See all <ChevronRight className="size-3" /></button>
           </div>
           <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 pb-2">
             {prescribed.map((p) => (
