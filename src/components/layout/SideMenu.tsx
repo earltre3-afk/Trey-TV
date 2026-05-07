@@ -66,22 +66,23 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           <div className="my-4 mx-5 h-px bg-white/10" />
 
           <div className="px-3 space-y-1">
-            {creatorItems.map((i) => (
+            {creatorItems.map((i, idx) => (
               <Link
                 key={i.label}
                 to="/u/$uid"
                 params={{ uid: currentUser.uid }}
                 onClick={onClose}
-                className="flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5"
+                style={{ animationDelay: `${(idx + items.length) * 50}ms` }}
+                className={`group flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 hover:translate-x-1 transition-all duration-300 ${open ? "animate-rise" : ""}`}
               >
-                <div className="size-10 rounded-xl grid place-items-center bg-white/5">
+                <div className="size-10 rounded-xl grid place-items-center bg-white/5 transition-transform group-hover:scale-110">
                   <i.icon className={`size-5 ${i.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-semibold">{i.label}</div>
                   <div className="text-xs text-muted-foreground truncate">{i.sub}</div>
                 </div>
-                <ChevronRight className="size-4 text-muted-foreground" />
+                <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
               </Link>
             ))}
           </div>
