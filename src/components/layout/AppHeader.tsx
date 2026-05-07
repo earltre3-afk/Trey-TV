@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
+import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
 const tabs = [
   { id: "for-you", label: "For You" },
