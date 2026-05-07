@@ -18,6 +18,8 @@ const POS_KEY = "treyi_pos_v1";
 const SIZE = 56;
 const PAD = 12;
 
+const INITIAL_POS = { x: 16, y: 200 };
+
 function clampToViewport(x: number, y: number) {
   if (typeof window === "undefined") return { x, y };
   const maxX = Math.max(PAD, window.innerWidth - SIZE - PAD);
@@ -40,17 +42,31 @@ export function TreyIWidget() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [text, setText] = useState("");
-  const [pos, setPos] = useState(() => {
-    if (typeof window === "undefined") return { x: 16, y: 200 };
-    try {
-      const raw = localStorage.getItem(POS_KEY);
-      if (raw) return clampToViewport(...(Object.values(JSON.parse(raw)) as [number, number]));
-    } catch {}
-    return defaultPos();
-  });
+  const [pos, setPos] = useState(INITIAL_POS);
+  const posRef = useRef(INITIAL_POS);
   const [dragging, setDragging] = useState(false);
   const dragInfo = useRef<{ dx: number; dy: number; moved: boolean }>({ dx: 0, dy: 0, moved: false });
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const moveTo = useCallback((next: { x: number; y: number }) => {
+    const clamped = clampToViewport(next.x, next.y);
+    posRef.current = clamped;
+    setPos(clamped);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(POS_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<{ x: number; y: number }>;
+        if (typeof saved.x === "number" && typeof saved.y === "number") {
+          moveTo({ x: saved.x, y: saved.y });
+          return;
+        }
+      }
+    } catch {}
+    moveTo(defaultPos());
+  }, [moveTo]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -61,26 +77,28 @@ export function TreyIWidget() {
     try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
   }, [pos]);
   useEffect(() => {
-    const onResize = () => setPos((p) => clampToViewport(p.x, p.y));
+    const onResize = () => moveTo(posRef.current);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [moveTo]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
-    dragInfo.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, moved: false };
+    const current = posRef.current;
+    dragInfo.current = { dx: e.clientX - current.x, dy: e.clientY - current.y, moved: false };
     setDragging(true);
-  }, [pos.x, pos.y]);
+  }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
     e.preventDefault();
     const nx = e.clientX - dragInfo.current.dx;
     const ny = e.clientY - dragInfo.current.dy;
-    if (Math.abs(nx - pos.x) + Math.abs(ny - pos.y) > 3) dragInfo.current.moved = true;
-    setPos(clampToViewport(nx, ny));
-  }, [dragging, pos.x, pos.y]);
+    const current = posRef.current;
+    if (Math.abs(nx - current.x) + Math.abs(ny - current.y) > 3) dragInfo.current.moved = true;
+    moveTo({ x: nx, y: ny });
+  }, [dragging, moveTo]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
@@ -121,7 +139,7 @@ export function TreyIWidget() {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         aria-label="Open Trey-I assistant — drag to move"
-        style={{ left: pos.x, top: pos.y, touchAction: "none" }}
+        style={{ position: "fixed", left: pos.x, top: pos.y, touchAction: "none" }}
         className={`fixed z-40 size-14 rounded-full grid place-items-center select-none transition-shadow duration-300 ${
           dragging ? "scale-110 cursor-grabbing shadow-[0_24px_60px_-10px_oklch(0.7_0.25_340_/_0.6)]" : "hover:scale-110 active:scale-95 cursor-grab"
         } ${open ? "ring-2 ring-primary/60 shadow-[0_0_30px_oklch(0.82_0.16_85_/_0.6)]" : ""}`}
@@ -140,7 +158,7 @@ export function TreyIWidget() {
 
       {/* Panel — anchored to launcher position */}
       <div
-        style={panelStyle}
+        style={{ position: "fixed", ...panelStyle }}
         className={`fixed z-50 max-h-[75vh] flex flex-col rounded-3xl liquid-glass neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
         }`}

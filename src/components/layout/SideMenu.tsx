@@ -38,10 +38,11 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
       <div
         onClick={onClose}
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        style={{ position: "fixed" }}
       />
       <aside
         className={`fixed left-0 top-0 bottom-0 z-50 w-[88vw] max-w-[380px] liquid-glass border-r border-white/10 transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
-        style={{ borderTopRightRadius: 28, borderBottomRightRadius: 28 }}
+        style={{ position: "fixed", borderTopRightRadius: 28, borderBottomRightRadius: 28 }}
       >
         <div className="h-full flex flex-col overflow-y-auto safe-bottom">
           <div className="flex items-start justify-between p-5">
