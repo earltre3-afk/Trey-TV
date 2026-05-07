@@ -7,8 +7,8 @@ export function BottomNav() {
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom max-w-[520px] mx-auto">
-      <div className="mx-3 mb-3 rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-[520px] mx-auto">
+      <div className="rounded-t-3xl glass-strong border-t border-x border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)] safe-bottom">
         <div className="flex items-end justify-between px-3 pt-2 pb-1 relative">
           <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
           <NavItem to="/explore" icon={Compass} label="Explore" active={isActive("/explore")} />
