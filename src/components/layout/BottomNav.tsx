@@ -48,8 +48,8 @@ function NavItem({ to, icon: Icon, label, active, badge }: { to: string; icon: t
 function ProfileItem({ active }: { active: boolean }) {
   return (
     <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="relative flex flex-col items-center gap-1 flex-1 py-1.5">
-      <div className={`relative grid place-items-center size-9 rounded-xl transition ${active ? "bg-primary/15 text-primary glow-gold" : "text-muted-foreground"}`}>
-        <User className="size-5" />
+      <div className={`relative size-9 rounded-full ${active ? "conic-ring" : "ring-1 ring-white/15"}`}>
+        <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover" />
       </div>
       <span className={`text-[10px] ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>Profile</span>
     </Link>
