@@ -27,21 +27,24 @@ function PublicProfile() {
     <AppShell>
       <div className="space-y-5 -mt-3">
         {/* Hero */}
-        <div className="relative rounded-3xl overflow-hidden border border-white/10">
-          <img src={banner} alt="" className="w-full h-48 object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+        <div className="relative pb-20">
+          <div className="relative rounded-3xl overflow-hidden border border-white/10">
+            <img src={banner} alt="" className="w-full h-44 sm:h-48 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-            <Link to="/" className="size-9 grid place-items-center rounded-full glass">
-              <ArrowLeft className="size-4" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <button className="size-9 grid place-items-center rounded-full glass"><Bell className="size-4" /></button>
-              <button className="size-9 grid place-items-center rounded-full glass"><MoreHorizontal className="size-4" /></button>
+            <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+              <Link to="/" className="size-9 grid place-items-center rounded-full glass">
+                <ArrowLeft className="size-4" />
+              </Link>
+              <div className="flex items-center gap-2">
+                <button className="size-9 grid place-items-center rounded-full glass"><Bell className="size-4" /></button>
+                <button className="size-9 grid place-items-center rounded-full glass"><MoreHorizontal className="size-4" /></button>
+              </div>
             </div>
           </div>
 
-          <div className="absolute left-1/2 -translate-x-1/2 top-12 size-32 rounded-full conic-ring bg-background animate-float">
+          {/* Avatar — outside the overflow-hidden hero so it never clips */}
+          <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 size-28 sm:size-32 rounded-full conic-ring bg-background animate-float">
             <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover ring-2 ring-white/20" />
           </div>
         </div>
@@ -77,32 +80,68 @@ function PublicProfile() {
           ))}
         </div>
 
-        {/* UID + actions */}
-        <div className="grid grid-cols-5 gap-3">
-          <div className="col-span-3 rounded-2xl glass border border-primary/30 p-3 relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 size-24 rounded-full bg-primary/10 blur-2xl" />
-            <div className="text-[10px] tracking-[0.2em] text-muted-foreground">TREY TV ID</div>
-            <div className="font-mono text-sm mt-1 flex items-center gap-2">
-              {uid.replace(/(.{4})/g, "$1 ").trim()}
-              <button onClick={() => { navigator.clipboard?.writeText(uid); toast.success("UID copied"); }} aria-label="copy" className="text-muted-foreground hover:text-primary"><Copy className="size-3.5" /></button>
+        {/* Rewards Card — credit-card format */}
+        <div className="relative mx-auto w-full max-w-[420px] aspect-[1.586/1] rounded-2xl p-5 overflow-hidden border border-primary/40 bg-[linear-gradient(135deg,oklch(0.22_0.08_85_/_0.85),oklch(0.16_0.05_60_/_0.9)_45%,oklch(0.18_0.06_300_/_0.85))] shadow-[0_20px_50px_-20px_oklch(0_0_0_/_0.8)] glow-gold hover-lift">
+          {/* shine */}
+          <div aria-hidden className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,oklch(1_0_0_/_0.08)_45%,transparent_60%)]" />
+          <div aria-hidden className="absolute -top-20 -right-16 size-56 rounded-full bg-primary/25 blur-3xl" />
+          <div aria-hidden className="absolute -bottom-20 -left-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.25)] blur-3xl" />
+
+          <div className="relative h-full flex flex-col justify-between text-white">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-[9px] tracking-[0.25em] text-white/70">TREY · TV</div>
+                <div className="mt-0.5 text-[10px] tracking-[0.2em] text-primary font-semibold">REWARDS</div>
+              </div>
+              {/* chip */}
+              <div className="size-9 rounded-md bg-[linear-gradient(135deg,oklch(0.85_0.16_85),oklch(0.65_0.15_60))] grid place-items-center shadow-inner">
+                <div className="size-6 rounded-sm border border-white/40 grid grid-cols-2 grid-rows-2 gap-px p-0.5">
+                  <span className="bg-white/30 rounded-[1px]" />
+                  <span className="bg-white/20 rounded-[1px]" />
+                  <span className="bg-white/20 rounded-[1px]" />
+                  <span className="bg-white/30 rounded-[1px]" />
+                </div>
+              </div>
             </div>
-            <div className="absolute right-3 bottom-2 text-[9px] tracking-widest text-primary/70 font-bold">TREY · TV</div>
+
+            <div>
+              <div className="font-mono text-base sm:text-lg tracking-[0.2em] flex items-center gap-2">
+                {uid.replace(/(.{4})/g, "$1 ").trim()}
+                <button onClick={() => { navigator.clipboard?.writeText(uid); toast.success("UID copied"); }} aria-label="copy" className="text-white/70 hover:text-primary"><Copy className="size-3.5" /></button>
+              </div>
+              <div className="mt-2 flex items-end justify-between">
+                <div>
+                  <div className="text-[9px] tracking-[0.2em] text-white/60">MEMBER</div>
+                  <div className="text-sm font-semibold uppercase tracking-wider">{currentUser.name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] tracking-[0.2em] text-white/60">POINTS</div>
+                  <div className="text-base font-bold text-primary drop-shadow-[0_0_6px_var(--gold)]">12,480</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[9px] tracking-[0.2em] text-white/60">TIER</div>
+                  <div className="text-sm font-bold bg-clip-text text-transparent bg-[linear-gradient(90deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340))]">GOLD</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="col-span-2 grid grid-cols-3 gap-2">
-            {[
-              { icon: Share2, label: "Share", onClick: async () => {
-                try { await navigator.share?.({ title: currentUser.name, url: location.href }); }
-                catch { await navigator.clipboard?.writeText(location.href); toast("Link copied"); }
-              }},
-              { icon: Link2, label: "Copy", onClick: () => { navigator.clipboard?.writeText(location.href); toast.success("Profile link copied"); } },
-              { icon: MoreHorizontal, label: "More", onClick: () => toast("More options") },
-            ].map((a) => (
-              <button key={a.label} onClick={a.onClick} className="rounded-2xl glass border border-white/10 flex flex-col items-center justify-center py-2 hover:bg-white/5">
-                <a.icon className="size-4" />
-                <span className="text-[10px] mt-1 text-muted-foreground">{a.label}</span>
-              </button>
-            ))}
-          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { icon: Share2, label: "Share", onClick: async () => {
+              try { await navigator.share?.({ title: currentUser.name, url: location.href }); }
+              catch { await navigator.clipboard?.writeText(location.href); toast("Link copied"); }
+            }},
+            { icon: Link2, label: "Copy", onClick: () => { navigator.clipboard?.writeText(location.href); toast.success("Profile link copied"); } },
+            { icon: MoreHorizontal, label: "More", onClick: () => toast("More options") },
+          ].map((a) => (
+            <button key={a.label} onClick={a.onClick} className="rounded-2xl glass border border-white/10 flex flex-col items-center justify-center py-2.5 hover:bg-white/5">
+              <a.icon className="size-4" />
+              <span className="text-[10px] mt-1 text-muted-foreground">{a.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Tabs */}

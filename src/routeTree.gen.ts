@@ -11,10 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
+import { Route as PremiumRouteImport } from './routes/premium'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as LatestRouteImport } from './routes/latest'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as GoLiveRouteImport } from './routes/go-live'
+import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UUidRouteImport } from './routes/u.$uid'
@@ -30,9 +36,34 @@ const PrescribeMeRoute = PrescribeMeRouteImport.update({
   path: '/prescribe-me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PremiumRoute = PremiumRouteImport.update({
+  id: '/premium',
+  path: '/premium',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LatestRoute = LatestRouteImport.update({
+  id: '/latest',
+  path: '/latest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GoLiveRoute = GoLiveRouteImport.update({
+  id: '/go-live',
+  path: '/go-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExploreRoute = ExploreRouteImport.update({
@@ -48,6 +79,11 @@ const CreatorHubRoute = CreatorHubRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionsRoute = CollectionsRouteImport.update({
+  id: '/collections',
+  path: '/collections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -74,10 +110,16 @@ const CreatorHubStudioRoute = CreatorHubStudioRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
+  '/following': typeof FollowingRoute
+  '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
+  '/latest': typeof LatestRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -86,10 +128,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
+  '/following': typeof FollowingRoute
+  '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
+  '/latest': typeof LatestRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -99,10 +147,16 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
+  '/collections': typeof CollectionsRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/explore': typeof ExploreRoute
+  '/following': typeof FollowingRoute
+  '/go-live': typeof GoLiveRoute
   '/inbox': typeof InboxRoute
+  '/latest': typeof LatestRoute
+  '/notifications': typeof NotificationsRoute
+  '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/settings': typeof SettingsRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -113,10 +167,16 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analytics'
+    | '/collections'
     | '/create'
     | '/creator-hub'
     | '/explore'
+    | '/following'
+    | '/go-live'
     | '/inbox'
+    | '/latest'
+    | '/notifications'
+    | '/premium'
     | '/prescribe-me'
     | '/settings'
     | '/creator-hub/studio'
@@ -125,10 +185,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analytics'
+    | '/collections'
     | '/create'
     | '/creator-hub'
     | '/explore'
+    | '/following'
+    | '/go-live'
     | '/inbox'
+    | '/latest'
+    | '/notifications'
+    | '/premium'
     | '/prescribe-me'
     | '/settings'
     | '/creator-hub/studio'
@@ -137,10 +203,16 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analytics'
+    | '/collections'
     | '/create'
     | '/creator-hub'
     | '/explore'
+    | '/following'
+    | '/go-live'
     | '/inbox'
+    | '/latest'
+    | '/notifications'
+    | '/premium'
     | '/prescribe-me'
     | '/settings'
     | '/creator-hub/studio'
@@ -150,10 +222,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
+  CollectionsRoute: typeof CollectionsRoute
   CreateRoute: typeof CreateRoute
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
   ExploreRoute: typeof ExploreRoute
+  FollowingRoute: typeof FollowingRoute
+  GoLiveRoute: typeof GoLiveRoute
   InboxRoute: typeof InboxRoute
+  LatestRoute: typeof LatestRoute
+  NotificationsRoute: typeof NotificationsRoute
+  PremiumRoute: typeof PremiumRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
   SettingsRoute: typeof SettingsRoute
   UUidRoute: typeof UUidRoute
@@ -175,11 +253,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrescribeMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/premium': {
+      id: '/premium'
+      path: '/premium'
+      fullPath: '/premium'
+      preLoaderRoute: typeof PremiumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/latest': {
+      id: '/latest'
+      path: '/latest'
+      fullPath: '/latest'
+      preLoaderRoute: typeof LatestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inbox': {
       id: '/inbox'
       path: '/inbox'
       fullPath: '/inbox'
       preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/go-live': {
+      id: '/go-live'
+      path: '/go-live'
+      fullPath: '/go-live'
+      preLoaderRoute: typeof GoLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explore': {
@@ -201,6 +314,13 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collections': {
+      id: '/collections'
+      path: '/collections'
+      fullPath: '/collections'
+      preLoaderRoute: typeof CollectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -249,10 +369,16 @@ const CreatorHubRouteWithChildren = CreatorHubRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
+  CollectionsRoute: CollectionsRoute,
   CreateRoute: CreateRoute,
   CreatorHubRoute: CreatorHubRouteWithChildren,
   ExploreRoute: ExploreRoute,
+  FollowingRoute: FollowingRoute,
+  GoLiveRoute: GoLiveRoute,
   InboxRoute: InboxRoute,
+  LatestRoute: LatestRoute,
+  NotificationsRoute: NotificationsRoute,
+  PremiumRoute: PremiumRoute,
   PrescribeMeRoute: PrescribeMeRoute,
   SettingsRoute: SettingsRoute,
   UUidRoute: UUidRoute,

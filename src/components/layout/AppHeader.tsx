@@ -1,8 +1,10 @@
 import { Menu, Search, Bell, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { NotificationsPopover } from "./NotificationsPopover";
 
 const tabs = [
   { id: "for-you", label: "For You" },
@@ -22,12 +24,13 @@ export function AppHeader({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [notifOpen, setNotifOpen] = useState(false);
   const computed =
     location.pathname === "/prescribe-me" ? "prescribe" : activeTab;
 
   return (
     <header className="sticky top-0 z-30 w-full glass-strong border-b border-white/5">
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="relative flex items-center justify-between px-4 pt-3 pb-2">
         <button
           onClick={onMenuClick}
           aria-label="Open menu"
@@ -58,7 +61,7 @@ export function AppHeader({
           <button onClick={() => navigate({ to: "/explore" })} aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Search className="size-5" />
           </button>
-          <button onClick={() => navigate({ to: "/inbox" })} aria-label="Notifications" className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+          <button onClick={() => setNotifOpen((v) => !v)} aria-label="Notifications" aria-expanded={notifOpen} className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Bell className="size-5" />
             <span className="absolute -top-1 -right-1 size-5 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">8</span>
           </button>
@@ -66,6 +69,7 @@ export function AppHeader({
             <img src={currentUser.avatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
           </Link>
         </div>
+        <NotificationsPopover open={notifOpen} onClose={() => setNotifOpen(false)} />
       </div>
 
       <nav className="flex items-center gap-1 px-2 pb-2 overflow-x-auto no-scrollbar">
