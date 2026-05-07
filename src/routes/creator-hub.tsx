@@ -48,6 +48,7 @@ const tools = [
 ];
 
 function CreatorHub() {
+  const navigate = useNavigate();
   return (
     <AppShell wide>
       <div className="space-y-8">
