@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser, posts, creators } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
