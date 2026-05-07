@@ -6,6 +6,7 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
 const primary = [
   { to: "/", icon: Home, label: "Home" },
