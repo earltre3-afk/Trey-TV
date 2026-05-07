@@ -40,10 +40,10 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       />
       <aside
-        className={`fixed left-0 right-0 top-0 z-50 max-h-[92vh] liquid-glass border-b border-white/10 transition-transform duration-300 ${open ? "translate-y-0" : "-translate-y-full"}`}
-        style={{ borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}
+        className={`fixed left-0 top-0 bottom-0 z-50 w-[88vw] max-w-[380px] liquid-glass border-r border-white/10 transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ borderTopRightRadius: 28, borderBottomRightRadius: 28 }}
       >
-        <div className="h-full max-h-[92vh] flex flex-col overflow-y-auto safe-bottom">
+        <div className="h-full flex flex-col overflow-y-auto safe-bottom">
           <div className="flex items-start justify-between p-5">
             <Logo className="h-12" />
             <button onClick={onClose} aria-label="Close" className="size-9 grid place-items-center rounded-full glass">
