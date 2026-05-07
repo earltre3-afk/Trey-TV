@@ -7,8 +7,8 @@ export function BottomNav() {
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 safe-bottom max-w-[520px] mx-auto">
-      <div className="mx-3 mb-3 rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-[520px] mx-auto">
+      <div className="rounded-t-3xl glass-strong border-t border-x border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)] safe-bottom">
         <div className="flex items-end justify-between px-3 pt-2 pb-1 relative">
           <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
           <NavItem to="/explore" icon={Compass} label="Explore" active={isActive("/explore")} />
@@ -48,8 +48,8 @@ function NavItem({ to, icon: Icon, label, active, badge }: { to: string; icon: t
 function ProfileItem({ active }: { active: boolean }) {
   return (
     <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="relative flex flex-col items-center gap-1 flex-1 py-1.5">
-      <div className={`relative grid place-items-center size-9 rounded-xl transition ${active ? "bg-primary/15 text-primary glow-gold" : "text-muted-foreground"}`}>
-        <User className="size-5" />
+      <div className={`relative size-9 rounded-full ${active ? "conic-ring" : "ring-1 ring-white/15"}`}>
+        <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover" />
       </div>
       <span className={`text-[10px] ${active ? "text-primary font-semibold" : "text-muted-foreground"}`}>Profile</span>
     </Link>
