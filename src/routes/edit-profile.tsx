@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef } from "react";
 import { ArrowLeft, Camera, Eye, Save, Sparkles, MapPin, Link2, Image as ImageIcon } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
