@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Bell, MoreHorizontal, MapPin, Link2, Share2, Copy, Grid3x3, Play, Pencil, Gem, UserPlus, MessageCircle, Crown, TrendingUp } from "lucide-react";
+import { ArrowLeft, Bell, MoreHorizontal, MapPin, Link2, Share2, Copy, Grid3x3, Play, Pencil, Gem, UserPlus, MessageCircle, Crown, TrendingUp, Star } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser, prescribed, creators } from "@/lib/mock-data";
@@ -173,6 +173,9 @@ function PublicProfile() {
               <h3 className="text-xs tracking-widest text-muted-foreground mb-2">ABOUT</h3>
               <p className="text-sm whitespace-pre-line leading-relaxed">{profile.bio}</p>
             </div>
+
+            {/* Top 3 — MySpace-style top friends */}
+            <TopThreeCard />
 
             {/* Tabs */}
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-white/10">
