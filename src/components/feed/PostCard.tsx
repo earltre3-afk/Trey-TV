@@ -55,7 +55,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
 
   return (
     <article
-      className="group rounded-3xl liquid-glass neon-border overflow-hidden shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover animate-rise"
+      className="group relative rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover animate-rise"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
@@ -108,8 +108,9 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         {/* Reaction button + picker */}
         <div className="relative">
           <button
-            onClick={requireAuth(() => setPickerOpen((v) => !v))}
-            onMouseEnter={() => !isGuest && setPickerOpen(true)}
+            type="button"
+            onClick={() => setPickerOpen((v) => !v)}
+            onMouseEnter={() => setPickerOpen(true)}
             className={`flex items-center gap-1.5 transition tilt-press ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
             style={current ? { color: current.color } : undefined}
           >
@@ -119,7 +120,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             <span className="text-xs font-semibold">{fmt(likeCount)}</span>
           </button>
 
-          {pickerOpen && !isGuest && (
+          {pickerOpen && (
             <div
               onMouseLeave={() => setPickerOpen(false)}
               className="absolute bottom-full left-0 mb-2 z-20 flex items-center gap-1 px-2 py-1.5 rounded-full liquid-glass border border-white/10 reaction-pop shadow-[0_20px_40px_-15px_oklch(0_0_0_/_0.7)]"
@@ -127,7 +128,11 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
               {REACTIONS.map((r) => (
                 <button
                   key={r.key}
-                  onClick={() => onReactionPick(r.key)}
+                  type="button"
+                  onClick={() => {
+                    if (isGuest) { toast("Sign up to react"); nav({ to: "/onboarding" }); return; }
+                    onReactionPick(r.key);
+                  }}
                   title={r.label}
                   className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform ${reaction === r.key ? "bg-white/10" : ""}`}
                   style={{ filter: `drop-shadow(0 0 8px ${r.color})` }}
@@ -140,6 +145,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         </div>
 
         <button
+          type="button"
           onClick={() => setCommentsOpen((v) => !v)}
           className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           aria-expanded={commentsOpen}
