@@ -8,6 +8,7 @@ import banner from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
 import { useFollow } from "@/lib/follow-store";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfile,
@@ -73,6 +74,7 @@ function PublicProfile() {
   const [tab, setTab] = useState("Posts");
   const { user, isGuest } = useAuth();
   const follow = useFollow();
+  const goBack = useGoBack("/");
 
   const profile = user ?? currentUser;
   const isOwnProfile = !isGuest && (user?.uid ?? currentUser.uid) === uid;
@@ -121,9 +123,9 @@ function PublicProfile() {
             )}
 
             <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-              <Link to="/" className="size-9 grid place-items-center rounded-full glass">
+              <button onClick={goBack} className="size-9 grid place-items-center rounded-full glass">
                 <ArrowLeft className="size-4" />
-              </Link>
+              </button>
               <div className="flex items-center gap-2">
                 <button className="size-9 grid place-items-center rounded-full glass"><Bell className="size-4" /></button>
                 <button className="size-9 grid place-items-center rounded-full glass"><MoreHorizontal className="size-4" /></button>
