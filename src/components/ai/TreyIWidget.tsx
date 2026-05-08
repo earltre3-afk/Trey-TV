@@ -45,14 +45,30 @@ export function TreyIWidget() {
   const [pos, setPos] = useState(INITIAL_POS);
   const posRef = useRef(INITIAL_POS);
   const [dragging, setDragging] = useState(false);
-  const dragInfo = useRef<{ dx: number; dy: number; moved: boolean }>({ dx: 0, dy: 0, moved: false });
+  const dragInfo = useRef<{
+    dx: number; dy: number; moved: boolean;
+    lastX: number; lastY: number; lastT: number;
+    vx: number; vy: number;
+    pendingX: number; pendingY: number;
+    rafId: number | null;
+  }>({ dx: 0, dy: 0, moved: false, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0, pendingX: 0, pendingY: 0, rafId: null });
+  const btnRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
 
-  const moveTo = useCallback((next: { x: number; y: number }) => {
+  // Apply position directly to DOM during drag for smoothest motion (no React re-renders)
+  const applyTransform = useCallback((x: number, y: number) => {
+    const el = btnRef.current;
+    if (!el) return;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  }, []);
+
+  const moveTo = useCallback((next: { x: number; y: number }, commit = true) => {
     const clamped = clampToViewport(next.x, next.y);
     posRef.current = clamped;
-    setPos(clamped);
-  }, []);
+    applyTransform(clamped.x, clamped.y);
+    if (commit) setPos(clamped);
+  }, [applyTransform]);
 
   useEffect(() => {
     try {
@@ -82,11 +98,34 @@ export function TreyIWidget() {
     return () => window.removeEventListener("resize", onResize);
   }, [moveTo]);
 
+  const flushDrag = useCallback(() => {
+    dragInfo.current.rafId = null;
+    const { pendingX, pendingY } = dragInfo.current;
+    const clamped = clampToViewport(pendingX, pendingY);
+    posRef.current = clamped;
+    applyTransform(clamped.x, clamped.y);
+    // subtle tilt based on velocity for premium feel
+    const vx = dragInfo.current.vx;
+    const vy = dragInfo.current.vy;
+    const ry = Math.max(-14, Math.min(14, vx * 0.6));
+    const rx = Math.max(-14, Math.min(14, -vy * 0.6));
+    setTilt({ rx, ry });
+  }, [applyTransform]);
+
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     const current = posRef.current;
-    dragInfo.current = { dx: e.clientX - current.x, dy: e.clientY - current.y, moved: false };
+    const now = performance.now();
+    dragInfo.current = {
+      dx: e.clientX - current.x,
+      dy: e.clientY - current.y,
+      moved: false,
+      lastX: e.clientX, lastY: e.clientY, lastT: now,
+      vx: 0, vy: 0,
+      pendingX: current.x, pendingY: current.y,
+      rafId: null,
+    };
     setDragging(true);
   }, []);
 
@@ -95,17 +134,78 @@ export function TreyIWidget() {
     e.preventDefault();
     const nx = e.clientX - dragInfo.current.dx;
     const ny = e.clientY - dragInfo.current.dy;
+    const now = performance.now();
+    const dt = Math.max(1, now - dragInfo.current.lastT);
+    // exponential moving average for smooth velocity
+    const instVx = (e.clientX - dragInfo.current.lastX) / dt * 16;
+    const instVy = (e.clientY - dragInfo.current.lastY) / dt * 16;
+    dragInfo.current.vx = dragInfo.current.vx * 0.7 + instVx * 0.3;
+    dragInfo.current.vy = dragInfo.current.vy * 0.7 + instVy * 0.3;
+    dragInfo.current.lastX = e.clientX;
+    dragInfo.current.lastY = e.clientY;
+    dragInfo.current.lastT = now;
+
     const current = posRef.current;
     if (Math.abs(nx - current.x) + Math.abs(ny - current.y) > 3) dragInfo.current.moved = true;
-    moveTo({ x: nx, y: ny });
-  }, [dragging, moveTo]);
+
+    dragInfo.current.pendingX = nx;
+    dragInfo.current.pendingY = ny;
+    if (dragInfo.current.rafId == null) {
+      dragInfo.current.rafId = requestAnimationFrame(flushDrag);
+    }
+  }, [dragging, flushDrag]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     (e.currentTarget as Element).releasePointerCapture?.(e.pointerId);
+    if (dragInfo.current.rafId != null) {
+      cancelAnimationFrame(dragInfo.current.rafId);
+      dragInfo.current.rafId = null;
+    }
     setDragging(false);
-    if (!dragInfo.current.moved) setOpen((o) => !o);
+    setTilt({ rx: 0, ry: 0 });
+
+    if (!dragInfo.current.moved) {
+      setOpen((o) => !o);
+      e.stopPropagation();
+      return;
+    }
+
+    // Momentum + magnetic edge snap with spring easing
+    if (typeof window !== "undefined") {
+      const start = posRef.current;
+      const projectedX = start.x + dragInfo.current.vx * 8;
+      const projectedY = start.y + dragInfo.current.vy * 8;
+      const snapLeft = projectedX + SIZE / 2 < window.innerWidth / 2;
+      const targetX = snapLeft ? PAD : window.innerWidth - SIZE - PAD;
+      const targetY = Math.min(Math.max(PAD, projectedY), window.innerHeight - SIZE - PAD);
+
+      const from = { ...start };
+      const to = clampToViewport(targetX, targetY);
+      const duration = 480;
+      const t0 = performance.now();
+      // ease-out-back for premium snap
+      const ease = (t: number) => {
+        const c1 = 1.4;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+      };
+      const step = (now: number) => {
+        const t = Math.min(1, (now - t0) / duration);
+        const k = ease(t);
+        const x = from.x + (to.x - from.x) * k;
+        const y = from.y + (to.y - from.y) * k;
+        applyTransform(x, y);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          posRef.current = to;
+          setPos(to);
+        }
+      };
+      requestAnimationFrame(step);
+    }
     e.stopPropagation();
-  }, []);
+  }, [applyTransform]);
 
   const send = (raw?: string) => {
     const value = (raw ?? text).trim();
