@@ -15,12 +15,12 @@ export const Route = createFileRoute("/explore")({
 });
 
 const categories = [
-  { icon: Music, label: "Music", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
-  { icon: Film, label: "Shows", color: "text-primary", bg: "bg-primary/10" },
-  { icon: Mic2, label: "Podcasts", color: "text-[oklch(0.82_0.15_215)]", bg: "bg-[oklch(0.82_0.15_215_/_0.1)]" },
-  { icon: Gamepad2, label: "Gaming", color: "text-[oklch(0.65_0.22_300)]", bg: "bg-[oklch(0.65_0.22_300_/_0.1)]" },
-  { icon: Sparkles, label: "Lifestyle", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
-  { icon: Flame, label: "Trending", color: "text-primary", bg: "bg-primary/10" },
+  { icon: Music, label: "Music", slug: "music", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
+  { icon: Film, label: "Shows", slug: "shows", color: "text-primary", bg: "bg-primary/10" },
+  { icon: Mic2, label: "Podcasts", slug: "podcasts", color: "text-[oklch(0.82_0.15_215)]", bg: "bg-[oklch(0.82_0.15_215_/_0.1)]" },
+  { icon: Gamepad2, label: "Gaming", slug: "gaming", color: "text-[oklch(0.65_0.22_300)]", bg: "bg-[oklch(0.65_0.22_300_/_0.1)]" },
+  { icon: Sparkles, label: "Lifestyle", slug: "lifestyle", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
+  { icon: Flame, label: "Trending", slug: "trending", color: "text-primary", bg: "bg-primary/10" },
 ];
 
 const filters = ["All", "Music", "Shows", "Live", "Podcasts", "Gaming", "Lifestyle", "New"];
@@ -95,12 +95,17 @@ function Explore() {
           <h2 className="text-sm lg:text-base font-semibold mb-3 flex items-center gap-2"><TrendingUp className="size-4 text-primary" /> Trending categories</h2>
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
             {categories.map((c) => (
-              <button key={c.label} className={`group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift`}>
+              <Link
+                to="/category/$slug"
+                params={{ slug: c.slug }}
+                key={c.label}
+                className={`group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift`}
+              >
                 <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
                   <c.icon className="size-5 lg:size-6" />
                 </div>
                 <span className="text-xs lg:text-sm font-medium">{c.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
