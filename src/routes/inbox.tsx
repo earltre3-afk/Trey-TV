@@ -25,36 +25,6 @@ export const Route = createFileRoute("/inbox")({
 
 type Tab = "all" | "dms" | "requests" | "activity";
 
-type Conversation = {
-  id: string;
-  who: typeof creators[number];
-  preview: string;
-  time: string;
-  unread: number;
-  pinned?: boolean;
-  online?: boolean;
-  typing?: boolean;
-  reaction?: string;
-};
-
-type ChatMsg = {
-  id: string;
-  from: "me" | "them";
-  text?: string;
-  attachment?: { kind: "image" | "audio"; src?: string; len?: string };
-  time: string;
-  status?: "sent" | "delivered" | "read";
-  reactions?: string[];
-};
-
-const conversations: Conversation[] = [
-  { id: "c1", who: creators[0], preview: "Yo that BTS clip is fire 🔥 you down to swap reels?", time: "2m", unread: 3, pinned: true, online: true, typing: true },
-  { id: "c2", who: creators[1], preview: "Just dropped a new beat — wanna preview?", time: "12m", unread: 1, online: true, reaction: "🔥" },
-  { id: "c3", who: creators[2], preview: "voice message · 0:42", time: "1h", unread: 0 },
-  { id: "c4", who: creators[3], preview: "Booking confirmed for the Friday set 🎧", time: "3h", unread: 0 },
-  { id: "c5", who: creators[4], preview: "Sent you the moodboard ✨", time: "1d", unread: 0, online: false },
-];
-
 const activity = [
   { icon: Heart, color: "text-[oklch(0.65_0.24_15)]", who: creators[0], text: "liked your latest post", time: "2m" },
   { icon: UserPlus, color: "text-primary", who: creators[1], text: "started following you", time: "12m" },
@@ -68,44 +38,65 @@ const requests = creators.slice(2, 5).map((c, i) => ({
   msg: ["Hey, big fan — would love to collab on a track ✨", "Saw your last drop — interested in a feature?", "Is your management open right now?"][i],
 }));
 
-const seedThread: Record<string, ChatMsg[]> = {
-  c1: [
-    { id: "m1", from: "them", text: "Yooo just watched the BTS — that lighting setup is unreal 🔥", time: "10:24" },
-    { id: "m2", from: "me", text: "Appreciate it 🙏 took 4 hours to dial the rig", time: "10:25", status: "read" },
-    { id: "m3", from: "them", text: "Reels swap? I'll plug your show on my channel tomorrow", time: "10:26" },
-    { id: "m4", from: "them", attachment: { kind: "audio", len: "0:18" }, time: "10:27" },
-    { id: "m5", from: "me", text: "Bet — send the cut over and I'll mix it into Late Night S2 promo", time: "10:28", status: "delivered", reactions: ["🔥"] },
-  ],
-};
+function fmtTime(ts: number) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+function fmtAgo(ts: number) {
+  if (!ts) return "";
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
 
 function Inbox() {
+  const { to } = Route.useSearch();
+  const { threads, messagesOf, unreadOf, totalUnread, send, markRead, ensureFromHandle } = useMessages();
   const [tab, setTab] = useState<Tab>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [thread, setThread] = useState<ChatMsg[]>(seedThread.c1);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Open a thread when navigated with ?to=<handle>
+  useEffect(() => {
+    if (!to) return;
+    const id = ensureFromHandle(to);
+    if (id) setOpenId(id);
+  }, [to, ensureFromHandle]);
+
   const filtered = useMemo(
-    () => conversations.filter((c) => c.who.name.toLowerCase().includes(query.toLowerCase())),
-    [query]
+    () => threads
+      .filter((t) => t.peer.name.toLowerCase().includes(query.toLowerCase()) || t.peer.handle.toLowerCase().includes(query.toLowerCase()))
+      .sort((a, b) => {
+        if (!!b.pinned !== !!a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        const am = messagesOf(a.id); const bm = messagesOf(b.id);
+        return (bm[bm.length - 1]?.ts ?? 0) - (am[am.length - 1]?.ts ?? 0);
+      }),
+    [threads, query, messagesOf]
   );
-  const open = conversations.find((c) => c.id === openId);
+  const open = threads.find((t) => t.id === openId) ?? null;
+  const thread = openId ? messagesOf(openId) : [];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [thread, openId]);
+  }, [thread.length, openId]);
 
-  const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
+  // Mark thread read when opened or new messages arrive while open
+  useEffect(() => {
+    if (openId) markRead(openId);
+  }, [openId, thread.length, markRead]);
 
   const send = () => {
-    if (!draft.trim()) return;
-    setThread((t) => [...t, { id: crypto.randomUUID(), from: "me", text: draft, time: "now", status: "sent" }]);
+    if (!openId || !draft.trim()) return;
+    handleSend(openId, draft);
     setDraft("");
-    setTimeout(() => {
-      setThread((t) => t.map((m) => (m.from === "me" ? { ...m, status: "read" } : m)));
-    }, 900);
   };
+  const handleSend = send; // alias to avoid shadowing the imported send below
 
   return (
     <AppShell wide>
