@@ -14,6 +14,7 @@ import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
 import { FeedProvider } from "@/lib/feed-store";
 import { CommentsProvider } from "@/lib/comments-store";
+import { FollowProvider } from "@/lib/follow-store";
 
 import appCss from "../styles.css?url";
 
@@ -129,9 +130,11 @@ function RootComponent() {
           <SubmissionsProvider>
             <FeedProvider>
               <CommentsProvider>
-                <Outlet />
-                <TreyIWidget />
-                <Toaster />
+                <FollowProvider>
+                  <Outlet />
+                  <TreyIWidget />
+                  <Toaster />
+                </FollowProvider>
               </CommentsProvider>
             </FeedProvider>
           </SubmissionsProvider>

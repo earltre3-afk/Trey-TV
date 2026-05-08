@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Bell, MoreHorizontal, MapPin, Link2, Share2, Copy, Grid3x3, Play, Pencil, Gem, UserPlus, MessageCircle, Crown, TrendingUp } from "lucide-react";
+import { ArrowLeft, Bell, MoreHorizontal, MapPin, Link2, Share2, Copy, Grid3x3, Play, Pencil, Gem, UserPlus, MessageCircle, Crown, TrendingUp, Star } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser, prescribed, creators } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
+import { useFollow } from "@/lib/follow-store";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfile,
@@ -18,15 +19,69 @@ export const Route = createFileRoute("/u/$uid")({
   }),
 });
 
+function TopThreeCard() {
+  const { topThree } = useFollow();
+  const slots = [0, 1, 2];
+  return (
+    <section className="rounded-3xl glass neon-border p-5 relative overflow-hidden">
+      <div aria-hidden className="absolute -top-16 -right-16 size-40 rounded-full bg-primary/20 blur-3xl" />
+      <div className="relative flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold flex items-center gap-2">
+          <Star className="size-4 text-primary fill-primary/30" /> Top 3
+        </h3>
+        <span className="text-[10px] tracking-[0.25em] text-muted-foreground">MOST WATCHED</span>
+      </div>
+      <div className="relative grid grid-cols-3 gap-3">
+        {slots.map((i) => {
+          const f = topThree[i];
+          if (!f) {
+            return (
+              <div key={i} className="rounded-2xl border border-dashed border-white/10 aspect-square flex flex-col items-center justify-center text-muted-foreground">
+                <span className="text-xs font-bold">#{i + 1}</span>
+                <span className="text-[10px] mt-1">Empty</span>
+              </div>
+            );
+          }
+          return (
+            <Link
+              key={f.handle}
+              to="/channel/$handle"
+              params={{ handle: f.handle }}
+              className="group rounded-2xl glass border border-white/10 p-3 flex flex-col items-center gap-2 hover-lift relative"
+            >
+              <span className="absolute top-1.5 left-1.5 size-5 grid place-items-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold glow-gold">
+                {i + 1}
+              </span>
+              <div className="size-14 rounded-full conic-ring">
+                <img src={f.avatar} alt="" className="size-full rounded-full object-cover" />
+              </div>
+              <div className="text-xs font-semibold truncate w-full text-center">{f.name}</div>
+              <div className="text-[10px] text-muted-foreground truncate w-full text-center">@{f.handle}</div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 const tabs = ["Posts", "About", "Prescriptions", "Collections", "Likes"];
 
 function PublicProfile() {
   const { uid } = Route.useParams();
   const [tab, setTab] = useState("Posts");
   const { user, isGuest } = useAuth();
+  const follow = useFollow();
 
   const profile = user ?? currentUser;
   const isOwnProfile = !isGuest && (user?.uid ?? currentUser.uid) === uid;
+  const followingThis = follow.isFollowing(profile.handle);
+  const onToggleFollow = () => {
+    const now = follow.toggle({
+      id: uid, name: profile.name, handle: profile.handle, avatar: profile.avatar as unknown as string,
+    });
+    toast.success(now ? `Added ${profile.name} to your friends` : `Removed ${profile.name}`);
+  };
 
   const StatItem = ({ k, v }: { k: string; v: string | number }) => (
     <div className="p-3 lg:p-4 text-center">
@@ -82,8 +137,15 @@ function PublicProfile() {
                   </Link>
                 ) : (
                   <>
-                    <button className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press">
-                      <UserPlus className="size-4" /> Follow
+                    <button
+                      onClick={onToggleFollow}
+                      className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold tilt-press ${
+                        followingThis
+                          ? "glass border border-white/15"
+                          : "bg-primary text-primary-foreground glow-gold"
+                      }`}
+                    >
+                      <UserPlus className="size-4" /> {followingThis ? "Friends" : "Follow"}
                     </button>
                     <button className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold glass border border-white/15 hover:bg-white/5">
                       <MessageCircle className="size-4" /> Message
@@ -122,8 +184,15 @@ function PublicProfile() {
                 <Pencil className="size-3.5" /> Edit Profile
               </Link>
             ) : (
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press">
-                <UserPlus className="size-3.5" /> Follow
+              <button
+                onClick={onToggleFollow}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold tilt-press ${
+                  followingThis
+                    ? "glass border border-white/15"
+                    : "bg-primary text-primary-foreground glow-gold"
+                }`}
+              >
+                <UserPlus className="size-3.5" /> {followingThis ? "Friends" : "Follow"}
               </button>
             )}
             {isGuest && (
@@ -150,6 +219,9 @@ function PublicProfile() {
               <h3 className="text-xs tracking-widest text-muted-foreground mb-2">ABOUT</h3>
               <p className="text-sm whitespace-pre-line leading-relaxed">{profile.bio}</p>
             </div>
+
+            {/* Top 3 — MySpace-style top friends */}
+            <TopThreeCard />
 
             {/* Tabs */}
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar border-b border-white/10">

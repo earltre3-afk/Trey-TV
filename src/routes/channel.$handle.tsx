@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useSubmissions, type Submission } from "@/lib/submissions-store";
 import { creators, posts, currentUser } from "@/lib/mock-data";
+import { useFollow } from "@/lib/follow-store";
 import {
   Crown, Play, UserPlus, UserCheck, Gift, Sparkles, Share2, Bell, Verified,
   ArrowLeft, Users, Eye, MessageSquare, Image as ImageIcon, Film, Tv, Calendar, Clock, ChevronRight,
@@ -27,6 +28,7 @@ function ChannelPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const store = useSubmissions();
+  const follow = useFollow();
 
   // Resolve creator (by handle from session, mock creators, or fallback)
   const creator = useMemo(() => {
@@ -64,9 +66,9 @@ function ChannelPage() {
   }, [publicEpisodes]);
 
   const [tab, setTab] = useState<"home" | "shows" | "episodes" | "live" | "about">("home");
-  const [following, setFollowing] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [notify, setNotify] = useState(true);
+  const following = follow.isFollowing(handle);
 
   const isOwnChannel = user?.handle === handle;
 
@@ -135,12 +137,17 @@ function ChannelPage() {
           ) : (
             <>
               <button
-                onClick={() => { setFollowing((f) => !f); toast(following ? "Unfollowed" : "Following"); }}
+                onClick={() => {
+                  const nowFollowing = follow.toggle({
+                    id: creator.uid, name: creator.name, handle: creator.handle, avatar: creator.avatar as unknown as string,
+                  });
+                  toast.success(nowFollowing ? `Added ${creator.name} to your friends` : "Unfollowed");
+                }}
                 className={`px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 tilt-press ${
                   following ? "glass border border-white/15" : "bg-primary text-primary-foreground glow-gold"
                 }`}
               >
-                {following ? <><UserCheck className="size-4" /> Following</> : <><UserPlus className="size-4" /> Follow</>}
+                {following ? <><UserCheck className="size-4" /> Friends</> : <><UserPlus className="size-4" /> Follow</>}
               </button>
               <button
                 onClick={() => { setSubscribed((s) => !s); toast(subscribed ? "Unsubscribed" : "Subscribed ✦"); }}
