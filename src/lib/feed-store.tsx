@@ -63,7 +63,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const addPost: Ctx["addPost"] = ({ text, audience = "Everyone", tags = [], media }) => {
     const id = (typeof crypto !== "undefined" && crypto.randomUUID?.()) || `p-${Date.now()}`;
     const post: UserPost = {
-      id, creator: currentUser, timeAgo: "now",
+      id, creator: meAsCreator, timeAgo: "now",
       text, media, duration: undefined,
       likes: 0, comments: 0, reshares: 0, saves: 0,
       audience, tags, createdAt: Date.now(),
