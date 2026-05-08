@@ -350,3 +350,27 @@
   40% { transform: scale(1.35); }
   100% { transform: scale(1); }
 }
+@keyframes dread-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.55; filter: blur(24px) hue-rotate(0deg); }
+  50% { transform: scale(1.18); opacity: 0.95; filter: blur(34px) hue-rotate(-25deg); }
+}
+@keyframes dread-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes dread-ring {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  70% { opacity: 0.15; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+@keyframes dread-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.6; }
+  33% { transform: translate(6px, -8px) rotate(120deg); opacity: 0.85; }
+  66% { transform: translate(-7px, 5px) rotate(240deg); opacity: 0.7; }
+}
+@keyframes dread-flicker {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px oklch(0.82 0.16 85 / 0.9)); }
+  42% { opacity: 0.78; filter: drop-shadow(0 0 14px oklch(0.7 0.25 340 / 0.95)); }
+  47% { opacity: 1; }
+  78% { opacity: 0.85; filter: drop-shadow(0 0 12px oklch(0.65 0.22 300 / 0.9)); }
+}
