@@ -11,6 +11,7 @@ import {
   CheckCircle2, Circle, Film, Clock, Tag, Users, ShieldCheck, DollarSign, Calendar, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/creator-studio/submit")({
   validateSearch: (s: Record<string, unknown>) => ({ id: (s.id as string) || undefined }),
