@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { useSubmissions, type Submission } from "@/lib/submissions-store";
 import { creators, posts, currentUser } from "@/lib/mock-data";
 import { useFollow } from "@/lib/follow-store";
+import { useGoBack } from "@/hooks/use-go-back";
 import {
   Crown, Play, UserPlus, UserCheck, Gift, Sparkles, Share2, Bell, Verified,
   ArrowLeft, Users, Eye, MessageSquare, Image as ImageIcon, Film, Tv, Calendar, Clock, ChevronRight,
@@ -29,6 +30,7 @@ function ChannelPage() {
   const navigate = useNavigate();
   const store = useSubmissions();
   const follow = useFollow();
+  const goBack = useGoBack("/explore");
 
   // Resolve creator (by handle from session, mock creators, or fallback)
   const creator = useMemo(() => {
@@ -88,7 +90,7 @@ function ChannelPage() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,oklch(0.7_0.25_340_/_0.25),transparent_60%),radial-gradient(circle_at_80%_70%,oklch(0.65_0.22_300_/_0.25),transparent_60%)]" />
 
             <button
-              onClick={() => navigate({ to: ".." as any })}
+              onClick={goBack}
               className="absolute top-3 left-3 size-9 grid place-items-center rounded-full glass border border-white/10"
               aria-label="Back"
             ><ArrowLeft className="size-4" /></button>

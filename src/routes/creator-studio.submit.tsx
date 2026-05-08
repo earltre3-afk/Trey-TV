@@ -11,6 +11,7 @@ import {
   CheckCircle2, Circle, Film, Clock, Tag, Users, ShieldCheck, DollarSign, Calendar, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/creator-studio/submit")({
   validateSearch: (s: Record<string, unknown>) => ({ id: (s.id as string) || undefined }),
@@ -78,6 +79,7 @@ function LockedScreen() {
 function Form({ draft }: { draft: Submission }) {
   const navigate = useNavigate();
   const store = useSubmissions();
+  const goBack = useGoBack("/creator-studio/edit");
   const [d, setD] = useState<Submission>(draft);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [seriesMode, setSeriesMode] = useState<"existing" | "new">("existing");
@@ -121,7 +123,7 @@ function Form({ draft }: { draft: Submission }) {
       {/* Header */}
       <header className="sticky top-0 z-30 px-3 md:px-5 pt-3 pb-3 backdrop-blur-xl bg-background/70 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="size-10 grid place-items-center rounded-xl glass tilt-press">
+          <button onClick={goBack} className="size-10 grid place-items-center rounded-xl glass tilt-press">
             <ArrowLeft className="size-5" />
           </button>
           <div className="flex-1 min-w-0">

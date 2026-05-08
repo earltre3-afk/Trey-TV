@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Gem, Check, Crown, Sparkles, Zap, Star } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { AppShell } from "@/components/layout/AppShell";
 import { toast } from "sonner";
 
@@ -27,12 +28,13 @@ const tiers = [
 ];
 
 function Premium() {
+  const goBack = useGoBack("/");
   return (
     <AppShell>
       <div className="space-y-6 -mt-2">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" /> Back
-        </Link>
+        </button>
 
         <div className="relative overflow-hidden rounded-3xl border border-[oklch(0.65_0.22_300_/_0.45)] p-6 lg:p-10 bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple">
           <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.25)] blur-3xl" />

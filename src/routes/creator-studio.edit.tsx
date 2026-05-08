@@ -12,6 +12,7 @@ import { posts } from "@/lib/mock-data";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/creator-studio/edit")({
   component: CreatorStudioEdit,
@@ -104,6 +105,7 @@ function CreatorLockedScreen() {
 function Studio() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const goBack = useGoBack("/creator-hub");
 
   const [projectName, setProjectName] = useState("Untitled Episode");
   const [showProjects, setShowProjects] = useState(false);
@@ -172,7 +174,7 @@ function Studio() {
       <header className="sticky top-0 z-30 px-3 md:px-5 pt-3 pb-2 backdrop-blur-xl bg-background/60 border-b border-white/5">
         <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
           <button
-            onClick={() => navigate({ to: "/creator-hub" })}
+            onClick={goBack}
             className="size-10 shrink-0 grid place-items-center rounded-xl glass tilt-press hover:bg-white/5"
             aria-label="Back"
           >

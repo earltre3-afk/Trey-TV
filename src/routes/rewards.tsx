@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
 import { creators } from "@/lib/mock-data";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/rewards")({
   component: Rewards,
@@ -38,6 +39,7 @@ const perks = [
 
 function Rewards() {
   const { user } = useAuth();
+  const goBack = useGoBack("/");
   const points = user?.rewards?.points ?? 12480;
   const tier = user?.rewards?.tier ?? "GOLD";
   const uid = user?.uid ?? "0000000000000000";
@@ -46,7 +48,7 @@ function Rewards() {
     <AppShell wide>
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <Link to="/" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"><ArrowLeft className="size-4" /></Link>
+          <button onClick={goBack} className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"><ArrowLeft className="size-4" /></button>
           <div className="text-center">
             <div className="text-[10px] tracking-[0.3em] text-primary">REWARDS WALLET</div>
             <h1 className="text-lg font-bold">Your Trey TV Rewards</h1>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Bookmark, Plus, Folder, Lock, Play } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { AppShell } from "@/components/layout/AppShell";
 import { prescribed } from "@/lib/mock-data";
 import { toast } from "sonner";
@@ -17,13 +18,14 @@ const collections = [
 ];
 
 function Collections() {
+  const goBack = useGoBack("/");
   return (
     <AppShell>
       <div className="space-y-6 -mt-2">
         <div className="flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" /> Back
-          </Link>
+          </button>
           <button onClick={() => toast.success("New collection")} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm border border-primary/40 text-primary glow-gold tilt-press">
             <Plus className="size-4" /> New
           </button>
