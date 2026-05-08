@@ -19,15 +19,16 @@ export const Route = createFileRoute("/u/$uid")({
   }),
 });
 
-function TopThreeCard() {
+function TopThreeCard({ isOwner = false }: { isOwner?: boolean }) {
   const { topThree } = useFollow();
   const slots = [0, 1, 2];
   return (
-    <section className="rounded-3xl glass neon-border p-5 relative overflow-hidden">
+    <section className={`rounded-3xl p-5 relative overflow-hidden ${isOwner ? "owner-neon owner-glass" : "glass neon-border"}`}>
       <div aria-hidden className="absolute -top-16 -right-16 size-40 rounded-full bg-primary/20 blur-3xl" />
       <div className="relative flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold flex items-center gap-2">
           <Star className="size-4 text-primary fill-primary/30" /> Top 3
+          {isOwner && <span className="text-[9px] tracking-[0.25em] px-1.5 py-0.5 rounded-full owner-ribbon text-black">OWNER PICKS</span>}
         </h3>
         <span className="text-[10px] tracking-[0.25em] text-muted-foreground">MOST WATCHED</span>
       </div>
