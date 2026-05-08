@@ -48,7 +48,6 @@ import { Route as CreatorStudioChannelRouteImport } from './routes/creator-studi
 import { Route as CreatorStudioAnalyticsRouteImport } from './routes/creator-studio.analytics'
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
-import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -254,11 +253,6 @@ const ChannelHandleRoute = ChannelHandleRouteImport.update({
   path: '/channel/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CategorySlugRoute = CategorySlugRouteImport.update({
-  id: '/category/$slug',
-  path: '/category/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminVideosRoute = AdminVideosRouteImport.update({
   id: '/videos',
   path: '/videos',
@@ -324,7 +318,6 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
-  '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
@@ -372,7 +365,6 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
-  '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
@@ -422,7 +414,6 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/videos': typeof AdminVideosRoute
-  '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
   '/creator-studio/analytics': typeof CreatorStudioAnalyticsRoute
@@ -473,7 +464,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
-    | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
@@ -521,7 +511,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
-    | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
@@ -570,7 +559,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/users'
     | '/admin/videos'
-    | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
     | '/creator-studio/analytics'
@@ -614,7 +602,6 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
-  CategorySlugRoute: typeof CategorySlugRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
@@ -895,13 +882,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChannelHandleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/category/$slug': {
-      id: '/category/$slug'
-      path: '/category/$slug'
-      fullPath: '/category/$slug'
-      preLoaderRoute: typeof CategorySlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin/videos': {
       id: '/admin/videos'
       path: '/videos'
@@ -1066,7 +1046,6 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
-  CategorySlugRoute: CategorySlugRoute,
   ChannelHandleRoute: ChannelHandleRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
@@ -1074,3 +1053,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
