@@ -109,7 +109,7 @@ function Inbox() {
               <div>
                 <div className="text-[10px] tracking-[0.3em] text-primary flex items-center gap-2"><InboxIcon className="size-3.5" /> INBOX</div>
                 <h1 className="text-2xl font-bold mt-0.5"><span className="text-gradient-gold">Connect</span></h1>
-                <div className="text-[11px] text-muted-foreground">{totalUnread} unread · {conversations.filter((c) => c.online).length} online now</div>
+                <div className="text-[11px] text-muted-foreground">{totalUnread} unread · {threads.filter((t) => t.peer.online).length} online now</div>
               </div>
               <button onClick={() => toast("New chat")} className="size-10 grid place-items-center rounded-full bg-primary text-primary-foreground glow-gold tilt-press">
                 <Plus className="size-5" />
@@ -161,7 +161,14 @@ function Inbox() {
               <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-2 px-1">ACTIVE NOW</div>
               <div className="flex gap-3 overflow-x-auto no-scrollbar">
                 {creators.map((c) => (
-                  <button key={c.id} onClick={() => setOpenId(conversations.find((x) => x.who.id === c.id)?.id ?? "c1")} className="shrink-0 flex flex-col items-center gap-1 tilt-press">
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      const id = ensureFromHandle(c.handle);
+                      if (id) setOpenId(id);
+                    }}
+                    className="shrink-0 flex flex-col items-center gap-1 tilt-press"
+                  >
                     <div className="relative size-12 rounded-full conic-ring">
                       <img src={c.avatar} className="size-12 rounded-full object-cover" alt="" />
                       <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />
@@ -177,37 +184,41 @@ function Inbox() {
           <div className="flex-1 overflow-y-auto no-scrollbar">
             {(tab === "all" || tab === "dms") && (
               <ul className="p-2 space-y-1">
-                {filtered.map((c, i) => {
-                  const active = openId === c.id;
+                {filtered.map((t, i) => {
+                  const active = openId === t.id;
+                  const msgs = messagesOf(t.id);
+                  const last = msgs[msgs.length - 1];
+                  const unread = unreadOf(t.id);
+                  const preview = last
+                    ? `${last.from === "me" ? "You: " : ""}${last.text}`
+                    : "Say hi 👋";
                   return (
-                    <li key={c.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
+                    <li key={t.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
                       <button
-                        onClick={() => setOpenId(c.id)}
+                        onClick={() => setOpenId(t.id)}
                         className={`w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition ${
                           active ? "bg-white/8 ring-1 ring-white/15" : "hover:bg-white/5"
                         }`}
                       >
                         <div className="relative size-12 rounded-full conic-ring shrink-0">
-                          <img src={c.who.avatar} className="size-12 rounded-full object-cover" alt="" />
-                          {c.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                          <img src={t.peer.avatar} className="size-12 rounded-full object-cover" alt="" />
+                          {t.peer.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-sm font-semibold truncate flex items-center gap-1">
-                              {c.who.name}
-                              <VerifiedBadge kind={c.who.verified} className="!size-3.5" />
-                              {c.pinned && <Pin className="size-3 text-primary" />}
+                              {t.peer.name}
+                              <VerifiedBadge kind={t.peer.verified} className="!size-3.5" />
+                              {t.pinned && <Pin className="size-3 text-primary" />}
                             </div>
-                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{c.time}</span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{last ? fmtAgo(last.ts) : ""}</span>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <p className={`text-xs truncate ${c.unread ? "text-foreground" : "text-muted-foreground"} ${c.typing ? "text-[oklch(0.82_0.15_215)] italic" : ""}`}>
-                              {c.typing ? "typing…" : c.preview}
+                            <p className={`text-xs truncate ${unread ? "text-foreground" : "text-muted-foreground"}`}>
+                              {preview}
                             </p>
-                            {c.unread ? (
-                              <span className="size-5 grid place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground glow-gold">{c.unread}</span>
-                            ) : c.reaction ? (
-                              <span className="text-xs">{c.reaction}</span>
+                            {unread ? (
+                              <span className="size-5 grid place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground glow-gold">{unread}</span>
                             ) : null}
                           </div>
                         </div>
