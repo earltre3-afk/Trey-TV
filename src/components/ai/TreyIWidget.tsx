@@ -144,10 +144,21 @@ export function TreyIWidget() {
           dragging ? "scale-110 cursor-grabbing shadow-[0_24px_60px_-10px_oklch(0.7_0.25_340_/_0.6)]" : "hover:scale-110 active:scale-95 cursor-grab"
         } ${open ? "ring-2 ring-primary/60 shadow-[0_0_30px_oklch(0.82_0.16_85_/_0.6)]" : ""}`}
       >
+        {/* Permeating dread — outer ominous halo */}
+        <span aria-hidden className="pointer-events-none absolute -inset-10 rounded-full bg-[radial-gradient(circle,oklch(0.25_0.15_300_/_0.55),oklch(0.1_0.08_320_/_0.35)_45%,transparent_72%)] blur-2xl animate-dread-breathe" />
+        {/* Slow rotating shadow vortex */}
+        <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-full bg-[conic-gradient(from_0deg,transparent,oklch(0.18_0.12_320_/_0.7),transparent_40%,oklch(0.22_0.18_280_/_0.6),transparent_75%)] blur-xl opacity-80 animate-dread-spin" />
+        {/* Pulsing dread rings */}
+        <span aria-hidden className="pointer-events-none absolute -inset-2 rounded-full ring-1 ring-[oklch(0.7_0.25_340_/_0.45)] animate-dread-ring" />
+        <span aria-hidden className="pointer-events-none absolute -inset-4 rounded-full ring-1 ring-[oklch(0.65_0.22_300_/_0.35)] animate-dread-ring [animation-delay:1.2s]" />
+        <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-full ring-1 ring-[oklch(0.55_0.2_320_/_0.25)] animate-dread-ring [animation-delay:2.4s]" />
+        {/* Drifting wisps */}
+        <span aria-hidden className="pointer-events-none absolute -inset-3 rounded-full bg-[radial-gradient(ellipse_at_30%_20%,oklch(0.7_0.25_340_/_0.4),transparent_60%),radial-gradient(ellipse_at_70%_80%,oklch(0.55_0.22_280_/_0.4),transparent_60%)] blur-md animate-dread-drift mix-blend-screen" />
+
         <span aria-hidden className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340),oklch(0.65_0.22_300),oklch(0.82_0.15_215),oklch(0.82_0.16_85))] animate-conic-spin opacity-90 blur-[1px]" />
         <span aria-hidden className="absolute inset-0.5 rounded-full bg-background" />
         <span aria-hidden className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-glow-pulse" />
-        <Sparkles className="relative size-6 text-primary drop-shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
+        <Sparkles className="relative size-6 text-primary drop-shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)] animate-dread-flicker" />
         <span className="absolute -top-1 -right-1 size-3 rounded-full bg-[oklch(0.7_0.25_340)] ring-2 ring-background animate-glow-pulse" />
         {dragging && (
           <span className="absolute -bottom-1 -left-1 size-5 grid place-items-center rounded-full bg-background/90 ring-1 ring-white/20">
