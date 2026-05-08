@@ -22,6 +22,7 @@ const FILTERS = ["All", "Reactions", "Saves", "Shares"] as const;
 function Activity() {
   const { activity, reactions, saves, clear } = useActivity();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const goBack = useGoBack("/");
 
   const reactionCount = Object.values(reactions).filter(Boolean).length;
   const saveCount = Object.values(saves).filter(Boolean).length;
@@ -38,7 +39,7 @@ function Activity() {
     <AppShell wide>
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <Link to="/" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"><ArrowLeft className="size-4" /></Link>
+          <button onClick={goBack} className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"><ArrowLeft className="size-4" /></button>
           <div className="text-center">
             <div className="text-[10px] tracking-[0.3em] text-primary">YOUR JOURNEY</div>
             <h1 className="text-lg font-bold">Activity</h1>
