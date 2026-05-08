@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { moods, prescribed } from "@/lib/mock-data";
 import orb from "@/assets/prescribe-orb.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { PrescribeModal } from "@/components/prescribe/PrescribeModal";
 
 export const Route = createFileRoute("/prescribe-me")({
   component: PrescribeMe,
@@ -48,6 +49,7 @@ function FilterCard({ icon: Icon, title, sub, kind }: { icon: typeof Film; title
 
 function PrescribeMe() {
   const [active, setActive] = useState("all");
+  const [quizOpen, setQuizOpen] = useState(false);
 
   return (
     <AppShell activeTab="prescribe">
@@ -108,7 +110,7 @@ function PrescribeMe() {
             <div className="text-sm font-bold tracking-wide">AI PRESCRIBE ME</div>
             <div className="text-xs text-muted-foreground">Let Trey-I analyze your vibe and prescribe the perfect content.</div>
           </div>
-          <button onClick={() => toast.success(`Trey-I prescribed picks for "${moods.find(m=>m.id===active)?.label}"`)} className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
+          <button onClick={() => setQuizOpen(true)} className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
             Get My Prescription <ChevronRight className="size-3" />
           </button>
         </div>
@@ -168,6 +170,7 @@ function PrescribeMe() {
           </div>
         </section>
       </div>
+      <PrescribeModal open={quizOpen} onClose={() => setQuizOpen(false)} />
     </AppShell>
   );
 }
