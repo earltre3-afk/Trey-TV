@@ -1,9 +1,18 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { currentUser } from "@/lib/mock-data";
 
+const meAsCreator = {
+  id: "me",
+  name: currentUser.name,
+  handle: currentUser.handle,
+  avatar: currentUser.avatar,
+  ring: "gold" as const,
+  verified: currentUser.verified,
+} as const;
+
 export type UserPost = {
   id: string;
-  creator: typeof currentUser;
+  creator: typeof meAsCreator;
   timeAgo: string;
   text: string;
   media?: string;
