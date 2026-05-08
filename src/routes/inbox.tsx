@@ -282,12 +282,12 @@ function Inbox() {
                   <ArrowLeft className="size-4" />
                 </button>
                 <div className="relative size-11 rounded-full conic-ring shrink-0">
-                  <img src={open.who.avatar} className="size-11 rounded-full object-cover" alt="" />
-                  {open.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                  <img src={open.peer.avatar} className="size-11 rounded-full object-cover" alt="" />
+                  {open.peer.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold flex items-center gap-1">{open.who.name} <VerifiedBadge kind={open.who.verified} className="!size-3.5" /></div>
-                  <div className="text-[11px] text-muted-foreground">@{open.who.handle} · {open.online ? "Active now" : "Last seen 3h ago"}</div>
+                  <div className="text-sm font-semibold flex items-center gap-1">{open.peer.name} <VerifiedBadge kind={open.peer.verified} className="!size-3.5" /></div>
+                  <div className="text-[11px] text-muted-foreground">@{open.peer.handle} · {open.peer.online ? "Active now" : "Last seen recently"}</div>
                 </div>
                 <div className="flex items-center gap-1">
                   <IconBtn icon={Phone} onClick={() => toast("Calling…")} />
@@ -306,7 +306,7 @@ function Inbox() {
                   return (
                     <div key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} animate-rise`}>
                       {!mine && !prevSameSide && (
-                        <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
+                        <img src={open.peer.avatar} className="size-7 rounded-full object-cover" alt="" />
                       )}
                       {!mine && prevSameSide && <div className="w-7 shrink-0" />}
                       <div className={`max-w-[70%] relative ${mine ? "items-end" : "items-start"} flex flex-col`}>
@@ -321,40 +321,19 @@ function Inbox() {
                             {m.text}
                           </div>
                         )}
-                        {m.attachment?.kind === "audio" && (
-                          <div className={`px-3 py-2 rounded-2xl flex items-center gap-3 ${mine ? "bg-primary/15 border border-primary/30" : "glass border border-white/10"}`}>
-                            <button className="size-8 rounded-full grid place-items-center bg-primary text-primary-foreground"><Mic className="size-4" /></button>
-                            <div className="flex items-center gap-px h-6 w-32">
-                              {Array.from({ length: 28 }).map((_, j) => (
-                                <span key={j} className="flex-1 bg-foreground/40 rounded-full" style={{ height: `${20 + Math.sin(j * 0.7) * 30 + Math.random() * 30}%` }} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] tabular-nums text-muted-foreground">{m.attachment.len}</span>
-                          </div>
-                        )}
                         {m.reactions && (
                           <div className={`absolute -bottom-2 ${mine ? "left-1" : "right-1"} px-1.5 py-0.5 rounded-full glass-strong border border-white/10 text-xs`}>
                             {m.reactions.join(" ")}
                           </div>
                         )}
                         <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "justify-end" : ""}`}>
-                          <span>{m.time}</span>
+                          <span>{fmtTime(m.ts)}</span>
                           {mine && (m.status === "read" ? <CheckCheck className="size-3 text-[oklch(0.82_0.15_215)]" /> : m.status === "delivered" ? <CheckCheck className="size-3" /> : <Check className="size-3" />)}
                         </div>
                       </div>
                     </div>
                   );
                 })}
-                {open.typing && (
-                  <div className="flex items-end gap-2 animate-rise">
-                    <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
-                    <div className="px-3.5 py-2 rounded-2xl glass border border-white/10 flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce" />
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:120ms]" />
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:240ms]" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* AI suggestions */}
@@ -380,12 +359,12 @@ function Inbox() {
                   <input
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && send()}
-                    placeholder={`Message ${open.who.name.split(" ")[0]}…`}
+                    onKeyDown={(e) => e.key === "Enter" && onSend()}
+                    placeholder={`Message ${open.peer.name.split(" ")[0]}…`}
                     className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground py-1"
                   />
                   {draft.trim() ? (
-                    <button onClick={send} className="size-9 grid place-items-center rounded-xl bg-primary text-primary-foreground glow-gold tilt-press">
+                    <button onClick={onSend} className="size-9 grid place-items-center rounded-xl bg-primary text-primary-foreground glow-gold tilt-press">
                       <Send className="size-4" />
                     </button>
                   ) : (
