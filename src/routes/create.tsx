@@ -14,6 +14,7 @@ export const Route = createFileRoute("/create")({
 function Create() {
   const [text, setText] = useState("");
   const navigate = useNavigate();
+  const goBack = useGoBack("/");
 
   const handlePost = () => {
     if (!text.trim()) {
@@ -28,7 +29,7 @@ function Create() {
     <AppShell>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <button onClick={useGoBack("/")} className="size-9 grid place-items-center rounded-full glass">
+          <button onClick={goBack} className="size-9 grid place-items-center rounded-full glass">
             <ArrowLeft className="size-4" />
           </button>
           <button onClick={handlePost} className="px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold hover:bg-primary/10">
