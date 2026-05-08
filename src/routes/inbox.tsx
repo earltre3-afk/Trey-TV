@@ -55,7 +55,7 @@ function fmtAgo(ts: number) {
 
 function Inbox() {
   const { to } = Route.useSearch();
-  const { threads, messagesOf, unreadOf, totalUnread, send, markRead, ensureFromHandle } = useMessages();
+  const { threads, messagesOf, unreadOf, totalUnread, send: sendMessage, markRead, ensureFromHandle } = useMessages();
   const [tab, setTab] = useState<Tab>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -91,12 +91,11 @@ function Inbox() {
     if (openId) markRead(openId);
   }, [openId, thread.length, markRead]);
 
-  const send = () => {
+  const onSend = () => {
     if (!openId || !draft.trim()) return;
-    handleSend(openId, draft);
+    sendMessage(openId, draft);
     setDraft("");
   };
-  const handleSend = send; // alias to avoid shadowing the imported send below
 
   return (
     <AppShell wide>
