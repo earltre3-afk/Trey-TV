@@ -12,6 +12,7 @@ import { posts } from "@/lib/mock-data";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/creator-studio/edit")({
   component: CreatorStudioEdit,
