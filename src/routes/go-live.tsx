@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, Radio, Camera, Mic, Users, Eye, Sparkles, Settings } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/go-live")({
   component: GoLive,
@@ -11,12 +12,13 @@ export const Route = createFileRoute("/go-live")({
 
 function GoLive() {
   const [title, setTitle] = useState("Studio Sessions Vol. 5");
+  const goBack = useGoBack("/");
   return (
     <AppShell>
       <div className="space-y-5 -mt-2">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="size-4" /> Back
-        </Link>
+        </button>
 
         <div className="relative aspect-[9/16] sm:aspect-video rounded-3xl overflow-hidden border border-[oklch(0.7_0.25_340_/_0.5)] bg-[radial-gradient(ellipse_at_top,oklch(0.2_0.08_340_/_0.4),transparent_60%),radial-gradient(ellipse_at_bottom,oklch(0.18_0.06_300_/_0.5),transparent_60%)] glow-magenta">
           <div className="absolute inset-0 grid place-items-center">
