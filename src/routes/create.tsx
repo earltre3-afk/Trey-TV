@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Image as ImageIcon, Wand2, Globe, Video, Music, Radio } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { AppShell } from "@/components/layout/AppShell";
 import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
@@ -27,7 +28,7 @@ function Create() {
     <AppShell>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <button onClick={() => navigate({ to: "/" })} className="size-9 grid place-items-center rounded-full glass">
+          <button onClick={useGoBack("/")} className="size-9 grid place-items-center rounded-full glass">
             <ArrowLeft className="size-4" />
           </button>
           <button onClick={handlePost} className="px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold hover:bg-primary/10">
