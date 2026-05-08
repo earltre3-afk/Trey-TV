@@ -7,6 +7,8 @@ import { currentUser, prescribed, creators } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
+import { useFollow } from "@/lib/follow-store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfile,
@@ -24,9 +26,17 @@ function PublicProfile() {
   const { uid } = Route.useParams();
   const [tab, setTab] = useState("Posts");
   const { user, isGuest } = useAuth();
+  const follow = useFollow();
 
   const profile = user ?? currentUser;
   const isOwnProfile = !isGuest && (user?.uid ?? currentUser.uid) === uid;
+  const followingThis = follow.isFollowing(profile.handle);
+  const onToggleFollow = () => {
+    const now = follow.toggle({
+      id: uid, name: profile.name, handle: profile.handle, avatar: profile.avatar as unknown as string,
+    });
+    toast.success(now ? `Added ${profile.name} to your friends` : `Removed ${profile.name}`);
+  };
 
   const StatItem = ({ k, v }: { k: string; v: string | number }) => (
     <div className="p-3 lg:p-4 text-center">
@@ -82,8 +92,15 @@ function PublicProfile() {
                   </Link>
                 ) : (
                   <>
-                    <button className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press">
-                      <UserPlus className="size-4" /> Follow
+                    <button
+                      onClick={onToggleFollow}
+                      className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold tilt-press ${
+                        followingThis
+                          ? "glass border border-white/15"
+                          : "bg-primary text-primary-foreground glow-gold"
+                      }`}
+                    >
+                      <UserPlus className="size-4" /> {followingThis ? "Friends" : "Follow"}
                     </button>
                     <button className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold glass border border-white/15 hover:bg-white/5">
                       <MessageCircle className="size-4" /> Message
@@ -122,8 +139,15 @@ function PublicProfile() {
                 <Pencil className="size-3.5" /> Edit Profile
               </Link>
             ) : (
-              <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press">
-                <UserPlus className="size-3.5" /> Follow
+              <button
+                onClick={onToggleFollow}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold tilt-press ${
+                  followingThis
+                    ? "glass border border-white/15"
+                    : "bg-primary text-primary-foreground glow-gold"
+                }`}
+              >
+                <UserPlus className="size-3.5" /> {followingThis ? "Friends" : "Follow"}
               </button>
             )}
             {isGuest && (
