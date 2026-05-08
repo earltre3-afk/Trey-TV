@@ -1,8 +1,11 @@
-import { Image as ImageIcon, Wand2, Globe, ChevronDown, Plus } from "lucide-react";
+import { Image as ImageIcon, Wand2, Globe, ChevronDown, Plus, Lock, Users, X } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { currentUser } from "@/lib/mock-data";
+import { useFeed } from "@/lib/feed-store";
+import { useAuth } from "@/lib/auth";
 
 const tags = [
   { label: "Music", color: "cyan" },
@@ -19,36 +22,162 @@ const ringMap: Record<string, string> = {
   magenta: "border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)]",
 };
 
+const AUDIENCES = [
+  { id: "Everyone", label: "Everyone", icon: Globe },
+  { id: "Followers", label: "Followers", icon: Users },
+  { id: "Premium", label: "Premium", icon: Lock },
+] as const;
+
+const MAX = 500;
+
+const postSchema = z.object({
+  text: z.string().trim().min(1, "Write something first").max(MAX, `Keep it under ${MAX} characters`),
+});
+
 export function Composer() {
   const navigate = useNavigate();
+  const { addPost } = useFeed();
+  const { isGuest } = useAuth();
   const [selected, setSelected] = useState<string[]>([]);
+  const [text, setText] = useState("");
+  const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["id"]>("Everyone");
+  const [audOpen, setAudOpen] = useState(false);
+  const [media, setMedia] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const toggleTag = (t: string) =>
     setSelected((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
 
+  // auto-grow textarea
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = Math.min(el.scrollHeight, 280) + "px";
+  }, [text]);
+
+  const reset = () => {
+    setText(""); setMedia(null); setSelected([]); setFocused(false);
+  };
+
+  const handlePost = () => {
+    if (isGuest) {
+      toast("Sign up to post");
+      navigate({ to: "/onboarding" });
+      return;
+    }
+    const parsed = postSchema.safeParse({ text });
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Invalid post");
+      return;
+    }
+    addPost({ text: parsed.data.text, audience, tags: selected, media: media ?? undefined });
+    toast.success("Posted to your feed");
+    reset();
+  };
+
+  const onFile = (f: File | null) => {
+    if (!f) return;
+    if (!f.type.startsWith("image/")) { toast.error("Image files only"); return; }
+    if (f.size > 8 * 1024 * 1024) { toast.error("Image must be under 8MB"); return; }
+    const reader = new FileReader();
+    reader.onload = () => setMedia(typeof reader.result === "string" ? reader.result : null);
+    reader.readAsDataURL(f);
+  };
+
+  const remaining = MAX - text.length;
+  const aud = AUDIENCES.find((a) => a.id === audience)!;
+
   return (
     <div className="rounded-3xl p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift">
       <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_80%_-20%,oklch(0.7_0.25_340_/_0.4),transparent_60%)]" />
-      <button onClick={() => navigate({ to: "/create" })} className="relative flex items-center gap-3 w-full text-left">
+
+      <div className="relative flex items-start gap-3">
         <div className="relative size-11 rounded-full conic-ring shrink-0">
           <img src={currentUser.avatar} alt="" className="size-11 rounded-full object-cover" />
         </div>
-        <p className="text-muted-foreground text-sm flex-1">What's on your mind, {currentUser.name}?</p>
-      </button>
+        <div className="flex-1 min-w-0">
+          <textarea
+            ref={taRef}
+            value={text}
+            onChange={(e) => setText(e.target.value.slice(0, MAX))}
+            onFocus={() => setFocused(true)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                handlePost();
+              }
+            }}
+            placeholder={`What's on your mind, ${currentUser.name}?`}
+            rows={1}
+            maxLength={MAX}
+            className="w-full bg-transparent resize-none outline-none text-sm placeholder:text-muted-foreground leading-relaxed"
+            aria-label="Post composer"
+          />
+          {media && (
+            <div className="relative mt-2 rounded-xl overflow-hidden border border-white/10">
+              <img src={media} alt="" className="w-full max-h-64 object-cover" />
+              <button
+                onClick={() => setMedia(null)}
+                className="absolute top-2 right-2 size-7 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
+                aria-label="Remove image"
+              >
+                <X className="size-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="relative mt-3 flex items-center gap-2 flex-wrap">
-        <button onClick={() => navigate({ to: "/create" })} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => onFile(e.target.files?.[0] ?? null)}
+        />
+        <button onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
           <ImageIcon className="size-4" /> Image
         </button>
         <button onClick={() => toast("Trey-I tools coming soon")} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
           <Wand2 className="size-4 text-primary" /> Trey-I Tools
         </button>
-        <button onClick={() => toast("Audience: Everyone")} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
-          <Globe className="size-4" /> Everyone <ChevronDown className="size-3" />
-        </button>
-        <button onClick={() => navigate({ to: "/create" })} className="ml-auto px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold hover:bg-primary/10">
-          Post
-        </button>
+        <div className="relative">
+          <button onClick={() => setAudOpen((s) => !s)} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+            <aud.icon className="size-4" /> {aud.label} <ChevronDown className={`size-3 transition-transform ${audOpen ? "rotate-180" : ""}`} />
+          </button>
+          {audOpen && (
+            <div className="absolute left-0 top-full mt-2 w-44 rounded-xl glass-strong border border-white/10 shadow-2xl p-1 z-30 animate-scale-in">
+              {AUDIENCES.map((a) => (
+                <button
+                  key={a.id}
+                  onClick={() => { setAudience(a.id); setAudOpen(false); }}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/5 flex items-center gap-2 ${audience === a.id ? "text-primary font-semibold" : ""}`}
+                >
+                  <a.icon className="size-4" /> {a.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
+          {(focused || text.length > 0) && (
+            <span className={`text-[11px] tabular-nums ${remaining < 40 ? "text-[oklch(0.78_0.24_15)]" : "text-muted-foreground"}`}>
+              {remaining}
+            </span>
+          )}
+          <button
+            onClick={handlePost}
+            disabled={text.trim().length === 0}
+            className="px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:glow-none"
+          >
+            Post
+          </button>
+        </div>
       </div>
 
       <div className="relative mt-4">
@@ -66,7 +195,7 @@ export function Composer() {
               </button>
             );
           })}
-          <button onClick={() => toast("Add custom tag")} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5">
+          <button onClick={() => toast("Add custom tag from /create")} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5">
             <Plus className="size-3.5" />
           </button>
         </div>
