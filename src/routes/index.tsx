@@ -123,7 +123,7 @@ function Home() {
 
           <div className="space-y-5">
             {filtered.map((p, i) => (
-              <PostCard key={p.id} post={p as any} index={i} />)
+              <PostCard key={p.id} post={p as any} index={i} />
             ))}
           </div>
         </div>
