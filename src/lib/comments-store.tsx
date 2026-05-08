@@ -10,6 +10,7 @@ export type Comment = {
   likes: number;
   likedByMe: boolean;
   createdAt: number;
+  editedAt?: number;
 };
 
 type Ctx = {
@@ -17,6 +18,8 @@ type Ctx = {
   add: (postId: string, text: string, parentId?: string) => void;
   toggleLike: (id: string) => void;
   remove: (id: string) => void;
+  edit: (id: string, text: string) => void;
+  isMine: (c: Comment) => boolean;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -60,7 +63,12 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   const remove: Ctx["remove"] = (id) =>
     setItems((s) => s.filter((c) => c.id !== id && c.parentId !== id));
 
-  return <C.Provider value={{ byPost, add, toggleLike, remove }}>{children}</C.Provider>;
+  const edit: Ctx["edit"] = (id, text) =>
+    setItems((s) => s.map((c) => c.id === id ? { ...c, text: text.trim(), editedAt: Date.now() } : c));
+
+  const isMine: Ctx["isMine"] = (c) => c.author.handle === currentUser.handle;
+
+  return <C.Provider value={{ byPost, add, toggleLike, remove, edit, isMine }}>{children}</C.Provider>;
 }
 
 export function useComments() {

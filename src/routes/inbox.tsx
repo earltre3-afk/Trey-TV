@@ -1,17 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useEffect, useState } from "react";
+import { z } from "zod";
 import {
   Bell, Heart, MessageCircle, UserPlus, Sparkles, Search, Send, Plus,
   Phone, Video, MoreHorizontal, Smile, Image as ImageIcon, Mic, Check,
   CheckCheck, ArrowLeft, Pin, Filter, Inbox as InboxIcon, Star, Wand2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { creators, currentUser } from "@/lib/mock-data";
+import { creators } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { toast } from "sonner";
+import { useMessages } from "@/lib/messages-store";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
+  validateSearch: (s: Record<string, unknown>) => z.object({ to: z.string().optional() }).parse(s),
   head: () => ({
     meta: [
       { title: "Inbox — Trey TV" },
@@ -21,36 +24,6 @@ export const Route = createFileRoute("/inbox")({
 });
 
 type Tab = "all" | "dms" | "requests" | "activity";
-
-type Conversation = {
-  id: string;
-  who: typeof creators[number];
-  preview: string;
-  time: string;
-  unread: number;
-  pinned?: boolean;
-  online?: boolean;
-  typing?: boolean;
-  reaction?: string;
-};
-
-type ChatMsg = {
-  id: string;
-  from: "me" | "them";
-  text?: string;
-  attachment?: { kind: "image" | "audio"; src?: string; len?: string };
-  time: string;
-  status?: "sent" | "delivered" | "read";
-  reactions?: string[];
-};
-
-const conversations: Conversation[] = [
-  { id: "c1", who: creators[0], preview: "Yo that BTS clip is fire 🔥 you down to swap reels?", time: "2m", unread: 3, pinned: true, online: true, typing: true },
-  { id: "c2", who: creators[1], preview: "Just dropped a new beat — wanna preview?", time: "12m", unread: 1, online: true, reaction: "🔥" },
-  { id: "c3", who: creators[2], preview: "voice message · 0:42", time: "1h", unread: 0 },
-  { id: "c4", who: creators[3], preview: "Booking confirmed for the Friday set 🎧", time: "3h", unread: 0 },
-  { id: "c5", who: creators[4], preview: "Sent you the moodboard ✨", time: "1d", unread: 0, online: false },
-];
 
 const activity = [
   { icon: Heart, color: "text-[oklch(0.65_0.24_15)]", who: creators[0], text: "liked your latest post", time: "2m" },
@@ -65,43 +38,63 @@ const requests = creators.slice(2, 5).map((c, i) => ({
   msg: ["Hey, big fan — would love to collab on a track ✨", "Saw your last drop — interested in a feature?", "Is your management open right now?"][i],
 }));
 
-const seedThread: Record<string, ChatMsg[]> = {
-  c1: [
-    { id: "m1", from: "them", text: "Yooo just watched the BTS — that lighting setup is unreal 🔥", time: "10:24" },
-    { id: "m2", from: "me", text: "Appreciate it 🙏 took 4 hours to dial the rig", time: "10:25", status: "read" },
-    { id: "m3", from: "them", text: "Reels swap? I'll plug your show on my channel tomorrow", time: "10:26" },
-    { id: "m4", from: "them", attachment: { kind: "audio", len: "0:18" }, time: "10:27" },
-    { id: "m5", from: "me", text: "Bet — send the cut over and I'll mix it into Late Night S2 promo", time: "10:28", status: "delivered", reactions: ["🔥"] },
-  ],
-};
+function fmtTime(ts: number) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+function fmtAgo(ts: number) {
+  if (!ts) return "";
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
 
 function Inbox() {
+  const { to } = Route.useSearch();
+  const { threads, messagesOf, unreadOf, totalUnread, send: sendMessage, markRead, ensureFromHandle } = useMessages();
   const [tab, setTab] = useState<Tab>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [thread, setThread] = useState<ChatMsg[]>(seedThread.c1);
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Open a thread when navigated with ?to=<handle>
+  useEffect(() => {
+    if (!to) return;
+    const id = ensureFromHandle(to);
+    if (id) setOpenId(id);
+  }, [to, ensureFromHandle]);
+
   const filtered = useMemo(
-    () => conversations.filter((c) => c.who.name.toLowerCase().includes(query.toLowerCase())),
-    [query]
+    () => threads
+      .filter((t) => t.peer.name.toLowerCase().includes(query.toLowerCase()) || t.peer.handle.toLowerCase().includes(query.toLowerCase()))
+      .sort((a, b) => {
+        if (!!b.pinned !== !!a.pinned) return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0);
+        const am = messagesOf(a.id); const bm = messagesOf(b.id);
+        return (bm[bm.length - 1]?.ts ?? 0) - (am[am.length - 1]?.ts ?? 0);
+      }),
+    [threads, query, messagesOf]
   );
-  const open = conversations.find((c) => c.id === openId);
+  const open = threads.find((t) => t.id === openId) ?? null;
+  const thread = openId ? messagesOf(openId) : [];
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [thread, openId]);
+  }, [thread.length, openId]);
 
-  const totalUnread = conversations.reduce((s, c) => s + c.unread, 0);
+  // Mark thread read when opened or new messages arrive while open
+  useEffect(() => {
+    if (openId) markRead(openId);
+  }, [openId, thread.length, markRead]);
 
-  const send = () => {
-    if (!draft.trim()) return;
-    setThread((t) => [...t, { id: crypto.randomUUID(), from: "me", text: draft, time: "now", status: "sent" }]);
+  const onSend = () => {
+    if (!openId || !draft.trim()) return;
+    sendMessage(openId, draft);
     setDraft("");
-    setTimeout(() => {
-      setThread((t) => t.map((m) => (m.from === "me" ? { ...m, status: "read" } : m)));
-    }, 900);
   };
 
   return (
@@ -116,7 +109,7 @@ function Inbox() {
               <div>
                 <div className="text-[10px] tracking-[0.3em] text-primary flex items-center gap-2"><InboxIcon className="size-3.5" /> INBOX</div>
                 <h1 className="text-2xl font-bold mt-0.5"><span className="text-gradient-gold">Connect</span></h1>
-                <div className="text-[11px] text-muted-foreground">{totalUnread} unread · {conversations.filter((c) => c.online).length} online now</div>
+                <div className="text-[11px] text-muted-foreground">{totalUnread} unread · {threads.filter((t) => t.peer.online).length} online now</div>
               </div>
               <button onClick={() => toast("New chat")} className="size-10 grid place-items-center rounded-full bg-primary text-primary-foreground glow-gold tilt-press">
                 <Plus className="size-5" />
@@ -168,7 +161,14 @@ function Inbox() {
               <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-2 px-1">ACTIVE NOW</div>
               <div className="flex gap-3 overflow-x-auto no-scrollbar">
                 {creators.map((c) => (
-                  <button key={c.id} onClick={() => setOpenId(conversations.find((x) => x.who.id === c.id)?.id ?? "c1")} className="shrink-0 flex flex-col items-center gap-1 tilt-press">
+                  <button
+                    key={c.id}
+                    onClick={() => {
+                      const id = ensureFromHandle(c.handle);
+                      if (id) setOpenId(id);
+                    }}
+                    className="shrink-0 flex flex-col items-center gap-1 tilt-press"
+                  >
                     <div className="relative size-12 rounded-full conic-ring">
                       <img src={c.avatar} className="size-12 rounded-full object-cover" alt="" />
                       <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />
@@ -184,37 +184,41 @@ function Inbox() {
           <div className="flex-1 overflow-y-auto no-scrollbar">
             {(tab === "all" || tab === "dms") && (
               <ul className="p-2 space-y-1">
-                {filtered.map((c, i) => {
-                  const active = openId === c.id;
+                {filtered.map((t, i) => {
+                  const active = openId === t.id;
+                  const msgs = messagesOf(t.id);
+                  const last = msgs[msgs.length - 1];
+                  const unread = unreadOf(t.id);
+                  const preview = last
+                    ? `${last.from === "me" ? "You: " : ""}${last.text}`
+                    : "Say hi 👋";
                   return (
-                    <li key={c.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
+                    <li key={t.id} style={{ animationDelay: `${i * 40}ms` }} className="animate-rise">
                       <button
-                        onClick={() => setOpenId(c.id)}
+                        onClick={() => setOpenId(t.id)}
                         className={`w-full flex items-center gap-3 p-2.5 rounded-2xl text-left transition ${
                           active ? "bg-white/8 ring-1 ring-white/15" : "hover:bg-white/5"
                         }`}
                       >
                         <div className="relative size-12 rounded-full conic-ring shrink-0">
-                          <img src={c.who.avatar} className="size-12 rounded-full object-cover" alt="" />
-                          {c.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                          <img src={t.peer.avatar} className="size-12 rounded-full object-cover" alt="" />
+                          {t.peer.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
                             <div className="text-sm font-semibold truncate flex items-center gap-1">
-                              {c.who.name}
-                              <VerifiedBadge kind={c.who.verified} className="!size-3.5" />
-                              {c.pinned && <Pin className="size-3 text-primary" />}
+                              {t.peer.name}
+                              <VerifiedBadge kind={t.peer.verified} className="!size-3.5" />
+                              {t.pinned && <Pin className="size-3 text-primary" />}
                             </div>
-                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{c.time}</span>
+                            <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{last ? fmtAgo(last.ts) : ""}</span>
                           </div>
                           <div className="flex items-center justify-between gap-2 mt-0.5">
-                            <p className={`text-xs truncate ${c.unread ? "text-foreground" : "text-muted-foreground"} ${c.typing ? "text-[oklch(0.82_0.15_215)] italic" : ""}`}>
-                              {c.typing ? "typing…" : c.preview}
+                            <p className={`text-xs truncate ${unread ? "text-foreground" : "text-muted-foreground"}`}>
+                              {preview}
                             </p>
-                            {c.unread ? (
-                              <span className="size-5 grid place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground glow-gold">{c.unread}</span>
-                            ) : c.reaction ? (
-                              <span className="text-xs">{c.reaction}</span>
+                            {unread ? (
+                              <span className="size-5 grid place-items-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground glow-gold">{unread}</span>
                             ) : null}
                           </div>
                         </div>
@@ -278,12 +282,12 @@ function Inbox() {
                   <ArrowLeft className="size-4" />
                 </button>
                 <div className="relative size-11 rounded-full conic-ring shrink-0">
-                  <img src={open.who.avatar} className="size-11 rounded-full object-cover" alt="" />
-                  {open.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
+                  <img src={open.peer.avatar} className="size-11 rounded-full object-cover" alt="" />
+                  {open.peer.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold flex items-center gap-1">{open.who.name} <VerifiedBadge kind={open.who.verified} className="!size-3.5" /></div>
-                  <div className="text-[11px] text-muted-foreground">@{open.who.handle} · {open.online ? "Active now" : "Last seen 3h ago"}</div>
+                  <div className="text-sm font-semibold flex items-center gap-1">{open.peer.name} <VerifiedBadge kind={open.peer.verified} className="!size-3.5" /></div>
+                  <div className="text-[11px] text-muted-foreground">@{open.peer.handle} · {open.peer.online ? "Active now" : "Last seen recently"}</div>
                 </div>
                 <div className="flex items-center gap-1">
                   <IconBtn icon={Phone} onClick={() => toast("Calling…")} />
@@ -302,7 +306,7 @@ function Inbox() {
                   return (
                     <div key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} animate-rise`}>
                       {!mine && !prevSameSide && (
-                        <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
+                        <img src={open.peer.avatar} className="size-7 rounded-full object-cover" alt="" />
                       )}
                       {!mine && prevSameSide && <div className="w-7 shrink-0" />}
                       <div className={`max-w-[70%] relative ${mine ? "items-end" : "items-start"} flex flex-col`}>
@@ -317,40 +321,19 @@ function Inbox() {
                             {m.text}
                           </div>
                         )}
-                        {m.attachment?.kind === "audio" && (
-                          <div className={`px-3 py-2 rounded-2xl flex items-center gap-3 ${mine ? "bg-primary/15 border border-primary/30" : "glass border border-white/10"}`}>
-                            <button className="size-8 rounded-full grid place-items-center bg-primary text-primary-foreground"><Mic className="size-4" /></button>
-                            <div className="flex items-center gap-px h-6 w-32">
-                              {Array.from({ length: 28 }).map((_, j) => (
-                                <span key={j} className="flex-1 bg-foreground/40 rounded-full" style={{ height: `${20 + Math.sin(j * 0.7) * 30 + Math.random() * 30}%` }} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] tabular-nums text-muted-foreground">{m.attachment.len}</span>
-                          </div>
-                        )}
                         {m.reactions && (
                           <div className={`absolute -bottom-2 ${mine ? "left-1" : "right-1"} px-1.5 py-0.5 rounded-full glass-strong border border-white/10 text-xs`}>
                             {m.reactions.join(" ")}
                           </div>
                         )}
                         <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "justify-end" : ""}`}>
-                          <span>{m.time}</span>
+                          <span>{fmtTime(m.ts)}</span>
                           {mine && (m.status === "read" ? <CheckCheck className="size-3 text-[oklch(0.82_0.15_215)]" /> : m.status === "delivered" ? <CheckCheck className="size-3" /> : <Check className="size-3" />)}
                         </div>
                       </div>
                     </div>
                   );
                 })}
-                {open.typing && (
-                  <div className="flex items-end gap-2 animate-rise">
-                    <img src={open.who.avatar} className="size-7 rounded-full object-cover" alt="" />
-                    <div className="px-3.5 py-2 rounded-2xl glass border border-white/10 flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce" />
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:120ms]" />
-                      <span className="size-1.5 rounded-full bg-foreground/60 animate-bounce [animation-delay:240ms]" />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* AI suggestions */}
@@ -376,12 +359,12 @@ function Inbox() {
                   <input
                     value={draft}
                     onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && send()}
-                    placeholder={`Message ${open.who.name.split(" ")[0]}…`}
+                    onKeyDown={(e) => e.key === "Enter" && onSend()}
+                    placeholder={`Message ${open.peer.name.split(" ")[0]}…`}
                     className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground py-1"
                   />
                   {draft.trim() ? (
-                    <button onClick={send} className="size-9 grid place-items-center rounded-xl bg-primary text-primary-foreground glow-gold tilt-press">
+                    <button onClick={onSend} className="size-9 grid place-items-center rounded-xl bg-primary text-primary-foreground glow-gold tilt-press">
                       <Send className="size-4" />
                     </button>
                   ) : (
