@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Play, Eye, Flame, TrendingUp } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { posts, prescribed, creators } from "@/lib/mock-data";
+import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/category/$slug")({
   component: CategoryPage,
@@ -29,6 +30,7 @@ const CATEGORY_META: Record<string, { label: string; tagline: string; tint: stri
 function CategoryPage() {
   const { slug } = Route.useParams();
   const meta = CATEGORY_META[slug] ?? { label: cap(slug), tagline: "Top videos in this category.", tint: "oklch(0.82 0.16 85)" };
+  const goBack = useGoBack("/explore");
 
   // Build a popular list — in real app would come from backend; here we synthesize stable scores per slug.
   const pool = [
@@ -44,9 +46,9 @@ function CategoryPage() {
   return (
     <AppShell wide>
       <div className="space-y-6">
-        <Link to="/explore" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-3.5" /> Back to explore
-        </Link>
+        <button onClick={goBack} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="size-3.5" /> Back
+        </button>
 
         {/* Hero */}
         <section
