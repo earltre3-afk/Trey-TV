@@ -75,13 +75,14 @@ function EditProfile() {
   };
 
   const accentColor = accents.find((a) => a.id === draft.accent)?.color ?? "oklch(0.82 0.16 85)";
+  const goBack = useGoBack(`/u/${base.uid}`);
 
   return (
     <AppShell wide>
       <div className="space-y-5 pb-24">
         {/* Header bar */}
         <div className="flex items-center justify-between">
-          <button onClick={() => nav({ to: "/u/$uid", params: { uid: base.uid } })} className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
+          <button onClick={goBack} className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
             <ArrowLeft className="size-4" />
           </button>
           <div className="text-center">
