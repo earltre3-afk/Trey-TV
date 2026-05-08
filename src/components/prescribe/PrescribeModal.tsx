@@ -139,7 +139,7 @@ export function PrescribeModal({ open, onClose }: { open: boolean; onClose: () =
       {/* Dialog */}
       <div
         ref={dialogRef}
-        className="relative w-full sm:max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[linear-gradient(160deg,oklch(0.18_0.05_290_/_0.95),oklch(0.12_0.04_270_/_0.95))] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] animate-rise"
+        className="relative w-full sm:max-w-lg max-h-[100dvh] sm:max-h-[92vh] h-[100dvh] sm:h-auto overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[linear-gradient(160deg,oklch(0.18_0.05_290_/_0.95),oklch(0.12_0.04_270_/_0.95))] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] animate-rise"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -175,7 +175,7 @@ export function PrescribeModal({ open, onClose }: { open: boolean; onClose: () =
         </div>
 
         {/* Body */}
-        <div className="p-5 pb-7 min-h-[420px]">
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] min-h-[420px]">
           {!analyzing && !done && q && (
             <div key={q.id} className="space-y-5 animate-rise">
               <div className="text-center space-y-2">
