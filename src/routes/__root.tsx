@@ -128,9 +128,11 @@ function RootComponent() {
         <ActivityProvider>
           <SubmissionsProvider>
             <FeedProvider>
-              <Outlet />
-              <TreyIWidget />
-              <Toaster />
+              <CommentsProvider>
+                <Outlet />
+                <TreyIWidget />
+                <Toaster />
+              </CommentsProvider>
             </FeedProvider>
           </SubmissionsProvider>
         </ActivityProvider>
