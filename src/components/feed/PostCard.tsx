@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X } from "lucide-react";
+import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
@@ -28,7 +28,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
-  const { byPost, add, toggleLike } = useComments();
+  const { byPost, add, toggleLike, edit, remove, isMine } = useComments();
   const allComments = byPost(post.id);
   const topComments = allComments.filter((c) => !c.parentId);
   const repliesOf = (id: string) => allComments.filter((c) => c.parentId === id);
@@ -186,11 +186,11 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             )}
             {topComments.map((c) => (
               <li key={c.id} className="space-y-2">
-                <CommentRow c={c} onLike={() => toggleLike(c.id)} onReply={() => setReplyTo(c)} />
+                <CommentRow c={c} mine={isMine(c)} onLike={() => toggleLike(c.id)} onReply={() => setReplyTo(c)} onEdit={(t) => edit(c.id, t)} onDelete={() => remove(c.id)} />
                 {repliesOf(c.id).length > 0 && (
                   <ul className="pl-10 space-y-2 border-l border-white/10 ml-4">
                     {repliesOf(c.id).map((r) => (
-                      <li key={r.id}><CommentRow c={r} onLike={() => toggleLike(r.id)} onReply={() => setReplyTo(c)} compact /></li>
+                      <li key={r.id}><CommentRow c={r} mine={isMine(r)} onLike={() => toggleLike(r.id)} onReply={() => setReplyTo(c)} onEdit={(t) => edit(r.id, t)} onDelete={() => remove(r.id)} compact /></li>
                     ))}
                   </ul>
                 )}
@@ -245,7 +245,9 @@ function timeAgo(ts: number) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function CommentRow({ c, onLike, onReply, compact }: { c: Comment; onLike: () => void; onReply: () => void; compact?: boolean }) {
+function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c: Comment; mine?: boolean; onLike: () => void; onReply: () => void; onEdit: (text: string) => void; onDelete: () => void; compact?: boolean }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(c.text);
   return (
     <div className="flex gap-2.5">
       <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="shrink-0">
@@ -257,9 +259,22 @@ function CommentRow({ c, onLike, onReply, compact }: { c: Comment; onLike: () =>
             <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="font-semibold hover:underline">
               {c.author.name}
             </Link>
-            <span className="text-muted-foreground">· {timeAgo(c.createdAt)}</span>
+            <span className="text-muted-foreground">· {timeAgo(c.createdAt)}{c.editedAt ? " · edited" : ""}</span>
           </div>
-          <p className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.text}</p>
+          {editing ? (
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                autoFocus
+                className="flex-1 rounded-lg bg-white/5 border border-white/10 px-2 py-1 text-sm focus:outline-none focus:border-primary/60"
+              />
+              <button onClick={() => { if (draft.trim()) { onEdit(draft); setEditing(false); } }} className="text-primary"><Check className="size-4" /></button>
+              <button onClick={() => { setDraft(c.text); setEditing(false); }} className="text-muted-foreground"><X className="size-4" /></button>
+            </div>
+          ) : (
+            <p className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.text}</p>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-1 px-1 text-[11px] text-muted-foreground">
           <button onClick={onLike} className={`flex items-center gap-1 hover:text-foreground transition ${c.likedByMe ? "text-[oklch(0.7_0.25_15)]" : ""}`}>
@@ -268,6 +283,16 @@ function CommentRow({ c, onLike, onReply, compact }: { c: Comment; onLike: () =>
           <button onClick={onReply} className="flex items-center gap-1 hover:text-foreground transition">
             <Reply className="size-3.5" /> Reply
           </button>
+          {mine && !editing && (
+            <>
+              <button onClick={() => setEditing(true)} className="flex items-center gap-1 hover:text-foreground transition">
+                <Pencil className="size-3.5" /> Edit
+              </button>
+              <button onClick={onDelete} className="flex items-center gap-1 hover:text-[oklch(0.7_0.25_15)] transition">
+                <Trash2 className="size-3.5" /> Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
