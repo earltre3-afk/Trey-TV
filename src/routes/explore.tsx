@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Search, TrendingUp, Flame, Music, Film, Mic2, Gamepad2, Sparkles, Play, Eye, Radio } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { creators, posts, prescribed } from "@/lib/mock-data";
+import { useFollow } from "@/lib/follow-store";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/explore")({
   component: Explore,
@@ -15,12 +17,12 @@ export const Route = createFileRoute("/explore")({
 });
 
 const categories = [
-  { icon: Music, label: "Music", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
-  { icon: Film, label: "Shows", color: "text-primary", bg: "bg-primary/10" },
-  { icon: Mic2, label: "Podcasts", color: "text-[oklch(0.82_0.15_215)]", bg: "bg-[oklch(0.82_0.15_215_/_0.1)]" },
-  { icon: Gamepad2, label: "Gaming", color: "text-[oklch(0.65_0.22_300)]", bg: "bg-[oklch(0.65_0.22_300_/_0.1)]" },
-  { icon: Sparkles, label: "Lifestyle", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
-  { icon: Flame, label: "Trending", color: "text-primary", bg: "bg-primary/10" },
+  { slug: "music", icon: Music, label: "Music", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
+  { slug: "shows", icon: Film, label: "Shows", color: "text-primary", bg: "bg-primary/10" },
+  { slug: "podcasts", icon: Mic2, label: "Podcasts", color: "text-[oklch(0.82_0.15_215)]", bg: "bg-[oklch(0.82_0.15_215_/_0.1)]" },
+  { slug: "gaming", icon: Gamepad2, label: "Gaming", color: "text-[oklch(0.65_0.22_300)]", bg: "bg-[oklch(0.65_0.22_300_/_0.1)]" },
+  { slug: "lifestyle", icon: Sparkles, label: "Lifestyle", color: "text-[oklch(0.7_0.25_340)]", bg: "bg-[oklch(0.7_0.25_340_/_0.1)]" },
+  { slug: "trending", icon: Flame, label: "Trending", color: "text-primary", bg: "bg-primary/10" },
 ];
 
 const filters = ["All", "Music", "Shows", "Live", "Podcasts", "Gaming", "Lifestyle", "New"];
@@ -28,6 +30,7 @@ const filters = ["All", "Music", "Shows", "Live", "Podcasts", "Gaming", "Lifesty
 function Explore() {
   const [active, setActive] = useState("All");
   const hero = posts[0];
+  const follow = useFollow();
 
   return (
     <AppShell wide>
@@ -95,12 +98,17 @@ function Explore() {
           <h2 className="text-sm lg:text-base font-semibold mb-3 flex items-center gap-2"><TrendingUp className="size-4 text-primary" /> Trending categories</h2>
           <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
             {categories.map((c) => (
-              <button key={c.label} className={`group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift`}>
+              <Link
+                key={c.label}
+                to="/category/$slug"
+                params={{ slug: c.slug }}
+                className="group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift"
+              >
                 <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
                   <c.icon className="size-5 lg:size-6" />
                 </div>
                 <span className="text-xs lg:text-sm font-medium">{c.label}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
@@ -112,27 +120,43 @@ function Explore() {
             <button className="text-xs text-primary hover:underline">See all</button>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {creators.map((c) => (
-              <Link
-                to="/channel/$handle"
-                params={{ handle: c.handle }}
-                key={c.id}
-                className="group rounded-2xl glass border border-white/10 p-4 flex flex-col items-center gap-3 hover-lift relative overflow-hidden"
-              >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(circle_at_50%_0%,oklch(0.82_0.16_85_/_0.15),transparent_70%)]" />
-                <div className="relative size-16 lg:size-20 rounded-full conic-ring">
-                  <img src={c.avatar} className="size-full rounded-full object-cover" alt="" />
-                  {c.live && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-[oklch(0.65_0.24_15)] text-white animate-glow-pulse">LIVE</span>
-                  )}
-                </div>
-                <div className="text-center min-w-0 w-full">
-                  <div className="text-sm font-semibold truncate">{c.name}</div>
-                  <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
-                </div>
-                <button className="text-[11px] px-3 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10">Follow</button>
-              </Link>
-            ))}
+            {creators.map((c) => {
+              const followed = follow.isFollowing(c.handle);
+              return (
+                <Link
+                  to="/channel/$handle"
+                  params={{ handle: c.handle }}
+                  key={c.id}
+                  className="group rounded-2xl glass border border-white/10 p-4 flex flex-col items-center gap-3 hover-lift relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-[radial-gradient(circle_at_50%_0%,oklch(0.82_0.16_85_/_0.15),transparent_70%)]" />
+                  <div className="relative size-16 lg:size-20 rounded-full conic-ring">
+                    <img src={c.avatar} className="size-full rounded-full object-cover" alt="" />
+                    {c.live && (
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-[oklch(0.65_0.24_15)] text-white animate-glow-pulse">LIVE</span>
+                    )}
+                  </div>
+                  <div className="text-center min-w-0 w-full">
+                    <div className="text-sm font-semibold truncate">{c.name}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault(); e.stopPropagation();
+                      const nowFollowing = follow.toggle({ id: c.id, name: c.name, handle: c.handle, avatar: c.avatar as unknown as string });
+                      toast.success(nowFollowing ? `Added ${c.name} to your friends` : `Removed ${c.name}`);
+                    }}
+                    className={`text-[11px] px-3 py-1 rounded-full border transition ${
+                      followed
+                        ? "border-primary/60 bg-primary/15 text-primary"
+                        : "border-primary/40 text-primary hover:bg-primary/10"
+                    }`}
+                  >
+                    {followed ? "Friends" : "Follow"}
+                  </button>
+                </Link>
+              );
+            })}
           </div>
         </section>
 
