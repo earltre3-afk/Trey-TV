@@ -8,7 +8,6 @@ import banner from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
 import { useFollow } from "@/lib/follow-store";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfile,
