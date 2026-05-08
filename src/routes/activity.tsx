@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Bookmark, Heart, Send, Eye, Trash2, Filter, Sparkles } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { useActivity, REACTIONS, type ActivityItem } from "@/lib/activity-store";
