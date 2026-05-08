@@ -13,6 +13,7 @@ import { AuthProvider } from "@/lib/auth";
 import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
 import { FeedProvider } from "@/lib/feed-store";
+import { CommentsProvider } from "@/lib/comments-store";
 
 import appCss from "../styles.css?url";
 
