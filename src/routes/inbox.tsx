@@ -1,17 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useEffect, useState } from "react";
+import { z } from "zod";
 import {
   Bell, Heart, MessageCircle, UserPlus, Sparkles, Search, Send, Plus,
   Phone, Video, MoreHorizontal, Smile, Image as ImageIcon, Mic, Check,
   CheckCheck, ArrowLeft, Pin, Filter, Inbox as InboxIcon, Star, Wand2,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { creators, currentUser } from "@/lib/mock-data";
+import { creators } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { toast } from "sonner";
+import { useMessages, type Peer } from "@/lib/messages-store";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
+  validateSearch: (s: Record<string, unknown>) => z.object({ to: z.string().optional() }).parse(s),
   head: () => ({
     meta: [
       { title: "Inbox — Trey TV" },
