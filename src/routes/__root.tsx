@@ -12,6 +12,7 @@ import { TreyIWidget } from "@/components/ai/TreyIWidget";
 import { AuthProvider } from "@/lib/auth";
 import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
+import { FeedProvider } from "@/lib/feed-store";
 
 import appCss from "../styles.css?url";
 
@@ -125,9 +126,11 @@ function RootComponent() {
       <AuthProvider>
         <ActivityProvider>
           <SubmissionsProvider>
-            <Outlet />
-            <TreyIWidget />
-            <Toaster />
+            <FeedProvider>
+              <Outlet />
+              <TreyIWidget />
+              <Toaster />
+            </FeedProvider>
           </SubmissionsProvider>
         </ActivityProvider>
       </AuthProvider>
