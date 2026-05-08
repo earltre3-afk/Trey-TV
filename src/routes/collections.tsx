@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Bookmark, Plus, Folder, Lock, Play } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import { AppShell } from "@/components/layout/AppShell";
 import { prescribed } from "@/lib/mock-data";
 import { toast } from "sonner";
