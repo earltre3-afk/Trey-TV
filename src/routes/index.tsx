@@ -6,6 +6,7 @@ import { Composer } from "@/components/feed/Composer";
 import { CreatorRail } from "@/components/feed/CreatorRail";
 import { PostCard } from "@/components/feed/PostCard";
 import { posts, creators, prescribed } from "@/lib/mock-data";
+import { useFeed } from "@/lib/feed-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -20,13 +21,15 @@ export const Route = createFileRoute("/")({
 
 function Home() {
   const [tab, setTab] = useState("for-you");
+  const { posts: userPosts } = useFeed();
 
+  const merged = [...userPosts, ...posts];
   const filtered =
     tab === "following"
-      ? posts.slice(0, 2)
+      ? merged.slice(0, 2 + userPosts.length)
       : tab === "latest"
-        ? [...posts].reverse()
-        : posts;
+        ? [...userPosts, ...[...posts].reverse()]
+        : merged;
 
   const heading =
     tab === "following" ? "From creators you follow"
