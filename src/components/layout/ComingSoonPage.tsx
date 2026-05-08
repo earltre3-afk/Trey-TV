@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { useGoBack } from "@/hooks/use-go-back";
 import type { LucideIcon } from "lucide-react";
 import { AppShell } from "./AppShell";
 
@@ -28,9 +29,7 @@ export function ComingSoonPage({
   return (
     <AppShell>
       <div className="space-y-6 -mt-2">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" /> Back
-        </Link>
+        <BackBtn />
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 glass-strong p-6 lg:p-10">
           <div aria-hidden className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/15 blur-3xl" />
