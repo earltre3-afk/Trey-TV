@@ -10,7 +10,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { creators } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { toast } from "sonner";
-import { useMessages, type Peer } from "@/lib/messages-store";
+import { useMessages } from "@/lib/messages-store";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
