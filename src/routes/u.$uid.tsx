@@ -180,9 +180,13 @@ function PublicProfile() {
                     >
                       <UserPlus className="size-4" /> {followingThis ? "Friends" : "Follow"}
                     </button>
-                    <button className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold glass border border-white/15 hover:bg-white/5">
+                    <Link
+                      to="/inbox"
+                      search={{ to: profile.handle }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-semibold glass border border-white/15 hover:bg-white/5"
+                    >
                       <MessageCircle className="size-4" /> Message
-                    </button>
+                    </Link>
                   </>
                 )}
               </div>
