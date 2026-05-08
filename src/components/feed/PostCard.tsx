@@ -69,19 +69,23 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
 
       <p className="px-4 pb-3 text-sm whitespace-pre-line">{post.text}</p>
 
-      <div className="px-3">
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
-          <img src={post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
-          <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
-            <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
-              {playing ? <Pause className="size-6 fill-white text-white" /> : <Play className="size-6 fill-white text-white" />}
-            </span>
-          </button>
-          <span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-md bg-black/60 backdrop-blur border border-white/10">
-            {post.duration}
-          </span>
+      {post.media && (
+        <div className="px-3">
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
+            <img src={post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
+            <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
+              <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
+                {playing ? <Pause className="size-6 fill-white text-white" /> : <Play className="size-6 fill-white text-white" />}
+              </span>
+            </button>
+            {post.duration && (
+              <span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-md bg-black/60 backdrop-blur border border-white/10">
+                {post.duration}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="relative flex items-center justify-between px-5 py-3 text-sm">
         {/* Reaction button + picker */}
