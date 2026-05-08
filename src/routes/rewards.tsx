@@ -54,41 +54,59 @@ function Rewards() {
           <button className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"><Plus className="size-4" /></button>
         </div>
 
-        {/* Big credit-card */}
-        <div className="relative mx-auto w-full max-w-[520px] aspect-[1.586/1] rounded-3xl p-6 overflow-hidden border border-primary/40 bg-[linear-gradient(135deg,oklch(0.22_0.08_85_/_0.85),oklch(0.16_0.05_60_/_0.9)_45%,oklch(0.18_0.06_300_/_0.85))] shadow-[0_30px_70px_-20px_oklch(0_0_0_/_0.8)] glow-gold liquid-hover">
-          <div aria-hidden className="absolute inset-0 bg-[linear-gradient(115deg,transparent_30%,oklch(1_0_0_/_0.1)_45%,transparent_60%)]" />
-          <div aria-hidden className="absolute -top-20 -right-16 size-56 rounded-full bg-primary/30 blur-3xl" />
-          <div aria-hidden className="absolute -bottom-20 -left-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.3)] blur-3xl" />
+        {/* Premium holographic rewards card */}
+        <div className="group relative mx-auto w-full max-w-[520px] [perspective:1200px]">
+          {/* Ambient glow */}
+          <div aria-hidden className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_30%_20%,oklch(0.82_0.16_85_/_0.35),transparent_60%),radial-gradient(circle_at_70%_80%,oklch(0.7_0.25_340_/_0.35),transparent_60%)] blur-2xl opacity-80" />
 
-          <div className="relative h-full flex flex-col justify-between text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-[10px] tracking-[0.3em] text-white/70">TREY · TV</div>
-                <div className="mt-0.5 text-[11px] tracking-[0.25em] text-primary font-semibold">REWARDS WALLET</div>
-              </div>
-              <div className="size-10 rounded-md bg-[linear-gradient(135deg,oklch(0.85_0.16_85),oklch(0.65_0.15_60))] grid place-items-center shadow-inner">
-                <div className="size-7 rounded-sm border border-white/40 grid grid-cols-2 grid-rows-2 gap-px p-0.5">
-                  <span className="bg-white/30" /><span className="bg-white/20" /><span className="bg-white/20" /><span className="bg-white/30" />
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-mono text-base sm:text-xl tracking-[0.25em] flex items-center gap-2">
-                {uid.replace(/(.{4})/g, "$1 ").trim()}
-                <button onClick={() => { navigator.clipboard?.writeText(uid); toast.success("UID copied"); }} className="text-white/70 hover:text-primary"><Copy className="size-3.5" /></button>
-              </div>
-              <div className="mt-3 flex items-end justify-between">
+          <div
+            className="relative w-full rounded-3xl p-5 sm:p-6 overflow-hidden border border-primary/40 bg-[linear-gradient(135deg,oklch(0.22_0.08_85_/_0.9),oklch(0.14_0.05_60_/_0.95)_45%,oklch(0.18_0.08_300_/_0.9))] shadow-[0_30px_70px_-20px_oklch(0_0_0_/_0.85)] transition-transform duration-700 will-change-transform [transform-style:preserve-3d] group-hover:[transform:rotateX(6deg)_rotateY(-8deg)]"
+          >
+            {/* Holographic sheen sweep */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_25%,oklch(1_0_0_/_0.18)_45%,transparent_60%)] translate-x-[-60%] group-hover:translate-x-[60%] transition-transform duration-[1400ms] ease-out" />
+            {/* Conic shimmer */}
+            <div aria-hidden className="pointer-events-none absolute -inset-1 opacity-40 mix-blend-screen bg-[conic-gradient(from_120deg,oklch(0.82_0.16_85_/_0.5),oklch(0.7_0.25_340_/_0.5),oklch(0.65_0.22_300_/_0.5),oklch(0.82_0.15_215_/_0.5),oklch(0.82_0.16_85_/_0.5))] animate-conic-spin" />
+            {/* Color blooms */}
+            <div aria-hidden className="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full bg-primary/30 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-24 -left-20 size-64 rounded-full bg-[oklch(0.7_0.25_340_/_0.35)] blur-3xl" />
+            {/* Subtle grid texture */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[linear-gradient(oklch(1_0_0)_1px,transparent_1px),linear-gradient(90deg,oklch(1_0_0)_1px,transparent_1px)] bg-[size:22px_22px]" />
+
+            <div className="relative flex flex-col gap-6 text-white [transform:translateZ(40px)]">
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="text-[10px] tracking-[0.2em] text-white/60">MEMBER</div>
-                  <div className="text-sm font-semibold uppercase tracking-wider">{user?.name ?? "Trey"}</div>
+                  <div className="text-[10px] tracking-[0.35em] text-white/70">TREY · TV</div>
+                  <div className="mt-1 text-[11px] tracking-[0.28em] text-primary font-semibold drop-shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.6)]">REWARDS WALLET</div>
+                </div>
+                <div className="size-11 rounded-md bg-[linear-gradient(135deg,oklch(0.88_0.16_85),oklch(0.6_0.15_55))] grid place-items-center shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.6),0_4px_10px_oklch(0_0_0_/_0.4)]">
+                  <div className="size-8 rounded-sm border border-white/40 grid grid-cols-2 grid-rows-2 gap-px p-0.5">
+                    <span className="bg-white/40" /><span className="bg-white/25" /><span className="bg-white/25" /><span className="bg-white/40" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Card number */}
+              <div className="font-mono text-sm sm:text-lg md:text-xl tracking-[0.22em] flex items-center gap-2 break-all">
+                <span className="bg-clip-text text-transparent bg-[linear-gradient(90deg,oklch(0.95_0.05_85),oklch(0.82_0.16_85),oklch(0.95_0.05_85))]">
+                  {uid.replace(/(.{4})/g, "$1 ").trim()}
+                </span>
+                <button onClick={() => { navigator.clipboard?.writeText(uid); toast.success("UID copied"); }} className="text-white/70 hover:text-primary shrink-0"><Copy className="size-3.5" /></button>
+              </div>
+
+              {/* Footer */}
+              <div className="grid grid-cols-3 gap-3 items-end">
+                <div className="min-w-0">
+                  <div className="text-[9px] tracking-[0.22em] text-white/60">MEMBER</div>
+                  <div className="text-sm font-semibold uppercase tracking-wider truncate">{user?.name ?? "Trey"}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-[9px] tracking-[0.22em] text-white/60">POINTS</div>
+                  <div className="text-lg sm:text-xl font-bold text-primary drop-shadow-[0_0_10px_oklch(0.82_0.16_85_/_0.8)]">{points.toLocaleString()}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] tracking-[0.2em] text-white/60">POINTS</div>
-                  <div className="text-xl font-bold text-primary drop-shadow-[0_0_8px_var(--gold)]">{points.toLocaleString()}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] tracking-[0.2em] text-white/60">TIER</div>
-                  <div className="text-base font-bold bg-clip-text text-transparent bg-[linear-gradient(90deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340))]">{tier}</div>
+                  <div className="text-[9px] tracking-[0.22em] text-white/60">TIER</div>
+                  <div className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-[linear-gradient(90deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340))]">{tier}</div>
                 </div>
               </div>
             </div>
