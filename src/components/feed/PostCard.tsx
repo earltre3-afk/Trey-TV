@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause } from "lucide-react";
+import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
 import { useAuth } from "@/lib/auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
+import { useComments, type Comment } from "@/lib/comments-store";
 
 type Post = (typeof Posts)[number];
 
@@ -24,6 +25,13 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [playing, setPlaying] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [burst, setBurst] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const { byPost, add, toggleLike } = useComments();
+  const allComments = byPost(post.id);
+  const topComments = allComments.filter((c) => !c.parentId);
+  const repliesOf = (id: string) => allComments.filter((c) => c.parentId === id);
 
   const likeCount = post.likes + (reaction ? 1 : 0);
   const saveCount = post.saves + (saved ? 1 : 0);
@@ -51,14 +59,23 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
-        <div className="relative size-10 rounded-full conic-ring shrink-0">
+        <Link
+          to="/channel/$handle"
+          params={{ handle: post.creator.handle }}
+          className="relative size-10 rounded-full conic-ring shrink-0 hover:scale-105 transition-transform"
+          aria-label={`Open @${post.creator.handle}'s profile`}
+        >
           <img src={post.creator.avatar} alt="" className="size-10 rounded-full object-cover" />
-        </div>
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold">{post.creator.name}</span>
+            <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline">
+              {post.creator.name}
+            </Link>
             <VerifiedBadge kind={post.creator.verified} />
-            <span className="text-xs text-muted-foreground">@{post.creator.handle} · {post.timeAgo}</span>
+            <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="text-xs text-muted-foreground hover:text-foreground">
+              @{post.creator.handle} · {post.timeAgo}
+            </Link>
             <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">Creator</span>
           </div>
         </div>
@@ -122,8 +139,12 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           )}
         </div>
 
-        <button onClick={() => toast("Comments coming soon")} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground tilt-press">
-          <MessageCircle className="size-5" /> {post.comments}
+        <button
+          onClick={() => setCommentsOpen((v) => !v)}
+          className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          aria-expanded={commentsOpen}
+        >
+          <MessageCircle className="size-5" /> {post.comments + allComments.length}
         </button>
         <button onClick={requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
@@ -143,6 +164,106 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           <Send className="size-5" />
         </button>
       </div>
+
+      {commentsOpen && (
+        <div className="border-t border-white/10 bg-black/20 px-4 py-4 animate-rise">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold">Comments · {allComments.length}</h4>
+            <button onClick={() => setCommentsOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close comments">
+              <X className="size-4" />
+            </button>
+          </div>
+
+          <ul className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            {topComments.length === 0 && (
+              <li className="text-xs text-muted-foreground py-2">Be the first to comment.</li>
+            )}
+            {topComments.map((c) => (
+              <li key={c.id} className="space-y-2">
+                <CommentRow c={c} onLike={() => toggleLike(c.id)} onReply={() => setReplyTo(c)} />
+                {repliesOf(c.id).length > 0 && (
+                  <ul className="pl-10 space-y-2 border-l border-white/10 ml-4">
+                    {repliesOf(c.id).map((r) => (
+                      <li key={r.id}><CommentRow c={r} onLike={() => toggleLike(r.id)} onReply={() => setReplyTo(c)} compact /></li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-3 pt-3 border-t border-white/5">
+            {replyTo && (
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5 px-1">
+                <span>Replying to <span className="text-primary">@{replyTo.author.handle}</span></span>
+                <button onClick={() => setReplyTo(null)} className="hover:text-foreground"><X className="size-3" /></button>
+              </div>
+            )}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (isGuest) { toast("Sign up to comment"); nav({ to: "/onboarding" }); return; }
+                add(post.id, newComment, replyTo?.id);
+                setNewComment(""); setReplyTo(null);
+              }}
+              className="flex items-center gap-2"
+            >
+              <input
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder={replyTo ? "Write a reply…" : "Add a comment…"}
+                className="flex-1 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm focus:outline-none focus:border-primary/60"
+              />
+              <button
+                type="submit"
+                disabled={!newComment.trim()}
+                className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-40 hover:opacity-90"
+              >
+                Post
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </article>
+  );
+}
+
+function timeAgo(ts: number) {
+  const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+function CommentRow({ c, onLike, onReply, compact }: { c: Comment; onLike: () => void; onReply: () => void; compact?: boolean }) {
+  return (
+    <div className="flex gap-2.5">
+      <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="shrink-0">
+        <img src={c.author.avatar} alt="" className={`${compact ? "size-7" : "size-8"} rounded-full object-cover ring-1 ring-white/10`} />
+      </Link>
+      <div className="flex-1 min-w-0">
+        <div className="rounded-2xl bg-white/[0.04] border border-white/5 px-3 py-2">
+          <div className="flex items-center gap-1.5 text-xs">
+            <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="font-semibold hover:underline">
+              {c.author.name}
+            </Link>
+            <span className="text-muted-foreground">· {timeAgo(c.createdAt)}</span>
+          </div>
+          <p className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.text}</p>
+        </div>
+        <div className="flex items-center gap-3 mt-1 px-1 text-[11px] text-muted-foreground">
+          <button onClick={onLike} className={`flex items-center gap-1 hover:text-foreground transition ${c.likedByMe ? "text-[oklch(0.7_0.25_15)]" : ""}`}>
+            <Heart className={`size-3.5 ${c.likedByMe ? "fill-current" : ""}`} /> {c.likes}
+          </button>
+          <button onClick={onReply} className="flex items-center gap-1 hover:text-foreground transition">
+            <Reply className="size-3.5" /> Reply
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
