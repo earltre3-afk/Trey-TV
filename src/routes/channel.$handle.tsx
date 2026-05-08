@@ -8,7 +8,7 @@ import { useFollow } from "@/lib/follow-store";
 import { useGoBack } from "@/hooks/use-go-back";
 import {
   Crown, Play, UserPlus, UserCheck, Gift, Sparkles, Share2, Bell, Verified,
-  ArrowLeft, Users, Eye, MessageSquare, Image as ImageIcon, Film, Tv, Calendar, Clock, ChevronRight,
+  ArrowLeft, Users, Eye, MessageSquare, Image as ImageIcon, Film, Tv, Calendar, Clock, ChevronRight, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,6 +72,8 @@ function ChannelPage() {
   const [notify, setNotify] = useState(true);
   const following = follow.isFollowing(handle);
 
+  // Owner = Trey himself. Stays true even for guests viewing /channel/trey
+  const isOwnerChannel = handle === currentUser.handle || user?.handle === handle;
   const isOwnChannel = user?.handle === handle;
 
   const onShare = async () => {
@@ -83,11 +85,19 @@ function ChannelPage() {
     <AppShell wide>
       <div className="space-y-5 -mt-3">
         {/* Cinematic hero */}
-        <section className="relative rounded-3xl overflow-hidden glass neon-border">
+        <section className={`relative rounded-3xl overflow-hidden ${isOwnerChannel ? "owner-neon owner-glass owner-scan" : "glass neon-border"}`}>
           <div className="relative aspect-[16/8] md:aspect-[16/6]">
             <img src={trailer?.thumbnail_url || posts[2].media} className="absolute inset-0 size-full object-cover" alt="" />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/10" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,oklch(0.7_0.25_340_/_0.25),transparent_60%),radial-gradient(circle_at_80%_70%,oklch(0.65_0.22_300_/_0.25),transparent_60%)]" />
+            {isOwnerChannel && (
+              <>
+                <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,oklch(0.82_0.16_85_/_0.28),transparent_55%),radial-gradient(circle_at_85%_90%,oklch(0.7_0.25_340_/_0.25),transparent_55%)]" />
+                <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full owner-ribbon text-[10px] font-bold tracking-[0.25em] text-black">
+                  <Crown className="size-3.5" /> OWNER CHANNEL
+                </div>
+              </>
+            )}
 
             <button
               onClick={goBack}
@@ -113,16 +123,21 @@ function ChannelPage() {
 
             {/* Creator identity strip */}
             <div className="absolute bottom-3 left-3 right-3 flex items-end gap-3 md:gap-4">
-              <div className="size-16 md:size-20 rounded-2xl conic-ring shrink-0">
+              <div className={`size-16 md:size-20 rounded-2xl conic-ring shrink-0 ${isOwnerChannel ? "animate-float" : ""}`}>
                 <img src={creator.avatar} className="size-full rounded-2xl object-cover" alt="" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-[10px] tracking-[0.3em] text-primary mb-1">
-                  <Crown className="size-3" /> APPROVED CREATOR
+                  <Crown className="size-3" /> {isOwnerChannel ? "FOUNDER · TREY TV" : "APPROVED CREATOR"}
                 </div>
-                <h1 className="text-2xl md:text-4xl font-bold text-gradient-gold leading-tight truncate flex items-center gap-2">
+                <h1 className="text-2xl md:text-4xl font-bold text-gradient-gold leading-tight truncate flex items-center gap-2 flex-wrap">
                   {creator.name}
                   <Verified className="size-5 text-primary fill-primary/20 shrink-0" />
+                  {isOwnerChannel && (
+                    <span className="ml-1 inline-flex items-center gap-1 text-[10px] font-bold tracking-[0.25em] px-2 py-0.5 rounded-full owner-ribbon text-black">
+                      <ShieldCheck className="size-3" /> OWNER
+                    </span>
+                  )}
                 </h1>
                 <div className="text-xs md:text-sm text-muted-foreground truncate">@{creator.handle} · 32.7K fans · {publicEpisodes.length} episodes</div>
               </div>
