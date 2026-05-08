@@ -170,30 +170,30 @@ function Studio() {
 
       {/* Header */}
       <header className="sticky top-0 z-30 px-3 md:px-5 pt-3 pb-2 backdrop-blur-xl bg-background/60 border-b border-white/5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap md:flex-nowrap">
           <button
             onClick={() => navigate({ to: "/creator-hub" })}
-            className="size-10 grid place-items-center rounded-xl glass tilt-press hover:bg-white/5"
+            className="size-10 shrink-0 grid place-items-center rounded-xl glass tilt-press hover:bg-white/5"
             aria-label="Back"
           >
             <ArrowLeft className="size-5" />
           </button>
 
-          <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
-            <span className="hidden sm:block text-[10px] tracking-[0.35em] text-gradient-gold font-bold">
+          <div className="order-3 md:order-none w-full md:w-auto md:flex-1 min-w-0 flex items-center md:justify-center gap-2">
+            <span className="hidden md:block text-[10px] tracking-[0.35em] text-gradient-gold font-bold whitespace-nowrap">
               CREATOR EDIT STUDIO
             </span>
-            <div className="relative">
+            <div className="relative min-w-0 flex-1 md:flex-none">
               <button
                 onClick={() => setShowProjects((s) => !s)}
-                className="px-3 py-1.5 rounded-lg glass border border-white/10 text-xs font-semibold flex items-center gap-1.5 max-w-[180px]"
+                className="w-full md:w-auto px-3 py-1.5 rounded-lg glass border border-white/10 text-xs font-semibold flex items-center gap-1.5 md:max-w-[200px]"
               >
-                <span className="size-1.5 rounded-full bg-primary animate-glow-pulse" />
+                <span className="size-1.5 shrink-0 rounded-full bg-primary animate-glow-pulse" />
                 <span className="truncate">{projectName}</span>
-                <ChevronDown className={`size-3.5 transition-transform ${showProjects ? "rotate-180" : ""}`} />
+                <ChevronDown className={`size-3.5 shrink-0 transition-transform ${showProjects ? "rotate-180" : ""}`} />
               </button>
               {showProjects && (
-                <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 rounded-xl glass-strong border border-white/10 shadow-2xl p-1 z-30 animate-scale-in">
+                <div className="absolute left-0 md:left-1/2 md:-translate-x-1/2 top-full mt-2 w-56 rounded-xl glass-strong border border-white/10 shadow-2xl p-1 z-30 animate-scale-in">
                   {["Untitled Episode", "New Trey TV Upload", "Late Night · S2 E14", "Studio Sessions Promo"].map((n) => (
                     <button
                       key={n}
@@ -208,7 +208,7 @@ function Studio() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <div className="relative">
               <button
                 onClick={() => setShowQuality((s) => !s)}
@@ -234,9 +234,9 @@ function Studio() {
             </div>
             <button
               onClick={() => navigate({ to: "/creator-studio/submit", search: { id: undefined } as any })}
-              className="px-3 md:px-5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift flex items-center gap-1.5"
+              className="px-3 md:px-5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift flex items-center gap-1.5 whitespace-nowrap"
             >
-              <Download className="size-4" /> <span className="hidden sm:inline">Next:</span> Content Details
+              <Download className="size-4" /> <span className="hidden sm:inline">Next:</span> Details
             </button>
           </div>
         </div>
