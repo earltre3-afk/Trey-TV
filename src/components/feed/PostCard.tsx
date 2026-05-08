@@ -5,7 +5,9 @@ import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
 import { useAuth } from "@/lib/auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
+import { useComments } from "@/lib/comments-store";
+import { CommentsThread } from "./CommentsThread";
 
 type Post = (typeof Posts)[number];
 
@@ -17,6 +19,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const { reactions, saves, setReaction, toggleSave, logShare } = useActivity();
   const { isGuest } = useAuth();
   const nav = useNavigate();
+  const { byPost } = useComments();
 
   const reaction = reactions[post.id] ?? null;
   const saved = !!saves[post.id];
@@ -24,6 +27,9 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [playing, setPlaying] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [burst, setBurst] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
+  const commentCount = post.comments + byPost(post.id).length;
 
   const likeCount = post.likes + (reaction ? 1 : 0);
   const saveCount = post.saves + (saved ? 1 : 0);
@@ -51,14 +57,24 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
-        <div className="relative size-10 rounded-full conic-ring shrink-0">
+        <Link
+          to="/u/$uid"
+          params={{ uid: post.creator.id }}
+          className="relative size-10 rounded-full conic-ring shrink-0 hover:scale-105 transition"
+          aria-label={`${post.creator.name}'s profile`}
+        >
           <img src={post.creator.avatar} alt="" className="size-10 rounded-full object-cover" />
-        </div>
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-semibold">{post.creator.name}</span>
+            <Link to="/u/$uid" params={{ uid: post.creator.id }} className="font-semibold hover:underline">
+              {post.creator.name}
+            </Link>
             <VerifiedBadge kind={post.creator.verified} />
-            <span className="text-xs text-muted-foreground">@{post.creator.handle} · {post.timeAgo}</span>
+            <Link to="/u/$uid" params={{ uid: post.creator.id }} className="text-xs text-muted-foreground hover:text-foreground">
+              @{post.creator.handle}
+            </Link>
+            <span className="text-xs text-muted-foreground">· {post.timeAgo}</span>
             <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">Creator</span>
           </div>
         </div>
@@ -122,8 +138,12 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           )}
         </div>
 
-        <button onClick={() => toast("Comments coming soon")} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground tilt-press">
-          <MessageCircle className="size-5" /> {post.comments}
+        <button
+          onClick={() => setCommentsOpen((v) => !v)}
+          className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          aria-expanded={commentsOpen}
+        >
+          <MessageCircle className={`size-5 ${commentsOpen ? "fill-current/10" : ""}`} /> {fmt(commentCount)}
         </button>
         <button onClick={requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
@@ -143,6 +163,8 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           <Send className="size-5" />
         </button>
       </div>
+
+      {commentsOpen && <CommentsThread postId={post.id} />}
     </article>
   );
 }
