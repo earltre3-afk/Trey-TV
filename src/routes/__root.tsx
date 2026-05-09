@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { TreyIWidget } from "@/components/ai/TreyIWidget";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { AuthProvider } from "@/lib/auth";
 import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
@@ -134,6 +135,7 @@ function RootComponent() {
                 <FollowProvider>
                   <MessagesProvider>
                     <Outlet />
+                    <BottomNav />
                     <TreyIWidget />
                     <Toaster />
                   </MessagesProvider>

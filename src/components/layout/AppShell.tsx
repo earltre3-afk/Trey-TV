@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
-import { BottomNav } from "./BottomNav";
 import { SideMenu } from "./SideMenu";
 import { DesktopSidebar } from "./DesktopSidebar";
 
@@ -37,7 +36,6 @@ export function AppShell({
       </div>
 
       <div className="lg:hidden">
-        <BottomNav />
         <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
       </div>
     </div>
