@@ -75,11 +75,6 @@ function PublicProfile() {
   const [tab, setTab] = useState("Posts");
   const { user: authUser, isGuest } = useAuth();
   const { profile: dbProfile, loading: profileLoading, error } = useProfile(uid);
-
-  if (error) {
-    return <div className="p-8 text-red-500">Error: {error.message || String(error)}</div>;
-  }
-
   const follow = useFollow();
   const goBack = useGoBack("/");
 
@@ -96,7 +91,7 @@ function PublicProfile() {
       }
     : currentUser;
 
-  const profile = profileLoading ? currentUser : baseProfile;
+  const profile = profileLoading || error ? currentUser : baseProfile;
   const isOwnProfile = !isGuest && (authUser?.uid ?? currentUser.uid) === uid;
   // Owner-only premium polish helpers
   const heroFrameClass = isOwnProfile

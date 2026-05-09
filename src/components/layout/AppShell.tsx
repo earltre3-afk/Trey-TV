@@ -28,7 +28,10 @@ export function AppShell({
           </div>
           <main 
             className="relative z-10 px-3 lg:px-8 pt-3 lg:pt-8 lg:pb-12"
-            style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+            style={{
+              paddingBottom: "calc(6rem + env(safe-area-inset-bottom))",
+              overflowAnchor: "none",
+            }}
           >
             {children}
           </main>

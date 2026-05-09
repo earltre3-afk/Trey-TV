@@ -16,8 +16,7 @@ export function CreatorRail() {
         <button
           key={c.id}
           onClick={() => toast(`Opening ${c.name}'s channel`)}
-          className="flex flex-col items-center gap-1 shrink-0 w-[72px] tilt-press animate-rise"
-          style={{ animationDelay: `${i * 60}ms` }}
+          className="flex flex-col items-center gap-1 shrink-0 w-[72px] tilt-press"
         >
           <div className="relative size-16 rounded-full conic-ring">
             <img
