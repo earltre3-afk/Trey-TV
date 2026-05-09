@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
 import { creators } from "@/lib/mock-data";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { useGoBack } from "@/hooks/use-go-back";
+import { useRewards } from "@/hooks/use-rewards";
 
 export const Route = createFileRoute("/rewards")({
   component: Rewards,
@@ -16,13 +18,15 @@ export const Route = createFileRoute("/rewards")({
   }),
 });
 
-const transactions = [
+/* MOCK FALLBACK
+const fallbackTransactions = [
   { id: "t1", title: "Daily streak bonus", delta: +120, when: "Today" },
   { id: "t2", title: "Gifted Chris H. — Crown", delta: -800, when: "Yesterday" },
   { id: "t3", title: "Comment milestone (50)", delta: +200, when: "2d ago" },
   { id: "t4", title: "Subscription redeem · Pro", delta: -2500, when: "5d ago" },
   { id: "t5", title: "Watched 3hr · weekly bonus", delta: +400, when: "1w ago" },
 ];
+*/
 
 const giftPacks = [
   { id: "g1", name: "Spark", emoji: "✨", cost: 50 },
@@ -39,10 +43,11 @@ const perks = [
 
 function Rewards() {
   const { user } = useAuth();
+  const currentUser = useCurrentUser();
+  const { balance, tier, lifetimeEarned, lifetimeSpent, streakDays, transactions } = useRewards();
   const goBack = useGoBack("/");
-  const points = user?.rewards?.points ?? 12480;
-  const tier = user?.rewards?.tier ?? "GOLD";
-  const uid = user?.uid ?? "0000000000000000";
+  const points = balance;
+  const uid = currentUser?.uid ?? "0000000000000000";
 
   return (
     <AppShell wide>
@@ -118,9 +123,9 @@ function Rewards() {
         {/* Quick stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Earned (30d)", value: "+3,240", Icon: TrendingUp, color: "oklch(0.78 0.18 150)" },
-            { label: "Spent (30d)", value: "1,800", Icon: Wallet, color: "oklch(0.7 0.25 340)" },
-            { label: "Streak", value: "12d", Icon: Sparkles, color: "oklch(0.82 0.16 85)" },
+            { label: "Earned (30d)", value: `+${lifetimeEarned.toLocaleString()}`, Icon: TrendingUp, color: "oklch(0.78 0.18 150)" },
+            { label: "Spent (30d)", value: lifetimeSpent.toLocaleString(), Icon: Wallet, color: "oklch(0.7 0.25 340)" },
+            { label: "Streak", value: `${streakDays}d`, Icon: Sparkles, color: "oklch(0.82 0.16 85)" },
           ].map((s) => (
             <div key={s.label} className="rounded-2xl liquid-glass border border-white/10 p-3">
               <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] text-muted-foreground">
