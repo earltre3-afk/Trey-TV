@@ -11,6 +11,7 @@ import {
   CheckCircle2, Circle, Film, Clock, Tag, Users, ShieldCheck, DollarSign, Calendar, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useCreatorSubmit } from "@/hooks/use-creator-submit";
 import { useGoBack } from "@/hooks/use-go-back";
 
 export const Route = createFileRoute("/creator-studio/submit")({
@@ -79,6 +80,7 @@ function LockedScreen() {
 function Form({ draft }: { draft: Submission }) {
   const navigate = useNavigate();
   const store = useSubmissions();
+  const { saveDraft, submitForReview } = useCreatorSubmit();
   const goBack = useGoBack("/creator-studio/edit");
   const [d, setD] = useState<Submission>(draft);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -92,7 +94,10 @@ function Form({ draft }: { draft: Submission }) {
       return { ...s, [k]: arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v] };
     });
 
-  const saveSilent = () => store.updateDraft(d.content_id, d);
+  const saveSilent = () => {
+    store.updateDraft(d.content_id, d);
+    void saveDraft(d);
+  };
 
   const checklist = useMemo(() => [
     { ok: !!d.video_url || !!d.thumbnail_url, label: "Video uploaded" },
@@ -108,13 +113,14 @@ function Form({ draft }: { draft: Submission }) {
 
   const canSubmit = checklist.every((c) => c.ok);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!canSubmit) { toast.error("Complete the checklist to submit."); return; }
     if (seriesMode === "new" && newShow.title) {
       d.show_title = newShow.title; d.show_id = newShow.title.toLowerCase().replace(/\s+/g, "-");
     }
     store.updateDraft(d.content_id, d);
     store.submit(d.content_id);
+    await submitForReview(d);
     navigate({ to: "/creator-studio/submitted", search: { id: d.content_id } as any });
   };
 
