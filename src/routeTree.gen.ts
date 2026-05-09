@@ -19,7 +19,9 @@ import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LatestRouteImport } from './routes/latest'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as GuideRouteImport } from './routes/guide'
 import { Route as GoLiveRouteImport } from './routes/go-live'
+import { Route as ForYouRouteImport } from './routes/for-you'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
@@ -107,9 +109,19 @@ const InboxRoute = InboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideRoute = GuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GoLiveRoute = GoLiveRouteImport.update({
   id: '/go-live',
   path: '/go-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForYouRoute = ForYouRouteImport.update({
+  id: '/for-you',
+  path: '/for-you',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FollowingRoute = FollowingRouteImport.update({
@@ -307,7 +319,9 @@ export interface FileRoutesByFullPath {
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
+  '/for-you': typeof ForYouRoute
   '/go-live': typeof GoLiveRoute
+  '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
@@ -355,7 +369,9 @@ export interface FileRoutesByTo {
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
+  '/for-you': typeof ForYouRoute
   '/go-live': typeof GoLiveRoute
+  '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
@@ -405,7 +421,9 @@ export interface FileRoutesById {
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
+  '/for-you': typeof ForYouRoute
   '/go-live': typeof GoLiveRoute
+  '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
@@ -456,7 +474,9 @@ export interface FileRouteTypes {
     | '/edit-profile'
     | '/explore'
     | '/following'
+    | '/for-you'
     | '/go-live'
+    | '/guide'
     | '/inbox'
     | '/latest'
     | '/login'
@@ -504,7 +524,9 @@ export interface FileRouteTypes {
     | '/edit-profile'
     | '/explore'
     | '/following'
+    | '/for-you'
     | '/go-live'
+    | '/guide'
     | '/inbox'
     | '/latest'
     | '/login'
@@ -553,7 +575,9 @@ export interface FileRouteTypes {
     | '/edit-profile'
     | '/explore'
     | '/following'
+    | '/for-you'
     | '/go-live'
+    | '/guide'
     | '/inbox'
     | '/latest'
     | '/login'
@@ -603,7 +627,9 @@ export interface RootRouteChildren {
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
+  ForYouRoute: typeof ForYouRoute
   GoLiveRoute: typeof GoLiveRoute
+  GuideRoute: typeof GuideRoute
   InboxRoute: typeof InboxRoute
   LatestRoute: typeof LatestRoute
   LoginRoute: typeof LoginRoute
@@ -692,11 +718,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide': {
+      id: '/guide'
+      path: '/guide'
+      fullPath: '/guide'
+      preLoaderRoute: typeof GuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/go-live': {
       id: '/go-live'
       path: '/go-live'
       fullPath: '/go-live'
       preLoaderRoute: typeof GoLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-you': {
+      id: '/for-you'
+      path: '/for-you'
+      fullPath: '/for-you'
+      preLoaderRoute: typeof ForYouRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/following': {
@@ -1055,7 +1095,9 @@ const rootRouteChildren: RootRouteChildren = {
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
+  ForYouRoute: ForYouRoute,
   GoLiveRoute: GoLiveRoute,
+  GuideRoute: GuideRoute,
   InboxRoute: InboxRoute,
   LatestRoute: LatestRoute,
   LoginRoute: LoginRoute,

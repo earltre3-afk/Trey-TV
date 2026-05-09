@@ -17,6 +17,7 @@ import { FeedProvider } from "@/lib/feed-store";
 import { CommentsProvider } from "@/lib/comments-store";
 import { FollowProvider } from "@/lib/follow-store";
 import { MessagesProvider } from "@/lib/messages-store";
+import { GuideProvider } from "@/lib/guide-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 
 import appCss from "../styles.css?url";
@@ -136,10 +137,12 @@ function RootComponent() {
               <CommentsProvider>
                 <FollowProvider>
                   <MessagesProvider>
-                    <Outlet />
-                    <BottomNav />
-                    <TreyIWidget />
-                    <Toaster />
+                    <GuideProvider>
+                      <Outlet />
+                      <BottomNav />
+                      <TreyIWidget />
+                      <Toaster />
+                    </GuideProvider>
                   </MessagesProvider>
                 </FollowProvider>
               </CommentsProvider>

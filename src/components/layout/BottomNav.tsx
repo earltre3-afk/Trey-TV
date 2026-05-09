@@ -1,4 +1,4 @@
-import { Home, Compass, Inbox, Plus } from "lucide-react";
+import { Compass, CalendarDays, Plus, Sparkles, Tv } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 
@@ -22,8 +22,8 @@ export function BottomNav() {
     >
       <div className="rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)]">
         <div className="flex items-center justify-between px-3 pt-2 pb-1 relative overflow-visible">
-          <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
-          <NavItem to="/explore" icon={Compass} label="Explore" active={isActive("/explore")} />
+          <NavItem to="/" icon={Tv} label="Watch" active={isActive("/")} />
+          <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
 
           <div className="flex-1 flex justify-center" style={{ overflow: "visible" }}>
             <Link
@@ -36,7 +36,8 @@ export function BottomNav() {
             </Link>
           </div>
 
-          <NavItem to="/inbox" icon={Inbox} label="Inbox" active={isActive("/inbox")} badge={7} />
+          <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
+          <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
           <ProfileItem active={pathname.startsWith("/u/")} />
         </div>
       </div>
@@ -52,7 +53,7 @@ function NavItem({
   badge,
 }: {
   to: string;
-  icon: typeof Home;
+  icon: typeof Tv;
   label: string;
   active: boolean;
   badge?: number;

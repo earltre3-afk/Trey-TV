@@ -8,10 +8,12 @@ import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
 const tabs = [
+  { id: "watch-now", label: "Watch Now" },
   { id: "for-you", label: "For You" },
-  { id: "following", label: "Following" },
-  { id: "latest", label: "Latest" },
+  { id: "discover", label: "Discover" },
+  { id: "guide", label: "Guide" },
   { id: "prescribe", label: "Prescribe Me" },
+  { id: "rewards", label: "Rewards" },
 ] as const;
 
 export function AppHeader({
@@ -27,7 +29,13 @@ export function AppHeader({
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const computed =
-    location.pathname === "/prescribe-me" ? "prescribe" : activeTab;
+    location.pathname === "/" ? "watch-now"
+    : location.pathname.startsWith("/for-you") ? "for-you"
+    : location.pathname.startsWith("/explore") ? "discover"
+    : location.pathname.startsWith("/guide") ? "guide"
+    : location.pathname.startsWith("/prescribe-me") ? "prescribe"
+    : location.pathname.startsWith("/rewards") ? "rewards"
+    : activeTab;
 
   return (
     <header className="sticky top-0 z-30 w-full glass-strong border-b border-white/5">
@@ -78,12 +86,13 @@ export function AppHeader({
         {tabs.map((t) => {
           const active = computed === t.id;
           const handleClick = () => {
-            if (t.id === "prescribe") {
-              navigate({ to: "/prescribe-me" });
-            } else {
-              if (location.pathname !== "/") navigate({ to: "/" });
-              onTabChange?.(t.id);
-            }
+            if (t.id === "watch-now") navigate({ to: "/" });
+            if (t.id === "for-you") navigate({ to: "/for-you" });
+            if (t.id === "discover") navigate({ to: "/explore" });
+            if (t.id === "guide") navigate({ to: "/guide" });
+            if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
+            if (t.id === "rewards") navigate({ to: "/rewards" });
+            onTabChange?.(t.id);
           };
           return (
             <button

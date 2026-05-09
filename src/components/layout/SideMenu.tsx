@@ -1,4 +1,4 @@
-import { X, Home, Search, Users, Zap, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Inbox, Upload } from "lucide-react";
+import { X, Home, Tv, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
 
@@ -9,11 +9,12 @@ import { useAuth } from "@/lib/auth";
 type Item = { icon: typeof Home; label: string; sub: string; to: string; color: string; active?: boolean };
 
 const items: Item[] = [
-  { icon: Home, label: "Home", sub: "For You", to: "/", color: "text-primary", active: true },
-  { icon: Search, label: "Explore", sub: "Discover Creators & Content", to: "/explore", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: Tv, label: "Watch Now", sub: "The streaming home", to: "/", color: "text-primary", active: true },
+  { icon: Sparkles, label: "For You", sub: "Personalized feed", to: "/for-you", color: "text-primary" },
+  { icon: Search, label: "Discover", sub: "Explore creators & content", to: "/explore", color: "text-[oklch(0.65_0.22_300)]" },
+  { icon: CalendarDays, label: "Guide", sub: "What's on right now", to: "/guide", color: "text-[oklch(0.82_0.15_215)]" },
   { icon: Users, label: "Following", sub: "Creators You Follow", to: "/following", color: "text-[oklch(0.65_0.22_300)]" },
-  { icon: Zap, label: "Latest", sub: "Fresh Content", to: "/latest", color: "text-primary" },
-  { icon: Heart, label: "Prescribe Me", sub: "Personalized Picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
+  { icon: Heart, label: "Prescribe Me", sub: "Personalized picks", to: "/prescribe-me", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/collections", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: Activity, label: "Activity", sub: "Your interactions", to: "/activity", color: "text-[oklch(0.82_0.15_215)]" },
   { icon: Gem, label: "Rewards", sub: "Points · Gifts · Perks", to: "/rewards", color: "text-primary" },
