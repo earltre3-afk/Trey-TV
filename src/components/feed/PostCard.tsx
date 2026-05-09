@@ -22,7 +22,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const isGuest = !isSignedIn;
   const nav = useNavigate();
 
-  const { reaction, toggleReaction, likeCount } = useSupabaseReactions(post.id, post.likes);
+  const { reaction, toggleReaction, likeCount, pending: reactionPending } = useSupabaseReactions(post.id, post.likes);
   const saved = !!saves[post.id];
   const [reshared, setReshared] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -46,8 +46,20 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
     fn();
   };
 
-  const onReactionPick = (k: ReactionKey) => {
-    toggleReaction(reaction === k ? null : k);
+  const onReactionPick = async (k: ReactionKey) => {
+    if (isGuest) {
+      toast("Sign up to react");
+      nav({ to: "/onboarding" });
+      return;
+    }
+
+    const result = await toggleReaction(reaction === k ? null : k);
+    if (!result.ok) {
+      toast(result.reason === "signed-out" ? "Sign up to react" : "Reaction unavailable");
+      if (result.reason === "signed-out") nav({ to: "/onboarding" });
+      return;
+    }
+
     setBurst(true);
     setPickerOpen(false);
     setTimeout(() => setBurst(false), 600);
@@ -113,7 +125,8 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
             onMouseEnter={() => setPickerOpen(true)}
-            className={`flex items-center gap-1.5 transition tilt-press ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
+            disabled={reactionPending}
+            className={`flex items-center gap-1.5 transition tilt-press disabled:opacity-70 ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
             style={current ? { color: current.color } : undefined}
           >
             <span className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}>
@@ -131,12 +144,10 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
                 <button
                   key={r.key}
                   type="button"
-                  onClick={() => {
-                    if (isGuest) { toast("Sign up to react"); nav({ to: "/onboarding" }); return; }
-                    onReactionPick(r.key);
-                  }}
+                  onClick={() => onReactionPick(r.key)}
+                  disabled={reactionPending}
                   title={r.label}
-                  className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform ${reaction === r.key ? "bg-white/10" : ""}`}
+                  className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform disabled:opacity-60 ${reaction === r.key ? "bg-white/10" : ""}`}
                   style={{ filter: `drop-shadow(0 0 8px ${r.color})` }}
                 >
                   {r.emoji}

@@ -1,16 +1,56 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { useAuth } from "./use-auth";
+import type { ReactionKey } from "@/lib/activity-store";
+
+type UserPostReactionType = "like" | "love" | "laugh" | "wow" | "sad" | "angry";
+
+type ReactionRow = {
+  reaction_type: string | null;
+};
+
+type ToggleReactionResult =
+  | { ok: true }
+  | { ok: false; reason: "signed-out" | "missing-post" | "unavailable" };
+
+const lovableToSupabaseReaction: Record<ReactionKey, UserPostReactionType> = {
+  fire: "like",
+  gem: "love",
+  crown: "wow",
+  dead: "laugh",
+  cinematic: "sad",
+};
+
+const supabaseToLovableReaction: Partial<Record<UserPostReactionType, ReactionKey>> = {
+  like: "fire",
+  love: "gem",
+  wow: "crown",
+  laugh: "dead",
+  sad: "cinematic",
+};
+
+function toSupabaseReaction(reaction: ReactionKey | null): UserPostReactionType | null {
+  return reaction ? lovableToSupabaseReaction[reaction] : null;
+}
+
+function toLovableReaction(reaction: string | null | undefined): ReactionKey | null {
+  const normalized = String(reaction ?? "").trim().toLowerCase() as UserPostReactionType;
+  return supabaseToLovableReaction[normalized] ?? null;
+}
+
+function userPostReactionsTable(supabase: ReturnType<typeof createBrowserClient>) {
+  return (supabase as any).from("user_post_reactions");
+}
 
 export function useSupabaseReactions(postId: string, initialLikesCount: number = 0) {
   const { user, isSignedIn } = useAuth();
-  const [reaction, setReaction] = useState<string | null>(null);
+  const [reaction, setReaction] = useState<ReactionKey | null>(null);
   const [likeCount, setLikeCount] = useState(initialLikesCount);
-  const initialReactionRef = useRef<string | null>(null);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    if (!isSignedIn || !user || !postId) {
+    if (!postId) {
       if (mounted) {
         setReaction(null);
         setLikeCount(initialLikesCount);
@@ -21,85 +61,106 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
     async function fetchReaction() {
       try {
         const supabase = createBrowserClient();
-        const { data, error } = await (supabase as any)
-          .from("user_post_reactions")
-          .select("reaction_type")
-          .eq("post_id", postId)
-          .eq("user_id", user!.id)
-          .limit(1)
-          .maybeSingle();
 
-        if (mounted) {
-          if (!error && data) {
-            setReaction(data.reaction_type);
-            initialReactionRef.current = data.reaction_type;
-          } else {
-            setReaction(null);
-            initialReactionRef.current = null;
-          }
-          // Reset count based on the initial DB value so we don't double count
+        const countRequest = userPostReactionsTable(supabase)
+          .select("id", { count: "exact", head: true })
+          .eq("post_id", postId);
+
+        const reactionRequest = isSignedIn && user
+          ? userPostReactionsTable(supabase)
+            .select("reaction_type")
+            .eq("post_id", postId)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          : Promise.resolve({ data: null, error: null });
+
+        const [countResult, reactionResult] = await Promise.all([countRequest, reactionRequest]);
+
+        if (!mounted) return;
+
+        if (!countResult.error) {
+          setLikeCount(countResult.count ?? initialLikesCount);
+        } else {
           setLikeCount(initialLikesCount);
         }
-      } catch (err) {
-        // ignore silently
+
+        if (!reactionResult.error && reactionResult.data) {
+          setReaction(toLovableReaction((reactionResult.data as ReactionRow).reaction_type));
+        } else {
+          setReaction(null);
+        }
+      } catch {
+        if (mounted) {
+          setReaction(null);
+          setLikeCount(initialLikesCount);
+        }
       }
     }
 
     fetchReaction();
     return () => { mounted = false; };
-  }, [postId, user, isSignedIn, initialLikesCount]);
+  }, [postId, user?.id, isSignedIn, initialLikesCount]);
 
-  const toggleReaction = useCallback(async (newReaction: string | null) => {
-    if (!isSignedIn || !user) return;
-    
+  const fetchCount = useCallback(async () => {
+    const supabase = createBrowserClient();
+    const { count, error } = await userPostReactionsTable(supabase)
+      .select("id", { count: "exact", head: true })
+      .eq("post_id", postId);
+
+    if (error) return null;
+    return count ?? 0;
+  }, [postId]);
+
+  const toggleReaction = useCallback(async (newReaction: ReactionKey | null): Promise<ToggleReactionResult> => {
+    if (!postId) return { ok: false, reason: "missing-post" };
+    if (!isSignedIn || !user) return { ok: false, reason: "signed-out" };
+
+    const nextReaction = newReaction;
+    const nextSupabaseReaction = toSupabaseReaction(nextReaction);
     const previousReaction = reaction;
-    
-    // Optimistic Update
-    setReaction(newReaction);
-    
-    // Calculate new like count
-    // If we are adding a reaction and didn't have one, +1
-    // If we are removing a reaction and had one, -1
-    // If we are just changing the reaction type, +0
+    const previousCount = likeCount;
+
+    setPending(true);
+    setReaction(nextReaction);
     setLikeCount((prev) => {
-      let next = prev;
-      if (!previousReaction && newReaction) next += 1;
-      else if (previousReaction && !newReaction) next -= 1;
-      return Math.max(0, next);
+      if (!previousReaction && nextReaction) return prev + 1;
+      if (previousReaction && !nextReaction) return Math.max(0, prev - 1);
+      return prev;
     });
 
     try {
       const supabase = createBrowserClient();
-      
-      // Remove existing reaction first to prevent unique constraint issues or duplicate rows
-      await (supabase as any)
-        .from("user_post_reactions")
+
+      const deleteResult = await userPostReactionsTable(supabase)
         .delete()
         .eq("post_id", postId)
         .eq("user_id", user.id);
 
-      // Insert new reaction if one was selected
-      if (newReaction) {
-        const { error } = await (supabase as any).from("user_post_reactions").insert({
+      if (deleteResult.error) throw deleteResult.error;
+
+      if (nextSupabaseReaction) {
+        const { error } = await userPostReactionsTable(supabase).insert({
           post_id: postId,
           user_id: user.id,
-          reaction_type: newReaction,
+          reaction_type: nextSupabaseReaction,
         });
-        
+
         if (error) throw error;
       }
-    } catch (err) {
-      console.error("Failed to sync reaction to database:", err);
-      // Revert optimistic update on failure
-      setReaction(previousReaction);
-      setLikeCount((prev) => {
-        let next = prev;
-        if (!newReaction && previousReaction) next += 1;
-        else if (newReaction && !previousReaction) next -= 1;
-        return Math.max(0, next);
-      });
-    }
-  }, [postId, user, isSignedIn, reaction]);
 
-  return { reaction, toggleReaction, likeCount };
+      const freshCount = await fetchCount();
+      if (freshCount !== null) setLikeCount(freshCount);
+      return { ok: true };
+    } catch {
+      setReaction(previousReaction);
+      setLikeCount(previousCount);
+      return { ok: false, reason: "unavailable" };
+    } finally {
+      setPending(false);
+    }
+  }, [postId, user, isSignedIn, reaction, likeCount, fetchCount]);
+
+  return { reaction, toggleReaction, likeCount, pending };
 }
