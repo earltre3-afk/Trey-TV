@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/use-go-back";
+import { useCloudflareUpload } from "@/hooks/use-cloudflare-upload";
 
 export const Route = createFileRoute("/creator-studio/edit")({
   component: CreatorStudioEdit,
@@ -106,6 +107,7 @@ function Studio() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const goBack = useGoBack("/creator-hub");
+  const { requestUpload, uploadFile } = useCloudflareUpload();
 
   const [projectName, setProjectName] = useState("Untitled Episode");
   const [showProjects, setShowProjects] = useState(false);
@@ -115,6 +117,8 @@ function Studio() {
   const [uploadState, setUploadState] = useState<UploadState>("empty");
   const [progress, setProgress] = useState(0);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [streamUid, setStreamUid] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
 
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -130,31 +134,38 @@ function Studio() {
 
   const onPickFile = () => fileRef.current?.click();
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file) return;
     setUploadState("uploading");
     setProgress(0);
-    const tick = setInterval(() => {
-      setProgress((p) => {
-        const n = p + 12;
-        if (n >= 100) {
-          clearInterval(tick);
-          setUploadState("processing");
-          // TODO: wire to real upload pipeline
-          setTimeout(() => {
-            try {
-              setMediaUrl(URL.createObjectURL(file));
-            } catch {
-              setMediaUrl(posts[0].media);
-            }
-            setUploadState("ready");
-            toast.success("Media ready to edit");
-          }, 700);
-          return 100;
-        }
-        return n;
-      });
-    }, 120);
+    setStreamUid(null);
+    setDraftId(null);
+
+    const result = await requestUpload();
+    if (!result) {
+      setUploadState("error");
+      return;
+    }
+
+    setStreamUid(result.uid);
+    setDraftId(result.draftId);
+
+    const ok = await uploadFile(file, result.uploadURL, setProgress);
+    if (!ok) {
+      setUploadState("error");
+      return;
+    }
+
+    setUploadState("processing");
+    window.setTimeout(() => {
+      try {
+        setMediaUrl(URL.createObjectURL(file));
+      } catch {
+        setMediaUrl(posts[0].media);
+      }
+      setUploadState("ready");
+      toast.success("Media ready to edit");
+    }, 700);
   };
 
   const fmt = (s: number) =>
@@ -235,7 +246,7 @@ function Studio() {
               )}
             </div>
             <button
-              onClick={() => navigate({ to: "/creator-studio/submit", search: { id: undefined } as any })}
+              onClick={() => navigate({ to: "/creator-studio/submit", search: { id: draftId ?? undefined } as any })}
               className="px-3 md:px-5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift flex items-center gap-1.5 whitespace-nowrap"
             >
               <Download className="size-4" /> <span className="hidden sm:inline">Next:</span> Details
