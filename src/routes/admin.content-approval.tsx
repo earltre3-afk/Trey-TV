@@ -1,7 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdminShell } from "@/components/layout/AdminShell";
-import { useSubmissions, STATUS_LABEL, STATUS_TONE, type SubmissionStatus } from "@/lib/submissions-store";
+import { STATUS_LABEL, STATUS_TONE, type Submission, type SubmissionStatus } from "@/lib/submissions-store";
+import { useAdminPostQueue } from "@/hooks/use-admin-post-queue";
+import { createBrowserClient } from "@/lib/supabase-browser";
+import { reviewAdminPostQueue, type AdminQueueItem, type AdminQueueApprovalStatus } from "@/lib/admin/post-queue.server";
 import {
   Search, CheckCircle2, MessageSquare, X, Eye, Clock, Hourglass, AlertTriangle, BadgeCheck, CalendarClock, Globe2,
 } from "lucide-react";
@@ -20,23 +23,98 @@ export const Route = createFileRoute("/admin/content-approval")({
 
 const FILTERS: ("all" | SubmissionStatus)[] = ["all", "pending", "approved", "needs_changes", "rejected", "scheduled", "published"];
 
+function queueItemToSubmission(item: AdminQueueItem): Submission {
+  return {
+    content_id: item.id,
+    creator_id: item.creator_id,
+    creator_name: "",
+    creator_handle: "",
+    creator_avatar: "",
+    title: item.title,
+    short_description: item.description ?? "",
+    full_description: "",
+    viewer_context: "",
+    what_to_know: "",
+    why_it_matters: "",
+    creator_note: "",
+    show_id: item.show_id ?? "",
+    show_title: "",
+    season_number: 1,
+    episode_number: item.episode_number ?? 1,
+    episode_type: "Full Episode",
+    category: [],
+    tags: [],
+    mood_tags: [],
+    thumbnail_url: item.thumbnail_url ?? "",
+    poster_url: "",
+    video_url: "",
+    duration: "",
+    quality: "",
+    visibility: item.visibility === "private" || item.visibility === "scheduled" ? item.visibility : "public",
+    access_type: item.is_plus_content ? "subscribers" : "free",
+    content_rating: "",
+    language: "",
+    explicit_content: false,
+    is_trailer: false,
+    is_bonus: false,
+    is_finale: false,
+    is_premiere: false,
+    status: item.approval_status,
+    admin_feedback: "",
+    admin_internal_note: "",
+    policy_ack: true,
+    scheduled_at: item.scheduled_at ?? undefined,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
+  };
+}
+
 function AdminContentApproval() {
-  const store = useSubmissions();
+  const { items, loading, reload } = useAdminPostQueue();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<typeof FILTERS[number]>("pending");
   const [feedback, setFeedback] = useState<{ id: string; mode: "changes" | "reject" } | null>(null);
   const [feedbackText, setFeedbackText] = useState("");
+  const submissions = useMemo(() => items.map(queueItemToSubmission), [items]);
+
+  const review = async (queueId: string, approvalStatus: AdminQueueApprovalStatus, adminNotes: string) => {
+    try {
+      const supabase = createBrowserClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Admin access required");
+      }
+
+      await reviewAdminPostQueue({
+        data: {
+          accessToken: session.access_token,
+          queueId,
+          approvalStatus,
+          adminNotes,
+        },
+      });
+
+      toast.success(approvalStatus === "approved" ? "Approved" : "Sent to creator");
+      await reload();
+      setFeedback(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed");
+    }
+  };
 
   const stats = useMemo(() => ({
-    pending: store.submissions.filter((s) => s.status === "pending").length,
-    approved: store.submissions.filter((s) => s.status === "approved").length,
-    needs_changes: store.submissions.filter((s) => s.status === "needs_changes").length,
-    rejected: store.submissions.filter((s) => s.status === "rejected").length,
-    published: store.submissions.filter((s) => s.status === "published").length,
-  }), [store.submissions]);
+    pending: submissions.filter((s) => s.status === "pending").length,
+    approved: submissions.filter((s) => s.status === "approved").length,
+    needs_changes: submissions.filter((s) => s.status === "needs_changes").length,
+    rejected: submissions.filter((s) => s.status === "rejected").length,
+    published: submissions.filter((s) => s.status === "published").length,
+  }), [submissions]);
 
-  const filtered = store.submissions.filter((s) => {
+  const filtered = submissions.filter((s) => {
     if (filter !== "all" && s.status !== filter) return false;
     if (q && !`${s.title} ${s.creator_handle} ${s.show_title}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
@@ -96,7 +174,7 @@ function AdminContentApproval() {
             </div>
             <div className="px-3 pb-3 flex flex-wrap gap-1.5">
               <button onClick={() => navigate({ to: "/admin/content-approval/$id", params: { id: s.content_id } })} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground"><Eye className="inline size-3 mr-1" />Review</button>
-              <button onClick={() => { store.approve(s.content_id); toast.success("Approved"); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-[oklch(0.78_0.18_150_/_0.4)] text-[oklch(0.82_0.18_150)]"><CheckCircle2 className="inline size-3 mr-1" />Approve</button>
+              <button onClick={() => { review(s.content_id, "approved", ""); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-[oklch(0.78_0.18_150_/_0.4)] text-[oklch(0.82_0.18_150)]"><CheckCircle2 className="inline size-3 mr-1" />Approve</button>
               <button onClick={() => { setFeedback({ id: s.content_id, mode: "changes" }); setFeedbackText(""); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-[oklch(0.7_0.25_340_/_0.4)] text-[oklch(0.78_0.25_340)]"><MessageSquare className="inline size-3 mr-1" />Needs Changes</button>
               <button onClick={() => { setFeedback({ id: s.content_id, mode: "reject" }); setFeedbackText(""); }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-[oklch(0.65_0.24_15_/_0.4)] text-[oklch(0.78_0.24_15)]"><X className="inline size-3 mr-1" />Reject</button>
             </div>
@@ -115,10 +193,7 @@ function AdminContentApproval() {
               <button
                 onClick={() => {
                   if (!feedbackText.trim()) { toast.error("Add a note for the creator."); return; }
-                  if (feedback.mode === "changes") store.requestChanges(feedback.id, feedbackText);
-                  else store.reject(feedback.id, feedbackText);
-                  toast.success("Sent to creator");
-                  setFeedback(null);
+                  review(feedback.id, feedback.mode === "changes" ? "needs_changes" : "rejected", feedbackText);
                 }}
                 className="px-3 py-2 rounded-xl text-xs font-bold bg-primary text-primary-foreground glow-gold"
               >Send</button>
