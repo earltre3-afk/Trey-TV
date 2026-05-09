@@ -9,7 +9,6 @@ export interface SupabaseProfile {
   avatar_url: string | null;
   banner_url: string | null;
   bio: string | null;
-  is_creator: boolean;
   location: string | null;
   created_at: string;
   profile_accent_color: string | null;
