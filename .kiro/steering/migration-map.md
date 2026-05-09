@@ -19,6 +19,7 @@ Status of each feature area: what's real, what's still mock, what's next.
 | Edit profile | `src/routes/edit-profile.tsx` | `profiles` — updates: `display_name`, `username`, `bio`, `location`, `profile_accent_color` — excluded: `public_profile_uid`, `role`, verification fields, `avatar_url`, `banner_url`, `website_url`, `date_of_birth`, `age`, `is_creator` — tsc ✅ build ✅ (no browser validation) |
 | Inbox / DMs | `src/lib/messages-store.tsx` | `direct_messages` — columns: `id`, `sender_id`, `recipient_id`, `body`, `read_at`, `created_at` — threads derived client-side by peer UUID (no conversations table) — peer profiles resolved via `profiles` FK joins and username lookup — attachments/encryption/message_type out of scope this phase — `as any` cast present due to missing generated Supabase table typings — tsc ✅ build ✅ (no browser validation) |
 | Notifications | `src/hooks/use-notifications.ts` + `src/components/layout/NotificationsPopover.tsx` | `notifications` — columns: `id`, `user_id`, `actor_id`, `type`, `message`, `read_at`, `created_at`, `post_id`, `comment_id`, `video_id`, `metadata` — browser SELECTs and UPDATEs `read_at` only — browser INSERT intentionally not used (server-side triggers write notifications) — `src/routes/notifications.tsx` remains ComingSoonPage stub — `activity-store.tsx` remains local user activity, not notification inbox — tsc ✅ build ✅ (no browser validation) |
+| Rewards | `src/hooks/use-rewards.ts` + `src/routes/rewards.tsx` | `community_credit_balances`, `community_credit_events` — browser SELECT only, no INSERT/UPDATE/DELETE/UPSERT — no Stripe/payment/payout/gift write logic — card UID from `useCurrentUser().public_profile_uid` (`profiles.public_profile_uid`) — gift/perk actions remain toast-only — tsc ✅ build ✅ (no browser validation) |
 
 ---
 
@@ -46,7 +47,6 @@ No items currently queued. See Mock section below for candidates.
 |---------|-------|
 | Auth login/signup flow | Routes exist (`login.tsx`, `signup.tsx`) but use mock |
 | Creator Studio | Routes exist — needs real episode/channel data |
-| Rewards | Route exists (`rewards.tsx`) — stub only |
 | Admin | Routes exist — needs service-role (server-side only) |
 
 ---
@@ -60,6 +60,6 @@ No items currently queued. See Mock section below for candidates.
 5. ~~**Inbox**~~ — ✅ done (`direct_messages` via `messages-store.tsx`)
 6. ~~**Notifications**~~ — ✅ done (`notifications` via `use-notifications.ts` + `NotificationsPopover.tsx`)
 7. **Creator Studio** — wire to `episodes`, `channels`
-8. **Rewards** — wire to `community_credits`
+8. ~~**Rewards**~~ — ✅ done (`community_credit_balances` + `community_credit_events` via `use-rewards.ts`; read-only)
 
 Each item above requires a spec before implementation.

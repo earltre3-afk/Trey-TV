@@ -24,7 +24,7 @@ explore.tsx                       — Explore
 following.tsx                     — Following feed
 latest.tsx                        — Latest feed
 activity.tsx                      — Activity feed
-rewards.tsx                       — Rewards
+rewards.tsx                       — Rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; read-only; gift/perk actions remain toast-only)
 prescribe-me.tsx                  — Prescribe Me
 watch.$id.tsx                     — Video watch page
 channel.$handle.tsx               — Channel page
@@ -54,6 +54,7 @@ use-profile.ts                — Public profile (REAL)
 use-supabase-reactions.ts     — Post reactions (REAL)
 use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
 use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
+use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
 ```
