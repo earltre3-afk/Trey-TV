@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
-import { useAuth } from "@/lib/auth";
+import { useAuth as useMockAuth } from "@/lib/auth";
+import { useAuth } from "@/hooks/use-auth";
+import { useSupabaseReactions } from "@/hooks/use-supabase-reactions";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useComments, type Comment } from "@/lib/comments-store";
 
@@ -15,11 +17,12 @@ function fmt(n: number) {
 }
 
 export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
-  const { reactions, saves, setReaction, toggleSave, logShare } = useActivity();
-  const { isGuest } = useAuth();
+  const { saves, toggleSave, logShare } = useActivity();
+  const { isSignedIn } = useAuth();
+  const isGuest = !isSignedIn;
   const nav = useNavigate();
 
-  const reaction = reactions[post.id] ?? null;
+  const { reaction, toggleReaction, likeCount } = useSupabaseReactions(post.id, post.likes);
   const saved = !!saves[post.id];
   const [reshared, setReshared] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -33,7 +36,6 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const topComments = allComments.filter((c) => !c.parentId);
   const repliesOf = (id: string) => allComments.filter((c) => c.parentId === id);
 
-  const likeCount = post.likes + (reaction ? 1 : 0);
   const saveCount = post.saves + (saved ? 1 : 0);
   const reshareCount = post.reshares + (reshared ? 1 : 0);
 
@@ -45,7 +47,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   };
 
   const onReactionPick = (k: ReactionKey) => {
-    setReaction(post.id, reaction === k ? null : k, meta);
+    toggleReaction(reaction === k ? null : k);
     setBurst(true);
     setPickerOpen(false);
     setTimeout(() => setBurst(false), 600);
@@ -55,7 +57,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
 
   return (
     <article
-      className="group relative rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover animate-rise"
+      className="group relative rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
