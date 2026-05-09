@@ -1,31 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Heart, MessageCircle, UserPlus, Zap, Sparkles, Radio, CheckCheck, X, Bell } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { creators } from "@/lib/mock-data";
+import { useNotifications, type NotificationItem } from "@/hooks/use-notifications";
 import { toast } from "sonner";
 
-type N = {
-  id: string;
-  kind: "like" | "comment" | "follow" | "live" | "trey" | "boost";
-  who?: typeof creators[number];
-  text: string;
-  time: string;
-  unread?: boolean;
-  to?: string;
-};
-
-const items: N[] = [
-  { id: "n1", kind: "live", who: creators[0], text: "is live now — 'Studio Sessions Vol. 4'", time: "now", unread: true, to: "/explore" },
-  { id: "n2", kind: "trey", text: "Trey-I prescribed 6 fresh picks based on your mood", time: "2m", unread: true, to: "/prescribe-me" },
-  { id: "n3", kind: "like", who: creators[1], text: "and 312 others liked your post", time: "12m", unread: true },
-  { id: "n4", kind: "comment", who: creators[2], text: 'commented: "this is fire 🔥"', time: "44m", unread: true, to: "/inbox" },
-  { id: "n5", kind: "follow", who: creators[3], text: "started following you", time: "1h" },
-  { id: "n6", kind: "boost", text: "Your post hit 10K views — boost unlocked", time: "3h", to: "/analytics" },
-  { id: "n7", kind: "comment", who: creators[4], text: "tagged you in a reply", time: "5h", to: "/inbox" },
-  { id: "n8", kind: "follow", who: creators[0], text: "shared your show with their audience", time: "1d" },
-];
-
-const iconFor = (k: N["kind"]) => ({
+const iconFor = (k: NotificationItem["kind"]) => ({
   like: Heart,
   comment: MessageCircle,
   follow: UserPlus,
@@ -34,7 +13,7 @@ const iconFor = (k: N["kind"]) => ({
   boost: Zap,
 }[k]);
 
-const tintFor = (k: N["kind"]) => ({
+const tintFor = (k: NotificationItem["kind"]) => ({
   like: "text-[oklch(0.7_0.25_340)] bg-[oklch(0.7_0.25_340_/_0.12)]",
   comment: "text-[oklch(0.82_0.15_215)] bg-[oklch(0.82_0.15_215_/_0.12)]",
   follow: "text-primary bg-primary/15",
@@ -45,6 +24,8 @@ const tintFor = (k: N["kind"]) => ({
 
 export function NotificationsPopover({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const { notifications: items, unreadCount, markRead, markAllRead } = useNotifications();
+
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -60,7 +41,6 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
   }, [open, onClose]);
 
   if (!open) return null;
-  const unread = items.filter((i) => i.unread).length;
 
   return (
     <div
@@ -80,7 +60,7 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
             </div>
             <div>
               <div className="text-sm font-semibold leading-tight">Notifications</div>
-              <div className="text-[10px] text-muted-foreground">{unread} new updates</div>
+              <div className="text-[10px] text-muted-foreground">{unreadCount} new updates</div>
             </div>
           </div>
           <button onClick={onClose} aria-label="Close" className="size-8 grid place-items-center rounded-full glass hover:bg-white/5">
@@ -154,18 +134,18 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
               </div>
             );
             return n.to ? (
-              <Link key={n.id} to={n.to} onClick={onClose} className="block">
+              <Link key={n.id} to={n.to} onClick={() => { markRead(n.id); onClose(); }} className="block">
                 {Body}
               </Link>
             ) : (
-              <div key={n.id} onClick={onClose}>{Body}</div>
+              <div key={n.id} onClick={() => { markRead(n.id); onClose(); }}>{Body}</div>
             );
           })}
         </div>
 
         <footer className="relative flex items-center justify-between px-3 py-2 border-t border-white/5 bg-white/[0.02]">
           <button
-            onClick={() => toast.success("All caught up")}
+            onClick={() => { markAllRead(); toast.success("All caught up"); }}
             className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
           >
             <CheckCheck className="size-3.5" /> Mark all as read
@@ -178,3 +158,15 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
     </div>
   );
 }
+
+// MOCK FALLBACK
+// const items: NotificationItem[] = [
+//   { id: "n1", kind: "live", who: creators[0], text: "is live now - 'Studio Sessions Vol. 4'", time: "now", unread: true, to: "/explore" },
+//   { id: "n2", kind: "trey", text: "Trey-I prescribed 6 fresh picks based on your mood", time: "2m", unread: true, to: "/prescribe-me" },
+//   { id: "n3", kind: "like", who: creators[1], text: "and 312 others liked your post", time: "12m", unread: true },
+//   { id: "n4", kind: "comment", who: creators[2], text: "commented on your post", time: "44m", unread: true, to: "/inbox" },
+//   { id: "n5", kind: "follow", who: creators[3], text: "started following you", time: "1h" },
+//   { id: "n6", kind: "boost", text: "Your post hit 10K views - boost unlocked", time: "3h", to: "/analytics" },
+//   { id: "n7", kind: "comment", who: creators[4], text: "tagged you in a reply", time: "5h", to: "/inbox" },
+//   { id: "n8", kind: "follow", who: creators[0], text: "shared your show with their audience", time: "1d" },
+// ];
