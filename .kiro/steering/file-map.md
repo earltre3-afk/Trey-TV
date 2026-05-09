@@ -33,7 +33,7 @@ creator-studio.tsx                — Creator Studio shell
 creator-studio.index.tsx          — Creator Studio home (REAL — channels/shows/episodes via use-creator-studio.ts, tsc ✅ build ✅; metric cards remain hardcoded)
 creator-studio.submit.tsx         — Submit content (REAL — metadata wired to creator_edit_projects via use-creator-submit.ts, tsc ✅ build ✅; submissions-store remains local rollback layer; no video upload; no Cloudflare Stream)
 creator-studio.edit.tsx           — Edit content (REAL — Cloudflare Stream direct upload wired via use-cloudflare-upload.ts, tsc ✅ build ✅; commit 46f970b; export/edit studio features remain out of scope)
-creator-studio.submissions.tsx    — Submissions list (REAL — episodes via use-creator-studio.ts, tsc ✅ build ✅; draft delete is toast-only, no write)
+creator-studio.submissions.tsx    — Submissions list (REAL — merges local submissions from `use-creator-studio.ts` with `creator_post_queue` read-back via `use-creator-post-queue.ts`; queue-backed `approval_status` wins when `edit_project_id` matches; `admin_notes` not displayed; tsc ✅ build ✅; draft delete is toast-only, no write)
 creator-studio.analytics.tsx      — Analytics (REAL — episode table from episodes via use-creator-studio.ts, tsc ✅ build ✅; all other analytics remain hardcoded)
 creator-studio.fans.tsx           — Fans (MOSTLY MOCK — fan list remains mock; follower_count query removed as unsafe in commit 8023b58; fan count uses fallback "32.7K")
 creator-studio.rewards.tsx        — Creator rewards (NOT WIRED — out of scope)
@@ -57,6 +57,7 @@ use-notifications.ts          — Supabase-backed notifications (REAL — notifi
 use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
 use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
 use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — `creator_edit_projects` INSERT/UPDATE + `creator_post_queue` INSERT, tsc ✅ build ✅; queue row written only after valid `stream_uid` confirmed from DB; duplicate pre-check on `creator_id + edit_project_id`; queue failure non-fatal; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
+use-creator-post-queue.ts     — Supabase-backed Creator Studio post queue read-back (REAL — `creator_post_queue` SELECT only, tsc ✅ build ✅; gated on `isApprovedCreator`; `admin_notes` not selected; no writes; no service-role key)
 use-cloudflare-upload.ts      — Cloudflare Stream upload client hook (REAL — XHR POST FormData upload with progress, tsc ✅ build ✅; calls upload.server.ts server function; Cloudflare token never in this file)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
@@ -73,7 +74,7 @@ comments-store.tsx            — Supabase-backed comments (REAL — user_post_c
 follow-store.tsx              — Supabase-backed follows (REAL — follows table, tsc ✅ build ✅; bumpWatch/topThree remain local-only)
 messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages table, tsc ✅ build ✅; attachments/encryption/message_type out of scope this phase; `as any` cast due to missing generated Supabase table typings)
 activity-store.tsx            — LOCAL user action tracking only (reactions/saves/shares in localStorage — not notification inbox)
-submissions-store.tsx         — MOCK submissions store
+submissions-store.tsx         — Local optimistic/rollback layer (preserved — not deleted; real queue status comes from use-creator-post-queue.ts)
 creator-studio/upload.server.ts — Cloudflare Stream server function (REAL — createServerFn; reads CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_STREAM_API_TOKEN from process.env server-side only; returns safe upload response to browser; tsc ✅ build ✅)
 utils.ts                      — cn() utility
 error-page.ts / error-capture.ts
