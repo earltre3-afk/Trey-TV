@@ -9,6 +9,7 @@ import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
 import { useFollow } from "@/lib/follow-store";
 import { useGoBack } from "@/hooks/use-go-back";
+import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfile,
@@ -72,12 +73,31 @@ const tabs = ["Posts", "About", "Prescriptions", "Collections", "Likes"];
 function PublicProfile() {
   const { uid } = Route.useParams();
   const [tab, setTab] = useState("Posts");
-  const { user, isGuest } = useAuth();
+  const { user: authUser, isGuest } = useAuth();
+  const { profile: dbProfile, loading: profileLoading, error } = useProfile(uid);
+
+  if (error) {
+    return <div className="p-8 text-red-500">Error: {error.message || String(error)}</div>;
+  }
+
   const follow = useFollow();
   const goBack = useGoBack("/");
 
-  const profile = user ?? currentUser;
-  const isOwnProfile = !isGuest && (user?.uid ?? currentUser.uid) === uid;
+  const baseProfile = dbProfile 
+    ? {
+        name: dbProfile.display_name || dbProfile.username || "Anonymous",
+        handle: dbProfile.username || "anonymous",
+        avatar: dbProfile.avatar_url || currentUser.avatar,
+        banner: dbProfile.banner_url || banner,
+        bio: dbProfile.bio || "",
+        location: dbProfile.location || "",
+        link: "", // Map if added to schema later
+        stats: currentUser.stats, // Keep mock stats for now
+      }
+    : currentUser;
+
+  const profile = profileLoading ? currentUser : baseProfile;
+  const isOwnProfile = !isGuest && (authUser?.uid ?? currentUser.uid) === uid;
   // Owner-only premium polish helpers
   const heroFrameClass = isOwnProfile
     ? "owner-neon owner-glass owner-scan rounded-3xl overflow-hidden"

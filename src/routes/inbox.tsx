@@ -99,7 +99,7 @@ function Inbox() {
 
   return (
     <AppShell wide>
-      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:h-[calc(100vh-7rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 lg:h-[calc(100dvh-7rem)]">
         {/* Conversation list */}
         <section className={`${openId ? "hidden lg:flex" : "flex"} flex-col rounded-3xl glass neon-border overflow-hidden`}>
           {/* Header */}

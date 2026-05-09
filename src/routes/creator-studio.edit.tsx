@@ -67,7 +67,7 @@ function CreatorStudioEdit() {
 function CreatorLockedScreen() {
   const navigate = useNavigate();
   return (
-    <main className="min-h-screen grid place-items-center px-6 bg-background">
+    <main className="min-h-dvh grid place-items-center px-6 bg-background">
       <div className="relative max-w-md w-full rounded-3xl glass neon-border p-8 text-center overflow-hidden">
         <div className="absolute -top-20 -right-20 size-56 rounded-full bg-[radial-gradient(circle,oklch(0.7_0.25_340_/_0.35),transparent_70%)] blur-2xl" />
         <div className="absolute -bottom-20 -left-20 size-56 rounded-full bg-[radial-gradient(circle,oklch(0.65_0.22_300_/_0.3),transparent_70%)] blur-2xl" />
@@ -161,7 +161,7 @@ function Studio() {
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-dvh bg-background text-foreground">
       <input
         ref={fileRef}
         type="file"

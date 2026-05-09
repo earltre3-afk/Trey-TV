@@ -12,4 +12,11 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+    server: {
+      port: 3000,
+      host: "127.0.0.1",
+    },
+  },
 });

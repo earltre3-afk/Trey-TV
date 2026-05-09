@@ -55,7 +55,7 @@ function SubmitPage() {
 function LockedScreen() {
   const navigate = useNavigate();
   return (
-    <main className="min-h-screen grid place-items-center px-6 bg-background">
+    <main className="min-h-dvh grid place-items-center px-6 bg-background">
       <div className="relative max-w-md w-full rounded-3xl glass neon-border p-8 text-center overflow-hidden">
         <div className="absolute -top-20 -right-20 size-56 rounded-full bg-[radial-gradient(circle,oklch(0.7_0.25_340_/_0.35),transparent_70%)] blur-2xl" />
         <div className="relative">
@@ -119,7 +119,7 @@ function Form({ draft }: { draft: Submission }) {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground pb-32">
+    <main className="min-h-dvh bg-background text-foreground pb-32">
       {/* Header */}
       <header className="sticky top-0 z-30 px-3 md:px-5 pt-3 pb-3 backdrop-blur-xl bg-background/70 border-b border-white/5">
         <div className="flex items-center gap-2">

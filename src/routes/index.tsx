@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Star, Flame, TrendingUp, Sparkles, Radio, UserPlus } from "lucide-react";
+import { formatDistanceToNowStrict } from "date-fns";
 import { AppShell } from "@/components/layout/AppShell";
 import { Composer } from "@/components/feed/Composer";
 import { CreatorRail } from "@/components/feed/CreatorRail";
 import { PostCard } from "@/components/feed/PostCard";
-import { posts, creators, prescribed } from "@/lib/mock-data";
+import { posts as mockPosts, creators, prescribed } from "@/lib/mock-data";
 import { useFeed } from "@/lib/feed-store";
+import { usePosts } from "@/hooks/use-posts";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -22,13 +24,37 @@ export const Route = createFileRoute("/")({
 function Home() {
   const [tab, setTab] = useState("for-you");
   const { posts: userPosts } = useFeed();
+  const { posts: dbPosts, loading: dbLoading } = usePosts();
 
-  const merged = [...userPosts, ...posts];
+  const mappedDbPosts = dbPosts.map(p => {
+    const pAuthor = p.author || p.creator || {};
+    return {
+      id: p.id,
+      creator: {
+        id: pAuthor.public_profile_uid || p.id,
+        name: pAuthor.display_name || pAuthor.username || "Anonymous",
+        handle: pAuthor.username || "anonymous",
+        avatar: pAuthor.avatar_url || creators[0].avatar,
+        ring: "cyan" as const,
+        verified: pAuthor.is_creator ? ("creator" as const) : ("user" as const),
+      },
+      timeAgo: formatDistanceToNowStrict(new Date(p.created_at), { addSuffix: false }),
+      text: p.content || p.body || "",
+      media: p.image_url || (p.media_urls && p.media_urls.length > 0 ? p.media_urls[0] : undefined),
+      likes: p.likes_count || 0,
+      comments: p.comments_count || 0,
+      reshares: 0,
+      saves: 0,
+    };
+  });
+
+  const basePosts = mappedDbPosts.length > 0 ? mappedDbPosts : mockPosts;
+  const merged = [...userPosts, ...basePosts];
   const filtered =
     tab === "following"
       ? merged.slice(0, 2 + userPosts.length)
       : tab === "latest"
-        ? [...userPosts, ...[...posts].reverse()]
+        ? [...userPosts, ...[...basePosts].reverse()]
         : merged;
 
   const heading =
@@ -57,7 +83,7 @@ function Home() {
             {t.label}
           </button>
         ))}
-        <div className="ml-auto text-xs text-muted-foreground">Live network · {posts.length * 412} active viewers</div>
+        <div className="ml-auto text-xs text-muted-foreground">Live network · {basePosts.length * 412} active viewers</div>
       </div>
 
       {/* Desktop: 3-col grid · Mobile: stacked */}

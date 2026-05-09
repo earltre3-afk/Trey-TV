@@ -18,7 +18,7 @@ export function AppShell({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
-    <div className="relative min-h-screen w-full">
+    <div className="relative min-h-dvh w-full">
       <DesktopSidebar />
 
       <div className="lg:pl-[260px] xl:pl-[280px]">
