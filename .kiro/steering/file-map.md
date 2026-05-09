@@ -66,7 +66,7 @@ auth.tsx                      — Auth context provider
 feed-store.tsx                — MOCK feed store
 comments-store.tsx            — Supabase-backed comments (REAL — user_post_comments, tsc ✅ build ✅)
 follow-store.tsx              — Supabase-backed follows (REAL — follows table, tsc ✅ build ✅; bumpWatch/topThree remain local-only)
-messages-store.tsx            — MOCK messages store
+messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages table, tsc ✅ build ✅; attachments/encryption/message_type out of scope this phase; `as any` cast due to missing generated Supabase table typings)
 activity-store.tsx            — MOCK activity store
 submissions-store.tsx         — MOCK submissions store
 utils.ts                      — cn() utility

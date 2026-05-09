@@ -17,6 +17,7 @@ Status of each feature area: what's real, what's still mock, what's next.
 | Current user profile | `src/hooks/use-current-user.ts` + `src/components/CurrentUserSync.tsx` | `profiles` — bridges Supabase auth into Lovable AuthProvider — tsc ✅ build ✅ (signed-in visual verification pending, browser validation intentionally skipped) |
 | Follow state | `src/lib/follow-store.tsx` | `follows` (`follower_id`, `following_id`) — `public_profile_uid` resolved to `profiles.id` before writing `following_id` — tsc ✅ build ✅ (no browser validation) |
 | Edit profile | `src/routes/edit-profile.tsx` | `profiles` — updates: `display_name`, `username`, `bio`, `location`, `profile_accent_color` — excluded: `public_profile_uid`, `role`, verification fields, `avatar_url`, `banner_url`, `website_url`, `date_of_birth`, `age`, `is_creator` — tsc ✅ build ✅ (no browser validation) |
+| Inbox / DMs | `src/lib/messages-store.tsx` | `direct_messages` — columns: `id`, `sender_id`, `recipient_id`, `body`, `read_at`, `created_at` — threads derived client-side by peer UUID (no conversations table) — peer profiles resolved via `profiles` FK joins and username lookup — attachments/encryption/message_type out of scope this phase — `as any` cast present due to missing generated Supabase table typings — tsc ✅ build ✅ (no browser validation) |
 
 ---
 
@@ -33,7 +34,6 @@ No items currently queued. See Mock section below for candidates.
 | Feed creators strip | `src/lib/mock-data.ts` → `creators[]` | `profiles` (following or featured) |
 | Prescribed content | `src/lib/mock-data.ts` → `prescribed[]` | `prescribe_me` / recommendations |
 | Mood filter | `src/lib/mock-data.ts` → `moods[]` | Static enum (keep as-is for now) |
-| Inbox / DMs | `src/lib/messages-store.tsx` | `direct_messages` |
 | Activity feed | `src/lib/activity-store.tsx` | `notifications` |
 | Submissions | `src/lib/submissions-store.tsx` | `creator_applications` / `episodes` |
 
@@ -57,7 +57,7 @@ No items currently queued. See Mock section below for candidates.
 2. ~~**Comments**~~ — ✅ done (`user_post_comments`)
 3. ~~**Follow state**~~ — ✅ done (`follows`)
 4. ~~**Edit profile**~~ — ✅ done (`profiles` — text fields only; avatar/banner upload out of scope)
-5. **Inbox** — wire `messages-store` to `direct_messages`
+5. ~~**Inbox**~~ — ✅ done (`direct_messages` via `messages-store.tsx`)
 6. **Notifications** — wire `activity-store` to `notifications`
 7. **Creator Studio** — wire to `episodes`, `channels`
 8. **Rewards** — wire to `community_credits`
