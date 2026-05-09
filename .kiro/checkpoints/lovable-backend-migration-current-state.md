@@ -27,7 +27,8 @@
 | Creator Studio dashboard | `src/hooks/use-creator-studio.ts` + `creator-studio.index.tsx` | `channels`, `shows`, `episodes` |
 | Creator Studio metadata drafts | `src/hooks/use-creator-submit.ts` + `creator-studio.submit.tsx` | `creator_edit_projects` |
 | Creator Studio Cloudflare upload | `src/lib/creator-studio/upload.server.ts` + `src/hooks/use-cloudflare-upload.ts` + `creator-studio.edit.tsx` | `creator_edit_projects` (`stream_uid` field) |
-| Creator Studio post queue | `src/hooks/use-creator-submit.ts` | `creator_post_queue` |
+| Creator Studio post queue (write) | `src/hooks/use-creator-submit.ts` | `creator_post_queue` |
+| Creator Studio post queue (read-back) | `src/hooks/use-creator-post-queue.ts` + `creator-studio.submissions.tsx` | `creator_post_queue` |
 
 ---
 
@@ -56,33 +57,37 @@ creator_post_queue
 
 ### 3a. Read-only dashboard
 - Access gate: `channels.owner_email` matched against `supabase.auth.getUser()` email.
-- `profiles.is_creator` is not used — column does not exist in current schema.
+- `profiles.is_creator` not used — column does not exist in current schema.
 - Browser SELECT only on `channels`, `shows`, `episodes`.
-- Fan list and fan count use safe mock fallback (`follower_count` not confirmed in schema).
+- Fan list and fan count use safe mock fallback.
 - Metric cards remain hardcoded.
 
 ### 3b. Metadata drafts — `creator_edit_projects`
 - `useCreatorSubmit.saveDraft()` INSERT/UPDATE on `creator_edit_projects`.
-- `useCreatorSubmit.submitForReview()` UPDATE `status = 'submitted'` on `creator_edit_projects`.
-- `submissions-store.tsx` remains as local optimistic/rollback layer — not deleted.
-- Supabase failures are non-blocking and do not break local draft flow.
+- `useCreatorSubmit.submitForReview()` UPDATE `status = 'submitted'`.
+- `submissions-store.tsx` remains as local optimistic/rollback layer.
 
-### 3c. Cloudflare Stream direct upload
-- `requestDirectUpload` is a `createServerFn` — runs server-side only (commit 46f970b).
-- `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_STREAM_API_TOKEN` read from `process.env` inside the server function — never in `VITE_*` env vars, never in client bundle.
+### 3c. Cloudflare Stream direct upload (commit 46f970b)
+- `requestDirectUpload` is a `createServerFn` — server-side only.
+- `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_STREAM_API_TOKEN` in `process.env` inside the server function — never in `VITE_*` env vars, never in client bundle.
 - Browser receives only: temporary `uploadURL` (1h TTL), `uid`, `expires`, `draftId`.
-- Client uploads via XHR POST FormData to the temporary URL — no Cloudflare token in browser.
+- Client uploads via XHR POST FormData — no Cloudflare token in browser.
 - `stream_uid` stored in `creator_edit_projects` after upload.
-- `draftId` passed as `?id=` search param to `/creator-studio/submit`.
 
 ### 3d. creator_post_queue entry creation (commit 8b482a5)
-- Queue row inserted inside `submitForReview()` only after `stream_uid` is confirmed from `creator_edit_projects` by `rowId + creator_id`.
-- Missing or empty `stream_uid` skips queue creation silently — returns `true`, no crash.
-- Pre-insert SELECT on `creator_id + edit_project_id` prevents duplicate rows from repeated submit calls.
-- `approval_status` hardcoded to `'pending'` — never user-controlled.
-- `is_plus_content` forced `false` for episode 1 or 2 (satisfies DB constraint `creator_post_queue_first_two_not_plus_check`).
-- Queue INSERT failure is non-fatal — submit flow returns `true` regardless.
-- No service-role key. Browser INSERT allowed by RLS: `creator_id = auth.uid() AND approval_status = 'pending' AND is_approved_creator_for_current_user()`.
+- Queue row inserted inside `submitForReview()` only after `stream_uid` confirmed from DB.
+- Missing/empty `stream_uid` skips queue creation silently.
+- Pre-insert SELECT on `creator_id + edit_project_id` prevents duplicate rows.
+- `approval_status` hardcoded to `'pending'`. `is_plus_content` forced `false` for episodes 1–2.
+- Queue INSERT failure is non-fatal. No service-role key.
+
+### 3e. creator_post_queue read-back / status display
+- `useCreatorPostQueue` SELECTs `creator_post_queue` rows for the signed-in creator.
+- `admin_notes` is not selected or displayed — admin-internal field.
+- `approval_status` values (`pending`, `approved`, `rejected`, `needs_changes`) map directly into existing `Submission.status` labels and tone classes — no new UI needed.
+- Queue rows merged with local submissions in `creator-studio.submissions.tsx`; queue-backed status wins when `edit_project_id` matches a local row's `content_id`.
+- SELECT-only — no writes, no approval/rejection actions.
+- No service-role key. `profiles.is_creator` not used.
 
 ---
 
@@ -91,12 +96,13 @@ creator_post_queue
 | Area | Constraint |
 |---|---|
 | Edit Profile | `avatar_url`, `banner_url`, `website_url`, `date_of_birth`, `age`, `is_creator`, `role`, verification fields excluded from writes |
-| Inbox / DMs | `message_type`, `encrypted_*`, `attachment_*` columns out of scope; `as any` cast due to missing generated Supabase typings |
+| Inbox / DMs | `message_type`, `encrypted_*`, `attachment_*` out of scope; `as any` cast due to missing generated Supabase typings |
 | Notifications | Browser SELECT + UPDATE `read_at` only — INSERT is server-side trigger only |
-| Rewards | SELECT only — no INSERT/UPDATE/DELETE; no Stripe/payment/payout/gift write logic |
+| Rewards | SELECT only — no Stripe/payment/payout/gift write logic |
 | Creator Studio fans | Fan list mock; `follower_count` query removed as unsafe |
-| `creator_post_queue` | No unique DB constraint yet on `(creator_id, edit_project_id)` — pre-insert SELECT covers normal cases; race-proof constraint is future hardening |
-| `profiles.is_creator` | Column does not exist in current schema — never query it |
+| `creator_post_queue` admin_notes | Not fetched or displayed in creator-facing UI |
+| `creator_post_queue` unique constraint | No DB-level unique constraint on `(creator_id, edit_project_id)` yet — pre-insert SELECT covers normal cases |
+| `profiles.is_creator` | Column does not exist — never query it |
 | `profiles.age` / `profiles.date_of_birth` | Do not query unless a specific task explicitly requires it |
 
 ---
@@ -107,9 +113,9 @@ creator_post_queue
 |---|---|
 | `src/lib/mock-data.ts` | MOCK — `creators[]`, `moods[]`, `currentUser` still used by several routes |
 | `src/lib/feed-store.tsx` | MOCK feed store |
-| `src/lib/activity-store.tsx` | LOCAL only — tracks user's own reactions/saves/shares in localStorage; intentionally not wired to `notifications` table |
-| `src/lib/submissions-store.tsx` | Preserved as local optimistic/rollback layer — not deleted |
-| `src/routes/notifications.tsx` | ComingSoonPage stub — notification surface is the popover |
+| `src/lib/activity-store.tsx` | LOCAL only — user's own reactions/saves/shares in localStorage; not wired to `notifications` table |
+| `src/lib/submissions-store.tsx` | Local optimistic/rollback layer — preserved, not deleted |
+| `src/routes/notifications.tsx` | ComingSoonPage stub |
 | Rewards gift / perk actions | `toast.success()` only — no write |
 | Creator strip in feed | Still uses `mock-data.ts creators[]` |
 | Creator Studio fans | Mock fallback |
@@ -121,7 +127,7 @@ creator_post_queue
 
 ## 6. Intentionally Out of Scope
 
-- Admin review UI for `creator_post_queue`
+- Admin review UI for `creator_post_queue` (approval/rejection writes)
 - Edit Studio / export features
 - Stripe / payments / subscriptions / creator payouts
 - Avatar / banner upload
@@ -129,6 +135,7 @@ creator_post_queue
 - Realtime subscriptions
 - `community_rewards`, `community_badges`, `user_badges`, `reward_redemptions` tables
 - Unique DB constraint on `creator_post_queue(creator_id, edit_project_id)`
+- Displaying `admin_notes` to creators
 
 ---
 
@@ -150,23 +157,21 @@ creator_post_queue
 
 ---
 
-## 8. Next Recommended Lane: Creator Studio post queue read-back / status display
+## 8. Next Recommended Lane: Admin Review UI for `creator_post_queue`
 
-Now that `creator_post_queue` rows are being written, creators have no visibility into their submission status inside the app. The next lane is to surface queue row status back to the creator.
+Creators can now submit videos and see their review status. The missing piece is the admin side: reviewing, approving, rejecting, or requesting changes on `creator_post_queue` rows.
 
 ### What this involves
-- Read `creator_post_queue` rows for the current creator (SELECT by `creator_id = auth.uid()`).
-- Display `approval_status` (`pending` / `approved` / `rejected` / `needs_changes`) on the submissions list or submitted confirmation page.
-- RLS already allows SELECT for `creator_id = auth.uid() AND is_approved_creator_for_current_user()`.
-- No new tables. No writes. Read-only.
+- Read `creator_post_queue` rows for admin review (all creators, not just current user).
+- UPDATE `approval_status` to `approved`, `rejected`, or `needs_changes`.
+- Optionally write `admin_notes`.
+- This requires a **server-side route or `createServerFn`** — browser must never hold the service-role key.
+- The existing `src/routes/admin.tsx` shell exists but is not wired.
 
 ### Risks before starting
-- Do not redesign the submissions list UI — wire data into existing Lovable components only.
-- Do not touch `creator-studio.edit.tsx` or Watch Now / Guide.
-- Do not expose secrets.
+- Service-role key must stay server-side only — use `createServerFn` pattern already established by `upload.server.ts`.
+- Do not add a `VITE_SUPABASE_SERVICE_ROLE_KEY` env var — it would be exposed to the browser.
+- Do not redesign the admin UI — wire data into existing Lovable admin route shell.
+- Do not touch Watch Now / Guide.
 - Do not use `profiles.is_creator`.
 - Spec required before any implementation.
-
-### After that: Admin review UI
-- Admin review of `creator_post_queue` requires service-role key — must be a server function or server route, never a browser query.
-- Spec required. Do not start until post queue read-back is confirmed build-safe.
