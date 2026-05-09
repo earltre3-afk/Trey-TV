@@ -16,7 +16,7 @@ index.tsx                         — Home feed (/)
 u.$uid.tsx                        — Public profile (/u/:uid)
 login.tsx                         — Login
 signup.tsx                        — Signup
-edit-profile.tsx                  — Edit profile
+edit-profile.tsx                  — Edit profile (REAL — profiles table, tsc ✅ build ✅; avatar/banner upload out of scope)
 settings.tsx                      — Settings
 inbox.tsx                         — DMs / inbox
 notifications.tsx                 — Notifications

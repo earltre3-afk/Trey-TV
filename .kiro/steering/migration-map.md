@@ -16,6 +16,7 @@ Status of each feature area: what's real, what's still mock, what's next.
 | Comments | `src/lib/comments-store.tsx` | `user_post_comments` — tsc ✅ build ✅ (no browser validation) |
 | Current user profile | `src/hooks/use-current-user.ts` + `src/components/CurrentUserSync.tsx` | `profiles` — bridges Supabase auth into Lovable AuthProvider — tsc ✅ build ✅ (signed-in visual verification pending, browser validation intentionally skipped) |
 | Follow state | `src/lib/follow-store.tsx` | `follows` (`follower_id`, `following_id`) — `public_profile_uid` resolved to `profiles.id` before writing `following_id` — tsc ✅ build ✅ (no browser validation) |
+| Edit profile | `src/routes/edit-profile.tsx` | `profiles` — updates: `display_name`, `username`, `bio`, `location`, `profile_accent_color` — excluded: `public_profile_uid`, `role`, verification fields, `avatar_url`, `banner_url`, `website_url`, `date_of_birth`, `age`, `is_creator` — tsc ✅ build ✅ (no browser validation) |
 
 ---
 
@@ -43,7 +44,6 @@ No items currently queued. See Mock section below for candidates.
 | Feature | Notes |
 |---------|-------|
 | Auth login/signup flow | Routes exist (`login.tsx`, `signup.tsx`) but use mock |
-| Edit profile | Route exists (`edit-profile.tsx`) — needs real save |
 | Creator Studio | Routes exist — needs real episode/channel data |
 | Notifications | Route exists (`notifications.tsx`) — stub only |
 | Rewards | Route exists (`rewards.tsx`) — stub only |
@@ -56,7 +56,7 @@ No items currently queued. See Mock section below for candidates.
 1. ~~**Current user profile**~~ — ✅ done (`profiles` via `use-current-user.ts` + `CurrentUserSync.tsx`)
 2. ~~**Comments**~~ — ✅ done (`user_post_comments`)
 3. ~~**Follow state**~~ — ✅ done (`follows`)
-4. **Edit profile** — save form to `profiles` table
+4. ~~**Edit profile**~~ — ✅ done (`profiles` — text fields only; avatar/banner upload out of scope)
 5. **Inbox** — wire `messages-store` to `direct_messages`
 6. **Notifications** — wire `activity-store` to `notifications`
 7. **Creator Studio** — wire to `episodes`, `channels`
