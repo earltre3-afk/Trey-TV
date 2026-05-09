@@ -31,8 +31,8 @@ channel.$handle.tsx               — Channel page
 category.$slug.tsx                — Category page
 creator-studio.tsx                — Creator Studio shell
 creator-studio.index.tsx          — Creator Studio home (REAL — channels/shows/episodes via use-creator-studio.ts, tsc ✅ build ✅; metric cards remain hardcoded)
-creator-studio.submit.tsx         — Submit content (NOT WIRED — upload out of scope)
-creator-studio.edit.tsx           — Edit content (NOT WIRED — upload/Cloudflare Stream out of scope)
+creator-studio.submit.tsx         — Submit content (REAL — metadata wired to creator_edit_projects via use-creator-submit.ts, tsc ✅ build ✅; submissions-store remains local rollback layer; no video upload; no Cloudflare Stream)
+creator-studio.edit.tsx           — Edit content (NOT WIRED — Cloudflare Stream upload/export out of scope)
 creator-studio.submissions.tsx    — Submissions list (REAL — episodes via use-creator-studio.ts, tsc ✅ build ✅; draft delete is toast-only, no write)
 creator-studio.analytics.tsx      — Analytics (REAL — episode table from episodes via use-creator-studio.ts, tsc ✅ build ✅; all other analytics remain hardcoded)
 creator-studio.fans.tsx           — Fans (MOSTLY MOCK — fan list remains mock; follower_count query removed as unsafe in commit 8023b58; fan count uses fallback "32.7K")
@@ -56,6 +56,7 @@ use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ 
 use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
 use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
 use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
+use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — creator_edit_projects INSERT/UPDATE, tsc ✅ build ✅; metadata-only; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
 ```
