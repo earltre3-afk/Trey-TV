@@ -6,6 +6,7 @@ import {
   STATUS_LABEL, STATUS_TONE, type SubmissionStatus, type Submission,
 } from "@/lib/submissions-store";
 import { useCreatorStudio } from "@/hooks/use-creator-studio";
+import { useCreatorPostQueue, type QueueRow } from "@/hooks/use-creator-post-queue";
 import { posts } from "@/lib/mock-data";
 import {
   Pencil, Trash2, Eye, MessageSquare, Upload, Search, LayoutGrid, List as ListIcon,
@@ -34,10 +35,57 @@ const FILTERS: { id: "all" | SubmissionStatus; label: string }[] = [
   { id: "rejected", label: "Rejected" },
 ];
 
+function queueRowToSubmission(row: QueueRow): Submission {
+  return {
+    content_id: row.id,
+    creator_id: row.channel_id ?? "",
+    creator_name: "",
+    creator_handle: "",
+    creator_avatar: "",
+    title: row.title,
+    short_description: row.description ?? "",
+    full_description: "",
+    viewer_context: "",
+    what_to_know: "",
+    why_it_matters: "",
+    creator_note: "",
+    show_id: row.show_id ?? "",
+    show_title: "",
+    season_number: 1,
+    episode_number: row.episode_number ?? 1,
+    episode_type: "Full Episode",
+    category: [],
+    tags: [],
+    mood_tags: [],
+    thumbnail_url: row.thumbnail_url ?? "",
+    poster_url: "",
+    video_url: "",
+    duration: "",
+    quality: "",
+    visibility: row.visibility === "private" || row.visibility === "scheduled" ? row.visibility : "public",
+    access_type: row.is_plus_content ? "subscribers" : "free",
+    content_rating: "",
+    language: "",
+    explicit_content: false,
+    is_trailer: false,
+    is_bonus: false,
+    is_finale: false,
+    is_premiere: false,
+    status: row.approval_status,
+    admin_feedback: "",
+    admin_internal_note: "",
+    policy_ack: true,
+    scheduled_at: row.scheduled_at ?? undefined,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
 function SubmissionsPage() {
   const { isGuest } = useAuth();
   const navigate = useNavigate();
   const { submissions } = useCreatorStudio();
+  const { queueRows } = useCreatorPostQueue();
   useEffect(() => { if (isGuest) navigate({ to: "/login" }); }, [isGuest, navigate]);
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
@@ -45,7 +93,12 @@ function SubmissionsPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const mine = submissions;
+  const mine = useMemo(() => {
+    const queueSubmissions = queueRows.map(queueRowToSubmission);
+    const queuedEditProjectIds = new Set(queueRows.map((row) => row.edit_project_id).filter(Boolean));
+    const episodeOnly = submissions.filter((submission) => !queuedEditProjectIds.has(submission.content_id));
+    return [...queueSubmissions, ...episodeOnly];
+  }, [submissions, queueRows]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: mine.length };
