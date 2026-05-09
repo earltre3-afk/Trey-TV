@@ -30,17 +30,17 @@ watch.$id.tsx                     — Video watch page
 channel.$handle.tsx               — Channel page
 category.$slug.tsx                — Category page
 creator-studio.tsx                — Creator Studio shell
-creator-studio.index.tsx          — Creator Studio home
-creator-studio.submit.tsx         — Submit content
-creator-studio.edit.tsx           — Edit content
-creator-studio.submissions.tsx    — Submissions list
-creator-studio.analytics.tsx      — Analytics
-creator-studio.fans.tsx           — Fans
-creator-studio.rewards.tsx        — Creator rewards
-creator-studio.schedule.tsx       — Schedule
-creator-studio.settings.tsx       — Studio settings
-creator-studio.channel.tsx        — Channel settings
-creator-studio.interactions.tsx   — Interactions
+creator-studio.index.tsx          — Creator Studio home (REAL — channels/shows/episodes via use-creator-studio.ts, tsc ✅ build ✅; metric cards remain hardcoded)
+creator-studio.submit.tsx         — Submit content (NOT WIRED — upload out of scope)
+creator-studio.edit.tsx           — Edit content (NOT WIRED — upload/Cloudflare Stream out of scope)
+creator-studio.submissions.tsx    — Submissions list (REAL — episodes via use-creator-studio.ts, tsc ✅ build ✅; draft delete is toast-only, no write)
+creator-studio.analytics.tsx      — Analytics (REAL — episode table from episodes via use-creator-studio.ts, tsc ✅ build ✅; all other analytics remain hardcoded)
+creator-studio.fans.tsx           — Fans (MOSTLY MOCK — fan list remains mock; follower_count query removed as unsafe in commit 8023b58; fan count uses fallback "32.7K")
+creator-studio.rewards.tsx        — Creator rewards (NOT WIRED — out of scope)
+creator-studio.schedule.tsx       — Schedule (NOT WIRED — out of scope)
+creator-studio.settings.tsx       — Studio settings (NOT WIRED — out of scope)
+creator-studio.channel.tsx        — Channel settings (NOT WIRED — channel edit writes out of scope)
+creator-studio.interactions.tsx   — Interactions (NOT WIRED — out of scope)
 creator-studio.submitted.tsx      — Submitted confirmation
 admin.tsx                         — Admin shell
 admin.videos.tsx / admin.users.tsx / etc.
@@ -55,6 +55,7 @@ use-supabase-reactions.ts     — Post reactions (REAL)
 use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
 use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
 use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
+use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
 ```
@@ -79,6 +80,7 @@ error-page.ts / error-capture.ts
 ```
 layout/     — AppLayout, BottomNav, TopBar, etc.
               NotificationsPopover.tsx — Wired to Supabase notifications via useNotifications() (REAL — tsc ✅ build ✅; mock fallback comment block preserved in file)
+              CreatorStudioLayout.tsx — Access gate wired to channels.owner_email via use-creator-studio.ts (REAL — tsc ✅ build ✅; profiles.is_creator not used)
 ui/         — shadcn/ui primitives (do not modify)
 feed/       — Feed-specific components
 creator/    — Creator Studio components
