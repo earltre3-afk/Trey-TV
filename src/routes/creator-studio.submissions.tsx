@@ -3,8 +3,9 @@ import { useEffect, useMemo, useState } from "react";
 import { CreatorStudioLayout } from "@/components/layout/CreatorStudioLayout";
 import { useAuth } from "@/lib/auth";
 import {
-  useSubmissions, STATUS_LABEL, STATUS_TONE, type SubmissionStatus, type Submission,
+  STATUS_LABEL, STATUS_TONE, type SubmissionStatus, type Submission,
 } from "@/lib/submissions-store";
+import { useCreatorStudio } from "@/hooks/use-creator-studio";
 import { posts } from "@/lib/mock-data";
 import {
   Pencil, Trash2, Eye, MessageSquare, Upload, Search, LayoutGrid, List as ListIcon,
@@ -34,9 +35,9 @@ const FILTERS: { id: "all" | SubmissionStatus; label: string }[] = [
 ];
 
 function SubmissionsPage() {
-  const { isGuest, user } = useAuth();
+  const { isGuest } = useAuth();
   const navigate = useNavigate();
-  const store = useSubmissions();
+  const { submissions } = useCreatorStudio();
   useEffect(() => { if (isGuest) navigate({ to: "/login" }); }, [isGuest, navigate]);
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
@@ -44,7 +45,7 @@ function SubmissionsPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const mine = user ? store.byCreator(user.uid) : store.submissions;
+  const mine = submissions;
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: mine.length };
@@ -65,11 +66,7 @@ function SubmissionsPage() {
   const clearSel = () => setSelected(new Set());
 
   const bulkDelete = () => {
-    selected.forEach((id) => {
-      const s = mine.find((x) => x.content_id === id);
-      if (s?.status === "draft") store.remove(id);
-    });
-    toast.success(`${selected.size} item(s) processed`);
+    toast.success('Delete not available in this version');
     clearSel();
   };
 
@@ -250,7 +247,6 @@ function SubmissionRow({ s, selected, onSelect }: { s: Submission; selected: boo
 }
 
 function RowActions({ s, compact }: { s: Submission; compact?: boolean }) {
-  const store = useSubmissions();
   const cls = compact ? "px-2.5 py-1.5 rounded-lg text-[11px]" : "px-3 py-1.5 rounded-lg text-xs";
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -273,7 +269,7 @@ function RowActions({ s, compact }: { s: Submission; compact?: boolean }) {
         <Share2 className="inline size-3 mr-1" />Share
       </button>
       {s.status === "draft" && (
-        <button onClick={() => store.remove(s.content_id)} className={`${cls} font-semibold glass border border-white/10 text-muted-foreground hover:text-[oklch(0.78_0.24_15)]`}>
+        <button onClick={() => toast.error('Delete not available in this version')} className={`${cls} font-semibold glass border border-white/10 text-muted-foreground hover:text-[oklch(0.78_0.24_15)]`}>
           <Trash2 className="size-3" />
         </button>
       )}

@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CreatorStudioLayout } from "@/components/layout/CreatorStudioLayout";
 import { SectionHeader, CreatorMetricCard } from "@/components/creator/CreatorPrimitives";
 import { Users, Heart, Gem, TrendingUp, MessageSquare, Search, X, Crown, Flame, Star, UserCheck } from "lucide-react";
 import { creators } from "@/lib/mock-data";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { createBrowserClient } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/creator-studio/fans")({
   component: FansPage,
@@ -29,6 +31,24 @@ function FansPage() {
   const [seg, setSeg] = useState<typeof SEGMENTS[number]["id"]>("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<FanRow | null>(null);
+  const [followerCount, setFollowerCount] = useState<string>("—");
+  const { user: sbUser } = useSupabaseAuth();
+
+  useEffect(() => {
+    if (!sbUser) return;
+    let mounted = true;
+    (createBrowserClient() as any)
+      .from("profiles")
+      .select("follower_count")
+      .eq("id", sbUser.id)
+      .single()
+      .then(({ data }: { data: { follower_count?: number | null } | null }) => {
+        if (mounted && data?.follower_count != null) {
+          setFollowerCount(data.follower_count.toLocaleString());
+        }
+      });
+    return () => { mounted = false; };
+  }, [sbUser?.id]);
 
   const fans: FanRow[] = useMemo(() => {
     const more = [...creators, ...creators];
@@ -51,7 +71,7 @@ function FansPage() {
   return (
     <CreatorStudioLayout title="Your fans" subtitle="The people powering your channel.">
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <CreatorMetricCard label="Total Fans" value="32.7K" delta="+1.2K this week" icon={Users} tone="cyan" />
+        <CreatorMetricCard label="Total Fans" value={followerCount} delta="+1.2K this week" icon={Users} tone="cyan" />
         <CreatorMetricCard label="Returning" value="68%" delta="+4%" icon={TrendingUp} tone="purple" />
         <CreatorMetricCard label="Top Supporter" value="@nightowl" sub="2,400 pts gifted" icon={Gem} tone="gold" />
         <CreatorMetricCard label="Most Engaged" value="Late Night fans" icon={Heart} tone="magenta" />

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { CreatorStudioLayout } from "@/components/layout/CreatorStudioLayout";
 import { CreatorMetricCard, SectionHeader } from "@/components/creator/CreatorPrimitives";
 import { RangePicker, Sparkline, MiniBars, useSeries, type Range } from "@/components/creator/CreatorCharts";
-import { useSubmissions } from "@/lib/submissions-store";
+import { useCreatorStudio } from "@/hooks/use-creator-studio";
 import { Eye, Clock, Users, Heart, TrendingUp, Wand2, Share2, Bookmark, Globe2, Compass, Search, Crown } from "lucide-react";
 
 export const Route = createFileRoute("/creator-studio/analytics")({
@@ -27,10 +27,10 @@ function AnalyticsPage() {
     { id: "channel", label: "Direct channel", pct: 10, icon: Eye },
   ];
 
-  const store = useSubmissions();
+  const { episodes: studioEpisodes } = useCreatorStudio();
   const episodes = useMemo(() =>
-    store.submissions.filter((s) => s.status === "approved" || s.status === "published" || s.status === "scheduled").slice(0, 8)
-  , [store.submissions]);
+    studioEpisodes.filter((ep) => ep.publish_status === "published").slice(0, 8)
+  , [studioEpisodes]);
   const epSeries = useSeries(11, Math.max(episodes.length, 1) * 14, 200, 140);
   const hourly = useSeries(99, 24, 50, 50);
 
@@ -119,7 +119,7 @@ function AnalyticsPage() {
                 const v = 8000 + (i * 3700) + (i % 3) * 1200;
                 const series = epSeries.slice(i * 14, (i + 1) * 14);
                 return (
-                  <tr key={e.content_id} className="hover:bg-white/5">
+                  <tr key={e.id} className="hover:bg-white/5">
                     <td className="p-2 font-semibold truncate max-w-[200px]">{e.title || "Untitled"}</td>
                     <td className="p-2 w-32"><div className="h-8"><Sparkline values={series} height={28} /></div></td>
                     <td className="p-2 text-right tabular-nums">{fmt(v)}</td>

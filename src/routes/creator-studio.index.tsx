@@ -4,7 +4,7 @@ import {
   CreatorMetricCard, CreatorActionButton, SectionHeader, CreatorStatusBadge,
 } from "@/components/creator/CreatorPrimitives";
 import { useAuth } from "@/lib/auth";
-import { useSubmissions } from "@/lib/submissions-store";
+import { useCreatorStudio } from "@/hooks/use-creator-studio";
 import {
   Eye, Clock, Users, Heart, Gem, FileClock, CheckCircle2, Trophy,
   Upload, Wand2, Tv, BarChart3, Calendar, Sparkles, MessageSquare,
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/creator-studio/")({
 
 function CreatorStudioDashboard() {
   const { user } = useAuth();
-  const { submissions } = useSubmissions();
+  const { submissions } = useCreatorStudio();
   const navigate = useNavigate();
 
   const myName = user?.name?.split(" ")[0] ?? "Creator";

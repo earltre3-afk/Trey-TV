@@ -7,6 +7,7 @@ import {
   Calendar, Settings, Tv, Lock, Sparkles,
 } from "lucide-react";
 import { currentUser } from "@/lib/mock-data";
+import { useCreatorStudio } from "@/hooks/use-creator-studio";
 import { CreatorStatusBadge } from "@/components/creator/CreatorPrimitives";
 
 type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; exact?: boolean };
@@ -34,7 +35,8 @@ export function CreatorStudioLayout({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { isGuest, isApprovedCreator, creatorStatus, user } = useAuth();
+  const { isGuest, creatorStatus, user } = useAuth();
+  const { isApprovedCreator } = useCreatorStudio();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
