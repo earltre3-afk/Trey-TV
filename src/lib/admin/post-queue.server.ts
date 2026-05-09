@@ -54,6 +54,23 @@ const PROJECT_STATUS_BY_APPROVAL_STATUS: Record<AdminQueueApprovalStatus, string
   pending: "submitted",
 };
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70);
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
+}
+
 const validateAccessToken = (input: AccessTokenInput): AccessTokenInput => ({
   accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
 });
@@ -209,7 +226,9 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
 
     const { data: queue, error: queueError } = await (supabase as any)
       .from("creator_post_queue")
-      .select("id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, stream_uid, is_plus_content")
+      .select(
+        "id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, description, stream_uid, thumbnail_url, scheduled_at, is_plus_content",
+      )
       .eq("id", data.queueId)
       .maybeSingle();
 
@@ -256,6 +275,94 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
 
       if (projectError) {
         throw new Error(projectError.message);
+      }
+    }
+
+    if (data.approvalStatus === "approved") {
+      const rollbackApproval = async () => {
+        await (supabase as any)
+          .from("creator_post_queue")
+          .update({
+            approval_status: "pending",
+            admin_notes: null,
+          })
+          .eq("id", data.queueId);
+
+        if (queue.edit_project_id) {
+          await (supabase as any)
+            .from("creator_edit_projects")
+            .update({ status: "submitted" })
+            .eq("id", queue.edit_project_id);
+        }
+      };
+
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const scheduledAt = queue.scheduled_at ? new Date(queue.scheduled_at) : null;
+      const isScheduled = scheduledAt ? scheduledAt.getTime() > now.getTime() : false;
+      const accessType = queue.episode_number <= 2 ? "free" : queue.is_plus_content ? "locked" : "free";
+      const baseSlug = slugify(queue.title) || `episode-${queue.episode_number}`;
+      const episodePayload = {
+        channel_id: queue.channel_id,
+        show_id: queue.show_id,
+        episode_number: queue.episode_number,
+        season_number: 1,
+        title: queue.title,
+        slug: baseSlug,
+        description: queue.description ?? null,
+        thumbnail_url: queue.thumbnail_url ?? null,
+        video_thumbnail_url: queue.thumbnail_url ?? null,
+        video_provider: "cloudflare_stream",
+        video_asset_id: queue.stream_uid,
+        video_playback_id: queue.stream_uid,
+        video_status: "ready",
+        publish_status: isScheduled ? "scheduled" : "published",
+        access_type: accessType,
+        scheduled_at: queue.scheduled_at ?? null,
+        admin_publish_override: true,
+        admin_publish_override_by: adminUser.id,
+        admin_publish_override_at: nowIso,
+        updated_at: nowIso,
+      };
+
+      const { data: existingEpisode, error: existingEpisodeError } = await (supabase as any)
+        .from("episodes")
+        .select("id, slug")
+        .eq("show_id", queue.show_id)
+        .eq("video_asset_id", queue.stream_uid)
+        .limit(1)
+        .maybeSingle();
+
+      let episodeError: unknown = existingEpisodeError;
+
+      if (!episodeError && existingEpisode) {
+        const episodeUpdatePayload: Record<string, unknown> = { ...episodePayload };
+        delete episodeUpdatePayload.slug;
+        const { error } = await (supabase as any)
+          .from("episodes")
+          .update(episodeUpdatePayload)
+          .eq("id", existingEpisode.id);
+        episodeError = error;
+      }
+
+      if (!episodeError && !existingEpisode) {
+        const { error } = await (supabase as any).from("episodes").insert(episodePayload);
+        episodeError = error;
+
+        if (error?.code === "23505") {
+          const { error: retryError } = await (supabase as any)
+            .from("episodes")
+            .insert({
+              ...episodePayload,
+              slug: `${baseSlug}-${queue.episode_number}`,
+            });
+          episodeError = retryError;
+        }
+      }
+
+      if (episodeError) {
+        await rollbackApproval().catch(() => undefined);
+        throw new Error(`Publishing failed: ${getErrorMessage(episodeError)}`);
       }
     }
 
