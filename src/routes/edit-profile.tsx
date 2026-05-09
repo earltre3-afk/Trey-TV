@@ -5,6 +5,8 @@ import { useGoBack } from "@/hooks/use-go-back";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { createBrowserClient } from "@/lib/supabase-browser";
 import { currentUser } from "@/lib/mock-data";
 import bannerImg from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
@@ -28,6 +30,7 @@ const accents = [
 
 function EditProfile() {
   const { user, updateUser, signIn } = useAuth();
+  const { user: supabaseUser } = useSupabaseAuth();
   const nav = useNavigate();
   const base = user ?? { ...currentUser, role: "creator" as const, banner: "", accent: "gold" as const, rewards: { points: 12480, tier: "GOLD" as const } };
 
@@ -58,7 +61,31 @@ function EditProfile() {
     };
   };
 
-  const save = () => {
+  const save = async () => {
+    if (supabaseUser) {
+      const supabase = createBrowserClient();
+      const profileUpdate: any = {
+        display_name: draft.name,
+        username: draft.handle,
+        bio: draft.bio,
+        location: draft.location,
+        profile_accent_color: draft.accent,
+      };
+      const { error } = await (supabase as any)
+        .from("profiles")
+        .update(profileUpdate)
+        .eq("id", supabaseUser.id);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast("Username already taken — try another.");
+          return;
+        }
+        toast("Failed to save profile.");
+        return;
+      }
+    }
+
     if (!user) signIn("creator");
     updateUser({
       name: draft.name,
