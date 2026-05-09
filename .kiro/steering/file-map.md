@@ -52,6 +52,7 @@ use-auth.ts                   — Auth session (REAL)
 use-posts.ts                  — Feed posts (REAL)
 use-profile.ts                — Public profile (REAL)
 use-supabase-reactions.ts     — Post reactions (REAL)
+use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
 ```
@@ -63,7 +64,7 @@ backend-env.ts                — Env var reader (VITE_SUPABASE_*)
 mock-data.ts                  — MOCK: creators, posts, moods, currentUser
 auth.tsx                      — Auth context provider
 feed-store.tsx                — MOCK feed store
-comments-store.tsx            — MOCK comments store
+comments-store.tsx            — Supabase-backed comments (REAL — user_post_comments, tsc ✅ build ✅)
 follow-store.tsx              — MOCK follow store
 messages-store.tsx            — MOCK messages store
 activity-store.tsx            — MOCK activity store
@@ -81,6 +82,7 @@ creator/    — Creator Studio components
 brand/      — Brand/logo components
 ai/         — AI assistant components
 prescribe/  — Prescribe Me components
+CurrentUserSync.tsx — Zero-render bridge: pushes real Supabase profile into Lovable AuthProvider (REAL — tsc ✅ build ✅, Lovable UI is source of truth)
 ```
 
 ## Config

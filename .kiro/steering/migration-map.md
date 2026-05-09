@@ -13,6 +13,8 @@ Status of each feature area: what's real, what's still mock, what's next.
 | Public profile | `src/hooks/use-profile.ts` | `profiles` |
 | Supabase client/env | `src/lib/supabase-browser.ts`, `src/lib/backend-env.ts` | — |
 | Post reactions/likes | `src/hooks/use-supabase-reactions.ts` | `user_post_reactions` |
+| Comments | `src/lib/comments-store.tsx` | `user_post_comments` — tsc ✅ build ✅ (no browser validation) |
+| Current user profile | `src/hooks/use-current-user.ts` + `src/components/CurrentUserSync.tsx` | `profiles` — bridges Supabase auth into Lovable AuthProvider — tsc ✅ build ✅ (signed-in visual verification pending, browser validation intentionally skipped) |
 
 ---
 
@@ -29,8 +31,6 @@ No items currently queued. See Mock section below for candidates.
 | Feed creators strip | `src/lib/mock-data.ts` → `creators[]` | `profiles` (following or featured) |
 | Prescribed content | `src/lib/mock-data.ts` → `prescribed[]` | `prescribe_me` / recommendations |
 | Mood filter | `src/lib/mock-data.ts` → `moods[]` | Static enum (keep as-is for now) |
-| Current user | `src/lib/mock-data.ts` → `currentUser` | `profiles` (auth user) |
-| Comments | `src/lib/comments-store.tsx` | `user_post_comments` |
 | Follow state | `src/lib/follow-store.tsx` | `follows` |
 | Inbox / DMs | `src/lib/messages-store.tsx` | `direct_messages` |
 | Activity feed | `src/lib/activity-store.tsx` | `notifications` |
@@ -53,8 +53,8 @@ No items currently queued. See Mock section below for candidates.
 
 ## Migration Priority Order
 
-1. **Current user profile** — replace `mock-data.currentUser` with auth user's real profile
-2. **Comments** — wire `comments-store` to `user_post_comments`
+1. ~~**Current user profile**~~ — ✅ done (`profiles` via `use-current-user.ts` + `CurrentUserSync.tsx`)
+2. ~~**Comments**~~ — ✅ done (`user_post_comments`)
 3. **Follow state** — wire `follow-store` to `follows` table
 4. **Edit profile** — save form to `profiles` table
 5. **Inbox** — wire `messages-store` to `direct_messages`
