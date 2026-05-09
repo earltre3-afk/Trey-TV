@@ -6,8 +6,6 @@ import { Users, Heart, Gem, TrendingUp, MessageSquare, Search, X, Crown, Flame, 
 import { creators } from "@/lib/mock-data";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
-import { createBrowserClient } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/creator-studio/fans")({
   component: FansPage,
@@ -31,24 +29,7 @@ function FansPage() {
   const [seg, setSeg] = useState<typeof SEGMENTS[number]["id"]>("all");
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<FanRow | null>(null);
-  const [followerCount, setFollowerCount] = useState<string>("—");
-  const { user: sbUser } = useSupabaseAuth();
-
-  useEffect(() => {
-    if (!sbUser) return;
-    let mounted = true;
-    (createBrowserClient() as any)
-      .from("profiles")
-      .select("follower_count")
-      .eq("id", sbUser.id)
-      .single()
-      .then(({ data }: { data: { follower_count?: number | null } | null }) => {
-        if (mounted && data?.follower_count != null) {
-          setFollowerCount(data.follower_count.toLocaleString());
-        }
-      });
-    return () => { mounted = false; };
-  }, [sbUser?.id]);
+  const [followerCount, setFollowerCount] = useState<string>("32.7K");
 
   const fans: FanRow[] = useMemo(() => {
     const more = [...creators, ...creators];
