@@ -17,6 +17,7 @@ import { FeedProvider } from "@/lib/feed-store";
 import { CommentsProvider } from "@/lib/comments-store";
 import { FollowProvider } from "@/lib/follow-store";
 import { MessagesProvider } from "@/lib/messages-store";
+import { CurrentUserSync } from "@/components/CurrentUserSync";
 
 import appCss from "../styles.css?url";
 
@@ -128,6 +129,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <CurrentUserSync />
         <ActivityProvider>
           <SubmissionsProvider>
             <FeedProvider>
