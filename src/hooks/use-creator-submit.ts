@@ -5,6 +5,7 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 import type { Submission } from "@/lib/submissions-store";
 
 type EditProjectInsert = {
+  id?: string;
   creator_id: string;
   title: string | null;
   description: string | null;
@@ -19,8 +20,9 @@ export type UseCreatorSubmitReturn = {
   saving: boolean;
 };
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function isNewRow(contentId: string): boolean {
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return contentId.startsWith("seed-") || !uuidPattern.test(contentId);
 }
 
@@ -111,15 +113,32 @@ export function useCreatorSubmit(): UseCreatorSubmitReturn {
         return data?.id ?? null;
       }
 
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from("creator_edit_projects")
         .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", draft.content_id)
-        .eq("creator_id", userId);
+        .eq("creator_id", userId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         toast.error("Failed to save draft");
         return null;
+      }
+
+      if (!data?.id) {
+        const { data: inserted, error: insertError } = await (supabase as any)
+          .from("creator_edit_projects")
+          .insert({ ...payload, id: draft.content_id })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          toast.error("Failed to save draft");
+          return null;
+        }
+
+        return inserted?.id ?? null;
       }
 
       return draft.content_id;
