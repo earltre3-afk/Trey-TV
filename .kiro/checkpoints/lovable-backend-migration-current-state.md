@@ -24,6 +24,10 @@
 | Inbox / DMs | `src/lib/messages-store.tsx` | `direct_messages` |
 | Notifications | `src/hooks/use-notifications.ts` + `src/components/layout/NotificationsPopover.tsx` | `notifications` |
 | Rewards (read-only) | `src/hooks/use-rewards.ts` + `src/routes/rewards.tsx` | `community_credit_balances`, `community_credit_events` |
+| Creator Studio dashboard | `src/hooks/use-creator-studio.ts` + `creator-studio.index.tsx` | `channels`, `shows`, `episodes` |
+| Creator Studio metadata drafts | `src/hooks/use-creator-submit.ts` + `creator-studio.submit.tsx` | `creator_edit_projects` |
+| Creator Studio Cloudflare upload | `src/lib/creator-studio/upload.server.ts` + `src/hooks/use-cloudflare-upload.ts` + `creator-studio.edit.tsx` | `creator_edit_projects` (`stream_uid` field) |
+| Creator Studio post queue | `src/hooks/use-creator-submit.ts` | `creator_post_queue` |
 
 ---
 
@@ -39,11 +43,50 @@ direct_messages
 notifications
 community_credit_balances
 community_credit_events
+channels
+shows
+episodes
+creator_edit_projects
+creator_post_queue
 ```
 
 ---
 
-## 3. Known Constraints and Intentional Limits
+## 3. Creator Studio Flow — Full Status
+
+### 3a. Read-only dashboard
+- Access gate: `channels.owner_email` matched against `supabase.auth.getUser()` email.
+- `profiles.is_creator` is not used — column does not exist in current schema.
+- Browser SELECT only on `channels`, `shows`, `episodes`.
+- Fan list and fan count use safe mock fallback (`follower_count` not confirmed in schema).
+- Metric cards remain hardcoded.
+
+### 3b. Metadata drafts — `creator_edit_projects`
+- `useCreatorSubmit.saveDraft()` INSERT/UPDATE on `creator_edit_projects`.
+- `useCreatorSubmit.submitForReview()` UPDATE `status = 'submitted'` on `creator_edit_projects`.
+- `submissions-store.tsx` remains as local optimistic/rollback layer — not deleted.
+- Supabase failures are non-blocking and do not break local draft flow.
+
+### 3c. Cloudflare Stream direct upload
+- `requestDirectUpload` is a `createServerFn` — runs server-side only (commit 46f970b).
+- `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_STREAM_API_TOKEN` read from `process.env` inside the server function — never in `VITE_*` env vars, never in client bundle.
+- Browser receives only: temporary `uploadURL` (1h TTL), `uid`, `expires`, `draftId`.
+- Client uploads via XHR POST FormData to the temporary URL — no Cloudflare token in browser.
+- `stream_uid` stored in `creator_edit_projects` after upload.
+- `draftId` passed as `?id=` search param to `/creator-studio/submit`.
+
+### 3d. creator_post_queue entry creation (commit 8b482a5)
+- Queue row inserted inside `submitForReview()` only after `stream_uid` is confirmed from `creator_edit_projects` by `rowId + creator_id`.
+- Missing or empty `stream_uid` skips queue creation silently — returns `true`, no crash.
+- Pre-insert SELECT on `creator_id + edit_project_id` prevents duplicate rows from repeated submit calls.
+- `approval_status` hardcoded to `'pending'` — never user-controlled.
+- `is_plus_content` forced `false` for episode 1 or 2 (satisfies DB constraint `creator_post_queue_first_two_not_plus_check`).
+- Queue INSERT failure is non-fatal — submit flow returns `true` regardless.
+- No service-role key. Browser INSERT allowed by RLS: `creator_id = auth.uid() AND approval_status = 'pending' AND is_approved_creator_for_current_user()`.
+
+---
+
+## 4. Known Constraints and Intentional Limits
 
 | Area | Constraint |
 |---|---|
@@ -51,43 +94,45 @@ community_credit_events
 | Inbox / DMs | `message_type`, `encrypted_*`, `attachment_*` columns out of scope; `as any` cast due to missing generated Supabase typings |
 | Notifications | Browser SELECT + UPDATE `read_at` only — INSERT is server-side trigger only |
 | Rewards | SELECT only — no INSERT/UPDATE/DELETE; no Stripe/payment/payout/gift write logic |
+| Creator Studio fans | Fan list mock; `follower_count` query removed as unsafe |
+| `creator_post_queue` | No unique DB constraint yet on `(creator_id, edit_project_id)` — pre-insert SELECT covers normal cases; race-proof constraint is future hardening |
 | `profiles.is_creator` | Column does not exist in current schema — never query it |
 | `profiles.age` / `profiles.date_of_birth` | Do not query unless a specific task explicitly requires it |
 
 ---
 
-## 4. Still Mock or Local-Only
+## 5. Still Mock or Local-Only
 
 | File / Feature | Status |
 |---|---|
-| `src/lib/mock-data.ts` | MOCK — `creators[]`, `posts[]`, `moods[]`, `currentUser` still used by several routes |
+| `src/lib/mock-data.ts` | MOCK — `creators[]`, `moods[]`, `currentUser` still used by several routes |
 | `src/lib/feed-store.tsx` | MOCK feed store |
 | `src/lib/activity-store.tsx` | LOCAL only — tracks user's own reactions/saves/shares in localStorage; intentionally not wired to `notifications` table |
-| `src/lib/submissions-store.tsx` | MOCK — targets `creator_applications` / `episodes` |
-| `src/routes/notifications.tsx` | ComingSoonPage stub — not the notification surface (popover is) |
-| Rewards gift sending | `toast.success()` only — no write |
-| Rewards perk redemption | `toast.success()` only — no write |
-| Creator strip in feed/rewards | Still uses `mock-data.ts creators[]` |
-| Creator Studio routes | All routes exist but are not wired to real data |
-| Admin routes | All routes exist — require service-role (server-side only) |
+| `src/lib/submissions-store.tsx` | Preserved as local optimistic/rollback layer — not deleted |
+| `src/routes/notifications.tsx` | ComingSoonPage stub — notification surface is the popover |
+| Rewards gift / perk actions | `toast.success()` only — no write |
+| Creator strip in feed | Still uses `mock-data.ts creators[]` |
+| Creator Studio fans | Mock fallback |
+| Creator Studio schedule / settings / channel / interactions / rewards routes | NOT WIRED — out of scope |
+| Admin routes | Routes exist — require service-role (server-side only) — not wired |
+| Auth login/signup flow | Routes exist but use mock |
 
 ---
 
-## 5. Intentionally Out of Scope So Far
+## 6. Intentionally Out of Scope
 
-- Push notifications (browser/mobile)
-- Email notifications
-- Realtime subscriptions (no Supabase channels wired)
-- Avatar / banner upload
-- Creator episode/channel/video uploads
+- Admin review UI for `creator_post_queue`
+- Edit Studio / export features
 - Stripe / payments / subscriptions / creator payouts
-- Admin tools (require service-role key — must never be in the Vite browser app)
-- Auth login/signup flow (routes exist but use mock)
+- Avatar / banner upload
+- Push / email notifications
+- Realtime subscriptions
 - `community_rewards`, `community_badges`, `user_badges`, `reward_redemptions` tables
+- Unique DB constraint on `creator_post_queue(creator_id, edit_project_id)`
 
 ---
 
-## 6. Hard Rules (carry forward to all future tasks)
+## 7. Hard Rules (carry forward to all future tasks)
 
 1. Do not redesign the Lovable UI.
 2. Do not replace Lovable components with RESTORE components.
@@ -100,30 +145,28 @@ community_credit_events
 9. Do not query `profiles.age`.
 10. Every task must pass `pnpm tsc --noEmit` and `pnpm build` before being considered done.
 11. No browser validation unless explicitly requested.
+12. Do not touch Watch Now / Guide unless the task explicitly targets those pages.
+13. Do not touch Cloudflare token handling unless the task specifically targets Cloudflare upload/security.
 
 ---
 
-## 7. Next Recommended Feature Lane: Creator Studio
+## 8. Next Recommended Lane: Creator Studio post queue read-back / status display
 
-Creator Studio is the largest remaining unconnected surface. All routes exist under `src/routes/creator-studio.*`. They currently render with mock/stub data.
+Now that `creator_post_queue` rows are being written, creators have no visibility into their submission status inside the app. The next lane is to surface queue row status back to the creator.
 
-### Risks Before Starting
+### What this involves
+- Read `creator_post_queue` rows for the current creator (SELECT by `creator_id = auth.uid()`).
+- Display `approval_status` (`pending` / `approved` / `rejected` / `needs_changes`) on the submissions list or submitted confirmation page.
+- RLS already allows SELECT for `creator_id = auth.uid() AND is_approved_creator_for_current_user()`.
+- No new tables. No writes. Read-only.
 
-- Creator Studio routes are large files (some 20k–35k characters). Read each file before speccing.
-- Some routes may reference `profiles.is_creator` — must be removed/replaced.
-- Episode/video upload involves Cloudflare Stream — that is out of scope for initial wiring; display-only first.
-- Submissions store (`submissions-store.tsx`) is mock — needs real `creator_applications` / `episodes` data.
-- RLS on creator tables likely requires `is_creator = true` or `creator_approved_at IS NOT NULL` — verify before writing queries.
-- Do not wire admin-level queries (fan management, revenue ledger) from the browser.
+### Risks before starting
+- Do not redesign the submissions list UI — wire data into existing Lovable components only.
+- Do not touch `creator-studio.edit.tsx` or Watch Now / Guide.
+- Do not expose secrets.
+- Do not use `profiles.is_creator`.
+- Spec required before any implementation.
 
-### Suggested Implementation Order for Creator Studio
-
-1. **Creator Studio access guard** — check if current user is an approved creator before rendering studio routes; graceful fallback if not.
-2. **Creator Studio index / dashboard** — wire real channel/profile data to the studio home.
-3. **Submissions list** — wire `submissions-store.tsx` to real `creator_applications` or `episodes` table (read-only first).
-4. **Submit content** — wire the submit form to real episode/post insert (requires careful RLS check).
-5. **Analytics** — wire to real view/like/comment counts from existing tables (read-only).
-6. **Fans** — wire to real `follows` data (already wired globally — reuse).
-7. **Schedule / channel settings** — wire to real channel data if table exists.
-
-Each sub-task requires a spec before implementation. Do not start coding until a spec is approved.
+### After that: Admin review UI
+- Admin review of `creator_post_queue` requires service-role key — must be a server function or server route, never a browser query.
+- Spec required. Do not start until post queue read-back is confirmed build-safe.
