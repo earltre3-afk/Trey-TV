@@ -13,7 +13,7 @@ src/styles.css        — Global styles
 ```
 __root.tsx                        — Root layout (BottomNav lives here)
 index.tsx                         — Home feed (/)
-u.$uid.tsx                        — Public profile (/u/:uid)
+u.$uid.tsx                        — Public profile (REAL — uses `ProfilePageShell`; resolves `ProfileData` from `useProfile` + auth session; `viewerRole` derived from ownership; `profileType` from session role; `profiles.is_creator` not used; tsc ✅ build ✅)
 login.tsx                         — Login
 signup.tsx                        — Signup
 edit-profile.tsx                  — Edit profile (REAL — profiles table, tsc ✅ build ✅; avatar/banner upload out of scope)
@@ -52,7 +52,7 @@ admin.videos.tsx / admin.users.tsx / etc.
 ```
 use-auth.ts                   — Auth session (REAL)
 use-posts.ts                  — Feed posts (REAL)
-use-profile.ts                — Public profile (REAL)
+use-profile.ts                — Public profile (REAL — SELECT by `public_profile_uid`; `is_creator` removed from `SupabaseProfile` type — column does not exist in schema)
 use-supabase-reactions.ts     — Post reactions (REAL)
 use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
 use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
@@ -95,6 +95,16 @@ creator/    — Creator Studio components
 brand/      — Brand/logo components
 ai/         — AI assistant components
 prescribe/  — Prescribe Me components
+profile/    — Reusable profile layout module system (REAL — tsc ✅ build ✅)
+              ProfilePageShell.tsx — Master template; accepts ProfileData + ViewerRole; renders NormalUser or Creator modules
+              ProfileTypes.ts — Shared types: ProfileData, ProfileContext, ViewerRole, ProfileType, ProfileStats
+              NormalUserProfileModules.tsx — Normal user main column (bio, Top 3, tabs, posts grid)
+              CreatorProfileModules.tsx — Creator main column (bio, tabs, episodes, shows)
+              ProfileBanner.tsx, ProfileIdentityCard.tsx, ProfileStatsBar.tsx, ProfileActionBar.tsx — Sub-components
+              ProfileOwnerControls.tsx, PublicProfileControls.tsx — Sidebar variants
+              ProfileSectionCard.tsx — Reusable section card + ProfileEmptyState
+              index.ts — Barrel export
+              (All components are prop-driven through ProfileData — no direct Supabase queries)
 CurrentUserSync.tsx — Zero-render bridge: pushes real Supabase profile into Lovable AuthProvider (REAL — tsc ✅ build ✅, Lovable UI is source of truth)
 ```
 
