@@ -56,7 +56,7 @@ use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ 
 use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
 use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
 use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
-use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — creator_edit_projects INSERT/UPDATE, tsc ✅ build ✅; metadata-only; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
+use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — `creator_edit_projects` INSERT/UPDATE + `creator_post_queue` INSERT, tsc ✅ build ✅; queue row written only after valid `stream_uid` confirmed from DB; duplicate pre-check on `creator_id + edit_project_id`; queue failure non-fatal; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
 use-cloudflare-upload.ts      — Cloudflare Stream upload client hook (REAL — XHR POST FormData upload with progress, tsc ✅ build ✅; calls upload.server.ts server function; Cloudflare token never in this file)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
