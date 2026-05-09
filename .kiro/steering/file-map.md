@@ -53,6 +53,7 @@ use-posts.ts                  — Feed posts (REAL)
 use-profile.ts                — Public profile (REAL)
 use-supabase-reactions.ts     — Post reactions (REAL)
 use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
+use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
 ```
@@ -67,7 +68,7 @@ feed-store.tsx                — MOCK feed store
 comments-store.tsx            — Supabase-backed comments (REAL — user_post_comments, tsc ✅ build ✅)
 follow-store.tsx              — Supabase-backed follows (REAL — follows table, tsc ✅ build ✅; bumpWatch/topThree remain local-only)
 messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages table, tsc ✅ build ✅; attachments/encryption/message_type out of scope this phase; `as any` cast due to missing generated Supabase table typings)
-activity-store.tsx            — MOCK activity store
+activity-store.tsx            — LOCAL user action tracking only (reactions/saves/shares in localStorage — not notification inbox)
 submissions-store.tsx         — MOCK submissions store
 utils.ts                      — cn() utility
 error-page.ts / error-capture.ts
@@ -76,6 +77,7 @@ error-page.ts / error-capture.ts
 ## Components (`src/components/`)
 ```
 layout/     — AppLayout, BottomNav, TopBar, etc.
+              NotificationsPopover.tsx — Wired to Supabase notifications via useNotifications() (REAL — tsc ✅ build ✅; mock fallback comment block preserved in file)
 ui/         — shadcn/ui primitives (do not modify)
 feed/       — Feed-specific components
 creator/    — Creator Studio components
