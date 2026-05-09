@@ -43,6 +43,8 @@ creator-studio.channel.tsx        — Channel settings (NOT WIRED — channel ed
 creator-studio.interactions.tsx   — Interactions (NOT WIRED — out of scope)
 creator-studio.submitted.tsx      — Submitted confirmation
 admin.tsx                         — Admin shell
+admin.content-approval.tsx        — Content approval list (REAL — wired to `creator_post_queue` via `useAdminPostQueue` + `reviewAdminPostQueue` server function; tsc ✅ build ✅; `isAdmin`/AdminShell is visual gate only; server-side admin auth enforced in server functions)
+admin.content-approval.$id.tsx    — Content approval detail (REAL — wired to `creator_post_queue` via `getAdminPostQueueItem` + `reviewAdminPostQueue` server functions; `admin_notes` loaded server-side; tsc ✅ build ✅)
 admin.videos.tsx / admin.users.tsx / etc.
 ```
 
@@ -58,6 +60,7 @@ use-rewards.ts                — Supabase-backed rewards (REAL — community_cr
 use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
 use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — `creator_edit_projects` INSERT/UPDATE + `creator_post_queue` INSERT, tsc ✅ build ✅; queue row written only after valid `stream_uid` confirmed from DB; duplicate pre-check on `creator_id + edit_project_id`; queue failure non-fatal; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
 use-creator-post-queue.ts     — Supabase-backed Creator Studio post queue read-back (REAL — `creator_post_queue` SELECT only, tsc ✅ build ✅; gated on `isApprovedCreator`; `admin_notes` not selected; no writes; no service-role key)
+use-admin-post-queue.ts       — Admin post queue hook (REAL — calls `getAdminPostQueue` server function; gated on `isAdmin` browser-side; real auth enforced server-side; tsc ✅ build ✅; no service-role key in this file)
 use-cloudflare-upload.ts      — Cloudflare Stream upload client hook (REAL — XHR POST FormData upload with progress, tsc ✅ build ✅; calls upload.server.ts server function; Cloudflare token never in this file)
 use-mobile.tsx                — Viewport detection
 use-go-back.ts                — Navigation helper
@@ -76,6 +79,7 @@ messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages 
 activity-store.tsx            — LOCAL user action tracking only (reactions/saves/shares in localStorage — not notification inbox)
 submissions-store.tsx         — Local optimistic/rollback layer (preserved — not deleted; real queue status comes from use-creator-post-queue.ts)
 creator-studio/upload.server.ts — Cloudflare Stream server function (REAL — createServerFn; reads CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_STREAM_API_TOKEN from process.env server-side only; returns safe upload response to browser; tsc ✅ build ✅)
+admin/post-queue.server.ts    — Admin creator post review server functions (REAL — createServerFn; `verifyAdmin` authenticates with auth client then checks `profiles.role = 'admin'` or `ADMIN_EMAILS`; service-role client constructed only after auth passes; `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_EMAILS` in process.env server-side only, no VITE_* prefix; tsc ✅ build ✅)
 utils.ts                      — cn() utility
 error-page.ts / error-capture.ts
 ```
