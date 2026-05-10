@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { saveOnboardingProfile, finalizeOnboarding } from "@/lib/trey-i/onboarding.server";
 
 export const Route = createFileRoute("/auth/callback")({
   component: AuthCallback,
@@ -20,26 +21,53 @@ function AuthCallback() {
 
       const code = params.get("code");
       let userId: string | undefined;
+      let accessToken: string | undefined;
 
       if (code) {
-        // PKCE code exchange — code may have already been consumed by detectSessionInUrl
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error && data.session) {
-          userId = data.session.user.id;
+          userId      = data.session.user.id;
+          accessToken = data.session.access_token;
         } else {
-          // Already exchanged by Supabase's detectSessionInUrl — session is in storage
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) userId = user.id;
+          // Already exchanged by Supabase detectSessionInUrl — session is in storage
+          const { data: { user } }    = await supabase.auth.getUser();
+          const { data: { session } } = await supabase.auth.getSession();
+          if (user)    userId      = user.id;
+          if (session) accessToken = session.access_token;
         }
       } else {
-        // Implicit / hash flow or session already established
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) userId = user.id;
+        const { data: { user } }    = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (user)    userId      = user.id;
+        if (session) accessToken = session.access_token;
       }
 
-      if (!userId) {
+      if (!userId || !accessToken) {
         nav({ to: "/login" });
         return;
+      }
+
+      // If the user built their profile via voice onboarding before signing in,
+      // apply the stored fields now and finalize — then go straight to their profile.
+      let voiceProfile: Record<string, unknown> | null = null;
+      try {
+        const raw = sessionStorage.getItem("treytv_voice_profile");
+        if (raw) {
+          voiceProfile = JSON.parse(raw) as Record<string, unknown>;
+          sessionStorage.removeItem("treytv_voice_profile");
+        }
+      } catch {}
+
+      if (voiceProfile?.display_name && voiceProfile?.username) {
+        try {
+          await saveOnboardingProfile({ data: { accessToken, fields: voiceProfile } });
+          const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken } });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          nav({ to: `/u/${publicProfileUid}` as any });
+          return;
+        } catch {
+          // Save failed — fall through to normal routing
+        }
       }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,7 +94,6 @@ function AuthCallback() {
     };
 
     run();
-  // nav is stable from useNavigate — intentionally run once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
