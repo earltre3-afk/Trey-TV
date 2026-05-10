@@ -113,7 +113,11 @@ function Inbox() {
   }, [openId, thread.length, markRead]);
 
   const onSend = () => {
-    if (!openId || !draft.trim()) return;
+    if (!openId) return;
+    if (!draft.trim()) {
+      toast.error("Message cannot be blank");
+      return;
+    }
     sendMessage(openId, draft);
     setDraft("");
     setTimeout(() => setPeerTyping(true), 600);
@@ -548,7 +552,15 @@ function Inbox() {
                 {/* Plus menu */}
                 {showPlusMenu && (
                   <PlusMenu
-                    onGhostMessage={() => { setShowPlusMenu(false); setShowGhostPopup(true); }}
+                    onGhostMessage={() => {
+                      if (!draft.trim()) {
+                        toast.error("Message cannot be blank");
+                        setShowPlusMenu(false);
+                        return;
+                      }
+                      setShowPlusMenu(false);
+                      setShowGhostPopup(true);
+                    }}
                     onPhoto={() => { setShowPlusMenu(false); fileInputRef.current?.click(); }}
                     onClose={() => setShowPlusMenu(false)}
                   />
