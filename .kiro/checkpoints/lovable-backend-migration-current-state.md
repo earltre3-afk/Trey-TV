@@ -31,6 +31,10 @@
 | Creator Studio post queue (write) | `src/hooks/use-creator-submit.ts` | `creator_post_queue` |
 | Creator Studio post queue (read-back) | `src/hooks/use-creator-post-queue.ts` + `creator-studio.submissions.tsx` | `creator_post_queue` |
 | Admin Creator Post Review | `src/lib/admin/post-queue.server.ts` + `src/hooks/use-admin-post-queue.ts` + `admin.content-approval.tsx` + `admin.content-approval.$id.tsx` | `creator_post_queue`, `creator_edit_projects` |
+| Admin Publishing Activation | `src/lib/admin/post-queue.server.ts` | `creator_post_queue`, `creator_edit_projects`, `episodes` |
+| Default Profile Layout System | `src/components/profile/` + `src/routes/u.$uid.tsx` + `src/hooks/use-profile.ts` | `profiles` |
+| Trey-I Onboarding (Phase 1 — text-first) | `src/lib/trey-i/intake.server.ts` + `src/lib/trey-i/onboarding.server.ts` + `src/routes/onboarding.voice.tsx` | `intake_sessions`, `profiles` |
+| Trey-I Phase 2 — TTS | `src/lib/trey-i/tts.server.ts` + `src/routes/onboarding.voice.tsx` | — (no table; Gemini TTS API) |
 
 ---
 
@@ -51,6 +55,7 @@ shows
 episodes
 creator_edit_projects
 creator_post_queue
+intake_sessions
 ```
 
 ---
@@ -67,22 +72,26 @@ creator_post_queue
 
 ---
 
-## 4. Admin Creator Post Review — Security Details
+## 4. Trey-I Onboarding — Current State (commit 8d4c1a5)
 
-- **Browser `isAdmin` / `AdminShell`** is a visual-only gate (reads `localStorage`). It does not authorize server-side actions.
-- **Server functions** authenticate the caller first with the normal auth client (`supabase.auth.getUser(accessToken)`), then authorize via `profiles.role = 'admin'` or `ADMIN_EMAILS` env var. The service-role client is only constructed after authorization passes.
-- **`SUPABASE_SERVICE_ROLE_KEY`** and **`ADMIN_EMAILS`** appear only in `src/lib/admin/post-queue.server.ts` — no `VITE_*` prefix, never in browser bundle.
-- **Review actions** update `creator_post_queue.approval_status` + `admin_notes` and sync `creator_edit_projects.status`:
-  - `approved` → `published`
-  - `rejected` → `rejected`
-  - `needs_changes` → `ready`
-  - `pending` → `submitted`
-- **Public episode/post publishing** to the feed remains out of scope.
-- **`admin_notes`** is loaded and displayed only in admin server functions — never returned to creator-facing hooks.
+| Phase | File(s) | Status |
+|---|---|---|
+| Phase 1 — text-first | `intake.server.ts` + `onboarding.server.ts` + `onboarding.voice.tsx` | ✅ Real — stage machine, filler detection, profile save, `public_profile_uid` redirect |
+| Phase 2 — TTS | `tts.server.ts` + `onboarding.voice.tsx` | ✅ Real — Gemini TTS, non-blocking, fire-and-forget |
+| Phase 3 — ElevenLabs voice input | — | Out of scope |
+| Phase 4 — Gemini Live | — | Out of scope |
+
+**TTS security:** `GOOGLE_GENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` are server-only env vars (no `VITE_` prefix). Browser receives only `{ audioBase64, mimeType }` or `{ audioBase64: null }` — never API keys. TTS failure is silent and non-fatal.
+
+**`@google/genai ^1.50.1`** added to `package.json` dependencies.
+
+**TreyIWidget** (`src/components/ai/TreyIWidget.tsx`) remains a visual-only mock — separate future lane, not wired to any AI.
+
+**.claude/** is local untracked Claude output — do not commit.
 
 ---
 
-## 5. Stashed WIP
+## 5. Admin Creator Post Review — Security Details
 
 Two stashes are present on this branch. Do not pop or apply unless explicitly requested.
 
