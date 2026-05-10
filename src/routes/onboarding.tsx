@@ -67,7 +67,7 @@ function Onboarding() {
 
           {/* Manual path */}
           <button
-            onClick={() => nav({ to: "/signup" })}
+            onClick={() => nav({ to: "/login" })}
             className="group relative text-left rounded-3xl liquid-glass liquid-hover neon-border overflow-hidden p-6 sm:p-8"
           >
             <div className="absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.82_0.15_215_/_0.3)] blur-3xl group-hover:bg-[oklch(0.82_0.15_215_/_0.5)] transition" />
