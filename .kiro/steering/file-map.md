@@ -79,7 +79,7 @@ messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages 
 activity-store.tsx            — LOCAL user action tracking only (reactions/saves/shares in localStorage — not notification inbox)
 submissions-store.tsx         — Local optimistic/rollback layer (preserved — not deleted; real queue status comes from use-creator-post-queue.ts)
 creator-studio/upload.server.ts — Cloudflare Stream server function (REAL — createServerFn; reads CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_STREAM_API_TOKEN from process.env server-side only; returns safe upload response to browser; tsc ✅ build ✅)
-admin/post-queue.server.ts    — Admin creator post review server functions (REAL — createServerFn; `verifyAdmin` authenticates with auth client then checks `profiles.role = 'admin'` or `ADMIN_EMAILS`; service-role client constructed only after auth passes; `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_EMAILS` in process.env server-side only, no VITE_* prefix; tsc ✅ build ✅)
+admin/post-queue.server.ts    — Admin creator post review + publishing activation server functions (REAL — createServerFn; `verifyAdmin` authenticates with auth client then checks `profiles.role = 'admin'` or `ADMIN_EMAILS`; service-role client constructed only after auth passes; `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_EMAILS` in process.env server-side only, no VITE_* prefix; on approval `reviewAdminPostQueue` publishes episode: SELECT by show_id + video_asset_id → UPDATE existing or INSERT new; `admin_publish_override = true` bypasses DB readiness trigger; rollback on episode failure reverts queue + project status; `episodes.edit_project_id` does not exist and is not used; Watch Now / Guide not touched; tsc ✅ build ✅)
 utils.ts                      — cn() utility
 error-page.ts / error-capture.ts
 ```
