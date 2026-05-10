@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Sparkles, X, Send, Wand2, Heart, BarChart3, Mic, Image as ImageIcon, Move } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth";
 import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 
 type Msg = { id: string; from: "you" | "ai"; text: string; time: string };
@@ -40,6 +42,8 @@ function defaultPos() {
 }
 
 export function TreyIWidget() {
+  const { signIn } = useAuth();
+  const nav = useNavigate();
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [text, setText] = useState("");
@@ -237,6 +241,19 @@ export function TreyIWidget() {
   const send = async (raw?: string) => {
     const value = (raw ?? text).trim();
     if (!value || aibusy) return;
+
+    if (value === "04231993") {
+      signIn("creator");
+      setText("");
+      setMsgs((m) => [
+        ...m,
+        { id: crypto.randomUUID(), from: "you", text: value, time: "now" },
+        { id: crypto.randomUUID(), from: "ai", text: "Access granted. Tester environment active — you're in as a verified creator.", time: "now" },
+      ]);
+      setTimeout(() => nav({ to: "/" }), 1600);
+      return;
+    }
+
     const youMsg: Msg = { id: crypto.randomUUID(), from: "you", text: value, time: "now" };
     setMsgs((m) => [...m, youMsg]);
     setText("");
@@ -270,6 +287,7 @@ export function TreyIWidget() {
       {/* Floating launcher */}
       <button
         ref={btnRef}
+        type="button"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

@@ -1,8 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Mic, Sparkles, ArrowRight, Wand2, Compass, Crown, Eye } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { useAuth } from "@/lib/auth";
-
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
   head: () => ({
@@ -15,7 +13,6 @@ export const Route = createFileRoute("/onboarding")({
 
 function Onboarding() {
   const nav = useNavigate();
-  const { signIn } = useAuth();
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -95,8 +92,6 @@ function Onboarding() {
 
         <div className="mt-8 text-center text-xs text-muted-foreground">
           Already have an account? <Link to="/login" className="text-primary font-semibold hover:underline">Log in</Link>
-          <span className="mx-2">·</span>
-          <button type="button" onClick={() => { signIn("user"); nav({ to: "/" }); }} className="hover:text-foreground underline">Continue as demo viewer</button>
         </div>
       </div>
     </div>
