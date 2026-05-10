@@ -1,122 +1,164 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdminShell } from "@/components/layout/AdminShell";
-import { useSubmissions } from "@/lib/submissions-store";
-import { Users, Flag, Crown, BarChart3, FileCheck2, ArrowUpRight, ShieldCheck, Wand2, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAdminStats } from "@/lib/admin-api";
+import {
+  Users, Flag, Crown, BadgeCheck, FileCheck2, ArrowUpRight, AlertTriangle, Gift,
+  Sparkles, History, ShieldCheck, ScrollText, Coins,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin")({
   component: Admin,
   head: () => ({
     meta: [
-      { title: "Admin — Trey TV" },
-      { name: "description", content: "Trey TV admin console: moderation, roles, creator review." },
+      { title: "Admin Command Center — Trey TV" },
+      { name: "description", content: "Owner Admin command center for Trey TV." },
     ],
   }),
 });
 
-const reports = [
-  { id: "r1", target: "@zaybeats", reason: "Copyrighted audio", priority: "high" },
-  { id: "r2", target: "post #2841", reason: "Spam in comments", priority: "med" },
-  { id: "r3", target: "@maya", reason: "Profile impersonation", priority: "high" },
-];
-const pendingCreators = [
-  { id: "c1", handle: "noah.films", followers: "8.4K" },
-  { id: "c2", handle: "the.studio", followers: "21K" },
-];
-
 function Admin() {
   const { isAdmin } = useAuth();
-  const store = useSubmissions();
+  const { adminRole, user: supaUser } = useSupabaseSession();
   if (!isAdmin) return null;
-  const pendingCount = store.submissions.filter((s) => s.status === "pending").length;
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["admin", "stats"],
+    queryFn: fetchAdminStats,
+    refetchInterval: 30000,
+  });
+
+  const { data: recentAudit } = useQuery({
+    queryKey: ["admin", "recent-audit"],
+    queryFn: async () => {
+      const { data } = await supabase.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(8);
+      return data ?? [];
+    },
+    refetchInterval: 30000,
+  });
+
+  const tiles = [
+    { label: "Total users", value: stats?.totalUsers ?? "—", icon: Users, color: "oklch(0.82 0.15 215)", to: "/admin/users" },
+    { label: "Pending creators", value: stats?.pendingCreators ?? "—", icon: Crown, color: "oklch(0.82 0.16 85)", to: "/admin/applications" },
+    { label: "Pending verification", value: stats?.pendingVerifications ?? "—", icon: BadgeCheck, color: "oklch(0.82 0.16 85)", to: "/admin/verification" },
+    { label: "Open reports", value: stats?.pendingReports ?? "—", icon: Flag, color: "oklch(0.65 0.24 15)", to: "/admin/reports" },
+    { label: "Banned users", value: stats?.activeBans ?? "—", icon: AlertTriangle, color: "oklch(0.65 0.24 15)", to: "/admin/users" },
+    { label: "Gold verified", value: stats?.goldVerifiedUsers ?? "—", icon: BadgeCheck, color: "oklch(0.82 0.16 85)", to: "/admin/verification" },
+    { label: "Pending redemptions", value: stats?.pendingRedemptions ?? "—", icon: Gift, color: "oklch(0.7 0.25 340)", to: "/admin/rewards" },
+    { label: "Points issued", value: stats?.totalPointsIssued ?? "—", icon: Coins, color: "oklch(0.78 0.18 150)", to: "/admin/rewards" },
+  ] as const;
 
   return (
-    <AdminShell title="Site Management" subtitle="Moderation queue · creator review · role ops">
-      {/* Quick action: Content approval */}
-      <Link to="/admin/content-approval" className="block rounded-3xl glass neon-border p-4 hover-lift">
-        <div className="flex items-center gap-3">
-          <div className="size-12 rounded-2xl glass grid place-items-center glow-gold"><FileCheck2 className="size-5 text-primary" /></div>
-          <div className="flex-1">
-            <div className="text-[10px] tracking-[0.3em] text-primary">CONTENT APPROVAL</div>
-            <div className="text-base font-bold">{pendingCount} episode{pendingCount === 1 ? "" : "s"} pending review</div>
-            <div className="text-xs text-muted-foreground">Approve, reject, or request changes from creators.</div>
-          </div>
-          <ArrowUpRight className="size-5" />
+    <AdminShell title="Owner Command Center" subtitle="Platform control · users · creators · content · rewards">
+      {/* Owner identity card */}
+      <div className="rounded-3xl liquid-glass border border-primary/30 p-5 flex items-center gap-3 glow-gold">
+        <div className="size-12 rounded-2xl grid place-items-center bg-primary/15 text-primary"><ShieldCheck className="size-5" /></div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] tracking-[0.3em] text-primary">{(adminRole ?? "ADMIN").toUpperCase()} MODE</div>
+          <div className="text-base font-bold truncate">{supaUser?.email ?? "Demo admin (mock)"}</div>
+          <div className="text-[11px] text-muted-foreground">All actions are logged to the audit trail.</div>
         </div>
-      </Link>
+        <Link to="/admin/audit-log" className="hidden md:inline-flex items-center gap-1.5 px-3 h-9 rounded-xl glass border border-white/10 text-xs font-semibold">
+          <History className="size-3.5" /> Audit log
+        </Link>
+      </div>
 
-      {/* KPI tiles */}
+      {/* Stat tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { label: "Total users", value: "284,931", icon: Users, color: "oklch(0.82 0.15 215)" },
-          { label: "Open reports", value: reports.length, icon: Flag, color: "oklch(0.65 0.24 15)" },
-          { label: "Pending creators", value: pendingCreators.length, icon: Crown, color: "oklch(0.82 0.16 85)" },
-          { label: "Daily watch hours", value: "1.2M", icon: BarChart3, color: "oklch(0.7 0.25 340)" },
-        ].map((k) => (
-          <div key={k.label} className="rounded-2xl liquid-glass liquid-hover border border-white/10 p-4">
-            <div className="flex items-center gap-2">
-              <div className="size-9 rounded-xl grid place-items-center" style={{ background: `color-mix(in oklab, ${k.color} 18%, transparent)`, color: k.color }}>
-                <k.icon className="size-4" />
+        {tiles.map((k, i) => (
+          <Link
+            key={k.label}
+            to={k.to as any}
+            className="group relative rounded-2xl liquid-glass border border-white/10 p-4 block overflow-hidden hover-lift transition"
+            style={{ animation: `counter-up 0.5s ${i * 60}ms both` }}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              style={{
+                background: `radial-gradient(circle at 30% 0%, color-mix(in oklab, ${k.color} 30%, transparent), transparent 60%)`,
+              }}
+            />
+            <div aria-hidden className="absolute inset-0 shimmer-sweep pointer-events-none opacity-0 group-hover:opacity-100" />
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <div
+                  className="size-9 rounded-xl grid place-items-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                  style={{ background: `color-mix(in oklab, ${k.color} 20%, transparent)`, color: k.color, boxShadow: `0 0 20px color-mix(in oklab, ${k.color} 35%, transparent)` }}
+                >
+                  <k.icon className="size-4" />
+                </div>
+                <div className="text-[10px] tracking-[0.2em] text-muted-foreground">{k.label.toUpperCase()}</div>
               </div>
-              <div className="text-[10px] tracking-[0.2em] text-muted-foreground">{k.label.toUpperCase()}</div>
+              <div
+                className="mt-2 text-2xl font-bold animate-counter-up"
+                style={{ textShadow: `0 0 18px color-mix(in oklab, ${k.color} 40%, transparent)` }}
+              >
+                {isLoading ? "…" : k.value}
+              </div>
+              <ArrowUpRight className="absolute top-0 right-0 size-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition" />
             </div>
-            <div className="mt-2 text-2xl font-bold">{k.value}</div>
-          </div>
+          </Link>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4">
+        {/* Quick actions */}
         <section className="rounded-3xl liquid-glass border border-white/10 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold flex items-center gap-2"><Flag className="size-4 text-[oklch(0.65_0.24_15)]" /> Moderation queue</h2>
-            <Link to="/admin/reports" className="text-xs text-muted-foreground hover:text-foreground">View all <ArrowUpRight className="inline size-3" /></Link>
-          </div>
-          <div className="space-y-2">
-            {reports.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 p-3 rounded-2xl glass border border-white/10">
-                <div className={`size-8 rounded-lg grid place-items-center ${r.priority === "high" ? "bg-[oklch(0.65_0.24_15_/_0.15)] text-[oklch(0.65_0.24_15)]" : "bg-white/5 text-muted-foreground"}`}>
-                  <AlertTriangle className="size-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold truncate">{r.target}</div>
-                  <div className="text-[11px] text-muted-foreground">{r.reason}</div>
-                </div>
-                <button className="size-8 rounded-lg grid place-items-center text-muted-foreground hover:text-[oklch(0.78_0.18_150)]"><CheckCircle2 className="size-4" /></button>
-                <button className="size-8 rounded-lg grid place-items-center text-muted-foreground hover:text-[oklch(0.65_0.24_15)]"><Trash2 className="size-4" /></button>
-              </div>
-            ))}
+          <h2 className="font-bold flex items-center gap-2 mb-3"><Sparkles className="size-4 text-primary" /> Quick actions</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <QuickAction to="/admin/applications" icon={Crown} label="Review creators" tone="gold" />
+            <QuickAction to="/admin/verification" icon={BadgeCheck} label="Verification queue" tone="gold" />
+            <QuickAction to="/admin/reports" icon={Flag} label="Reports inbox" tone="red" />
+            <QuickAction to="/admin/content-approval" icon={FileCheck2} label="Content approval" tone="blue" />
+            <QuickAction to="/admin/site-editor" icon={ScrollText} label="Edit live site" tone="blue" />
+            <QuickAction to="/admin/settings" icon={ShieldCheck} label="Platform settings" tone="purple" />
           </div>
         </section>
 
+        {/* Recent audit */}
         <section className="rounded-3xl liquid-glass border border-white/10 p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold flex items-center gap-2"><Crown className="size-4 text-primary" /> Creator applications</h2>
-            <Link to="/admin/creators" className="text-xs text-muted-foreground hover:text-foreground">Review all <ArrowUpRight className="inline size-3" /></Link>
+            <h2 className="font-bold flex items-center gap-2"><History className="size-4 text-[oklch(0.7_0.25_340)]" /> Recent admin activity</h2>
+            <Link to="/admin/audit-log" className="text-xs text-muted-foreground hover:text-foreground">View all <ArrowUpRight className="inline size-3" /></Link>
           </div>
-          <div className="space-y-2">
-            {pendingCreators.map((c) => (
-              <div key={c.id} className="flex items-center gap-3 p-3 rounded-2xl glass border border-white/10">
-                <div className="size-9 rounded-full conic-ring bg-background grid place-items-center text-xs font-bold">{c.handle.slice(0, 2).toUpperCase()}</div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold">@{c.handle}</div>
-                  <div className="text-[11px] text-muted-foreground">{c.followers} followers</div>
+          <div className="space-y-2 max-h-[320px] overflow-y-auto">
+            {(recentAudit?.length ?? 0) === 0 ? (
+              <div className="text-xs text-muted-foreground p-4 text-center">No admin actions logged yet.</div>
+            ) : recentAudit!.map((row: any) => (
+              <div key={row.id} className="p-3 rounded-2xl glass border border-white/10">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold truncate">{row.action}</div>
+                  <div className="text-[10px] text-muted-foreground shrink-0">{new Date(row.created_at).toLocaleString()}</div>
                 </div>
-                <button className="px-3 h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Approve</button>
-                <button className="px-3 h-8 rounded-lg text-xs font-semibold liquid-glass border border-white/10">Deny</button>
+                {row.target_type && <div className="text-[11px] text-muted-foreground truncate">{row.target_type}: {row.target_id}</div>}
+                {row.reason && <div className="text-[11px] text-muted-foreground/80 mt-1 italic">"{row.reason}"</div>}
               </div>
             ))}
           </div>
         </section>
       </div>
-
-      <Link to="/settings" className="rounded-2xl liquid-glass liquid-hover border border-white/10 p-4 flex items-center gap-3">
-        <Wand2 className="size-5 text-primary" />
-        <div className="flex-1">
-          <div className="text-sm font-semibold">Site settings & feature flags</div>
-          <div className="text-[11px] text-muted-foreground">Toggle modules, manage roles, configure billing.</div>
-        </div>
-        <ArrowUpRight className="size-4" />
-      </Link>
     </AdminShell>
+  );
+}
+
+function QuickAction({ to, icon: Icon, label, tone }: { to: string; icon: any; label: string; tone: "gold" | "blue" | "red" | "purple" }) {
+  const colors: Record<string, string> = {
+    gold: "oklch(0.82 0.16 85)",
+    blue: "oklch(0.82 0.15 215)",
+    red: "oklch(0.65 0.24 15)",
+    purple: "oklch(0.7 0.25 340)",
+  };
+  return (
+    <Link to={to as any} className="group p-3 rounded-2xl glass border border-white/10 hover:border-white/30 transition flex items-center gap-3">
+      <div className="size-9 rounded-xl grid place-items-center" style={{ background: `color-mix(in oklab, ${colors[tone]} 18%, transparent)`, color: colors[tone] }}>
+        <Icon className="size-4" />
+      </div>
+      <div className="text-xs font-semibold flex-1">{label}</div>
+      <ArrowUpRight className="size-3.5 text-muted-foreground group-hover:text-foreground transition" />
+    </Link>
   );
 }

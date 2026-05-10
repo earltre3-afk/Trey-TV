@@ -1,45 +1,54 @@
-import { Compass, CalendarDays, Plus, Sparkles, Tv } from "lucide-react";
+import { Compass, CalendarDays, Home, Inbox, Sparkles, LogIn } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth";
+import { haptic } from "@/lib/haptics";
+import { CreateWheel } from "./CreateWheel";
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { isGuest, user } = useAuth();
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
+  const profileUid = user?.uid ?? currentUser.uid;
+  const profileAvatar = user?.avatar ?? currentUser.avatar;
+  const onProfile = pathname.startsWith("/u/");
 
   return (
     <nav
+      className="lg:hidden"
       style={{
         position: "fixed",
         left: "50%",
-        bottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+        bottom: "max(env(safe-area-inset-bottom), 0.125rem)",
         transform: "translate3d(-50%, 0, 0)",
         zIndex: 9999,
-        width: "min(calc(100vw - 1.5rem), 28rem)",
-        contain: "layout paint style",
+        width: "min(calc(100vw - 1.5rem), 24rem)",
+        contain: "layout style",
         backfaceVisibility: "hidden",
         willChange: "transform",
+        paddingTop: "1.75rem",
       }}
     >
-      <div className="rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)]">
-        <div className="flex items-center justify-between px-3 pt-2 pb-1 relative overflow-visible">
-          <NavItem to="/" icon={Tv} label="Watch" active={isActive("/")} />
-          <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
-
-          <div className="flex-1 flex justify-center" style={{ overflow: "visible" }}>
-            <Link
-              to="/create"
-              aria-label="Create"
-              style={{ marginTop: "-1.75rem", position: "relative", zIndex: 1 }}
-              className="size-16 rounded-full grid place-items-center bg-background border-2 border-primary text-primary glow-gold animate-glow-pulse"
-            >
-              <Plus className="size-7" />
-            </Link>
+      <div className="rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)] overflow-visible">
+        {isGuest ? (
+          <div className="grid grid-cols-5 items-center px-2 pt-2 pb-1 relative overflow-visible">
+            <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
+            <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
+            <div className="flex justify-center"><CreateWheel /></div>
+            <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
+            <NavItem to="/login" icon={LogIn} label="Sign in" active={isActive("/login") || isActive("/signup")} />
           </div>
-
-          <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
-          <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
-          <ProfileItem active={pathname.startsWith("/u/")} />
-        </div>
+        ) : (
+          <div className="grid grid-cols-7 items-center px-2 pt-2 pb-1 relative overflow-visible">
+            <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
+            <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
+            <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
+            <div className="flex justify-center"><CreateWheel /></div>
+            <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
+            <NavItem to="/inbox" icon={Inbox} label="Inbox" active={isActive("/inbox")} badge={8} />
+            <ProfileItem active={onProfile} uid={profileUid} avatar={profileAvatar} />
+          </div>
+        )}
       </div>
     </nav>
   );
@@ -53,15 +62,21 @@ function NavItem({
   badge,
 }: {
   to: string;
-  icon: typeof Tv;
+  icon: typeof Home;
   label: string;
   active: boolean;
   badge?: number;
 }) {
   return (
-    <Link to={to} className="relative flex flex-col items-center gap-1 flex-1 py-1.5 min-w-0">
+    <Link
+      to={to}
+      onPointerDown={() => haptic(active ? "light" : "selection")}
+      className="group relative flex flex-col items-center justify-center gap-1 min-w-0 -my-2 py-3 px-1 rounded-2xl touch-manipulation select-none active:scale-[0.96] transition-transform"
+      style={{ WebkitTapHighlightColor: "transparent", minHeight: 56 }}
+      aria-label={label}
+    >
       <div
-        className="relative grid place-items-center size-9 rounded-xl"
+        className="relative grid place-items-center size-10 rounded-xl transition-colors"
         style={{
           color: active ? "var(--color-primary)" : "var(--color-muted-foreground)",
           background: active ? "oklch(0.82 0.16 85 / 0.15)" : "transparent",
@@ -76,7 +91,7 @@ function NavItem({
         ) : null}
       </div>
       <span
-        className="text-[10px]"
+        className="text-[10px] leading-none"
         style={{ color: active ? "var(--color-primary)" : "var(--color-muted-foreground)" }}
       >
         {label}
@@ -85,25 +100,28 @@ function NavItem({
   );
 }
 
-function ProfileItem({ active }: { active: boolean }) {
+function ProfileItem({ active, uid, avatar }: { active: boolean; uid: string; avatar: string }) {
   return (
     <Link
       to="/u/$uid"
-      params={{ uid: currentUser.uid }}
-      className="relative flex flex-col items-center gap-1 flex-1 py-1.5 min-w-0"
+      params={{ uid }}
+      onPointerDown={() => haptic(active ? "light" : "selection")}
+      className="group relative flex flex-col items-center justify-center gap-1 min-w-0 -my-2 py-3 px-1 rounded-2xl touch-manipulation select-none active:scale-[0.96] transition-transform"
+      style={{ WebkitTapHighlightColor: "transparent", minHeight: 56 }}
+      aria-label="Profile"
     >
       <div
-        className="relative size-9 rounded-full overflow-hidden"
+        className="relative size-10 rounded-full overflow-hidden"
         style={{
           boxShadow: active
             ? "0 0 0 2px var(--gold), 0 0 12px oklch(0.82 0.16 85 / 0.55)"
             : "0 0 0 1px oklch(1 0 0 / 15%)",
         }}
       >
-        <img src={currentUser.avatar} alt="" className="size-full rounded-full object-cover" />
+        <img src={avatar} alt="" className="size-full rounded-full object-cover" />
       </div>
       <span
-        className="text-[10px]"
+        className="text-[10px] leading-none"
         style={{ color: active ? "var(--color-primary)" : "var(--color-muted-foreground)" }}
       >
         Profile

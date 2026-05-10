@@ -6,6 +6,7 @@ import { currentUser } from "@/lib/mock-data";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
+import { useNotifications } from "@/lib/notifications-store";
 
 const tabs = [
   { id: "watch-now", label: "Watch Now" },
@@ -28,6 +29,7 @@ export function AppHeader({
   const location = useLocation();
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
+  const { unreadCount } = useNotifications();
   const computed =
     location.pathname === "/" ? "watch-now"
     : location.pathname.startsWith("/for-you") ? "for-you"
@@ -73,7 +75,11 @@ export function AppHeader({
           </button>
           <button onClick={() => setNotifOpen((v) => !v)} aria-label="Notifications" aria-expanded={notifOpen} className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
             <Bell className="size-5" />
-            <span className="absolute -top-1 -right-1 size-5 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">8</span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
           </button>
           <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="relative size-10 rounded-full conic-ring shrink-0">
             <img src={currentUser.avatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />

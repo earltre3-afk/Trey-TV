@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as Char91indexChar93RouteImport } from './routes/[index]'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RewardsRouteImport } from './routes/rewards'
@@ -16,6 +17,7 @@ import { Route as PrescribeMeRouteImport } from './routes/prescribe-me'
 import { Route as PremiumRouteImport } from './routes/premium'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MusicReviewRouteImport } from './routes/music-review'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LatestRouteImport } from './routes/latest'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -32,11 +34,17 @@ import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LegalIndexRouteImport } from './routes/legal.index'
 import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
+import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
+import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
+import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
+import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
 import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
 import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
@@ -51,14 +59,28 @@ import { Route as CreatorStudioAnalyticsRouteImport } from './routes/creator-stu
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as AdminViewAsRouteImport } from './routes/admin.view-as'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
+import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSiteEditorRouteImport } from './routes/admin.site-editor'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminRewardsRouteImport } from './routes/admin.rewards'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRecommendationsRouteImport } from './routes/admin.recommendations'
+import { Route as AdminProfileDecorationsRouteImport } from './routes/admin.profile-decorations'
+import { Route as AdminMusicReviewRouteImport } from './routes/admin.music-review'
 import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
+import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
+import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
+const Char91indexChar93Route = Char91indexChar93RouteImport.update({
+  id: '/index',
+  path: '/index',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -92,6 +114,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusicReviewRoute = MusicReviewRouteImport.update({
+  id: '/music-review',
+  path: '/music-review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -174,9 +201,19 @@ const ActivityRoute = ActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalIndexRoute = LegalIndexRouteImport.update({
+  id: '/legal/',
+  path: '/legal/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorStudioIndexRoute = CreatorStudioIndexRouteImport.update({
@@ -194,10 +231,30 @@ const UUidRoute = UUidRouteImport.update({
   path: '/u/$uid',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsVerificationRoute = SettingsVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   id: '/voice',
   path: '/voice',
   getParentRoute: () => OnboardingRoute,
+} as any)
+const MusicReviewQueueRoute = MusicReviewQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => MusicReviewRoute,
+} as any)
+const LegalDataDeletionRoute = LegalDataDeletionRouteImport.update({
+  id: '/legal/data-deletion',
+  path: '/legal/data-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalSlugRoute = LegalSlugRouteImport.update({
+  id: '/legal/$slug',
+  path: '/legal/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorStudioSubmittedRoute = CreatorStudioSubmittedRouteImport.update({
   id: '/submitted',
@@ -271,14 +328,39 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminViewAsRoute = AdminViewAsRouteImport.update({
+  id: '/view-as',
+  path: '/view-as',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminVideosRoute = AdminVideosRouteImport.update({
   id: '/videos',
   path: '/videos',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminVerificationRoute = AdminVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSiteEditorRoute = AdminSiteEditorRouteImport.update({
+  id: '/site-editor',
+  path: '/site-editor',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminRewardsRoute = AdminRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
@@ -291,6 +373,16 @@ const AdminRecommendationsRoute = AdminRecommendationsRouteImport.update({
   path: '/recommendations',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProfileDecorationsRoute = AdminProfileDecorationsRouteImport.update({
+  id: '/profile-decorations',
+  path: '/profile-decorations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMusicReviewRoute = AdminMusicReviewRouteImport.update({
+  id: '/music-review',
+  path: '/music-review',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreatorsRoute = AdminCreatorsRouteImport.update({
   id: '/creators',
   path: '/creators',
@@ -301,6 +393,16 @@ const AdminContentApprovalRoute = AdminContentApprovalRouteImport.update({
   path: '/content-approval',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditLogRoute = AdminAuditLogRouteImport.update({
+  id: '/audit-log',
+  path: '/audit-log',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -309,6 +411,7 @@ const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
@@ -323,21 +426,32 @@ export interface FileRoutesByFullPath {
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
+  '/index': typeof Char91indexChar93Route
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
+  '/music-review': typeof MusicReviewRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/rewards': typeof RewardsRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/music-review': typeof AdminMusicReviewRoute
+  '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rewards': typeof AdminRewardsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/site-editor': typeof AdminSiteEditorRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/admin/view-as': typeof AdminViewAsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -352,14 +466,20 @@ export interface FileRoutesByFullPath {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/music-review/queue': typeof MusicReviewQueueRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
+  '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
@@ -373,21 +493,32 @@ export interface FileRoutesByTo {
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
+  '/index': typeof Char91indexChar93Route
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
+  '/music-review': typeof MusicReviewRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/rewards': typeof RewardsRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/music-review': typeof AdminMusicReviewRoute
+  '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rewards': typeof AdminRewardsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/site-editor': typeof AdminSiteEditorRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/admin/view-as': typeof AdminViewAsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -402,15 +533,21 @@ export interface FileRoutesByTo {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/music-review/queue': typeof MusicReviewQueueRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio': typeof CreatorStudioIndexRoute
+  '/legal': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
@@ -425,21 +562,32 @@ export interface FileRoutesById {
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
+  '/index': typeof Char91indexChar93Route
   '/latest': typeof LatestRoute
   '/login': typeof LoginRoute
+  '/music-review': typeof MusicReviewRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/onboarding': typeof OnboardingRouteWithChildren
   '/premium': typeof PremiumRoute
   '/prescribe-me': typeof PrescribeMeRoute
   '/rewards': typeof RewardsRoute
-  '/settings': typeof SettingsRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/admin/applications': typeof AdminApplicationsRoute
+  '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/music-review': typeof AdminMusicReviewRoute
+  '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rewards': typeof AdminRewardsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/site-editor': typeof AdminSiteEditorRoute
   '/admin/users': typeof AdminUsersRoute
+  '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
+  '/admin/view-as': typeof AdminViewAsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -454,16 +602,22 @@ export interface FileRoutesById {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/legal/$slug': typeof LegalSlugRoute
+  '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/music-review/queue': typeof MusicReviewQueueRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
+  '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/activity'
     | '/admin'
     | '/analytics'
@@ -478,8 +632,10 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/guide'
     | '/inbox'
+    | '/index'
     | '/latest'
     | '/login'
+    | '/music-review'
     | '/notifications'
     | '/onboarding'
     | '/premium'
@@ -487,12 +643,21 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/applications'
+    | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/music-review'
+    | '/admin/profile-decorations'
     | '/admin/recommendations'
     | '/admin/reports'
+    | '/admin/rewards'
+    | '/admin/settings'
+    | '/admin/site-editor'
     | '/admin/users'
+    | '/admin/verification'
     | '/admin/videos'
+    | '/admin/view-as'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -507,14 +672,20 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/legal/$slug'
+    | '/legal/data-deletion'
+    | '/music-review/queue'
     | '/onboarding/voice'
+    | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
+    | '/legal/'
     | '/admin/content-approval/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/activity'
     | '/admin'
     | '/analytics'
@@ -528,8 +699,10 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/guide'
     | '/inbox'
+    | '/index'
     | '/latest'
     | '/login'
+    | '/music-review'
     | '/notifications'
     | '/onboarding'
     | '/premium'
@@ -537,12 +710,21 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/applications'
+    | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/music-review'
+    | '/admin/profile-decorations'
     | '/admin/recommendations'
     | '/admin/reports'
+    | '/admin/rewards'
+    | '/admin/settings'
+    | '/admin/site-editor'
     | '/admin/users'
+    | '/admin/verification'
     | '/admin/videos'
+    | '/admin/view-as'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -557,14 +739,20 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/legal/$slug'
+    | '/legal/data-deletion'
+    | '/music-review/queue'
     | '/onboarding/voice'
+    | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio'
+    | '/legal'
     | '/admin/content-approval/$id'
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/activity'
     | '/admin'
     | '/analytics'
@@ -579,8 +767,10 @@ export interface FileRouteTypes {
     | '/go-live'
     | '/guide'
     | '/inbox'
+    | '/index'
     | '/latest'
     | '/login'
+    | '/music-review'
     | '/notifications'
     | '/onboarding'
     | '/premium'
@@ -588,12 +778,21 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/admin/applications'
+    | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/music-review'
+    | '/admin/profile-decorations'
     | '/admin/recommendations'
     | '/admin/reports'
+    | '/admin/rewards'
+    | '/admin/settings'
+    | '/admin/site-editor'
     | '/admin/users'
+    | '/admin/verification'
     | '/admin/videos'
+    | '/admin/view-as'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -608,15 +807,21 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/legal/$slug'
+    | '/legal/data-deletion'
+    | '/music-review/queue'
     | '/onboarding/voice'
+    | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
+    | '/legal/'
     | '/admin/content-approval/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   ActivityRoute: typeof ActivityRoute
   AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
@@ -631,23 +836,35 @@ export interface RootRouteChildren {
   GoLiveRoute: typeof GoLiveRoute
   GuideRoute: typeof GuideRoute
   InboxRoute: typeof InboxRoute
+  Char91indexChar93Route: typeof Char91indexChar93Route
   LatestRoute: typeof LatestRoute
   LoginRoute: typeof LoginRoute
+  MusicReviewRoute: typeof MusicReviewRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
   OnboardingRoute: typeof OnboardingRouteWithChildren
   PremiumRoute: typeof PremiumRoute
   PrescribeMeRoute: typeof PrescribeMeRoute
   RewardsRoute: typeof RewardsRoute
-  SettingsRoute: typeof SettingsRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
+  LegalSlugRoute: typeof LegalSlugRoute
+  LegalDataDeletionRoute: typeof LegalDataDeletionRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
+  LegalIndexRoute: typeof LegalIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/index': {
+      id: '/index'
+      path: '/index'
+      fullPath: '/index'
+      preLoaderRoute: typeof Char91indexChar93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -695,6 +912,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/music-review': {
+      id: '/music-review'
+      path: '/music-review'
+      fullPath: '/music-review'
+      preLoaderRoute: typeof MusicReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -809,11 +1033,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/': {
+      id: '/legal/'
+      path: '/legal'
+      fullPath: '/legal/'
+      preLoaderRoute: typeof LegalIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/creator-studio/': {
@@ -837,12 +1075,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UUidRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/verification': {
+      id: '/settings/verification'
+      path: '/verification'
+      fullPath: '/settings/verification'
+      preLoaderRoute: typeof SettingsVerificationRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/onboarding/voice': {
       id: '/onboarding/voice'
       path: '/voice'
       fullPath: '/onboarding/voice'
       preLoaderRoute: typeof OnboardingVoiceRouteImport
       parentRoute: typeof OnboardingRoute
+    }
+    '/music-review/queue': {
+      id: '/music-review/queue'
+      path: '/queue'
+      fullPath: '/music-review/queue'
+      preLoaderRoute: typeof MusicReviewQueueRouteImport
+      parentRoute: typeof MusicReviewRoute
+    }
+    '/legal/data-deletion': {
+      id: '/legal/data-deletion'
+      path: '/legal/data-deletion'
+      fullPath: '/legal/data-deletion'
+      preLoaderRoute: typeof LegalDataDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/$slug': {
+      id: '/legal/$slug'
+      path: '/legal/$slug'
+      fullPath: '/legal/$slug'
+      preLoaderRoute: typeof LegalSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/creator-studio/submitted': {
       id: '/creator-studio/submitted'
@@ -942,6 +1208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/view-as': {
+      id: '/admin/view-as'
+      path: '/view-as'
+      fullPath: '/admin/view-as'
+      preLoaderRoute: typeof AdminViewAsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/videos': {
       id: '/admin/videos'
       path: '/videos'
@@ -949,11 +1222,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVideosRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/verification': {
+      id: '/admin/verification'
+      path: '/verification'
+      fullPath: '/admin/verification'
+      preLoaderRoute: typeof AdminVerificationRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/users': {
       id: '/admin/users'
       path: '/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/site-editor': {
+      id: '/admin/site-editor'
+      path: '/site-editor'
+      fullPath: '/admin/site-editor'
+      preLoaderRoute: typeof AdminSiteEditorRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/rewards': {
+      id: '/admin/rewards'
+      path: '/rewards'
+      fullPath: '/admin/rewards'
+      preLoaderRoute: typeof AdminRewardsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reports': {
@@ -970,6 +1271,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRecommendationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/profile-decorations': {
+      id: '/admin/profile-decorations'
+      path: '/profile-decorations'
+      fullPath: '/admin/profile-decorations'
+      preLoaderRoute: typeof AdminProfileDecorationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/music-review': {
+      id: '/admin/music-review'
+      path: '/music-review'
+      fullPath: '/admin/music-review'
+      preLoaderRoute: typeof AdminMusicReviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/creators': {
       id: '/admin/creators'
       path: '/creators'
@@ -982,6 +1297,20 @@ declare module '@tanstack/react-router' {
       path: '/content-approval'
       fullPath: '/admin/content-approval'
       preLoaderRoute: typeof AdminContentApprovalRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit-log': {
+      id: '/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AdminAuditLogRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/applications': {
+      id: '/admin/applications'
+      path: '/applications'
+      fullPath: '/admin/applications'
+      preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/content-approval/$id': {
@@ -1006,21 +1335,39 @@ const AdminContentApprovalRouteWithChildren =
   AdminContentApprovalRoute._addFileChildren(AdminContentApprovalRouteChildren)
 
 interface AdminRouteChildren {
+  AdminApplicationsRoute: typeof AdminApplicationsRoute
+  AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
   AdminCreatorsRoute: typeof AdminCreatorsRoute
+  AdminMusicReviewRoute: typeof AdminMusicReviewRoute
+  AdminProfileDecorationsRoute: typeof AdminProfileDecorationsRoute
   AdminRecommendationsRoute: typeof AdminRecommendationsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminRewardsRoute: typeof AdminRewardsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSiteEditorRoute: typeof AdminSiteEditorRoute
   AdminUsersRoute: typeof AdminUsersRoute
+  AdminVerificationRoute: typeof AdminVerificationRoute
   AdminVideosRoute: typeof AdminVideosRoute
+  AdminViewAsRoute: typeof AdminViewAsRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminApplicationsRoute: AdminApplicationsRoute,
+  AdminAuditLogRoute: AdminAuditLogRoute,
   AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
   AdminCreatorsRoute: AdminCreatorsRoute,
+  AdminMusicReviewRoute: AdminMusicReviewRoute,
+  AdminProfileDecorationsRoute: AdminProfileDecorationsRoute,
   AdminRecommendationsRoute: AdminRecommendationsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminRewardsRoute: AdminRewardsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminSiteEditorRoute: AdminSiteEditorRoute,
   AdminUsersRoute: AdminUsersRoute,
+  AdminVerificationRoute: AdminVerificationRoute,
   AdminVideosRoute: AdminVideosRoute,
+  AdminViewAsRoute: AdminViewAsRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -1071,6 +1418,18 @@ const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
   CreatorStudioRouteChildren,
 )
 
+interface MusicReviewRouteChildren {
+  MusicReviewQueueRoute: typeof MusicReviewQueueRoute
+}
+
+const MusicReviewRouteChildren: MusicReviewRouteChildren = {
+  MusicReviewQueueRoute: MusicReviewQueueRoute,
+}
+
+const MusicReviewRouteWithChildren = MusicReviewRoute._addFileChildren(
+  MusicReviewRouteChildren,
+)
+
 interface OnboardingRouteChildren {
   OnboardingVoiceRoute: typeof OnboardingVoiceRoute
 }
@@ -1083,8 +1442,21 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
   OnboardingRouteChildren,
 )
 
+interface SettingsRouteChildren {
+  SettingsVerificationRoute: typeof SettingsVerificationRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsVerificationRoute: SettingsVerificationRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   ActivityRoute: ActivityRoute,
   AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
@@ -1099,19 +1471,24 @@ const rootRouteChildren: RootRouteChildren = {
   GoLiveRoute: GoLiveRoute,
   GuideRoute: GuideRoute,
   InboxRoute: InboxRoute,
+  Char91indexChar93Route: Char91indexChar93Route,
   LatestRoute: LatestRoute,
   LoginRoute: LoginRoute,
+  MusicReviewRoute: MusicReviewRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
   OnboardingRoute: OnboardingRouteWithChildren,
   PremiumRoute: PremiumRoute,
   PrescribeMeRoute: PrescribeMeRoute,
   RewardsRoute: RewardsRoute,
-  SettingsRoute: SettingsRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
   CategorySlugRoute: CategorySlugRoute,
   ChannelHandleRoute: ChannelHandleRoute,
+  LegalSlugRoute: LegalSlugRoute,
+  LegalDataDeletionRoute: LegalDataDeletionRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
+  LegalIndexRoute: LegalIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

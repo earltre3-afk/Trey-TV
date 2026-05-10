@@ -21,19 +21,26 @@ function Signup() {
   const [showPw, setShowPw] = useState(false);
   const [role, setRole] = useState<Exclude<Role, "guest" | "admin">>("user");
   const [form, setForm] = useState({ email: "", password: "", name: "", handle: "", bio: "" });
+  const [consent, setConsent] = useState(false);
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const next = () => setStep((s) => Math.min(2, s + 1));
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const finish = () => {
+    if (!consent) return;
     signIn(role);
     updateUser({
       name: form.name || "New User",
       handle: form.handle || form.email.split("@")[0] || "user",
       bio: form.bio || "Newly minted on Trey TV ✨",
     });
-    nav({ to: "/" });
+    try {
+      localStorage.setItem("treytv_legal_consent", JSON.stringify({ acceptedAt: new Date().toISOString(), version: "2026-05-09" }));
+    } catch {}
+    let next: string | null = null;
+    try { next = sessionStorage.getItem("treytv_post_auth_redirect"); sessionStorage.removeItem("treytv_post_auth_redirect"); } catch {}
+    nav({ to: (next as any) || "/" });
   };
 
   return (
@@ -91,6 +98,15 @@ function Signup() {
                 <RoleCard label="Creator" desc="Upload, manage shows, see analytics, earn." Icon={Crown} active={role === "creator"} onClick={() => setRole("creator")} accent />
               </div>
               <div className="text-[11px] text-muted-foreground text-center pt-2">You can switch later in Settings.</div>
+              <label className="mt-2 flex items-start gap-2.5 cursor-pointer rounded-xl bg-white/5 border border-white/10 p-3 hover:border-white/25 transition">
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 accent-primary size-4" />
+                <span className="text-[12px] leading-relaxed text-foreground/80">
+                  I agree to the{" "}
+                  <Link to="/legal/$slug" params={{ slug: "terms" }} className="text-primary font-semibold hover:underline">Terms of Service</Link>,{" "}
+                  <Link to="/legal/$slug" params={{ slug: "privacy" }} className="text-primary font-semibold hover:underline">Privacy Policy</Link>, and{" "}
+                  <Link to="/legal/$slug" params={{ slug: "community-guidelines" }} className="text-primary font-semibold hover:underline">Community Guidelines</Link>.
+                </span>
+              </label>
             </>
           )}
 
@@ -101,7 +117,7 @@ function Signup() {
                 Continue <ArrowRight className="size-4" />
               </button>
             ) : (
-              <button onClick={finish} className="px-5 h-10 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press">Enter Trey TV</button>
+              <button onClick={finish} disabled={!consent} className="px-5 h-10 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press disabled:opacity-50">Enter Trey TV</button>
             )}
           </div>
         </div>

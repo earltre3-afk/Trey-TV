@@ -5,8 +5,9 @@ import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import {
   Settings as SettingsIcon, User, Bell, Lock, Palette, CreditCard, Shield,
-  Globe, LogOut, ChevronRight, Sparkles, Crown, Wand2, Mail, Smartphone,
+  Globe, LogOut, ChevronRight, Sparkles, Crown, Wand2, Mail, Smartphone, FileText,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
@@ -26,6 +27,17 @@ const sections = [
   { id: "privacy", label: "Privacy & Safety", icon: Shield, color: "oklch(0.65 0.22 300)" },
   { id: "billing", label: "Billing", icon: CreditCard, color: "oklch(0.78 0.18 150)" },
   { id: "language", label: "Language & Region", icon: Globe, color: "oklch(0.82 0.15 215)" },
+  { id: "legal", label: "Legal & Safety", icon: FileText, color: "oklch(0.82 0.16 85)" },
+];
+
+const LEGAL_LINKS: { to: string; label: string; desc: string }[] = [
+  { to: "/legal", label: "Legal Hub", desc: "Browse every Trey TV policy in one place." },
+  { to: "/legal/terms", label: "Terms of Service", desc: "The agreement between you and Trey TV." },
+  { to: "/legal/privacy", label: "Privacy Policy", desc: "What we collect and how it's used." },
+  { to: "/legal/community-guidelines", label: "Community Guidelines", desc: "How we keep Trey TV safe." },
+  { to: "/legal/data-deletion", label: "Data Deletion", desc: "Request deletion, export, or correction." },
+  { to: "/legal/dmca", label: "Copyright / DMCA", desc: "File a copyright complaint." },
+  { to: "/legal/ai-disclosure", label: "AI Disclosure", desc: "How Trey-I works and its limits." },
 ];
 
 type Toggle = { id: string; label: string; desc: string; icon: typeof Bell; on: boolean };
@@ -192,6 +204,31 @@ function SettingsPage() {
                 <Row icon={Globe} title="Language" desc="English (US)" action={<ChevronRight className="size-4 text-muted-foreground" />} />
                 <Row icon={Globe} title="Region" desc="United States" action={<ChevronRight className="size-4 text-muted-foreground" />} last />
               </Panel>
+            )}
+
+            {active === "legal" && (
+              <div className="space-y-4 animate-fade-in">
+                <Panel>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="size-4 text-primary" />
+                    <div className="text-sm font-semibold">Legal & Safety</div>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {LEGAL_LINKS.map((l) => (
+                      <Link key={l.to} to={l.to as any} className="group flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition">
+                        <div className="size-9 rounded-lg bg-primary/15 text-primary grid place-items-center shrink-0"><FileText className="size-4" /></div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold flex items-center justify-between gap-2">
+                            <span>{l.label}</span>
+                            <ChevronRight className="size-4 text-muted-foreground group-hover:text-foreground transition" />
+                          </div>
+                          <div className="text-[11px] text-muted-foreground">{l.desc}</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </Panel>
+              </div>
             )}
           </div>
         </div>

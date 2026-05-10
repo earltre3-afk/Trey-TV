@@ -1,4 +1,4 @@
-import { X, Home, Tv, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays } from "lucide-react";
+import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link } from "@tanstack/react-router";
 
@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 type Item = { icon: typeof Home; label: string; sub: string; to: string; color: string; active?: boolean };
 
 const items: Item[] = [
-  { icon: Tv, label: "Watch Now", sub: "The streaming home", to: "/", color: "text-primary", active: true },
+  { icon: Home, label: "Home", sub: "The streaming home", to: "/", color: "text-primary", active: true },
   { icon: Sparkles, label: "For You", sub: "Personalized feed", to: "/for-you", color: "text-primary" },
   { icon: Search, label: "Discover", sub: "Explore creators & content", to: "/explore", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: CalendarDays, label: "Guide", sub: "What's on right now", to: "/guide", color: "text-[oklch(0.82_0.15_215)]" },
@@ -45,7 +45,15 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
         className={`fixed left-0 top-0 bottom-0 z-50 w-[88vw] max-w-[380px] liquid-glass border-r border-white/10 transition-transform duration-300 ease-out ${open ? "translate-x-0" : "-translate-x-full"}`}
         style={{ position: "fixed", borderTopRightRadius: 28, borderBottomRightRadius: 28 }}
       >
-        <div className="h-full flex flex-col overflow-y-auto safe-bottom">
+        <div
+          className="h-full flex flex-col overflow-y-auto"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            // Leave room for the floating bottom dock (lg:hidden) so the last
+            // cards never sit behind it on mobile.
+            paddingBottom: "calc(env(safe-area-inset-bottom) + 7rem)",
+          }}
+        >
           <div className="flex items-start justify-between p-5">
             <Logo className="h-12" />
             <button onClick={onClose} aria-label="Close" className="size-9 grid place-items-center rounded-full glass">

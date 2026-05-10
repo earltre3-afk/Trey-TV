@@ -11,6 +11,7 @@ import {
   ArrowLeft, Users, Eye, MessageSquare, Image as ImageIcon, Film, Tv, Calendar, Clock, ChevronRight, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
+import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
 
 export const Route = createFileRoute("/channel/$handle")({
   component: ChannelPage,
@@ -70,6 +71,7 @@ function ChannelPage() {
   const [tab, setTab] = useState<"home" | "shows" | "episodes" | "live" | "about">("home");
   const [subscribed, setSubscribed] = useState(false);
   const [notify, setNotify] = useState(true);
+  const [giftOpen, setGiftOpen] = useState(false);
   const following = follow.isFollowing(handle);
 
   // Owner = Trey himself. Stays true even for guests viewing /channel/trey
@@ -176,7 +178,10 @@ function ChannelPage() {
               >
                 <Sparkles className="size-4" /> {subscribed ? "Subscribed" : "Subscribe"}
               </button>
-              <button onClick={() => toast("Gift sent ✨")} className="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 glass border border-primary/40 text-primary glow-gold tilt-press">
+              <button
+                onClick={() => setGiftOpen(true)}
+                className="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 glass border border-primary/40 text-primary glow-gold tilt-press"
+              >
                 <Gift className="size-4" /> Send gift
               </button>
             </>
@@ -290,6 +295,7 @@ function ChannelPage() {
           </section>
         )}
       </div>
+      <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={handle} />
     </AppShell>
   );
 }

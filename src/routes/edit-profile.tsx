@@ -10,6 +10,7 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 import { currentUser } from "@/lib/mock-data";
 import bannerImg from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { AnimatedBanner } from "@/components/profile/AnimatedBanner";
 
 export const Route = createFileRoute("/edit-profile")({
   component: EditProfile,
@@ -58,8 +59,17 @@ function EditProfile() {
       if (!f) return;
       const url = URL.createObjectURL(f);
       setDraft((d) => ({ ...d, [key]: url }));
+      if (key === "banner") {
+        const isAnimated = /gif|video/.test(f.type);
+        toast.success(isAnimated ? "Animated banner ready — it'll loop forever ✨" : "Banner updated");
+      }
     };
   };
+
+  const isAnimatedBanner = (() => {
+    const b = (draft.banner || "").toLowerCase();
+    return b.endsWith(".gif") || /\.(mp4|webm|mov)$/.test(b.split("?")[0]) || b.startsWith("blob:");
+  })();
 
   const save = async () => {
     if (supabaseUser) {
@@ -127,12 +137,17 @@ function EditProfile() {
             {/* Banner / avatar uploaders */}
             <div className="rounded-3xl liquid-glass border border-white/10 overflow-hidden">
               <div className="relative h-40">
-                <img src={draft.banner || bannerImg} alt="banner" className="w-full h-full object-cover" />
+                <AnimatedBanner src={draft.banner} fallback={bannerImg} alt="banner" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                {isAnimatedBanner && (
+                  <span className="absolute top-3 left-3 px-2 py-1 rounded-full text-[10px] font-bold tracking-[0.2em] bg-[oklch(0.7_0.25_340_/_0.25)] text-[oklch(0.85_0.2_340)] border border-[oklch(0.7_0.25_340_/_0.5)] backdrop-blur-md flex items-center gap-1">
+                    <span className="size-1.5 rounded-full bg-[oklch(0.85_0.2_340)] animate-glow-pulse" /> LOOPING
+                  </span>
+                )}
                 <button onClick={() => pickFile(bannerFile, "banner")} className="absolute top-3 right-3 px-2.5 py-1.5 rounded-full text-[11px] font-semibold liquid-glass border border-white/15 flex items-center gap-1.5">
                   <ImageIcon className="size-3" /> Change banner
                 </button>
-                <input ref={bannerFile} type="file" accept="image/*" className="hidden" />
+                <input ref={bannerFile} type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" className="hidden" />
               </div>
               <div className="px-5 pb-5 -mt-10 flex items-end gap-4">
                 <div className="relative size-20 rounded-full conic-ring bg-background">
@@ -142,7 +157,7 @@ function EditProfile() {
                   </button>
                   <input ref={avatarFile} type="file" accept="image/*" className="hidden" />
                 </div>
-                <div className="flex-1 text-xs text-muted-foreground pb-1">PNG / JPG · square recommended</div>
+                <div className="flex-1 text-xs text-muted-foreground pb-1">Banner: JPG · PNG · GIF · MP4/WebM (loops automatically)</div>
               </div>
             </div>
 
@@ -183,7 +198,7 @@ function EditProfile() {
               </div>
               <div className="rounded-3xl liquid-glass border overflow-hidden" style={{ borderColor: `color-mix(in oklab, ${accentColor} 40%, transparent)` }}>
                 <div className="relative h-32">
-                  <img src={draft.banner || bannerImg} className="w-full h-full object-cover" alt="" />
+                  <AnimatedBanner src={draft.banner} fallback={bannerImg} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
                 </div>
                 <div className="px-5 pb-5 -mt-10 text-center">

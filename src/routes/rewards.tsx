@@ -7,6 +7,10 @@ import { creators } from "@/lib/mock-data";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useRewards } from "@/hooks/use-rewards";
+import { COIN_TIERS } from "@/components/gifts/coin-tiers";
+import { Coin } from "@/components/gifts/Coin";
+import { triggerCoinGift } from "@/components/gifts/GiftBurst";
+import { useState } from "react";
 
 export const Route = createFileRoute("/rewards")({
   component: Rewards,
@@ -28,12 +32,8 @@ const fallbackTransactions = [
 ];
 */
 
-const giftPacks = [
-  { id: "g1", name: "Spark", emoji: "✨", cost: 50 },
-  { id: "g2", name: "Fire", emoji: "🔥", cost: 200 },
-  { id: "g3", name: "Crown", emoji: "👑", cost: 800 },
-  { id: "g4", name: "Diamond", emoji: "💎", cost: 1500 },
-];
+// Coin denominations now power the luxury gift system.
+// (See `COIN_TIERS` in `@/components/gifts/coin-tiers`.)
 
 const perks = [
   { id: "p1", title: "Trey TV Pro · 1 month", cost: 2500, Icon: Crown },
@@ -46,6 +46,7 @@ function Rewards() {
   const currentUser = useCurrentUser();
   const { balance, tier, lifetimeEarned, lifetimeSpent, streakDays, transactions } = useRewards();
   const goBack = useGoBack("/");
+  const [recipient, setRecipient] = useState<string | null>(null);
   const points = balance;
   const uid = currentUser?.uid ?? "0000000000000000";
 
@@ -137,28 +138,60 @@ function Rewards() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-4">
-          {/* Send a gift */}
-          <section className="rounded-3xl liquid-glass border border-white/10 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold flex items-center gap-2"><Gift className="size-4 text-[oklch(0.7_0.25_340)]" /> Send a gift</h2>
-              <Link to="/explore" className="text-xs text-muted-foreground hover:text-foreground">Find creators →</Link>
-            </div>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-              {creators.slice(0, 5).map((c) => (
-                <button key={c.id} className="shrink-0 flex flex-col items-center gap-1 w-16">
-                  <div className="size-12 rounded-full conic-ring"><img src={c.avatar} className="size-full rounded-full object-cover" alt="" /></div>
-                  <div className="text-[10px] truncate w-full text-center">{c.name}</div>
-                </button>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              {giftPacks.map((g) => (
-                <button key={g.id} onClick={() => toast.success(`Gifted ${g.name}!`)} className="rounded-2xl liquid-glass liquid-hover border border-white/10 p-3 text-center">
-                  <div className="text-2xl">{g.emoji}</div>
-                  <div className="text-[11px] font-semibold mt-1">{g.name}</div>
-                  <div className="text-[10px] text-primary">{g.cost} pts</div>
-                </button>
-              ))}
+          {/* Send a gift — Coin denominations */}
+          <section className="rounded-3xl liquid-glass border border-white/10 p-5 relative overflow-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-0 admin-aurora opacity-40" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-bold flex items-center gap-2">
+                  <Gift className="size-4 text-[oklch(0.7_0.25_340)]" /> Send a coin gift
+                </h2>
+                <Link to="/explore" className="text-xs text-muted-foreground hover:text-foreground">Find creators →</Link>
+              </div>
+
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {creators.slice(0, 5).map((c, i) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setRecipient(c.handle ?? c.name)}
+                    className={`shrink-0 flex flex-col items-center gap-1 w-16 transition ${
+                      recipient === (c.handle ?? c.name) ? "scale-105" : "opacity-80 hover:opacity-100"
+                    }`}
+                    style={{ animation: `counter-up 0.4s ${i * 60}ms both` }}
+                  >
+                    <div className={`size-12 rounded-full ${recipient === (c.handle ?? c.name) ? "conic-ring ring-neon-magenta" : "conic-ring"}`}>
+                      <img src={c.avatar} className="size-full rounded-full object-cover" alt="" />
+                    </div>
+                    <div className="text-[10px] truncate w-full text-center">{c.name}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-4 grid grid-cols-5 gap-2">
+                {COIN_TIERS.map((t, i) => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      triggerCoinGift(t, recipient ?? undefined);
+                      toast.success(`${t.name} sent${recipient ? ` to @${recipient}` : ""} · −${t.cost} pts`);
+                    }}
+                    className="group relative rounded-2xl liquid-glass border border-white/10 p-2.5 text-center hover-lift tilt-press"
+                    style={{ animation: `counter-up 0.45s ${i * 70}ms both` }}
+                  >
+                    <div className="grid place-items-center mb-1 [perspective:600px]">
+                      <div className="transition-transform duration-500 group-hover:[transform:rotateY(180deg)] [transform-style:preserve-3d]">
+                        <Coin tier={t} size={42} />
+                      </div>
+                    </div>
+                    <div className="text-[10px] font-bold tracking-wider uppercase">{t.name}</div>
+                    <div className="text-[9px] text-primary font-semibold">{t.cost.toLocaleString()} pts</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 text-[10px] text-muted-foreground text-center">
+                Tip: tap a creator above, then a coin to send a luxe gift burst.
+              </div>
             </div>
           </section>
 

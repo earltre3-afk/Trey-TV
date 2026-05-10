@@ -74,7 +74,7 @@ function GuidePage() {
         {categories.map((c) => (
           <button key={c} onClick={() => setActiveCat(c)} className={chip(activeCat === c)}>{c}</button>
         ))}
-        <span className="ml-auto text-[11px] text-muted-foreground">
+        <span className="ml-auto text-[11px] text-muted-foreground" suppressHydrationWarning>
           {new Date(now).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
         </span>
       </div>

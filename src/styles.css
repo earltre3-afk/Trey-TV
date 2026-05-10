@@ -478,3 +478,274 @@
   47% { opacity: 1; }
   78% { opacity: 0.85; filter: drop-shadow(0 0 12px oklch(0.65 0.22 300 / 0.9)); }
 }
+
+/* ====== Luxury Coin Gift Animations ====== */
+@keyframes coin-spin-3d {
+  0%   { transform: rotateY(0deg) rotateZ(0deg); }
+  100% { transform: rotateY(720deg) rotateZ(360deg); }
+}
+@keyframes coin-rise {
+  0%   { transform: translate(-50%, 30%) scale(0.4); opacity: 0; filter: blur(4px); }
+  35%  { transform: translate(-50%, -50%) scale(1.15); opacity: 1; filter: blur(0); }
+  70%  { transform: translate(-50%, -55%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -180%) scale(0.7); opacity: 0; filter: blur(2px); }
+}
+@keyframes coin-fall {
+  0%   { transform: translate3d(var(--cx,0), -120vh, 0) rotate(var(--cr,0deg)); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(var(--cx2,0), 110vh, 0) rotate(calc(var(--cr,0deg) + 1080deg)); opacity: 0.85; }
+}
+@keyframes sparkle-pop {
+  0%   { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--sx,0px)), calc(-50% + var(--sy,0px))) scale(1.6); opacity: 0; }
+}
+@keyframes ring-burst {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+@keyframes gift-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-10px) rotate(3deg); }
+}
+@keyframes slide-up {
+  0%   { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes coin-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes coin-edge-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px var(--coin-edge), 0 0 18px var(--coin-glow), inset 0 2px 6px oklch(1 0 0 / 0.55), inset 0 -3px 8px oklch(0 0 0 / 0.45); }
+  50%      { box-shadow: 0 0 0 1px var(--coin-edge), 0 0 36px var(--coin-glow), inset 0 2px 6px oklch(1 0 0 / 0.65), inset 0 -3px 8px oklch(0 0 0 / 0.55); }
+}
+@keyframes counter-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes admin-aurora {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Coin face — used for tier preview & burst */
+.coin {
+  position: relative;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  background:
+    radial-gradient(circle at 30% 25%, oklch(1 0 0 / 0.85), transparent 45%),
+    linear-gradient(135deg, var(--coin-hi), var(--coin-lo) 55%, var(--coin-hi));
+  background-size: 200% 200%;
+  color: var(--coin-text);
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.35);
+  animation: coin-shimmer 3.4s ease-in-out infinite, coin-edge-pulse 2.6s ease-in-out infinite;
+  box-shadow:
+    0 0 0 1px var(--coin-edge),
+    0 0 22px var(--coin-glow),
+    inset 0 2px 6px oklch(1 0 0 / 0.55),
+    inset 0 -3px 8px oklch(0 0 0 / 0.45);
+}
+.coin::before {
+  content: "";
+  position: absolute; inset: 8%;
+  border-radius: 9999px;
+  border: 1px dashed oklch(0 0 0 / 0.25);
+  pointer-events: none;
+}
+.coin::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 9999px;
+  background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 0.55) 50%, transparent 65%);
+  background-size: 250% 100%;
+  mix-blend-mode: overlay;
+  animation: coin-shimmer 2.2s linear infinite;
+  pointer-events: none;
+}
+
+/* Coin tier color tokens */
+.coin-penny   { --coin-hi: oklch(0.78 0.13 45); --coin-lo: oklch(0.45 0.11 35); --coin-edge: oklch(0.5 0.13 35 / 0.9); --coin-glow: oklch(0.6 0.13 35 / 0.55); --coin-text: oklch(0.18 0.05 30); }
+.coin-nickel  { --coin-hi: oklch(0.92 0.01 250); --coin-lo: oklch(0.65 0.015 250); --coin-edge: oklch(0.78 0.01 250 / 0.9); --coin-glow: oklch(0.85 0.02 250 / 0.55); --coin-text: oklch(0.22 0.02 260); }
+.coin-dime    { --coin-hi: oklch(0.96 0.012 230); --coin-lo: oklch(0.7 0.02 230); --coin-edge: oklch(0.82 0.02 230 / 0.95); --coin-glow: oklch(0.85 0.05 220 / 0.65); --coin-text: oklch(0.2 0.02 240); }
+.coin-quarter { --coin-hi: oklch(0.98 0.005 240); --coin-lo: oklch(0.72 0.02 250); --coin-edge: oklch(0.88 0.04 250 / 0.95); --coin-glow: oklch(0.85 0.08 280 / 0.7); --coin-text: oklch(0.2 0.03 260); }
+.coin-dollar  { --coin-hi: oklch(0.95 0.16 95); --coin-lo: oklch(0.68 0.17 60); --coin-edge: oklch(0.82 0.16 85 / 0.95); --coin-glow: oklch(0.82 0.16 85 / 0.85); --coin-text: oklch(0.2 0.05 80); }
+
+.animate-counter-up { animation: counter-up 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
+
+/* Admin aurora bar background */
+.admin-aurora {
+  background:
+    linear-gradient(120deg,
+      oklch(0.7 0.25 340 / 0.18),
+      oklch(0.65 0.22 300 / 0.18),
+      oklch(0.82 0.15 215 / 0.16),
+      oklch(0.82 0.16 85 / 0.18),
+      oklch(0.7 0.25 340 / 0.18));
+  background-size: 300% 300%;
+  animation: admin-aurora 12s ease infinite;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* ====== State-of-the-art Inbox FX ====== */
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%           { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes msg-pop-in {
+  0%   { transform: translateY(8px) scale(0.96); opacity: 0; filter: blur(2px); }
+  60%  { transform: translateY(0) scale(1.01); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes scan-line {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes wave-bar {
+  0%, 100% { transform: scaleY(0.4); }
+  50%      { transform: scaleY(1); }
+}
+@keyframes presence-pulse {
+  0%   { box-shadow: 0 0 0 0 oklch(0.78 0.18 150 / 0.7); }
+  70%  { box-shadow: 0 0 0 8px oklch(0.78 0.18 150 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0.78 0.18 150 / 0); }
+}
+@keyframes orb-drift-1 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(40px, -30px); }
+}
+@keyframes orb-drift-2 {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(-30px, 40px); }
+}
+@keyframes neon-trail {
+  0%   { opacity: 0; transform: translateX(0) scale(0.3); }
+  60%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(40px) scale(1); }
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, var(--gold), var(--neon-magenta));
+  box-shadow: 0 0 8px oklch(0.7 0.25 340 / 0.8);
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+.msg-bubble-mine {
+  background: linear-gradient(135deg, oklch(0.86 0.17 90), oklch(0.7 0.18 60));
+  color: oklch(0.18 0.02 80);
+  box-shadow:
+    0 0 0 1px oklch(0.82 0.16 85 / 0.4),
+    0 0 22px oklch(0.82 0.16 85 / 0.35),
+    inset 0 1px 0 oklch(1 0 0 / 0.5);
+  position: relative;
+  overflow: hidden;
+}
+.msg-bubble-mine::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 0.35) 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: coin-shimmer 4s linear infinite;
+  pointer-events: none;
+}
+.msg-bubble-them {
+  background: linear-gradient(180deg, oklch(0.22 0.04 270 / 0.7), oklch(0.18 0.04 280 / 0.7));
+  border: 1px solid oklch(1 0 0 / 0.1);
+  backdrop-filter: blur(14px);
+  position: relative;
+}
+.msg-bubble-them::before {
+  content: "";
+  position: absolute; inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, oklch(0.7 0.25 340 / 0.4), transparent 50%, oklch(0.82 0.15 215 / 0.3));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+.animate-msg-pop { animation: msg-pop-in 0.4s cubic-bezier(0.2,0.8,0.2,1) both; }
+.animate-presence { animation: presence-pulse 2s ease-out infinite; }
+
+.holo-header {
+  background:
+    linear-gradient(120deg,
+      oklch(0.7 0.25 340 / 0.16),
+      oklch(0.82 0.15 215 / 0.14),
+      oklch(0.82 0.16 85 / 0.16),
+      oklch(0.65 0.22 300 / 0.16),
+      oklch(0.7 0.25 340 / 0.16));
+  background-size: 300% 300%;
+  animation: admin-aurora 14s ease infinite;
+  position: relative;
+}
+.holo-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.18), transparent);
+  width: 40%;
+  animation: scan-line 5.5s ease-in-out infinite;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.chat-orb-1 {
+  position: absolute;
+  width: 240px; height: 240px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, oklch(0.7 0.25 340 / 0.35), transparent 70%);
+  filter: blur(40px);
+  animation: orb-drift-1 9s ease-in-out infinite;
+}
+.chat-orb-2 {
+  position: absolute;
+  width: 280px; height: 280px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, oklch(0.82 0.15 215 / 0.3), transparent 70%);
+  filter: blur(50px);
+  animation: orb-drift-2 11s ease-in-out infinite;
+}
+
+.wave-bar {
+  display: inline-block;
+  width: 3px;
+  margin: 0 1px;
+  background: linear-gradient(180deg, var(--gold), var(--neon-magenta));
+  border-radius: 2px;
+  transform-origin: center;
+  animation: wave-bar 0.9s ease-in-out infinite;
+}
+
+.thread-row { transition: background 200ms, transform 200ms; }
+.thread-row:hover { transform: translateX(2px); }
+.thread-row-active {
+  background: linear-gradient(90deg, oklch(0.7 0.25 340 / 0.12), oklch(0.82 0.16 85 / 0.08));
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+
+.send-btn-rocket {
+  background: linear-gradient(135deg, oklch(0.86 0.17 90), oklch(0.7 0.25 340));
+  color: oklch(0.18 0.02 80);
+  box-shadow: 0 0 22px oklch(0.82 0.16 85 / 0.6);
+  transition: transform 200ms cubic-bezier(0.34,1.56,0.64,1);
+}
+.send-btn-rocket:hover { transform: rotate(-15deg) scale(1.08); }
+.send-btn-rocket:active { transform: rotate(-15deg) scale(0.94); }

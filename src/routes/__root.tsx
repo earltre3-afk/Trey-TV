@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TreyIWidget } from "@/components/ai/TreyIWidget";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AuthProvider } from "@/lib/auth";
+import { SupabaseSessionProvider } from "@/lib/supabase-session";
 import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
 import { FeedProvider } from "@/lib/feed-store";
@@ -18,7 +19,9 @@ import { CommentsProvider } from "@/lib/comments-store";
 import { FollowProvider } from "@/lib/follow-store";
 import { MessagesProvider } from "@/lib/messages-store";
 import { GuideProvider } from "@/lib/guide-store";
+import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
+import { GiftBurstHost } from "@/components/gifts/GiftBurst";
 
 import appCss from "../styles.css?url";
 
@@ -129,27 +132,32 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CurrentUserSync />
-        <ActivityProvider>
-          <SubmissionsProvider>
-            <FeedProvider>
-              <CommentsProvider>
-                <FollowProvider>
-                  <MessagesProvider>
-                    <GuideProvider>
-                      <Outlet />
-                      <BottomNav />
-                      <TreyIWidget />
-                      <Toaster />
-                    </GuideProvider>
-                  </MessagesProvider>
-                </FollowProvider>
-              </CommentsProvider>
-            </FeedProvider>
-          </SubmissionsProvider>
-        </ActivityProvider>
-      </AuthProvider>
+      <SupabaseSessionProvider>
+        <AuthProvider>
+          <CurrentUserSync />
+          <ActivityProvider>
+            <SubmissionsProvider>
+              <FeedProvider>
+                <CommentsProvider>
+                  <FollowProvider>
+                    <MessagesProvider>
+                      <GuideProvider>
+                        <MusicReviewProvider>
+                          <Outlet />
+                          <BottomNav />
+                          <TreyIWidget />
+                          <GiftBurstHost />
+                          <Toaster />
+                        </MusicReviewProvider>
+                      </GuideProvider>
+                    </MessagesProvider>
+                  </FollowProvider>
+                </CommentsProvider>
+              </FeedProvider>
+            </SubmissionsProvider>
+          </ActivityProvider>
+        </AuthProvider>
+      </SupabaseSessionProvider>
     </QueryClientProvider>
   );
 }

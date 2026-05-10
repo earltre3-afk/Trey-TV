@@ -7,12 +7,14 @@
  */
 
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Pencil, UserPlus, UserCheck, MessageCircle, Share2, Copy,
   Crown, Sparkles, Gift, Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProfileContext } from "./ProfileTypes";
+import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
 
 interface Props extends ProfileContext {
   followingThis?: boolean;
@@ -37,6 +39,7 @@ export function ProfileActionBar({
   onNotify,
 }: Props) {
   const isCreator = profileType === "creator";
+  const [giftOpen, setGiftOpen] = useState(false);
 
   const onShare = async () => {
     try {
@@ -152,12 +155,15 @@ export function ProfileActionBar({
 
       {/* Creator-only: Send Gift */}
       {isCreator && (
-        <button
-          onClick={() => toast("Gift sent ✨")}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold glass border border-primary/40 text-primary glow-gold tilt-press"
-        >
-          <Gift className="size-4" /> Gift
-        </button>
+        <>
+          <button
+            onClick={() => setGiftOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold glass border border-primary/40 text-primary glow-gold tilt-press"
+          >
+            <Gift className="size-4" /> Gift
+          </button>
+          <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={profile.handle} />
+        </>
       )}
 
       {/* Message (non-creator) */}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { currentUser as defaultUser } from "@/lib/mock-data";
+import { useSupabaseSession } from "@/lib/supabase-session";
 
 export type Role = "guest" | "user" | "creator" | "admin";
 export type CreatorStatus = "not_applied" | "pending" | "approved" | "rejected";
@@ -49,6 +50,7 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { isRealAdmin, user: supaUser } = useSupabaseSession();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [role, setRoleState] = useState<Role>("guest");
 
@@ -81,15 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = (patch: Partial<SessionUser>) =>
     setUser((prev) => (prev ? { ...prev, ...patch } : prev));
 
+  // Real Supabase admin overrides mock role for admin gating
+  const effectiveIsAdmin = role === "admin" || isRealAdmin;
+  const effectiveIsCreator = effectiveIsAdmin || role === "creator";
+
   return (
     <Ctx.Provider value={{
       role,
       user,
-      isGuest: role === "guest",
-      isCreator: role === "creator" || role === "admin",
-      isAdmin: role === "admin",
-      creatorStatus: user?.creatorStatus ?? (role === "creator" || role === "admin" ? "approved" : "not_applied"),
-      isApprovedCreator: (user?.creatorStatus ?? (role === "creator" || role === "admin" ? "approved" : "not_applied")) === "approved" && (role === "creator" || role === "admin"),
+      isGuest: role === "guest" && !supaUser,
+      isCreator: effectiveIsCreator,
+      isAdmin: effectiveIsAdmin,
+      creatorStatus: user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied"),
+      isApprovedCreator: (user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied")) === "approved" && effectiveIsCreator,
       setCreatorStatus: (s) => setUser((prev) => prev ? { ...prev, creatorStatus: s } : prev),
       signIn, signOut, setRole, updateUser,
     }}>

@@ -10,6 +10,7 @@
 import { ArrowLeft, Bell, MoreHorizontal, Crown, Pencil, Play } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { ProfileContext } from "./ProfileTypes";
+import { AnimatedBanner } from "./AnimatedBanner";
 
 interface ProfileBannerProps extends ProfileContext {
   onBack: () => void;
@@ -31,9 +32,10 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
   return (
     <div className="relative">
       <div className={`relative ${heroFrame}`}>
-        {/* Banner image */}
-        <img
-          src={profile.bannerUrl || "/profile-banner"}
+        {/* Banner media — supports static images, looping GIFs, and short looping videos */}
+        <AnimatedBanner
+          src={profile.bannerUrl}
+          fallback="/profile-banner"
           alt=""
           className={`w-full ${bannerHeight} object-cover`}
         />

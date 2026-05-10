@@ -101,7 +101,7 @@ function GuestWatchNow() {
 
       {/* WHAT IS */}
       <Section title="What is Trey TV?" subtitle="A new kind of network — built by creators, designed like cinema, alive like social.">
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { icon: Tv,      title: "Watch",   body: "Original shows, live channels, music videos and creator series — all premium-grade." },
             { icon: Sparkles,title: "Discover",body: "Trey-I, our AI host, prescribes what to watch based on your mood, mind and moment." },
@@ -113,6 +113,7 @@ function GuestWatchNow() {
               <p className="mt-1 text-sm text-muted-foreground">{c.body}</p>
             </div>
           ))}
+          <LiveMusicReviewCard />
         </div>
       </Section>
 
@@ -237,6 +238,40 @@ function GuestWatchNow() {
   );
 }
 
+
+function LiveMusicReviewCard() {
+  const { isGuest } = useAuth();
+  // Signed-in users access this from Discover. On home, only show to guests.
+  if (!isGuest) return null;
+  const onClick = () => {
+    try { sessionStorage.setItem("treytv_post_auth_redirect", "/music-review"); } catch {}
+  };
+  return (
+    <Link
+      to="/signup"
+      onClick={onClick}
+      className="group relative rounded-3xl liquid-glass neon-border p-6 overflow-hidden md:col-span-2 lg:col-span-1"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(80%_80%_at_30%_20%,oklch(0.7_0.25_340/0.18),transparent),radial-gradient(80%_80%_at_80%_80%,oklch(0.82_0.15_215/0.18),transparent)]" />
+      <div className="absolute -top-10 -right-10 size-40 rounded-full bg-[oklch(0.65_0.24_15/0.18)] blur-3xl" />
+      <div className="relative">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[oklch(0.65_0.24_15/0.15)] border border-[oklch(0.65_0.24_15/0.4)] text-[10px] tracking-[0.22em] text-[oklch(0.85_0.18_15)]">
+            <span className="size-1.5 rounded-full bg-[oklch(0.65_0.24_15)] animate-glow-pulse" /> LIVE
+          </span>
+          <span className="text-[10px] tracking-[0.22em] text-muted-foreground">NEW</span>
+        </div>
+        <div className="size-11 mt-4 rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.16_85)] to-[oklch(0.7_0.25_340)] text-primary-foreground grid place-items-center"><Radio className="size-5" /></div>
+        <h3 className="mt-4 text-lg font-bold">Live Music Review</h3>
+        <p className="mt-1 text-sm text-muted-foreground">Submit a track. Get reviewed live on TikTok. Skip the line with Cash App.</p>
+        <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary">
+          Submit a song <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function Section({
   title, subtitle, children, action,
 }: { title: string; subtitle?: string; children: React.ReactNode; action?: React.ReactNode }) {
@@ -286,32 +321,67 @@ function SignedInWatchNow() {
   return (
     <AppShell wide>
       {/* Hero */}
-      <div className="relative -mx-3 lg:-mx-8 -mt-3 lg:-mt-8 mb-6 overflow-hidden rounded-b-[32px]">
-        <div className="relative h-[60vh] min-h-[420px] w-full">
+      <div className="relative -mx-3 lg:-mx-8 xl:-mx-10 -mt-3 lg:-mt-8 xl:-mt-10 mb-6 lg:mb-10 overflow-hidden rounded-b-[32px]">
+        <div className="relative h-[60vh] min-h-[420px] xl:h-[72vh] xl:min-h-[560px] w-full">
           <img src={heroShow.backdrop} alt="" className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.13_0.02_270/.2),transparent_30%,oklch(0.13_0.02_270/.95)_92%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_15%_50%,transparent,oklch(0.13_0.02_270/.55)_70%)]" />
-          <div className="relative z-10 h-full flex items-end p-6 sm:p-10">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full liquid-glass border border-white/15 text-[10px] tracking-widest">
-                <Crown className="size-3 text-primary" /> TREY TV ORIGINAL
+          <div className="relative z-10 h-full flex items-end p-6 sm:p-10 xl:p-14">
+            <div className="grid lg:grid-cols-[minmax(0,640px)_1fr] xl:grid-cols-[minmax(0,720px)_1fr] gap-8 w-full items-end">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full liquid-glass border border-white/15 text-[10px] tracking-widest">
+                  <Crown className="size-3 text-primary" /> TREY TV ORIGINAL
+                </div>
+                <h1 className="mt-4 font-display text-4xl sm:text-6xl xl:text-7xl font-black leading-[0.95] drop-shadow-[0_4px_30px_oklch(0.82_0.16_85_/_0.4)]">
+                  {heroShow.title}
+                </h1>
+                <div className="mt-2 text-sm text-muted-foreground">{heroChannel.name} · {heroShow.year} · {heroShow.rating} · {heroShow.category}</div>
+                <p className="mt-3 text-sm sm:text-base xl:text-lg text-white/85 max-w-xl line-clamp-3">{heroShow.description}</p>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <Link to="/watch/$id" params={{ id: heroShow.episodes[0].id }} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold glow-gold">
+                    <Play className="size-4 fill-current" /> Watch Now
+                  </Link>
+                  <button onClick={() => toast("Saved to your list")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
+                    <Plus className="size-4" /> Save
+                  </button>
+                  <button onClick={() => toast("Show details coming soon")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
+                    <Info className="size-4" /> More Info
+                  </button>
+                </div>
               </div>
-              <h1 className="mt-4 font-display text-4xl sm:text-6xl font-black leading-[0.95] drop-shadow-[0_4px_30px_oklch(0.82_0.16_85_/_0.4)]">
-                {heroShow.title}
-              </h1>
-              <div className="mt-2 text-sm text-muted-foreground">{heroChannel.name} · {heroShow.year} · {heroShow.rating} · {heroShow.category}</div>
-              <p className="mt-3 text-sm sm:text-base text-white/85 max-w-xl line-clamp-3">{heroShow.description}</p>
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <Link to="/watch/$id" params={{ id: heroShow.episodes[0].id }} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold glow-gold">
-                  <Play className="size-4 fill-current" /> Watch Now
-                </Link>
-                <button onClick={() => toast("Saved to your list")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
-                  <Plus className="size-4" /> Save
-                </button>
-                <button onClick={() => toast("Show details coming soon")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
-                  <Info className="size-4" /> More Info
-                </button>
-              </div>
+
+              {/* Desktop side panel — Up Next + creator */}
+              <aside className="hidden xl:flex flex-col gap-3 self-end">
+                <div className="rounded-2xl liquid-glass border border-white/10 p-4 backdrop-blur-md">
+                  <div className="flex items-center gap-3">
+                    <img src={heroChannel.avatar} className="size-10 rounded-full object-cover ring-2 ring-primary/40" alt="" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] tracking-widest text-primary">FROM THE CREATOR</div>
+                      <div className="text-sm font-bold truncate">{heroChannel.name}</div>
+                    </div>
+                    <Link to="/channel/$handle" params={{ handle: heroChannel.handle }} className="ml-auto text-[11px] px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10">View</Link>
+                  </div>
+                </div>
+                <div className="rounded-2xl liquid-glass border border-white/10 p-4 backdrop-blur-md">
+                  <div className="text-[10px] tracking-widest text-muted-foreground mb-2">UP NEXT</div>
+                  <div className="space-y-2">
+                    {heroShow.episodes.slice(0, 3).map((ep) => (
+                      <Link key={ep.id} to="/watch/$id" params={{ id: ep.id }} className="flex items-center gap-3 group">
+                        <div className="relative size-14 rounded-lg overflow-hidden shrink-0 ring-1 ring-white/10">
+                          <img src={ep.thumb} alt="" className="size-full object-cover transition group-hover:scale-110" />
+                          <div className="absolute inset-0 grid place-items-center bg-black/40 opacity-0 group-hover:opacity-100 transition">
+                            <Play className="size-4 text-white fill-current" />
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold truncate">{ep.title}</div>
+                          <div className="text-[10px] text-muted-foreground">S{ep.season}E{ep.number} · {ep.duration}m</div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </aside>
             </div>
           </div>
         </div>
