@@ -34,6 +34,13 @@ type Ctx = {
 
 const C = createContext<Ctx | null>(null);
 const KEY = "treytv_user_posts_v1";
+const SERVER_FALLBACK_CTX: Ctx = {
+  posts: [],
+  addPost: () => {
+    throw new Error("FeedProvider is required before adding posts");
+  },
+  removePost: () => undefined,
+};
 
 function timeAgo(ts: number) {
   const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
@@ -79,6 +86,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
 export function useFeed() {
   const ctx = useContext(C);
+  if (!ctx && typeof window === "undefined") return SERVER_FALLBACK_CTX;
   if (!ctx) throw new Error("useFeed must be inside <FeedProvider>");
   return ctx;
 }

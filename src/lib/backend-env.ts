@@ -7,8 +7,6 @@ export type SupabasePublicEnv = {
 export function getSupabasePublicEnv(): SupabasePublicEnv | null {
   const viteUrl = import.meta.env.VITE_SUPABASE_URL;
   const viteAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  console.log("VITE URL:", viteUrl ? "Found" : "Missing", "NEXT_PUBLIC URL:", import.meta.env.NEXT_PUBLIC_SUPABASE_URL ? "Found" : "Missing");
-  console.log("process.env VITE URL:", typeof process !== "undefined" ? process.env.VITE_SUPABASE_URL : "No process");
   if (viteUrl && viteAnonKey) {
     return { url: viteUrl, anonKey: viteAnonKey, source: "vite" };
   }

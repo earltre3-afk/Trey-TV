@@ -1,8 +1,6 @@
 import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
 import { Mic, Sparkles, ArrowRight, Wand2, Compass, Crown, Eye } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
@@ -17,33 +15,9 @@ export const Route = createFileRoute("/onboarding")({
 function Onboarding() {
   const nav = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [authReady, setAuthReady] = useState(false);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        try { sessionStorage.setItem("treytv_post_auth_redirect", "/onboarding"); } catch {}
-        nav({ to: "/login" });
-      } else {
-        setAuthReady(true);
-      }
-    }).catch(() => nav({ to: "/login" }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Show child routes (voice, manual) while auth check completes — they manage their own auth
+  // Show child routes (voice, manual). They manage their own auth and completion.
   if (pathname.startsWith("/onboarding/")) return <Outlet />;
-
-  if (!authReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="glass border border-white/10 rounded-3xl px-10 py-8 text-center space-y-3">
-          <div className="size-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">

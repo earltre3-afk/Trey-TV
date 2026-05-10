@@ -319,6 +319,7 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
         publish_status: isScheduled ? "scheduled" : "published",
         access_type: accessType,
         scheduled_at: queue.scheduled_at ?? null,
+        published_at: isScheduled ? null : nowIso,
         admin_publish_override: true,
         admin_publish_override_by: adminUser.id,
         admin_publish_override_at: nowIso,
