@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ChevronDown, Upload, Download, Maximize2, Camera, SkipBack, Play, Pause,
@@ -131,6 +132,36 @@ function Studio() {
 
   const [showAI, setShowAI] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [aiOutput, setAiOutput] = useState("");
+  const [aiOutputLabel, setAiOutputLabel] = useState("");
+  const [aiOutputBusy, setAiOutputBusy] = useState(false);
+
+  type AiActionId = typeof AI_ACTIONS[number]["id"];
+  const AI_TEXT_TASKS: Partial<Record<AiActionId, Parameters<typeof treyIGenerate>[0]["data"]["task"]>> = {
+    captions: "caption",
+    title: "title",
+    desc: "description",
+    hashtags: "hashtags",
+    hook: "hook",
+    promo: "promo_caption",
+  };
+
+  const handleAiAction = async (id: AiActionId, label: string) => {
+    const task = AI_TEXT_TASKS[id];
+    if (!task) { toast.success(`${label} queued`); return; }
+    setAiOutput("");
+    setAiOutputLabel(label);
+    setAiOutputBusy(true);
+    try {
+      const result = await treyIGenerate({ data: { task, prompt: `Generate ${label.toLowerCase()} for a Trey TV creator episode` } });
+      setAiOutput("text" in result ? result.text : "");
+      if ("error" in result) toast.error("Trey-I couldn't generate that right now");
+    } catch {
+      toast.error("Trey-I couldn't generate that right now");
+    } finally {
+      setAiOutputBusy(false);
+    }
+  };
 
   const onPickFile = () => fileRef.current?.click();
 
@@ -522,12 +553,13 @@ function Studio() {
             </SheetTitle>
             <SheetDescription>Premium AI tools for your upload. Tap any action to run it.</SheetDescription>
           </SheetHeader>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4 pb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
             {AI_ACTIONS.map((a) => (
               <button
                 key={a.id}
-                onClick={() => toast.success(`${a.label} queued`)}
-                className="group rounded-2xl glass neon-border p-4 text-left hover-lift tilt-press relative overflow-hidden"
+                onClick={() => handleAiAction(a.id, a.label)}
+                disabled={aiOutputBusy}
+                className="group rounded-2xl glass neon-border p-4 text-left hover-lift tilt-press relative overflow-hidden disabled:opacity-50"
               >
                 <div className="size-10 rounded-xl bg-white/5 grid place-items-center group-hover:scale-110 transition">
                   <a.icon className="size-5 text-primary" />
@@ -537,6 +569,30 @@ function Studio() {
               </button>
             ))}
           </div>
+
+          {/* AI output result panel */}
+          {(aiOutputBusy || aiOutput) && (
+            <div className="mt-4 rounded-2xl glass border border-white/10 p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] tracking-[0.2em] text-primary">{aiOutputLabel.toUpperCase()}</div>
+                {!aiOutputBusy && aiOutput && (
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(aiOutput); toast.success("Copied"); }}
+                    className="text-[10px] text-muted-foreground hover:text-foreground px-2 py-0.5 rounded glass border border-white/10"
+                  >
+                    Copy
+                  </button>
+                )}
+              </div>
+              {aiOutputBusy ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+                  <Sparkles className="size-3 text-primary animate-pulse" /> Trey-I is generating…
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{aiOutput}</p>
+              )}
+            </div>
+          )}
         </SheetContent>
       </Sheet>
 

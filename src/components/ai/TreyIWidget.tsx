@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Sparkles, X, Send, Wand2, Heart, BarChart3, Mic, Image as ImageIcon, Move } from "lucide-react";
+import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 
 type Msg = { id: string; from: "you" | "ai"; text: string; time: string };
 
@@ -42,6 +43,7 @@ export function TreyIWidget() {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [text, setText] = useState("");
+  const [aibusy, setAibusy] = useState(false);
   const [pos, setPos] = useState(INITIAL_POS);
   const posRef = useRef(INITIAL_POS);
   const loadedRef = useRef(false);
@@ -218,15 +220,22 @@ export function TreyIWidget() {
     e.stopPropagation();
   }, [applyTransform]);
 
-  const send = (raw?: string) => {
+  const send = async (raw?: string) => {
     const value = (raw ?? text).trim();
-    if (!value) return;
+    if (!value || aibusy) return;
     const youMsg: Msg = { id: crypto.randomUUID(), from: "you", text: value, time: "now" };
     setMsgs((m) => [...m, youMsg]);
     setText("");
-    setTimeout(() => {
+    setAibusy(true);
+    try {
+      const result = await treyIGenerate({ data: { task: "widget_chat", prompt: value } });
+      const reply = "text" in result ? result.text : aiReply(value);
+      setMsgs((m) => [...m, { id: crypto.randomUUID(), from: "ai", text: reply, time: "now" }]);
+    } catch {
       setMsgs((m) => [...m, { id: crypto.randomUUID(), from: "ai", text: aiReply(value), time: "now" }]);
-    }, 700);
+    } finally {
+      setAibusy(false);
+    }
   };
 
   // panel position: pop out beside launcher horizontally
@@ -348,9 +357,18 @@ export function TreyIWidget() {
               </div>
             </div>
           ))}
+          {aibusy && (
+            <div className="flex justify-start animate-rise">
+              <div className="glass border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+                <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+                <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                <span className="size-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+              </div>
+            </div>
+          )}
         </div>
 
-        {msgs.length <= 2 && (
+        {msgs.length <= 2 && !aibusy && (
           <div className="px-3 pb-2 flex gap-1.5 overflow-x-auto no-scrollbar">
             {quick.map((q) => (
               <button key={q.label} onClick={() => send(q.label)} className="shrink-0 px-3 py-1.5 rounded-full text-[11px] glass border border-white/10 hover:bg-white/5 flex items-center gap-1.5 tilt-press">
@@ -371,7 +389,7 @@ export function TreyIWidget() {
               placeholder="Ask Trey-I anything…"
               className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground"
             />
-            <button onClick={() => send()} disabled={!text.trim()} className={`size-8 grid place-items-center rounded-xl transition ${text.trim() ? "bg-primary text-primary-foreground glow-gold tilt-press" : "bg-white/5 text-muted-foreground"}`}>
+            <button onClick={() => send()} disabled={!text.trim() || aibusy} className={`size-8 grid place-items-center rounded-xl transition ${text.trim() && !aibusy ? "bg-primary text-primary-foreground glow-gold tilt-press" : "bg-white/5 text-muted-foreground"}`}>
               <Send className="size-4" />
             </button>
           </div>

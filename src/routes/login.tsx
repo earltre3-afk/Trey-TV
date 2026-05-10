@@ -26,7 +26,29 @@ function Login() {
 
   const [busy, setBusy] = useState(false);
 
-  const postAuthRedirect = () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+
+  const postAuthRedirect = async (userId?: string) => {
+    if (userId) {
+      const { data: profile } = await db
+        .from("profiles")
+        .select("onboarding_completed, public_profile_uid")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (!profile || !profile.onboarding_completed) {
+        nav({ to: "/onboarding" });
+        return;
+      }
+
+      let next: string | null = null;
+      try { next = sessionStorage.getItem("treytv_post_auth_redirect"); sessionStorage.removeItem("treytv_post_auth_redirect"); } catch {}
+      nav({ to: (next as any) || (profile.public_profile_uid ? `/u/${profile.public_profile_uid}` : "/") });
+      return;
+    }
+
+    // Demo quick-login — no Supabase user, use stored redirect or home
     let next: string | null = null;
     try { next = sessionStorage.getItem("treytv_post_auth_redirect"); sessionStorage.removeItem("treytv_post_auth_redirect"); } catch {}
     nav({ to: (next as any) || "/" });
@@ -34,28 +56,29 @@ function Login() {
 
   const quick = (r: Exclude<Role, "guest">) => {
     signIn(r);
-    postAuthRedirect();
+    void postAuthRedirect();
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !pw) return toast.error("Enter email and password");
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Signed in");
-    postAuthRedirect();
+    await postAuthRedirect(data.user?.id);
   };
 
   const handleGoogle = async () => {
     setBusy(true);
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (r.error) { setBusy(false); toast.error("Google sign-in failed"); return; }
-    if (r.redirected) return; // browser will redirect
+    if (r.redirected) return; // browser will redirect; Supabase picks up session on return
+    const { data: { user } } = await supabase.auth.getUser();
     setBusy(false);
     toast.success("Signed in with Google");
-    postAuthRedirect();
+    await postAuthRedirect(user?.id);
   };
 
   return (

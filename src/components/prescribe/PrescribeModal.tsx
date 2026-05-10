@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { X, ChevronRight, ChevronLeft, Sparkles, Wand2, Brain, Heart, Zap, Cloud, Flame, Smile, Leaf, Star, Music, Film, Mic, Tv, Check } from "lucide-react";
 import { prescribed } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
+import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 
 type Choice = { id: string; label: string; icon: React.ComponentType<{ className?: string }>; tint: string; tag: string };
 type Question = { id: string; prompt: string; sub: string; choices: Choice[] };
@@ -83,11 +84,12 @@ export function PrescribeModal({ open, onClose }: { open: boolean; onClose: () =
   const [answers, setAnswers] = useState<Record<string, Choice>>({});
   const [analyzing, setAnalyzing] = useState(false);
   const [done, setDone] = useState(false);
+  const [prescribeReasoning, setPrescribeReasoning] = useState("");
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    setStep(0); setAnswers({}); setAnalyzing(false); setDone(false);
+    setStep(0); setAnswers({}); setAnalyzing(false); setDone(false); setPrescribeReasoning("");
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -102,11 +104,26 @@ export function PrescribeModal({ open, onClose }: { open: boolean; onClose: () =
 
   const recs = useMemo(() => done ? pickRecommendations(answers) : [], [done, answers]);
 
-  const handlePick = (choice: Choice) => {
-    setAnswers((a) => ({ ...a, [q.id]: choice }));
+  const handlePick = async (choice: Choice) => {
+    const allAnswers = { ...answers, [q.id]: choice };
+    setAnswers(allAnswers);
     if (isLast) {
       setAnalyzing(true);
-      setTimeout(() => { setAnalyzing(false); setDone(true); }, 1800);
+      const moodContext = Object.values(allAnswers).map((c) => c.label).join(", ");
+      try {
+        const result = await treyIGenerate({
+          data: {
+            task: "prescribe_reasoning",
+            prompt: "Explain why these picks match the viewer's vibe tonight",
+            context: moodContext,
+          },
+        });
+        setPrescribeReasoning("text" in result ? result.text : "");
+      } catch {
+        setPrescribeReasoning("");
+      }
+      setAnalyzing(false);
+      setDone(true);
     } else {
       setTimeout(() => setStep((s) => s + 1), 220);
     }
@@ -284,7 +301,11 @@ export function PrescribeModal({ open, onClose }: { open: boolean; onClose: () =
               <div className="text-center space-y-2">
                 <div className="text-[10px] tracking-[0.3em] text-[oklch(0.7_0.25_340)]">YOUR PRESCRIPTION</div>
                 <h2 className="text-2xl font-extrabold tracking-tight">Tonight you need…</h2>
-                <p className="text-xs text-muted-foreground capitalize">{summary(answers)}</p>
+                {prescribeReasoning ? (
+                  <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">{prescribeReasoning}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground capitalize">{summary(answers)}</p>
+                )}
               </div>
 
               <div className="space-y-3">
