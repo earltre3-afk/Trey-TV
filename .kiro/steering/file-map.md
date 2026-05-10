@@ -29,6 +29,8 @@ prescribe-me.tsx                  — Prescribe Me
 watch.$id.tsx                     — Video watch page
 channel.$handle.tsx               — Channel page
 category.$slug.tsx                — Category page
+onboarding.tsx                    — Onboarding entry (UI-only — two path buttons: voice → /onboarding/voice, manual → /signup; no Supabase; Lovable UI preserved)
+onboarding.voice.tsx              — Trey-I voice onboarding (REAL — wired to text-first server flow via `startIntakeSession` + `profileSetupTurn`; access token from browser session; `assistant.message` rendered in existing Lovable UI; `confirmedFields` drives progress chips; completion redirects to `/u/{publicProfileUid}?tour=1`; mic button visual-only; no ElevenLabs/Gemini/TTS; tsc ✅ build ✅)
 creator-studio.tsx                — Creator Studio shell
 creator-studio.index.tsx          — Creator Studio home (REAL — channels/shows/episodes via use-creator-studio.ts, tsc ✅ build ✅; metric cards remain hardcoded)
 creator-studio.submit.tsx         — Submit content (REAL — metadata wired to creator_edit_projects via use-creator-submit.ts, tsc ✅ build ✅; submissions-store remains local rollback layer; no video upload; no Cloudflare Stream)
@@ -80,6 +82,8 @@ activity-store.tsx            — LOCAL user action tracking only (reactions/sav
 submissions-store.tsx         — Local optimistic/rollback layer (preserved — not deleted; real queue status comes from use-creator-post-queue.ts)
 creator-studio/upload.server.ts — Cloudflare Stream server function (REAL — createServerFn; reads CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_STREAM_API_TOKEN from process.env server-side only; returns safe upload response to browser; tsc ✅ build ✅)
 admin/post-queue.server.ts    — Admin creator post review + publishing activation server functions (REAL — createServerFn; `verifyAdmin` authenticates with auth client then checks `profiles.role = 'admin'` or `ADMIN_EMAILS`; service-role client constructed only after auth passes; `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_EMAILS` in process.env server-side only, no VITE_* prefix; on approval `reviewAdminPostQueue` publishes episode: SELECT by show_id + video_asset_id → UPDATE existing or INSERT new; `admin_publish_override = true` bypasses DB readiness trigger; rollback on episode failure reverts queue + project status; `episodes.edit_project_id` does not exist and is not used; Watch Now / Guide not touched; tsc ✅ build ✅)
+trey-i/intake.server.ts       — Trey-I onboarding intake server functions (REAL — createServerFn; `startIntakeSession` creates intake_sessions row with flow_type="signup"; `profileSetupTurn` runs server-side stage machine with filler detection; auth verified via access token before any write; service-role used for intake_sessions reads/writes (no RLS policies); no ElevenLabs/Gemini/TTS code; tsc ✅ build ✅)
+trey-i/onboarding.server.ts   — Trey-I onboarding profile finalization server functions (REAL — createServerFn; writes confirmed fields to profiles on completion; sets onboarding_completed=true, onboarding_status="completed"; ensures public_profile_uid; profiles.is_creator / profiles.age / date_of_birth not used; tsc ✅ build ✅)
 utils.ts                      — cn() utility
 error-page.ts / error-capture.ts
 ```
@@ -94,6 +98,7 @@ feed/       — Feed-specific components
 creator/    — Creator Studio components
 brand/      — Brand/logo components
 ai/         — AI assistant components
+              TreyIWidget.tsx — Floating draggable chat widget (UI-only mock — hardcoded aiReply(); no real AI/ElevenLabs/Gemini; separate future lane; do not wire in this phase)
 prescribe/  — Prescribe Me components
 profile/    — Reusable profile layout module system (REAL — tsc ✅ build ✅)
               ProfilePageShell.tsx — Master template; accepts ProfileData + ViewerRole; renders NormalUser or Creator modules
