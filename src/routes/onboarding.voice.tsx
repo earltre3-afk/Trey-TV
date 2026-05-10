@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, ArrowLeft, Sparkles, Volume2, Loader2 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { startIntakeSession, profileSetupTurn } from "@/lib/trey-i/intake.server";
+import { createBrowserClient } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/onboarding/voice")({
   component: VoiceOnboarding,
@@ -13,48 +14,121 @@ export const Route = createFileRoute("/onboarding/voice")({
   }),
 });
 
-type Step = { ai: string; field: keyof Profile; placeholder: string };
-type Profile = { name: string; handle: string; bio: string; vibe: string };
+type ConfirmedFields = {
+  bio?: string;
+  display_name?: string;
+  location?: string;
+  username?: string;
+};
 
-const script: Step[] = [
-  { ai: "Hey — I'm Trey-I. What should the world call you?", field: "name", placeholder: "Your name" },
-  { ai: "Love that. Pick a handle people will tag.", field: "handle", placeholder: "@yourhandle" },
-  { ai: "In one breath — what do you create?", field: "bio", placeholder: "I create…" },
-  { ai: "Last one. What's tonight's vibe?", field: "vibe", placeholder: "Late-night studio energy" },
-];
+const INITIAL_MESSAGE = "Hey — I'm Trey-I. What should the world call you?";
+const MAIN_FIELDS: Array<keyof ConfirmedFields> = ["display_name", "username", "bio", "location"];
 
 function VoiceOnboarding() {
   const nav = useNavigate();
-  const { signIn, updateUser } = useAuth();
-  const [step, setStep] = useState(0);
-  const [listening, setListening] = useState(false);
-  const [profile, setProfile] = useState<Profile>({ name: "", handle: "", bio: "", vibe: "" });
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [assistantMessage, setAssistantMessage] = useState(INITIAL_MESSAGE);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [confirmedFields, setConfirmedFields] = useState<ConfirmedFields>({});
+  const [error, setError] = useState<string | null>(null);
+  const sessionStarted = useRef(false);
 
-  useEffect(() => { setDraft(""); }, [step]);
+  // Obtain Supabase access token from the browser session
+  useEffect(() => {
+    let mounted = true;
+    try {
+      createBrowserClient()
+        .auth.getSession()
+        .then(({ data }) => {
+          if (mounted && data.session?.access_token) {
+            setAccessToken(data.session.access_token);
+          }
+        })
+        .catch(() => {});
+    } catch {}
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
-  const cur = script[step];
-  const isLast = step === script.length - 1;
-
-  const submit = () => {
-    if (!draft.trim()) return;
-    setProfile((p) => ({ ...p, [cur.field]: draft.trim() }));
+  // Create the intake session once we have an access token
+  useEffect(() => {
+    if (!accessToken || sessionStarted.current) return;
+    sessionStarted.current = true;
+    let mounted = true;
     setThinking(true);
-    setTimeout(() => {
-      setThinking(false);
-      if (isLast) {
-        signIn("creator");
-        updateUser({
-          name: draft.trim() || "New Creator",
-          handle: profile.handle || "newcreator",
-          bio: profile.bio || draft.trim(),
-        });
-        nav({ to: "/" });
-      } else {
-        setStep((s) => s + 1);
+    startIntakeSession({ data: { accessToken, intakeMethod: "ai_voice" } })
+      .then((result) => {
+        if (mounted) {
+          setSessionId(result.sessionId);
+          setThinking(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (mounted) {
+          const message = err instanceof Error ? err.message : "Could not start setup. Please try again.";
+          setError(message);
+          setThinking(false);
+          sessionStarted.current = false;
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken]);
+
+  const confirmedCount = MAIN_FIELDS.filter((f) => confirmedFields[f]).length;
+  const isAtReview = !!confirmedFields.display_name && !!confirmedFields.username;
+
+  const submit = async () => {
+    const text = draft.trim();
+    if (!text || thinking) return;
+
+    if (!accessToken) {
+      setError("Please sign in to use voice setup.");
+      return;
+    }
+
+    if (!sessionId) {
+      setError("Setup session is still starting. Please try again in a moment.");
+      return;
+    }
+
+    setDraft("");
+    setThinking(true);
+    setError(null);
+
+    try {
+      const result = await profileSetupTurn({
+        data: { accessToken, sessionId, transcript: text },
+      });
+
+      setAssistantMessage(result.assistant.message);
+      setConfirmedFields(result.confirmedFields);
+
+      if (result.switchToManual) {
+        nav({ to: "/signup" });
+        return;
       }
-    }, 700);
+
+      if (result.complete) {
+        if (!result.publicProfileUid) {
+          setError("Your profile is saved, but your public link isn't ready yet. Please try finishing again.");
+          setThinking(false);
+          return;
+        }
+        window.location.href = `/u/${result.publicProfileUid}?tour=1`;
+        return;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
+    } finally {
+      setThinking(false);
+    }
   };
 
   return (
@@ -68,7 +142,7 @@ function VoiceOnboarding() {
           <Link to="/onboarding" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
             <ArrowLeft className="size-4" />
           </Link>
-          <div className="text-[10px] tracking-[0.3em] text-primary">VOICE SETUP · {step + 1}/{script.length}</div>
+          <div className="text-[10px] tracking-[0.3em] text-primary">VOICE SETUP · {confirmedCount}/4</div>
           <div className="size-9" />
         </div>
 
@@ -87,8 +161,14 @@ function VoiceOnboarding() {
 
         <div className="mt-8 text-center space-y-2 animate-rise">
           <div className="text-xs tracking-widest text-muted-foreground">TREY-I SAYS</div>
-          <p className="text-xl sm:text-2xl font-bold leading-snug">{cur.ai}</p>
+          <p className="text-xl sm:text-2xl font-bold leading-snug">{assistantMessage}</p>
         </div>
+
+        {error && (
+          <div className="mt-4 mx-auto max-w-md text-center text-sm text-red-400 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
+            {error}
+          </div>
+        )}
 
         {/* Transcript / typing fallback */}
         <div className="mt-8 mx-auto max-w-md">
@@ -104,23 +184,27 @@ function VoiceOnboarding() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder={listening ? "Listening… (or type)" : cur.placeholder}
+              placeholder={listening ? "Listening… (or type)" : "Type your answer…"}
               className="flex-1 bg-transparent text-sm focus:outline-none px-1"
               autoFocus
             />
-            <button onClick={submit} disabled={!draft.trim()} className={`px-3 h-9 rounded-xl text-xs font-semibold ${draft.trim() ? "bg-primary text-primary-foreground glow-gold" : "bg-white/5 text-muted-foreground"}`}>
-              {isLast ? "Finish" : "Next"}
+            <button
+              onClick={submit}
+              disabled={!draft.trim() || thinking}
+              className={`px-3 h-9 rounded-xl text-xs font-semibold ${draft.trim() && !thinking ? "bg-primary text-primary-foreground glow-gold" : "bg-white/5 text-muted-foreground"}`}
+            >
+              {isAtReview ? "Finish" : "Next"}
             </button>
           </div>
           <div className="mt-3 text-center text-[11px] text-muted-foreground">
-            Voice powered by ElevenLabs (plug in later) · Your responses build your profile in real-time.
+            Powered by Trey-I · Your responses build your profile in real-time.
           </div>
         </div>
 
         {/* Progress chips */}
         <div className="mt-8 flex justify-center gap-1.5">
-          {script.map((s, i) => (
-            <span key={s.field} className={`h-1.5 rounded-full transition-all ${i <= step ? "w-8 bg-primary" : "w-3 bg-white/10"}`} />
+          {MAIN_FIELDS.map((f) => (
+            <span key={f} className={`h-1.5 rounded-full transition-all ${confirmedFields[f] ? "w-8 bg-primary" : "w-3 bg-white/10"}`} />
           ))}
         </div>
       </div>
