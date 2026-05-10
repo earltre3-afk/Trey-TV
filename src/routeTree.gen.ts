@@ -59,6 +59,7 @@ import { Route as CreatorStudioAnalyticsRouteImport } from './routes/creator-stu
 import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studio'
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminViewAsRouteImport } from './routes/admin.view-as'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
@@ -328,6 +329,11 @@ const CategorySlugRoute = CategorySlugRouteImport.update({
   path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminViewAsRoute = AdminViewAsRouteImport.update({
   id: '/view-as',
   path: '/view-as',
@@ -452,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -519,6 +526,7 @@ export interface FileRoutesByTo {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -588,6 +596,7 @@ export interface FileRoutesById {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
   '/creator-hub/studio': typeof CreatorHubStudioRoute
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -725,6 +735,7 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -793,6 +804,7 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
     | '/creator-hub/studio'
@@ -847,6 +859,7 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
   LegalSlugRoute: typeof LegalSlugRoute
@@ -1208,6 +1221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/view-as': {
       id: '/admin/view-as'
       path: '/view-as'
@@ -1482,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CategorySlugRoute: CategorySlugRoute,
   ChannelHandleRoute: ChannelHandleRoute,
   LegalSlugRoute: LegalSlugRoute,

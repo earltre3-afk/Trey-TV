@@ -1,10 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles, Crown, ShieldCheck, User } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { useAuth, type Role } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -19,7 +17,6 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const nav = useNavigate();
-  const { signIn } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -48,15 +45,10 @@ function Login() {
       return;
     }
 
-    // Demo quick-login — no Supabase user, use stored redirect or home
+    // No userId — fall back to stored redirect or home
     let next: string | null = null;
     try { next = sessionStorage.getItem("treytv_post_auth_redirect"); sessionStorage.removeItem("treytv_post_auth_redirect"); } catch {}
     nav({ to: (next as any) || "/" });
-  };
-
-  const quick = (r: Exclude<Role, "guest">) => {
-    signIn(r);
-    void postAuthRedirect();
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -72,13 +64,12 @@ function Login() {
 
   const handleGoogle = async () => {
     setBusy(true);
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) { setBusy(false); toast.error("Google sign-in failed"); return; }
-    if (r.redirected) return; // browser will redirect; Supabase picks up session on return
-    const { data: { user } } = await supabase.auth.getUser();
-    setBusy(false);
-    toast.success("Signed in with Google");
-    await postAuthRedirect(user?.id);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (error) { setBusy(false); toast.error("Google sign-in failed"); }
+    // browser navigates away to Google — /auth/callback handles the rest
   };
 
   return (
@@ -138,21 +129,6 @@ function Login() {
           </div>
         </form>
 
-        {/* Demo quick-login (mock backend) */}
-        <div className="mt-5 rounded-2xl liquid-glass border border-dashed border-white/15 p-4">
-          <div className="text-[10px] tracking-[0.25em] text-muted-foreground mb-2">DEMO · QUICK LOGIN</div>
-          <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => quick("user")} className="flex flex-col items-center gap-1 p-3 rounded-xl glass border border-white/10 hover:bg-white/5">
-              <User className="size-4" /><span className="text-xs font-semibold">Viewer</span>
-            </button>
-            <button onClick={() => quick("creator")} className="flex flex-col items-center gap-1 p-3 rounded-xl glass border border-primary/40 bg-primary/10 text-primary">
-              <Crown className="size-4" /><span className="text-xs font-semibold">Creator</span>
-            </button>
-            <button onClick={() => quick("admin")} className="flex flex-col items-center gap-1 p-3 rounded-xl glass border border-[oklch(0.7_0.25_340_/_0.5)] bg-[oklch(0.7_0.25_340_/_0.1)] text-[oklch(0.7_0.25_340)]">
-              <ShieldCheck className="size-4" /><span className="text-xs font-semibold">Admin</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

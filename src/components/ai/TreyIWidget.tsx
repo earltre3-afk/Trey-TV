@@ -50,13 +50,15 @@ export function TreyIWidget() {
   const [dragging, setDragging] = useState(false);
   const dragInfo = useRef<{
     dx: number; dy: number; moved: boolean;
+    startX: number; startY: number;
     lastX: number; lastY: number; lastT: number;
     vx: number; vy: number;
     pendingX: number; pendingY: number;
     rafId: number | null;
-  }>({ dx: 0, dy: 0, moved: false, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0, pendingX: 0, pendingY: 0, rafId: null });
+  }>({ dx: 0, dy: 0, moved: false, startX: 0, startY: 0, lastX: 0, lastY: 0, lastT: 0, vx: 0, vy: 0, pendingX: 0, pendingY: 0, rafId: null });
   const btnRef = useRef<HTMLButtonElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pointerToggleHandledRef = useRef(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
 
   // Apply position directly to DOM during drag for smoothest motion (no React re-renders)
@@ -119,14 +121,16 @@ export function TreyIWidget() {
   }, [applyTransform]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     const current = posRef.current;
     const now = performance.now();
+    pointerToggleHandledRef.current = false;
     dragInfo.current = {
       dx: e.clientX - current.x,
       dy: e.clientY - current.y,
       moved: false,
+      startX: e.clientX,
+      startY: e.clientY,
       lastX: e.clientX, lastY: e.clientY, lastT: now,
       vx: 0, vy: 0,
       pendingX: current.x, pendingY: current.y,
@@ -151,8 +155,9 @@ export function TreyIWidget() {
     dragInfo.current.lastY = e.clientY;
     dragInfo.current.lastT = now;
 
-    const current = posRef.current;
-    if (Math.abs(nx - current.x) + Math.abs(ny - current.y) > 3) dragInfo.current.moved = true;
+    if (Math.hypot(e.clientX - dragInfo.current.startX, e.clientY - dragInfo.current.startY) > 8) {
+      dragInfo.current.moved = true;
+    }
 
     dragInfo.current.pendingX = nx;
     dragInfo.current.pendingY = ny;
@@ -172,6 +177,7 @@ export function TreyIWidget() {
 
     if (!dragInfo.current.moved) {
       setOpen((o) => !o);
+      pointerToggleHandledRef.current = true;
       e.stopPropagation();
       return;
     }
@@ -220,6 +226,14 @@ export function TreyIWidget() {
     e.stopPropagation();
   }, [applyTransform]);
 
+  const onLauncherClick = useCallback(() => {
+    if (pointerToggleHandledRef.current) {
+      pointerToggleHandledRef.current = false;
+      return;
+    }
+    setOpen((o) => !o);
+  }, []);
+
   const send = async (raw?: string) => {
     const value = (raw ?? text).trim();
     if (!value || aibusy) return;
@@ -229,7 +243,7 @@ export function TreyIWidget() {
     setAibusy(true);
     try {
       const result = await treyIGenerate({ data: { task: "widget_chat", prompt: value } });
-      const reply = "text" in result ? result.text : aiReply(value);
+      const reply = ("text" in result && result.text) ? result.text : aiReply(value);
       setMsgs((m) => [...m, { id: crypto.randomUUID(), from: "ai", text: reply, time: "now" }]);
     } catch {
       setMsgs((m) => [...m, { id: crypto.randomUUID(), from: "ai", text: aiReply(value), time: "now" }]);
@@ -259,6 +273,7 @@ export function TreyIWidget() {
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
+        onClick={onLauncherClick}
         aria-label="Open Trey-I assistant — drag to move"
         style={{
           position: "fixed",
@@ -268,7 +283,7 @@ export function TreyIWidget() {
           touchAction: "none",
           willChange: "transform",
         }}
-        className={`z-40 size-14 rounded-full grid place-items-center select-none ${
+        className={`z-[10020] size-14 rounded-full grid place-items-center select-none ${
           dragging ? "cursor-grabbing" : "cursor-grab"
         }`}
       >
@@ -313,7 +328,7 @@ export function TreyIWidget() {
       {/* Panel — anchored to launcher position */}
       <div
         style={{ position: "fixed", ...panelStyle }}
-        className={`fixed z-50 max-h-[75vh] flex flex-col rounded-3xl liquid-glass neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
+        className={`fixed z-[10030] max-h-[75vh] flex flex-col rounded-3xl liquid-glass neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
         }`}
       >
@@ -327,10 +342,7 @@ export function TreyIWidget() {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-bold flex items-center gap-2">
-                Trey-I
-                <span className="text-[9px] tracking-widest text-primary px-1.5 py-0.5 rounded bg-primary/15 border border-primary/30">BETA</span>
-              </div>
+              <div className="text-sm font-bold">Trey-I</div>
               <div className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <span className="size-1.5 rounded-full bg-[oklch(0.78_0.18_150)] animate-glow-pulse" />
                 Online · co-pilot for creators

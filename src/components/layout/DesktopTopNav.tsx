@@ -2,15 +2,15 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Home, Compass, CalendarDays, Inbox, Sparkles, Heart, Gem, Bell, Search,
-  Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn,
+  Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn, LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import { currentUser } from "@/lib/mock-data";
 import { useNotifications } from "@/lib/notifications-store";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
-import { CreateWheel } from "./CreateWheel";
 
 type NavLink = { to: string; icon: typeof Home; label: string; badge?: number };
 
@@ -40,9 +40,16 @@ const moreLinks: readonly NavLink[] = [
 ];
 
 export function DesktopTopNav() {
-  const { isGuest, user } = useAuth();
+  const { isGuest, user, signOut } = useAuth();
+  const { signOutSupabase } = useSupabaseSession();
   const { pathname } = useLocation();
   const nav = useNavigate();
+
+  const handleSignOut = async () => {
+    signOut();
+    await signOutSupabase();
+    nav({ to: "/login" });
+  };
   const [notifOpen, setNotifOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const { unreadCount } = useNotifications();
@@ -131,7 +138,6 @@ export function DesktopTopNav() {
           {!isGuest && (
             <>
               <CreatorGoldNavButton compact />
-              <CreateWheel />
             </>
           )}
           <button
@@ -172,14 +178,24 @@ export function DesktopTopNav() {
               </Link>
             </>
           ) : (
-            <Link
-              to="/u/$uid"
-              params={{ uid: profileUid }}
-              className="relative size-10 rounded-full conic-ring shrink-0"
-              aria-label="Profile"
-            >
-              <img src={profileAvatar} alt="" className="size-full rounded-full object-cover" loading="lazy" />
-            </Link>
+            <div className="flex items-center gap-1">
+              <Link
+                to="/u/$uid"
+                params={{ uid: profileUid }}
+                className="relative size-10 rounded-full conic-ring shrink-0"
+                aria-label="Profile"
+              >
+                <img src={profileAvatar} alt="" className="size-full rounded-full object-cover" loading="lazy" />
+              </Link>
+              <button
+                onClick={() => void handleSignOut()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="size-9 grid place-items-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5 transition"
+              >
+                <LogOut className="size-4" />
+              </button>
+            </div>
           )}
         </div>
 

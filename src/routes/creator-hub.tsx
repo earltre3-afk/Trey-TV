@@ -6,7 +6,6 @@ import {
   Crown, Upload, Radio, Wand2, Film, Music2, Mic, Calendar,
   TrendingUp, Eye, Heart, DollarSign, Users, Sparkles, ChevronRight, Plus, Play, Clock,
 } from "lucide-react";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/creator-hub")({
   component: CreatorHub,
@@ -74,7 +73,7 @@ function CreatorHub() {
               <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold hover-lift tilt-press flex items-center gap-2">
                 <Upload className="size-4" /> Upload
               </button>
-              <button onClick={() => toast("Going live…")} className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover-lift tilt-press flex items-center gap-2">
+              <button onClick={() => navigate({ to: "/go-live" })} className="px-4 py-2.5 rounded-xl text-sm font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover-lift tilt-press flex items-center gap-2">
                 <Radio className="size-4" /> Go Live
               </button>
             </div>
@@ -111,10 +110,16 @@ function CreatorHub() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {tools.map((t, i) => {
+              const toolDestinations: Record<string, string> = {
+                "Upload Episode": "/creator-studio/edit",
+                "Go Live": "/go-live",
+                "Drop a Track": "/creator-studio/edit",
+                "Record Podcast": "/creator-studio/edit",
+                "Trey-I Studio": "/creator-studio/edit",
+                "Schedule": "/creator-studio/edit",
+              };
               const isStudio = t.label === "Trey-I Studio" || t.label === "Upload Episode";
-              const onClick = isStudio
-                ? () => navigate({ to: "/creator-studio/edit" })
-                : () => toast(`${t.label} coming soon`);
+              const onClick = () => navigate({ to: toolDestinations[t.label] as any });
               return (
                 <button
                   key={t.label}
@@ -140,7 +145,7 @@ function CreatorHub() {
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-lg font-semibold flex items-center gap-2"><Film className="size-4 text-primary" /> Your Shows</h2>
-            <button onClick={() => toast("New show wizard")} className="text-sm text-primary flex items-center gap-1"><Plus className="size-4" /> New show</button>
+            <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="text-sm text-primary flex items-center gap-1"><Plus className="size-4" /> New show</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {shows.map((s, i) => (
@@ -158,7 +163,7 @@ function CreatorHub() {
                   <span className="absolute top-3 right-3 text-[10px] tracking-[0.18em] px-2 py-1 rounded-full bg-primary/20 text-primary border border-primary/40 animate-glow-pulse">
                     {s.status}
                   </span>
-                  <button className="absolute bottom-3 right-3 size-11 rounded-full grid place-items-center bg-white text-black shadow-[0_0_24px_oklch(1_0_0_/_0.4)] hover:scale-110 transition">
+                  <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="absolute bottom-3 right-3 size-11 rounded-full grid place-items-center bg-white text-black shadow-[0_0_24px_oklch(1_0_0_/_0.4)] hover:scale-110 transition">
                     <Play className="size-5 fill-current" />
                   </button>
                 </div>
@@ -179,7 +184,7 @@ function CreatorHub() {
         <div>
           <div className="flex items-center justify-between mb-3 px-1">
             <h2 className="text-lg font-semibold flex items-center gap-2"><Users className="size-4 text-primary" /> Top Fans</h2>
-            <button className="text-sm text-primary flex items-center gap-1">View all <ChevronRight className="size-4" /></button>
+            <button onClick={() => navigate({ to: "/analytics" })} className="text-sm text-primary flex items-center gap-1">View all <ChevronRight className="size-4" /></button>
           </div>
           <div className="rounded-3xl glass neon-border p-3 md:p-4">
             <ul className="divide-y divide-white/5">
@@ -194,7 +199,7 @@ function CreatorHub() {
                     <div className="text-[11px] text-muted-foreground">@{c.handle}</div>
                   </div>
                   <div className="text-xs text-muted-foreground hidden md:block">{(98 - i * 7)}h watched</div>
-                  <button className="px-3 py-1.5 rounded-lg text-xs border border-primary text-primary hover:bg-primary/10">Message</button>
+                  <button onClick={() => navigate({ to: "/inbox" })} className="px-3 py-1.5 rounded-lg text-xs border border-primary text-primary hover:bg-primary/10">Message</button>
                 </li>
               ))}
             </ul>

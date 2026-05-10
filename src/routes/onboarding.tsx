@@ -39,11 +39,11 @@ function Onboarding() {
 
         <div className="mt-10 grid md:grid-cols-2 gap-5">
           {/* Voice path */}
-          <button
-            onClick={() => nav({ to: "/onboarding/voice" })}
+          <Link
+            to="/onboarding/voice"
             className="group relative text-left rounded-3xl liquid-glass liquid-hover neon-border overflow-hidden p-6 sm:p-8"
           >
-            <div className="absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.35)] blur-3xl group-hover:bg-[oklch(0.7_0.25_340_/_0.5)] transition" />
+            <div className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.35)] blur-3xl group-hover:bg-[oklch(0.7_0.25_340_/_0.5)] transition" />
             <div className="relative">
               <div className="size-14 rounded-2xl conic-ring grid place-items-center bg-background">
                 <Mic className="size-6 text-primary" />
@@ -63,14 +63,15 @@ function Onboarding() {
                 Start voice setup <ArrowRight className="size-4" />
               </div>
             </div>
-          </button>
+          </Link>
 
           {/* Manual path */}
           <button
+            type="button"
             onClick={() => nav({ to: "/login" })}
             className="group relative text-left rounded-3xl liquid-glass liquid-hover neon-border overflow-hidden p-6 sm:p-8"
           >
-            <div className="absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.82_0.15_215_/_0.3)] blur-3xl group-hover:bg-[oklch(0.82_0.15_215_/_0.5)] transition" />
+            <div className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.82_0.15_215_/_0.3)] blur-3xl group-hover:bg-[oklch(0.82_0.15_215_/_0.5)] transition" />
             <div className="relative">
               <div className="size-14 rounded-2xl border border-white/15 grid place-items-center bg-white/5">
                 <Compass className="size-6 text-[oklch(0.82_0.15_215)]" />
@@ -95,7 +96,7 @@ function Onboarding() {
         <div className="mt-8 text-center text-xs text-muted-foreground">
           Already have an account? <Link to="/login" className="text-primary font-semibold hover:underline">Log in</Link>
           <span className="mx-2">·</span>
-          <button onClick={() => { signIn("user"); nav({ to: "/" }); }} className="hover:text-foreground underline">Continue as demo viewer</button>
+          <button type="button" onClick={() => { signIn("user"); nav({ to: "/" }); }} className="hover:text-foreground underline">Continue as demo viewer</button>
         </div>
       </div>
     </div>

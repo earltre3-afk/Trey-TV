@@ -51,14 +51,14 @@ function Create() {
           />
           <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-white/5">
             {[
-              { icon: ImageIcon, label: "Image" },
-              { icon: Video, label: "Video" },
-              { icon: Music, label: "Audio" },
-              { icon: Radio, label: "Go Live" },
-              { icon: Wand2, label: "Trey-I" },
-              { icon: Globe, label: "Everyone" },
+              { icon: ImageIcon, label: "Image", to: "/creator-studio/edit" },
+              { icon: Video, label: "Video", to: "/creator-studio/edit" },
+              { icon: Music, label: "Audio", to: "/creator-studio/edit" },
+              { icon: Radio, label: "Go Live", to: "/go-live" },
+              { icon: Wand2, label: "Trey-I", to: "/creator-studio/edit" },
+              { icon: Globe, label: "Everyone", to: "/creator-studio/edit" },
             ].map((b) => (
-              <button key={b.label} onClick={() => toast(`${b.label} coming soon`)} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+              <button key={b.label} onClick={() => navigate({ to: b.to as any })} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
                 <b.icon className="size-4" /> {b.label}
               </button>
             ))}

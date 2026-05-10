@@ -1,10 +1,11 @@
 import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 
 type Item = { icon: typeof Home; label: string; sub: string; to: string; color: string; active?: boolean };
 
@@ -31,7 +32,16 @@ const creatorItems: Item[] = [
 
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, isGuest, isCreator, isAdmin, signOut } = useAuth();
+  const { signOutSupabase } = useSupabaseSession();
+  const nav = useNavigate();
   const profile = user ?? currentUser;
+
+  const handleSignOut = async () => {
+    signOut();
+    await signOutSupabase();
+    onClose();
+    nav({ to: "/login" });
+  };
   const visibleCreatorItems = isCreator ? creatorItems : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
 
   return (
@@ -152,7 +162,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
                   <VerifiedBadge kind="creator" className="!size-3" /> {isAdmin ? "Admin" : isCreator ? "Verified Creator" : "Member"}
                 </div>
               </div>
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); signOut(); onClose(); }} className="size-8 grid place-items-center rounded-lg hover:bg-white/5 text-muted-foreground" title="Sign out">
+              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); void handleSignOut(); }} className="size-8 grid place-items-center rounded-lg hover:bg-white/5 text-muted-foreground" title="Sign out">
                 <LogOut className="size-4" />
               </button>
             </Link>

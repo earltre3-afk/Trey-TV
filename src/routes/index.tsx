@@ -341,12 +341,12 @@ function SignedInWatchNow() {
                   <Link to="/watch/$id" params={{ id: heroShow.episodes[0].id }} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold glow-gold">
                     <Play className="size-4 fill-current" /> Watch Now
                   </Link>
-                  <button onClick={() => toast("Saved to your list")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
+                  <Link to="/collections" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
                     <Plus className="size-4" /> Save
-                  </button>
-                  <button onClick={() => toast("Show details coming soon")} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
+                  </Link>
+                  <Link to="/watch/$id" params={{ id: heroShow.episodes[0].id }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">
                     <Info className="size-4" /> More Info
-                  </button>
+                  </Link>
                 </div>
               </div>
 

@@ -142,7 +142,7 @@ export function Composer() {
         <button onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
           <ImageIcon className="size-4" /> Image
         </button>
-        <button onClick={() => toast("Trey-I tools coming soon")} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+        <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
           <Wand2 className="size-4 text-primary" /> Trey-I Tools
         </button>
         <div className="relative">
@@ -195,7 +195,7 @@ export function Composer() {
               </button>
             );
           })}
-          <button onClick={() => toast("Add custom tag from /create")} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5">
+          <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5">
             <Plus className="size-3.5" />
           </button>
         </div>

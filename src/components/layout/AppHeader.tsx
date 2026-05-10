@@ -1,12 +1,12 @@
-import { Menu, Search, Bell, SlidersHorizontal } from "lucide-react";
+import { Menu, Search, Bell, LogIn } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
-import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 import { useNotifications } from "@/lib/notifications-store";
+import { useAuth } from "@/lib/auth";
 
 const tabs = [
   { id: "watch-now", label: "Watch Now" },
@@ -30,6 +30,9 @@ export function AppHeader({
   const navigate = useNavigate();
   const [notifOpen, setNotifOpen] = useState(false);
   const { unreadCount } = useNotifications();
+  const { isGuest, user } = useAuth();
+  const profileUid = user?.uid ?? currentUser.uid;
+  const profileAvatar = user?.avatar ?? currentUser.avatar;
   const computed =
     location.pathname === "/" ? "watch-now"
     : location.pathname.startsWith("/for-you") ? "for-you"
@@ -81,9 +84,15 @@ export function AppHeader({
               </span>
             )}
           </button>
-          <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="relative size-10 rounded-full conic-ring shrink-0">
-            <img src={currentUser.avatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
-          </Link>
+          {isGuest ? (
+            <Link to="/login" aria-label="Sign in" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+              <LogIn className="size-5" />
+            </Link>
+          ) : (
+            <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring shrink-0" aria-label="Profile">
+              <img src={profileAvatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
+            </Link>
+          )}
         </div>
         <NotificationsPopover open={notifOpen} onClose={() => setNotifOpen(false)} />
       </div>
@@ -115,9 +124,6 @@ export function AppHeader({
             </button>
           );
         })}
-        <button onClick={() => toast("Filters coming soon")} className="ml-auto size-9 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground" aria-label="Filters">
-          <SlidersHorizontal className="size-5" />
-        </button>
       </nav>
     </header>
   );
