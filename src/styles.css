@@ -111,17 +111,50 @@
   * { border-color: var(--color-border); }
 
   html, body, #root {
+    margin: 0;
+    min-width: 100%;
     min-height: 100%;
+    background: #05070D;
+    color: #F8FAFC;
     max-width: 100%;
-    overflow-x: clip;
+    overflow-x: hidden;
+  }
+
+  html {
+    background: #05070D;
+    overscroll-behavior: none;
   }
 
   body {
-    background: var(--gradient-bg);
-    background-attachment: fixed;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at top center, rgba(255, 200, 87, 0.12), transparent 34rem),
+      linear-gradient(180deg, #05070D 0%, #08111F 45%, #05070D 100%);
     color: var(--color-foreground);
     font-family: "Inter", system-ui, sans-serif;
+    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
+  }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: transparent;
+  }
+
+  .app-shell,
+  .trey-tv-shell,
+  .mobile-shell {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .bottom-nav,
+  .mobile-bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 
   /* Subtle starry texture overlay */
@@ -749,3 +782,218 @@
 }
 .send-btn-rocket:hover { transform: rotate(-15deg) scale(1.08); }
 .send-btn-rocket:active { transform: rotate(-15deg) scale(0.94); }
+
+@media (max-width: 640px) {
+  .mobile-edge-card {
+    border-left-width: 0;
+    border-right-width: 0;
+  }
+
+  .mobile-edge-card::before,
+  .mobile-edge-card::after {
+    border-radius: 0;
+  }
+}
+
+/* ====== Ghost Message Rise Animation ====== */
+@keyframes ghost-rise {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.01); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ghost-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+.animate-ghost-rise { animation: ghost-rise 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* ====== Ghost bubble (in message thread) ====== */
+.ghost-bubble {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg,
+    oklch(0.86 0.17 90 / 0.15),
+    oklch(0.7 0.25 340 / 0.12),
+    oklch(0.65 0.22 300 / 0.1));
+  border: 1px solid oklch(0.82 0.16 85 / 0.4);
+  box-shadow:
+    0 0 20px oklch(0.82 0.16 85 / 0.3),
+    0 0 40px oklch(0.7 0.25 340 / 0.15),
+    inset 0 1px 0 oklch(1 0 0 / 0.15);
+  position: relative;
+  overflow: hidden;
+  animation: ghost-float 4s ease-in-out infinite;
+}
+.ghost-bubble::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 30%, oklch(1 0 0 / 0.12) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: coin-shimmer 3.5s linear infinite;
+  pointer-events: none;
+}
+.ghost-timer-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: oklch(0.82 0.16 85);
+  background: oklch(0.82 0.16 85 / 0.12);
+  border: 1px solid oklch(0.82 0.16 85 / 0.3);
+  border-radius: 999px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  margin-left: 4px;
+}
+
+/* ====== Voice bubble ====== */
+.voice-bubble {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, oklch(0.82 0.15 215 / 0.15), oklch(0.65 0.22 300 / 0.1));
+  border: 1px solid oklch(0.82 0.15 215 / 0.35);
+  box-shadow: 0 0 16px oklch(0.82 0.15 215 / 0.25);
+}
+.voice-audio {
+  height: 32px;
+  width: 160px;
+  opacity: 0.85;
+}
+
+/* ====== Plus Menu Overlay ====== */
+.plus-menu-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: flex-end; justify-content: center;
+  background: oklch(0 0 0 / 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.plus-menu-panel {
+  position: relative;
+  width: 100%; max-width: 480px;
+  margin-bottom: 80px;
+  padding: 20px 16px 16px;
+  background: linear-gradient(180deg, oklch(0.18 0.04 280 / 0.95), oklch(0.14 0.03 270 / 0.97));
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  border-radius: 28px 28px 20px 20px;
+  box-shadow: 0 -8px 60px oklch(0 0 0 / 0.6), inset 0 1px 0 oklch(1 0 0 / 0.15);
+  overflow: hidden;
+}
+.plus-menu-item {
+  border-radius: 18px;
+  background: oklch(1 0 0 / 0.04);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s ease;
+  overflow: hidden;
+}
+.plus-menu-item:hover { background: oklch(1 0 0 / 0.07); border-color: oklch(1 0 0 / 0.14); transform: translateY(-1px); }
+.plus-menu-item:active { transform: scale(0.98); }
+
+/* ====== Ghost Message Popup ====== */
+.ghost-popup-overlay {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: oklch(0 0 0 / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ghost-popup-panel {
+  position: relative;
+  width: 100%; max-width: 360px;
+  padding: 24px 20px 20px;
+  background: linear-gradient(160deg, oklch(0.19 0.05 290 / 0.97), oklch(0.14 0.03 270 / 0.98));
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid oklch(0.82 0.16 85 / 0.25);
+  border-radius: 28px;
+  box-shadow:
+    0 0 60px oklch(0.82 0.16 85 / 0.2),
+    0 30px 80px oklch(0 0 0 / 0.7),
+    inset 0 1px 0 oklch(1 0 0 / 0.18);
+  overflow: hidden;
+}
+.ghost-icon-ring {
+  width: 40px; height: 40px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, oklch(0.86 0.17 90 / 0.2), oklch(0.7 0.25 340 / 0.15));
+  border: 1px solid oklch(0.82 0.16 85 / 0.4);
+  box-shadow: 0 0 16px oklch(0.82 0.16 85 / 0.35);
+}
+.ghost-timer-btn {
+  border-radius: 16px;
+  background: oklch(1 0 0 / 0.04);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  overflow: hidden; position: relative;
+  transition: transform 0.15s ease, border-color 0.2s;
+}
+.ghost-timer-btn:hover { transform: translateY(-1px) scale(1.01); }
+.ghost-timer-btn:active { transform: scale(0.98); }
+.ghost-timer-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at left center, color-mix(in oklch, var(--ghost-color, oklch(0.82 0.16 85)) 20%, transparent), transparent 60%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.ghost-timer-btn:hover .ghost-timer-glow { opacity: 1; }
+.ghost-timer-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 12px; display: grid; place-items: center;
+  background: color-mix(in oklch, var(--ghost-color, oklch(0.82 0.16 85)) 12%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ghost-color, oklch(0.82 0.16 85)) 30%, transparent);
+}
+.ghost-timer-arrow {
+  font-size: 20px;
+  color: color-mix(in oklch, var(--ghost-color, oklch(0.82 0.16 85)) 70%, transparent);
+  transition: transform 0.2s, color 0.2s;
+}
+.ghost-timer-btn:hover .ghost-timer-arrow { transform: translateX(3px); color: var(--ghost-color, oklch(0.82 0.16 85)); }
+
+/* ====== Neon Emoji Picker ====== */
+.neon-emoji-picker {
+  border-radius: 22px;
+  background: linear-gradient(180deg, oklch(0.18 0.04 280 / 0.96), oklch(0.14 0.03 270 / 0.97));
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid oklch(1 0 0 / 0.1);
+  box-shadow: 0 -4px 40px oklch(0 0 0 / 0.5), inset 0 1px 0 oklch(1 0 0 / 0.12);
+  overflow: hidden;
+  position: relative;
+}
+.neon-emoji-scanline {
+  position: absolute; top: 0; left: 0; right: 0; height: 100%;
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
+  width: 30%;
+  animation: scan-line 6s ease-in-out infinite;
+  pointer-events: none; z-index: 1;
+}
+.neon-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.neon-emoji-grid::-webkit-scrollbar { display: none; }
+.neon-emoji-btn {
+  height: 36px;
+  border-radius: 10px;
+  font-size: 20px;
+  display: grid; place-items: center;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: background 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
+}
+.neon-emoji-btn:hover { background: oklch(1 0 0 / 0.06); }

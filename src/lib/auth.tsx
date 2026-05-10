@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { currentUser as defaultUser } from "@/lib/mock-data";
 import { useSupabaseSession } from "@/lib/supabase-session";
+import { recordUserTrace } from "@/lib/user-trace";
 
 export type Role = "guest" | "user" | "creator" | "admin";
 export type CreatorStatus = "not_applied" | "pending" | "approved" | "rejected";
@@ -20,6 +21,17 @@ export type SessionUser = {
   role: Role;
   stats: { posts: number; followers: string; following: number; prescriptions: string };
   rewards?: { points: number; tier: "BRONZE" | "SILVER" | "GOLD" | "DIAMOND" };
+  tagline?: string;
+  pronouns?: string;
+  birthday?: string;
+  favoriteGenres?: string;
+  favoriteCreators?: string;
+  socialInstagram?: string;
+  socialTikTok?: string;
+  socialYouTube?: string;
+  profileVisibility?: "public" | "members_only" | "private";
+  showLocation?: boolean;
+  showBirthday?: boolean;
 };
 
 type AuthCtx = {
@@ -44,6 +56,9 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   ...defaultUser,
   banner: "",
   accent: "gold",
+  profileVisibility: "public",
+  showLocation: true,
+  showBirthday: false,
   role,
   creatorStatus: role === "creator" || role === "admin" ? "approved" : "not_applied",
   rewards: { points: 12480, tier: "GOLD" },
@@ -83,8 +98,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = buildUser(r);
     setUser(u);
     setRoleState(r);
+    recordUserTrace({ userUid: u.uid, action: "auth.sign_in", targetType: "session", details: { role: r } });
   };
-  const signOut = () => { setUser(null); setRoleState("guest"); };
+  const signOut = () => {
+    recordUserTrace({ userUid: user?.uid, action: "auth.sign_out", targetType: "session", details: { role } });
+    try {
+      localStorage.removeItem(KEY);
+      sessionStorage.removeItem("treytv_post_auth_redirect");
+      sessionStorage.removeItem("treytv_voice_profile");
+    } catch {}
+    setUser(null);
+    setRoleState("guest");
+  };
   const setRole = (r: Role) => {
     setRoleState(r);
     if (r === "guest") setUser(null);

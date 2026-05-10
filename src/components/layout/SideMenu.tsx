@@ -141,7 +141,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <div className="text-sm font-bold">Guest mode</div>
               <div className="text-xs text-muted-foreground">Sign up to react, save, follow and earn rewards.</div>
               <div className="flex gap-2">
-                <Link to="/onboarding" onClick={onClose} className="flex-1 text-center px-3 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground glow-gold">Sign up</Link>
+                <Link to="/signup" onClick={onClose} className="flex-1 text-center px-3 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground glow-gold">Sign up</Link>
                 <Link to="/login" onClick={onClose} className="flex-1 text-center px-3 py-2 rounded-lg text-xs font-bold liquid-glass border border-white/15 inline-flex items-center justify-center gap-1"><LogIn className="size-3" /> Log in</Link>
               </div>
             </div>

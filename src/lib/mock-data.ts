@@ -57,9 +57,15 @@ export const moods = [
 ] as const;
 
 export const prescribed = [
-  { id: "p1", kind: "VIDEO", title: "Level Up Your Mindset", creator: "Chris Horizon", media: postStudio, duration: "12:45", mood: "Motivated", moodColor: "gold" as const },
-  { id: "p2", kind: "MUSIC", title: "Late Night Drive", creator: "Zay Beats", media: postNight, duration: "03:21", mood: "Chill", moodColor: "cyan" as const },
-  { id: "p3", kind: "LIVE", title: "Creator Talk Live", creator: "Lena", media: postConcert, viewers: "2.3K", mood: "Inspired", moodColor: "purple" as const },
+  { id: "p1", kind: "VIDEO", title: "Level Up Your Mindset", creator: "Chris Horizon", media: postStudio, duration: "12:45", mood: "Motivated", moodColor: "gold" as const, vibes: ["all", "motivated", "focused", "hype"] },
+  { id: "p2", kind: "MUSIC", title: "Late Night Drive", creator: "Zay Beats", media: postNight, duration: "03:21", mood: "Chill", moodColor: "cyan" as const, vibes: ["all", "chill", "reflective", "happy"] },
+  { id: "p3", kind: "LIVE", title: "Creator Talk Live", creator: "Lena", media: postConcert, viewers: "2.3K", mood: "Inspired", moodColor: "purple" as const, vibes: ["all", "inspired", "motivated"] },
+  { id: "p4", kind: "VIDEO", title: "Morning Grind Ritual", creator: "Chris Horizon", media: postStudio, duration: "08:30", mood: "Motivated", moodColor: "gold" as const, vibes: ["motivated", "hype", "focused"] },
+  { id: "p5", kind: "MUSIC", title: "Focus Flow Mix", creator: "Zay Beats", media: postNight, duration: "45:00", mood: "Focused", moodColor: "cyan" as const, vibes: ["focused", "chill"] },
+  { id: "p6", kind: "LIVE", title: "Hype Hour with Zay", creator: "Zay Beats", media: postConcert, viewers: "8.7K", mood: "Hype", moodColor: "magenta" as const, vibes: ["hype", "motivated", "happy"] },
+  { id: "p7", kind: "VIDEO", title: "Night Reflections", creator: "Lena", media: postNight, duration: "15:22", mood: "Reflective", moodColor: "cyan" as const, vibes: ["reflective", "chill"] },
+  { id: "p8", kind: "VIDEO", title: "Laugh Track: Season 2", creator: "Lena", media: postConcert, duration: "22:00", mood: "Happy", moodColor: "magenta" as const, vibes: ["happy", "hype"] },
+  { id: "p9", kind: "VIDEO", title: "Creative Block Breaker", creator: "Trey-I", media: postStudio, duration: "10:00", mood: "Inspired", moodColor: "purple" as const, vibes: ["inspired", "focused", "motivated"] },
 ];
 
 export const currentUser = {

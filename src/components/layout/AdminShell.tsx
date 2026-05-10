@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { AppShell } from "./AppShell";
 import {
   ShieldCheck, LayoutDashboard, FileCheck2, Crown, Users, Flag, Film, BarChart3, Sparkles, Settings,
-  BadgeCheck, Gift, Palette, FileText, History, Eye, ScrollText,
+  BadgeCheck, Gift, Palette, FileText, History, Eye, ScrollText, Route as RouteIcon,
 } from "lucide-react";
 
 const NAV = [
@@ -21,6 +21,20 @@ const NAV = [
   { to: "/admin/audit-log", label: "Audit Log", icon: History },
   { to: "/admin/view-as", label: "View As", icon: Eye },
   { to: "/admin/settings", label: "Platform", icon: Settings },
+] as const;
+
+const APP_ACCESS = [
+  { to: "/", label: "Watch Now" },
+  { to: "/for-you", label: "For You" },
+  { to: "/explore", label: "Discover" },
+  { to: "/guide", label: "Guide" },
+  { to: "/prescribe-me", label: "Prescribe Me" },
+  { to: "/rewards", label: "Rewards" },
+  { to: "/onboarding", label: "Onboarding" },
+  { to: "/onboarding/manual", label: "Manual Setup" },
+  { to: "/onboarding/voice", label: "Voice Setup" },
+  { to: "/creator-studio", label: "Creator Studio" },
+  { to: "/creator-studio/submit", label: "Submit Content" },
 ] as const;
 
 export function AdminShell({ children, title, subtitle }: { children: ReactNode; title?: string; subtitle?: string }) {
@@ -79,6 +93,23 @@ export function AdminShell({ children, title, subtitle }: { children: ReactNode;
             );
           })}
         </nav>
+
+        <div className="rounded-2xl liquid-glass border border-primary/20 p-3">
+          <div className="flex items-center gap-2 text-[10px] tracking-[0.25em] text-primary mb-2">
+            <RouteIcon className="size-3.5" /> ADMIN APP ACCESS
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {APP_ACCESS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to as any}
+                className="shrink-0 px-3 py-1.5 rounded-xl border border-white/10 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {children}
       </div>

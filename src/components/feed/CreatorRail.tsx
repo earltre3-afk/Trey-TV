@@ -5,7 +5,7 @@ import { creators } from "@/lib/mock-data";
 
 export function CreatorRail() {
   return (
-    <div className="flex items-start gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 py-2">
+    <div className="flex items-start gap-3 overflow-x-auto no-scrollbar px-2 py-2">
       <div className="flex flex-col items-center gap-1 shrink-0">
         <button onClick={() => toast("Going live — preparing your stream")} className="size-16 rounded-2xl border border-primary/60 grid place-items-center text-primary glow-gold bg-primary/5">
           <Radio className="size-6" />

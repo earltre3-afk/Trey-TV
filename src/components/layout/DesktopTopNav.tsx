@@ -171,7 +171,7 @@ export function DesktopTopNav() {
                 Log in
               </Link>
               <Link
-                to="/login"
+                to="/signup"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold hover-scale"
               >
                 <LogIn className="size-4" /> Sign up

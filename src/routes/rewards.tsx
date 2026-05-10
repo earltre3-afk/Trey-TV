@@ -6,11 +6,12 @@ import { useAuth } from "@/lib/auth";
 import { creators } from "@/lib/mock-data";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useGoBack } from "@/hooks/use-go-back";
-import { useRewards } from "@/hooks/use-rewards";
+import { REWARD_TIERS, useRewards } from "@/hooks/use-rewards";
 import { COIN_TIERS } from "@/components/gifts/coin-tiers";
 import { Coin } from "@/components/gifts/Coin";
 import { triggerCoinGift } from "@/components/gifts/GiftBurst";
 import { useState } from "react";
+import { recordUserTrace } from "@/lib/user-trace";
 
 export const Route = createFileRoute("/rewards")({
   component: Rewards,
@@ -42,9 +43,29 @@ const perks = [
 ];
 
 function Rewards() {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const currentUser = useCurrentUser();
-  const { balance, tier, lifetimeEarned, lifetimeSpent, streakDays, transactions } = useRewards();
+
+  if (isGuest) {
+    return (
+      <AppShell wide>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center px-4">
+          <div className="size-20 rounded-full bg-primary/10 grid place-items-center">
+            <Gem className="size-10 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Trey TV Rewards</h1>
+            <p className="mt-2 text-muted-foreground max-w-xs">Sign in to view your wallet, earn points, and send gifts to creators.</p>
+          </div>
+          <div className="flex gap-3">
+            <Link to="/signup" className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold glow-gold">Create account</Link>
+            <Link to="/login" className="px-5 py-2.5 rounded-xl liquid-glass border border-white/15 font-semibold">Log in</Link>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+  const { balance, tier, tierProgress, nextTier, nextTierAt, pointsToNextTier, lifetimeEarned, lifetimeSpent, streakDays, transactions } = useRewards();
   const goBack = useGoBack("/");
   const [recipient, setRecipient] = useState<string | null>(null);
   const points = balance;
@@ -117,6 +138,15 @@ function Rewards() {
                   <div className="text-base sm:text-lg font-bold bg-clip-text text-transparent bg-[linear-gradient(90deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340))]">{tier}</div>
                 </div>
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[10px] tracking-[0.18em] text-white/65">
+                  <span>LIFETIME EARNED {lifetimeEarned.toLocaleString()}</span>
+                  {nextTier ? <span>{pointsToNextTier.toLocaleString()} TO {nextTier}</span> : <span>TOP TIER</span>}
+                </div>
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                  <div className="h-full rounded-full bg-[linear-gradient(90deg,oklch(0.78_0.18_150),oklch(0.82_0.16_85))]" style={{ width: `${tierProgress}%` }} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -136,6 +166,45 @@ function Rewards() {
             </div>
           ))}
         </div>
+
+        <section className="rounded-3xl liquid-glass border border-white/10 p-5">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-bold flex items-center gap-2"><Crown className="size-4 text-primary" /> Member tiers</h2>
+              <p className="text-xs text-muted-foreground mt-1">Tiers are based on lifetime earned points, so Gold takes real time to reach.</p>
+            </div>
+            <div className="text-right text-xs text-muted-foreground">
+              {nextTierAt ? `${nextTierAt.toLocaleString()} pts unlocks ${nextTier}` : "Gold tier unlocked"}
+            </div>
+          </div>
+          <div className="grid md:grid-cols-4 gap-3">
+            {REWARD_TIERS.map((memberTier) => {
+              const activeTier = tier === memberTier.id;
+              const unlocked = lifetimeEarned >= memberTier.min;
+              const colors: Record<string, string> = {
+                WHITE: "oklch(0.92 0.02 250)",
+                GREEN: "oklch(0.78 0.18 150)",
+                RED: "oklch(0.65 0.24 15)",
+                GOLD: "oklch(0.82 0.16 85)",
+              };
+              const color = colors[memberTier.id] ?? "oklch(0.82 0.16 85)";
+              return (
+                <div key={memberTier.id} className={`rounded-2xl border p-4 ${activeTier ? "bg-white/[0.06]" : "bg-white/[0.025]"} ${unlocked ? "border-white/15" : "border-white/5 opacity-70"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-bold" style={{ color }}>{memberTier.label}</div>
+                    <div className="text-[10px] text-muted-foreground">{memberTier.min.toLocaleString()}+</div>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-1">{memberTier.rank}</div>
+                  <ul className="mt-3 space-y-1.5">
+                    {memberTier.perks.map((perk) => (
+                      <li key={perk} className="text-[11px] flex gap-1.5"><Sparkles className="size-3 shrink-0 mt-0.5" style={{ color }} /> {perk}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="grid lg:grid-cols-2 gap-4">
           {/* Send a gift — Coin denominations */}
@@ -173,6 +242,7 @@ function Rewards() {
                     key={t.id}
                     onClick={() => {
                       triggerCoinGift(t, recipient ?? undefined);
+                      recordUserTrace({ userUid: uid, action: "rewards.gift", targetType: "creator", targetId: recipient ?? "unselected", details: { gift: t.name, cost: t.cost } });
                       toast.success(`${t.name} sent${recipient ? ` to @${recipient}` : ""} · −${t.cost} pts`);
                     }}
                     className="group relative rounded-2xl liquid-glass border border-white/10 p-2.5 text-center hover-lift tilt-press"
@@ -209,7 +279,7 @@ function Rewards() {
                     <div className="text-sm font-semibold">{p.title}</div>
                     <div className="text-[11px] text-muted-foreground">{p.cost.toLocaleString()} pts</div>
                   </div>
-                  <button onClick={() => toast.success(`Redeemed: ${p.title}`)} className="px-3 h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Redeem</button>
+                  <button onClick={() => { recordUserTrace({ userUid: uid, action: "rewards.redeem", targetType: "perk", targetId: p.id, details: { title: p.title, cost: p.cost } }); toast.success(`Redeemed: ${p.title}`); }} className="px-3 h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Redeem</button>
                 </div>
               ))}
             </div>

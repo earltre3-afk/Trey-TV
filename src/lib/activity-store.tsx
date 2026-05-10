@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useAuth } from "@/lib/auth";
+import { recordUserTrace } from "@/lib/user-trace";
 
 export type ReactionKey = "fire" | "gem" | "crown" | "dead" | "cinematic";
 
@@ -14,6 +16,7 @@ export type ActivityItem = {
   id: string;
   ts: number;
   type: "react" | "save" | "share" | "follow" | "view";
+  userUid: string;
   postId: string;
   reaction?: ReactionKey;
   title: string;
@@ -35,6 +38,7 @@ const C = createContext<Ctx | null>(null);
 const KEY = "treytv_activity_v1";
 
 export function ActivityProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [reactions, setReactions] = useState<Record<string, ReactionKey | null>>({});
   const [saves, setSaves] = useState<Record<string, boolean>>({});
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -54,21 +58,30 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(KEY, JSON.stringify({ reactions, saves, activity })); } catch {}
   }, [reactions, saves, activity]);
 
-  const push = (a: ActivityItem) => setActivity((prev) => [a, ...prev].slice(0, 80));
+  const traceUid = user?.uid ?? "guest";
+  const push = (a: Omit<ActivityItem, "userUid"> & { userUid?: string }) =>
+    setActivity((prev) => [{ ...a, userUid: a.userUid ?? traceUid }, ...prev].slice(0, 80));
 
   const setReaction: Ctx["setReaction"] = (postId, r, meta) => {
     setReactions((prev) => ({ ...prev, [postId]: r }));
-    if (r) push({ id: crypto.randomUUID(), ts: Date.now(), type: "react", postId, reaction: r, ...meta });
+    if (r) {
+      push({ id: crypto.randomUUID(), ts: Date.now(), type: "react", postId, reaction: r, ...meta });
+      recordUserTrace({ userUid: traceUid, action: "feed.react", targetType: "post", targetId: postId, details: { reaction: r, title: meta.title } });
+    }
   };
   const toggleSave: Ctx["toggleSave"] = (postId, meta) => {
     setSaves((prev) => {
       const next = !prev[postId];
-      if (next) push({ id: crypto.randomUUID(), ts: Date.now(), type: "save", postId, ...meta });
+      if (next) {
+        push({ id: crypto.randomUUID(), ts: Date.now(), type: "save", postId, ...meta });
+        recordUserTrace({ userUid: traceUid, action: "feed.save", targetType: "post", targetId: postId, details: { title: meta.title } });
+      }
       return { ...prev, [postId]: next };
     });
   };
   const logShare: Ctx["logShare"] = (postId, meta) => {
     push({ id: crypto.randomUUID(), ts: Date.now(), type: "share", postId, ...meta });
+    recordUserTrace({ userUid: traceUid, action: "feed.share", targetType: "post", targetId: postId, details: { title: meta.title } });
   };
   const clear = () => { setReactions({}); setSaves({}); setActivity([]); };
 

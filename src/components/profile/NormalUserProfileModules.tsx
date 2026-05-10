@@ -283,8 +283,13 @@ function AboutTab({
       <div>
         <div className="text-[10px] tracking-[0.3em] text-primary mb-1">BIO</div>
         <p className="text-sm">{profile.bio || "No bio set."}</p>
+        {profile.tagline && <p className="mt-2 text-sm text-primary font-semibold">{profile.tagline}</p>}
       </div>
       <div className="grid grid-cols-2 gap-2">
+        <InfoPill label="UID" value={profile.uid} />
+        <InfoPill label="Visibility" value={profile.profileVisibility?.replace("_", " ") ?? "public"} />
+        <InfoPill label="Pronouns" value={profile.pronouns ?? "-"} />
+        <InfoPill label="Birthday" value={profile.showBirthday ? (profile.birthday ?? "-") : "Hidden"} />
         <div className={pillClass}>
           <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Joined</div>
           <div className="text-sm font-bold mt-0.5">{profile.joinedDate ?? "—"}</div>
@@ -302,6 +307,13 @@ function AboutTab({
           <div className="text-sm font-bold mt-0.5">{profile.stats.prescriptions ?? "—"}</div>
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-2">
+        <InfoPill label="Genres" value={profile.favoriteGenres ?? "-"} />
+        <InfoPill label="Creators" value={profile.favoriteCreators ?? "-"} />
+        <InfoPill label="Instagram" value={profile.socialInstagram ?? "-"} />
+        <InfoPill label="TikTok" value={profile.socialTikTok ?? "-"} />
+        <InfoPill label="YouTube" value={profile.socialYouTube ?? "-"} />
+      </div>
       {isOwner && (
         <div className="flex items-center gap-1.5 pt-1">
           <Heart className="size-3 text-[oklch(0.7_0.25_340)]" />
@@ -315,6 +327,15 @@ function AboutTab({
   );
 }
 
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white/5 ring-1 ring-white/10 p-2.5 min-w-0">
+      <div className="text-[10px] tracking-wider text-muted-foreground uppercase">{label}</div>
+      <div className="text-sm font-bold mt-0.5 truncate">{value}</div>
+    </div>
+  );
+}
+
 // ─── Guest wall ──────────────────────────────────────────────────────────────
 
 function GuestTabWall({ label }: { label: string }) {
@@ -322,7 +343,7 @@ function GuestTabWall({ label }: { label: string }) {
     <div className="rounded-3xl glass neon-border p-10 text-center space-y-3">
       <p className="text-sm text-muted-foreground">{label}</p>
       <Link
-        to="/onboarding"
+        to="/signup"
         className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold"
       >
         Sign up free

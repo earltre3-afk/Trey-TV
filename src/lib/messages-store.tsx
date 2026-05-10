@@ -14,6 +14,15 @@ export type Message = {
   ts: number;
   status: MsgStatus;
   reactions?: string[];
+  // Ghost message — self-deletes if unread after expiresAt
+  ghostExpiresAt?: number;  // unix ms timestamp
+  ghostLabel?: string;      // "30s" | "5 min" | "1 Day"
+  // Media
+  mediaUrl?: string;
+  mediaType?: "image" | "video";
+  // Voice note
+  voiceUrl?: string;
+  voiceDuration?: number; // seconds
 };
 
 export type Peer = {
@@ -39,6 +48,9 @@ type Ctx = {
   unreadOf: (threadId: string) => number;
   totalUnread: number;
   send: (threadId: string, text: string) => void;
+  sendGhost: (threadId: string, text: string, durationSecs: number, label: string) => void;
+  sendMedia: (threadId: string, file: File) => Promise<void>;
+  sendVoice: (threadId: string, blob: Blob, durationSecs: number) => Promise<void>;
   openThread: (peer: Peer) => string;
   markRead: (threadId: string) => void;
   ensureFromHandle: (handle: string) => string | null;
@@ -84,6 +96,24 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const { user: supabaseUser } = useSupabaseAuth();
+
+  // Ghost message reaper — prune expired unread ghost messages every 5s
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      setMessages((prev) => {
+        const hasExpired = prev.some(
+          (m) => m.ghostExpiresAt && m.ghostExpiresAt <= now && m.status !== "read"
+        );
+        if (!hasExpired) return prev;
+        return prev.filter(
+          (m) => !(m.ghostExpiresAt && m.ghostExpiresAt <= now && m.status !== "read")
+        );
+      });
+    };
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     try {
@@ -299,8 +329,52 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const sendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
+    if (!supabaseUser) { toast.error("Please sign in to send messages"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const ghostExpiresAt = ts + durationSecs * 1000;
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me",
+      text: text.trim() || `👻 Ghost message · ${label}`,
+      ts, status: "sent", ghostExpiresAt, ghostLabel: label
+    }]);
+    setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 600);
+    toast.success(`👻 Ghost message set to dissolve in ${label}`);
+  };
+
+  const sendMedia: Ctx["sendMedia"] = async (threadId, file) => {
+    if (!supabaseUser) { toast.error("Please sign in to send media"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const objectUrl = URL.createObjectURL(file);
+    const mediaType: Message["mediaType"] = file.type.startsWith("video") ? "video" : "image";
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me", text: "",
+      ts, status: "sent", mediaUrl: objectUrl, mediaType
+    }]);
+    setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 800);
+    toast.success(`${mediaType === "video" ? "🎥" : "📸"} Media sent`);
+  };
+
+  const sendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
+    if (!supabaseUser) { toast.error("Please sign in to send voice notes"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const voiceUrl = URL.createObjectURL(blob);
+    const mins = Math.floor(durationSecs / 60);
+    const secs = Math.floor(durationSecs % 60).toString().padStart(2, "0");
+    const label = `🎙 Voice note · ${mins}:${secs}`;
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me", text: label,
+      ts, status: "sent", voiceUrl, voiceDuration: durationSecs
+    }]);
+    setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 600);
+    toast.success("🎙 Voice note sent");
+  };
+
   return (
-    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, openThread, markRead, ensureFromHandle }}>
+    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, sendGhost, sendMedia, sendVoice, openThread, markRead, ensureFromHandle }}>
       {children}
     </C.Provider>
   );

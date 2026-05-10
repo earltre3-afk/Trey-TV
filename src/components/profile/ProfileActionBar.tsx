@@ -98,7 +98,7 @@ export function ProfileActionBar({
     return (
       <div className="flex flex-wrap gap-2">
         <Link
-          to="/onboarding"
+          to="/signup"
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold liquid-glass border border-white/10 text-foreground"
         >
           Sign up to follow

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useSubmissions, STATUS_LABEL, STATUS_TONE } from "@/lib/submissions-store";
 import { posts } from "@/lib/mock-data";
+import { VideoPlayer } from "@/components/player/VideoPlayer";
 import { Heart, MessageCircle, Bookmark, Share2, Crown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
@@ -52,9 +53,12 @@ function WatchPage() {
         <div>
           <div className="rounded-3xl overflow-hidden glass neon-border">
             <div className="relative aspect-video bg-black">
-              {s.video_url?.startsWith("blob:")
-                ? <video src={s.video_url} controls className="size-full" />
-                : <img src={s.thumbnail_url || posts[0].media} className="size-full object-cover" alt="" />}
+              <VideoPlayer
+                src={s.video_url?.startsWith("blob:") ? s.video_url : undefined}
+                poster={s.thumbnail_url}
+                fallbackImg={s.thumbnail_url || posts[0].media}
+                className="size-full"
+              />
             </div>
           </div>
           <div className="mt-4 space-y-2">

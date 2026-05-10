@@ -44,7 +44,7 @@ export function AppHeader({
 
   return (
     <header className="sticky top-0 z-30 w-full glass-strong border-b border-white/5">
-      <div className="relative flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="relative flex items-center justify-between px-2 sm:px-4 pt-3 pb-2">
         <button
           onClick={onMenuClick}
           aria-label="Open menu"
@@ -97,7 +97,7 @@ export function AppHeader({
         <NotificationsPopover open={notifOpen} onClose={() => setNotifOpen(false)} />
       </div>
 
-      <nav className="flex items-center gap-1 px-2 pb-2 overflow-x-auto no-scrollbar">
+      <nav className="flex items-center gap-1 px-1 sm:px-2 pb-2 overflow-x-auto no-scrollbar">
         {tabs.map((t) => {
           const active = computed === t.id;
           const handleClick = () => {

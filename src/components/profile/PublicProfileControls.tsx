@@ -95,7 +95,7 @@ export function PublicProfileControls({ profile, viewerRole }: Props) {
               </div>
               {isGuest ? (
                 <Link
-                  to="/onboarding"
+                  to="/signup"
                   className="text-[11px] px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10"
                 >
                   Join
@@ -115,7 +115,7 @@ export function PublicProfileControls({ profile, viewerRole }: Props) {
         <div className="rounded-3xl liquid-glass border border-white/10 p-4 text-center space-y-2">
           <p className="text-xs text-muted-foreground">Join Trey TV to follow, message, and interact.</p>
           <Link
-            to="/onboarding"
+            to="/signup"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press"
           >
             Sign up free

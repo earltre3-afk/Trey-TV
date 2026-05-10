@@ -25,8 +25,10 @@ const INITIAL_POS = { x: 16, y: 200 };
 
 function clampToViewport(x: number, y: number) {
   if (typeof window === "undefined") return { x, y };
+  const isMobile = window.innerWidth < 1024;
+  const bottomPad = isMobile ? 96 : PAD;
   const maxX = Math.max(PAD, window.innerWidth - SIZE - PAD);
-  const maxY = Math.max(PAD, window.innerHeight - SIZE - PAD);
+  const maxY = Math.max(PAD, window.innerHeight - SIZE - bottomPad);
   return {
     x: Math.min(Math.max(PAD, x), maxX),
     y: Math.min(Math.max(PAD, y), maxY),

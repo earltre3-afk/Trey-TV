@@ -68,7 +68,19 @@ function GuidePage() {
   const nowOffsetPx = (minutesSinceMidnight / 30) * SLOT_PX;
 
   const liveSlots = slotsWithStatus.filter((s) => s.status === "live");
-  const upcomingSlots = slotsWithStatus.filter((s) => s.status === "upcoming").slice(0, 6);
+  // One upcoming slot per channel, in channel order, capped at 6
+  const upcomingSlots = channels
+    .map((ch) => slotsWithStatus.find((s) => s.channelId === ch.id && s.status === "upcoming"))
+    .filter((s): s is typeof slotsWithStatus[number] => s !== undefined)
+    .slice(0, 6);
+  // When nothing is live (e.g. before 6 AM or past midnight), fall back to the
+  // nearest upcoming slot per channel so the "On Now" section is never blank.
+  const onNowSlots = liveSlots.length > 0
+    ? liveSlots
+    : channels
+        .map((ch) => slotsWithStatus.find((s) => s.channelId === ch.id && s.status === "upcoming"))
+        .filter((s): s is typeof slotsWithStatus[number] => s !== undefined)
+        .slice(0, 3);
 
   return (
     <AppShell wide>
@@ -119,8 +131,10 @@ function GuidePage() {
       {/* On Now */}
       <Section title="On Now" icon={Radio} accent="red">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {liveSlots.map((s) => <NowCard key={s.episodeId + s.startsAt} slot={s} onClick={() => setOpenSlot(s)} />)}
-          {liveSlots.length === 0 && <div className="text-sm text-muted-foreground">Nothing live this minute. Coming up next ↓</div>}
+          {onNowSlots.map((s) => (
+            <NowCard key={s.episodeId + s.startsAt} slot={s} isStartingSoon={liveSlots.length === 0} onClick={() => setOpenSlot(s)} />
+          ))}
+          {onNowSlots.length === 0 && <div className="text-sm text-muted-foreground">Nothing scheduled right now. Check back later ↓</div>}
         </div>
       </Section>
 
@@ -280,18 +294,25 @@ function RowFragment({ channel, slots, nowOffsetPx, onSlotClick }: { channel: ty
   );
 }
 
-function NowCard({ slot, onClick }: { slot: ScheduleSlot; onClick: () => void }) {
+function NowCard({ slot, onClick, isStartingSoon }: { slot: ScheduleSlot; onClick: () => void; isStartingSoon?: boolean }) {
   const ep = episodeById(slot.episodeId)!;
   const ch = channelById(slot.channelId)!;
+  const start = new Date(slot.startsAt);
   return (
     <button onClick={onClick} className="text-left rounded-2xl liquid-glass border border-[oklch(0.65_0.24_15/.6)] p-3 hover:bg-white/5 group">
       <div className="flex items-center gap-3">
         <div className="relative">
           <img src={ch.avatar} className="size-12 rounded-full object-cover" alt="" />
-          <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-[oklch(0.65_0.24_15)] ring-2 ring-background animate-glow-pulse" />
+          {!isStartingSoon && <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-[oklch(0.65_0.24_15)] ring-2 ring-background animate-glow-pulse" />}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] tracking-widest text-[oklch(0.65_0.24_15)] inline-flex items-center gap-1"><Radio className="size-3" /> LIVE NOW</div>
+          {isStartingSoon ? (
+            <div className="text-[10px] tracking-widest text-muted-foreground inline-flex items-center gap-1">
+              <ChevronRight className="size-3" /> STARTS {start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+            </div>
+          ) : (
+            <div className="text-[10px] tracking-widest text-[oklch(0.65_0.24_15)] inline-flex items-center gap-1"><Radio className="size-3" /> LIVE NOW</div>
+          )}
           <div className="text-sm font-bold truncate">{ep.title}</div>
           <div className="text-[11px] text-muted-foreground truncate">{ch.name} · S{ep.season}E{ep.number}</div>
         </div>

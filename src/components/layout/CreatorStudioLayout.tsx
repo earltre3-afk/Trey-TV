@@ -35,18 +35,18 @@ export function CreatorStudioLayout({
   actions?: ReactNode;
   children: ReactNode;
 }) {
-  const { isGuest, creatorStatus, user } = useAuth();
+  const { isGuest, isAdmin, creatorStatus, user } = useAuth();
   const { isApprovedCreator } = useCreatorStudio();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (isGuest) navigate({ to: "/login" });
-  }, [isGuest, navigate]);
+    if (isGuest && !isAdmin) navigate({ to: "/login" });
+  }, [isGuest, isAdmin, navigate]);
 
-  if (isGuest) return null;
+  if (isGuest && !isAdmin) return null;
 
-  if (!isApprovedCreator) {
+  if (!isAdmin && !isApprovedCreator) {
     return (
       <AppShell wide>
         <CreatorGate status={creatorStatus} />
@@ -76,6 +76,7 @@ export function CreatorStudioLayout({
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <CreatorStatusBadge status="approved" label="Approved Creator" />
+              {isAdmin && <CreatorStatusBadge status="approved" label="Admin override" />}
               {actions}
             </div>
           </div>

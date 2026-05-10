@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { type Submission, type SubmissionStatus } from "@/lib/submissions-store";
+import { useAuth } from "@/lib/auth";
 
 // ── Internal DB shapes (not exported) ──────────────────────────────────────
 
@@ -122,12 +123,18 @@ const EMPTY: CreatorStudioData = {
 };
 
 export function useCreatorStudio(): CreatorStudioData {
+  const { isAdmin } = useAuth();
   const [data, setData] = useState<CreatorStudioData>({ ...EMPTY, loading: true });
 
   useEffect(() => {
     let mounted = true;
 
     async function load() {
+      if (isAdmin) {
+        setData({ ...EMPTY, isApprovedCreator: true, loading: false });
+        return;
+      }
+
       const supabase = createBrowserClient();
 
       // Get auth email without relying on profiles schema
@@ -207,7 +214,7 @@ export function useCreatorStudio(): CreatorStudioData {
 
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [isAdmin]);
 
   return data;
 }

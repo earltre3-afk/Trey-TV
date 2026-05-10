@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useRef } from "react";
-import { ArrowLeft, Camera, Eye, Save, Sparkles, MapPin, Link2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Camera, Eye, Save, Sparkles, MapPin, Link2, Image as ImageIcon, Instagram, Youtube, Music2, Shield } from "lucide-react";
 import { useGoBack } from "@/hooks/use-go-back";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
@@ -11,6 +11,7 @@ import { currentUser } from "@/lib/mock-data";
 import bannerImg from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { AnimatedBanner } from "@/components/profile/AnimatedBanner";
+import { recordUserTrace } from "@/lib/user-trace";
 
 export const Route = createFileRoute("/edit-profile")({
   component: EditProfile,
@@ -39,8 +40,19 @@ function EditProfile() {
     name: base.name,
     handle: base.handle,
     bio: base.bio,
+    tagline: (base as any).tagline ?? "",
+    pronouns: (base as any).pronouns ?? "",
+    birthday: (base as any).birthday ?? "",
     location: base.location ?? "",
     link: base.link ?? "",
+    favoriteGenres: (base as any).favoriteGenres ?? "",
+    favoriteCreators: (base as any).favoriteCreators ?? "",
+    socialInstagram: (base as any).socialInstagram ?? "",
+    socialTikTok: (base as any).socialTikTok ?? "",
+    socialYouTube: (base as any).socialYouTube ?? "",
+    profileVisibility: ((base as any).profileVisibility ?? "public") as "public" | "members_only" | "private",
+    showLocation: (base as any).showLocation ?? true,
+    showBirthday: (base as any).showBirthday ?? false,
     avatar: base.avatar,
     banner: (base as any).banner || "",
     accent: ((base as any).accent || "gold") as "gold" | "magenta" | "cyan" | "purple",
@@ -58,9 +70,10 @@ function EditProfile() {
       const f = input.files?.[0];
       if (!f) return;
       const url = URL.createObjectURL(f);
-      setDraft((d) => ({ ...d, [key]: url }));
-      if (key === "banner") {
-        const isAnimated = /gif|video/.test(f.type);
+        setDraft((d) => ({ ...d, [key]: url }));
+        if (key === "banner") {
+          recordUserTrace({ userUid: base.uid, action: "profile.banner_update", targetType: "profile", targetId: base.uid, details: { fileType: f.type } });
+          const isAnimated = /gif|video/.test(f.type);
         toast.success(isAnimated ? "Animated banner ready — it'll loop forever ✨" : "Banner updated");
       }
     };
@@ -101,12 +114,24 @@ function EditProfile() {
       name: draft.name,
       handle: draft.handle,
       bio: draft.bio,
+      tagline: draft.tagline,
+      pronouns: draft.pronouns,
+      birthday: draft.birthday,
       location: draft.location,
       link: draft.link,
+      favoriteGenres: draft.favoriteGenres,
+      favoriteCreators: draft.favoriteCreators,
+      socialInstagram: draft.socialInstagram,
+      socialTikTok: draft.socialTikTok,
+      socialYouTube: draft.socialYouTube,
+      profileVisibility: draft.profileVisibility,
+      showLocation: draft.showLocation,
+      showBirthday: draft.showBirthday,
       avatar: draft.avatar,
       banner: draft.banner,
       accent: draft.accent,
     });
+    recordUserTrace({ userUid: base.uid, action: "profile.update", targetType: "profile", targetId: base.uid, details: { handle: draft.handle, visibility: draft.profileVisibility } });
     toast.success("Profile published ✨");
     setTimeout(() => nav({ to: "/u/$uid", params: { uid: base.uid } }), 350);
   };
@@ -165,11 +190,48 @@ function EditProfile() {
             <div className="rounded-3xl liquid-glass border border-white/10 p-5 space-y-4">
               <Field label="Display name" value={draft.name} onChange={(v) => setDraft((d) => ({ ...d, name: v }))} />
               <Field label="Username" prefix="@" value={draft.handle} onChange={(v) => setDraft((d) => ({ ...d, handle: v.replace(/\s+/g, "").toLowerCase() }))} />
+              <Field label="Profile tagline" value={draft.tagline} onChange={(v) => setDraft((d) => ({ ...d, tagline: v }))} />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Pronouns" value={draft.pronouns} onChange={(v) => setDraft((d) => ({ ...d, pronouns: v }))} />
+                <Field label="Birthday" value={draft.birthday} onChange={(v) => setDraft((d) => ({ ...d, birthday: v }))} />
+              </div>
               <FieldArea label="Bio" value={draft.bio} onChange={(v) => setDraft((d) => ({ ...d, bio: v }))} />
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Location" icon={<MapPin className="size-3.5" />} value={draft.location} onChange={(v) => setDraft((d) => ({ ...d, location: v }))} />
                 <Field label="Website" icon={<Link2 className="size-3.5" />} value={draft.link} onChange={(v) => setDraft((d) => ({ ...d, link: v }))} />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Favorite genres" icon={<Music2 className="size-3.5" />} value={draft.favoriteGenres} onChange={(v) => setDraft((d) => ({ ...d, favoriteGenres: v }))} />
+                <Field label="Favorite creators" icon={<Sparkles className="size-3.5" />} value={draft.favoriteCreators} onChange={(v) => setDraft((d) => ({ ...d, favoriteCreators: v }))} />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <Field label="Instagram" icon={<Instagram className="size-3.5" />} value={draft.socialInstagram} onChange={(v) => setDraft((d) => ({ ...d, socialInstagram: v }))} />
+                <Field label="TikTok" value={draft.socialTikTok} onChange={(v) => setDraft((d) => ({ ...d, socialTikTok: v }))} />
+                <Field label="YouTube" icon={<Youtube className="size-3.5" />} value={draft.socialYouTube} onChange={(v) => setDraft((d) => ({ ...d, socialYouTube: v }))} />
+              </div>
+            </div>
+
+            <div className="rounded-3xl liquid-glass border border-white/10 p-5 space-y-3">
+              <div className="text-xs tracking-[0.2em] text-muted-foreground flex items-center gap-2"><Shield className="size-3.5" /> PROFILE PRIVACY</div>
+              <div className="grid grid-cols-3 gap-2">
+                {(["public", "members_only", "private"] as const).map((visibility) => (
+                  <button
+                    key={visibility}
+                    onClick={() => setDraft((d) => ({ ...d, profileVisibility: visibility }))}
+                    className={`h-10 rounded-xl border text-xs font-semibold ${draft.profileVisibility === visibility ? "border-primary bg-primary/15 text-primary" : "border-white/10 glass"}`}
+                  >
+                    {visibility.replace("_", " ")}
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center justify-between gap-3 rounded-xl glass border border-white/10 px-3 py-2 text-sm">
+                Show location on profile
+                <input type="checkbox" checked={draft.showLocation} onChange={(e) => setDraft((d) => ({ ...d, showLocation: e.target.checked }))} className="accent-[oklch(0.82_0.16_85)]" />
+              </label>
+              <label className="flex items-center justify-between gap-3 rounded-xl glass border border-white/10 px-3 py-2 text-sm">
+                Show birthday on profile
+                <input type="checkbox" checked={draft.showBirthday} onChange={(e) => setDraft((d) => ({ ...d, showBirthday: e.target.checked }))} className="accent-[oklch(0.82_0.16_85)]" />
+              </label>
             </div>
 
             {/* Accent */}

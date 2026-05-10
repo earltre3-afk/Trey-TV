@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
 import { z } from "zod";
 import {
-  Bell, Heart, MessageCircle, UserPlus, Sparkles, Search, Send, Plus,
+  Heart, MessageCircle, UserPlus, Sparkles, Search, Send, Plus,
   Phone, Video, MoreHorizontal, Smile, Image as ImageIcon, Mic, Check,
   CheckCheck, ArrowLeft, Pin, Filter, Inbox as InboxIcon, Star, Wand2,
+  Ghost, X, Timer,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { creators } from "@/lib/mock-data";
@@ -13,6 +14,9 @@ import { toast } from "sonner";
 import { useMessages } from "@/lib/messages-store";
 import { NewConversationSheet } from "@/components/inbox/NewConversationSheet";
 import { ChatOnboarding } from "@/components/inbox/ChatOnboarding";
+import { PlusMenu } from "@/components/inbox/PlusMenu";
+import { GhostMessagePopup } from "@/components/inbox/GhostMessagePopup";
+import { NeonEmojiPicker } from "@/components/inbox/NeonEmojiPicker";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -57,15 +61,27 @@ function fmtAgo(ts: number) {
 
 function Inbox() {
   const { to } = Route.useSearch();
-  const { threads, messagesOf, unreadOf, totalUnread, send: sendMessage, markRead, ensureFromHandle } = useMessages();
+  const { threads, messagesOf, unreadOf, totalUnread, send: sendMessage, sendGhost, sendMedia, sendVoice, markRead, ensureFromHandle } = useMessages();
   const [tab, setTab] = useState<Tab>("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState("");
-  const [recording, setRecording] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
   const [newOpen, setNewOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Composer overlay state
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const [showGhostPopup, setShowGhostPopup] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [ghostDraft, setGhostDraft] = useState("");
+  // Voice recorder state
+  const [recording, setRecording] = useState(false);
+  const [recorderMs, setRecorderMs] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recorderChunksRef = useRef<Blob[]>([]);
+  const recorderTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const MAX_VOICE_SECS = 20;
 
   // Open a thread when navigated with ?to=<handle>
   useEffect(() => {
@@ -100,10 +116,70 @@ function Inbox() {
     if (!openId || !draft.trim()) return;
     sendMessage(openId, draft);
     setDraft("");
-    // Simulate peer typing reaction for state-of-the-art liveliness
     setTimeout(() => setPeerTyping(true), 600);
     setTimeout(() => setPeerTyping(false), 2800);
   };
+
+  // Voice recorder logic — 20s max
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      recorderChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size > 0) recorderChunksRef.current.push(e.data); };
+      mr.onstop = () => { stream.getTracks().forEach((t) => t.stop()); };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecorderMs(0);
+      setRecording(true);
+      recorderTimerRef.current = setInterval(() => {
+        setRecorderMs((prev) => {
+          if (prev >= MAX_VOICE_SECS * 1000 - 500) {
+            stopAndSendVoice();
+            return prev;
+          }
+          return prev + 500;
+        });
+      }, 500);
+    } catch {
+      toast.error("Microphone access denied");
+    }
+  }, [openId]);
+
+  const stopAndSendVoice = useCallback(() => {
+    const mr = mediaRecorderRef.current;
+    if (!mr || mr.state === "inactive") return;
+    mr.onstop = () => {
+      mr.stream?.getTracks().forEach((t) => t.stop());
+      if (recorderChunksRef.current.length && openId) {
+        const blob = new Blob(recorderChunksRef.current, { type: "audio/webm" });
+        const durSecs = recorderMs / 1000;
+        sendVoice(openId, blob, durSecs);
+      }
+    };
+    mr.stop();
+    if (recorderTimerRef.current) clearInterval(recorderTimerRef.current);
+    setRecording(false);
+    setRecorderMs(0);
+  }, [openId, recorderMs, sendVoice]);
+
+  const cancelRecording = useCallback(() => {
+    const mr = mediaRecorderRef.current;
+    if (mr && mr.state !== "inactive") {
+      mr.onstop = () => mr.stream?.getTracks().forEach((t) => t.stop());
+      mr.stop();
+    }
+    if (recorderTimerRef.current) clearInterval(recorderTimerRef.current);
+    setRecording(false);
+    setRecorderMs(0);
+    toast("Voice note cancelled");
+  }, []);
+
+  const onPhotoSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && openId) sendMedia(openId, file);
+    e.target.value = "";
+  }, [openId, sendMedia]);
 
   return (
     <AppShell wide>
@@ -345,6 +421,10 @@ function Inbox() {
                 {thread.map((m, i) => {
                   const mine = m.from === "me";
                   const prevSameSide = thread[i - 1]?.from === m.from;
+                  const isGhost = !!m.ghostExpiresAt;
+                  const hasMedia = !!m.mediaUrl;
+                  const hasVoice = !!m.voiceUrl;
+                  const timeLeft = isGhost ? Math.max(0, Math.ceil((m.ghostExpiresAt! - Date.now()) / 1000)) : 0;
                   return (
                     <div
                       key={m.id}
@@ -356,31 +436,50 @@ function Inbox() {
                       )}
                       {!mine && prevSameSide && <div className="w-7 shrink-0" />}
                       <div className={`max-w-[70%] relative ${mine ? "items-end" : "items-start"} flex flex-col`}>
-                        {m.text && (
-                          <div
-                            className={`px-3.5 py-2 text-sm leading-relaxed rounded-2xl ${
-                              mine ? "msg-bubble-mine rounded-br-sm" : "msg-bubble-them rounded-bl-sm"
-                            }`}
-                          >
+                        {/* Ghost message bubble */}
+                        {isGhost && (
+                          <div className="ghost-bubble">
+                            <Ghost className="size-4" style={{ color: "oklch(0.82 0.16 85)", filter: "drop-shadow(0 0 8px oklch(0.82 0.16 85 / 0.8))" }} />
+                            <span className="text-sm font-medium" style={{ color: "oklch(0.86 0.17 90)" }}>{m.text}</span>
+                            <div className="ghost-timer-badge">
+                              <Timer className="size-2.5" />
+                              <span>{timeLeft}s left</span>
+                            </div>
+                          </div>
+                        )}
+                        {/* Media bubble */}
+                        {hasMedia && (
+                          <div className="rounded-2xl overflow-hidden border border-white/10" style={{ maxWidth: 220 }}>
+                            {m.mediaType === "video" ? (
+                              <video src={m.mediaUrl} controls className="w-full" style={{ maxHeight: 200 }} />
+                            ) : (
+                              <img src={m.mediaUrl} alt="media" className="w-full object-cover" style={{ maxHeight: 200 }} />
+                            )}
+                          </div>
+                        )}
+                        {/* Voice bubble */}
+                        {hasVoice && (
+                          <div className="voice-bubble">
+                            <Mic className="size-4 shrink-0" style={{ color: "oklch(0.82 0.15 215)", filter: "drop-shadow(0 0 6px oklch(0.82 0.15 215 / 0.7))" }} />
+                            <audio src={m.voiceUrl} controls className="voice-audio" />
+                          </div>
+                        )}
+                        {/* Regular text bubble */}
+                        {!isGhost && !hasMedia && !hasVoice && m.text && (
+                          <div className={`px-3.5 py-2 text-sm leading-relaxed rounded-2xl ${
+                            mine ? "msg-bubble-mine rounded-br-sm" : "msg-bubble-them rounded-bl-sm"
+                          }`}>
                             <span className="relative z-[1]">{m.text}</span>
                           </div>
                         )}
-
                         {/* Hover quick reactions */}
                         <div className={`absolute -top-7 ${mine ? "right-0" : "left-0"} opacity-0 group-hover/msg:opacity-100 transition pointer-events-auto`}>
                           <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-full glass-strong border border-white/10 shadow-[0_8px_24px_-8px_oklch(0_0_0_/_0.6)]">
                             {["❤️", "🔥", "😂", "👏", "💎"].map((e) => (
-                              <button
-                                key={e}
-                                onClick={() => toast(`${e} reaction sent`)}
-                                className="size-6 grid place-items-center rounded-full hover:bg-white/10 hover:scale-125 transition text-xs"
-                              >
-                                {e}
-                              </button>
+                              <button key={e} onClick={() => toast(`${e} reaction sent`)} className="size-6 grid place-items-center rounded-full hover:bg-white/10 hover:scale-125 transition text-xs">{e}</button>
                             ))}
                           </div>
                         </div>
-
                         {m.reactions && (
                           <div className={`absolute -bottom-2 ${mine ? "left-1" : "right-1"} px-1.5 py-0.5 rounded-full glass-strong border border-white/10 text-xs`}>
                             {m.reactions.join(" ")}
@@ -422,43 +521,79 @@ function Inbox() {
 
               {/* Composer */}
               <div className="p-3 border-t border-white/5 relative">
+                {/* Hidden file input for photo/video */}
+                <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={onPhotoSelect} />
+
+                {/* Ghost draft input (shown above composer when ghost selected) */}
+                {showGhostPopup && (
+                  <GhostMessagePopup
+                    onSelect={(secs, label) => {
+                      if (openId) sendGhost(openId, draft || ghostDraft, secs, label);
+                      setDraft(""); setGhostDraft(""); setShowGhostPopup(false);
+                    }}
+                    onClose={() => setShowGhostPopup(false)}
+                  />
+                )}
+
+                {/* Emoji picker */}
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full left-0 right-0 mb-2 z-50 px-3">
+                    <NeonEmojiPicker
+                      onSelect={(emoji) => { setDraft((d) => d + emoji); setShowEmojiPicker(false); }}
+                      onClose={() => setShowEmojiPicker(false)}
+                    />
+                  </div>
+                )}
+
+                {/* Plus menu */}
+                {showPlusMenu && (
+                  <PlusMenu
+                    onGhostMessage={() => { setShowPlusMenu(false); setShowGhostPopup(true); }}
+                    onPhoto={() => { setShowPlusMenu(false); fileInputRef.current?.click(); }}
+                    onClose={() => setShowPlusMenu(false)}
+                  />
+                )}
+
                 {recording ? (
                   <div className="flex items-center gap-3 rounded-2xl px-4 py-3 border border-[oklch(0.7_0.25_340_/_0.5)] bg-[linear-gradient(120deg,oklch(0.7_0.25_340_/_0.18),oklch(0.82_0.16_85_/_0.12))] glow-purple">
                     <span className="size-2.5 rounded-full bg-[oklch(0.65_0.24_15)] animate-glow-pulse" />
-                    <span className="text-[11px] tracking-[0.2em] font-bold text-[oklch(0.85_0.2_340)]">RECORDING</span>
+                    <span className="text-[11px] tracking-[0.2em] font-bold text-[oklch(0.85_0.2_340)]">REC {Math.floor(recorderMs / 1000)}s / {MAX_VOICE_SECS}s</span>
                     <div className="flex-1 flex items-center justify-center gap-0.5 h-6">
-                      {Array.from({ length: 28 }).map((_, i) => (
-                        <span
-                          key={i}
-                          className="wave-bar"
-                          style={{
-                            height: `${10 + (i % 5) * 4}px`,
-                            animationDelay: `${i * 60}ms`,
-                            animationDuration: `${0.7 + (i % 3) * 0.15}s`,
-                          }}
-                        />
+                      {Array.from({ length: 20 }).map((_, i) => (
+                        <span key={i} className="wave-bar" style={{ height: `${10 + (i % 5) * 4}px`, animationDelay: `${i * 60}ms`, animationDuration: `${0.7 + (i % 3) * 0.15}s` }} />
                       ))}
                     </div>
-                    <button
-                      onClick={() => { setRecording(false); toast("Voice note cancelled"); }}
-                      className="px-2.5 h-8 rounded-lg text-[11px] font-semibold glass border border-white/10"
-                    >Cancel</button>
-                    <button
-                      onClick={() => {
-                        setRecording(false);
-                        if (openId) sendMessage(openId, "🎙 Voice note · 0:08");
-                        toast.success("Voice note sent");
-                      }}
-                      className="size-9 grid place-items-center rounded-xl send-btn-rocket"
-                    >
+                    <button onClick={cancelRecording} className="px-2.5 h-8 rounded-lg text-[11px] font-semibold glass border border-white/10">Cancel</button>
+                    <button onClick={stopAndSendVoice} className="size-9 grid place-items-center rounded-xl send-btn-rocket">
                       <Send className="size-4" />
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-end gap-2 rounded-2xl glass border border-white/10 px-3 py-2 focus-within:border-primary/50 transition">
-                    <button className="text-muted-foreground hover:text-primary tilt-press"><Plus className="size-5" /></button>
-                    <button className="text-muted-foreground hover:text-primary tilt-press"><ImageIcon className="size-5" /></button>
-                    <button className="text-muted-foreground hover:text-primary tilt-press"><Smile className="size-5" /></button>
+                    <button
+                      id="composer-plus"
+                      onClick={() => { setShowEmojiPicker(false); setShowPlusMenu((v) => !v); }}
+                      className={`tilt-press transition ${showPlusMenu ? "text-primary" : "text-muted-foreground hover:text-primary"}`}
+                      aria-label="More options"
+                    >
+                      <Plus className="size-5" />
+                    </button>
+                    <button
+                      id="composer-photo"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-muted-foreground hover:text-[oklch(0.82_0.15_215)] tilt-press transition"
+                      aria-label="Attach photo or video"
+                    >
+                      <ImageIcon className="size-5" />
+                    </button>
+                    <button
+                      id="composer-emoji"
+                      onClick={() => { setShowPlusMenu(false); setShowEmojiPicker((v) => !v); }}
+                      className={`tilt-press transition ${showEmojiPicker ? "text-primary" : "text-muted-foreground hover:text-[oklch(0.7_0.25_340)]"}`}
+                      aria-label="Emoji picker"
+                    >
+                      <Smile className="size-5" />
+                    </button>
                     <input
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
@@ -471,7 +606,12 @@ function Inbox() {
                         <Send className="size-4" />
                       </button>
                     ) : (
-                      <button onClick={() => setRecording(true)} aria-label="Record voice note" className="size-9 grid place-items-center rounded-xl glass border border-white/10 tilt-press">
+                      <button
+                        id="composer-mic"
+                        onClick={startRecording}
+                        aria-label="Record voice note"
+                        className="size-9 grid place-items-center rounded-xl glass border border-white/10 tilt-press"
+                      >
                         <Mic className="size-4 text-primary" />
                       </button>
                     )}

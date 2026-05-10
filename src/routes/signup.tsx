@@ -1,10 +1,16 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { AuthPage } from "./login";
 
-// Trey TV uses a single auth page (/login) with email + Google sign-in.
-// Any /signup links redirect there.
 export const Route = createFileRoute("/signup")({
-  beforeLoad: () => {
-    throw redirect({ to: "/login" });
-  },
-  component: () => null,
+  component: Signup,
+  head: () => ({
+    meta: [
+      { title: "Sign up - Trey TV" },
+      { name: "description", content: "Create your Trey TV account." },
+    ],
+  }),
 });
+
+function Signup() {
+  return <AuthPage defaultSignUp />;
+}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -22,6 +23,8 @@ import { GuideProvider } from "@/lib/guide-store";
 import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 import { GiftBurstHost } from "@/components/gifts/GiftBurst";
+import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
+import { GatewaySplash } from "@/components/splash/GatewaySplash";
 
 import appCss from "../styles.css?url";
 
@@ -86,7 +89,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" },
+      { name: "theme-color", content: "#05070D" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Trey TV" },
       { name: "description", content: "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes." },
       { name: "author", content: "Trey TV" },
@@ -101,6 +107,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f894de06-4f23-442e-876e-f9d0c649d867/id-preview-fe97151e--916886fa-a471-491f-be76-412367cc12b1.lovable.app-1778127002822.png" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;900&family=Raleway:wght@300;400;500&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -129,6 +141,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [phase, setPhase] = useState<"welcome" | "gateway" | "done">("welcome");
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -143,6 +156,8 @@ function RootComponent() {
                     <MessagesProvider>
                       <GuideProvider>
                         <MusicReviewProvider>
+                          <WelcomeSplash onDone={() => setPhase("gateway")} />
+                          <GatewaySplash active={phase === "gateway"} onDone={() => setPhase("done")} />
                           <Outlet />
                           <BottomNav />
                           <TreyIWidget />

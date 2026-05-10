@@ -1,10 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search, TrendingUp, Flame, Music, Film, Mic2, Gamepad2, Sparkles, Play, Eye, Radio, ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { creators, posts, prescribed } from "@/lib/mock-data";
 import { useFollow } from "@/lib/follow-store";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+
+function stableK(seed: string, min: number, range: number) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = ((h * 31) + seed.charCodeAt(i)) >>> 0;
+  return ((min + (h % range)) / 10).toFixed(1);
+}
 
 export const Route = createFileRoute("/explore")({
   component: Explore,
@@ -31,6 +38,8 @@ function Explore() {
   const [active, setActive] = useState("All");
   const hero = posts[0];
   const follow = useFollow();
+  const { isGuest } = useAuth();
+  const nav = useNavigate();
 
   return (
     <AppShell wide>
@@ -48,7 +57,7 @@ function Explore() {
               <h1 className="mt-3 text-4xl xl:text-5xl font-bold leading-tight">Discover the next wave of creators</h1>
               <p className="mt-4 text-base text-muted-foreground max-w-md">Trending shows, live channels and editor-picked drops — refreshed every hour.</p>
               <div className="mt-6 flex items-center gap-3">
-                <button className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold glow-gold tilt-press flex items-center gap-2"><Play className="size-4 fill-current" /> Watch trailer</button>
+                <button onClick={() => nav({ to: "/channel/$handle", params: { handle: hero.creator.handle } })} className="px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-semibold glow-gold tilt-press flex items-center gap-2"><Play className="size-4 fill-current" /> Watch trailer</button>
                 <Link to="/prescribe-me" className="px-5 py-2.5 rounded-full glass border border-white/15 font-semibold hover:bg-white/5">Prescribe me</Link>
               </div>
             </div>
@@ -172,16 +181,17 @@ function Explore() {
                   <button
                     onClick={(e) => {
                       e.preventDefault(); e.stopPropagation();
+                      if (isGuest) { nav({ to: "/signup" }); return; }
                       const nowFollowing = follow.toggle({ id: c.id, name: c.name, handle: c.handle, avatar: c.avatar as unknown as string });
                       toast.success(nowFollowing ? `Added ${c.name} to your friends` : `Removed ${c.name}`);
                     }}
                     className={`text-[11px] px-3 py-1 rounded-full border transition ${
-                      followed
+                      !isGuest && followed
                         ? "border-primary/60 bg-primary/15 text-primary"
                         : "border-primary/40 text-primary hover:bg-primary/10"
                     }`}
                   >
-                    {followed ? "Friends" : "Follow"}
+                    {!isGuest && followed ? "Friends" : "Follow"}
                   </button>
                 </Link>
               );
@@ -202,7 +212,7 @@ function Explore() {
                   <img src={p.media} alt="" className="size-full object-cover transition duration-500 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
                   <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-black/50 backdrop-blur text-white">
-                    <Eye className="size-3" /> {(Math.random() * 20).toFixed(1)}K
+                    <Eye className="size-3" /> {stableK(`${p.id}-${i}`, 5, 195)}K
                   </div>
                   <div className="absolute inset-x-0 bottom-0 p-3">
                     <div className="text-xs font-semibold text-white truncate">{p.creator.name}</div>
@@ -230,7 +240,7 @@ function Explore() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold truncate">{c.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{(Math.random() * 5 + 1).toFixed(1)}K viewers</div>
+                      <div className="text-[11px] text-muted-foreground">{stableK(c.id, 10, 40)}K viewers</div>
                     </div>
                   </li>
                 ))}

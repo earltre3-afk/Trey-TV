@@ -96,7 +96,7 @@ export function ProfileIdentityCard({
           </Link>
         ) : isGuest ? (
           <Link
-            to="/onboarding"
+            to="/signup"
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold liquid-glass border border-white/10 text-foreground"
           >
             Sign up to interact

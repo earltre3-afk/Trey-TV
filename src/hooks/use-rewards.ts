@@ -28,6 +28,10 @@ type EventRow = {
 type UseRewardsReturn = {
   balance: number;
   tier: string;
+  tierProgress: number;
+  nextTier: string | null;
+  nextTierAt: number | null;
+  pointsToNextTier: number;
   streakDays: number;
   lifetimeEarned: number;
   lifetimeSpent: number;
@@ -37,7 +41,7 @@ type UseRewardsReturn = {
 
 const fallbackTransactions: RewardTransaction[] = [
   { id: "t1", title: "Daily streak bonus", delta: +120, when: "Today" },
-  { id: "t2", title: "Gifted Chris H. - Crown", delta: -800, when: "Yesterday" },
+  { id: "t2", title: "Sent Mansion Estate gift · Chris H.", delta: -2500, when: "Yesterday" },
   { id: "t3", title: "Comment milestone (50)", delta: +200, when: "2d ago" },
   { id: "t4", title: "Subscription redeem - Pro", delta: -2500, when: "5d ago" },
   { id: "t5", title: "Watched 3hr - weekly bonus", delta: +400, when: "1w ago" },
@@ -45,9 +49,13 @@ const fallbackTransactions: RewardTransaction[] = [
 
 const fallbackRewards: UseRewardsReturn = {
   balance: 12480,
-  tier: "GOLD",
+  tier: "RED",
+  tierProgress: 24.96,
+  nextTier: "GOLD",
+  nextTierAt: 50000,
+  pointsToNextTier: 37520,
   streakDays: 12,
-  lifetimeEarned: 3240,
+  lifetimeEarned: 12480,
   lifetimeSpent: 1800,
   transactions: fallbackTransactions,
   loading: false,
@@ -62,6 +70,32 @@ const tierLabels: Record<string, string> = {
   trey_tv_insider: "INSIDER",
   community_mvp: "MVP",
 };
+
+export const REWARD_TIERS = [
+  { id: "WHITE", min: 0, label: "White", rank: "New member", perks: ["Starter profile badge", "Basic reward wallet"] },
+  { id: "GREEN", min: 5000, label: "Green", rank: "Growing", perks: ["Early community drops", "5% membership discount"] },
+  { id: "RED", min: 15000, label: "Red", rank: "Core member", perks: ["One music-review skip monthly", "Event presale access"] },
+  { id: "GOLD", min: 50000, label: "Gold", rank: "Top member", perks: ["Priority music-review skip", "15% membership discount", "VIP content/event perks"] },
+] as const;
+
+export function pointsToRewardTier(points: number) {
+  const current = [...REWARD_TIERS].reverse().find((tier) => points >= tier.min) ?? REWARD_TIERS[0];
+  const currentIndex = REWARD_TIERS.findIndex((tier) => tier.id === current.id);
+  const next = REWARD_TIERS[currentIndex + 1] ?? null;
+  const previousMin = current.min;
+  const nextMin = next?.min ?? current.min;
+  const tierProgress = next
+    ? Math.min(100, Math.max(0, ((points - previousMin) / (nextMin - previousMin)) * 100))
+    : 100;
+
+  return {
+    tier: current.id,
+    tierProgress,
+    nextTier: next?.id ?? null,
+    nextTierAt: next?.min ?? null,
+    pointsToNextTier: next ? Math.max(0, next.min - points) : 0,
+  };
+}
 
 const eventTitles: Record<string, string> = {
   episode_watch_completed: "Watched episode",
@@ -154,11 +188,13 @@ export function useRewards(): UseRewardsReturn {
           return;
         }
 
+        const earned = balanceRow.lifetime_earned || balanceRow.current_balance;
+        const tierMeta = pointsToRewardTier(earned);
         setRewards({
           balance: balanceRow.current_balance,
-          tier: engagementLevelToTier(balanceRow.engagement_level),
+          ...tierMeta,
           streakDays: balanceRow.current_streak_days,
-          lifetimeEarned: balanceRow.lifetime_earned,
+          lifetimeEarned: earned,
           lifetimeSpent: balanceRow.lifetime_spent,
           transactions: eventRows.length > 0 ? eventRows.map(mapTransaction) : fallbackTransactions,
           loading: false,

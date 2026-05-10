@@ -12,7 +12,7 @@ export type ViewerRole = "owner" | "user" | "guest";
 export type ProfileType = "user" | "creator";
 
 /** Reward tier */
-export type RewardTier = "BRONZE" | "SILVER" | "GOLD" | "DIAMOND";
+export type RewardTier = "WHITE" | "GREEN" | "RED" | "GOLD" | "BRONZE" | "SILVER" | "DIAMOND";
 
 /** Stats shown in the stats bar */
 export interface ProfileStats {
@@ -44,6 +44,17 @@ export interface ProfileData {
   location?: string;
   websiteLink?: string;
   joinedDate?: string;
+  tagline?: string;
+  pronouns?: string;
+  birthday?: string;
+  favoriteGenres?: string;
+  favoriteCreators?: string;
+  socialInstagram?: string;
+  socialTikTok?: string;
+  socialYouTube?: string;
+  profileVisibility?: "public" | "members_only" | "private";
+  showLocation?: boolean;
+  showBirthday?: boolean;
 
   // Profile type & verification
   profileType: ProfileType;

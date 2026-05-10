@@ -16,10 +16,14 @@ export const Route = createFileRoute("/login")({
 });
 
 function Login() {
+  return <AuthPage />;
+}
+
+export function AuthPage({ defaultSignUp = false }: { defaultSignUp?: boolean }) {
   const nav = useNavigate();
   // We use strict: false so we don't have to define a validateSearch schema just for this optional param
   const search: any = useSearch({ strict: false });
-  const [isSignUp, setIsSignUp] = useState(search?.signup === "true" || search?.signup === true);
+  const [isSignUp, setIsSignUp] = useState(defaultSignUp || search?.signup === "true" || search?.signup === true);
   const [showPw, setShowPw] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");

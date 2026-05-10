@@ -15,28 +15,32 @@ export function BottomNav() {
 
   return (
     <nav
-      className="lg:hidden"
+      className="bottom-nav mobile-bottom-nav lg:hidden"
       style={{
         position: "fixed",
-        left: "50%",
-        bottom: "max(env(safe-area-inset-bottom), 0.125rem)",
-        transform: "translate3d(-50%, 0, 0)",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        transform: "translate3d(0, 0, 0)",
         zIndex: 9999,
-        width: "min(calc(100vw - 1.5rem), 24rem)",
+        width: "100vw",
         contain: "layout style",
         backfaceVisibility: "hidden",
         willChange: "transform",
         paddingTop: "1.75rem",
+        paddingLeft: "max(env(safe-area-inset-left), 0.25rem)",
+        paddingRight: "max(env(safe-area-inset-right), 0.25rem)",
+        background: "#05070D",
       }}
     >
-      <div className="rounded-3xl glass-strong border border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)] overflow-visible">
+      <div className="rounded-t-3xl rounded-b-none glass-strong border-x-0 border-b-0 border-t border-white/10 shadow-[0_-10px_40px_-10px_oklch(0_0_0_/_0.7)] overflow-visible">
         {isGuest ? (
           <div className="grid grid-cols-5 items-center px-2 pt-2 pb-1 relative overflow-visible">
             <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
             <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
             <div className="flex justify-center"><CreateWheel /></div>
             <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
-            <NavItem to="/login" icon={LogIn} label="Sign in" active={isActive("/login") || isActive("/signup")} />
+            <NavItem to="/signup" icon={LogIn} label="Sign up" active={isActive("/login") || isActive("/signup")} />
           </div>
         ) : (
           <div className="grid grid-cols-7 items-center px-2 pt-2 pb-1 relative overflow-visible">

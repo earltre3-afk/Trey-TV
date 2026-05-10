@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { creators } from "@/lib/mock-data";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { createBrowserClient } from "@/lib/supabase-browser";
+import { recordUserTrace } from "@/lib/user-trace";
 
 export type FollowedCreator = {
   id: string;
@@ -146,12 +147,19 @@ export function FollowProvider({ children }: { children: ReactNode }) {
         if (s.some((f) => f.handle === c.handle)) return s.filter((f) => f.handle !== c.handle);
         return [...s, { id: c.id, name: c.name, handle: c.handle, avatar: c.avatar, followedAt: Date.now(), watchScore: 10 }];
       });
+      recordUserTrace({
+        userUid: ownPublicProfileUid,
+        action: isFollowing(c.handle) ? "social.unfollow" : "social.follow",
+        targetType: "profile",
+        targetId: c.id,
+        details: { handle: c.handle },
+      });
       return !isFollowing(c.handle);
     }
 
     if (!isSignedIn || !supabaseUser) {
       toast("Sign up to follow");
-      navigate({ to: "/onboarding" });
+      navigate({ to: "/signup" });
       return false;
     }
 
@@ -161,6 +169,13 @@ export function FollowProvider({ children }: { children: ReactNode }) {
     }
 
     const wasFollowing = isFollowing(c.handle);
+    recordUserTrace({
+      userUid: ownPublicProfileUid,
+      action: wasFollowing ? "social.unfollow" : "social.follow",
+      targetType: "profile",
+      targetId: c.id,
+      details: { handle: c.handle },
+    });
     const optimisticCreator: FollowedCreator = {
       id: c.id,
       name: c.name,

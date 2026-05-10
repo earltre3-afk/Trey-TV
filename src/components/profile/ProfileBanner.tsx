@@ -7,8 +7,12 @@
  * - Responsive: taller on lg+ breakpoints
  */
 
-import { ArrowLeft, Bell, MoreHorizontal, Crown, Pencil, Play } from "lucide-react";
+import { ArrowLeft, Bell, MoreHorizontal, Crown, Pencil, Play, Image as ImageIcon, Copy, ExternalLink } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { recordUserTrace } from "@/lib/user-trace";
 import type { ProfileContext } from "./ProfileTypes";
 import { AnimatedBanner } from "./AnimatedBanner";
 
@@ -17,6 +21,9 @@ interface ProfileBannerProps extends ProfileContext {
 }
 
 export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBack }: ProfileBannerProps) {
+  const { updateUser } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   const isCreator = profileType === "creator";
 
   const heroFrame = isOwner
@@ -79,9 +86,56 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
             <button aria-label="Notifications" className="size-9 grid place-items-center rounded-full glass">
               <Bell className="size-4" />
             </button>
-            <button aria-label="More options" className="size-9 grid place-items-center rounded-full glass">
+            <button
+              aria-label="More options"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+              className="size-9 grid place-items-center rounded-full glass"
+            >
               <MoreHorizontal className="size-4" />
             </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-11 w-64 rounded-2xl liquid-glass border border-white/15 p-2 shadow-[0_24px_70px_-20px_oklch(0_0_0_/_0.85)]">
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 text-left"
+                    >
+                      <ImageIcon className="size-4 text-primary" /> Change banner photo
+                    </button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+                      className="hidden"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (!file) return;
+                        const banner = URL.createObjectURL(file);
+                        updateUser({ banner });
+                        recordUserTrace({ userUid: profile.uid, action: "profile.banner_update", targetType: "profile", targetId: profile.uid, details: { fileType: file.type } });
+                        toast.success("Banner photo updated");
+                        setMenuOpen(false);
+                      }}
+                    />
+                  </>
+                )}
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(profile.uid); toast.success("UID copied"); }}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 text-left"
+                >
+                  <Copy className="size-4" /> Copy UID {profile.uid.slice(0, 3)}
+                </button>
+                <Link
+                  to="/u/$uid"
+                  params={{ uid: profile.uid }}
+                  className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 text-left"
+                >
+                  <ExternalLink className="size-4" /> Open public profile
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -215,7 +269,7 @@ function DesktopActionButtons({
   if (viewerRole === "guest") {
     return (
       <Link
-        to="/onboarding"
+        to="/signup"
         className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold liquid-glass border border-white/10"
       >
         Sign up to interact

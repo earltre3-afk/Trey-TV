@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Play, Plus, Info, ChevronRight, Sparkles, Tv, Radio, Heart, Bookmark,
   Share2, MessageCircle, Lock, Crown, Flame, Compass, Gem, Bot, ArrowRight,
@@ -135,8 +135,18 @@ function GuestWatchNow() {
       </Section>
 
       {/* PREVIEWS */}
-      <PreviewRail title="Featured shows" items={shows.slice(0, 6).map((s) => ({ id: s.id, title: s.title, sub: channelById(s.channelId)?.name ?? "", img: s.poster, locked: false }))} />
-      <PreviewRail title="Trending episodes" items={allEpisodes.slice(0, 6).map((e) => ({ id: e.id, title: e.title, sub: `${channelById(e.channelId)?.name} · S${e.season}E${e.number}`, img: e.thumb, locked: !e.isFree }))} />
+      <PreviewRail title="Featured shows" items={shows.filter((s, i, arr) => arr.findIndex((x) => x.poster === s.poster) === i).map((s) => ({ id: s.id, title: s.title, sub: channelById(s.channelId)?.name ?? "", img: s.poster, locked: false }))} />
+      <PreviewRail
+        title="Trending episodes"
+        items={allEpisodes.slice(0, 6).map((e) => ({ id: e.id, title: e.title, sub: `${channelById(e.channelId)?.name} · S${e.season}E${e.number}`, img: e.thumb, locked: !e.isFree }))}
+        footer={
+          <div className="mt-4">
+            <Link to="/signup" className="inline-flex items-center gap-2 text-xs font-semibold text-primary hover:underline">
+              <Lock className="size-3" /> Sign up free to unlock all episodes
+            </Link>
+          </div>
+        }
+      />
 
       {/* CHANNELS */}
       <Section title="Creator channels" subtitle="Every creator gets their own live channel.">
@@ -184,7 +194,7 @@ function GuestWatchNow() {
         <div className="rounded-3xl liquid-glass neon-border p-6">
           <div className="flex flex-wrap gap-2">
             {["Motivated","Chill","Hype","Focused","Reflective","Inspired","Happy"].map((m) => (
-              <span key={m} className="px-3 py-1.5 rounded-full liquid-glass border border-white/10 text-xs">{m}</span>
+              <span key={m} className="inline-flex items-center shrink-0 px-3 py-1.5 rounded-full liquid-glass border border-white/10 text-xs">{m}</span>
             ))}
           </div>
           <div className="mt-5">
@@ -253,19 +263,18 @@ function LiveMusicReviewCard() {
       className="group relative rounded-3xl liquid-glass neon-border p-6 overflow-hidden md:col-span-2 lg:col-span-1"
     >
       <div className="absolute inset-0 bg-[radial-gradient(80%_80%_at_30%_20%,oklch(0.7_0.25_340/0.18),transparent),radial-gradient(80%_80%_at_80%_80%,oklch(0.82_0.15_215/0.18),transparent)]" />
-      <div className="absolute -top-10 -right-10 size-40 rounded-full bg-[oklch(0.65_0.24_15/0.18)] blur-3xl" />
+      <div className="absolute -top-10 -right-10 size-40 rounded-full bg-[oklch(0.82_0.16_85/0.15)] blur-3xl" />
       <div className="relative">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[oklch(0.65_0.24_15/0.15)] border border-[oklch(0.65_0.24_15/0.4)] text-[10px] tracking-[0.22em] text-[oklch(0.85_0.18_15)]">
-            <span className="size-1.5 rounded-full bg-[oklch(0.65_0.24_15)] animate-glow-pulse" /> LIVE
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/40 text-[10px] tracking-[0.22em] text-primary">
+            <Crown className="size-2.5" /> CREATOR FEATURE
           </span>
-          <span className="text-[10px] tracking-[0.22em] text-muted-foreground">NEW</span>
         </div>
         <div className="size-11 mt-4 rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.16_85)] to-[oklch(0.7_0.25_340)] text-primary-foreground grid place-items-center"><Radio className="size-5" /></div>
         <h3 className="mt-4 text-lg font-bold">Live Music Review</h3>
-        <p className="mt-1 text-sm text-muted-foreground">Submit a track. Get reviewed live on TikTok. Skip the line with Cash App.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Submit your original music for a live on-air review by Trey. Get discovered on the network.</p>
         <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary">
-          Submit a song <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          Apply to feature <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
         </div>
       </div>
     </Link>
@@ -289,7 +298,7 @@ function Section({
   );
 }
 
-function PreviewRail({ title, items }: { title: string; items: { id: string; title: string; sub: string; img: string; locked?: boolean }[] }) {
+function PreviewRail({ title, items, footer }: { title: string; items: { id: string; title: string; sub: string; img: string; locked?: boolean }[]; footer?: React.ReactNode }) {
   return (
     <Section title={title}>
       <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 snap-x">
@@ -298,7 +307,11 @@ function PreviewRail({ title, items }: { title: string; items: { id: string; tit
             <div className="relative aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/10 group">
               <img src={it.img} alt="" className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-              {it.locked && <span className="absolute top-2 left-2 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-black/60 backdrop-blur border border-white/15"><Lock className="size-3" /> Sign up</span>}
+              {it.locked && (
+                <span className="absolute top-2 left-2 size-6 grid place-items-center rounded-full bg-black/60 backdrop-blur border border-white/15">
+                  <Lock className="size-3" />
+                </span>
+              )}
               <div className="absolute bottom-2 inset-x-2">
                 <div className="text-xs font-bold truncate">{it.title}</div>
                 <div className="text-[10px] text-white/70 truncate">{it.sub}</div>
@@ -307,6 +320,7 @@ function PreviewRail({ title, items }: { title: string; items: { id: string; tit
           </div>
         ))}
       </div>
+      {footer}
     </Section>
   );
 }
@@ -497,7 +511,6 @@ function EpisodeCard({ ep, progress }: { ep: ReturnType<typeof episodeById>; pro
   const { has, toggle } = useGuide();
   if (!ep) return null;
   const ch = channelById(ep.channelId);
-  const show = showById(ep.showId);
   const saved = has("saved", ep.id);
   return (
     <Link to="/watch/$id" params={{ id: ep.id }} className="snap-start shrink-0 w-64 sm:w-72 group">

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Mic, Upload, Link as LinkIcon, ArrowLeft, ArrowRight, Sparkles, Music2, Zap,
   Crown, CheckCircle2, Rocket, Flame, Star, Info, Radio, ListOrdered, Heart, X,
@@ -31,18 +31,6 @@ const MAX_BYTES = 30 * 1024 * 1024; // 30MB
 const DRIVE_RE = /^https?:\/\/(drive|docs)\.google\.com\/.+/i;
 
 function MusicReviewPage() {
-  const { user, isGuest } = useAuth();
-  const nav = useNavigate();
-
-  // Auth gate — redirect to signup, remember intent
-  useEffect(() => {
-    if (isGuest) {
-      try { sessionStorage.setItem("treytv_post_auth_redirect", "/music-review"); } catch {}
-      nav({ to: "/login" });
-    }
-  }, [isGuest, nav]);
-
-  if (isGuest || !user) return null;
   return (
     <AppShell wide>
       <Flow />
@@ -458,7 +446,11 @@ function ReviewStep({ source, file, driveLink, title, artist, genre, notes, tier
   const meta = TIER_META[tier];
 
   const submit = async () => {
-    if (!user) return;
+    if (!user) {
+      try { sessionStorage.setItem("treytv_post_auth_redirect", "/music-review"); } catch {}
+      nav({ to: "/signup" });
+      return;
+    }
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 700));
     const sub = add({

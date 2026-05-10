@@ -1,0 +1,6 @@
+# Trey TV AI Relay Task Log
+
+| Date | Task | Status | Files changed | Validation | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 2026-05-10 | Fix signup routing and Live Music Review blank page | Completed | `src/routes/signup.tsx`, `src/routes/login.tsx`, `src/routes/music-review.tsx`, `src/components/layout/DesktopTopNav.tsx`, `src/components/layout/SideMenu.tsx`, `src/components/layout/BottomNav.tsx`, `src/components/feed/PostCard.tsx`, `src/components/feed/Composer.tsx`, `src/components/profile/PublicProfileControls.tsx`, `src/components/profile/NormalUserProfileModules.tsx`, `src/components/profile/ProfileActionBar.tsx`, `src/components/profile/ProfileIdentityCard.tsx`, `src/components/profile/ProfileBanner.tsx`, `src/components/profile/CreatorProfileModules.tsx`, `src/lib/follow-store.tsx`, `ai-relay/outbox.md`, `ai-relay/task-log.md` | `pnpm tsc --noEmit` passed; `pnpm build` passed | No Supabase wiring, Trey-I onboarding, voice setup, profile save/review, admin, creator backend, or secrets changed |
+| 2026-05-10 | Create safe phone-to-computer relay markdown workflow | Completed | `ai-relay/inbox.md`, `ai-relay/outbox.md`, `ai-relay/task-log.md`, `ai-relay/safety-rules.md` | Not run; Markdown-only relay setup | No app wiring, no route/build/backend/auth/onboarding changes |

@@ -42,21 +42,21 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const meta = { title: post.text.split("\n")[0].slice(0, 60), creator: post.creator.handle, thumb: post.media };
 
   const requireAuth = (fn: () => void) => () => {
-    if (isGuest) { toast("Sign up to interact"); nav({ to: "/onboarding" }); return; }
+    if (isGuest) { toast("Sign up to interact"); nav({ to: "/signup" }); return; }
     fn();
   };
 
   const onReactionPick = async (k: ReactionKey) => {
     if (isGuest) {
       toast("Sign up to react");
-      nav({ to: "/onboarding" });
+      nav({ to: "/signup" });
       return;
     }
 
     const result = await toggleReaction(reaction === k ? null : k);
     if (!result.ok) {
       toast(result.reason === "signed-out" ? "Sign up to react" : "Reaction unavailable");
-      if (result.reason === "signed-out") nav({ to: "/onboarding" });
+      if (result.reason === "signed-out") nav({ to: "/signup" });
       return;
     }
 
@@ -69,7 +69,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
 
   return (
     <article
-      className="group relative rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover"
+      className="mobile-edge-card group relative rounded-none sm:rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
@@ -101,8 +101,8 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       <p className="px-4 pb-3 text-sm whitespace-pre-line">{post.text}</p>
 
       {post.media && (
-        <div className="px-3">
-          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
+        <div className="px-0 sm:px-3">
+          <div className="relative rounded-none sm:rounded-2xl overflow-hidden border-y border-x-0 sm:border-x border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
             <img src={post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
             <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
               <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
@@ -221,7 +221,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (isGuest) { toast("Sign up to comment"); nav({ to: "/onboarding" }); return; }
+                if (isGuest) { toast("Sign up to comment"); nav({ to: "/signup" }); return; }
                 add(post.id, newComment, replyTo?.id);
                 setNewComment(""); setReplyTo(null);
               }}

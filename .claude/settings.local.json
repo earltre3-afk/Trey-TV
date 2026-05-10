@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm tsc *)",
+      "Bash(pnpm build *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(grep -E '\\(trey-i|post-queue|onboarding\\\\.voice|u\\\\.$uid|ProfilePageShell|watch-data|guide-store|\\\\.kiro\\)')",
+      "Bash(pnpm install *)",
+      "Bash(git stash *)",
+      "Bash(git remote *)",
+      "Bash(git show *)",
+      "Bash(python -c \"import sys,json; a=json.load\\(open\\('package.json'\\)\\); b=json.load\\(sys.stdin\\); new={k:v for k,v in b.get\\('dependencies',{}\\).items\\(\\) if k not in a.get\\('dependencies',{}\\)}; print\\('NEW DEPS:', json.dumps\\(new, indent=2\\)\\)\")",
+      "PowerShell(git show HEAD:src/lib/trey-i/vertex.server.ts | Out-File -Encoding utf8 \"$env:TEMP\\\\vertex_head.ts\"; Compare-Object \\(Get-Content \"$env:TEMP\\\\vertex_head.ts\"\\) \\(Get-Content \"src/lib/trey-i/vertex.server.ts\"\\) | Select-Object -First 20)",
+      "PowerShell(git restore src/lib/trey-i/vertex.server.ts)",
+      "PowerShell($urls = @\\(\"http://localhost:3000/onboarding\", \"http://localhost:3000/onboarding/voice\"\\); foreach \\($url in $urls\\) { try { $req = [System.Net.HttpWebRequest]::Create\\($url\\); $req.Timeout = 5000; $res = $req.GetResponse\\(\\); Write-Host \"$url -> $\\([int]$res.StatusCode\\)\"; $res.Close\\(\\) } catch { Write-Host \"$url -> ERROR: $_\" } })",
+      "PowerShell($urls = @\\(\"http://localhost:3000/onboarding\", \"http://localhost:3000/onboarding/voice\"\\); foreach \\($url in $urls\\) { try { $req = [System.Net.HttpWebRequest]::Create\\($url\\); $req.Timeout = 8000; $res = $req.GetResponse\\(\\); Write-Host \"$url -> $\\([int]$res.StatusCode\\)\"; $res.Close\\(\\) } catch [System.Net.WebException] { $code = [int]$_.Exception.Response.StatusCode; Write-Host \"$url -> $code\" } catch { Write-Host \"$url -> ERROR: $\\($_.Exception.Message\\)\" } })",
+      "PowerShell($urls = @\\(\"http://localhost:3000/onboarding/voice\"\\); foreach \\($url in $urls\\) { try { $req = [System.Net.HttpWebRequest]::Create\\($url\\); $req.Timeout = 8000; $res = $req.GetResponse\\(\\); Write-Host \"$url -> $\\([int]$res.StatusCode\\)\"; $res.Close\\(\\) } catch [System.Net.WebException] { $code = [int]$_.Exception.Response.StatusCode; Write-Host \"$url -> $code\" } catch { Write-Host \"$url -> ERROR: $\\($_.Exception.Message\\)\" } })",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/onboarding/voice)",
+      "Bash(npx tsc *)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000/onboarding/voice\" -UseBasicParsing -TimeoutSec 8 | Select-Object StatusCode, @{n='ContentLen';e={$_.Content.Length}} 2>&1)",
+      "PowerShell(cd \"c:\\\\Users\\\\info\\\\TREY-TV-ANTIGRAVITY\"; $r = Invoke-WebRequest -Uri \"http://localhost:3000/onboarding/voice\" -UseBasicParsing -TimeoutSec 10 -ErrorAction SilentlyContinue; if \\($r\\) { \"HTTP $\\($r.StatusCode\\)\" } else { \"NO_RESPONSE\" })",
+      "PowerShell($routes = @\\(\"/login\", \"/onboarding\", \"/onboarding/manual\", \"/onboarding/voice\"\\); foreach \\($r in $routes\\) { $res = Invoke-WebRequest -Uri \"http://localhost:3000$r\" -UseBasicParsing -TimeoutSec 8 -ErrorAction SilentlyContinue; \"HTTP $\\($res.StatusCode\\) $r\" })",
+      "PowerShell(npx wrangler --version 2>&1)",
+      "PowerShell(node -e \"const w = require\\('./node_modules/wrangler/dist/cli.js'\\); console.log\\('ok'\\)\" 2>&1)",
+      "PowerShell(npx wrangler login 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\info\\\\TREY-TV-ANTIGRAVITY\\\\dist\\\\client\\\\assets\" -Name | Where-Object { $_ -match \"^\\(index|main|app|client\\)\" } | Select-Object -First 10)",
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\info\\\\TREY-TV-ANTIGRAVITY\\\\dist\\\\client\\\\assets\" -Name | Where-Object { $_ -match \"\\\\.css$\" } | Select-Object -First 5)",
+      "Bash(vercel --version)",
+      "Bash(vercel --prod)",
+      "Bash(vercel logs *)",
+      "Bash(vercel inspect *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel build *)",
+      "Bash(vercel deploy *)"
+    ]
+  }
+}

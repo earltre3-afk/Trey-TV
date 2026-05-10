@@ -215,7 +215,7 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
           </p>
           {isGuest ? (
             <Link
-              to="/onboarding"
+              to="/signup"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold"
             >
               Sign up for alerts
