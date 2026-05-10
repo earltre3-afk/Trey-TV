@@ -62,9 +62,9 @@ function GuestWatchNow() {
       {/* HERO */}
       <section className="relative min-h-[100svh] w-full overflow-hidden">
         <img src={heroShow.backdrop} alt="" className="absolute inset-0 w-full h-full object-cover scale-105" />
-        <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_30%,transparent,oklch(0.13_0.02_270/.85)_70%,oklch(0.13_0.02_270)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.13_0.02_270/.4),transparent_30%,oklch(0.13_0.02_270)_95%)]" />
-        <div className="absolute inset-x-0 top-0 p-5 flex items-center justify-between">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_30%,transparent,oklch(0.13_0.02_270/.85)_70%,oklch(0.13_0.02_270)_100%)]" />
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,oklch(0.13_0.02_270/.4),transparent_30%,oklch(0.13_0.02_270)_95%)]" />
+        <div className="absolute inset-x-0 top-0 z-20 p-5 flex items-center justify-between">
           <Logo className="h-12" />
           <div className="flex items-center gap-2">
             <Link to="/login" className="hidden sm:inline px-3 py-1.5 rounded-lg text-xs font-semibold liquid-glass border border-white/15">Log in</Link>

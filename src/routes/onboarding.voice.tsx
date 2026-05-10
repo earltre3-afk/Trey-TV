@@ -1,9 +1,11 @@
+import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Keyboard, Mic, MicOff, Send, Sparkles } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { VoiceOrb, type VoiceState } from "@/components/onboarding/VoiceOrb";
 import { startIntakeSession, profileSetupTurn } from "@/lib/trey-i/intake.server";
+import { treyIElevenLabsSession } from "@/lib/trey-i/elevenlabs-session.server";
 import { treyITts } from "@/lib/trey-i/tts.server";
 import { createBrowserClient } from "@/lib/supabase-browser";
 
@@ -26,6 +28,8 @@ type ConfirmedFields = {
   username?: string;
 };
 
+type VoiceStatus = "idle" | "connecting" | "connected" | "listening" | "speaking" | "error" | "unavailable";
+
 const INITIAL_MESSAGE = "Hey — I'm Trey-I. What should the world call you?";
 const MAIN_FIELDS: Array<keyof ConfirmedFields> = ["display_name", "username", "bio", "location"];
 
@@ -46,17 +50,136 @@ function playAssistantAudio(text: string) {
     .catch(() => {});
 }
 
+function isElevenLabsActive(voiceStatus: VoiceStatus) {
+  return voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking";
+}
+
 function VoiceOnboarding() {
+  return (
+    <ConversationProvider>
+      <VoiceOnboardingInner />
+    </ConversationProvider>
+  );
+}
+
+function VoiceOnboardingInner() {
   const nav = useNavigate();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [assistantMessage, setAssistantMessage] = useState(INITIAL_MESSAGE);
   const [draft, setDraft] = useState("");
   const [thinking, setThinking] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
   const [confirmedFields, setConfirmedFields] = useState<ConfirmedFields>({});
   const [error, setError] = useState<string | null>(null);
   const sessionStarted = useRef(false);
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const processingTranscriptRef = useRef(false);
+  const voiceStatusRef = useRef<VoiceStatus>("idle");
+
+  const clearWatchdog = () => {
+    if (watchdogRef.current !== null) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  };
+
+  const submitWithText = async (text: string) => {
+    const transcript = text.trim();
+    if (!transcript || thinking) return;
+
+    if (!accessToken) {
+      setError("Please sign in to use voice setup.");
+      return;
+    }
+
+    if (!sessionId) {
+      setError("Setup session is still starting. Please try again in a moment.");
+      return;
+    }
+
+    setThinking(true);
+    setError(null);
+
+    try {
+      const result = await profileSetupTurn({
+        data: { accessToken, sessionId, transcript },
+      });
+
+      setAssistantMessage(result.assistant.message);
+      if (!isElevenLabsActive(voiceStatusRef.current)) {
+        playAssistantAudio(result.assistant.message);
+      }
+      setConfirmedFields(result.confirmedFields);
+
+      if (result.switchToManual) {
+        nav({ to: "/login" });
+        return;
+      }
+
+      if (result.complete) {
+        if (!result.publicProfileUid) {
+          setError("Your profile is saved, but your public link isn't ready yet. Please try finishing again.");
+          setThinking(false);
+          return;
+        }
+        window.location.href = `/u/${result.publicProfileUid}?tour=1`;
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(message);
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const submitFromVoice = async (text: string) => {
+    if (processingTranscriptRef.current) return;
+    processingTranscriptRef.current = true;
+    try {
+      await submitWithText(text);
+    } finally {
+      processingTranscriptRef.current = false;
+    }
+  };
+
+  const conversation = useConversation({
+    onConnect: () => {
+      clearWatchdog();
+      setVoiceStatus("connected");
+      setError(null);
+    },
+    onDisconnect: (details) => {
+      clearWatchdog();
+      const reason = typeof details === "object" && details !== null && "reason" in details ? details.reason : undefined;
+      if (reason === "error") {
+        setVoiceStatus("error");
+        setError("Voice disconnected. Type to continue or tap mic to retry.");
+      } else {
+        setVoiceStatus("idle");
+        setError(null);
+      }
+    },
+    onError: () => {
+      clearWatchdog();
+      setVoiceStatus("error");
+      setError("Voice disconnected. Type to continue or tap mic to retry.");
+    },
+    onModeChange: (mode) => {
+      if (mode.mode === "listening") setVoiceStatus("listening");
+      else if (mode.mode === "speaking") setVoiceStatus("speaking");
+    },
+    onMessage: (message) => {
+      const payload = message as { message?: unknown; role?: unknown };
+      const text = typeof payload.message === "string" ? payload.message.trim() : "";
+      if (!text) return;
+      if (payload.role !== "user") {
+        setAssistantMessage(text);
+        return;
+      }
+      void submitFromVoice(text);
+    },
+  });
 
   // Obtain Supabase access token from the browser session
   useEffect(() => {
@@ -102,60 +225,95 @@ function VoiceOnboarding() {
     };
   }, [accessToken]);
 
+  useEffect(() => {
+    voiceStatusRef.current = voiceStatus;
+  }, [voiceStatus]);
+
+  useEffect(() => {
+    return () => {
+      clearWatchdog();
+      try {
+        conversation.endSession();
+      } catch {}
+    };
+  }, []);
+
   const confirmedCount = MAIN_FIELDS.filter((f) => confirmedFields[f]).length;
   const isAtReview = !!confirmedFields.display_name && !!confirmedFields.username;
   const progress = (confirmedCount / MAIN_FIELDS.length) * 100;
 
-  const voiceState: VoiceState = thinking ? "processing" : listening ? "listening" : "idle";
+  const voiceActive = isElevenLabsActive(voiceStatus);
+  const voiceBusy = voiceStatus === "connecting";
+  const voiceState: VoiceState = thinking || voiceBusy ? "processing" : voiceActive ? "listening" : "idle";
 
   const submit = async () => {
     const text = draft.trim();
-    if (!text || thinking) return;
+    if (!text) return;
+    setDraft("");
+    await submitWithText(text);
+  };
 
+  const startElevenLabsSession = async () => {
+    if (voiceBusy) return;
     if (!accessToken) {
       setError("Please sign in to use voice setup.");
       return;
     }
-
     if (!sessionId) {
       setError("Setup session is still starting. Please try again in a moment.");
       return;
     }
 
-    setDraft("");
-    setThinking(true);
+    setVoiceStatus("connecting");
     setError(null);
 
     try {
-      const result = await profileSetupTurn({
-        data: { accessToken, sessionId, transcript: text },
+      const result = await treyIElevenLabsSession({ data: { accessToken } }).catch(() => null);
+      if (!result || !result.ok) {
+        setVoiceStatus("unavailable");
+        setError(result?.message ?? "Voice is unavailable. Type to continue.");
+        return;
+      }
+
+      watchdogRef.current = setTimeout(() => {
+        try {
+          conversation.endSession();
+        } catch {}
+        setVoiceStatus("error");
+        setError("Voice connection timed out. Type to continue or tap mic to retry.");
+      }, 12_000);
+
+      conversation.startSession({
+        signedUrl: result.signedUrl,
+        connectionType: "websocket",
       });
-
-      setAssistantMessage(result.assistant.message);
-      playAssistantAudio(result.assistant.message);
-      setConfirmedFields(result.confirmedFields);
-
-      if (result.switchToManual) {
-        nav({ to: "/login" });
-        return;
-      }
-
-      if (result.complete) {
-        if (!result.publicProfileUid) {
-          setError("Your profile is saved, but your public link isn't ready yet. Please try finishing again.");
-          setThinking(false);
-          return;
-        }
-        window.location.href = `/u/${result.publicProfileUid}?tour=1`;
-        return;
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
-      setError(message);
-    } finally {
-      setThinking(false);
+    } catch {
+      clearWatchdog();
+      setVoiceStatus("error");
+      setError("Voice unavailable. Type to continue.");
     }
   };
+
+  const stopElevenLabsSession = () => {
+    clearWatchdog();
+    try {
+      conversation.endSession();
+    } catch {}
+    setVoiceStatus("idle");
+    setError(null);
+  };
+
+  const toggleMic = () => {
+    if (voiceBusy) return;
+    if (voiceActive) {
+      stopElevenLabsSession();
+      return;
+    }
+    void startElevenLabsSession();
+  };
+
+  const micLabel = voiceBusy ? "Connecting" : voiceActive ? "Stop voice" : "Start voice";
+  const inputPlaceholder = voiceActive || voiceBusy ? "Listening... (or type)" : "Type your answer...";
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -237,17 +395,18 @@ function VoiceOnboarding() {
             {/* Input row */}
             <div className="mt-5 rounded-2xl liquid-glass border border-white/10 p-2.5 flex items-center gap-2 focus-within:border-primary/50 transition">
               <button
-                onClick={() => setListening((v) => !v)}
-                className={`size-10 rounded-full grid place-items-center shrink-0 transition ${listening ? "bg-primary text-primary-foreground glow-gold" : "bg-white/5 text-muted-foreground"}`}
-                aria-label="Toggle mic"
+                onClick={toggleMic}
+                disabled={voiceBusy}
+                className={`size-10 rounded-full grid place-items-center shrink-0 transition ${voiceActive ? "bg-primary text-primary-foreground glow-gold" : voiceBusy ? "bg-primary/70 text-primary-foreground" : "bg-white/5 text-muted-foreground"}`}
+                aria-label={micLabel}
               >
-                {listening ? <Mic className="size-4" /> : <MicOff className="size-4" />}
+                {voiceActive || voiceBusy ? <Mic className="size-4" /> : <MicOff className="size-4" />}
               </button>
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
-                placeholder={listening ? "Listening… (or type)" : "Type your answer…"}
+                placeholder={inputPlaceholder}
                 className="flex-1 bg-transparent text-sm focus:outline-none px-1 h-10"
                 autoFocus
               />
