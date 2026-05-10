@@ -16,6 +16,8 @@ type Ctx = {
 
 const C = createContext<Ctx | null>(null);
 
+const OWNER_EMAIL = "californiatrey@gmail.com";
+
 export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [adminRole, setAdminRole] = useState<AdminRole>(null);
@@ -27,7 +29,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
       setSession(s);
       if (s?.user) {
         // defer admin lookup to avoid deadlocking the listener
-        setTimeout(() => loadAdmin(s.user.id), 0);
+        setTimeout(() => loadAdmin(s.user.id, s.user.email), 0);
       } else {
         setAdminRole(null);
       }
@@ -35,15 +37,20 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     // Then check existing session
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      if (data.session?.user) loadAdmin(data.session.user.id);
+      if (data.session?.user) loadAdmin(data.session.user.id, data.session.user.email);
       setLoading(false);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  async function loadAdmin(uid: string) {
+  async function loadAdmin(uid: string, email?: string | null) {
     const { data } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
-    setAdminRole((data?.role as AdminRole) ?? null);
+    if (data?.role) {
+      setAdminRole(data.role as AdminRole);
+      return;
+    }
+    // Owner email fallback — grants owner access even before the DB row is created
+    setAdminRole(email === OWNER_EMAIL ? "owner" : null);
   }
 
   const value: Ctx = {

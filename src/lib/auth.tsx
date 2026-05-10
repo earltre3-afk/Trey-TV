@@ -50,7 +50,7 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { isRealAdmin, user: supaUser } = useSupabaseSession();
+  const { isRealAdmin, isOwner, user: supaUser } = useSupabaseSession();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [role, setRoleState] = useState<Role>("guest");
 
@@ -64,6 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
   }, []);
+
+  // When the real Supabase owner/admin logs in, auto-populate the @trey mock profile
+  useEffect(() => {
+    if (supaUser && isRealAdmin && !user) {
+      const r: Exclude<Role, "guest"> = isOwner ? "admin" : "creator";
+      const u = buildUser(r);
+      setUser(u);
+      setRoleState(r);
+    }
+  }, [supaUser, isRealAdmin, isOwner, user]);
 
   useEffect(() => {
     try { localStorage.setItem(KEY, JSON.stringify({ role, user })); } catch {}
