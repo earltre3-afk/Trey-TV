@@ -1,0 +1,5 @@
+# Normalize line endings for all text files
+* text=auto
+
+# Auto-generated files — always LF, no CRLF conversion
+src/routeTree.gen.ts text eol=lf
