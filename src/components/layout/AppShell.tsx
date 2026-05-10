@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { AppHeader } from "./AppHeader";
 import { SideMenu } from "./SideMenu";
-import { DesktopSidebar } from "./DesktopSidebar";
+import { DesktopTopNav } from "./DesktopTopNav";
 
 export function AppShell({
   children,
@@ -18,30 +18,26 @@ export function AppShell({
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="relative min-h-[100svh] w-full">
-      <DesktopSidebar />
+      {/* Desktop top navigation (lg+) */}
+      <DesktopTopNav />
 
-      <div className="lg:pl-[260px] xl:pl-[280px]">
-        <div
-          className={`relative mx-auto ${
-            wide
-              ? "max-w-[1400px] 2xl:max-w-[1600px]"
-              : "max-w-[520px] lg:max-w-[820px] xl:max-w-[900px] 2xl:max-w-[960px]"
-          }`}
-        >
-          {/* Mobile-only header */}
-          <div className="lg:hidden">
-            <AppHeader activeTab={activeTab} onTabChange={onTabChange} onMenuClick={() => setMenuOpen(true)} />
-          </div>
-          <main
-            className="relative z-10 px-3 lg:px-8 xl:px-10 2xl:px-12 pt-3 lg:pt-8 xl:pt-10 lg:pb-12"
-            style={{
-              paddingBottom: "calc(6rem + env(safe-area-inset-bottom))",
-              overflowAnchor: "none",
-            }}
-          >
-            {children}
-          </main>
+      <div
+        className={`relative mx-auto ${
+          wide
+            ? "max-w-[1400px] 2xl:max-w-[1600px]"
+            : "max-w-[520px] lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1400px]"
+        }`}
+      >
+        {/* Mobile-only header */}
+        <div className="lg:hidden">
+          <AppHeader activeTab={activeTab} onTabChange={onTabChange} onMenuClick={() => setMenuOpen(true)} />
         </div>
+        <main
+          className="relative z-10 px-3 lg:px-8 xl:px-10 2xl:px-12 pt-3 lg:pt-8 xl:pt-10 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:!pb-16"
+          style={{ overflowAnchor: "none" }}
+        >
+          {children}
+        </main>
       </div>
 
       <div className="lg:hidden">

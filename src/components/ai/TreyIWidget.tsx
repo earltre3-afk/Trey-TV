@@ -44,6 +44,7 @@ export function TreyIWidget() {
   const [text, setText] = useState("");
   const [pos, setPos] = useState(INITIAL_POS);
   const posRef = useRef(INITIAL_POS);
+  const loadedRef = useRef(false);
   const [dragging, setDragging] = useState(false);
   const dragInfo = useRef<{
     dx: number; dy: number; moved: boolean;
@@ -77,19 +78,22 @@ export function TreyIWidget() {
         const saved = JSON.parse(raw) as Partial<{ x: number; y: number }>;
         if (typeof saved.x === "number" && typeof saved.y === "number") {
           moveTo({ x: saved.x, y: saved.y });
+          loadedRef.current = true;
           return;
         }
       }
     } catch {}
     moveTo(defaultPos());
+    loadedRef.current = true;
   }, [moveTo]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, open]);
 
-  // persist & re-clamp on resize
+  // persist (only after initial load to avoid clobbering saved value with INITIAL_POS)
   useEffect(() => {
+    if (!loadedRef.current) return;
     try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
   }, [pos]);
   useEffect(() => {
@@ -170,20 +174,27 @@ export function TreyIWidget() {
       return;
     }
 
-    // Momentum + magnetic edge snap with spring easing
+    // Soft magnetic snap: only pull to an edge if released near one or flicked hard.
+    // Otherwise honor the drop position so the orb truly remembers where you put it.
     if (typeof window !== "undefined") {
       const start = posRef.current;
-      const projectedX = start.x + dragInfo.current.vx * 8;
-      const projectedY = start.y + dragInfo.current.vy * 8;
-      const snapLeft = projectedX + SIZE / 2 < window.innerWidth / 2;
-      const targetX = snapLeft ? PAD : window.innerWidth - SIZE - PAD;
-      const targetY = Math.min(Math.max(PAD, projectedY), window.innerHeight - SIZE - PAD);
+      const speed = Math.hypot(dragInfo.current.vx, dragInfo.current.vy);
+      const nearLeft = start.x < 48;
+      const nearRight = start.x > window.innerWidth - SIZE - 48;
+      const flicked = speed > 28;
+
+      let to = clampToViewport(start.x, start.y);
+      if (nearLeft || nearRight || flicked) {
+        const projectedX = start.x + dragInfo.current.vx * 8;
+        const projectedY = start.y + dragInfo.current.vy * 8;
+        const snapLeft = projectedX + SIZE / 2 < window.innerWidth / 2;
+        const targetX = snapLeft ? PAD : window.innerWidth - SIZE - PAD;
+        to = clampToViewport(targetX, projectedY);
+      }
 
       const from = { ...start };
-      const to = clampToViewport(targetX, targetY);
-      const duration = 480;
+      const duration = 420;
       const t0 = performance.now();
-      // ease-out-back for premium snap
       const ease = (t: number) => {
         const c1 = 1.4;
         const c3 = c1 + 1;

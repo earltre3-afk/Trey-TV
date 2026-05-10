@@ -38,7 +38,7 @@ function MusicReviewPage() {
   useEffect(() => {
     if (isGuest) {
       try { sessionStorage.setItem("treytv_post_auth_redirect", "/music-review"); } catch {}
-      nav({ to: "/signup" });
+      nav({ to: "/login" });
     }
   }, [isGuest, nav]);
 
