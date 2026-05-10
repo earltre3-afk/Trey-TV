@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, ArrowLeft, Sparkles, Volume2, Loader2 } from "lucide-react";
 import { startIntakeSession, profileSetupTurn } from "@/lib/trey-i/intake.server";
+import { treyITts } from "@/lib/trey-i/tts.server";
 import { createBrowserClient } from "@/lib/supabase-browser";
 
 export const Route = createFileRoute("/onboarding/voice")({
@@ -23,6 +24,23 @@ type ConfirmedFields = {
 
 const INITIAL_MESSAGE = "Hey — I'm Trey-I. What should the world call you?";
 const MAIN_FIELDS: Array<keyof ConfirmedFields> = ["display_name", "username", "bio", "location"];
+
+function playAssistantAudio(text: string) {
+  treyITts({ data: { text } })
+    .then((result) => {
+      if (!result.audioBase64) return;
+      const bytes = Uint8Array.from(atob(result.audioBase64), (char) => char.charCodeAt(0));
+      const blob = new Blob([bytes], { type: result.mimeType ?? "audio/wav" });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.onended = () => URL.revokeObjectURL(url);
+      audio.onerror = () => URL.revokeObjectURL(url);
+      audio.play().catch(() => {
+        URL.revokeObjectURL(url);
+      });
+    })
+    .catch(() => {});
+}
 
 function VoiceOnboarding() {
   const nav = useNavigate();
@@ -107,6 +125,7 @@ function VoiceOnboarding() {
       });
 
       setAssistantMessage(result.assistant.message);
+      playAssistantAudio(result.assistant.message);
       setConfirmedFields(result.confirmedFields);
 
       if (result.switchToManual) {
