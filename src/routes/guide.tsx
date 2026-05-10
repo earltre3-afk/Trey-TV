@@ -27,9 +27,16 @@ export const Route = createFileRoute("/guide")({
 
 const SLOT_PX = 160; // 30-min cell width
 
+function getSlotStatus(slot: ScheduleSlot, now: number): ScheduleSlot["status"] {
+  const start = new Date(slot.startsAt).getTime();
+  const end = new Date(slot.endsAt).getTime();
+  return end < now ? "aired" : start <= now ? "live" : "upcoming";
+}
+
 function GuidePage() {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
@@ -47,13 +54,21 @@ function GuidePage() {
   }, [activeCat, activeChannels]);
 
   const dayStart = useMemo(() => {
-    const d = new Date(); d.setHours(0,0,0,0); return d.getTime();
+    const firstSlot = scheduleSlots[0]?.startsAt;
+    const d = firstSlot ? new Date(firstSlot) : new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime();
   }, []);
-  const minutesSinceMidnight = (now - dayStart) / 60_000;
+  const effectiveNow = now ?? dayStart;
+  const slotsWithStatus = useMemo(
+    () => scheduleSlots.map((slot) => ({ ...slot, status: getSlotStatus(slot, effectiveNow) })),
+    [effectiveNow],
+  );
+  const minutesSinceMidnight = (effectiveNow - dayStart) / 60_000;
   const nowOffsetPx = (minutesSinceMidnight / 30) * SLOT_PX;
 
-  const liveSlots = scheduleSlots.filter((s) => s.status === "live");
-  const upcomingSlots = scheduleSlots.filter((s) => s.status === "upcoming").slice(0, 6);
+  const liveSlots = slotsWithStatus.filter((s) => s.status === "live");
+  const upcomingSlots = slotsWithStatus.filter((s) => s.status === "upcoming").slice(0, 6);
 
   return (
     <AppShell wide>
@@ -75,7 +90,7 @@ function GuidePage() {
           <button key={c} onClick={() => setActiveCat(c)} className={chip(activeCat === c)}>{c}</button>
         ))}
         <span className="ml-auto text-[11px] text-muted-foreground" suppressHydrationWarning>
-          {new Date(now).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+          {new Date(effectiveNow).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
         </span>
       </div>
 
@@ -140,7 +155,7 @@ function GuidePage() {
 
             {/* Channel rows */}
             {filteredChannels.map((c) => {
-              const slots = scheduleSlots.filter((s) => s.channelId === c.id);
+              const slots = slotsWithStatus.filter((s) => s.channelId === c.id);
               return (
                 <RowFragment key={c.id} channel={c} slots={slots} nowOffsetPx={nowOffsetPx} onSlotClick={setOpenSlot} />
               );
@@ -151,7 +166,7 @@ function GuidePage() {
         {/* Mobile stacked view */}
         <div className="md:hidden space-y-3">
           {filteredChannels.map((c) => {
-            const slots = scheduleSlots.filter((s) => s.channelId === c.id).slice(0, 6);
+            const slots = slotsWithStatus.filter((s) => s.channelId === c.id).slice(0, 6);
             return (
               <div key={c.id} className="rounded-2xl liquid-glass border border-white/10 p-3">
                 <div className="flex items-center gap-3 mb-2">
@@ -212,7 +227,11 @@ function Section({ title, icon: Icon, accent, children }: { title: string; icon:
 }
 
 function RowFragment({ channel, slots, nowOffsetPx, onSlotClick }: { channel: typeof channels[number]; slots: ScheduleSlot[]; nowOffsetPx: number; onSlotClick: (s: ScheduleSlot) => void }) {
-  const dayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+  const dayStart = (() => {
+    const d = slots[0]?.startsAt ? new Date(slots[0].startsAt) : new Date();
+    d.setHours(0,0,0,0);
+    return d.getTime();
+  })();
   return (
     <>
       <div className="bg-black/20 border-b border-r border-white/5 p-3 flex items-center gap-3 sticky left-0 z-10">

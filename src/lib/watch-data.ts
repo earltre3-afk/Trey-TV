@@ -79,12 +79,20 @@ const baseDate = (() => {
 const at = (h: number, m = 0) => new Date(baseDate.getTime() + (h * 60 + m) * 60_000).toISOString();
 
 // ---- Shows + episodes ----
+function stableCount(seed: string, min: number, span: number) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return min + (hash % span);
+}
+
 function mkEp(p: Partial<Episode> & Pick<Episode, "id" | "showId" | "channelId" | "title" | "duration" | "thumb" | "airTime" | "number">): Episode {
   return {
     season: 1,
     isFree: p.number <= 2,
-    comments: Math.floor(Math.random() * 320 + 12),
-    reactions: Math.floor(Math.random() * 4200 + 80),
+    comments: stableCount(p.id, 12, 320),
+    reactions: stableCount(`${p.id}:reactions`, 80, 4200),
     ...p,
   };
 }
@@ -177,9 +185,7 @@ function genScheduleForChannel(ch: Channel): ScheduleSlot[] {
     const ep = eps[i % eps.length];
     const start = new Date(cursor);
     const end = new Date(cursor.getTime() + ep.duration * 60_000);
-    const now = Date.now();
-    const status: ScheduleSlot["status"] = end.getTime() < now ? "aired" : start.getTime() <= now ? "live" : "upcoming";
-    slots.push({ channelId: ch.id, startsAt: start.toISOString(), endsAt: end.toISOString(), episodeId: ep.id, status });
+    slots.push({ channelId: ch.id, startsAt: start.toISOString(), endsAt: end.toISOString(), episodeId: ep.id, status: "upcoming" });
     cursor = end;
     i++;
   }
