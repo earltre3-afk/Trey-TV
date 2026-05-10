@@ -19,11 +19,24 @@ function AuthCallback() {
         return;
       }
 
-      const code = params.get("code");
+      const code      = params.get("code");
+      const tokenHash = params.get("token_hash");
+      const otpType   = params.get("type");
       let userId: string | undefined;
       let accessToken: string | undefined;
 
-      if (code) {
+      if (tokenHash && otpType) {
+        // Magic link (email OTP) path — verify the token hash directly
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType as any });
+        if (!error && data.session) {
+          userId      = data.session.user.id;
+          accessToken = data.session.access_token;
+        } else {
+          nav({ to: "/login" });
+          return;
+        }
+      } else if (code) {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error && data.session) {
           userId      = data.session.user.id;

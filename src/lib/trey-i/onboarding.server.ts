@@ -23,6 +23,7 @@ export type SafeProfileFields = {
   allow_top_three_adds?: boolean;
   bio?: string | null;
   content_frequency?: string | null;
+  date_of_birth?: string | null;
   display_name?: string;
   fan_type?: string | null;
   favorite_categories?: string[] | null;
@@ -138,6 +139,9 @@ function sanitizeSafeProfileFields(fields: Record<string, unknown>, options: { r
 
   const location = cleanText(fields.location, 50);
   if (location) updates.location = location;
+
+  const rawDob = cleanText(fields.date_of_birth, 20);
+  if (rawDob && /^\d{4}-\d{2}-\d{2}$/.test(rawDob)) updates.date_of_birth = rawDob;
 
   const categories = cleanList(fields.favorite_categories);
   if (categories.length) updates.favorite_categories = categories;
@@ -445,4 +449,28 @@ export const finalizeOnboarding = createServerFn({ method: "POST" })
     }
 
     return { publicProfileUid };
+  });
+
+export const treyICheckUsername = createServerFn({ method: "POST" })
+  .inputValidator((input: { username: string }) => ({
+    username: typeof input?.username === "string" ? input.username : "",
+  }))
+  .handler(async ({ data }): Promise<{ username: string; available: boolean; reason: string }> => {
+    const raw = data.username
+      .toLowerCase().replace(/^@/, "").replace(/\s+underscore\s+/g, "_")
+      .replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_")
+      .replace(/_+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30);
+
+    if (!USERNAME_PATTERN.test(raw)) return { username: raw, available: false, reason: "invalid" };
+
+    try {
+      const supabase = getTreyIServiceClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: existing } = await (supabase as any)
+        .from("profiles").select("id").ilike("username", raw).maybeSingle();
+      if (existing) return { username: raw, available: false, reason: "taken" };
+      return { username: raw, available: true, reason: "available" };
+    } catch {
+      return { username: raw, available: true, reason: "unchecked" };
+    }
   });

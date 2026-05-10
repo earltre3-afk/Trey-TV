@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -9,14 +9,17 @@ export const Route = createFileRoute("/login")({
   component: Login,
   head: () => ({
     meta: [
-      { title: "Log in — Trey TV" },
-      { name: "description", content: "Log into your Trey TV account." },
+      { title: "Authentication — Trey TV" },
+      { name: "description", content: "Log into or sign up for your Trey TV account." },
     ],
   }),
 });
 
 function Login() {
   const nav = useNavigate();
+  // We use strict: false so we don't have to define a validateSearch schema just for this optional param
+  const search: any = useSearch({ strict: false });
+  const [isSignUp, setIsSignUp] = useState(search?.signup === "true" || search?.signup === true);
   const [showPw, setShowPw] = useState(false);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -51,15 +54,40 @@ function Login() {
     nav({ to: (next as any) || "/" });
   };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handlePasswordAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !pw) return toast.error("Enter email and password");
     setBusy(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+
+    if (isSignUp) {
+      const { data, error } = await supabase.auth.signUp({ email, password: pw });
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      if (data?.session) {
+        toast.success("Account created successfully!");
+        await postAuthRedirect(data.user?.id);
+      } else {
+        toast.success("Account created! Check your email for a verification link.");
+      }
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      toast.success("Signed in");
+      await postAuthRedirect(data.user?.id);
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email) return toast.error("Enter your email address first");
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Signed in");
-    await postAuthRedirect(data.user?.id);
+    toast.success("Magic link sent! Check your inbox.");
   };
 
   const handleGoogle = async () => {
@@ -69,7 +97,6 @@ function Login() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) { setBusy(false); toast.error("Google sign-in failed"); }
-    // browser navigates away to Google — /auth/callback handles the rest
   };
 
   return (
@@ -83,11 +110,13 @@ function Login() {
 
         <div className="mt-6 text-center">
           <Logo className="h-16 mx-auto" />
-          <h1 className="mt-2 text-2xl font-bold">Welcome back</h1>
-          <div className="text-xs text-muted-foreground">Log in to keep building your universe.</div>
+          <h1 className="mt-2 text-2xl font-bold">{isSignUp ? "Create your account" : "Welcome back"}</h1>
+          <div className="text-xs text-muted-foreground">
+            {isSignUp ? "Join Trey TV and start building your universe." : "Log in to keep building your universe."}
+          </div>
         </div>
 
-        <form onSubmit={handleEmailLogin} className="mt-6 rounded-3xl liquid-glass border border-white/10 p-5 space-y-4">
+        <form onSubmit={handlePasswordAuth} className="mt-6 rounded-3xl liquid-glass border border-white/10 p-5 space-y-4">
           <label className="block">
             <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1">EMAIL</div>
             <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-10 focus-within:border-primary/50 transition">
@@ -96,20 +125,29 @@ function Login() {
             </div>
           </label>
           <label className="block">
-            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1">PASSWORD</div>
+            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1">PASSWORD <span className="opacity-50 lowercase tracking-normal">(only for password auth)</span></div>
             <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-10 focus-within:border-primary/50 transition">
               <Lock className="size-4 text-muted-foreground" />
               <input value={pw} onChange={(e) => setPw(e.target.value)} type={showPw ? "text" : "password"} placeholder="••••••••" className="flex-1 bg-transparent text-sm focus:outline-none" />
               <button type="button" onClick={() => setShowPw((v) => !v)} className="text-muted-foreground hover:text-foreground">{showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
             </div>
           </label>
-          <button type="submit" disabled={busy} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press flex items-center justify-center gap-1.5 disabled:opacity-60">
-            <Sparkles className="size-4" /> {busy ? "Signing in…" : "Log in"}
-          </button>
+
+          <div className="flex flex-col gap-2 pt-2">
+            <button type="submit" disabled={busy} className="w-full h-11 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press flex items-center justify-center gap-1.5 disabled:opacity-60">
+              <Sparkles className="size-4" /> {busy ? "Working…" : isSignUp ? "Sign up with Password" : "Log in with Password"}
+            </button>
+            
+            <button type="button" onClick={handleMagicLink} disabled={busy} className="w-full h-11 rounded-xl text-sm font-bold bg-white/5 text-white hover:bg-white/10 border border-white/10 transition flex items-center justify-center gap-1.5 tilt-press disabled:opacity-60">
+              <Mail className="size-4" /> Send Magic Link
+            </button>
+          </div>
+
           <div className="relative my-1">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-white/10" /></div>
             <div className="relative flex justify-center"><span className="px-2 bg-background/40 text-[10px] tracking-[0.25em] text-muted-foreground">OR</span></div>
           </div>
+          
           <button
             type="button"
             onClick={handleGoogle}
@@ -124,8 +162,13 @@ function Login() {
             </svg>
             Continue with Google
           </button>
-          <div className="text-center text-xs text-muted-foreground">
-            New here? <Link to="/onboarding" className="text-primary font-semibold hover:underline">Start onboarding</Link>
+          
+          <div className="text-center text-xs text-muted-foreground pt-2">
+            {isSignUp ? (
+              <>Already have an account? <button type="button" onClick={() => setIsSignUp(false)} className="text-primary font-semibold hover:underline">Log in</button></>
+            ) : (
+              <>New here? <button type="button" onClick={() => setIsSignUp(true)} className="text-primary font-semibold hover:underline">Create an account</button></>
+            )}
           </div>
         </form>
 

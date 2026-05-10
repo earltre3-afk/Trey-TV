@@ -46,6 +46,71 @@ function log(level: "info" | "warn" | "error", code: string, detail?: object) {
   else console.info(...args);
 }
 
+// Unauthenticated version for onboarding — no user session required.
+// Auth happens at the end of onboarding when the profile is saved.
+export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" })
+  .handler(async (): Promise<ElevenLabsSessionResult> => {
+    try {
+      const apiKey = process.env.ELEVENLABS_API_KEY?.trim() || "";
+      const agentId = process.env.ELEVENLABS_AGENT_ID?.trim() || "";
+
+      if (!apiKey || !agentId) {
+        log("warn", "ELEVENLABS_NOT_CONFIGURED (onboarding)");
+        return { ok: false, code: "ELEVENLABS_NOT_CONFIGURED", message: FALLBACK_MESSAGE };
+      }
+
+      for (const path of SIGNED_URL_PATHS) {
+        const url = `https://api.elevenlabs.io/v1/convai/conversation/${path}?agent_id=${encodeURIComponent(agentId)}`;
+        let upstream: Response;
+        try {
+          upstream = await fetch(url, {
+            method: "GET",
+            headers: { "xi-api-key": apiKey },
+            cache: "no-store",
+          });
+        } catch {
+          continue;
+        }
+
+        if (upstream.status === 404 && path === "get_signed_url") continue;
+
+        if (upstream.status === 401 || upstream.status === 403) {
+          return {
+            ok: false,
+            code: upstream.status === 401 ? "ELEVENLABS_API_KEY_INVALID" : "ELEVENLABS_API_KEY_FORBIDDEN",
+            message: FALLBACK_MESSAGE,
+          };
+        }
+
+        if (!upstream.ok) {
+          return { ok: false, code: "ELEVENLABS_SESSION_CREATE_FAILED", message: FALLBACK_MESSAGE };
+        }
+
+        const payload = (await upstream.json().catch(() => null)) as {
+          signed_url?: unknown; signedUrl?: unknown;
+          conversation_id?: unknown; conversationId?: unknown;
+        } | null;
+
+        if (!payload) return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+
+        const signedUrl =
+          typeof payload.signed_url === "string" ? payload.signed_url
+          : typeof payload.signedUrl === "string" ? payload.signedUrl : "";
+
+        if (!signedUrl) return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+
+        return { ok: true, provider: "elevenlabs", signedUrl, expiresInSeconds: 900 };
+      }
+
+      return { ok: false, code: "ELEVENLABS_SESSION_CREATE_FAILED", message: FALLBACK_MESSAGE };
+    } catch (error) {
+      log("error", "UNKNOWN_ELEVENLABS_ERROR (onboarding)", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: false, code: "UNKNOWN_ELEVENLABS_ERROR", message: FALLBACK_MESSAGE };
+    }
+  });
+
 export const treyIElevenLabsSession = createServerFn({ method: "POST" })
   .inputValidator(validateElevenLabsSessionInput)
   .handler(async ({ data }): Promise<ElevenLabsSessionResult> => {

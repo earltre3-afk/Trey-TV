@@ -1,6 +1,9 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { Mic, Sparkles, ArrowRight, Wand2, Compass, Crown, Eye } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
+import { supabase } from "@/integrations/supabase/client";
+
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
   head: () => ({
@@ -13,6 +16,34 @@ export const Route = createFileRoute("/onboarding")({
 
 function Onboarding() {
   const nav = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [authReady, setAuthReady] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        try { sessionStorage.setItem("treytv_post_auth_redirect", "/onboarding"); } catch {}
+        nav({ to: "/login" });
+      } else {
+        setAuthReady(true);
+      }
+    }).catch(() => nav({ to: "/login" }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Show child routes (voice, manual) while auth check completes — they manage their own auth
+  if (pathname.startsWith("/onboarding/")) return <Outlet />;
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="glass border border-white/10 rounded-3xl px-10 py-8 text-center space-y-3">
+          <div className="size-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -65,7 +96,7 @@ function Onboarding() {
           {/* Manual path */}
           <button
             type="button"
-            onClick={() => nav({ to: "/login" })}
+            onClick={() => nav({ to: "/onboarding/manual" })}
             className="group relative text-left rounded-3xl liquid-glass liquid-hover neon-border overflow-hidden p-6 sm:p-8"
           >
             <div className="pointer-events-none absolute -top-16 -right-16 size-56 rounded-full bg-[oklch(0.82_0.15_215_/_0.3)] blur-3xl group-hover:bg-[oklch(0.82_0.15_215_/_0.5)] transition" />
@@ -76,7 +107,7 @@ function Onboarding() {
               <div className="mt-4 text-[10px] tracking-[0.3em] text-[oklch(0.82_0.15_215)]">CLASSIC · MANUAL</div>
               <h3 className="mt-1 text-2xl font-bold">Manual Setup</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                The familiar flow. Enter your info, upload a photo, pick your interests, finish setup. Just polished.
+                The familiar flow. Enter your info, pick your interests, finish setup. Just polished.
               </p>
               <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">
                 <li className="flex items-center gap-2"><Sparkles className="size-3 text-[oklch(0.82_0.15_215)]" /> Step-by-step form</li>
@@ -84,7 +115,7 @@ function Onboarding() {
                 <li className="flex items-center gap-2"><Eye className="size-3 text-[oklch(0.7_0.25_340)]" /> Visual preview at the end</li>
               </ul>
               <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full liquid-glass border border-white/15 font-semibold text-sm">
-                Sign up manually <ArrowRight className="size-4" />
+                Set up manually <ArrowRight className="size-4" />
               </div>
             </div>
           </button>

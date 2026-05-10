@@ -42,6 +42,7 @@ import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
+import { Route as OnboardingManualRouteImport } from './routes/onboarding.manual'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
@@ -240,6 +241,11 @@ const SettingsVerificationRoute = SettingsVerificationRouteImport.update({
 const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   id: '/voice',
   path: '/voice',
+  getParentRoute: () => OnboardingRoute,
+} as any)
+const OnboardingManualRoute = OnboardingManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => OnboardingRoute,
 } as any)
 const MusicReviewQueueRoute = MusicReviewQueueRouteImport.update({
@@ -476,6 +482,7 @@ export interface FileRoutesByFullPath {
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
@@ -544,6 +551,7 @@ export interface FileRoutesByTo {
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
@@ -614,6 +622,7 @@ export interface FileRoutesById {
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
@@ -685,6 +694,7 @@ export interface FileRouteTypes {
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/onboarding/manual'
     | '/onboarding/voice'
     | '/settings/verification'
     | '/u/$uid'
@@ -753,6 +763,7 @@ export interface FileRouteTypes {
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/onboarding/manual'
     | '/onboarding/voice'
     | '/settings/verification'
     | '/u/$uid'
@@ -822,6 +833,7 @@ export interface FileRouteTypes {
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/onboarding/manual'
     | '/onboarding/voice'
     | '/settings/verification'
     | '/u/$uid'
@@ -1100,6 +1112,13 @@ declare module '@tanstack/react-router' {
       path: '/voice'
       fullPath: '/onboarding/voice'
       preLoaderRoute: typeof OnboardingVoiceRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
+    '/onboarding/manual': {
+      id: '/onboarding/manual'
+      path: '/manual'
+      fullPath: '/onboarding/manual'
+      preLoaderRoute: typeof OnboardingManualRouteImport
       parentRoute: typeof OnboardingRoute
     }
     '/music-review/queue': {
@@ -1451,10 +1470,12 @@ const MusicReviewRouteWithChildren = MusicReviewRoute._addFileChildren(
 )
 
 interface OnboardingRouteChildren {
+  OnboardingManualRoute: typeof OnboardingManualRoute
   OnboardingVoiceRoute: typeof OnboardingVoiceRoute
 }
 
 const OnboardingRouteChildren: OnboardingRouteChildren = {
+  OnboardingManualRoute: OnboardingManualRoute,
   OnboardingVoiceRoute: OnboardingVoiceRoute,
 }
 
