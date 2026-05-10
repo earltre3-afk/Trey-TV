@@ -29,7 +29,7 @@ prescribe-me.tsx                  — Prescribe Me
 watch.$id.tsx                     — Video watch page
 channel.$handle.tsx               — Channel page
 category.$slug.tsx                — Category page
-onboarding.tsx                    — Onboarding entry (UI-only — two path buttons: voice → /onboarding/voice, manual → /signup; no Supabase; Lovable UI preserved)
+onboarding.tsx                    — Onboarding entry (UI-only — two path buttons: voice → /onboarding/voice, manual → /login; no Supabase; Lovable UI preserved; commit b0681c3 fixed manual path from /signup → /login)
 onboarding.voice.tsx              — Trey-I voice onboarding (REAL — wired to text-first server flow via `startIntakeSession` + `profileSetupTurn`; access token from browser session; `assistant.message` rendered in existing Lovable UI; non-blocking TTS playback via `treyITts` fire-and-forget after each response (failure silent); `confirmedFields` drives progress chips; completion redirects to `/u/{publicProfileUid}?tour=1`; mic button visual-only; no ElevenLabs/Gemini Live; tsc ✅ build ✅)
 creator-studio.tsx                — Creator Studio shell
 creator-studio.index.tsx          — Creator Studio home (REAL — channels/shows/episodes via use-creator-studio.ts, tsc ✅ build ✅; metric cards remain hardcoded)
@@ -57,7 +57,7 @@ use-posts.ts                  — Feed posts (REAL)
 use-profile.ts                — Public profile (REAL — SELECT by `public_profile_uid`; `is_creator` removed from `SupabaseProfile` type — column does not exist in schema)
 use-supabase-reactions.ts     — Post reactions (REAL)
 use-current-user.ts           — Current user profile bridge (REAL — tsc ✅ build ✅, Lovable UI unchanged)
-use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; browser SELECT + UPDATE read_at only; no browser INSERT)
+use-notifications.ts          — Supabase-backed notifications (REAL — notifications table, tsc ✅ build ✅; SELECT columns: id, type, message, read_at, created_at, post_id, metadata + actor profile join profiles!notifications_actor_id_fkey(display_name, username, avatar_url); unread count derived locally from read_at === null; markRead(id) optimistic local update then UPDATE read_at = now(); markAllRead() optimistic then UPDATE WHERE read_at IS NULL; signed-out users get empty state, no query; no browser INSERT/UPSERT/DELETE; no service-role key; commit b0681c3)
 use-rewards.ts                — Supabase-backed rewards (REAL — community_credit_balances + community_credit_events, tsc ✅ build ✅; SELECT only; no writes)
 use-creator-studio.ts         — Supabase-backed Creator Studio access + data (REAL — channels, shows, episodes, tsc ✅ build ✅; SELECT only; access gate via channels.owner_email + auth email; no writes)
 use-creator-submit.ts         — Supabase-backed Creator Studio submit (REAL — `creator_edit_projects` INSERT/UPDATE + `creator_post_queue` INSERT, tsc ✅ build ✅; queue row written only after valid `stream_uid` confirmed from DB; duplicate pre-check on `creator_id + edit_project_id`; queue failure non-fatal; no video upload; no Cloudflare Stream; submissions-store remains rollback layer)
@@ -79,6 +79,7 @@ comments-store.tsx            — Supabase-backed comments (REAL — user_post_c
 follow-store.tsx              — Supabase-backed follows (REAL — follows table, tsc ✅ build ✅; bumpWatch/topThree remain local-only)
 messages-store.tsx            — Supabase-backed DMs (REAL — direct_messages table, tsc ✅ build ✅; attachments/encryption/message_type out of scope this phase; `as any` cast due to missing generated Supabase table typings)
 activity-store.tsx            — LOCAL user action tracking only (reactions/saves/shares in localStorage — not notification inbox)
+notifications-store.ts        — Compatibility re-export shim → re-exports `useNotifications` from `src/hooks/use-notifications.ts`; no longer contains localStorage mock implementation (commit b0681c3)
 submissions-store.tsx         — Local optimistic/rollback layer (preserved — not deleted; real queue status comes from use-creator-post-queue.ts)
 creator-studio/upload.server.ts — Cloudflare Stream server function (REAL — createServerFn; reads CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_STREAM_API_TOKEN from process.env server-side only; returns safe upload response to browser; tsc ✅ build ✅)
 admin/post-queue.server.ts    — Admin creator post review + publishing activation server functions (REAL — createServerFn; `verifyAdmin` authenticates with auth client then checks `profiles.role = 'admin'` or `ADMIN_EMAILS`; service-role client constructed only after auth passes; `SUPABASE_SERVICE_ROLE_KEY` + `ADMIN_EMAILS` in process.env server-side only, no VITE_* prefix; on approval `reviewAdminPostQueue` publishes episode: SELECT by show_id + video_asset_id → UPDATE existing or INSERT new; `admin_publish_override = true` bypasses DB readiness trigger; rollback on episode failure reverts queue + project status; `episodes.edit_project_id` does not exist and is not used; Watch Now / Guide not touched; tsc ✅ build ✅)
