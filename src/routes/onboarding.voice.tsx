@@ -1,9 +1,10 @@
 import { ConversationProvider, useConversation } from "@elevenlabs/react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, CheckCircle, Keyboard, Mic, MicOff, Send, Shield, Sparkles } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, CheckCircle, CheckCircle2, Keyboard, Loader2, Mic, MicOff, Send, Shield, Sparkles } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { VoiceOrb, type VoiceState } from "@/components/onboarding/VoiceOrb";
+import { extractName, toTitleCase, cleanLocation, polishBio, polishAllFields } from "@/lib/trey-i/profile-polish";
+import { type VoiceState } from "@/components/onboarding/VoiceOrb";
 import { treyIElevenLabsOnboardingSession } from "@/lib/trey-i/elevenlabs-session.server";
 import { treyITts } from "@/lib/trey-i/tts.server";
 import { saveOnboardingProfile, finalizeOnboarding, treyICheckUsername } from "@/lib/trey-i/onboarding.server";
@@ -145,11 +146,12 @@ function parseDateOfBirth(input: string) {
 // ─── Review summary ───────────────────────────────────────────────────────────
 
 function buildReview(f: Fields): string {
+  const bio = f.bio ? polishBio(f.bio, { location: f.location ?? undefined }) : undefined;
   const parts = [
     `display name: ${f.display_name}`,
     `username: @${f.username}`,
   ];
-  if (f.bio)            parts.push(`bio: ${f.bio}`);
+  if (bio)              parts.push(`bio: ${bio}`);
   if (f.location)       parts.push(`location: ${f.location}`);
   if (f.date_of_birth)  parts.push(`birthday: ${f.date_of_birth}`);
   if (f.favorite_categories?.length) parts.push(`categories: ${f.favorite_categories.join(", ")}`);
@@ -195,17 +197,19 @@ async function clientTurn(
   if (stage === "ask_display_name") {
     if (yesRe.test(t) || noRe.test(t) || skipRe.test(t))
       return stay("Say the name you want people to see on Trey TV.");
-    const name = t.replace(/^my name is\s+/i, "").replace(/^call me\s+/i, "").trim().slice(0, 50);
+    const raw = t.replace(/^my name is\s+/i, "").replace(/^call me\s+/i, "").trim();
+    const name = toTitleCase(extractName(raw));
     if (name.length < 2) return stay("Say your profile name one more time for me.");
-    return { message: `I heard "${name}". Is that spelled right?`, stage: "confirm_display_name", fields, pending: { field: "display_name", value: name } };
+    return { message: `I heard "${name}". Is that right?`, stage: "confirm_display_name", fields, pending: { field: "display_name", value: name } };
   }
 
   if (stage === "confirm_display_name") {
     if (yesRe.test(t) && pending.value)
       return { message: "Saved. What username do you want on Trey TV?", stage: "ask_username", fields: { ...fields, display_name: String(pending.value) }, pending: {} };
-    const rep = (noRe.test(t) ? t.replace(noRe, "") : t).trim();
+    const repRaw = (noRe.test(t) ? t.replace(noRe, "") : t);
+    const rep = toTitleCase(extractName(repRaw));
     if (rep.length >= 2)
-      return { message: `Got it. I heard "${rep.slice(0, 50)}". Is that spelled right?`, stage: "confirm_display_name", fields, pending: { field: "display_name", value: rep.slice(0, 50) } };
+      return { message: `Got it. I heard "${rep}". Is that right?`, stage: "confirm_display_name", fields, pending: { field: "display_name", value: rep } };
     return { message: "Say your profile name one more time.", stage: "ask_display_name", fields, pending: {} };
   }
 
@@ -244,8 +248,11 @@ async function clientTurn(
   }
 
   if (stage === "confirm_bio") {
-    if (yesRe.test(t) && pending.value)
-      return { message: "Bio saved. Want to add your location? Say it now, or say skip.", stage: "ask_location", fields: { ...fields, bio: String(pending.value) }, pending: {} };
+    if (yesRe.test(t) && pending.value) {
+      const rawBio = String(pending.value).trim();
+      const cleanedBio = rawBio.charAt(0).toUpperCase() + rawBio.slice(1) + (!/[.!?]$/.test(rawBio) ? "." : "");
+      return { message: "Bio saved. Want to add your location? Say it now, or say skip.", stage: "ask_location", fields: { ...fields, bio: cleanedBio }, pending: {} };
+    }
     if (skipRe.test(t))
       return { message: "No bio for now. Want to add your location? Say it now, or say skip.", stage: "ask_location", fields, pending: {} };
     const bio = (noRe.test(t) ? t.replace(noRe, "") : t).trim().slice(0, 160);
@@ -257,7 +264,8 @@ async function clientTurn(
     if (skipRe.test(t))
       return { message: afterLocationMsg(), stage: "optional_offer", fields, pending: {} };
     if (yesRe.test(t) || noRe.test(t)) return stay("Say your location, or say skip.");
-    const loc = t.slice(0, 50);
+    const loc = cleanLocation(t);
+    if (loc.length < 2) return stay("Say your city or location, or say skip.");
     return { message: `I heard "${loc}". Should I save that?`, stage: "confirm_location", fields, pending: { field: "location", value: loc } };
   }
 
@@ -268,8 +276,8 @@ async function clientTurn(
     }
     if (skipRe.test(t))
       return { message: afterLocationMsg(), stage: "optional_offer", fields, pending: {} };
-    const loc = (noRe.test(t) ? t.replace(noRe, "") : t).trim().slice(0, 50);
-    if (loc) return { message: `Got it. "${loc}". Should I save that?`, stage: "confirm_location", fields, pending: { field: "location", value: loc } };
+    const loc = cleanLocation((noRe.test(t) ? t.replace(noRe, "") : t));
+    if (loc.length >= 2) return { message: `Got it, "${loc}". Should I save that?`, stage: "confirm_location", fields, pending: { field: "location", value: loc } };
     return { message: "Say your location one more time, or say skip.", stage: "ask_location", fields, pending: {} };
   }
 
@@ -531,6 +539,433 @@ function playAssistantAudio(text: string) {
     .catch(() => {});
 }
 
+// ─── Setup path ───────────────────────────────────────────────────────────────
+
+const SETUP_STEPS: Array<{ key: keyof Fields; label: string }> = [
+  { key: "display_name", label: "Name" },
+  { key: "username",     label: "Handle" },
+  { key: "date_of_birth", label: "Birth" },
+  { key: "location",     label: "City" },
+  { key: "favorite_categories", label: "Taste" },
+];
+
+function stepDone(fields: Fields, key: keyof Fields): boolean {
+  const v = fields[key];
+  if (v === undefined || v === "") return false;
+  if (Array.isArray(v)) return v.length > 0;
+  return true;
+}
+
+// ─── Plasma Orb ───────────────────────────────────────────────────────────────
+// Replaces the mic icon with a full SVG energy-sphere that reacts to voice state.
+
+const ORB_C = 120;  // center x/y
+const ORB_R = 100;  // sphere radius
+const ORB_W = 240;  // svg width
+const ORB_H = 288;  // svg height (includes ground reflection)
+
+// Audio-bar layout
+const BARS      = 20;
+const BAR_W     = 2.2;
+const BAR_GAP   = 3.6;
+const BARS_SPAN = BARS * (BAR_W + BAR_GAP) - BAR_GAP;
+
+// Per-bar config: animation name, duration, delay
+const BAR_ANIMS = ["orb-bar-a","orb-bar-b","orb-bar-c","orb-bar-b","orb-bar-a"] as const;
+const BAR_DURS  = [0.55, 0.72, 0.82, 0.65, 0.60];
+
+// Ring config: [rx ratio, ry ratio, tiltDeg, durationBase, direction]
+const RINGS = [
+  [0.91, 0.225, -26, 7.5, "orb-ring-cw" ],
+  [0.78, 0.200,  17, 5.2, "orb-ring-cw" ],
+  [0.65, 0.180,  -9, 9.0, "orb-ring-ccw"],
+  [0.52, 0.160,  33, 4.0, "orb-ring-cw" ],
+  [0.38, 0.130, -43, 3.4, "orb-ring-ccw"],
+] as const;
+
+// Rim spark positions (degrees)
+const SPARKS = [0, 72, 144, 216, 288];
+const SPARK_COLORS = ["#35E6FF","#FFC85A","#35E6FF","#9B7FFF","#FFC85A"];
+
+function GalaxyOrb({ state }: { state: VoiceState }) {
+  const isActive     = state === "listening" || state === "speaking";
+  const isProcessing = state === "processing";
+  const isDone       = state === "completed";
+
+  // Rings spin faster when voice is active
+  const speed = isActive ? 0.52 : 1;
+
+  // Gradient IDs — defined once in <defs>
+  const C = ORB_C;
+  const R = ORB_R;
+
+  return (
+    <div className="relative select-none" style={{ width: ORB_W, height: ORB_H }}>
+      <svg
+        width={ORB_W}
+        height={ORB_H}
+        viewBox={`0 0 ${ORB_W} ${ORB_H}`}
+        aria-hidden
+        style={{ overflow: "visible" }}
+      >
+        <defs>
+          {/* Sphere interior fill */}
+          <radialGradient id="pOrbBg" cx="37%" cy="31%" r="66%">
+            <stop offset="0%"   stopColor="#192860" />
+            <stop offset="38%"  stopColor="#0d1835" />
+            <stop offset="72%"  stopColor="#070e22" />
+            <stop offset="100%" stopColor="#030810" />
+          </radialGradient>
+
+          {/* Ring stroke gradients */}
+          <linearGradient id="pGold" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#FFC85A" stopOpacity="0" />
+            <stop offset="22%"  stopColor="#FFC85A" stopOpacity="0.88" />
+            <stop offset="50%"  stopColor="#FFE490" stopOpacity="1" />
+            <stop offset="78%"  stopColor="#FFC85A" stopOpacity="0.88" />
+            <stop offset="100%" stopColor="#FFC85A" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="pBlue" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#35E6FF" stopOpacity="0" />
+            <stop offset="22%"  stopColor="#35E6FF" stopOpacity="0.85" />
+            <stop offset="50%"  stopColor="#88EEFF" stopOpacity="1" />
+            <stop offset="78%"  stopColor="#35E6FF" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#35E6FF" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="pPurple" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stopColor="#7A5CFF" stopOpacity="0" />
+            <stop offset="22%"  stopColor="#7A5CFF" stopOpacity="0.85" />
+            <stop offset="50%"  stopColor="#A888FF" stopOpacity="1" />
+            <stop offset="78%"  stopColor="#7A5CFF" stopOpacity="0.85" />
+            <stop offset="100%" stopColor="#7A5CFF" stopOpacity="0" />
+          </linearGradient>
+
+          {/* Center core */}
+          <radialGradient id="pCore" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#FFFFFF" />
+            <stop offset="22%"  stopColor="#B8F4FF" stopOpacity="0.96" />
+            <stop offset="58%"  stopColor="#35E6FF" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="#35E6FF" stopOpacity="0" />
+          </radialGradient>
+
+          {/* Outer sphere glow ring */}
+          <radialGradient id="pRimGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="55%" stopColor="transparent" />
+            <stop offset="100%" stopColor="#1060CC" stopOpacity="0.22" />
+          </radialGradient>
+
+          {/* SVG blur / glow filters */}
+          <filter id="pGfSoft" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="1.6" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="pGfStrong" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="pGfBloom" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="9" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+
+          {/* Clip to sphere boundary */}
+          <clipPath id="pOrbClip">
+            <circle cx={C} cy={C} r={R} />
+          </clipPath>
+        </defs>
+
+        {/* ── Outer halo rings ── */}
+        <circle cx={C} cy={C} r={R + 26} fill="none" stroke="#1E4090" strokeWidth="0.55" opacity="0.48" />
+        <circle cx={C} cy={C} r={R + 44} fill="none" stroke="#142870" strokeWidth="0.38" opacity="0.30" />
+        <circle cx={C} cy={C} r={R + 62} fill="none" stroke="#0e1f52" strokeWidth="0.25" opacity="0.18" />
+
+        {/* ── Sphere outer glow ── */}
+        <circle cx={C} cy={C} r={R + 8}  fill="url(#pRimGlow)" />
+        <circle cx={C} cy={C} r={R + 1}  fill="none" stroke="#35E6FF"
+          strokeWidth="1.4" opacity={isActive ? 0.55 : 0.28} filter="url(#pGfSoft)" />
+
+        {/* ── Active bloom ── */}
+        {isActive && (
+          <circle cx={C} cy={C} r={R + 14} fill="none" stroke="#35E6FF"
+            strokeWidth="1" opacity="0.18" filter="url(#pGfBloom)" />
+        )}
+
+        {/* ── Main sphere fill ── */}
+        <circle cx={C} cy={C} r={R} fill="url(#pOrbBg)" />
+
+        {/* ── Inner clipped content ── */}
+        <g clipPath="url(#pOrbClip)">
+
+          {/* Swirling energy rings */}
+          {RINGS.map(([rxR, ryR, tilt, durBase, animName], i) => {
+            const gradId = i % 3 === 0 ? "url(#pGold)" : i % 3 === 1 ? "url(#pBlue)" : "url(#pPurple)";
+            const sw = i < 2 ? 2.4 : i < 4 ? 2.0 : 1.5;
+            return (
+              <g
+                key={i}
+                style={{
+                  transformOrigin: `${C}px ${C}px`,
+                  animationName: animName,
+                  animationDuration: `${durBase * speed}s`,
+                  animationTimingFunction: "linear",
+                  animationIterationCount: "infinite",
+                }}
+              >
+                <ellipse
+                  cx={C} cy={C}
+                  rx={R * rxR} ry={R * ryR}
+                  fill="none"
+                  stroke={gradId}
+                  strokeWidth={sw}
+                  transform={`rotate(${tilt} ${C} ${C})`}
+                  filter="url(#pGfSoft)"
+                />
+              </g>
+            );
+          })}
+
+          {/* ── Audio bars (Siri-style wave) — active only ── */}
+          {isActive && Array.from({ length: BARS }).map((_, i) => {
+            const bx = C - BARS_SPAN / 2 + i * (BAR_W + BAR_GAP);
+            const color = i % 3 === 0 ? "#FFC85A" : i % 3 === 1 ? "#35E6FF" : "#A080FF";
+            const anim  = BAR_ANIMS[i % BAR_ANIMS.length];
+            const dur   = BAR_DURS[i % BAR_DURS.length];
+            const delay = (i * 0.045) % 0.54;
+            return (
+              <rect
+                key={i}
+                x={bx} y={C - 1}
+                width={BAR_W} height={2}
+                rx="1"
+                fill={color}
+                opacity="0.92"
+                style={{
+                  transformOrigin: `${bx + BAR_W / 2}px ${C}px`,
+                  animationName: anim,
+                  animationDuration: `${dur}s`,
+                  animationDelay: `${delay}s`,
+                  animationTimingFunction: "ease-in-out",
+                  animationIterationCount: "infinite",
+                } as React.CSSProperties}
+              />
+            );
+          })}
+
+          {/* ── Center star core ── */}
+          <circle
+            cx={C} cy={C} r={16}
+            fill="url(#pCore)"
+            filter="url(#pGfStrong)"
+            style={{
+              transformOrigin: `${C}px ${C}px`,
+              animationName: "orb-core-breathe",
+              animationDuration: isActive ? "1.3s" : "2.8s",
+              animationTimingFunction: "ease-in-out",
+              animationIterationCount: "infinite",
+            } as React.CSSProperties}
+          />
+
+          {/* ── Top specular highlight ── */}
+          <ellipse
+            cx={C - 18} cy={C - R * 0.44}
+            rx={R * 0.28} ry={R * 0.1}
+            fill="white" opacity="0.07"
+          />
+        </g>
+
+        {/* ── Glass sphere edge ── */}
+        <circle cx={C} cy={C} r={R} fill="none" stroke="rgba(255,255,255,0.09)" strokeWidth="1.5" />
+
+        {/* ── Rotating gold rim band ── */}
+        <g style={{
+          transformOrigin: `${C}px ${C}px`,
+          animationName: "orb-ring-cw",
+          animationDuration: `${15 * speed}s`,
+          animationTimingFunction: "linear",
+          animationIterationCount: "infinite",
+        }}>
+          <path
+            d={`M ${C - R} ${C} A ${R} ${R} 0 0 1 ${C + R} ${C}`}
+            fill="none"
+            stroke="url(#pGold)"
+            strokeWidth="1.8"
+            opacity="0.6"
+            filter="url(#pGfSoft)"
+          />
+        </g>
+
+        {/* ── Rim spark dots ── */}
+        {SPARKS.map((deg, i) => {
+          const rad = (deg * Math.PI) / 180;
+          const px = C + (R - 1) * Math.cos(rad);
+          const py = C + (R - 1) * Math.sin(rad);
+          return (
+            <circle
+              key={i}
+              cx={px} cy={py} r="2.5"
+              fill={SPARK_COLORS[i]}
+              opacity="0.65"
+              filter="url(#pGfSoft)"
+              style={{ animation: `orb-rim-dot ${1.5 + i * 0.35}s ease-in-out ${i * 0.45}s infinite` }}
+            />
+          );
+        })}
+
+        {/* ── Completed state overlay ── */}
+        {isDone && (
+          <>
+            <circle cx={C} cy={C} r={R} fill="none" stroke="#4ADE80" strokeWidth="2" opacity="0.6" filter="url(#pGfSoft)" />
+            <circle cx={C} cy={C} r={18} fill="#22C55E" opacity="0.92" filter="url(#pGfStrong)" />
+            <path
+              d={`M ${C - 9} ${C} L ${C - 2} ${C + 7} L ${C + 9} ${C - 7}`}
+              fill="none" stroke="white" strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round"
+            />
+          </>
+        )}
+
+        {/* ── Processing spinner dot ── */}
+        {isProcessing && (
+          <g style={{
+            transformOrigin: `${C}px ${C}px`,
+            animationName: "orb-ring-cw",
+            animationDuration: "0.9s",
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+          }}>
+            <circle cx={C} cy={C - R + 9} r="5.5" fill="#35E6FF" opacity="0.92" filter="url(#pGfSoft)" />
+          </g>
+        )}
+
+        {/* ── Ground reflection rings ── */}
+        <ellipse cx={C} cy={C + R + 12} rx={R * 0.7}  ry="5"   fill="none" stroke="#35E6FF" strokeWidth="0.7" opacity="0.28" />
+        <ellipse cx={C} cy={C + R + 21} rx={R * 0.50} ry="3.5" fill="none" stroke="#FFC85A" strokeWidth="0.5" opacity="0.18" />
+        <ellipse cx={C} cy={C + R + 29} rx={R * 0.32} ry="2.5" fill="none" stroke="#35E6FF" strokeWidth="0.4" opacity="0.12" />
+        <circle  cx={C} cy={C + R + 36} r="3.5"
+          fill="#35E6FF" opacity="0.28" filter="url(#pGfStrong)"
+        />
+
+        {/* ── Scattered star particles (outside sphere) ── */}
+        {([
+          [C - 82, C - 68, 2.2, "2.1s", "0s"   ],
+          [C + 70, C - 55, 1.5, "1.7s", "0.6s"  ],
+          [C - 95, C + 10, 1.8, "2.4s", "1.1s"  ],
+          [C + 88, C + 25, 1.5, "1.9s", "0.3s"  ],
+          [C + 58, C + 68, 2.0, "2.2s", "0.9s"  ],
+          [C - 65, C + 72, 1.5, "1.8s", "1.4s"  ],
+        ] as [number,number,number,string,string][]).map(([px, py, r, dur, del], i) => (
+          <circle
+            key={i}
+            cx={px} cy={py} r={r}
+            fill="white"
+            style={{ animation: `trey-star-twinkle ${dur} ease-in-out ${del} infinite` }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+// ─── Galaxy backdrop ──────────────────────────────────────────────────────────
+
+function GalaxyBackdrop() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 0 }}>
+      <div
+        className="absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at 50% 22%, oklch(0.2 0.07 290 / 0.78) 0%, oklch(0.1 0.03 270 / 0.88) 50%, #05060B 100%)" }}
+      />
+      <div className="absolute rounded-full" style={{ top: "-20%", left: "-10%", width: "70vw", height: "70vw", background: "radial-gradient(circle, oklch(0.65 0.22 300 / 0.14), transparent 62%)", filter: "blur(60px)" }} />
+      <div className="absolute rounded-full" style={{ top: "5%", right: "-15%", width: "60vw", height: "60vw", background: "radial-gradient(circle, oklch(0.7 0.25 340 / 0.11), transparent 62%)", filter: "blur(80px)" }} />
+      <div className="absolute rounded-full" style={{ bottom: "0", left: "15%", width: "55vw", height: "38vw", background: "radial-gradient(circle, oklch(0.82 0.15 215 / 0.08), transparent 65%)", filter: "blur(70px)" }} />
+    </div>
+  );
+}
+
+// ─── Review panel ─────────────────────────────────────────────────────────────
+// Shows polished profile copy at the review stage. Manual edits here win over
+// auto-polished values — they go into fieldOverrides and are spread on top at save time.
+
+function ReviewPanel({
+  fields,
+  polishedBio,
+  overrides,
+  onOverride,
+  onConfirm,
+}: {
+  fields: Fields;
+  polishedBio: string;
+  overrides: Partial<Fields>;
+  onOverride: (key: keyof Fields, value: unknown) => void;
+  onConfirm: () => void;
+}) {
+  const name     = String(overrides.display_name ?? fields.display_name ?? "");
+  const handle   = String(overrides.username     ?? fields.username     ?? "");
+  const bioVal   = String(overrides.bio          ?? (polishedBio || fields.bio) ?? "");
+  const locVal   = String(overrides.location     ?? fields.location     ?? "");
+
+  return (
+    <div className="relative mx-4 mb-3 rounded-2xl liquid-glass border border-primary/25 overflow-hidden" style={{ zIndex: 1 }}>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+        <div className="text-[9px] tracking-[0.35em] text-primary font-bold">YOUR PROFILE PREVIEW</div>
+        <span className="text-[10px] text-muted-foreground/50">Tap any field to edit</span>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[9px] tracking-[0.2em] text-muted-foreground/50 mb-1 block">NAME</label>
+            <input
+              value={name}
+              onChange={(e) => onOverride("display_name", e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 h-9 text-sm font-semibold focus:outline-none focus:border-primary/40 transition"
+            />
+          </div>
+          <div>
+            <label className="text-[9px] tracking-[0.2em] text-muted-foreground/50 mb-1 block">HANDLE</label>
+            <div className="flex items-center bg-white/5 border border-white/10 rounded-xl h-9 px-2 focus-within:border-primary/40 transition">
+              <span className="text-muted-foreground text-sm">@</span>
+              <input
+                value={handle}
+                onChange={(e) =>
+                  onOverride("username", e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30))
+                }
+                className="flex-1 bg-transparent text-sm font-semibold focus:outline-none ml-1"
+              />
+            </div>
+          </div>
+        </div>
+        {(polishedBio || fields.bio) && (
+          <div>
+            <label className="text-[9px] tracking-[0.2em] text-muted-foreground/50 mb-1 block">BIO</label>
+            <textarea
+              value={bioVal}
+              onChange={(e) => onOverride("bio", e.target.value)}
+              rows={3}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary/40 transition leading-relaxed"
+            />
+          </div>
+        )}
+        {fields.location && (
+          <div>
+            <label className="text-[9px] tracking-[0.2em] text-muted-foreground/50 mb-1 block">LOCATION</label>
+            <input
+              value={locVal}
+              onChange={(e) => onOverride("location", e.target.value)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-3 h-9 text-sm focus:outline-none focus:border-primary/40 transition"
+            />
+          </div>
+        )}
+        <button
+          onClick={onConfirm}
+          className="w-full h-11 rounded-2xl bg-primary text-primary-foreground text-sm font-bold glow-gold flex items-center justify-center gap-2 mt-1"
+        >
+          <CheckCircle2 className="size-4" /> Looks Good — Save Profile
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Components ───────────────────────────────────────────────────────────────
 
 function VoiceOnboarding() {
@@ -554,14 +989,21 @@ function VoiceOnboardingInner() {
   const [thinking, setThinking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
   const [error,   setError]   = useState<string | null>(null);
+  // Manual edits made in the review panel — these win over auto-polished values at save time
+  const [fieldOverrides, setFieldOverrides] = useState<Partial<Fields>>({});
 
   const voiceStatusRef = useRef<VoiceStatus>("idle");
   const watchdogRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const processingRef  = useRef(false);
 
   const coreConfirmed = CORE_FIELDS.filter((f) => fields[f] !== undefined && fields[f] !== "").length;
-  const progress      = (coreConfirmed / CORE_FIELDS.length) * 100;
   const isAtReview    = !!fields.display_name && !!fields.username;
+
+  // Context-polished bio — available once location is captured, shown on review panel
+  const polishedBio = useMemo(
+    () => polishBio(fields.bio ?? "", { location: fields.location ?? undefined }),
+    [fields.bio, fields.location],
+  );
 
   useEffect(() => {
     supabase.auth.getSession()
@@ -612,15 +1054,21 @@ function VoiceOnboardingInner() {
 
       if (result.stage !== "complete") return;
 
-      // Persist all fields in sessionStorage as fallback
-      try { sessionStorage.setItem("treytv_voice_profile", JSON.stringify(result.fields)); } catch {}
+      // Build final save payload: auto-polish raw captures, then layer manual review edits on top
+      const finalFields = {
+        ...polishAllFields(result.fields as Record<string, unknown>),
+        ...fieldOverrides,
+      };
+
+      // Persist polished fields in sessionStorage as fallback for OAuth callback
+      try { sessionStorage.setItem("treytv_voice_profile", JSON.stringify(finalFields)); } catch {}
 
       const token = accessToken ?? await supabase.auth.getSession()
         .then(({ data }) => data.session?.access_token ?? null).catch(() => null);
 
       if (token) {
         try {
-          await saveOnboardingProfile({ data: { accessToken: token, fields: result.fields } });
+          await saveOnboardingProfile({ data: { accessToken: token, fields: finalFields } });
           const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken: token } });
           window.location.href = `/u/${publicProfileUid}?tour=1`;
           return;
@@ -647,7 +1095,7 @@ function VoiceOnboardingInner() {
       setThinking(false);
       processingRef.current = false;
     }
-  }, [stage, fields, pending, thinking, accessToken, checkUsername, nav]);
+  }, [stage, fields, pending, thinking, accessToken, checkUsername, nav, fieldOverrides]);
 
   const submit = useCallback(async () => {
     const text = draft.trim();
@@ -735,17 +1183,14 @@ function VoiceOnboardingInner() {
     : "idle";
 
   const micLabel         = voiceBusy ? "Connecting…" : voiceActive ? "Stop voice" : "Restart voice";
-  const inputPlaceholder = voiceActive || voiceBusy ? "Listening… (or type)" : "Type your answer…";
+  const inputPlaceholder = voiceActive || voiceBusy ? "Listening… or type" : "Type your answer…";
 
   // ── Disclosure gate ────────────────────────────────────────────────────────
   if (phase === "disclosure") {
     return (
-      <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-[80vmin] rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85_/_0.45),oklch(0.7_0.25_340_/_0.4),oklch(0.65_0.22_300_/_0.45),oklch(0.82_0.15_215_/_0.4),oklch(0.82_0.16_85_/_0.45))] blur-3xl opacity-60 animate-conic-spin" />
-          <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-background to-transparent" />
-        </div>
-        <div className="relative w-full max-w-md animate-rise">
+      <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center px-4" style={{ background: "#05060B" }}>
+        <GalaxyBackdrop />
+        <div className="relative w-full max-w-md animate-rise" style={{ zIndex: 1 }}>
           <div className="liquid-glass neon-border rounded-3xl p-8 space-y-6">
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="size-14 rounded-2xl conic-ring grid place-items-center bg-background">
@@ -798,157 +1243,153 @@ function VoiceOnboardingInner() {
 
   // ── Conversation UI ────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen w-full overflow-hidden">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-[80vmin] rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85_/_0.45),oklch(0.7_0.25_340_/_0.4),oklch(0.65_0.22_300_/_0.45),oklch(0.82_0.15_215_/_0.4),oklch(0.82_0.16_85_/_0.45))] blur-3xl opacity-60 animate-conic-spin" />
-        <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-background to-transparent" />
+    <div className="relative min-h-screen w-full overflow-hidden flex flex-col" style={{ background: "#05060B" }}>
+      <GalaxyBackdrop />
+
+      {/* Top bar */}
+      <div className="relative flex items-center justify-between px-4 pt-6 pb-2 shrink-0" style={{ zIndex: 1 }}>
+        <Link to="/onboarding" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
+          <ArrowLeft className="size-4" />
+        </Link>
+        <Logo className="h-7" />
+        <div className="size-9" />
       </div>
 
-      <div className="relative max-w-[720px] mx-auto px-4 pt-6 pb-12">
-        <div className="flex items-center justify-between">
-          <Link to="/onboarding" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
-            <ArrowLeft className="size-4" />
-          </Link>
-          <Logo className="h-7" />
-          <div className="size-9" />
+      {/* Header */}
+      <header className="relative text-center px-4 pt-1 pb-2 shrink-0" style={{ zIndex: 1 }}>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-[oklch(0.82_0.16_85_/_0.35)] bg-[oklch(0.82_0.16_85_/_0.08)] mb-2">
+          <Sparkles className="size-3 text-primary" />
+          <span className="text-[9px] tracking-[0.3em] text-primary font-bold">PROFILE CONCIERGE</span>
+        </div>
+        <h1 className="text-2xl font-extrabold leading-tight">
+          Build Your Trey TV Profile<br />
+          <span className="text-gradient-prescribe">with Trey-I</span>
+        </h1>
+      </header>
+
+      {/* Voice / Manual toggle */}
+      <div className="relative flex items-center justify-center gap-2 px-4 py-2 shrink-0" style={{ zIndex: 1 }}>
+        <span className="inline-flex items-center gap-1.5 px-5 h-9 rounded-full text-sm font-bold bg-primary text-primary-foreground glow-gold">
+          <Mic className="size-3.5" /> Voice Setup
+        </span>
+        <button
+          onClick={() => nav({ to: "/login" })}
+          className="inline-flex items-center gap-1.5 px-5 h-9 rounded-full text-sm font-medium liquid-glass border border-white/10 text-muted-foreground hover:text-foreground transition"
+        >
+          <Keyboard className="size-3.5" /> Manual Form
+        </button>
+      </div>
+
+      {/* Galaxy Orb hero */}
+      <div className="relative flex justify-center items-center py-5 shrink-0" style={{ zIndex: 1 }}>
+        <GalaxyOrb state={voiceState} />
+      </div>
+
+      {/* TREY-I SAYS card */}
+      <div className="relative mx-4 mb-3 rounded-2xl liquid-glass border border-white/10 p-4 shrink-0" style={{ zIndex: 1 }}>
+        <div className="text-[9px] tracking-[0.35em] text-primary font-bold mb-1.5">TREY-I SAYS</div>
+        <p className="text-base font-semibold leading-snug">{assistantMessage}</p>
+        {error && (
+          <div className="mt-2 text-xs text-red-400 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
+            {error}
+          </div>
+        )}
+      </div>
+
+      {/* Review panel — appears at review stage so the user can see and edit polished fields */}
+      {stage === "review" && (
+        <ReviewPanel
+          fields={fields}
+          polishedBio={polishedBio}
+          overrides={fieldOverrides}
+          onOverride={(key, value) => setFieldOverrides((prev) => ({ ...prev, [key]: value }))}
+          onConfirm={() => void advance("yes")}
+        />
+      )}
+
+      {/* Input bar */}
+      <div
+        className="relative mx-4 mb-3 rounded-2xl liquid-glass border border-white/10 p-2 flex items-center gap-2 focus-within:border-primary/40 transition shrink-0"
+        style={{ zIndex: 1 }}
+      >
+        <button
+          onClick={toggleMic}
+          disabled={voiceBusy}
+          aria-label={micLabel}
+          className={`size-10 rounded-full grid place-items-center shrink-0 transition ${
+            voiceActive
+              ? "bg-primary text-primary-foreground glow-gold"
+              : voiceBusy
+              ? "bg-primary/60 text-primary-foreground"
+              : "bg-white/5 text-muted-foreground hover:bg-white/10"
+          }`}
+        >
+          {voiceActive || voiceBusy ? <Mic className="size-4" /> : <MicOff className="size-4" />}
+        </button>
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !thinking && void submit()}
+          placeholder={inputPlaceholder}
+          disabled={thinking || stage === "complete"}
+          className="flex-1 bg-transparent text-sm focus:outline-none px-1 h-10 placeholder:text-muted-foreground/40 disabled:opacity-50"
+          autoFocus
+        />
+        <button
+          onClick={() => void submit()}
+          disabled={!draft.trim() || thinking || stage === "complete"}
+          className={`inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold shrink-0 transition ${
+            draft.trim() && !thinking && stage !== "complete"
+              ? "bg-primary text-primary-foreground glow-gold"
+              : "bg-white/5 text-muted-foreground"
+          }`}
+        >
+          {isAtReview && stage !== "complete" ? "Finish" : "Send"} <Send className="size-3" />
+        </button>
+      </div>
+
+      {/* Setup path progress */}
+      <div className="relative mx-4 pb-8 shrink-0" style={{ zIndex: 1 }}>
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-[9px] tracking-[0.22em] text-muted-foreground/50 font-medium">SETUP PATH</span>
+          <span className="text-[9px] tracking-[0.15em] text-muted-foreground/50">
+            {SETUP_STEPS.filter((s) => stepDone(fields, s.key)).length}/{SETUP_STEPS.length}
+          </span>
+        </div>
+        <div className="flex items-center">
+          {SETUP_STEPS.map((step, i) => {
+            const done = stepDone(fields, step.key);
+            return (
+              <Fragment key={step.key}>
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className={`size-6 rounded-full grid place-items-center border-2 transition-all duration-500 ${
+                    done
+                      ? "bg-primary border-primary shadow-[0_0_12px_oklch(0.82_0.16_85_/_0.65)]"
+                      : "bg-white/5 border-white/15"
+                  }`}>
+                    {done && <CheckCircle2 className="size-3.5 text-primary-foreground" />}
+                  </div>
+                  <span className={`text-[9px] tracking-wider font-medium transition-colors duration-500 ${done ? "text-primary" : "text-muted-foreground/35"}`}>
+                    {step.label}
+                  </span>
+                </div>
+                {i < SETUP_STEPS.length - 1 && (
+                  <div className={`flex-1 h-px mx-1 mb-4 transition-all duration-500 ${done ? "bg-primary/50" : "bg-white/10"}`} />
+                )}
+              </Fragment>
+            );
+          })}
         </div>
 
-        <header className="mt-6 text-center space-y-3 animate-rise">
-          <div className="text-[10px] tracking-[0.4em] text-primary">PROFILE CONCIERGE</div>
-          <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
-            Build Your Trey TV Profile{" "}
-            <span className="text-gradient-prescribe">With Trey-I</span>
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Trey-I guides you through setup one question at a time.
-            Every answer is confirmed before it's saved. Say "finish" to skip to review, or "switch to manual" anytime.
-          </p>
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <span className="inline-flex items-center gap-2 px-4 h-9 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold">
-              <Mic className="size-4" /> Voice Setup
-            </span>
-            <button
-              onClick={() => nav({ to: "/login" })}
-              className="inline-flex items-center gap-2 px-4 h-9 rounded-full text-sm font-semibold liquid-glass border border-white/10"
-            >
-              <Keyboard className="size-4" /> Manual Form
-            </button>
-          </div>
-        </header>
-
-        <div className="mt-7">
-          <div className="flex items-center justify-between mb-2 text-[11px] uppercase tracking-widest text-muted-foreground">
-            <span>REQUIRED FIELDS · {coreConfirmed}/{CORE_FIELDS.length}</span>
-            {isAtReview && stage !== "complete" && <span className="text-primary">Ready to finish</span>}
-          </div>
-          <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+        {/* Core field progress */}
+        <div className="mt-4 flex items-center gap-2">
+          <div className="flex-1 h-1 rounded-full bg-white/8 overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[oklch(0.82_0.16_85)] via-[oklch(0.7_0.25_340)] to-[oklch(0.82_0.15_215)] transition-all duration-500"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${(coreConfirmed / CORE_FIELDS.length) * 100}%` }}
             />
           </div>
-        </div>
-
-        <section className="mt-6 rounded-3xl liquid-glass neon-border p-5 sm:p-6 relative overflow-hidden">
-          <div className="absolute -top-24 -right-20 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.25)] blur-3xl pointer-events-none" />
-          <div className="relative">
-            <div className="text-[10px] tracking-[0.3em] text-primary mb-4">TREY-I VOICE MODULE</div>
-
-            <div className="grid sm:grid-cols-[180px_1fr] gap-5 items-center">
-              <div className="grid place-items-center">
-                <VoiceOrb state={voiceState} size={160} />
-              </div>
-              <div className="space-y-2 text-center sm:text-left">
-                <div className="text-xs tracking-widest text-muted-foreground">TREY-I SAYS</div>
-                <p className="text-xl sm:text-2xl font-bold leading-snug">{assistantMessage}</p>
-                {error && (
-                  <div className="text-sm text-red-400 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
-                    {error}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl liquid-glass border border-white/10 p-2.5 flex items-center gap-2 focus-within:border-primary/50 transition">
-              <button
-                onClick={toggleMic}
-                disabled={voiceBusy}
-                aria-label={micLabel}
-                className={`size-10 rounded-full grid place-items-center shrink-0 transition ${
-                  voiceActive ? "bg-primary text-primary-foreground glow-gold"
-                  : voiceBusy ? "bg-primary/70 text-primary-foreground"
-                  : "bg-white/5 text-muted-foreground"
-                }`}
-              >
-                {voiceActive || voiceBusy ? <Mic className="size-4" /> : <MicOff className="size-4" />}
-              </button>
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !thinking && void submit()}
-                placeholder={inputPlaceholder}
-                disabled={thinking || stage === "complete"}
-                className="flex-1 bg-transparent text-sm focus:outline-none px-1 h-10 disabled:opacity-50"
-                autoFocus
-              />
-              <button
-                onClick={() => void submit()}
-                disabled={!draft.trim() || thinking || stage === "complete"}
-                className={`inline-flex items-center gap-1 h-10 px-4 rounded-xl text-xs font-bold shrink-0 ${
-                  draft.trim() && !thinking && stage !== "complete"
-                    ? "bg-primary text-primary-foreground glow-gold"
-                    : "bg-white/5 text-muted-foreground"
-                }`}
-              >
-                {isAtReview && stage !== "complete" ? "Finish" : "Send"} <Send className="size-3" />
-              </button>
-            </div>
-
-            <div className="mt-3 text-center text-[11px] text-muted-foreground">
-              Say <strong>"finish"</strong> to skip to review · <strong>"switch to manual"</strong> to use a form instead
-            </div>
-
-            {/* Confirmed field chips */}
-            {Object.entries(fields).filter(([, v]) => v !== undefined && v !== "" && !Array.isArray(v) && typeof v !== "boolean").length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(Object.entries(fields) as [keyof Fields, unknown][]).map(([f, v]) => {
-                  if (v === undefined || v === "" || Array.isArray(v) || typeof v === "boolean") return null;
-                  const label = String(f).replace(/_/g, " ");
-                  const display = String(v).slice(0, 30);
-                  return (
-                    <span key={f} className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary/10 border border-primary/30 text-xs">
-                      <Sparkles className="size-3 text-primary" />
-                      <span className="text-muted-foreground capitalize">{label}:</span>
-                      <span className="font-semibold max-w-[120px] truncate">{display}</span>
-                    </span>
-                  );
-                })}
-                {(Object.entries(fields) as [keyof Fields, unknown][]).map(([f, v]) => {
-                  if (!Array.isArray(v) || !v.length) return null;
-                  return (
-                    <span key={f} className="inline-flex items-center gap-1.5 px-3 h-8 rounded-full bg-primary/10 border border-primary/30 text-xs">
-                      <Sparkles className="size-3 text-primary" />
-                      <span className="text-muted-foreground capitalize">{String(f).replace(/_/g, " ")}:</span>
-                      <span className="font-semibold max-w-[140px] truncate">{(v as string[]).join(", ")}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-
-            <div className="mt-4 flex justify-center gap-1.5">
-              {CORE_FIELDS.map((f) => (
-                <span key={f} className={`h-1.5 rounded-full transition-all ${fields[f] ? "w-8 bg-primary" : "w-3 bg-white/10"}`} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <div className="mt-5 text-center text-xs text-muted-foreground">
-          Prefer a form?{" "}
-          <button onClick={() => nav({ to: "/login" })} className="text-primary font-semibold hover:underline inline-flex items-center gap-1">
-            Switch to manual setup <ArrowRight className="size-3" />
-          </button>
+          <span className="text-[9px] text-muted-foreground/50 shrink-0">{coreConfirmed}/{CORE_FIELDS.length} required</span>
         </div>
       </div>
     </div>

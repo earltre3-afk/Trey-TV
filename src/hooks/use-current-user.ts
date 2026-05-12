@@ -3,6 +3,7 @@ import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { SessionUser } from "@/lib/auth";
 import { currentUser as fallbackUser } from "@/lib/mock-data";
+import { pointsToRewardTier } from "@/hooks/use-rewards";
 
 export function useCurrentUser(): SessionUser {
   const { user, loading } = useSupabaseAuth();
@@ -21,13 +22,21 @@ export function useCurrentUser(): SessionUser {
       setIsFetching(true);
       const supabase = createBrowserClient();
       try {
-        const { data: rawData, error } = await supabase
-          .from("profiles")
-          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, created_at, role, verification_type, is_verified, verified_creator, profile_accent_color")
-          .eq("id", user.id)
-          .single();
+        const [{ data: rawData, error }, { data: rewardsData }] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, created_at, role, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday")
+            .eq("id", user.id)
+            .single(),
+          (supabase as any)
+            .from("community_credit_balances")
+            .select("current_balance, lifetime_earned")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
 
         const data = rawData as any;
+        const rewardBalance = rewardsData as any;
 
         if (error || !data) {
           console.error("Failed to fetch profile:", error);
@@ -41,6 +50,8 @@ export function useCurrentUser(): SessionUser {
                verified = "creator";
             }
 
+            const rewardPoints = Number(rewardBalance?.current_balance ?? 0);
+            const rewardTier = pointsToRewardTier(Number(rewardBalance?.lifetime_earned ?? rewardPoints)).tier as any;
             const mappedProfile: SessionUser = {
               name: data.display_name || fallbackUser.name,
               handle: data.username || fallbackUser.handle,
@@ -49,12 +60,23 @@ export function useCurrentUser(): SessionUser {
               banner: data.banner_url || fallbackUser.banner,
               bio: data.bio || fallbackUser.bio,
               location: data.location || fallbackUser.location,
-              link: fallbackUser.link,
+              link: data.link_url || fallbackUser.link,
               accent: (data.profile_accent_color as any) || "gold",
+              tagline: data.tagline || "",
+              pronouns: data.pronouns || "",
+              birthday: data.birthday || "",
+              favoriteGenres: data.favorite_genres || "",
+              favoriteCreators: data.favorite_creators || "",
+              socialInstagram: data.social_instagram || "",
+              socialTikTok: data.social_tiktok || "",
+              socialYouTube: data.social_youtube || "",
               verified: verified || fallbackUser.verified,
               role: (data.role as any) || "user",
               stats: fallbackUser.stats,
-              rewards: { points: 12480, tier: "GOLD" },
+              rewards: { points: rewardPoints, tier: rewardTier },
+              profileVisibility: data.profile_visibility || "public",
+              showLocation: data.show_location ?? true,
+              showBirthday: data.show_birthday ?? false,
             };
             setProfile(mappedProfile);
           }

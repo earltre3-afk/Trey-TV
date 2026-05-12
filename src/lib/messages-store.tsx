@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { creators } from "@/lib/mock-data";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { createBrowserClient } from "@/lib/supabase-browser";
+import { createMessageMediaUrl, uploadMessageMedia } from "@/lib/supabase-storage";
 import { toast } from "sonner";
 
 export type MsgStatus = "sent" | "delivered" | "read";
@@ -96,6 +98,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const { user: supabaseUser } = useSupabaseAuth();
+  const currentProfile = useCurrentUser();
+  const storageKey = `${KEY}:${currentProfile.uid}`;
 
   // Ghost message reaper — prune expired unread ghost messages every 5s
   useEffect(() => {
@@ -118,7 +122,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) {
+      const scopedRaw = localStorage.getItem(storageKey);
+      if (scopedRaw) {
+        const p = JSON.parse(scopedRaw);
+        if (Array.isArray(p.threads)) setThreads(p.threads);
+        if (Array.isArray(p.messages)) setMessages(p.messages);
+      } else if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.threads)) setThreads(p.threads);
         if (Array.isArray(p.messages)) setMessages(p.messages);
@@ -128,16 +137,16 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
     setHydrated(true);
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;
     try { 
       const localThreads = threads.filter(t => !isUUID(t.id));
       const localMsgs = messages.filter(m => !isUUID(m.threadId));
-      localStorage.setItem(KEY, JSON.stringify({ threads: localThreads, messages: localMsgs })); 
+      localStorage.setItem(storageKey, JSON.stringify({ threads: localThreads, messages: localMsgs }));
     } catch {}
-  }, [threads, messages, hydrated]);
+  }, [threads, messages, hydrated, storageKey]);
 
   useEffect(() => {
     if (!supabaseUser) return;
@@ -148,7 +157,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("direct_messages")
         .select(`
-          id, sender_id, recipient_id, body, read_at, created_at,
+          id, sender_id, recipient_id, body, message_type, media_url, media_type, voice_duration, ghost_expires_at, ghost_label, read_at, created_at,
           sender:sender_id ( id, display_name, username, avatar_url, verification_type ),
           recipient:recipient_id ( id, display_name, username, avatar_url, verification_type )
         `)
@@ -192,6 +201,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           if (row.read_at) status = "read";
           else if (isMeSender) status = "sent";
 
+          const resolvedMediaUrl = await createMessageMediaUrl(row.media_url);
           dbMsgs.push({
             id: row.id,
             threadId: peerId,
@@ -199,6 +209,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             text: row.body,
             ts: new Date(row.created_at).getTime(),
             status,
+            ghostExpiresAt: row.ghost_expires_at ? new Date(row.ghost_expires_at).getTime() : undefined,
+            ghostLabel: row.ghost_label ?? undefined,
+            mediaUrl: row.message_type === "voice" ? undefined : resolvedMediaUrl,
+            mediaType: row.media_type === "video" ? "video" : row.media_type === "image" ? "image" : undefined,
+            voiceUrl: row.message_type === "voice" ? resolvedMediaUrl : undefined,
+            voiceDuration: row.voice_duration ? Number(row.voice_duration) : undefined,
           });
         }
 
@@ -215,6 +231,69 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     fetchConversations();
     return () => { mounted = false; };
+  }, [supabaseUser?.id]);
+
+  useEffect(() => {
+    if (!supabaseUser) return;
+
+    const supabase = createBrowserClient() as any;
+    const channel = supabase
+      .channel(`direct_messages:${supabaseUser.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+          filter: `recipient_id=eq.${supabaseUser.id}`,
+        },
+        async (payload: any) => {
+          const row = payload.new;
+          if (!row) return;
+
+          const { data: peerProfile } = await supabase
+            .from("profiles")
+            .select("id, display_name, username, avatar_url, verification_type")
+            .eq("id", row.sender_id)
+            .maybeSingle();
+
+          const peer: Peer = {
+            id: row.sender_id,
+            name: peerProfile?.display_name || "Unknown",
+            handle: peerProfile?.username || "unknown",
+            avatar: peerProfile?.avatar_url || "",
+            verified: peerProfile?.verification_type === "creator" ? "creator" : "user",
+            online: true,
+          };
+
+          setThreads((prev) => {
+            const existing = prev.find((t) => t.id === row.sender_id);
+            if (existing) return prev.map((t) => t.id === row.sender_id ? { ...t, peer } : t);
+            return [{ id: row.sender_id, peer, lastReadAt: 0, myLastReadAt: 0 }, ...prev];
+          });
+
+          const resolvedMediaUrl = await createMessageMediaUrl(row.media_url);
+          setMessages((prev) => prev.some((m) => m.id === row.id) ? prev : [...prev, {
+            id: row.id,
+            threadId: row.sender_id,
+            from: "them",
+            text: row.body,
+            ts: new Date(row.created_at).getTime(),
+            status: row.read_at ? "read" : "delivered",
+            ghostExpiresAt: row.ghost_expires_at ? new Date(row.ghost_expires_at).getTime() : undefined,
+            ghostLabel: row.ghost_label ?? undefined,
+            mediaUrl: row.message_type === "voice" ? undefined : resolvedMediaUrl,
+            mediaType: row.media_type === "video" ? "video" : row.media_type === "image" ? "image" : undefined,
+            voiceUrl: row.message_type === "voice" ? resolvedMediaUrl : undefined,
+            voiceDuration: row.voice_duration ? Number(row.voice_duration) : undefined,
+          }]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [supabaseUser?.id]);
 
   const outThreads = supabaseUser ? threads : [];
@@ -329,7 +408,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const sendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
+  const legacySendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
     if (!supabaseUser) { toast.error("Please sign in to send messages"); return; }
     const localId = uid();
     const ts = Date.now();
@@ -343,7 +422,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     toast.success(`👻 Ghost message set to dissolve in ${label}`);
   };
 
-  const sendMedia: Ctx["sendMedia"] = async (threadId, file) => {
+  const legacySendMedia: Ctx["sendMedia"] = async (threadId, file) => {
     if (!supabaseUser) { toast.error("Please sign in to send media"); return; }
     const localId = uid();
     const ts = Date.now();
@@ -357,7 +436,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     toast.success(`${mediaType === "video" ? "🎥" : "📸"} Media sent`);
   };
 
-  const sendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
+  const legacySendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
     if (!supabaseUser) { toast.error("Please sign in to send voice notes"); return; }
     const localId = uid();
     const ts = Date.now();
@@ -371,6 +450,135 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     }]);
     setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 600);
     toast.success("🎙 Voice note sent");
+  };
+
+  const sendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
+    if (!supabaseUser) { toast.error("Please sign in to send messages"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const ghostExpiresAt = ts + durationSecs * 1000;
+    const body = text.trim() || `Ghost message · ${label}`;
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me",
+      text: body,
+      ts, status: "sent", ghostExpiresAt, ghostLabel: label
+    }]);
+
+    if (isUUID(threadId)) {
+      void (async () => {
+        const supabase = createBrowserClient() as any;
+        const { data, error } = await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: supabaseUser.id,
+            recipient_id: threadId,
+            body,
+            message_type: "ghost",
+            ghost_expires_at: new Date(ghostExpiresAt).toISOString(),
+            ghost_label: label,
+          })
+          .select("id")
+          .single();
+
+        if (error) {
+          console.error("Failed to send ghost message:", error);
+          toast.error("Ghost message failed");
+          setMessages((s) => s.filter((m) => m.id !== localId));
+        } else if (data) {
+          setMessages((s) => s.map((m) => m.id === localId ? { ...m, id: data.id, status: "delivered" } : m));
+        }
+      })();
+    } else {
+      setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 600);
+    }
+    toast.success(`Ghost message set to dissolve in ${label}`);
+  };
+
+  const sendMedia: Ctx["sendMedia"] = async (threadId, file) => {
+    if (!supabaseUser) { toast.error("Please sign in to send media"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const objectUrl = URL.createObjectURL(file);
+    const mediaType: Message["mediaType"] = file.type.startsWith("video") ? "video" : "image";
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me", text: "",
+      ts, status: "sent", mediaUrl: objectUrl, mediaType
+    }]);
+
+    if (isUUID(threadId)) {
+      try {
+        const mediaPath = await uploadMessageMedia(supabaseUser.id, file, "media");
+        const supabase = createBrowserClient() as any;
+        const { data, error } = await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: supabaseUser.id,
+            recipient_id: threadId,
+            body: "",
+            message_type: mediaType,
+            media_url: mediaPath,
+            media_type: mediaType,
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        setMessages((s) => s.map((m) => m.id === localId ? { ...m, id: data.id, status: "delivered" } : m));
+      } catch (error) {
+        console.error("Failed to send media:", error);
+        toast.error("Media failed");
+        setMessages((s) => s.filter((m) => m.id !== localId));
+        return;
+      }
+    } else {
+      setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 800);
+    }
+    toast.success(`${mediaType === "video" ? "Video" : "Image"} sent`);
+  };
+
+  const sendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
+    if (!supabaseUser) { toast.error("Please sign in to send voice notes"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const voiceUrl = URL.createObjectURL(blob);
+    const mins = Math.floor(durationSecs / 60);
+    const secs = Math.floor(durationSecs % 60).toString().padStart(2, "0");
+    const label = `Voice note · ${mins}:${secs}`;
+    setMessages((s) => [...s, {
+      id: localId, threadId, from: "me", text: label,
+      ts, status: "sent", voiceUrl, voiceDuration: durationSecs
+    }]);
+
+    if (isUUID(threadId)) {
+      try {
+        const voicePath = await uploadMessageMedia(supabaseUser.id, blob, "voice");
+        const supabase = createBrowserClient() as any;
+        const { data, error } = await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: supabaseUser.id,
+            recipient_id: threadId,
+            body: label,
+            message_type: "voice",
+            media_url: voicePath,
+            media_type: "audio",
+            voice_duration: durationSecs,
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        setMessages((s) => s.map((m) => m.id === localId ? { ...m, id: data.id, status: "delivered" } : m));
+      } catch (error) {
+        console.error("Failed to send voice note:", error);
+        toast.error("Voice note failed");
+        setMessages((s) => s.filter((m) => m.id !== localId));
+        return;
+      }
+    } else {
+      setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 600);
+    }
+    toast.success("Voice note sent");
   };
 
   return (

@@ -38,7 +38,8 @@ export type SafeProfileFields = {
 };
 
 const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
-const PUBLIC_PROFILE_UID_PATTERN = /^423[0-9]{13}$/;
+const PUBLIC_PROFILE_UID_PATTERN = /^[0-9]{16}$/;
+const TREY_PUBLIC_PROFILE_UID_PATTERN = /^423[0-9]{13}$/;
 
 const validateAuthInput = (input: AuthInput): AuthInput => ({
   accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
@@ -269,6 +270,24 @@ export async function ensurePublicProfileUid(userId: string): Promise<string | n
     throw new Error(existingError.message);
   }
 
+  if (!existing) {
+    const publicUid = generateFallbackPublicProfileUid();
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .upsert(
+        {
+          id: userId,
+          public_profile_uid: publicUid,
+          site_uid: publicUid,
+          role: "user",
+        },
+        { onConflict: "id" },
+      );
+
+    if (error) throw new Error(error.message);
+    return ensurePublicProfileUid(userId);
+  }
+
   const existingPublicUid = cleanText(existing?.public_profile_uid, 32);
   const existingSiteUid = cleanText(existing?.site_uid, 32);
   const existingValidUid = PUBLIC_PROFILE_UID_PATTERN.test(existingPublicUid)
@@ -292,7 +311,7 @@ export async function ensurePublicProfileUid(userId: string): Promise<string | n
 
   let candidate = "";
   const { data: generatedUid, error: rpcError } = await (supabase as any).rpc("generate_trey_public_profile_uid");
-  if (!rpcError && typeof generatedUid === "string" && PUBLIC_PROFILE_UID_PATTERN.test(generatedUid)) {
+  if (!rpcError && typeof generatedUid === "string" && TREY_PUBLIC_PROFILE_UID_PATTERN.test(generatedUid)) {
     candidate = generatedUid;
   }
 
@@ -324,6 +343,49 @@ export async function ensurePublicProfileUid(userId: string): Promise<string | n
   }
 
   return data?.public_profile_uid ?? null;
+}
+
+async function ensureCompletedAccountPersistence(userId: string, publicProfileUid: string) {
+  const supabase = getTreyIServiceClient();
+  const now = new Date().toISOString();
+
+  const profilePatch = {
+    id: userId,
+    public_profile_uid: publicProfileUid,
+    site_uid: publicProfileUid,
+    onboarding_completed: true,
+    onboarding_status: "completed",
+    updated_at: now,
+  };
+
+  const { error: profileError } = await (supabase as any)
+    .from("profiles")
+    .upsert(profilePatch, { onConflict: "id" });
+  if (profileError) throw new Error(profileError.message);
+
+  const { error: prefError } = await (supabase as any)
+    .from("user_preferences")
+    .upsert(
+      {
+        user_id: userId,
+        public_profile_uid: publicProfileUid,
+        updated_at: now,
+      },
+      { onConflict: "user_id" },
+    );
+  if (prefError) throw new Error(prefError.message);
+
+  const { error: creditError } = await (supabase as any)
+    .from("community_credit_balances")
+    .upsert(
+      {
+        user_id: userId,
+        public_profile_uid: publicProfileUid,
+        updated_at: now,
+      },
+      { onConflict: "user_id" },
+    );
+  if (creditError) throw new Error(creditError.message);
 }
 
 async function assertUsernameAvailable(supabase: ReturnType<typeof createClient>, username: string, userId: string) {
@@ -389,6 +451,11 @@ export async function saveProfileFieldsForUser(
   }
 
   if (options.complete) {
+    if (!publicProfileUid) {
+      throw new Error("Your public profile link is not ready yet. Please try finishing setup again.");
+    }
+    await ensureCompletedAccountPersistence(user.id, publicProfileUid);
+
     await (supabase as any)
       .from("user_onboarding")
       .upsert(

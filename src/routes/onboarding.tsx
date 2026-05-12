@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, Outlet, useRouterState } from "@tanstack/react-router";
-import { Mic, Sparkles, ArrowRight, Wand2, Compass, Crown, Eye } from "lucide-react";
+import { Mic, Sparkles, ArrowRight, Wand2, Compass, Crown, Eye, ImageIcon } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/onboarding")({
@@ -90,6 +90,37 @@ function Onboarding() {
               </ul>
               <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full liquid-glass border border-white/15 font-semibold text-sm">
                 Set up manually <ArrowRight className="size-4" />
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Import from screenshot path */}
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={() => nav({ to: "/onboarding/import-screenshot" })}
+            className="group relative w-full text-left rounded-3xl liquid-glass liquid-hover neon-border overflow-hidden p-6 sm:p-7"
+          >
+            <div className="pointer-events-none absolute -top-12 -right-12 size-44 rounded-full bg-[oklch(0.78_0.18_150_/_0.25)] blur-3xl group-hover:bg-[oklch(0.78_0.18_150_/_0.4)] transition" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center gap-5">
+              <div className="size-14 shrink-0 rounded-2xl border border-white/15 grid place-items-center bg-white/5">
+                <ImageIcon className="size-6 text-[oklch(0.78_0.18_150)]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] tracking-[0.3em] text-[oklch(0.78_0.18_150)]">FAST · IMPORT</div>
+                <h3 className="mt-0.5 text-xl font-bold">Import From Screenshot</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Upload a screenshot of your public profile and Trey TV will turn it into a profile draft you can edit before publishing.
+                </p>
+                <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted-foreground">
+                  <li className="flex items-center gap-1.5"><ImageIcon className="size-3 text-[oklch(0.78_0.18_150)]" /> Upload your screenshot</li>
+                  <li className="flex items-center gap-1.5"><Sparkles className="size-3 text-primary" /> AI extracts your profile info</li>
+                  <li className="flex items-center gap-1.5"><Eye className="size-3 text-[oklch(0.82_0.15_215)]" /> Review &amp; edit before publishing</li>
+                </ul>
+              </div>
+              <div className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-full liquid-glass border border-[oklch(0.78_0.18_150_/_0.4)] text-[oklch(0.78_0.18_150)] font-semibold text-sm whitespace-nowrap">
+                Import From Screenshot <ArrowRight className="size-4" />
               </div>
             </div>
           </button>

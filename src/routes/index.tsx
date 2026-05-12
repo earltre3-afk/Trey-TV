@@ -331,6 +331,17 @@ function PreviewRail({ title, items, footer }: { title: string; items: { id: str
 function SignedInWatchNow() {
   const heroShow = showById(featuredHero.showId)!;
   const heroChannel = channelById(heroShow.channelId)!;
+  const guide = useGuide();
+  const continueWatching = guide.continueWatching.length > 0
+    ? guide.continueWatching
+    : rails.continueWatching.map((item) => ({
+        episodeId: item.episodeId,
+        progress: item.progress,
+        progressSeconds: 0,
+        durationSeconds: 0,
+        completed: false,
+        updatedAt: 0,
+      }));
 
   return (
     <AppShell wide>
@@ -403,7 +414,7 @@ function SignedInWatchNow() {
 
       {/* Continue Watching */}
       <Rail title="Continue Watching" icon={Play}>
-        {rails.continueWatching.map((c) => {
+        {continueWatching.map((c) => {
           const ep = episodeById(c.episodeId);
           if (!ep) return null;
           return <EpisodeCard key={c.episodeId} ep={ep} progress={c.progress} />;

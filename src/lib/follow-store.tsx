@@ -5,6 +5,7 @@ import { creators } from "@/lib/mock-data";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { recordUserTrace } from "@/lib/user-trace";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
 export type FollowedCreator = {
   id: string;
@@ -48,14 +49,20 @@ export function FollowProvider({ children }: { children: ReactNode }) {
   const [dbFollowed, setDbFollowed] = useState<Map<string, FollowedCreator>>(new Map());
   const [ownPublicProfileUid, setOwnPublicProfileUid] = useState<string | null>(null);
   const { user: supabaseUser, isSignedIn } = useSupabaseAuth();
+  const currentProfile = useCurrentUser();
   const navigate = useNavigate();
+  const storageKey = `${KEY}:${currentProfile.uid}`;
 
   useEffect(() => {
-    try { const raw = localStorage.getItem(KEY); if (raw) setLocalFollowed(JSON.parse(raw)); } catch {}
-  }, []);
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setLocalFollowed(raw ? JSON.parse(raw) : SEED);
+    } catch {}
+  }, [storageKey]);
+
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(localFollowed)); } catch {}
-  }, [localFollowed]);
+    try { localStorage.setItem(storageKey, JSON.stringify(localFollowed)); } catch {}
+  }, [localFollowed, storageKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -148,7 +155,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
         return [...s, { id: c.id, name: c.name, handle: c.handle, avatar: c.avatar, followedAt: Date.now(), watchScore: 10 }];
       });
       recordUserTrace({
-        userUid: ownPublicProfileUid,
+        userUid: ownPublicProfileUid ?? "",
         action: isFollowing(c.handle) ? "social.unfollow" : "social.follow",
         targetType: "profile",
         targetId: c.id,
@@ -170,7 +177,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
 
     const wasFollowing = isFollowing(c.handle);
     recordUserTrace({
-      userUid: ownPublicProfileUid,
+      userUid: ownPublicProfileUid ?? "",
       action: wasFollowing ? "social.unfollow" : "social.follow",
       targetType: "profile",
       targetId: c.id,
@@ -245,8 +252,8 @@ export function FollowProvider({ children }: { children: ReactNode }) {
     setLocalFollowed((s) => s.map((f) => f.handle === handle ? { ...f, watchScore: f.watchScore + 5 } : f));
 
   const topThree = useMemo(
-    () => [...localFollowed].sort((a, b) => b.watchScore - a.watchScore).slice(0, 3),
-    [localFollowed]
+    () => [...followed].sort((a, b) => b.watchScore - a.watchScore).slice(0, 3),
+    [followed]
   );
 
   return <C.Provider value={{ followed, isFollowing, toggle, bumpWatch, topThree }}>{children}</C.Provider>;

@@ -37,6 +37,8 @@ type UseRewardsReturn = {
   lifetimeSpent: number;
   transactions: RewardTransaction[];
   loading: boolean;
+  refresh: () => void;
+  spend: (input: { points: number; eventType: string; sourceType?: string; sourceId?: string; metadata?: Record<string, unknown> }) => Promise<{ ok: true } | { ok: false; error: unknown }>;
 };
 
 const fallbackTransactions: RewardTransaction[] = [
@@ -59,6 +61,8 @@ const fallbackRewards: UseRewardsReturn = {
   lifetimeSpent: 1800,
   transactions: fallbackTransactions,
   loading: false,
+  refresh: () => undefined,
+  spend: async () => ({ ok: false, error: "signed-out" }),
 };
 
 const tierLabels: Record<string, string> = {
@@ -97,6 +101,18 @@ export function pointsToRewardTier(points: number) {
   };
 }
 
+const emptyRewards: UseRewardsReturn = {
+  balance: 0,
+  ...pointsToRewardTier(0),
+  streakDays: 0,
+  lifetimeEarned: 0,
+  lifetimeSpent: 0,
+  transactions: [],
+  loading: false,
+  refresh: () => undefined,
+  spend: async () => ({ ok: false, error: "signed-out" }),
+};
+
 const eventTitles: Record<string, string> = {
   episode_watch_completed: "Watched episode",
   episode_liked: "Liked content",
@@ -109,6 +125,8 @@ const eventTitles: Record<string, string> = {
   creator_followed: "Followed a creator",
   friend_invited: "Friend invited",
   helpful_report_confirmed: "Helpful report",
+  gift_sent: "Sent creator gift",
+  perk_redeemed: "Redeemed perk",
 };
 
 const balanceColumns = "current_balance, lifetime_earned, lifetime_spent, engagement_level, current_streak_days";
@@ -151,6 +169,7 @@ export function useRewards(): UseRewardsReturn {
   const { user, loading: authLoading } = useAuth();
   const [rewards, setRewards] = useState<UseRewardsReturn>(fallbackRewards);
   const [loading, setLoading] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -168,6 +187,7 @@ export function useRewards(): UseRewardsReturn {
 
       try {
         const supabase = createBrowserClient();
+        await (supabase as any).rpc("ensure_user_credit_balance", { _user_id: user.id });
         const [balanceResult, eventsResult] = await Promise.all([
           creditBalancesTable(supabase).select(balanceColumns).eq("user_id", user.id).maybeSingle(),
           creditEventsTable(supabase)
@@ -183,8 +203,14 @@ export function useRewards(): UseRewardsReturn {
 
         if (!mounted) return;
 
-        if (balanceResult.error || eventsResult.error || !balanceRow) {
-          setRewards(fallbackRewards);
+        if (balanceResult.error || eventsResult.error) {
+          console.error("Failed to load UID rewards:", balanceResult.error || eventsResult.error);
+          setRewards(emptyRewards);
+          return;
+        }
+
+        if (!balanceRow) {
+          setRewards(emptyRewards);
           return;
         }
 
@@ -196,8 +222,10 @@ export function useRewards(): UseRewardsReturn {
           streakDays: balanceRow.current_streak_days,
           lifetimeEarned: earned,
           lifetimeSpent: balanceRow.lifetime_spent,
-          transactions: eventRows.length > 0 ? eventRows.map(mapTransaction) : fallbackTransactions,
+          transactions: eventRows.map(mapTransaction),
           loading: false,
+          refresh: () => undefined,
+          spend: async () => ({ ok: false, error: "not-ready" }),
         });
       } catch {
         if (mounted) setRewards(fallbackRewards);
@@ -211,10 +239,34 @@ export function useRewards(): UseRewardsReturn {
     return () => {
       mounted = false;
     };
-  }, [authLoading, user]);
+  }, [authLoading, user, refreshNonce]);
+
+  const refresh = () => setRefreshNonce((n) => n + 1);
+
+  const spend: UseRewardsReturn["spend"] = async (input) => {
+    if (!user) return { ok: false, error: "signed-out" };
+    try {
+      const supabase = createBrowserClient();
+      const { error } = await (supabase as any).rpc("spend_community_credit", {
+        _points: input.points,
+        _event_type: input.eventType,
+        _source_type: input.sourceType ?? null,
+        _source_id: input.sourceId ?? null,
+        _metadata: input.metadata ?? {},
+      });
+      if (error) throw error;
+      refresh();
+      return { ok: true };
+    } catch (error) {
+      console.error("Failed to spend UID rewards:", error);
+      return { ok: false, error };
+    }
+  };
 
   return {
     ...rewards,
     loading: authLoading || loading,
+    refresh,
+    spend,
   };
 }

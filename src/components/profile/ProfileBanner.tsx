@@ -12,6 +12,8 @@ import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { recordUserTrace } from "@/lib/user-trace";
 import type { ProfileContext } from "./ProfileTypes";
 import { AnimatedBanner } from "./AnimatedBanner";
@@ -22,6 +24,7 @@ interface ProfileBannerProps extends ProfileContext {
 
 export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBack }: ProfileBannerProps) {
   const { updateUser } = useAuth();
+  const { user: supabaseUser } = useSupabaseAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const isCreator = profileType === "creator";
@@ -109,14 +112,22 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
                       type="file"
                       accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
                       className="hidden"
-                      onChange={(event) => {
+                      onChange={async (event) => {
                         const file = event.target.files?.[0];
                         if (!file) return;
-                        const banner = URL.createObjectURL(file);
-                        updateUser({ banner });
-                        recordUserTrace({ userUid: profile.uid, action: "profile.banner_update", targetType: "profile", targetId: profile.uid, details: { fileType: file.type } });
-                        toast.success("Banner photo updated");
-                        setMenuOpen(false);
+                        const preview = URL.createObjectURL(file);
+                        updateUser({ banner: preview });
+                        try {
+                          if (!supabaseUser) throw new Error("Sign in required");
+                          const uploaded = await uploadProfileMedia(supabaseUser.id, file, "banner");
+                          updateUser({ banner: uploaded.url });
+                          recordUserTrace({ userUid: profile.uid, action: "profile.banner_update", targetType: "profile", targetId: profile.uid, details: { fileType: file.type } });
+                          toast.success("Banner photo updated");
+                          setMenuOpen(false);
+                        } catch (error) {
+                          console.error("Failed to upload banner:", error);
+                          toast.error("Banner upload failed");
+                        }
                       }}
                     />
                   </>

@@ -12,6 +12,7 @@ import { Coin } from "@/components/gifts/Coin";
 import { triggerCoinGift } from "@/components/gifts/GiftBurst";
 import { useState } from "react";
 import { recordUserTrace } from "@/lib/user-trace";
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/rewards")({
   component: Rewards,
@@ -45,6 +46,7 @@ const perks = [
 function Rewards() {
   const { user, isGuest } = useAuth();
   const currentUser = useCurrentUser();
+  const { user: supabaseUser } = useSupabaseAuth();
 
   if (isGuest) {
     return (
@@ -65,11 +67,32 @@ function Rewards() {
       </AppShell>
     );
   }
-  const { balance, tier, tierProgress, nextTier, nextTierAt, pointsToNextTier, lifetimeEarned, lifetimeSpent, streakDays, transactions } = useRewards();
+  const { balance, tier, tierProgress, nextTier, nextTierAt, pointsToNextTier, lifetimeEarned, lifetimeSpent, streakDays, transactions, spend } = useRewards();
   const goBack = useGoBack("/");
   const [recipient, setRecipient] = useState<string | null>(null);
   const points = balance;
   const uid = currentUser?.uid ?? "0000000000000000";
+
+  const saveRewardAction = async (input: { type: "gift" | "redeem"; points: number; sourceId: string; metadata: Record<string, unknown> }) => {
+    if (!supabaseUser) return false;
+    const result = await spend({
+      points: input.points,
+      eventType: input.type === "gift" ? "gift_sent" : "perk_redeemed",
+      sourceType: input.type,
+      sourceId: input.sourceId,
+      metadata: {
+        ...input.metadata,
+        public_profile_uid: uid,
+        source_id: input.sourceId,
+      },
+    });
+
+    if (!result.ok) {
+      toast.error("Not enough rewards points");
+      return false;
+    }
+    return true;
+  };
 
   return (
     <AppShell wide>
@@ -240,7 +263,9 @@ function Rewards() {
                 {COIN_TIERS.map((t, i) => (
                   <button
                     key={t.id}
-                    onClick={() => {
+                    onClick={async () => {
+                      const saved = await saveRewardAction({ type: "gift", points: t.cost, sourceId: recipient ?? "unselected", metadata: { gift: t.name, recipient } });
+                      if (!saved) return;
                       triggerCoinGift(t, recipient ?? undefined);
                       recordUserTrace({ userUid: uid, action: "rewards.gift", targetType: "creator", targetId: recipient ?? "unselected", details: { gift: t.name, cost: t.cost } });
                       toast.success(`${t.name} sent${recipient ? ` to @${recipient}` : ""} · −${t.cost} pts`);
@@ -279,7 +304,7 @@ function Rewards() {
                     <div className="text-sm font-semibold">{p.title}</div>
                     <div className="text-[11px] text-muted-foreground">{p.cost.toLocaleString()} pts</div>
                   </div>
-                  <button onClick={() => { recordUserTrace({ userUid: uid, action: "rewards.redeem", targetType: "perk", targetId: p.id, details: { title: p.title, cost: p.cost } }); toast.success(`Redeemed: ${p.title}`); }} className="px-3 h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Redeem</button>
+                  <button onClick={async () => { const saved = await saveRewardAction({ type: "redeem", points: p.cost, sourceId: p.id, metadata: { title: p.title } }); if (!saved) return; recordUserTrace({ userUid: uid, action: "rewards.redeem", targetType: "perk", targetId: p.id, details: { title: p.title, cost: p.cost } }); toast.success(`Redeemed: ${p.title}`); }} className="px-3 h-8 rounded-lg text-xs font-semibold bg-primary text-primary-foreground glow-gold">Redeem</button>
                 </div>
               ))}
             </div>

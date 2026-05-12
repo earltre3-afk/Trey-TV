@@ -348,6 +348,37 @@
     opacity: 0.8;
   }
 
+  /* Static premium treatment for dense owner panels such as stats. */
+  .owner-luxe-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 0.095), oklch(1 0 0 / 0.025)),
+      radial-gradient(115% 90% at 10% 0%, oklch(0.82 0.16 85 / 0.16), transparent 58%),
+      radial-gradient(120% 95% at 100% 100%, oklch(0.82 0.15 215 / 0.1), transparent 62%);
+    border: 1px solid oklch(0.82 0.16 85 / 0.28);
+    backdrop-filter: blur(24px) saturate(155%);
+    -webkit-backdrop-filter: blur(24px) saturate(155%);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 0.22),
+      inset 0 -1px 0 oklch(0 0 0 / 0.35),
+      0 22px 70px -34px oklch(0 0 0 / 0.9),
+      0 0 36px -18px oklch(0.82 0.16 85 / 0.45);
+  }
+  .owner-luxe-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(90deg, transparent, oklch(1 0 0 / 0.08), transparent),
+      linear-gradient(180deg, oklch(0.82 0.16 85 / 0.14), transparent 38%);
+    opacity: 0.72;
+    pointer-events: none;
+    z-index: -1;
+  }
+
   /* Animated multi-stop neon border for owner cards */
   .owner-neon {
     position: relative;
@@ -997,3 +1028,62 @@
   transition: background 0.15s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s;
 }
 .neon-emoji-btn:hover { background: oklch(1 0 0 / 0.06); }
+
+/* ====== Trey-I Voice Onboarding — Galaxy Orb ====== */
+@keyframes trey-orb-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.88; }
+  50% { transform: scale(1.09); opacity: 1; }
+}
+@keyframes trey-orbit-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes trey-orbit-reverse {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+@keyframes trey-star-twinkle {
+  0%, 100% { opacity: 0.12; transform: scale(0.75); }
+  50% { opacity: 0.9; transform: scale(1.35); }
+}
+@keyframes trey-energy-ripple {
+  0% { transform: scale(1); opacity: 0.65; }
+  100% { transform: scale(1.95); opacity: 0; }
+}
+@keyframes trey-glass-shimmer {
+  0% { transform: translateX(-120%); }
+  60%, 100% { transform: translateX(320%); }
+}
+
+.trey-orb-breathe { animation: trey-orb-breathe 3.6s ease-in-out infinite; }
+.trey-orbit-ring-slow { animation: trey-orbit-slow 14s linear infinite; }
+.trey-orbit-ring-medium { animation: trey-orbit-slow 9s linear infinite; }
+.trey-orbit-ring-reverse { animation: trey-orbit-reverse 11s linear infinite; }
+.trey-energy-ripple { animation: trey-energy-ripple 2.2s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .trey-orb-breathe,
+  .trey-orbit-ring-slow,
+  .trey-orbit-ring-medium,
+  .trey-orbit-ring-reverse,
+  .trey-energy-ripple { animation: none !important; }
+}
+
+/* ====== Trey-I Plasma Orb — SVG ring + bar animations ====== */
+@keyframes orb-ring-cw  { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+@keyframes orb-ring-ccw { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+@keyframes orb-core-breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.88; }
+  50%       { transform: scale(1.6); opacity: 1;    }
+}
+@keyframes orb-bar-a { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(9);   } }
+@keyframes orb-bar-b { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(5.5); } }
+@keyframes orb-bar-c { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(3);   } }
+@keyframes orb-rim-dot {
+  0%, 100% { opacity: 0.2;  }
+  50%       { opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [style*="orb-ring-cw"], [style*="orb-ring-ccw"],
+  [style*="orb-core-breathe"], [style*="orb-bar-"] { animation: none !important; }
+}

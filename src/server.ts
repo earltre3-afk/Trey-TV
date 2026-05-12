@@ -1,5 +1,12 @@
 import "./lib/error-capture";
 
+import {
+  handleJwks,
+  handleOAuthRevoke,
+  handleOAuthToken,
+  handleOAuthUserInfo,
+  handleOpenIdConfiguration,
+} from "./lib/developers/oauth-http.server";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
@@ -23,6 +30,18 @@ function brandedErrorResponse(): Response {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
   });
+}
+
+function handleOAuthApiRequest(request: Request): Promise<Response> | Response | null {
+  const url = new URL(request.url);
+
+  if (url.pathname === "/oauth/token") return handleOAuthToken(request);
+  if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
+  if (url.pathname === "/oauth/revoke") return handleOAuthRevoke(request);
+  if (url.pathname === "/.well-known/openid-configuration") return handleOpenIdConfiguration(request);
+  if (url.pathname === "/oauth/jwks.json") return handleJwks();
+
+  return null;
 }
 
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
@@ -69,6 +88,9 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const oauthResponse = handleOAuthApiRequest(request);
+      if (oauthResponse) return await oauthResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

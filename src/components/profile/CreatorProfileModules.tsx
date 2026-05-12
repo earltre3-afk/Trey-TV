@@ -87,7 +87,7 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
 
       {/* ── Owner quick analytics (mobile only) ─────────────── */}
       {isOwner && (
-        <div className="lg:hidden rounded-3xl owner-neon owner-glass p-4">
+        <div className="lg:hidden rounded-3xl owner-luxe-card p-4">
           <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
             <BarChart2 className="size-4 text-[oklch(0.78_0.18_150)]" /> Quick Stats
           </h3>
@@ -98,7 +98,7 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
               { k: "Watch hours", v: "3.2K" },
               { k: "Avg. watch time", v: "3:42" },
             ].map((row) => (
-              <div key={row.k} className="rounded-xl bg-white/5 p-2.5">
+              <div key={row.k} className="rounded-xl bg-white/[0.06] ring-1 ring-white/10 p-2.5">
                 <div className="text-[10px] text-muted-foreground">{row.k}</div>
                 <div className="text-sm font-bold">{row.v}</div>
               </div>

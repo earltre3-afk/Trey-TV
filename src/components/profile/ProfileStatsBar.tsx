@@ -23,7 +23,7 @@ export function ProfileStatsBar({ profile, profileType, isOwner }: Props) {
   const isCreator = profileType === "creator";
 
   const containerClass = isOwner
-    ? "owner-neon owner-glass rounded-3xl grid divide-x divide-white/10"
+    ? "owner-luxe-card rounded-3xl grid divide-x divide-white/10"
     : "rounded-3xl liquid-glass border border-white/10 grid divide-x divide-white/5";
 
   if (isCreator) {

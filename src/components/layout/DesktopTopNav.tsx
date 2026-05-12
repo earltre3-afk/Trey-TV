@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Home, Compass, CalendarDays, Inbox, Sparkles, Heart, Gem, Bell, Search,
-  Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn, LogOut,
+  Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn, LogOut, Award,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
@@ -37,6 +37,7 @@ const moreLinks: readonly NavLink[] = [
   { to: "/go-live", icon: Radio, label: "Go Live" },
   { to: "/following", icon: Users, label: "Following" },
   { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/apply", icon: Award, label: "Apply" },
 ];
 
 export function DesktopTopNav() {

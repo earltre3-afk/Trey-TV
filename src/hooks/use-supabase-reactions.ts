@@ -42,10 +42,6 @@ function userPostReactionsTable(supabase: ReturnType<typeof createBrowserClient>
   return (supabase as any).from("user_post_reactions");
 }
 
-function isUuid(value: string) {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
-}
-
 export function useSupabaseReactions(postId: string, initialLikesCount: number = 0) {
   const { user, isSignedIn } = useAuth();
   const [reaction, setReaction] = useState<ReactionKey | null>(null);
@@ -54,7 +50,7 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
 
   useEffect(() => {
     let mounted = true;
-    if (!postId || !isUuid(postId)) {
+    if (!postId) {
       if (mounted) {
         setReaction(null);
         setLikeCount(initialLikesCount);
@@ -108,7 +104,7 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
   }, [postId, user?.id, isSignedIn, initialLikesCount]);
 
   const fetchCount = useCallback(async () => {
-    if (!isUuid(postId)) return initialLikesCount;
+    if (!postId) return initialLikesCount;
 
     const supabase = createBrowserClient();
     const { count, error } = await userPostReactionsTable(supabase)
@@ -120,7 +116,7 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
   }, [postId, initialLikesCount]);
 
   const toggleReaction = useCallback(async (newReaction: ReactionKey | null): Promise<ToggleReactionResult> => {
-    if (!postId || !isUuid(postId)) return { ok: false, reason: "missing-post" };
+    if (!postId) return { ok: false, reason: "missing-post" };
     if (!isSignedIn || !user) return { ok: false, reason: "signed-out" };
 
     const nextReaction = newReaction;
@@ -147,11 +143,11 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
       if (deleteResult.error) throw deleteResult.error;
 
       if (nextSupabaseReaction) {
-        const { error } = await userPostReactionsTable(supabase).insert({
+        const { error } = await userPostReactionsTable(supabase).upsert({
           post_id: postId,
           user_id: user.id,
           reaction_type: nextSupabaseReaction,
-        });
+        }, { onConflict: "post_id,user_id" });
 
         if (error) throw error;
       }

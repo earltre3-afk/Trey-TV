@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sparkles, Wand2, ChevronRight, Film, Users, LayoutGrid, Clock, Brain, Heart, TrendingUp, Infinity, Zap, Leaf, Smile, Target, Star, Flame, Cloud } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/layout/AppShell";
@@ -9,6 +9,7 @@ import { VerifiedBadge } from "@/components/brand/Badge";
 import { PrescribeModal } from "@/components/prescribe/PrescribeModal";
 import { recordUserTrace } from "@/lib/user-trace";
 import { useAuth } from "@/lib/auth";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 export const Route = createFileRoute("/prescribe-me")({
   component: PrescribeMe,
@@ -54,15 +55,29 @@ function FilterCard({ icon: Icon, title, sub, kind, active, onClick }: { icon: t
 function PrescribeMe() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { preferences, updateSection } = useUserPreferences();
   const [active, setActive] = useState("all");
   const [quizOpen, setQuizOpen] = useState(false);
   const [contentType, setContentType] = useState("All");
   const [creatorFilter, setCreatorFilter] = useState("All Creators");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [lengthFilter, setLengthFilter] = useState("Any Length");
+  useEffect(() => {
+    const prefs = preferences.prescribe_preferences;
+    if (typeof prefs.activeMood === "string") setActive(prefs.activeMood);
+    if (typeof prefs.contentType === "string") setContentType(prefs.contentType);
+    if (typeof prefs.creatorFilter === "string") setCreatorFilter(prefs.creatorFilter);
+    if (typeof prefs.categoryFilter === "string") setCategoryFilter(prefs.categoryFilter);
+    if (typeof prefs.lengthFilter === "string") setLengthFilter(prefs.lengthFilter);
+  }, [preferences.prescribe_preferences]);
+
+  const savePrescribePreference = (patch: Record<string, unknown>) => {
+    void updateSection("prescribe_preferences", patch);
+  };
+
   const cycle = (current: string, values: string[]) => values[(values.indexOf(current) + 1) % values.length] ?? values[0];
   const traceFilter = (title: string, value: string) => {
-    recordUserTrace({ userUid: user?.uid, action: "prescribe.filter", targetType: "filter", targetId: title, details: { value } });
+    recordUserTrace({ userUid: user?.uid ?? "", action: "prescribe.filter", targetType: "filter", targetId: title, details: { value } });
     toast.success(`${title}: ${value}`);
   };
   const displayItems = active === "all"
@@ -97,7 +112,7 @@ function PrescribeMe() {
               return (
                 <button
                   key={m.id}
-                  onClick={() => setActive(m.id)}
+                  onClick={() => { setActive(m.id); savePrescribePreference({ activeMood: m.id }); }}
                   className={`flex items-center gap-2 px-3 py-3 rounded-2xl border glass transition ${moodColor[m.color]} ${isActive ? "bg-white/[0.06] shadow-[0_0_24px_-6px_currentColor]" : "hover:bg-white/[0.04]"}`}
                 >
                   <Icon className="size-4" />
@@ -114,19 +129,19 @@ function PrescribeMe() {
           <div className="grid grid-cols-2 gap-2">
             <FilterCard icon={Film} title="Content Type" sub={contentType} kind="Content" active={contentType !== "All"} onClick={() => {
               const next = cycle(contentType, ["All", "Videos", "Music", "Live", "Podcasts"]);
-              setContentType(next); traceFilter("Content Type", next);
+              setContentType(next); savePrescribePreference({ contentType: next }); traceFilter("Content Type", next);
             }} />
             <FilterCard icon={Users} title="Creators" sub={creatorFilter} kind="Creators" active={creatorFilter !== "All Creators"} onClick={() => {
               const next = cycle(creatorFilter, ["All Creators", "Following", "Verified", "New Creators"]);
-              setCreatorFilter(next); traceFilter("Creators", next);
+              setCreatorFilter(next); savePrescribePreference({ creatorFilter: next }); traceFilter("Creators", next);
             }} />
             <FilterCard icon={LayoutGrid} title="Categories" sub={categoryFilter} kind="Categories" active={categoryFilter !== "All Categories"} onClick={() => {
               const next = cycle(categoryFilter, ["All Categories", "Music", "Film", "Lifestyle", "Live"]);
-              setCategoryFilter(next); traceFilter("Categories", next);
+              setCategoryFilter(next); savePrescribePreference({ categoryFilter: next }); traceFilter("Categories", next);
             }} />
             <FilterCard icon={Clock} title="Length" sub={lengthFilter} kind="Length" active={lengthFilter !== "Any Length"} onClick={() => {
               const next = cycle(lengthFilter, ["Any Length", "Under 10 min", "10-30 min", "Long-form"]);
-              setLengthFilter(next); traceFilter("Length", next);
+              setLengthFilter(next); savePrescribePreference({ lengthFilter: next }); traceFilter("Length", next);
             }} />
           </div>
         </section>
@@ -140,7 +155,7 @@ function PrescribeMe() {
             <div className="text-sm font-bold tracking-wide">AI PRESCRIBE ME</div>
             <div className="text-xs text-muted-foreground">Let Trey-I analyze your vibe and prescribe the perfect content.</div>
           </div>
-          <button onClick={() => { recordUserTrace({ userUid: user?.uid, action: "prescribe.open", targetType: "quiz" }); setQuizOpen(true); }} className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
+          <button onClick={() => { recordUserTrace({ userUid: user?.uid ?? "", action: "prescribe.open", targetType: "quiz" }); setQuizOpen(true); }} className="px-3 py-2 rounded-xl text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.7_0.25_340)] hover:bg-[oklch(0.7_0.25_340_/_0.1)] flex items-center gap-1">
             Get My Prescription <ChevronRight className="size-3" />
           </button>
         </div>

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
-import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import {
   Settings as SettingsIcon, User, Bell, Lock, Palette, CreditCard, Shield,
@@ -9,6 +8,8 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -43,6 +44,8 @@ const LEGAL_LINKS: { to: string; label: string; desc: string }[] = [
 type Toggle = { id: string; label: string; desc: string; icon: typeof Bell; on: boolean };
 
 function SettingsPage() {
+  const currentUser = useCurrentUser();
+  const { preferences, updateSection } = useUserPreferences();
   const [active, setActive] = useState<string>("account");
   const [theme, setTheme] = useState<"midnight" | "aurora" | "gold">("midnight");
   const [accent, setAccent] = useState<"gold" | "magenta" | "cyan" | "purple">("gold");
@@ -53,7 +56,27 @@ function SettingsPage() {
     { id: "sms", label: "SMS for Streams", desc: "Text me before tonight's show starts", icon: Smartphone, on: false },
   ]);
 
-  const flip = (id: string) => setToggles((t) => t.map((x) => (x.id === id ? { ...x, on: !x.on } : x)));
+  useEffect(() => {
+    const app = preferences.app_settings;
+    if (typeof app.theme === "string") setTheme(app.theme as any);
+    if (typeof app.accent === "string") setAccent(app.accent as any);
+    const notificationPrefs = app.notifications as Record<string, boolean> | undefined;
+    if (notificationPrefs) {
+      setToggles((current) => current.map((item) => (
+        typeof notificationPrefs[item.id] === "boolean" ? { ...item, on: notificationPrefs[item.id] } : item
+      )));
+    }
+  }, [preferences.app_settings]);
+
+  const persistAppSetting = (patch: Record<string, unknown>) => {
+    void updateSection("app_settings", patch);
+  };
+
+  const flip = (id: string) => setToggles((t) => {
+    const next = t.map((x) => (x.id === id ? { ...x, on: !x.on } : x));
+    persistAppSetting({ notifications: Object.fromEntries(next.map((item) => [item.id, item.on])) });
+    return next;
+  });
 
   return (
     <AppShell wide>
@@ -116,8 +139,8 @@ function SettingsPage() {
                   <FieldRow label="Display name" value={currentUser.name} />
                   <FieldRow label="Username" value={`@${currentUser.handle}`} />
                   <FieldRow label="Bio" value={currentUser.bio.split("\n")[0]} />
-                  <FieldRow label="Location" value={currentUser.location} />
-                  <FieldRow label="Website" value={currentUser.link} last />
+                  <FieldRow label="Location" value={currentUser.location ?? ""} />
+                  <FieldRow label="Website" value={currentUser.link ?? ""} last />
                 </Panel>
 
                 <Panel>
@@ -134,7 +157,7 @@ function SettingsPage() {
                   <div className="text-sm font-semibold mb-3">Theme</div>
                   <div className="grid grid-cols-3 gap-3">
                     {(["midnight", "aurora", "gold"] as const).map((t) => (
-                      <button key={t} onClick={() => setTheme(t)} className={`relative rounded-2xl p-3 ring-1 ${theme === t ? "ring-primary glow-gold" : "ring-white/10"} hover-lift tilt-press text-left`}>
+                      <button key={t} onClick={() => { setTheme(t); persistAppSetting({ theme: t }); }} className={`relative rounded-2xl p-3 ring-1 ${theme === t ? "ring-primary glow-gold" : "ring-white/10"} hover-lift tilt-press text-left`}>
                         <div className={`h-16 rounded-xl mb-2 ${
                           t === "midnight" ? "bg-[radial-gradient(ellipse_at_top,oklch(0.2_0.07_290),oklch(0.1_0.02_270))]" :
                           t === "aurora" ? "bg-[linear-gradient(135deg,oklch(0.3_0.18_300),oklch(0.25_0.15_215),oklch(0.2_0.18_340))]" :
@@ -157,7 +180,7 @@ function SettingsPage() {
                     ] as const).map((a) => (
                       <button
                         key={a.id}
-                        onClick={() => setAccent(a.id)}
+                        onClick={() => { setAccent(a.id); persistAppSetting({ accent: a.id }); }}
                         className={`size-10 rounded-full transition hover:scale-110 ${accent === a.id ? "ring-2 ring-white/80 scale-110" : ""}`}
                         style={{ background: a.c, boxShadow: `0 0 16px ${a.c}` }}
                         aria-label={a.id}
@@ -167,8 +190,8 @@ function SettingsPage() {
                 </Panel>
 
                 <Panel>
-                  <Row icon={Palette} title="Reduce motion" desc="Limit animations across the app" action={<Switch on={false} onClick={() => toast("Motion preference saved")} />} />
-                  <Row icon={Sparkles} title="Liquid glass intensity" desc="Tune blur and translucency" action={<input type="range" defaultValue={75} className="w-32 accent-[oklch(0.82_0.16_85)]" />} last />
+                  <Row icon={Palette} title="Reduce motion" desc="Limit animations across the app" action={<Switch on={!!preferences.app_settings.reduceMotion} onClick={() => { persistAppSetting({ reduceMotion: !preferences.app_settings.reduceMotion }); toast("Motion preference saved"); }} />} />
+                  <Row icon={Sparkles} title="Liquid glass intensity" desc="Tune blur and translucency" action={<input type="range" value={Number(preferences.app_settings.glassIntensity ?? 75)} onChange={(e) => persistAppSetting({ glassIntensity: Number(e.target.value) })} className="w-32 accent-[oklch(0.82_0.16_85)]" />} last />
                 </Panel>
               </div>
             )}
@@ -186,7 +209,7 @@ function SettingsPage() {
 
             {active === "privacy" && (
               <Panel>
-                <Row icon={Shield} title="Private account" desc="Only approved fans can see your posts" action={<Switch on={false} onClick={() => toast("Private mode toggled")} />} />
+                <Row icon={Shield} title="Private account" desc="Only approved fans can see your posts" action={<Switch on={!!preferences.profile_preferences.privateAccount} onClick={() => { void updateSection("profile_preferences", { privateAccount: !preferences.profile_preferences.privateAccount }); toast("Private mode saved"); }} />} />
                 <Row icon={Lock} title="Block list" desc="0 accounts blocked" action={<ChevronRight className="size-4 text-muted-foreground" />} />
                 <Row icon={User} title="Who can DM you" desc="Followers only" action={<ChevronRight className="size-4 text-muted-foreground" />} last />
               </Panel>

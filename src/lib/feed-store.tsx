@@ -1,7 +1,19 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { currentUser } from "@/lib/mock-data";
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { createBrowserClient } from "@/lib/supabase-browser";
 
-const meAsCreator = {
+type FeedCreator = {
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  ring: "gold";
+  verified?: "creator" | "user";
+};
+
+const fallbackCreator: FeedCreator = {
   id: "me",
   name: currentUser.name,
   handle: currentUser.handle,
@@ -12,7 +24,7 @@ const meAsCreator = {
 
 export type UserPost = {
   id: string;
-  creator: typeof meAsCreator;
+  creator: FeedCreator;
   timeAgo: string;
   text: string;
   media?: string;
@@ -54,16 +66,75 @@ function timeAgo(ts: number) {
 
 export function FeedProvider({ children }: { children: ReactNode }) {
   const [raw, setRaw] = useState<UserPost[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const { user: supabaseUser } = useSupabaseAuth();
+  const profileUser = useCurrentUser();
+  const storageKey = `${KEY}:${profileUser.uid}`;
+  const meAsCreator: FeedCreator = {
+    id: profileUser.uid,
+    name: profileUser.name,
+    handle: profileUser.handle,
+    avatar: profileUser.avatar,
+    ring: "gold",
+    verified: profileUser.verified,
+  };
 
   useEffect(() => {
     try {
-      const v = localStorage.getItem(KEY);
+      const v = localStorage.getItem(storageKey);
       if (v) setRaw(JSON.parse(v));
+      else setRaw([]);
     } catch {}
-  }, []);
+    setHydrated(true);
+  }, [storageKey]);
+
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify(raw)); } catch {}
-  }, [raw]);
+    if (!hydrated) return;
+    try { localStorage.setItem(storageKey, JSON.stringify(raw)); } catch {}
+  }, [raw, hydrated, storageKey]);
+
+  useEffect(() => {
+    if (!supabaseUser) return;
+    let cancelled = false;
+
+    const loadPosts = async () => {
+      try {
+        const supabase = createBrowserClient();
+        const { data, error } = await (supabase as any)
+          .from("user_feed_posts")
+          .select("id, body, media_url, audience, tags, metrics, created_at")
+          .eq("user_id", supabaseUser.id)
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (error) throw error;
+        if (cancelled) return;
+
+        setRaw(((data ?? []) as any[]).map((row) => ({
+          id: row.id,
+          creator: meAsCreator,
+          timeAgo: timeAgo(new Date(row.created_at).getTime()),
+          text: row.body,
+          media: row.media_url ?? undefined,
+          duration: undefined,
+          likes: Number(row.metrics?.likes ?? 0),
+          comments: Number(row.metrics?.comments ?? 0),
+          reshares: Number(row.metrics?.reshares ?? 0),
+          saves: Number(row.metrics?.saves ?? 0),
+          audience: row.audience ?? "Everyone",
+          tags: Array.isArray(row.tags) ? row.tags : [],
+          createdAt: new Date(row.created_at).getTime(),
+        })));
+      } catch (error) {
+        console.error("Failed to load UID feed posts:", error);
+      }
+    };
+
+    loadPosts();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabaseUser?.id]);
 
   const posts = raw.map((p) => ({ ...p, timeAgo: timeAgo(p.createdAt) }));
 
@@ -76,10 +147,50 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       audience, tags, createdAt: Date.now(),
     };
     setRaw((s) => [post, ...s].slice(0, 100));
+    if (supabaseUser) {
+      void (async () => {
+        try {
+          const supabase = createBrowserClient();
+          const { data, error } = await (supabase as any)
+            .from("user_feed_posts")
+            .insert({
+              user_id: supabaseUser.id,
+              public_profile_uid: profileUser.uid,
+              body: text,
+              media_url: media ?? null,
+              audience,
+              tags,
+              metrics: { likes: 0, comments: 0, reshares: 0, saves: 0 },
+            })
+            .select("id, created_at")
+            .single();
+
+          if (error) throw error;
+          if (data?.id) {
+            const createdAt = data.created_at ? new Date(data.created_at).getTime() : post.createdAt;
+            setRaw((s) => s.map((p) => p.id === id ? { ...p, id: data.id, createdAt } : p));
+          }
+        } catch (error) {
+          console.error("Failed to save UID feed post:", error);
+        }
+      })();
+    }
     return post;
   };
 
-  const removePost: Ctx["removePost"] = (id) => setRaw((s) => s.filter((p) => p.id !== id));
+  const removePost: Ctx["removePost"] = (id) => {
+    setRaw((s) => s.filter((p) => p.id !== id));
+    if (supabaseUser) {
+      void (async () => {
+        try {
+          const supabase = createBrowserClient();
+          await (supabase as any).from("user_feed_posts").delete().eq("id", id).eq("user_id", supabaseUser.id);
+        } catch (error) {
+          console.error("Failed to remove UID feed post:", error);
+        }
+      })();
+    }
+  };
 
   return <C.Provider value={{ posts, addPost, removePost }}>{children}</C.Provider>;
 }

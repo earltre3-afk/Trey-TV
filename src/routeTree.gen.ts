@@ -27,10 +27,14 @@ import { Route as ForYouRouteImport } from './routes/for-you'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
+import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as CreatorStudioRouteImport } from './routes/creator-studio'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as CollectionsRouteImport } from './routes/collections'
+import { Route as ApplyRouteImport } from './routes/apply'
+import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
@@ -41,11 +45,18 @@ import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
+import { Route as SettingsConnectedAppsRouteImport } from './routes/settings.connected-apps'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
 import { Route as OnboardingManualRouteImport } from './routes/onboarding.manual'
+import { Route as OnboardingImportScreenshotRouteImport } from './routes/onboarding.import-screenshot'
+import { Route as OauthUserinfoRouteImport } from './routes/oauth.userinfo'
+import { Route as OauthTokenRouteImport } from './routes/oauth.token'
+import { Route as OauthRevokeRouteImport } from './routes/oauth.revoke'
+import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as DevelopersDocsRouteImport } from './routes/developers.docs'
 import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
 import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
 import { Route as CreatorStudioSubmissionsRouteImport } from './routes/creator-studio.submissions'
@@ -61,6 +72,8 @@ import { Route as CreatorHubStudioRouteImport } from './routes/creator-hub.studi
 import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ApplyVerificationRouteImport } from './routes/apply.verification'
+import { Route as ApplyCreatorRouteImport } from './routes/apply.creator'
 import { Route as AdminViewAsRouteImport } from './routes/admin.view-as'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
@@ -72,10 +85,12 @@ import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRecommendationsRouteImport } from './routes/admin.recommendations'
 import { Route as AdminProfileDecorationsRouteImport } from './routes/admin.profile-decorations'
 import { Route as AdminMusicReviewRouteImport } from './routes/admin.music-review'
+import { Route as AdminDeveloperAppsRouteImport } from './routes/admin.developer-apps'
 import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
+import { Route as OauthJwksJsonRouteImport } from './routes/oauth.jwks.json'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
@@ -168,6 +183,11 @@ const EditProfileRoute = EditProfileRouteImport.update({
   path: '/edit-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DevelopersRoute = DevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CreatorStudioRoute = CreatorStudioRouteImport.update({
   id: '/creator-studio',
   path: '/creator-studio',
@@ -183,9 +203,24 @@ const CreateRoute = CreateRouteImport.update({
   path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
+  id: '/confirm-email',
+  path: '/confirm-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CollectionsRoute = CollectionsRouteImport.update({
   id: '/collections',
   path: '/collections',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplyRoute = ApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApplicationsRoute = ApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
@@ -238,6 +273,11 @@ const SettingsVerificationRoute = SettingsVerificationRouteImport.update({
   path: '/verification',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsConnectedAppsRoute = SettingsConnectedAppsRouteImport.update({
+  id: '/connected-apps',
+  path: '/connected-apps',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const OnboardingVoiceRoute = OnboardingVoiceRouteImport.update({
   id: '/voice',
   path: '/voice',
@@ -247,6 +287,32 @@ const OnboardingManualRoute = OnboardingManualRouteImport.update({
   id: '/manual',
   path: '/manual',
   getParentRoute: () => OnboardingRoute,
+} as any)
+const OnboardingImportScreenshotRoute =
+  OnboardingImportScreenshotRouteImport.update({
+    id: '/import-screenshot',
+    path: '/import-screenshot',
+    getParentRoute: () => OnboardingRoute,
+  } as any)
+const OauthUserinfoRoute = OauthUserinfoRouteImport.update({
+  id: '/oauth/userinfo',
+  path: '/oauth/userinfo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthTokenRoute = OauthTokenRouteImport.update({
+  id: '/oauth/token',
+  path: '/oauth/token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthRevokeRoute = OauthRevokeRouteImport.update({
+  id: '/oauth/revoke',
+  path: '/oauth/revoke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
+  id: '/oauth/authorize',
+  path: '/oauth/authorize',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MusicReviewQueueRoute = MusicReviewQueueRouteImport.update({
   id: '/queue',
@@ -262,6 +328,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DevelopersDocsRoute = DevelopersDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => DevelopersRoute,
 } as any)
 const CreatorStudioSubmittedRoute = CreatorStudioSubmittedRouteImport.update({
   id: '/submitted',
@@ -340,6 +411,16 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApplyVerificationRoute = ApplyVerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => ApplyRoute,
+} as any)
+const ApplyCreatorRoute = ApplyCreatorRouteImport.update({
+  id: '/creator',
+  path: '/creator',
+  getParentRoute: () => ApplyRoute,
+} as any)
 const AdminViewAsRoute = AdminViewAsRouteImport.update({
   id: '/view-as',
   path: '/view-as',
@@ -395,6 +476,11 @@ const AdminMusicReviewRoute = AdminMusicReviewRouteImport.update({
   path: '/music-review',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDeveloperAppsRoute = AdminDeveloperAppsRouteImport.update({
+  id: '/developer-apps',
+  path: '/developer-apps',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCreatorsRoute = AdminCreatorsRouteImport.update({
   id: '/creators',
   path: '/creators',
@@ -415,6 +501,11 @@ const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => AdminRoute,
 } as any)
+const OauthJwksJsonRoute = OauthJwksJsonRouteImport.update({
+  id: '/oauth/jwks/json',
+  path: '/oauth/jwks/json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -427,10 +518,14 @@ export interface FileRoutesByFullPath {
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
+  '/applications': typeof ApplicationsRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/collections': typeof CollectionsRoute
+  '/confirm-email': typeof ConfirmEmailRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/creator-studio': typeof CreatorStudioRouteWithChildren
+  '/developers': typeof DevelopersRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -453,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/developer-apps': typeof AdminDeveloperAppsRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -464,6 +560,8 @@ export interface FileRoutesByFullPath {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -479,17 +577,25 @@ export interface FileRoutesByFullPath {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/developers/docs': typeof DevelopersDocsRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/oauth/userinfo': typeof OauthUserinfoRoute
+  '/onboarding/import-screenshot': typeof OnboardingImportScreenshotRoute
   '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/oauth/jwks/json': typeof OauthJwksJsonRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -497,9 +603,13 @@ export interface FileRoutesByTo {
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
+  '/applications': typeof ApplicationsRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/collections': typeof CollectionsRoute
+  '/confirm-email': typeof ConfirmEmailRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
+  '/developers': typeof DevelopersRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -522,6 +632,7 @@ export interface FileRoutesByTo {
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/developer-apps': typeof AdminDeveloperAppsRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -533,6 +644,8 @@ export interface FileRoutesByTo {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -548,17 +661,25 @@ export interface FileRoutesByTo {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/developers/docs': typeof DevelopersDocsRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/oauth/userinfo': typeof OauthUserinfoRoute
+  '/onboarding/import-screenshot': typeof OnboardingImportScreenshotRoute
   '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio': typeof CreatorStudioIndexRoute
   '/legal': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/oauth/jwks/json': typeof OauthJwksJsonRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -567,10 +688,14 @@ export interface FileRoutesById {
   '/activity': typeof ActivityRoute
   '/admin': typeof AdminRouteWithChildren
   '/analytics': typeof AnalyticsRoute
+  '/applications': typeof ApplicationsRoute
+  '/apply': typeof ApplyRouteWithChildren
   '/collections': typeof CollectionsRoute
+  '/confirm-email': typeof ConfirmEmailRoute
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/creator-studio': typeof CreatorStudioRouteWithChildren
+  '/developers': typeof DevelopersRouteWithChildren
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -593,6 +718,7 @@ export interface FileRoutesById {
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
+  '/admin/developer-apps': typeof AdminDeveloperAppsRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -604,6 +730,8 @@ export interface FileRoutesById {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
   '/channel/$handle': typeof ChannelHandleRoute
@@ -619,17 +747,25 @@ export interface FileRoutesById {
   '/creator-studio/submissions': typeof CreatorStudioSubmissionsRoute
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
+  '/developers/docs': typeof DevelopersDocsRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
+  '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/revoke': typeof OauthRevokeRoute
+  '/oauth/token': typeof OauthTokenRoute
+  '/oauth/userinfo': typeof OauthUserinfoRoute
+  '/onboarding/import-screenshot': typeof OnboardingImportScreenshotRoute
   '/onboarding/manual': typeof OnboardingManualRoute
   '/onboarding/voice': typeof OnboardingVoiceRoute
+  '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/u/$uid': typeof UUidRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/oauth/jwks/json': typeof OauthJwksJsonRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -639,10 +775,14 @@ export interface FileRouteTypes {
     | '/activity'
     | '/admin'
     | '/analytics'
+    | '/applications'
+    | '/apply'
     | '/collections'
+    | '/confirm-email'
     | '/create'
     | '/creator-hub'
     | '/creator-studio'
+    | '/developers'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -665,6 +805,7 @@ export interface FileRouteTypes {
     | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/developer-apps'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -676,6 +817,8 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/apply/creator'
+    | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
@@ -691,17 +834,25 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/developers/docs'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/oauth/authorize'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/oauth/userinfo'
+    | '/onboarding/import-screenshot'
     | '/onboarding/manual'
     | '/onboarding/voice'
+    | '/settings/connected-apps'
     | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
     | '/legal/'
     | '/admin/content-approval/$id'
+    | '/oauth/jwks/json'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -709,9 +860,13 @@ export interface FileRouteTypes {
     | '/activity'
     | '/admin'
     | '/analytics'
+    | '/applications'
+    | '/apply'
     | '/collections'
+    | '/confirm-email'
     | '/create'
     | '/creator-hub'
+    | '/developers'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -734,6 +889,7 @@ export interface FileRouteTypes {
     | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/developer-apps'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -745,6 +901,8 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/apply/creator'
+    | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
@@ -760,17 +918,25 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/developers/docs'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/oauth/authorize'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/oauth/userinfo'
+    | '/onboarding/import-screenshot'
     | '/onboarding/manual'
     | '/onboarding/voice'
+    | '/settings/connected-apps'
     | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio'
     | '/legal'
     | '/admin/content-approval/$id'
+    | '/oauth/jwks/json'
   id:
     | '__root__'
     | '/'
@@ -778,10 +944,14 @@ export interface FileRouteTypes {
     | '/activity'
     | '/admin'
     | '/analytics'
+    | '/applications'
+    | '/apply'
     | '/collections'
+    | '/confirm-email'
     | '/create'
     | '/creator-hub'
     | '/creator-studio'
+    | '/developers'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -804,6 +974,7 @@ export interface FileRouteTypes {
     | '/admin/audit-log'
     | '/admin/content-approval'
     | '/admin/creators'
+    | '/admin/developer-apps'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -815,6 +986,8 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/apply/creator'
+    | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
     | '/channel/$handle'
@@ -830,17 +1003,25 @@ export interface FileRouteTypes {
     | '/creator-studio/submissions'
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
+    | '/developers/docs'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
+    | '/oauth/authorize'
+    | '/oauth/revoke'
+    | '/oauth/token'
+    | '/oauth/userinfo'
+    | '/onboarding/import-screenshot'
     | '/onboarding/manual'
     | '/onboarding/voice'
+    | '/settings/connected-apps'
     | '/settings/verification'
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
     | '/legal/'
     | '/admin/content-approval/$id'
+    | '/oauth/jwks/json'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -849,10 +1030,14 @@ export interface RootRouteChildren {
   ActivityRoute: typeof ActivityRoute
   AdminRoute: typeof AdminRouteWithChildren
   AnalyticsRoute: typeof AnalyticsRoute
+  ApplicationsRoute: typeof ApplicationsRoute
+  ApplyRoute: typeof ApplyRouteWithChildren
   CollectionsRoute: typeof CollectionsRoute
+  ConfirmEmailRoute: typeof ConfirmEmailRoute
   CreateRoute: typeof CreateRoute
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
   CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
+  DevelopersRoute: typeof DevelopersRouteWithChildren
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
@@ -876,9 +1061,14 @@ export interface RootRouteChildren {
   ChannelHandleRoute: typeof ChannelHandleRoute
   LegalSlugRoute: typeof LegalSlugRoute
   LegalDataDeletionRoute: typeof LegalDataDeletionRoute
+  OauthAuthorizeRoute: typeof OauthAuthorizeRoute
+  OauthRevokeRoute: typeof OauthRevokeRoute
+  OauthTokenRoute: typeof OauthTokenRoute
+  OauthUserinfoRoute: typeof OauthUserinfoRoute
   UUidRoute: typeof UUidRoute
   WatchIdRoute: typeof WatchIdRoute
   LegalIndexRoute: typeof LegalIndexRoute
+  OauthJwksJsonRoute: typeof OauthJwksJsonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1009,6 +1199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/developers': {
+      id: '/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof DevelopersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/creator-studio': {
       id: '/creator-studio'
       path: '/creator-studio'
@@ -1030,11 +1227,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/confirm-email': {
+      id: '/confirm-email'
+      path: '/confirm-email'
+      fullPath: '/confirm-email'
+      preLoaderRoute: typeof ConfirmEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/collections': {
       id: '/collections'
       path: '/collections'
       fullPath: '/collections'
       preLoaderRoute: typeof CollectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/apply': {
+      id: '/apply'
+      path: '/apply'
+      fullPath: '/apply'
+      preLoaderRoute: typeof ApplyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/applications': {
+      id: '/applications'
+      path: '/applications'
+      fullPath: '/applications'
+      preLoaderRoute: typeof ApplicationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analytics': {
@@ -1107,6 +1325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsVerificationRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/connected-apps': {
+      id: '/settings/connected-apps'
+      path: '/connected-apps'
+      fullPath: '/settings/connected-apps'
+      preLoaderRoute: typeof SettingsConnectedAppsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/onboarding/voice': {
       id: '/onboarding/voice'
       path: '/voice'
@@ -1120,6 +1345,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding/manual'
       preLoaderRoute: typeof OnboardingManualRouteImport
       parentRoute: typeof OnboardingRoute
+    }
+    '/onboarding/import-screenshot': {
+      id: '/onboarding/import-screenshot'
+      path: '/import-screenshot'
+      fullPath: '/onboarding/import-screenshot'
+      preLoaderRoute: typeof OnboardingImportScreenshotRouteImport
+      parentRoute: typeof OnboardingRoute
+    }
+    '/oauth/userinfo': {
+      id: '/oauth/userinfo'
+      path: '/oauth/userinfo'
+      fullPath: '/oauth/userinfo'
+      preLoaderRoute: typeof OauthUserinfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/token': {
+      id: '/oauth/token'
+      path: '/oauth/token'
+      fullPath: '/oauth/token'
+      preLoaderRoute: typeof OauthTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/revoke': {
+      id: '/oauth/revoke'
+      path: '/oauth/revoke'
+      fullPath: '/oauth/revoke'
+      preLoaderRoute: typeof OauthRevokeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/authorize': {
+      id: '/oauth/authorize'
+      path: '/oauth/authorize'
+      fullPath: '/oauth/authorize'
+      preLoaderRoute: typeof OauthAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/music-review/queue': {
       id: '/music-review/queue'
@@ -1141,6 +1401,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/developers/docs': {
+      id: '/developers/docs'
+      path: '/docs'
+      fullPath: '/developers/docs'
+      preLoaderRoute: typeof DevelopersDocsRouteImport
+      parentRoute: typeof DevelopersRoute
     }
     '/creator-studio/submitted': {
       id: '/creator-studio/submitted'
@@ -1247,6 +1514,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/apply/verification': {
+      id: '/apply/verification'
+      path: '/verification'
+      fullPath: '/apply/verification'
+      preLoaderRoute: typeof ApplyVerificationRouteImport
+      parentRoute: typeof ApplyRoute
+    }
+    '/apply/creator': {
+      id: '/apply/creator'
+      path: '/creator'
+      fullPath: '/apply/creator'
+      preLoaderRoute: typeof ApplyCreatorRouteImport
+      parentRoute: typeof ApplyRoute
+    }
     '/admin/view-as': {
       id: '/admin/view-as'
       path: '/view-as'
@@ -1324,6 +1605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMusicReviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/developer-apps': {
+      id: '/admin/developer-apps'
+      path: '/developer-apps'
+      fullPath: '/admin/developer-apps'
+      preLoaderRoute: typeof AdminDeveloperAppsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/creators': {
       id: '/admin/creators'
       path: '/creators'
@@ -1352,6 +1640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/oauth/jwks/json': {
+      id: '/oauth/jwks/json'
+      path: '/oauth/jwks/json'
+      fullPath: '/oauth/jwks/json'
+      preLoaderRoute: typeof OauthJwksJsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/content-approval/$id': {
       id: '/admin/content-approval/$id'
       path: '/$id'
@@ -1378,6 +1673,7 @@ interface AdminRouteChildren {
   AdminAuditLogRoute: typeof AdminAuditLogRoute
   AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
   AdminCreatorsRoute: typeof AdminCreatorsRoute
+  AdminDeveloperAppsRoute: typeof AdminDeveloperAppsRoute
   AdminMusicReviewRoute: typeof AdminMusicReviewRoute
   AdminProfileDecorationsRoute: typeof AdminProfileDecorationsRoute
   AdminRecommendationsRoute: typeof AdminRecommendationsRoute
@@ -1396,6 +1692,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditLogRoute: AdminAuditLogRoute,
   AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
   AdminCreatorsRoute: AdminCreatorsRoute,
+  AdminDeveloperAppsRoute: AdminDeveloperAppsRoute,
   AdminMusicReviewRoute: AdminMusicReviewRoute,
   AdminProfileDecorationsRoute: AdminProfileDecorationsRoute,
   AdminRecommendationsRoute: AdminRecommendationsRoute,
@@ -1410,6 +1707,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ApplyRouteChildren {
+  ApplyCreatorRoute: typeof ApplyCreatorRoute
+  ApplyVerificationRoute: typeof ApplyVerificationRoute
+}
+
+const ApplyRouteChildren: ApplyRouteChildren = {
+  ApplyCreatorRoute: ApplyCreatorRoute,
+  ApplyVerificationRoute: ApplyVerificationRoute,
+}
+
+const ApplyRouteWithChildren = ApplyRoute._addFileChildren(ApplyRouteChildren)
 
 interface CreatorHubRouteChildren {
   CreatorHubStudioRoute: typeof CreatorHubStudioRoute
@@ -1457,6 +1766,18 @@ const CreatorStudioRouteWithChildren = CreatorStudioRoute._addFileChildren(
   CreatorStudioRouteChildren,
 )
 
+interface DevelopersRouteChildren {
+  DevelopersDocsRoute: typeof DevelopersDocsRoute
+}
+
+const DevelopersRouteChildren: DevelopersRouteChildren = {
+  DevelopersDocsRoute: DevelopersDocsRoute,
+}
+
+const DevelopersRouteWithChildren = DevelopersRoute._addFileChildren(
+  DevelopersRouteChildren,
+)
+
 interface MusicReviewRouteChildren {
   MusicReviewQueueRoute: typeof MusicReviewQueueRoute
 }
@@ -1470,11 +1791,13 @@ const MusicReviewRouteWithChildren = MusicReviewRoute._addFileChildren(
 )
 
 interface OnboardingRouteChildren {
+  OnboardingImportScreenshotRoute: typeof OnboardingImportScreenshotRoute
   OnboardingManualRoute: typeof OnboardingManualRoute
   OnboardingVoiceRoute: typeof OnboardingVoiceRoute
 }
 
 const OnboardingRouteChildren: OnboardingRouteChildren = {
+  OnboardingImportScreenshotRoute: OnboardingImportScreenshotRoute,
   OnboardingManualRoute: OnboardingManualRoute,
   OnboardingVoiceRoute: OnboardingVoiceRoute,
 }
@@ -1484,10 +1807,12 @@ const OnboardingRouteWithChildren = OnboardingRoute._addFileChildren(
 )
 
 interface SettingsRouteChildren {
+  SettingsConnectedAppsRoute: typeof SettingsConnectedAppsRoute
   SettingsVerificationRoute: typeof SettingsVerificationRoute
 }
 
 const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsConnectedAppsRoute: SettingsConnectedAppsRoute,
   SettingsVerificationRoute: SettingsVerificationRoute,
 }
 
@@ -1501,10 +1826,14 @@ const rootRouteChildren: RootRouteChildren = {
   ActivityRoute: ActivityRoute,
   AdminRoute: AdminRouteWithChildren,
   AnalyticsRoute: AnalyticsRoute,
+  ApplicationsRoute: ApplicationsRoute,
+  ApplyRoute: ApplyRouteWithChildren,
   CollectionsRoute: CollectionsRoute,
+  ConfirmEmailRoute: ConfirmEmailRoute,
   CreateRoute: CreateRoute,
   CreatorHubRoute: CreatorHubRouteWithChildren,
   CreatorStudioRoute: CreatorStudioRouteWithChildren,
+  DevelopersRoute: DevelopersRouteWithChildren,
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
@@ -1528,9 +1857,14 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelHandleRoute: ChannelHandleRoute,
   LegalSlugRoute: LegalSlugRoute,
   LegalDataDeletionRoute: LegalDataDeletionRoute,
+  OauthAuthorizeRoute: OauthAuthorizeRoute,
+  OauthRevokeRoute: OauthRevokeRoute,
+  OauthTokenRoute: OauthTokenRoute,
+  OauthUserinfoRoute: OauthUserinfoRoute,
   UUidRoute: UUidRoute,
   WatchIdRoute: WatchIdRoute,
   LegalIndexRoute: LegalIndexRoute,
+  OauthJwksJsonRoute: OauthJwksJsonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

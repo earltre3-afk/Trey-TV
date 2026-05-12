@@ -1,6 +1,35 @@
 import { Link } from "@tanstack/react-router";
-import * as Icons from "lucide-react";
-import { ArrowUpRight } from "lucide-react";
+import {
+  Accessibility,
+  AlertTriangle,
+  ArrowUpRight,
+  Cookie,
+  Copyright,
+  CreditCard,
+  Crown,
+  FileText,
+  Film,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICONS: Record<string, LucideIcon> = {
+  Accessibility,
+  AlertTriangle,
+  Cookie,
+  Copyright,
+  CreditCard,
+  Crown,
+  FileText,
+  Film,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  Users,
+};
 
 export function LegalHubCard({
   slug,
@@ -13,7 +42,7 @@ export function LegalHubCard({
   summary: string;
   icon?: string;
 }) {
-  const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[icon] ?? Icons.FileText;
+  const Icon = ICONS[icon] ?? FileText;
   return (
     <Link
       to={"/legal/$slug" as any}

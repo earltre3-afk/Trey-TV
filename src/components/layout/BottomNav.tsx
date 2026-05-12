@@ -13,6 +13,9 @@ export function BottomNav() {
   const profileAvatar = user?.avatar ?? currentUser.avatar;
   const onProfile = pathname.startsWith("/u/");
 
+  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/");
+  if (hideNav) return null;
+
   return (
     <nav
       className="bottom-nav mobile-bottom-nav lg:hidden"

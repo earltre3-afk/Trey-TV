@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { createBrowserClient } from "@/lib/supabase-browser";
+import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { currentUser } from "@/lib/mock-data";
 import bannerImg from "@/assets/profile-banner.jpg";
 import { VerifiedBadge } from "@/components/brand/Badge";
@@ -59,6 +60,8 @@ function EditProfile() {
   });
 
   const [previewing, setPreviewing] = useState(false);
+  const [avatarUpload, setAvatarUpload] = useState<File | null>(null);
+  const [bannerUpload, setBannerUpload] = useState<File | null>(null);
   const avatarFile = useRef<HTMLInputElement | null>(null);
   const bannerFile = useRef<HTMLInputElement | null>(null);
 
@@ -70,10 +73,12 @@ function EditProfile() {
       const f = input.files?.[0];
       if (!f) return;
       const url = URL.createObjectURL(f);
-        setDraft((d) => ({ ...d, [key]: url }));
-        if (key === "banner") {
-          recordUserTrace({ userUid: base.uid, action: "profile.banner_update", targetType: "profile", targetId: base.uid, details: { fileType: f.type } });
-          const isAnimated = /gif|video/.test(f.type);
+      setDraft((d) => ({ ...d, [key]: url }));
+      if (key === "avatar") setAvatarUpload(f);
+      if (key === "banner") {
+        setBannerUpload(f);
+        recordUserTrace({ userUid: base.uid, action: "profile.banner_update", targetType: "profile", targetId: base.uid, details: { fileType: f.type } });
+        const isAnimated = /gif|video/.test(f.type);
         toast.success(isAnimated ? "Animated banner ready — it'll loop forever ✨" : "Banner updated");
       }
     };
@@ -85,13 +90,45 @@ function EditProfile() {
   })();
 
   const save = async () => {
+    let persistedAvatar = draft.avatar;
+    let persistedBanner = draft.banner;
+
     if (supabaseUser) {
       const supabase = createBrowserClient();
+      try {
+        if (avatarUpload) {
+          const uploaded = await uploadProfileMedia(supabaseUser.id, avatarUpload, "avatar");
+          persistedAvatar = uploaded.url;
+        }
+        if (bannerUpload) {
+          const uploaded = await uploadProfileMedia(supabaseUser.id, bannerUpload, "banner");
+          persistedBanner = uploaded.url;
+        }
+      } catch (error) {
+        console.error("Failed to upload profile media:", error);
+        toast("Failed to upload profile media.");
+        return;
+      }
+
       const profileUpdate: any = {
         display_name: draft.name,
         username: draft.handle,
         bio: draft.bio,
         location: draft.location,
+        link_url: draft.link,
+        tagline: draft.tagline,
+        pronouns: draft.pronouns,
+        birthday: draft.birthday,
+        favorite_genres: draft.favoriteGenres,
+        favorite_creators: draft.favoriteCreators,
+        social_instagram: draft.socialInstagram,
+        social_tiktok: draft.socialTikTok,
+        social_youtube: draft.socialYouTube,
+        profile_visibility: draft.profileVisibility,
+        show_location: draft.showLocation,
+        show_birthday: draft.showBirthday,
+        avatar_url: persistedAvatar,
+        banner_url: persistedBanner,
         profile_accent_color: draft.accent,
       };
       const { error } = await (supabase as any)
@@ -127,8 +164,8 @@ function EditProfile() {
       profileVisibility: draft.profileVisibility,
       showLocation: draft.showLocation,
       showBirthday: draft.showBirthday,
-      avatar: draft.avatar,
-      banner: draft.banner,
+      avatar: persistedAvatar,
+      banner: persistedBanner,
       accent: draft.accent,
     });
     recordUserTrace({ userUid: base.uid, action: "profile.update", targetType: "profile", targetId: base.uid, details: { handle: draft.handle, visibility: draft.profileVisibility } });
