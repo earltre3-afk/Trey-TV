@@ -10,14 +10,15 @@ import {
   handValue,
   BJState,
 } from "@/features/games/lib/blackjack/blackjackEngine";
-import { TreyCard } from "../shared/TreyCard";
+
 import { TreyBrandMark } from "../shared/TreyBrandMark";
+import { GamePlayerSeat } from "../shared/GamePlayerSeat";
 import { ArrowLeft, Info, Loader2 } from "lucide-react";
 import { useRealtimeRoom } from "@/features/games/hooks/useRealtimeRoom";
 import { PlayerIdentity } from "@/features/games/lib/services/identity";
 import { useChat } from "@/features/games/hooks/useChat";
 import { GameChatDrawer, ChatHeaderButton } from "../shared/GameChatDrawer";
-import { PixiTableEffectsLazy } from "../pixi/PixiTableEffectsLazy";
+import { PixiBlackjackTableLazy } from "../pixi/PixiGameTables";
 
 interface Props {
   onBack: () => void;
@@ -277,157 +278,95 @@ const BJView: React.FC<ViewProps> = ({
         </div>
       </header>
 
-      {/* TABLE */}
+      {/* PIXI TABLE — primary game visual layer */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-center justify-center">
         <div
-          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden flex flex-col trey-blackjack-felt trey-table-rim ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
+          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
           style={{
             borderColor: `${accent}66`,
             boxShadow: `0 0 60px ${accent}24, inset 0 0 68px ${accent}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
+            background: '#05070D',
           }}
         >
-          <PixiTableEffectsLazy
-            game="blackjack"
-            accent={accent}
-            eventKey={pixiEventKey}
-            cardCount={state.player.length + state.dealer.length}
+          {/* Pixi renders the entire table scene: felt, rim, dealer cards, player cards, chips */}
+          <PixiBlackjackTableLazy
+            dealerCards={state.dealer}
+            playerCards={state.player}
+            phase={state.phase}
             result={state.result}
             bet={state.bet}
-            className="z-0 opacity-90"
-          />
-          <div
-            className="absolute inset-0 opacity-50 trey-smoke"
-            style={{
-              background:
-                "radial-gradient(circle at 22% 18%, rgba(255,255,255,0.08), transparent 18%), radial-gradient(circle at 78% 22%, rgba(255,200,87,0.10), transparent 22%), radial-gradient(circle at 40% 86%, rgba(0,183,255,0.08), transparent 24%)",
-            }}
-          />
-          <div
-            className="absolute inset-3 rounded-[28px] border pointer-events-none"
-            style={{ borderColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0 -36px 70px rgba(0,0,0,0.42)" }}
-          />
-          <div
-            className="absolute left-[-8%] right-[-8%] bottom-[-18px] h-24 rounded-[50%] pointer-events-none"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,200,87,0.12), rgba(0,0,0,0.58))",
-              borderTop: "1px solid rgba(255,200,87,0.32)",
-              boxShadow: "0 -10px 28px rgba(255,200,87,0.12), inset 0 12px 22px rgba(255,255,255,0.04)",
-            }}
-          />
-          <div
-            className="absolute left-1/2 top-1/2 w-44 h-44 -translate-x-1/2 -translate-y-1/2 rounded-full border pointer-events-none"
-            style={{
-              borderColor: `${accent}28`,
-              boxShadow: `0 0 45px ${accent}24, inset 0 0 35px ${accent}10`,
-            }}
-          />
-          <div
-            className="absolute left-1/2 top-1/2 w-28 h-28 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
-            style={{
-              background: `radial-gradient(circle, ${accent}14 0%, transparent 68%)`,
-            }}
+            accent={accent}
+            eventKey={pixiEventKey}
           />
 
-          {/* DEALER ZONE */}
-          <section className="relative z-10 flex-[1.05] flex flex-col items-center justify-center px-4 pt-3 min-h-0">
-            <TableLabel
-              label="DEALER"
-              value={state.dealer.length > 0 ? dealerShownVal : undefined}
-              color="#FFC857"
-            />
-            <div className="mt-2 min-h-[88px] flex justify-center items-center gap-1.5 max-w-full">
-              {state.dealer.length === 0 && (
-                <EmptyCardHint text="Waiting for the cut…" />
-              )}
-              {state.dealer.map((id, i) => (
-                <div
-                  key={`${id}-${i}`}
-                  className="trey-card-deal"
-                  style={{
-                    animationDelay: `${i * 85}ms`,
-                    marginLeft: i > 0 ? -12 : 0,
-                  }}
-                >
-                  <TreyCard
-                    cardId={id}
-                    faceDown={state.phase === "player" && i === 1}
-                    size="sm"
-                  />
-                </div>
-              ))}
+          {/* ── Seat identity overlays ── */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+            {/* Dealer seat — top of table, matches Pixi dealer card zone */}
+            <div style={{ position: 'absolute', top: '16%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+              <GamePlayerSeat
+                displayName="Dealer"
+                isBot
+                isCurrentTurn={state.phase === 'dealer'}
+                accentColor="#FFC857"
+                size="sm"
+                position="top"
+              />
             </div>
-          </section>
+            {/* Player seat — bottom of table, above the player card zone */}
+            <div style={{ position: 'absolute', top: '82%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+              <GamePlayerSeat
+                displayName="You"
+                isBot={false}
+                isCurrentTurn={state.phase === 'player'}
+                accentColor="#00B7FF"
+                size="md"
+                position="bottom"
+              />
+            </div>
+          </div>
 
-          {/* CENTER ACTION / RESULT RING */}
-          <section className="relative z-10 shrink-0 px-4 py-1.5">
+          {/* Score labels — floating React overlay on top of Pixi canvas */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <TableLabel label="DEALER" value={state.dealer.length > 0 ? dealerShownVal : undefined} color="#FFC857" />
+          </div>
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <TableLabel label="YOU" value={state.player.length > 0 ? playerVal : undefined} color="#00B7FF" />
+          </div>
+
+          {/* Center info strip — table rules + result badge */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center gap-1">
             <div
-              className="rounded-3xl border px-3 py-2 text-center backdrop-blur-xl trey-glass-panel"
+              className="rounded-2xl border px-3 py-1.5 text-center backdrop-blur-xl"
               style={{
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))",
+                background: "rgba(5,7,13,0.72)",
                 borderColor: `${accent}40`,
-                boxShadow: `0 0 28px ${accent}1f, inset 0 1px 0 rgba(255,255,255,0.07)`,
+                boxShadow: `0 0 22px ${accent}18, inset 0 1px 0 rgba(255,255,255,0.06)`,
               }}
             >
-              <div
-                className="text-[8px] tracking-[0.32em] font-black"
-                style={{ color: accent }}
-              >
+              <div className="text-[8px] tracking-[0.32em] font-black" style={{ color: accent }}>
                 TREY TV BLACKJACK
               </div>
-              <div className="mt-1 text-[10px] text-slate-400 font-bold tracking-wide">
-                Pays 3:2 · Dealer stands on 17 · Virtual chips only
+              <div className="text-[9px] text-slate-500 font-bold tracking-wide">
+                3:2 · Dealer 17 · Virtual
               </div>
-              {state.result && (
-                <div
-                  className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black trey-score-pop"
-                  style={{
-                    background: isWin
-                      ? "rgba(34,197,94,0.16)"
-                      : isPush
-                        ? "rgba(255,200,87,0.16)"
-                        : "rgba(239,68,68,0.16)",
-                    color: accent,
-                    border: `1px solid ${accent}90`,
-                    boxShadow: `0 0 18px ${accent}35`,
-                  }}
-                >
-                  {state.result.toUpperCase()} · {state.message}
-                </div>
-              )}
             </div>
-          </section>
-
-          {/* PLAYER ZONE */}
-          <section className="relative z-10 flex-[1.1] flex flex-col items-center justify-center px-4 pb-3 min-h-0">
-            <div className="min-h-[92px] flex justify-center items-center gap-1.5 max-w-full">
-              {state.player.length === 0 && (
-                <EmptyCardHint text="Select chips below to deal" />
-              )}
-              {state.player.map((id, i) => (
-                <div
-                  key={`${id}-${i}`}
-                  className="trey-card-deal"
-                  style={{
-                    animationDelay: `${i * 85}ms`,
-                    marginLeft: i > 0 ? -10 : 0,
-                  }}
-                >
-                  <TreyCard
-                    cardId={id}
-                    size="sm"
-                    selected={state.phase === "player"}
-                    playable={state.phase === "player"}
-                  />
-                </div>
-              ))}
-            </div>
-            <TableLabel
-              label="YOU"
-              value={state.player.length > 0 ? playerVal : undefined}
-              color="#00B7FF"
-            />
-          </section>
+            {state.result && (
+              <div
+                className="mt-1 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black trey-score-pop"
+                style={{
+                  background: isWin ? "rgba(34,197,94,0.18)" : isPush ? "rgba(255,200,87,0.18)" : "rgba(239,68,68,0.18)",
+                  color: accent,
+                  border: `1px solid ${accent}90`,
+                  boxShadow: `0 0 18px ${accent}35`,
+                }}
+              >
+                {state.result.toUpperCase()} · {state.message}
+              </div>
+            )}
+            {state.player.length === 0 && state.phase === 'betting' && (
+              <div className="text-[10px] text-slate-500 font-bold tracking-wide mt-1">Select chips below to deal</div>
+            )}
+          </div>
         </div>
       </main>
 
@@ -573,18 +512,6 @@ const TableLabel: React.FC<{
         {value}
       </span>
     )}
-  </div>
-);
-
-const EmptyCardHint: React.FC<{ text: string }> = ({ text }) => (
-  <div
-    className="w-36 h-20 rounded-2xl border border-dashed flex items-center justify-center text-[11px] text-slate-500 font-bold text-center px-3"
-    style={{
-      background: "rgba(255,255,255,0.025)",
-      borderColor: "rgba(255,255,255,0.12)",
-    }}
-  >
-    {text}
   </div>
 );
 

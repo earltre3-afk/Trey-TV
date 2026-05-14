@@ -312,7 +312,8 @@ html, body, #root { overscroll-behavior: none; }
   .trey-bid-confirm,
   .trey-screen-enter,
   .trey-glow-sweep,
-  .trey-pile-tremble {
+  .trey-pile-tremble,
+  .trey-seat-pulse {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
@@ -356,3 +357,20 @@ html, body, #root { overscroll-behavior: none; }
     rgba(255,255,255,0.06) 0%,
     rgba(255,255,255,0) 60%);
 }
+
+/* active-seat avatar pulse ring */
+@keyframes trey-seat-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(255,200,87,0.55),
+      0 0 18px rgba(255,200,87,0.50);
+    border-color: rgba(255,200,87,0.80);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(255,200,87,0),
+      0 0 30px rgba(255,200,87,0.90);
+    border-color: rgba(255,200,87,1);
+  }
+}
+.trey-seat-pulse { animation: trey-seat-pulse 1.7s ease-in-out infinite; }

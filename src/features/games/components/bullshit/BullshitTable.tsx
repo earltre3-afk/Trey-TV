@@ -3,14 +3,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   newBullshitGame, makeClaim, callBullshit, passChallenge, botClaim, botShouldCall, BSState,
 } from '@/features/games/lib/bullshit/bullshitEngine';
-import { TreyCard } from '../shared/TreyCard';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
+import { GamePlayerSeat } from '../shared/GamePlayerSeat';
 import { ArrowLeft, Info, Loader2, Flame } from 'lucide-react';
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
-import { PixiTableEffectsLazy } from '../pixi/PixiTableEffectsLazy';
+import { PixiBullshitTableLazy } from '../pixi/PixiGameTables';
 
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
@@ -152,7 +152,6 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
   const opponents = state.players.filter((_, i) => i !== mySeat).slice(0, 3);
 
   const isCaughtBluff = state.reveal?.liar;
-  const isTrueClaim = state.reveal && !state.reveal.liar;
   const pixiEventKey = `${state.phase}:${state.lastClaim?.cardIds.join('|') ?? 'none'}:${state.pile.length}:${state.reveal?.cards.join('|') ?? 'none'}:${state.reveal?.liar ?? 'none'}`;
 
   return (
@@ -192,85 +191,79 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
       {/* TABLE — flex-1 */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-stretch justify-center">
         <div
-          className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden flex flex-col p-3 trey-bullshit-felt trey-table-rim"
+          className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden"
           style={{
             borderColor: 'rgba(168,85,247,0.45)',
             boxShadow: '0 0 50px rgba(168,85,247,0.18)',
+            background: '#05070D',
           }}
         >
-          <PixiTableEffectsLazy
-            game="bullshit"
-            accent="#A855F7"
-            eventKey={pixiEventKey}
-            cardCount={state.lastClaim?.count ?? 1}
-            secondaryCount={state.reveal?.cards.length ?? Math.min(state.pile.length, 4)}
-            reveal={Boolean(state.reveal)}
-            result={state.reveal ? (state.reveal.liar ? 'lie' : 'truth') : null}
-            className="z-0 opacity-90"
-          />
-          {/* OPPONENTS ROW */}
-          <div className="grid grid-cols-3 gap-1.5 shrink-0">
-            {opponents.map(p => {
-              const active = state.currentSeat === p.seat && state.phase === 'playing';
+          {/* ── Opponent + player seat overlays ── */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+            {/* Opponent seats — distributed across the top zone, matching Pixi positions */}
+            {opponents.map((opp, i) => {
+              const n = opponents.length;
+              // X positions match Pixi: oppZoneW * i + oppZoneW/2, where oppZoneW = w/n
+              const xPct = n === 1 ? 50 : n === 2 ? [25, 75][i] : [16.7, 50, 83.3][i];
               return (
-                <div key={p.seat} className={`rounded-xl px-2 py-1.5 border text-center trey-glass-panel ${active ? 'trey-turn-pulse' : ''}`}
+                <div
+                  key={opp.seat}
                   style={{
-                    background: active ? 'rgba(255,200,87,0.12)' : 'rgba(8,17,31,0.6)',
-                    borderColor: active ? '#FFC857' : 'rgba(168,85,247,0.25)'
-                  }}>
-                  <div className="text-[10px] font-bold truncate" style={{ color: active ? '#FFC857' : '#F8FAFC' }}>{p.name}</div>
-                  <div className="text-[9px] text-slate-400 leading-tight">{p.hand.length} cards</div>
-                  <div className="flex justify-center gap-0 mt-1">
-                    {Array.from({ length: Math.min(p.hand.length, 4) }).map((_, i) => (
-                      <div key={i} style={{ marginLeft: i > 0 ? -22 : 0 }}>
-                        <TreyCard faceDown size="xs" />
-                      </div>
-                    ))}
-                  </div>
+                    position: 'absolute',
+                    left: `${xPct}%`,
+                    top: '14%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <GamePlayerSeat
+                    displayName={opp.name}
+                    isBot={opp.isBot}
+                    isCurrentTurn={state.currentSeat === opp.seat}
+                    cardCount={opp.hand.length}
+                    accentColor="#A855F7"
+                    size="sm"
+                    position="top"
+                  />
                 </div>
               );
             })}
+            {/* Player seat — bottom, matching Pixi hand zone */}
+            <div style={{ position: 'absolute', top: '82%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+              <GamePlayerSeat
+                displayName={you.name}
+                isBot={you.isBot}
+                isCurrentTurn={isYourTurn}
+                cardCount={you.hand.length}
+                accentColor="#A855F7"
+                size="md"
+                position="bottom"
+              />
+            </div>
           </div>
 
-          {/* CENTER CLAIM AREA — flex-1 */}
-          <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center px-2 py-2">
-            <div className={`relative px-5 py-3 rounded-[24px] border backdrop-blur-xl trey-glass-panel ${isTrueClaim ? 'trey-win-burst' : ''}`}
-              style={{
-                borderColor: state.reveal ? (state.reveal.liar ? 'rgba(239,68,68,0.65)' : 'rgba(34,197,94,0.65)') : 'rgba(168,85,247,0.45)',
-                boxShadow: state.reveal
-                  ? `0 0 42px ${state.reveal.liar ? 'rgba(239,68,68,0.26)' : 'rgba(34,197,94,0.24)'}`
-                  : '0 0 36px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.09)',
-              }}>
-              <div className="text-[9px] text-purple-300 tracking-[0.3em] font-black">CURRENT CLAIM</div>
-              <div className="text-2xl font-black mt-0.5">
-                {state.lastClaim ? `${state.lastClaim.count} x ${state.lastClaim.rank}` : `Claim ${state.expectedRank}`}
-              </div>
-              {state.lastClaim && (
-                <div className="text-[10px] text-slate-400 mt-0.5">by {state.players[state.lastClaim.seat].name}</div>
-              )}
-            </div>
+          <PixiBullshitTableLazy
+            myHand={you.hand}
+            opponents={opponents.map(p => ({ name: p.name, cardCount: p.hand.length }))}
+            pileCount={state.pile.length}
+            revealCards={state.reveal?.cards ?? null}
+            revealLiar={state.reveal?.liar ?? null}
+            awaitingChallenge={state.phase === 'awaiting-challenge'}
+            selectedCards={selected}
+            isMyTurn={isYourTurn}
+            expectedRank={state.expectedRank}
+            accent="#A855F7"
+            eventKey={pixiEventKey}
+            onCardClick={(cardId) => {
+              if (!isYourTurn) return;
+              setSelected(s => s.includes(cardId) ? s.filter(x => x !== cardId) : (s.length < 4 ? [...s, cardId] : s));
+            }}
+          />
 
-            <div className={`flex justify-center gap-1 mt-3 items-center ${state.phase === 'awaiting-challenge' ? 'trey-pile-tremble' : ''}`}>
-              {state.reveal ? (
-                state.reveal.cards.map((id, i) => (
-                  <div key={i} className="trey-card-deal" style={{ animationDelay: `${i * 70}ms` }}>
-                    <TreyCard cardId={id} size="xs" />
-                  </div>
-                ))
-              ) : state.pile.length > 0 ? (
-                <>
-                  {Array.from({ length: Math.min(state.pile.length, 4) }).map((_, i) => (
-                    <div key={i} style={{ marginLeft: i > 0 ? -22 : 0 }}>
-                      <TreyCard faceDown size="xs" />
-                    </div>
-                  ))}
-                  <div className="ml-1.5 text-[10px] text-slate-400 font-medium">{state.pile.length} in pile</div>
-                </>
-              ) : (<div className="text-slate-500 text-xs">Empty pile</div>)}
-            </div>
-
-            {state.reveal && (
-              <div className="mt-2 inline-block px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider trey-glass-button"
+          {/* Floating info overlay */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center text-center px-2 py-2 pointer-events-none z-10">
+            {state.reveal ? (
+              <div className="inline-block px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider trey-glass-button"
                 style={{
                   background: state.reveal.liar ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.18)',
                   color: state.reveal.liar ? '#EF4444' : '#22C55E',
@@ -279,9 +272,22 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                 }}>
                 {state.reveal.liar ? 'BLUFF CAUGHT!' : 'CLAIM WAS TRUE!'}
               </div>
+            ) : (
+              <div className="relative px-5 py-3 rounded-[24px] border backdrop-blur-xl trey-glass-panel pointer-events-none"
+                style={{
+                  borderColor: 'rgba(168,85,247,0.45)',
+                  boxShadow: '0 0 36px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.09)',
+                }}>
+                <div className="text-[9px] text-purple-300 tracking-[0.3em] font-black">CURRENT CLAIM</div>
+                <div className="text-2xl font-black mt-0.5">
+                  {state.lastClaim ? `${state.lastClaim.count} x ${state.lastClaim.rank}` : `Claim ${state.expectedRank}`}
+                </div>
+                {state.lastClaim && (
+                  <div className="text-[10px] text-slate-400 mt-0.5">by {state.players[state.lastClaim.seat].name}</div>
+                )}
+              </div>
             )}
-
-            <div className="text-[10px] text-slate-400 mt-2">
+            <div className="text-[10px] text-slate-300 font-bold mt-2 bg-black/40 px-2 py-0.5 rounded">
               {isYourTurn ? `Your turn — claim ${state.expectedRank}s` :
                canCall ? `Pass or call BS` :
                state.phase === 'game-over' ? '' :
@@ -323,29 +329,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
               </>
             )}
           </div>
-          <div className="overflow-x-auto scrollbar-hide -mx-2">
-            <div className="flex justify-center gap-0.5 px-3 min-w-min pb-1">
-              {you.hand.map((cardId, idx) => {
-                const isSel = selected.includes(cardId);
-                return (
-                  <div
-                    key={cardId}
-                    className="trey-card-deal shrink-0"
-                    style={{
-                      marginLeft: idx === 0 ? 0 : -18,
-                      animationDelay: `${idx * 28}ms`,
-                    }}
-                  >
-                    <TreyCard cardId={cardId} size="sm" selected={isSel} playable={isYourTurn}
-                      onClick={() => {
-                        if (!isYourTurn) return;
-                        setSelected(s => isSel ? s.filter(x => x !== cardId) : (s.length < 4 ? [...s, cardId] : s));
-                      }} />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* Hand is now rendered inside the Pixi canvas */}
         </section>
       )}
 

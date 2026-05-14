@@ -4,15 +4,16 @@ import {
   newSpadesGame, placeBid, playCard, legalCards, botBid, botPlay, startNextRound,
   SpadesState,
 } from '@/features/games/lib/spades/spadesEngine';
-import { TreyCard } from '../shared/TreyCard';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
+import { GamePlayerSeat } from '../shared/GamePlayerSeat';
+import { SEAT_PIXI_NORM } from '../pixi/pixiLayout';
 import { ArrowLeft, Info, RotateCw, Loader2, Crown, Flame, Spade } from 'lucide-react';
 
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
-import { PixiTableEffectsLazy } from '../pixi/PixiTableEffectsLazy';
+import { PixiSpadesTableLazy } from '../pixi/PixiGameTables';
 
 interface Props {
   onBack: () => void;
@@ -146,71 +147,6 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
 // ============================================
 const CARD_W = 42; // xs card width in px
 
-const HandRow: React.FC<{
-  hand: string[];
-  selected?: string | null;
-  legalCards?: string[];
-  isMyTurn?: boolean;
-  playing?: boolean;
-  onSelect?: (id: string) => void;
-}> = ({ hand, selected, legalCards = [], isMyTurn = false, playing = false, onSelect }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(360);
-
-  useLayoutEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const update = () => setContainerWidth(el.offsetWidth);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  const count = hand.length;
-  // Spacing: divide available width evenly, but never wider than a card
-  const available = containerWidth - 16;
-  const spacing = count > 1 ? Math.min(CARD_W, available / count) : CARD_W;
-  const marginLeft = spacing - CARD_W; // negative = overlap
-
-  return (
-    <div ref={containerRef} className="w-full">
-      <div className="flex justify-center items-end py-2">
-        {hand.map((cardId, idx) => {
-          const mid = (count - 1) / 2;
-          const offset = idx - mid;
-          const rot = offset * 2.2;
-          const lift = Math.abs(offset) * 1.2;
-          const isLegal = legalCards.includes(cardId);
-          const dimmed = playing && isMyTurn && !isLegal;
-          const clickable = playing && isMyTurn && isLegal;
-          return (
-            <div
-              key={cardId}
-              className="shrink-0"
-              style={{
-                marginLeft: idx === 0 ? 0 : marginLeft,
-                transform: `rotate(${rot}deg) translateY(${lift}px)`,
-                transformOrigin: 'bottom center',
-                zIndex: selected === cardId ? 50 : idx,
-              }}
-            >
-              <TreyCard
-                cardId={cardId}
-                size="xs"
-                selected={selected === cardId}
-                playable={clickable}
-                dimmed={dimmed}
-                onClick={clickable ? () => onSelect?.(cardId) : undefined}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 // ============================================
 // SHARED VIEW — mobile-first, no-scroll, fixed viewport
 // ============================================
@@ -336,100 +272,60 @@ const SpadesView: React.FC<ViewProps> = ({
       {/* FELT — flexes to fill remaining space */}
       <main className="flex-1 min-h-0 relative flex items-center justify-center px-2 py-2">
         <div
-          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden trey-felt-rim trey-luxury-felt trey-table-rim"
+          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden"
           style={{
             border: '1.5px solid rgba(0,183,255,0.32)',
+            background: '#05070D',
           }}
         >
-          <PixiTableEffectsLazy
-            game="spades"
+          <PixiSpadesTableLazy
+            hands={state.players.map(p => p.hand)}
+            trick={state.trick}
+            mySeat={mySeat}
+            currentSeat={state.currentSeat}
+            winnerSeat={winnerFlash}
+            selectedCardId={selected}
+            legalCards={yourLegal}
             accent="#00B7FF"
             eventKey={pixiEventKey}
-            cardCount={state.trick.length || 1}
-            winnerSeat={winnerFlash}
-            className="z-0 opacity-90"
+            onCardClick={setSelected}
           />
-          {/* slow conic spotlight behind everything */}
-          <div className="absolute inset-0 pointer-events-none opacity-50">
-            <div className="absolute inset-[-25%] trey-conic-light"
-              style={{
-                background: 'conic-gradient(from 0deg at 50% 50%, rgba(0,183,255,0.08), transparent 25%, rgba(168,85,247,0.10) 50%, transparent 75%, rgba(0,183,255,0.08))',
-                filter: 'blur(28px)',
-              }} />
-          </div>
 
-          {/* drifting smoke */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute inset-[-10%] trey-smoke opacity-60"
-              style={{
-                background: 'radial-gradient(ellipse 50% 30% at 30% 40%, rgba(0,183,255,0.10), transparent 70%), radial-gradient(ellipse 40% 30% at 70% 70%, rgba(168,85,247,0.10), transparent 70%)',
-                filter: 'blur(40px)',
-              }} />
-          </div>
-
-          {/* inner glass panel highlight (top sheen) */}
-          <div className="absolute inset-x-4 top-2 h-10 rounded-full pointer-events-none"
-            style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.05), transparent)' }} />
-
-          {/* inner felt vignette + reflective inner ring */}
-          <div className="absolute inset-3 rounded-[22px] pointer-events-none"
-            style={{
-              boxShadow: 'inset 0 0 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.04)',
-            }} />
-
-          {/* Opponent seats */}
-          {[0, 1, 2, 3].filter(s => s !== mySeat).map(s => (
-            <PlayerSeat
-              key={s}
-              state={state}
-              seat={s}
-              position={seatPositions[s] as 'left'|'top'|'right'}
-              isDealer={s === dealerSeat}
-              winnerFlash={winnerFlash === s}
-              partner={teamOfSeat(s) === myTeam}
-            />
-          ))}
-
-          {/* Center trick area */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <TrickArea state={state} seatPositions={seatPositions} winnerFlash={winnerFlash} />
-          </div>
-
-          {/* Bottom "you" nameplate — premium floating capsule */}
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center px-3">
-            <div className={`relative inline-flex items-center gap-1.5 rounded-full pl-1 pr-2.5 py-1 border backdrop-blur-xl trey-nameplate-sheen ${isMyTurn ? 'trey-turn-pulse' : ''} ${winnerFlash === mySeat ? 'trey-trick-win' : ''}`}
-              style={{
-                background: isMyTurn
-                  ? 'linear-gradient(180deg, rgba(255,200,87,0.20), rgba(255,200,87,0.06))'
-                  : 'linear-gradient(180deg, rgba(8,17,31,0.85), rgba(8,17,31,0.65))',
-                borderColor: isMyTurn ? '#FFC857' : 'rgba(255,255,255,0.16)',
-                color: isMyTurn ? '#FFC857' : '#F8FAFC',
-                boxShadow: isMyTurn ? '0 0 24px rgba(255,200,87,0.4)' : '0 4px 12px rgba(0,0,0,0.4)',
-              }}>
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(0,183,255,0.55), rgba(0,183,255,0.15))',
-                  border: '1px solid rgba(0,183,255,0.8)',
-                  color: '#fff',
-                  textShadow: '0 0 8px rgba(0,183,255,0.9)',
-                  boxShadow: '0 0 12px rgba(0,183,255,0.45)',
-                }}>
-                {(you.name || 'Y').charAt(0).toUpperCase()}
-              </div>
-              <span className="text-[11px] font-bold leading-tight">{you.name}</span>
-              <span className="text-slate-500">·</span>
-              <span className="text-[11px] text-slate-300 tabular-nums">Tr {you.tricksWon}</span>
-              {you.bid !== null && <><span className="text-slate-500">·</span><span className="text-[11px] tabular-nums" style={{ color: '#00B7FF' }}>Bid {you.bid}</span></>}
-              {dealerSeat === mySeat && (
-                <span className="ml-0.5 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black leading-none shrink-0"
+          {/* ── Player seat overlays (React layer above Pixi canvas) ── */}
+          {/* Positions match SEAT_PIXI_NORM so avatars align with Pixi card stacks */}
+          <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+            {([0, 1, 2, 3] as const).map(seat => {
+              const pos = seatPositions[seat as keyof typeof seatPositions];
+              if (!pos) return null;
+              const player = state.players[seat];
+              const norm = SEAT_PIXI_NORM[pos];
+              const isMyTeam = (seat % 2) === (mySeat % 2);
+              return (
+                <div
+                  key={seat}
                   style={{
-                    background: 'radial-gradient(circle, #FFC857, #C99326)',
-                    color: '#1A1206',
-                    border: '1px solid rgba(255,200,87,0.9)',
-                    boxShadow: '0 0 8px rgba(255,200,87,0.6), inset 0 1px 0 rgba(255,255,255,0.4)',
-                  }}>D</span>
-              )}
-            </div>
+                    position: 'absolute',
+                    top: `${norm.y * 100}%`,
+                    left: `${norm.x * 100}%`,
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <GamePlayerSeat
+                    displayName={player.name}
+                    isBot={player.isBot}
+                    isCurrentTurn={state.currentSeat === seat}
+                    isDealer={dealerSeat === seat}
+                    bid={player.bid}
+                    tricks={player.tricksWon}
+                    accentColor={isMyTeam ? '#00B7FF' : '#A855F7'}
+                    size={pos === 'bottom' ? 'md' : 'sm'}
+                    position={pos}
+                    winFlash={winnerFlash === seat}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </main>
@@ -479,8 +375,6 @@ const SpadesView: React.FC<ViewProps> = ({
               );
             })}
           </div>
-          {/* Your hand — visible during bidding so you can count your books */}
-          <HandRow hand={you.hand} />
         </section>
       )}
 
@@ -493,8 +387,6 @@ const SpadesView: React.FC<ViewProps> = ({
           <div className="text-sm font-bold mt-0.5 mb-3 text-center">
             {state.players[state.currentSeat].name} is deciding…
           </div>
-          {/* Your hand — visible while waiting so you can plan your bid */}
-          <HandRow hand={you.hand} />
         </section>
       )}
 
@@ -524,15 +416,6 @@ const SpadesView: React.FC<ViewProps> = ({
               Play Card
             </button>
           </div>
-          {/* hand */}
-          <HandRow
-            hand={you.hand}
-            selected={selected}
-            legalCards={yourLegal}
-            isMyTurn={isMyTurn}
-            playing
-            onSelect={setSelected}
-          />
         </section>
       )}
 
@@ -653,219 +536,6 @@ const ScoreCard: React.FC<{ label: string; score: number; bid: number; tricks: n
             fontFamily: "'Cinzel', serif",
           }}>{score}</div>
       </div>
-    </div>
-  );
-};
-
-const PlayerSeat: React.FC<{
-  state: SpadesState;
-  seat: number;
-  position: 'top' | 'left' | 'right';
-  isDealer: boolean;
-  winnerFlash: boolean;
-  partner: boolean;
-}> = ({ state, seat, position, isDealer, winnerFlash, partner }) => {
-  const p = state.players[seat];
-  const active = state.currentSeat === seat;
-  const accent = partner ? '#00B7FF' : '#A855F7';
-  const initial = (p.name || '?').charAt(0).toUpperCase();
-
-  const Nameplate = (
-    <div className={`relative inline-flex items-center gap-1 rounded-full pl-0.5 pr-1.5 py-0.5 border backdrop-blur-xl transition-all trey-nameplate-sheen ${active ? 'trey-turn-pulse' : ''} ${winnerFlash ? 'trey-trick-win' : ''}`}
-      style={{
-        background: active
-          ? 'linear-gradient(180deg, rgba(255,200,87,0.22), rgba(255,200,87,0.05))'
-          : 'linear-gradient(180deg, rgba(8,17,31,0.92), rgba(8,17,31,0.7))',
-        borderColor: active ? '#FFC857' : 'rgba(255,255,255,0.16)',
-        maxWidth: '120px',
-        boxShadow: active ? '0 0 18px rgba(255,200,87,0.4)' : '0 3px 10px rgba(0,0,0,0.45)',
-      }}>
-      <div className="relative w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black shrink-0"
-        style={{
-          background: `radial-gradient(circle at 30% 25%, ${accent}, ${accent}50 70%, #0a1228)`,
-          border: `1px solid ${accent}`,
-          color: '#fff',
-          textShadow: `0 0 6px ${accent}`,
-          boxShadow: `0 0 10px ${accent}88, inset 0 1px 0 rgba(255,255,255,0.3)`,
-        }}>
-        {initial}
-      </div>
-      <div className="text-[10px] font-bold leading-tight truncate" style={{ color: active ? '#FFC857' : '#F8FAFC', maxWidth: '64px' }}>
-        {p.name}
-      </div>
-      {isDealer && (
-        <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] font-black leading-none shrink-0"
-          style={{
-            background: 'radial-gradient(circle at 30% 25%, #FFE7A8, #FFC857 55%, #8C6918)',
-            color: '#1A1206',
-            border: '1px solid rgba(255,200,87,0.9)',
-            boxShadow: '0 0 8px rgba(255,200,87,0.7), inset 0 1px 0 rgba(255,255,255,0.5)',
-          }}>D</span>
-      )}
-    </div>
-  );
-
-  const StatLine = (
-    <div className="text-[9px] text-slate-400 font-medium tabular-nums whitespace-nowrap inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full"
-      style={{ background: 'rgba(8,17,31,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
-      {p.bid !== null
-        ? <span style={{ color: accent }}>Bid {p.bid}</span>
-        : <span className="text-slate-500">bidding…</span>}
-      <span className="text-slate-700">·</span>
-      <span className="text-slate-300">Tr {p.tricksWon}</span>
-    </div>
-  );
-
-  const CardStack = ({ count, horizontal }: { count: number; horizontal: boolean }) => (
-    <div className={`flex ${horizontal ? '' : 'flex-col'} items-center`}>
-      {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            marginLeft: horizontal && i > 0 ? -24 : 0,
-            marginTop: !horizontal && i > 0 ? -40 : 0,
-            transform: horizontal ? `rotate(${(i - 1.5) * 2}deg)` : `rotate(${(i - 1.5) * 1.5}deg)`,
-          }}
-        >
-          <TreyCard faceDown size="xs" />
-        </div>
-      ))}
-    </div>
-  );
-
-  if (position === 'top') {
-    return (
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 z-10">
-        <CardStack count={p.hand.length} horizontal />
-        {Nameplate}
-        {StatLine}
-      </div>
-    );
-  }
-
-  if (position === 'left') {
-    return (
-      <div className="absolute left-1.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-10">
-        <CardStack count={p.hand.length} horizontal={false} />
-        {Nameplate}
-        {StatLine}
-      </div>
-    );
-  }
-
-  // right
-  return (
-    <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-10">
-      <CardStack count={p.hand.length} horizontal={false} />
-      {Nameplate}
-      {StatLine}
-    </div>
-  );
-};
-
-const TrickArea: React.FC<{
-  state: SpadesState;
-  seatPositions: Record<number, 'bottom'|'left'|'top'|'right'>;
-  winnerFlash: number | null;
-}> = ({ state, seatPositions, winnerFlash }) => {
-  const fromOffsets: Record<string, { x: number; y: number; r: number }> = {
-    bottom: { x: 0,    y: 130,  r: 6   },
-    left:   { x: -140, y: 0,    r: -10 },
-    top:    { x: 0,    y: -130, r: -6  },
-    right:  { x: 140,  y: 0,    r: 10  },
-  };
-  const finalOffsets: Record<string, React.CSSProperties> = {
-    bottom: { transform: 'translate(0, 28px)' },
-    left:   { transform: 'translate(-38px, 0)' },
-    top:    { transform: 'translate(0, -28px)' },
-    right:  { transform: 'translate(38px, 0)' },
-  };
-
-  // Sweep direction toward winner
-  const winnerPos = winnerFlash !== null ? seatPositions[winnerFlash] : null;
-  const sweepTransform: Record<string, string> = {
-    bottom: 'translate(0, 60px)',
-    left:   'translate(-60px, 0)',
-    top:    'translate(0, -60px)',
-    right:  'translate(60px, 0)',
-  };
-
-  return (
-    <div className="relative w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center">
-      {/* outer ambient ring */}
-      <div className="absolute inset-0 rounded-full"
-        style={{ background: 'radial-gradient(circle, rgba(0,183,255,0.18) 0%, transparent 65%)' }} />
-      {/* layered glass rings */}
-      <div className="absolute inset-2 rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at 50% 35%, rgba(255,255,255,0.06) 0%, transparent 50%)',
-          border: '1px solid rgba(0,183,255,0.22)',
-          boxShadow: 'inset 0 0 30px rgba(0,183,255,0.10), 0 0 20px rgba(0,183,255,0.10)',
-        }} />
-      <div className="absolute inset-6 rounded-full pointer-events-none"
-        style={{
-          border: '1px dashed rgba(168,85,247,0.18)',
-        }} />
-      <div className="absolute inset-10 rounded-full pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(0,183,255,0.08), transparent 70%)',
-          border: '1px solid rgba(255,255,255,0.04)',
-        }} />
-
-      {/* tiny center spades crest when idle */}
-      {state.trick.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center px-3">
-            {state.phase === 'bidding' ? (
-              <>
-                <div className="text-[9px] tracking-[0.35em] text-cyan-300 opacity-80 font-bold">BIDDING</div>
-                <div className="font-black mt-1 text-xs" style={{ textShadow: '0 0 8px rgba(0,183,255,0.6)' }}>
-                  {state.players[state.currentSeat].name}
-                </div>
-                <div className="text-[9px] text-slate-500 mt-0.5">to bid</div>
-              </>
-            ) : (
-              <>
-                <div className="text-[9px] tracking-[0.35em] text-cyan-300 opacity-80 font-bold">LEAD</div>
-                <div className="font-black mt-1 text-xs" style={{ textShadow: '0 0 8px rgba(0,183,255,0.6)' }}>
-                  {state.players[state.currentSeat].name}
-                </div>
-                <div className="text-[9px] text-slate-500 mt-0.5">{state.spadesBroken ? 'spades broken' : 'spades safe'}</div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* glow sweep toward winner */}
-      {winnerPos && (
-        <div className="absolute w-24 h-24 rounded-full pointer-events-none trey-glow-sweep"
-          style={{
-            background: 'radial-gradient(circle, rgba(255,200,87,0.7), transparent 70%)',
-            transform: sweepTransform[winnerPos],
-            filter: 'blur(8px)',
-          }} />
-      )}
-
-      {/* trick cards */}
-      {state.trick.map((t) => {
-        const pos = seatPositions[t.seat];
-        const from = fromOffsets[pos];
-        return (
-          <div
-            key={`${t.seat}-${t.cardId}`}
-            className="absolute trey-card-throw pointer-events-none"
-            style={{
-              ...finalOffsets[pos],
-              ['--from-x' as any]: `${from.x}px`,
-              ['--from-y' as any]: `${from.y}px`,
-              ['--from-r' as any]: `${from.r}deg`,
-            }}
-          >
-            <TreyCard cardId={t.cardId} size="sm" />
-          </div>
-        );
-      })}
     </div>
   );
 };
