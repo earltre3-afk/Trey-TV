@@ -12,6 +12,7 @@ import {
   joinQueue, cancelQueue, getQueueSnapshot,
   resolveMatchesForGame, heartbeatQueue, reapStaleQueueEntries,
 } from '@/features/games/lib/services/matchmakingService';
+import { isGameBackendEnabled } from '@/features/games/lib/gameBackend';
 
 interface Props {
   gameType: GameType;
@@ -32,6 +33,7 @@ type Phase = 'searching' | 'almost' | 'found';
 export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMatched, onInviteFriends }) => {
   const meta = GAME_META[gameType];
   const max = MAX_PLAYERS_BY_GAME[gameType];
+  const backendEnabled = isGameBackendEnabled();
 
   const [entry, setEntry] = useState<QueueEntry | null>(null);
   const [snap, setSnap] = useState<QueueSnapshot | null>(null);
@@ -43,6 +45,10 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
 
   // 1) Join queue on mount
   useEffect(() => {
+    if (!backendEnabled) {
+      setError('Public queue is waiting on the Trey TV game database migration. Solo tables are available now.');
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -56,11 +62,11 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
       }
     })();
     return () => { cancelled = true; };
-  }, [identity.userId, gameType]);
+  }, [backendEnabled, identity.userId, gameType]);
 
   // 2) Poll snapshot + try to resolve matches
   useEffect(() => {
-    if (!entry) return;
+    if (!backendEnabled || !entry) return;
     let cancelled = false;
 
     const tick = async () => {
@@ -90,7 +96,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
     tick();
     const timer = setInterval(tick, 2000);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [entry?.id, gameType, identity.userId]);
+  }, [backendEnabled, entry?.id, gameType, identity.userId]);
 
   // 3) Elapsed counter
   useEffect(() => {
@@ -99,7 +105,9 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
   }, []);
 
   const handleCancel = async () => {
-    try { await cancelQueue(identity.userId); } catch { /* noop */ }
+    if (backendEnabled) {
+      try { await cancelQueue(identity.userId); } catch { /* noop */ }
+    }
     onBack();
   };
 

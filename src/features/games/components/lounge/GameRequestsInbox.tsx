@@ -9,6 +9,7 @@ import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import {
   GameRequest, listInbox, listOutgoing, acceptRequest, declineRequest, cancelOutgoingRequest,
 } from '@/features/games/lib/services/socialService';
+import { isGameBackendEnabled } from '@/features/games/lib/gameBackend';
 
 interface Props {
   identity: PlayerIdentity;
@@ -26,20 +27,28 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
   const [inbox, setInbox] = useState<GameRequest[]>([]);
   const [outgoing, setOutgoing] = useState<GameRequest[]>([]);
   const [tab, setTab] = useState<'in' | 'out'>('in');
+  const backendEnabled = isGameBackendEnabled();
 
   useEffect(() => {
+    if (!backendEnabled) return;
+
     const tick = async () => {
-      const [i, o] = await Promise.all([
-        listInbox(identity.userId),
-        listOutgoing(identity.userId),
-      ]);
-      setInbox(i);
-      setOutgoing(o);
+      try {
+        const [i, o] = await Promise.all([
+          listInbox(identity.userId),
+          listOutgoing(identity.userId),
+        ]);
+        setInbox(i);
+        setOutgoing(o);
+      } catch {
+        setInbox([]);
+        setOutgoing([]);
+      }
     };
     tick();
     const t = setInterval(tick, 2500);
     return () => clearInterval(t);
-  }, [identity.userId]);
+  }, [backendEnabled, identity.userId]);
 
   const handleAccept = async (r: GameRequest) => {
     const updated = await acceptRequest(r.id);
@@ -94,7 +103,9 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
               <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md"
                 style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Mail size={28} className="mx-auto mb-2 text-slate-500" />
-                Your inbox is quiet. When friends invite you to a game, requests show up here.
+                {backendEnabled
+                  ? 'Your inbox is quiet. When friends invite you to a game, requests show up here.'
+                  : 'Game requests will light up here after the Trey TV game database migration is enabled.'}
               </div>
             )}
             {inbox.map(r => <RequestCard key={r.id} r={r} kind="in" onAccept={() => handleAccept(r)} onDecline={() => handleDecline(r)} />)}
@@ -107,7 +118,7 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
               <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md"
                 style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Send size={28} className="mx-auto mb-2 text-slate-500" />
-                You haven't sent any invites yet.
+                {backendEnabled ? 'You haven\'t sent any invites yet.' : 'Sent invites will appear here once the game backend is enabled.'}
               </div>
             )}
             {outgoing.map(r => <RequestCard key={r.id} r={r} kind="out" onCancel={() => handleCancel(r)} />)}

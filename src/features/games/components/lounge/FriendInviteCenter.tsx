@@ -11,6 +11,7 @@ import {
   Friend, listFriends, addFriendByName, removeFriend, findUserByDisplayName,
   sendGameRequest,
 } from '@/features/games/lib/services/socialService';
+import { isGameBackendEnabled } from '@/features/games/lib/gameBackend';
 
 interface Props {
   identity: PlayerIdentity;
@@ -35,25 +36,42 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
   const [message, setMessage] = useState('Come join the table.');
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
   const [feedback, setFeedback] = useState<string | null>(null);
+  const backendEnabled = isGameBackendEnabled();
 
   useEffect(() => {
+    if (!backendEnabled) return;
+
     let cancelled = false;
     (async () => {
-      const list = await listFriends(identity.userId);
-      if (!cancelled) setFriends(list);
+      try {
+        const list = await listFriends(identity.userId);
+        if (!cancelled) setFriends(list);
+      } catch {
+        if (!cancelled) setFriends([]);
+      }
     })();
     const timer = setInterval(async () => {
-      const list = await listFriends(identity.userId);
-      setFriends(list);
+      try {
+        const list = await listFriends(identity.userId);
+        setFriends(list);
+      } catch {
+        setFriends([]);
+      }
     }, 5000);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [identity.userId]);
+  }, [backendEnabled, identity.userId]);
 
   const filtered = friends.filter(f =>
     !search.trim() || f.friend_display_name.toLowerCase().includes(search.trim().toLowerCase())
   );
 
   const handleAddFriend = async () => {
+    if (!backendEnabled) {
+      setFeedback('Friend search will be available after the Trey TV game database migration is enabled.');
+      setTimeout(() => setFeedback(null), 2500);
+      return;
+    }
+
     const name = search.trim();
     if (!name) return;
     setAdding(true);
@@ -79,6 +97,12 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
   };
 
   const handleInvite = async (f: Friend) => {
+    if (!backendEnabled) {
+      setFeedback('Invites will be available after the Trey TV game database migration is enabled.');
+      setTimeout(() => setFeedback(null), 2500);
+      return;
+    }
+
     try {
       await sendGameRequest({
         from: identity,
@@ -98,6 +122,12 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
   };
 
   const handleRemove = async (f: Friend) => {
+    if (!backendEnabled) {
+      setFeedback('Friend management will be available after the Trey TV game database migration is enabled.');
+      setTimeout(() => setFeedback(null), 2500);
+      return;
+    }
+
     await removeFriend(f.id);
     setFriends(prev => prev.filter(x => x.id !== f.id));
   };
@@ -191,7 +221,9 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
 
           {filtered.length === 0 ? (
             <div className="text-xs text-slate-500 py-6 text-center">
-              {friends.length === 0 ? 'No friends yet. Search a display name above to add someone you\'ve played with.' : 'No matches.'}
+              {!backendEnabled
+                ? 'Friend invites will connect after the Trey TV game database migration is enabled.'
+                : friends.length === 0 ? 'No friends yet. Search a display name above to add someone you\'ve played with.' : 'No matches.'}
             </div>
           ) : (
             <div className="space-y-2">

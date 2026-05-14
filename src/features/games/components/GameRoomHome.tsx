@@ -5,6 +5,7 @@ import { GameType } from '@/features/games/lib/services/roomService';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { getQueueCounts } from '@/features/games/lib/services/matchmakingService';
 import { getPendingInboxCount } from '@/features/games/lib/services/socialService';
+import { isGameBackendEnabled } from '@/features/games/lib/gameBackend';
 
 
 interface Props {
@@ -34,6 +35,8 @@ export const GameRoomHome: React.FC<Props> = ({
   const [inboxCount, setInboxCount] = useState(0);
 
   useEffect(() => {
+    if (!isGameBackendEnabled()) return;
+
     const tick = async () => {
       try {
         const q = await getQueueCounts();

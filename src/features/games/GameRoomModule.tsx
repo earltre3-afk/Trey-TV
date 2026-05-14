@@ -50,10 +50,14 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
   }, [room, view]);
 
   const handleCreate = async (opts: { gameType: GameType; isPrivate: boolean; targetScore: number }) => {
-    const { room: newRoom } = await createRoom({ identity, ...opts });
-    setRoom({ roomId: newRoom.id, gameType: opts.gameType });
-    setCreateOpen(false);
-    setView('lobby');
+    try {
+      const { room: newRoom } = await createRoom({ identity, ...opts });
+      setRoom({ roomId: newRoom.id, gameType: opts.gameType });
+      setCreateOpen(false);
+      setView('lobby');
+    } catch (err: any) {
+      alert(`Failed to create room: ${err?.message ?? 'Unknown error'}`);
+    }
   };
 
   const handleJoin = async (code: string) => {
