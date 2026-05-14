@@ -134,7 +134,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
       {/* Header */}
       <div className="sticky top-0 z-30 backdrop-blur-2xl border-b" style={{ background: 'rgba(5,7,13,0.78)', borderColor: 'rgba(0,183,255,0.18)' }}>
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={handleCancel} className="p-2 -ml-2 rounded-xl hover:bg-white/5 transition" title="Back">
+          <button onClick={handleCancel} className="p-2 -ml-2 rounded-xl hover:bg-white/5 transition" aria-label="Back" title="Back">
             <ArrowLeft size={18} />
           </button>
           <TreyBrandMark size={28} glow />

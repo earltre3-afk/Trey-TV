@@ -143,7 +143,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
 
       <div className="sticky top-0 z-30 backdrop-blur-2xl border-b" style={{ background: 'rgba(5,7,13,0.78)', borderColor: 'rgba(0,183,255,0.18)' }}>
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-white/5 transition"><ArrowLeft size={18} /></button>
+          <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-white/5 transition" aria-label="Back" title="Back"><ArrowLeft size={18} /></button>
           <TreyBrandMark size={28} glow />
           <div className="h-7 w-px bg-white/10" />
           <div className="min-w-0 flex-1">

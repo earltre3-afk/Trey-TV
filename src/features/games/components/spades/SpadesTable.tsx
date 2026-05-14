@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   newSpadesGame, placeBid, playCard, legalCards, botBid, botPlay, startNextRound,
   SpadesState,
@@ -12,6 +12,7 @@ import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
+import { PixiTableEffectsLazy } from '../pixi/PixiTableEffectsLazy';
 
 interface Props {
   onBack: () => void;
@@ -140,6 +141,77 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
 
 
 // ============================================
+// HAND ROW — fits all cards on screen, no overflow
+// Measures container width and computes overlap so every card is visible.
+// ============================================
+const CARD_W = 42; // xs card width in px
+
+const HandRow: React.FC<{
+  hand: string[];
+  selected?: string | null;
+  legalCards?: string[];
+  isMyTurn?: boolean;
+  playing?: boolean;
+  onSelect?: (id: string) => void;
+}> = ({ hand, selected, legalCards = [], isMyTurn = false, playing = false, onSelect }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(360);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const update = () => setContainerWidth(el.offsetWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const count = hand.length;
+  // Spacing: divide available width evenly, but never wider than a card
+  const available = containerWidth - 16;
+  const spacing = count > 1 ? Math.min(CARD_W, available / count) : CARD_W;
+  const marginLeft = spacing - CARD_W; // negative = overlap
+
+  return (
+    <div ref={containerRef} className="w-full">
+      <div className="flex justify-center items-end py-2">
+        {hand.map((cardId, idx) => {
+          const mid = (count - 1) / 2;
+          const offset = idx - mid;
+          const rot = offset * 2.2;
+          const lift = Math.abs(offset) * 1.2;
+          const isLegal = legalCards.includes(cardId);
+          const dimmed = playing && isMyTurn && !isLegal;
+          const clickable = playing && isMyTurn && isLegal;
+          return (
+            <div
+              key={cardId}
+              className="shrink-0"
+              style={{
+                marginLeft: idx === 0 ? 0 : marginLeft,
+                transform: `rotate(${rot}deg) translateY(${lift}px)`,
+                transformOrigin: 'bottom center',
+                zIndex: selected === cardId ? 50 : idx,
+              }}
+            >
+              <TreyCard
+                cardId={cardId}
+                size="xs"
+                selected={selected === cardId}
+                playable={clickable}
+                dimmed={dimmed}
+                onClick={clickable ? () => onSelect?.(cardId) : undefined}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // SHARED VIEW — mobile-first, no-scroll, fixed viewport
 // ============================================
 interface ViewProps {
@@ -192,6 +264,7 @@ const SpadesView: React.FC<ViewProps> = ({
   }, [state.trick.length, state.lastTrickWinner]);
 
   const dealerSeat = ((state.round - 1) + 3) % 4;
+  const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}`;
 
   return (
     <div
@@ -249,7 +322,7 @@ const SpadesView: React.FC<ViewProps> = ({
             </div>
           )}
           {chatButton}
-          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5 transition border border-white/5" title="Suit legend"><Info size={16} /></button>
+          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
         </div>
 
 
@@ -272,6 +345,14 @@ const SpadesView: React.FC<ViewProps> = ({
             border: '1.5px solid rgba(0,183,255,0.32)',
           }}
         >
+          <PixiTableEffectsLazy
+            game="spades"
+            accent="#00B7FF"
+            eventKey={pixiEventKey}
+            cardCount={state.trick.length || 1}
+            winnerSeat={winnerFlash}
+            className="z-0 opacity-90"
+          />
           {/* slow conic spotlight behind everything */}
           <div className="absolute inset-0 pointer-events-none opacity-50">
             <div className="absolute inset-[-25%] trey-conic-light"
@@ -383,7 +464,7 @@ const SpadesView: React.FC<ViewProps> = ({
               NIL · 0
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 mb-3">
             {Array.from({ length: 13 }).map((_, n) => {
               const bid = n + 1;
               return (
@@ -402,18 +483,22 @@ const SpadesView: React.FC<ViewProps> = ({
               );
             })}
           </div>
+          {/* Your hand — visible during bidding so you can count your books */}
+          <HandRow hand={you.hand} />
         </section>
       )}
 
       {state.phase === 'bidding' && !isMyTurn && (
-        <section className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 py-3 text-center relative overflow-hidden"
+        <section className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3 relative overflow-hidden"
           style={{ background: 'rgba(5,7,13,0.94)', borderColor: 'rgba(0,183,255,0.28)' }}>
           <div className="absolute inset-x-0 top-0 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(0,183,255,0.5), transparent)' }} />
-          <div className="text-[9px] tracking-[0.3em] font-bold text-cyan-300">BIDDING PHASE</div>
-          <div className="text-sm font-bold mt-0.5">
+          <div className="text-[9px] tracking-[0.3em] font-bold text-cyan-300 text-center">BIDDING PHASE</div>
+          <div className="text-sm font-bold mt-0.5 mb-3 text-center">
             {state.players[state.currentSeat].name} is deciding…
           </div>
+          {/* Your hand — visible while waiting so you can plan your bid */}
+          <HandRow hand={you.hand} />
         </section>
       )}
 
@@ -443,38 +528,15 @@ const SpadesView: React.FC<ViewProps> = ({
               Play Card
             </button>
           </div>
-          {/* hand — slight fan with perspective */}
-          <div className="overflow-x-auto -mx-2 scrollbar-hide" style={{ perspective: '900px' }}>
-            <div className="flex justify-center items-end gap-0.5 pb-2 pt-2 px-3 min-w-min">
-              {you.hand.map((cardId, idx) => {
-                const isLegal = yourLegal.includes(cardId);
-                const dimmed = state.phase === 'playing' && isMyTurn && !isLegal;
-                const mid = (you.hand.length - 1) / 2;
-                const offset = idx - mid;
-                const rot = offset * 2.2; // gentle fan
-                const lift = Math.abs(offset) * 1.5;
-                return (
-                  <div
-                    key={cardId}
-                    className="trey-card-deal shrink-0"
-                    style={{
-                      marginLeft: idx === 0 ? 0 : -20,
-                      animationDelay: `${idx * 30}ms`,
-                      transform: `rotate(${rot}deg) translateY(${lift}px)`,
-                      transformOrigin: 'bottom center',
-                      ['--deal-r' as any]: `${rot}deg`,
-                    }}
-                  >
-                    <TreyCard cardId={cardId} size="sm"
-                      selected={selected === cardId}
-                      playable={isLegal && isMyTurn}
-                      dimmed={dimmed}
-                      onClick={() => isMyTurn && isLegal && setSelected(cardId)} />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          {/* hand */}
+          <HandRow
+            hand={you.hand}
+            selected={selected}
+            legalCards={yourLegal}
+            isMyTurn={isMyTurn}
+            playing
+            onSelect={setSelected}
+          />
         </section>
       )}
 

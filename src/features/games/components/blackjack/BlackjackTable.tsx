@@ -17,6 +17,7 @@ import { useRealtimeRoom } from "@/features/games/hooks/useRealtimeRoom";
 import { PlayerIdentity } from "@/features/games/lib/services/identity";
 import { useChat } from "@/features/games/hooks/useChat";
 import { GameChatDrawer, ChatHeaderButton } from "../shared/GameChatDrawer";
+import { PixiTableEffectsLazy } from "../pixi/PixiTableEffectsLazy";
 
 interface Props {
   onBack: () => void;
@@ -173,6 +174,7 @@ const BJView: React.FC<ViewProps> = ({
     state.phase === "player" &&
     state.player.length === 2 &&
     state.balance >= state.bet;
+  const pixiEventKey = `${state.phase}:${state.player.join("|")}:${state.dealer.join("|")}:${state.result ?? "none"}:${state.bet}`;
 
   return (
     <div
@@ -289,6 +291,15 @@ const BJView: React.FC<ViewProps> = ({
             boxShadow: `0 0 60px ${accent}24, inset 0 0 68px ${accent}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
           }}
         >
+          <PixiTableEffectsLazy
+            game="blackjack"
+            accent={accent}
+            eventKey={pixiEventKey}
+            cardCount={state.player.length + state.dealer.length}
+            result={state.result}
+            bet={state.bet}
+            className="z-0 opacity-90"
+          />
           <div
             className="absolute inset-0 opacity-50 trey-smoke"
             style={{

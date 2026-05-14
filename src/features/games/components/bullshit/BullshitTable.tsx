@@ -10,6 +10,7 @@ import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
+import { PixiTableEffectsLazy } from '../pixi/PixiTableEffectsLazy';
 
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
@@ -152,6 +153,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
 
   const isCaughtBluff = state.reveal?.liar;
   const isTrueClaim = state.reveal && !state.reveal.liar;
+  const pixiEventKey = `${state.phase}:${state.lastClaim?.cardIds.join('|') ?? 'none'}:${state.pile.length}:${state.reveal?.cards.join('|') ?? 'none'}:${state.reveal?.liar ?? 'none'}`;
 
   return (
     <div
@@ -172,7 +174,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
       {/* HEADER */}
       <header className="shrink-0 z-20 backdrop-blur-2xl border-b" style={{ background: 'rgba(8,17,31,0.85)', borderColor: 'rgba(168,85,247,0.3)' }}>
         <div className="px-3 py-2 flex items-center gap-2">
-          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/5"><ArrowLeft size={18} /></button>
+          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Back" title="Back"><ArrowLeft size={18} /></button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <TreyBrandMark size={20} glow className="shrink-0" />
             <div className="h-4 w-px bg-white/15 shrink-0" />
@@ -183,7 +185,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
           </div>
 
           {chatButton}
-          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5"><Info size={16} /></button>
+          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
         </div>
       </header>
 
@@ -197,6 +199,16 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             boxShadow: '0 0 50px rgba(168,85,247,0.18)',
           }}
         >
+          <PixiTableEffectsLazy
+            game="bullshit"
+            accent="#A855F7"
+            eventKey={pixiEventKey}
+            cardCount={state.lastClaim?.count ?? 1}
+            secondaryCount={state.reveal?.cards.length ?? Math.min(state.pile.length, 4)}
+            reveal={Boolean(state.reveal)}
+            result={state.reveal ? (state.reveal.liar ? 'lie' : 'truth') : null}
+            className="z-0 opacity-90"
+          />
           {/* OPPONENTS ROW */}
           <div className="grid grid-cols-3 gap-1.5 shrink-0">
             {opponents.map(p => {
