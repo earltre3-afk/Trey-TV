@@ -19,10 +19,13 @@ export default defineConfig({
   },
   vite: {
     envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+    optimizeDeps: {
+      include: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+    },
     build: {
       rollupOptions: {
         output: {
-          manualChunks(id) {
+          manualChunks(id: string) {
             if (!id.includes("node_modules")) return;
 
             if (id.includes("livekit-client")) return "vendor-livekit";

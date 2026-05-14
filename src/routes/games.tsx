@@ -1,6 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/AppShell";
-import { GamesPreviewSection } from "@/components/games/GamesPreviewSection";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
+import { GameRoomRouteMount } from "@/features/games/GameRoomRouteMount";
 
 export const Route = createFileRoute("/games")({
   component: GamesPage,
@@ -13,9 +12,11 @@ export const Route = createFileRoute("/games")({
 });
 
 function GamesPage() {
-  return (
-    <AppShell wide>
-      <GamesPreviewSection />
-    </AppShell>
-  );
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (pathname !== "/games") {
+    return <Outlet />;
+  }
+
+  return <GameRoomRouteMount />;
 }

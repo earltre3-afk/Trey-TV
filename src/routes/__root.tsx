@@ -142,6 +142,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const showWelcomeSplash = pathname === "/";
+  const isImmersivePrescribeMe = pathname.startsWith("/prescribe-me");
+  const isImmersiveGameRoom = pathname.startsWith("/games");
+  const hideGlobalMobileChrome = isImmersivePrescribeMe || isImmersiveGameRoom;
 
   // Apply user's profile accent color globally
   useAccentColor();
@@ -160,8 +163,8 @@ function RootComponent() {
                       <MusicReviewProvider>
                         {showWelcomeSplash && <WelcomeSplash onDone={() => undefined} />}
                         <Outlet />
-                        <BottomNav />
-                        <TreyIWidget />
+                        {!hideGlobalMobileChrome && <BottomNav />}
+                        {!hideGlobalMobileChrome && <TreyIWidget />}
                         <GiftBurstHost />
                         <Toaster />
                       </MusicReviewProvider>

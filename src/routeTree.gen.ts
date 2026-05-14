@@ -57,6 +57,9 @@ import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as GamesSpadesRouteImport } from './routes/games.spades'
+import { Route as GamesBullshitRouteImport } from './routes/games.bullshit'
+import { Route as GamesBlackjackRouteImport } from './routes/games.blackjack'
 import { Route as DevelopersDocsRouteImport } from './routes/developers.docs'
 import { Route as CreatorStudioSubmittedRouteImport } from './routes/creator-studio.submitted'
 import { Route as CreatorStudioSubmitRouteImport } from './routes/creator-studio.submit'
@@ -89,6 +92,7 @@ import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminRecommendationsRouteImport } from './routes/admin.recommendations'
 import { Route as AdminProfileDecorationsRouteImport } from './routes/admin.profile-decorations'
 import { Route as AdminMusicReviewRouteImport } from './routes/admin.music-review'
+import { Route as AdminGamesRouteImport } from './routes/admin.games'
 import { Route as AdminDeveloperAppsRouteImport } from './routes/admin.developer-apps'
 import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
@@ -339,6 +343,21 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesSpadesRoute = GamesSpadesRouteImport.update({
+  id: '/spades',
+  path: '/spades',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesBullshitRoute = GamesBullshitRouteImport.update({
+  id: '/bullshit',
+  path: '/bullshit',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesBlackjackRoute = GamesBlackjackRouteImport.update({
+  id: '/blackjack',
+  path: '/blackjack',
+  getParentRoute: () => GamesRoute,
+} as any)
 const DevelopersDocsRoute = DevelopersDocsRouteImport.update({
   id: '/docs',
   path: '/docs',
@@ -501,6 +520,11 @@ const AdminMusicReviewRoute = AdminMusicReviewRouteImport.update({
   path: '/music-review',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGamesRoute = AdminGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminDeveloperAppsRoute = AdminDeveloperAppsRouteImport.update({
   id: '/developer-apps',
   path: '/developer-apps',
@@ -560,7 +584,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -580,6 +604,7 @@ export interface FileRoutesByFullPath {
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
   '/admin/developer-apps': typeof AdminDeveloperAppsRoute
+  '/admin/games': typeof AdminGamesRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -612,6 +637,9 @@ export interface FileRoutesByFullPath {
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/developers/docs': typeof DevelopersDocsRoute
+  '/games/blackjack': typeof GamesBlackjackRoute
+  '/games/bullshit': typeof GamesBullshitRoute
+  '/games/spades': typeof GamesSpadesRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -649,7 +677,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -669,6 +697,7 @@ export interface FileRoutesByTo {
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
   '/admin/developer-apps': typeof AdminDeveloperAppsRoute
+  '/admin/games': typeof AdminGamesRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -701,6 +730,9 @@ export interface FileRoutesByTo {
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/developers/docs': typeof DevelopersDocsRoute
+  '/games/blackjack': typeof GamesBlackjackRoute
+  '/games/bullshit': typeof GamesBullshitRoute
+  '/games/spades': typeof GamesSpadesRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -740,7 +772,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
-  '/games': typeof GamesRoute
+  '/games': typeof GamesRouteWithChildren
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -760,6 +792,7 @@ export interface FileRoutesById {
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
   '/admin/creators': typeof AdminCreatorsRoute
   '/admin/developer-apps': typeof AdminDeveloperAppsRoute
+  '/admin/games': typeof AdminGamesRoute
   '/admin/music-review': typeof AdminMusicReviewRoute
   '/admin/profile-decorations': typeof AdminProfileDecorationsRoute
   '/admin/recommendations': typeof AdminRecommendationsRoute
@@ -792,6 +825,9 @@ export interface FileRoutesById {
   '/creator-studio/submit': typeof CreatorStudioSubmitRoute
   '/creator-studio/submitted': typeof CreatorStudioSubmittedRoute
   '/developers/docs': typeof DevelopersDocsRoute
+  '/games/blackjack': typeof GamesBlackjackRoute
+  '/games/bullshit': typeof GamesBullshitRoute
+  '/games/spades': typeof GamesSpadesRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -852,6 +888,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval'
     | '/admin/creators'
     | '/admin/developer-apps'
+    | '/admin/games'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -884,6 +921,9 @@ export interface FileRouteTypes {
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
     | '/developers/docs'
+    | '/games/blackjack'
+    | '/games/bullshit'
+    | '/games/spades'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -941,6 +981,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval'
     | '/admin/creators'
     | '/admin/developer-apps'
+    | '/admin/games'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -973,6 +1014,9 @@ export interface FileRouteTypes {
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
     | '/developers/docs'
+    | '/games/blackjack'
+    | '/games/bullshit'
+    | '/games/spades'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -1031,6 +1075,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval'
     | '/admin/creators'
     | '/admin/developer-apps'
+    | '/admin/games'
     | '/admin/music-review'
     | '/admin/profile-decorations'
     | '/admin/recommendations'
@@ -1063,6 +1108,9 @@ export interface FileRouteTypes {
     | '/creator-studio/submit'
     | '/creator-studio/submitted'
     | '/developers/docs'
+    | '/games/blackjack'
+    | '/games/bullshit'
+    | '/games/spades'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -1102,7 +1150,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
   ForYouRoute: typeof ForYouRoute
-  GamesRoute: typeof GamesRoute
+  GamesRoute: typeof GamesRouteWithChildren
   GoLiveRoute: typeof GoLiveRoute
   GuideRoute: typeof GuideRoute
   InboxRoute: typeof InboxRoute
@@ -1470,6 +1518,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/spades': {
+      id: '/games/spades'
+      path: '/spades'
+      fullPath: '/games/spades'
+      preLoaderRoute: typeof GamesSpadesRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/bullshit': {
+      id: '/games/bullshit'
+      path: '/bullshit'
+      fullPath: '/games/bullshit'
+      preLoaderRoute: typeof GamesBullshitRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/blackjack': {
+      id: '/games/blackjack'
+      path: '/blackjack'
+      fullPath: '/games/blackjack'
+      preLoaderRoute: typeof GamesBlackjackRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/developers/docs': {
       id: '/developers/docs'
       path: '/docs'
@@ -1694,6 +1763,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMusicReviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/games': {
+      id: '/admin/games'
+      path: '/games'
+      fullPath: '/admin/games'
+      preLoaderRoute: typeof AdminGamesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/developer-apps': {
       id: '/admin/developer-apps'
       path: '/developer-apps'
@@ -1770,6 +1846,7 @@ interface AdminRouteChildren {
   AdminContentApprovalRoute: typeof AdminContentApprovalRouteWithChildren
   AdminCreatorsRoute: typeof AdminCreatorsRoute
   AdminDeveloperAppsRoute: typeof AdminDeveloperAppsRoute
+  AdminGamesRoute: typeof AdminGamesRoute
   AdminMusicReviewRoute: typeof AdminMusicReviewRoute
   AdminProfileDecorationsRoute: typeof AdminProfileDecorationsRoute
   AdminRecommendationsRoute: typeof AdminRecommendationsRoute
@@ -1790,6 +1867,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminContentApprovalRoute: AdminContentApprovalRouteWithChildren,
   AdminCreatorsRoute: AdminCreatorsRoute,
   AdminDeveloperAppsRoute: AdminDeveloperAppsRoute,
+  AdminGamesRoute: AdminGamesRoute,
   AdminMusicReviewRoute: AdminMusicReviewRoute,
   AdminProfileDecorationsRoute: AdminProfileDecorationsRoute,
   AdminRecommendationsRoute: AdminRecommendationsRoute,
@@ -1880,6 +1958,20 @@ const DevelopersRouteWithChildren = DevelopersRoute._addFileChildren(
   DevelopersRouteChildren,
 )
 
+interface GamesRouteChildren {
+  GamesBlackjackRoute: typeof GamesBlackjackRoute
+  GamesBullshitRoute: typeof GamesBullshitRoute
+  GamesSpadesRoute: typeof GamesSpadesRoute
+}
+
+const GamesRouteChildren: GamesRouteChildren = {
+  GamesBlackjackRoute: GamesBlackjackRoute,
+  GamesBullshitRoute: GamesBullshitRoute,
+  GamesSpadesRoute: GamesSpadesRoute,
+}
+
+const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)
+
 interface MusicReviewRouteChildren {
   MusicReviewQueueRoute: typeof MusicReviewQueueRoute
 }
@@ -1950,7 +2042,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
   ForYouRoute: ForYouRoute,
-  GamesRoute: GamesRoute,
+  GamesRoute: GamesRouteWithChildren,
   GoLiveRoute: GoLiveRoute,
   GuideRoute: GuideRoute,
   InboxRoute: InboxRoute,

@@ -1,0 +1,190 @@
+/* ==========================================================
+   TREY TV GAME ROOM — premium cinematic gameplay system
+   ========================================================== */
+
+/* ----- felt rim shimmer ----- */
+@keyframes trey-rim-shimmer {
+  0%, 100% { box-shadow:
+    0 0 60px rgba(0,183,255,0.20),
+    0 0 0 1px rgba(0,183,255,0.35) inset,
+    inset 0 0 80px rgba(0,183,255,0.10); }
+  50%      { box-shadow:
+    0 0 110px rgba(168,85,247,0.32),
+    0 0 0 1px rgba(168,85,247,0.45) inset,
+    inset 0 0 110px rgba(168,85,247,0.16); }
+}
+.trey-felt-rim { animation: trey-rim-shimmer 7s ease-in-out infinite; }
+
+/* slow rotating conic spotlight for the table */
+@keyframes trey-conic-spin {
+  to { transform: rotate(360deg); }
+}
+.trey-conic-light { animation: trey-conic-spin 28s linear infinite; }
+
+/* drifting smoke / light texture */
+@keyframes trey-smoke-drift {
+  0%   { transform: translate(-4%, -2%) scale(1.08); opacity: 0.55; }
+  50%  { transform: translate(3%, 2%) scale(1.12);  opacity: 0.75; }
+  100% { transform: translate(-4%, -2%) scale(1.08); opacity: 0.55; }
+}
+.trey-smoke { animation: trey-smoke-drift 14s ease-in-out infinite; }
+
+/* ----- card motion ----- */
+@keyframes trey-card-throw {
+  0%   { opacity: 0; transform: translate(var(--from-x, 0), var(--from-y, 0)) scale(0.55) rotate(var(--from-r, 0deg)); filter: blur(2px); }
+  55%  { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); filter: blur(0); }
+}
+.trey-card-throw { animation: trey-card-throw 460ms cubic-bezier(0.22, 0.85, 0.28, 1.08) both; }
+
+/* trail behind the thrown card */
+@keyframes trey-card-trail {
+  0%   { opacity: 0.7; transform: translate(var(--from-x, 0), var(--from-y, 0)) scale(0.6); }
+  100% { opacity: 0;   transform: translate(0, 0) scale(1); }
+}
+.trey-card-trail { animation: trey-card-trail 480ms ease-out both; }
+
+/* trick winner glow */
+@keyframes trey-trick-win {
+  0%   { box-shadow: 0 0 0 rgba(255,200,87,0); transform: scale(1); }
+  40%  { box-shadow: 0 0 70px rgba(255,200,87,0.85), 0 0 140px rgba(255,200,87,0.4); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 rgba(255,200,87,0); transform: scale(1); }
+}
+.trey-trick-win { animation: trey-trick-win 800ms ease-out both; }
+
+/* selected card breathing */
+@keyframes trey-card-breathe {
+  0%, 100% { filter: drop-shadow(0 0 10px currentColor); }
+  50%      { filter: drop-shadow(0 0 24px currentColor); }
+}
+.trey-card-breathe { animation: trey-card-breathe 1.8s ease-in-out infinite; }
+
+/* turn pulse (refined — two-layer ring) */
+@keyframes trey-turn-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 0 rgba(255,200,87,0.55),
+      0 0 22px rgba(255,200,87,0.55),
+      inset 0 0 0 1px rgba(255,200,87,0.6);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(255,200,87,0),
+      0 0 36px rgba(255,200,87,0.85),
+      inset 0 0 0 1px rgba(255,200,87,0.9);
+  }
+}
+.trey-turn-pulse { animation: trey-turn-pulse 1.7s ease-in-out infinite; }
+
+/* round/win celebration */
+@keyframes trey-win-burst {
+  0%   { opacity: 0; transform: scale(0.85); }
+  60%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.trey-win-burst { animation: trey-win-burst 560ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+
+/* loss shake */
+@keyframes trey-bust-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-7px); }
+  40%, 80% { transform: translateX(7px); }
+}
+.trey-bust-shake { animation: trey-bust-shake 460ms ease-in-out both; }
+
+/* ambient glow breathing */
+@keyframes trey-ambient-glow {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.95; }
+}
+.trey-ambient-glow { animation: trey-ambient-glow 7s ease-in-out infinite; }
+
+/* card-deal slide-in */
+@keyframes trey-card-deal {
+  0%   { opacity: 0; transform: translateY(-50px) rotate(var(--deal-r, -6deg)) scale(0.8); }
+  100% { opacity: 1; transform: translateY(0) rotate(var(--deal-r, 0deg)) scale(1); }
+}
+.trey-card-deal { animation: trey-card-deal 420ms cubic-bezier(0.22, 0.9, 0.32, 1.08) both; }
+
+/* card holographic shimmer sweep */
+@keyframes trey-card-shimmer {
+  0%   { transform: translateX(-130%) skewX(-18deg); }
+  100% { transform: translateX(230%)  skewX(-18deg); }
+}
+.trey-card-shimmer { animation: trey-card-shimmer 4.5s ease-in-out infinite; }
+
+/* score count-up pop */
+@keyframes trey-score-pop {
+  0%   { transform: scale(1); text-shadow: 0 0 12px currentColor; }
+  40%  { transform: scale(1.18); text-shadow: 0 0 28px currentColor; }
+  100% { transform: scale(1); text-shadow: 0 0 12px currentColor; }
+}
+.trey-score-pop { animation: trey-score-pop 600ms ease-out both; }
+
+/* bid select confirm */
+@keyframes trey-bid-confirm {
+  0%   { transform: scale(0.9); box-shadow: 0 0 0 rgba(255,200,87,0); }
+  50%  { transform: scale(1.1); box-shadow: 0 0 32px rgba(255,200,87,0.9); }
+  100% { transform: scale(1);   box-shadow: 0 0 12px rgba(255,200,87,0.4); }
+}
+.trey-bid-confirm { animation: trey-bid-confirm 500ms ease-out both; }
+
+/* cinematic screen entrance */
+@keyframes trey-screen-enter {
+  0%   { opacity: 0; transform: translateY(12px) scale(0.985); filter: blur(8px); }
+  60%  { filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.trey-screen-enter { animation: trey-screen-enter 600ms cubic-bezier(0.22, 0.85, 0.3, 1) both; }
+
+/* glow sweep across the trick center toward the winner */
+@keyframes trey-glow-sweep {
+  0%   { opacity: 0; transform: scale(0.3); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+.trey-glow-sweep { animation: trey-glow-sweep 800ms ease-out both; }
+
+/* utilities */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+html, body, #root { overscroll-behavior: none; }
+
+/* premium card surface gloss (used by TreyCard) */
+.trey-card-gloss::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.18) 0%,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0) 45%,
+    rgba(0,0,0,0.12) 100%
+  );
+  border-radius: inherit;
+}
+.trey-card-gloss::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255,255,255,0.10) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  border-radius: inherit;
+}
+
+/* nameplate sheen */
+.trey-nameplate-sheen {
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.06) 0%,
+    rgba(255,255,255,0) 60%);
+}
