@@ -24,7 +24,7 @@ export const SUIT_DISPLAY: Record<Suit, { name: string; symbol: string; color: s
 
 const RANKS: Rank[] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
 const SUIT_LETTER: Record<Suit, string> = { spades:'S', hearts:'H', diamonds:'D', clubs:'C' };
-const SUIT_FOLDER: Record<Suit, string> = { spades:'spades', hearts:'hearts', diamonds:'diamonds', clubs:'clubs' };
+const SUIT_FOLDER: Record<Suit, string> = { spades:'blades', hearts:'soul', diamonds:'flame', clubs:'keys' };
 
 const SUIT_TO_DISPLAY: Record<Suit, CardDef['displaySuit']> = {
   spades: 'Blades', hearts: 'Soul', diamonds: 'Crowns', clubs: 'Sparks',
@@ -47,7 +47,7 @@ export const CARD_MANIFEST: CardDef[] = (['spades','hearts','diamonds','clubs'] 
       rank,
       suit,
       displaySuit: SUIT_TO_DISPLAY[suit],
-      assetPath: `/assets/games/cards/trey-tv-deck/${SUIT_FOLDER[suit]}/${rank}${SUIT_LETTER[suit]}.png`,
+      assetPath: `/assets/games/cards/trey-tv-luxury/${SUIT_FOLDER[suit]}/${rank}${SUIT_LETTER[suit]}.png`,
       spadesValue: spadesRankValue(rank),
       blackjackValue: blackjackRankValue(rank),
     }))
