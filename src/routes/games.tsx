@@ -1,8 +1,7 @@
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import { GameRoomRouteMount } from "@/features/games/GameRoomRouteMount";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/games")({
-  component: GamesPage,
+  component: () => <Outlet />,
   head: () => ({
     meta: [
       { title: "Games · Trey TV" },
@@ -10,13 +9,3 @@ export const Route = createFileRoute("/games")({
     ],
   }),
 });
-
-function GamesPage() {
-  const pathname = useRouterState({ select: (state) => state.location.pathname });
-
-  if (pathname !== "/games") {
-    return <Outlet />;
-  }
-
-  return <GameRoomRouteMount />;
-}

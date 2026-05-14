@@ -23,6 +23,7 @@ export type GameView = 'home' | 'lobby' | 'spades' | 'blackjack' | 'bullshit' | 
 interface RoomCtx { roomId: string; gameType: GameType; }
 
 export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: TreyGameUserInput | null }> = ({ initialView = 'home', currentUser = null }) => {
+  const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<GameView>(initialView);
   const [legendOpen, setLegendOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -31,6 +32,10 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
   const [identity, setIdentity] = useState<PlayerIdentity>(() => currentUser ? identityFromTreyUser(currentUser) : getOrCreateIdentity());
   const [room, setRoom] = useState<RoomCtx | null>(null);
   const [queueGame, setQueueGame] = useState<GameType>('spades');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (currentUser) setIdentity(identityFromTreyUser(currentUser));
@@ -103,6 +108,31 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
     if (game === 'blackjack') return <BlackjackTable {...commonProps} />;
     return <BullshitTable {...commonProps} />;
   };
+
+  if (!mounted) {
+    return (
+      <div
+        className="trey-game-room font-sans antialiased"
+        style={{ background: '#05070D', color: '#F8FAFC', minHeight: '100vh' }}
+      >
+        <div className="min-h-screen w-full flex items-center justify-center px-6">
+          <div
+            className="rounded-3xl border px-6 py-5 text-center"
+            style={{
+              background: 'rgba(8,17,31,0.78)',
+              borderColor: 'rgba(0,183,255,0.3)',
+              boxShadow: '0 0 44px rgba(0,183,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
+            }}
+          >
+            <div className="text-[10px] font-bold tracking-[0.3em]" style={{ color: '#00B7FF' }}>
+              TREY TV
+            </div>
+            <div className="mt-1 text-base font-black">Loading Game Room</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="trey-game-room font-sans antialiased" style={{ background: '#05070D', color: '#F8FAFC', minHeight: '100vh' }}>

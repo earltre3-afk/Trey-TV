@@ -42,6 +42,7 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LegalIndexRouteImport } from './routes/legal.index'
+import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
@@ -266,6 +267,11 @@ const LegalIndexRoute = LegalIndexRouteImport.update({
   id: '/legal/',
   path: '/legal/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GamesIndexRoute = GamesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GamesRoute,
 } as any)
 const CreatorStudioIndexRoute = CreatorStudioIndexRouteImport.update({
   id: '/',
@@ -655,6 +661,7 @@ export interface FileRoutesByFullPath {
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
+  '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
@@ -677,7 +684,6 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
-  '/games': typeof GamesRouteWithChildren
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -748,6 +754,7 @@ export interface FileRoutesByTo {
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio': typeof CreatorStudioIndexRoute
+  '/games': typeof GamesIndexRoute
   '/legal': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
@@ -843,6 +850,7 @@ export interface FileRoutesById {
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
+  '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
@@ -939,6 +947,7 @@ export interface FileRouteTypes {
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
+    | '/games/'
     | '/legal/'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
@@ -961,7 +970,6 @@ export interface FileRouteTypes {
     | '/explore'
     | '/following'
     | '/for-you'
-    | '/games'
     | '/go-live'
     | '/guide'
     | '/inbox'
@@ -1032,6 +1040,7 @@ export interface FileRouteTypes {
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio'
+    | '/games'
     | '/legal'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
@@ -1126,6 +1135,7 @@ export interface FileRouteTypes {
     | '/u/$uid'
     | '/watch/$id'
     | '/creator-studio/'
+    | '/games/'
     | '/legal/'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
@@ -1412,6 +1422,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/'
       preLoaderRoute: typeof LegalIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/games/': {
+      id: '/games/'
+      path: '/'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesIndexRouteImport
+      parentRoute: typeof GamesRoute
     }
     '/creator-studio/': {
       id: '/creator-studio/'
@@ -1962,12 +1979,14 @@ interface GamesRouteChildren {
   GamesBlackjackRoute: typeof GamesBlackjackRoute
   GamesBullshitRoute: typeof GamesBullshitRoute
   GamesSpadesRoute: typeof GamesSpadesRoute
+  GamesIndexRoute: typeof GamesIndexRoute
 }
 
 const GamesRouteChildren: GamesRouteChildren = {
   GamesBlackjackRoute: GamesBlackjackRoute,
   GamesBullshitRoute: GamesBullshitRoute,
   GamesSpadesRoute: GamesSpadesRoute,
+  GamesIndexRoute: GamesIndexRoute,
 }
 
 const GamesRouteWithChildren = GamesRoute._addFileChildren(GamesRouteChildren)

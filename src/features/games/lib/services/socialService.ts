@@ -153,10 +153,15 @@ export async function cancelOutgoingRequest(id: string): Promise<void> {
 }
 
 export async function getPendingInboxCount(userId: string): Promise<number> {
-  const { count } = await supabase
-    .from('game_requests')
-    .select('*', { count: 'exact', head: true })
-    .eq('to_user_id', userId)
-    .eq('status', 'pending');
-  return count || 0;
+  try {
+    const { count, error } = await supabase
+      .from('game_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('to_user_id', userId)
+      .eq('status', 'pending');
+    if (error) return 0;
+    return count || 0;
+  } catch {
+    return 0;
+  }
 }

@@ -138,14 +138,19 @@ export async function getQueueSnapshot(userId: string, gameType: GameType): Prom
 }
 
 export async function getQueueCounts(): Promise<Record<GameType, number>> {
-  const { data } = await supabase
-    .from('game_queue_entries')
-    .select('game_type,status')
-    .eq('status', 'searching')
-    .limit(500);
   const counts: Record<GameType, number> = { spades: 0, blackjack: 0, bullshit: 0 };
-  for (const r of (data || []) as any[]) {
-    if (counts[r.game_type as GameType] !== undefined) counts[r.game_type as GameType]++;
+  try {
+    const { data, error } = await supabase
+      .from('game_queue_entries')
+      .select('game_type,status')
+      .eq('status', 'searching')
+      .limit(500);
+    if (error) return counts;
+    for (const r of (data || []) as any[]) {
+      if (counts[r.game_type as GameType] !== undefined) counts[r.game_type as GameType]++;
+    }
+  } catch {
+    return counts;
   }
   return counts;
 }
