@@ -148,7 +148,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
 
       <div className="relative max-w-3xl mx-auto px-4 py-6 md:py-10 space-y-5">
         {/* Main matchmaking card */}
-        <div className="relative rounded-[32px] border overflow-hidden p-6 md:p-10"
+        <div className="relative rounded-[32px] border overflow-hidden p-6 md:p-10 trey-queue-card"
           style={{
             background: 'linear-gradient(180deg, rgba(8,17,31,0.85), rgba(5,7,13,0.95))',
             borderColor: phaseColor + '55',
@@ -216,7 +216,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
         </div>
 
         {/* Forming rooms */}
-        <div className="rounded-3xl border backdrop-blur-md p-5"
+        <div className="rounded-3xl border backdrop-blur-md p-5 trey-queue-card"
           style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(0,183,255,0.22)' }}>
           <div className="flex items-end justify-between mb-3">
             <div>
@@ -233,7 +233,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
                 const urgent = need === 1;
                 const c = urgent ? '#FFC857' : need === 2 ? meta.color : '#A855F7';
                 return (
-                  <div key={r.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 border"
+                  <div key={r.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 border trey-glass-panel"
                     style={{ background: 'rgba(5,7,13,0.6)', borderColor: c + '40' }}>
                     <div className="text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md" style={{ background: c + '22', color: c, border: '1px solid ' + c + '60' }}>
                       #{idx + 1}
@@ -283,7 +283,7 @@ export const QueueScreen: React.FC<Props> = ({ gameType, identity, onBack, onMat
 /* ----- small bits ----- */
 
 const StatTile: React.FC<{ label: string; value: string; color: string; icon: React.ReactNode }> = ({ label, value, color, icon }) => (
-  <div className="rounded-2xl px-3 py-3 border backdrop-blur-md" style={{ background: 'rgba(5,7,13,0.6)', borderColor: color + '40' }}>
+  <div className="rounded-2xl px-3 py-3 border backdrop-blur-md trey-glass-panel" style={{ borderColor: color + '40' }}>
     <div className="flex items-center gap-1.5 text-[9px] tracking-[0.2em] font-bold" style={{ color }}>{icon} {label.toUpperCase()}</div>
     <div className="text-base md:text-lg font-black mt-1 truncate">{value}</div>
   </div>

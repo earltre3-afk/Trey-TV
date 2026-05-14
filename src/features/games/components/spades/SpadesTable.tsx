@@ -299,7 +299,7 @@ const SpadesView: React.FC<ViewProps> = ({
           boxShadow: '0 6px 24px rgba(0,0,0,0.4)',
         }}>
         <div className="px-3 py-2 flex items-center gap-2">
-          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Back">
+          <button onClick={onBack} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Back">
             <ArrowLeft size={18} />
           </button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -322,7 +322,7 @@ const SpadesView: React.FC<ViewProps> = ({
             </div>
           )}
           {chatButton}
-          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
+          <button onClick={onLegend} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
         </div>
 
 
@@ -336,12 +336,8 @@ const SpadesView: React.FC<ViewProps> = ({
       {/* FELT — flexes to fill remaining space */}
       <main className="flex-1 min-h-0 relative flex items-center justify-center px-2 py-2">
         <div
-          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden trey-felt-rim"
+          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden trey-felt-rim trey-luxury-felt trey-table-rim"
           style={{
-            background: `
-              radial-gradient(ellipse 70% 50% at 50% 50%, rgba(0,183,255,0.10) 0%, rgba(8,17,31,0.0) 60%),
-              radial-gradient(ellipse 100% 100% at 50% 50%, rgba(10,20,48,0.95) 0%, rgba(5,7,13,0.98) 70%, #02030A 100%)
-            `,
             border: '1.5px solid rgba(0,183,255,0.32)',
           }}
         >
@@ -454,7 +450,7 @@ const SpadesView: React.FC<ViewProps> = ({
               <div className="text-[9px] tracking-[0.3em] font-bold" style={{ color: '#FFC857' }}>YOUR TURN</div>
               <div className="text-xs font-bold text-slate-200">How many tricks will you take?</div>
             </div>
-            <button onClick={() => onBid(0)} className="px-3 py-1.5 rounded-full font-black text-[10px] tracking-[0.18em] shrink-0 active:scale-95 transition relative overflow-hidden"
+            <button onClick={() => onBid(0)} className="min-h-9 px-3 py-2 rounded-full font-black text-[10px] tracking-[0.18em] shrink-0 active:scale-95 transition relative overflow-hidden"
               style={{
                 background: 'linear-gradient(180deg, rgba(244,63,94,0.28), rgba(244,63,94,0.10))',
                 border: '1px solid rgba(244,63,94,0.6)',

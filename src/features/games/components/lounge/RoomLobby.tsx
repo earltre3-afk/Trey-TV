@@ -117,7 +117,7 @@ export const RoomLobby: React.FC<Props> = ({ roomId, identity, onBack, onSession
 
       <div className="max-w-3xl mx-auto px-4 pt-6">
         {/* Code card */}
-        <div className="rounded-3xl p-5 border text-center mb-6"
+        <div className="rounded-3xl p-5 border text-center mb-6 trey-queue-card"
           style={{ background: 'linear-gradient(135deg, rgba(8,17,31,0.95), rgba(5,7,13,0.95))', borderColor: gameMeta.color + '60', boxShadow: `0 0 40px ${gameMeta.color}20` }}>
           <div className="text-xs text-slate-400 tracking-widest mb-2">ROOM CODE</div>
           <div className="flex items-center justify-center gap-3">
@@ -173,7 +173,7 @@ export const RoomLobby: React.FC<Props> = ({ roomId, identity, onBack, onSession
 };
 
 const SeatCard: React.FC<{ seat: number; player: PlayerRow | null; isYou: boolean; accent: string; teamLabel: string | null }> = ({ seat, player, isYou, accent, teamLabel }) => (
-  <div className="rounded-2xl p-3 border flex items-center gap-3"
+  <div className="rounded-2xl p-3 border flex items-center gap-3 trey-glass-panel"
     style={{
       background: player ? 'rgba(8,17,31,0.7)' : 'rgba(8,17,31,0.3)',
       borderColor: isYou ? accent : player ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',

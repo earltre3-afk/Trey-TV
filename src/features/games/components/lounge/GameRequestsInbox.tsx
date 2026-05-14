@@ -92,7 +92,7 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
 
       <div className="relative max-w-3xl mx-auto px-4 py-5 space-y-4">
         {/* Tabs */}
-        <div className="flex gap-2 rounded-2xl p-1 border" style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="flex gap-2 rounded-2xl p-1 border trey-glass-panel" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           <TabBtn active={tab === 'in'} onClick={() => setTab('in')} icon={<Inbox size={14} />} label={`Inbox (${inbox.length})`} color="#FFC857" />
           <TabBtn active={tab === 'out'} onClick={() => setTab('out')} icon={<Send size={14} />} label={`Sent (${outgoing.length})`} color="#00B7FF" />
         </div>
@@ -100,7 +100,7 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
         {tab === 'in' && (
           <div className="space-y-2">
             {inbox.length === 0 && (
-              <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md"
+              <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md trey-queue-card"
                 style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Mail size={28} className="mx-auto mb-2 text-slate-500" />
                 {backendEnabled
@@ -115,7 +115,7 @@ export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept 
         {tab === 'out' && (
           <div className="space-y-2">
             {outgoing.length === 0 && (
-              <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md"
+              <div className="rounded-3xl border p-8 text-center text-sm text-slate-400 backdrop-blur-md trey-queue-card"
                 style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(255,255,255,0.08)' }}>
                 <Send size={28} className="mx-auto mb-2 text-slate-500" />
                 {backendEnabled ? 'You haven\'t sent any invites yet.' : 'Sent invites will appear here once the game backend is enabled.'}
@@ -157,7 +157,7 @@ const RequestCard: React.FC<{
     meta.color;
 
   return (
-    <div className="rounded-3xl border p-4 backdrop-blur-md"
+    <div className="rounded-3xl border p-4 backdrop-blur-md trey-queue-card"
       style={{
         background: 'rgba(8,17,31,0.7)',
         borderColor: meta.color + (isPending ? '60' : '25'),

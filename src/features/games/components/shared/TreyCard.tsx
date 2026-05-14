@@ -46,10 +46,10 @@ export const TreyCard: React.FC<TreyCardProps> = ({
     return (
       <div
         onClick={onClick}
-        className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 ${onClick ? 'cursor-pointer' : ''} ${className || ''}`}
+        className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 trey-card-depth ${onClick ? 'cursor-pointer active:scale-95' : ''} ${selected ? 'trey-card-depth-selected' : ''} ${className || ''}`}
         style={{
           ...baseStyle,
-          boxShadow: '0 8px 26px rgba(0,0,0,0.6), 0 0 26px rgba(0,183,255,0.22)',
+          boxShadow: '0 14px 30px rgba(0,0,0,0.68), 0 0 28px rgba(0,183,255,0.24), inset 0 1px 0 rgba(255,255,255,0.20)',
         }}
       >
         <img
@@ -83,7 +83,7 @@ export const TreyCard: React.FC<TreyCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 ${onClick ? 'cursor-pointer hover:-translate-y-1 active:scale-95' : ''} ${selected ? '-translate-y-3' : ''} ${dimmed ? 'opacity-35 saturate-50' : ''} ${className || ''}`}
+      className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 trey-card-depth ${onClick ? 'cursor-pointer hover:-translate-y-1 active:scale-95' : ''} ${selected ? 'trey-card-depth-selected' : ''} ${dimmed ? 'opacity-35 saturate-50' : ''} ${className || ''}`}
       style={{ ...baseStyle, boxShadow: ring }}
     >
       <img
@@ -106,4 +106,3 @@ export const TreyCard: React.FC<TreyCardProps> = ({
     </div>
   );
 };
-

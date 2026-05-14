@@ -155,7 +155,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
 
       <div className="relative max-w-3xl mx-auto px-4 py-6 space-y-4">
         {/* Game selector */}
-        <div className="rounded-3xl border p-4 md:p-5 backdrop-blur-md"
+        <div className="rounded-3xl border p-4 md:p-5 backdrop-blur-md trey-queue-card"
           style={{ background: 'rgba(8,17,31,0.65)', borderColor: gm.color + '40', boxShadow: `0 0 40px ${gm.color}18` }}>
           <div className="text-[10px] tracking-[0.3em] font-bold mb-3" style={{ color: gm.color }}>INVITE TO</div>
           <div className="grid grid-cols-3 gap-2">
@@ -188,7 +188,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
         </div>
 
         {/* Add by name */}
-        <div className="rounded-3xl border p-4 backdrop-blur-md"
+        <div className="rounded-3xl border p-4 backdrop-blur-md trey-queue-card"
           style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(0,183,255,0.25)' }}>
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
@@ -210,7 +210,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
         </div>
 
         {/* Friends list */}
-        <div className="rounded-3xl border backdrop-blur-md p-4"
+        <div className="rounded-3xl border backdrop-blur-md p-4 trey-queue-card"
           style={{ background: 'rgba(8,17,31,0.65)', borderColor: 'rgba(168,85,247,0.25)' }}>
           <div className="flex items-end justify-between mb-3">
             <div>
@@ -230,7 +230,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
               {filtered.map(f => {
                 const sent = sentTo.has(f.friend_user_id);
                 return (
-                  <div key={f.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 border"
+                  <div key={f.id} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 border trey-glass-panel"
                     style={{ background: 'rgba(5,7,13,0.6)', borderColor: 'rgba(255,255,255,0.08)' }}>
                     <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm shrink-0"
                       style={{ background: 'linear-gradient(135deg, rgba(0,183,255,0.25), rgba(168,85,247,0.25))', border: '1px solid rgba(255,255,255,0.12)' }}>

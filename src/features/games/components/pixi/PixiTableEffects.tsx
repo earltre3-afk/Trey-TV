@@ -29,6 +29,14 @@ interface ParticleNode {
   ttl: number;
 }
 
+interface AmbientDust {
+  node: Graphics;
+  x: number;
+  y: number;
+  vx: number;
+  phase: number;
+}
+
 interface PixiScene {
   app: Application;
   root: Container;
@@ -38,12 +46,14 @@ interface PixiScene {
   bursts: Container;
   motion: MotionNode[];
   particles: ParticleNode[];
+  dust: AmbientDust[];
   texture: Texture | null;
   width: number;
   height: number;
   time: number;
   lastEventKey: string;
   lastBet: number;
+  reducedMotion: boolean;
 }
 
 function colorToNumber(color: string): number {
@@ -86,11 +96,19 @@ function makeCard(texture: Texture | null, accent: number): PixiNode {
 
 function makeChip(accent: number): Graphics {
   const chip = new Graphics();
-  chip.circle(0, 0, 12)
+  chip.circle(0, 0, 13)
+    .fill({ color: 0x2a1604, alpha: 0.95 })
+    .stroke({ color: 0xffe4a3, alpha: 0.72, width: 1.6 });
+  chip.circle(0, 0, 11)
     .fill({ color: accent, alpha: 0.92 })
-    .stroke({ color: 0xffffff, alpha: 0.42, width: 2 });
-  chip.circle(0, 0, 7).stroke({ color: 0x05070d, alpha: 0.55, width: 2 });
-  chip.circle(0, 0, 2).fill({ color: 0xffffff, alpha: 0.55 });
+    .stroke({ color: 0x05070d, alpha: 0.38, width: 1.2 });
+  for (let i = 0; i < 8; i += 1) {
+    const a = (Math.PI * 2 * i) / 8;
+    chip.roundRect(Math.cos(a) * 8 - 1.2, Math.sin(a) * 8 - 3.2, 2.4, 6.4, 1)
+      .fill({ color: 0xffffff, alpha: 0.28 });
+  }
+  chip.circle(0, 0, 6.2).stroke({ color: 0x05070d, alpha: 0.55, width: 1.6 });
+  chip.circle(-3.4, -4.4, 2.4).fill({ color: 0xffffff, alpha: 0.46 });
   return chip;
 }
 
@@ -104,6 +122,7 @@ function addMotion(scene: PixiScene, node: PixiNode, opts: Omit<MotionNode, 'nod
 }
 
 function addBurst(scene: PixiScene, x: number, y: number, color: number, count = 18) {
+  if (scene.reducedMotion) count = Math.min(count, 8);
   for (let i = 0; i < count; i += 1) {
     const angle = (Math.PI * 2 * i) / count + Math.random() * 0.45;
     const speed = 28 + Math.random() * 86;
@@ -132,14 +151,18 @@ function drawScene(scene: PixiScene, props: PixiTableEffectsProps) {
   bg.clear();
   bg.roundRect(0, 0, w, h, Math.min(34, w * 0.08))
     .fill({ color: 0x02050c, alpha: 0.1 });
-  bg.ellipse(w / 2, h / 2, w * 0.52, h * 0.42)
-    .fill({ color: accent, alpha: 0.045 })
-    .stroke({ color: accent, alpha: 0.16, width: 1.4 });
+  bg.ellipse(w / 2, h * 0.46, w * 0.58, h * 0.45)
+    .fill({ color: accent, alpha: props.game === 'blackjack' ? 0.07 : 0.052 })
+    .stroke({ color: accent, alpha: 0.22, width: 1.8 });
+  bg.ellipse(w / 2, h * 0.5, w * 0.44, h * 0.31)
+    .stroke({ color: 0xffffff, alpha: 0.055, width: 3 });
   bg.ellipse(w / 2, h / 2, w * 0.32, h * 0.24)
-    .stroke({ color: alt, alpha: 0.18, width: 1 });
+    .fill({ color: 0x000000, alpha: 0.045 })
+    .stroke({ color: alt, alpha: 0.22, width: 1.1 });
   bg.ellipse(w / 2, h / 2, w * 0.18, h * 0.12)
-    .fill({ color: alt, alpha: 0.035 })
-    .stroke({ color: 0xffffff, alpha: 0.05, width: 1 });
+    .fill({ color: alt, alpha: 0.045 })
+    .stroke({ color: 0xffffff, alpha: 0.08, width: 1 });
+  bg.rect(0, 0, w, h * 0.45).fill({ color: 0xffffff, alpha: 0.018 });
 
   rings.removeChildren().forEach(child => child.destroy());
   for (let i = 0; i < 3; i += 1) {
@@ -153,12 +176,38 @@ function drawScene(scene: PixiScene, props: PixiTableEffectsProps) {
   }
 }
 
+function seedDust(scene: PixiScene, color: number) {
+  scene.dust.forEach(d => d.node.destroy());
+  scene.dust = [];
+  if (scene.reducedMotion) return;
+  const amount = clamp(Math.floor((scene.width * scene.height) / 22000), 10, 24);
+  for (let i = 0; i < amount; i += 1) {
+    const dot = new Graphics();
+    dot.circle(0, 0, 0.9 + Math.random() * 1.6).fill({ color, alpha: 0.13 + Math.random() * 0.16 });
+    dot.blendMode = 'screen';
+    const dust = {
+      node: dot,
+      x: Math.random() * scene.width,
+      y: Math.random() * scene.height,
+      vx: -4 + Math.random() * 8,
+      phase: Math.random() * Math.PI * 2,
+    };
+    dot.x = dust.x;
+    dot.y = dust.y;
+    scene.bursts.addChild(dot);
+    scene.dust.push(dust);
+  }
+}
+
 function triggerEvent(scene: PixiScene, props: PixiTableEffectsProps) {
   const accent = colorToNumber(props.accent);
   const w = scene.width;
   const h = scene.height;
   const center = { x: w / 2, y: h / 2 };
   const cards = clamp(props.cardCount ?? 0, 0, 8);
+  // Future sound hooks can subscribe to these DOM events without coupling audio to Pixi.
+  const soundReadyEvent = new CustomEvent('trey-games:fx', { detail: { game: props.game, result: props.result, bet: props.bet } });
+  window.dispatchEvent(soundReadyEvent);
 
   if (props.game === 'spades') {
     const from = seatPoint(props.winnerSeat ?? cards % 4, w, h);
@@ -236,6 +285,21 @@ function triggerEvent(scene: PixiScene, props: PixiTableEffectsProps) {
     }
     if (props.result) {
       const color = props.result === 'win' || props.result === 'blackjack' ? 0x22c55e : props.result === 'push' ? 0xffc857 : 0xef4444;
+      const halo = new Graphics();
+      halo.ellipse(0, 0, w * 0.34, h * 0.18).fill({ color, alpha: 0.18 });
+      halo.blendMode = 'screen';
+      addMotion(scene, halo, {
+        startX: center.x,
+        startY: center.y,
+        endX: center.x,
+        endY: center.y,
+        startRot: 0,
+        endRot: 0,
+        ttl: 0.9,
+        scaleFrom: 0.35,
+        scaleTo: 1.55,
+        fade: true,
+      });
       addBurst(scene, center.x, center.y, color, 34);
     }
   }
@@ -277,19 +341,20 @@ const PixiTableEffects: React.FC<PixiTableEffectsProps> = (props) => {
 
     async function init() {
       const rect = host.getBoundingClientRect();
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
       const app = new Application();
       await app.init({
         width: Math.max(1, rect.width),
         height: Math.max(1, rect.height),
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: !reducedMotion,
         autoDensity: true,
-        resolution: Math.min(window.devicePixelRatio || 1, 2),
+        resolution: Math.min(window.devicePixelRatio || 1, reducedMotion ? 1.25 : 1.75),
         preference: 'webgl',
         powerPreference: 'low-power',
       });
       if (disposed) {
-        app.destroy(true, { children: true, texture: false });
+        app.destroy({ removeView: true, releaseGlobalResources: true }, { children: true, texture: false });
         return;
       }
 
@@ -322,15 +387,18 @@ const PixiTableEffects: React.FC<PixiTableEffectsProps> = (props) => {
         bursts,
         motion: [],
         particles: [],
+        dust: [],
         texture,
         width: Math.max(1, rect.width),
         height: Math.max(1, rect.height),
         time: 0,
         lastEventKey: '',
         lastBet: 0,
+        reducedMotion,
       };
       sceneRef.current = scene;
       drawScene(scene, propsRef.current);
+      seedDust(scene, colorToNumber(propsRef.current.accent));
       triggerEvent(scene, propsRef.current);
       scene.lastEventKey = propsRef.current.eventKey;
 
@@ -342,6 +410,7 @@ const PixiTableEffects: React.FC<PixiTableEffectsProps> = (props) => {
         scene.width = width;
         scene.height = height;
         drawScene(scene, propsRef.current);
+        seedDust(scene, colorToNumber(propsRef.current.accent));
       });
       ro.observe(host);
 
@@ -352,6 +421,14 @@ const PixiTableEffects: React.FC<PixiTableEffectsProps> = (props) => {
         scene.rings.children.forEach((ring, i) => {
           ring.rotation += dt * (0.035 + i * 0.018);
           ring.alpha = 0.72 + Math.sin(scene.time * 1.2 + i) * 0.22;
+        });
+        scene.dust.forEach((d, i) => {
+          d.x += d.vx * dt;
+          if (d.x < -8) d.x = scene.width + 8;
+          if (d.x > scene.width + 8) d.x = -8;
+          d.node.x = d.x;
+          d.node.y = d.y + Math.sin(scene.time * 0.55 + d.phase) * 5;
+          d.node.alpha = 0.12 + Math.sin(scene.time * 0.7 + i) * 0.06;
         });
 
         const latest = propsRef.current;
@@ -406,7 +483,7 @@ const PixiTableEffects: React.FC<PixiTableEffectsProps> = (props) => {
       ro?.disconnect();
       const scene = sceneRef.current;
       sceneRef.current = null;
-      scene?.app.destroy(true, { children: true, texture: false });
+      scene?.app.destroy({ removeView: true, releaseGlobalResources: true }, { children: true, texture: false });
     };
   }, []);
 

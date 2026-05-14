@@ -35,7 +35,7 @@ export const CreateRoomModal: React.FC<CreateProps> = ({ open, onClose, onCreate
       <div className="grid grid-cols-3 gap-2 mb-5">
         {games.map(g => (
           <button key={g.id} onClick={() => setGameType(g.id)}
-            className="rounded-2xl p-3 border transition-all"
+            className="rounded-2xl p-3 border transition-all trey-glass-button"
             style={{
               background: gameType === g.id ? g.color + '20' : 'rgba(8,17,31,0.6)',
               borderColor: gameType === g.id ? g.color : 'rgba(255,255,255,0.08)',
@@ -53,7 +53,7 @@ export const CreateRoomModal: React.FC<CreateProps> = ({ open, onClose, onCreate
       <label className="text-xs text-slate-400 mb-2 block">Visibility</label>
       <div className="grid grid-cols-2 gap-2 mb-5">
         <button onClick={() => setIsPrivate(true)}
-          className="rounded-xl p-2.5 border flex items-center justify-center gap-2 text-sm"
+          className="rounded-xl p-2.5 border flex items-center justify-center gap-2 text-sm trey-glass-button"
           style={{
             background: isPrivate ? 'rgba(168,85,247,0.15)' : 'rgba(8,17,31,0.6)',
             borderColor: isPrivate ? '#A855F7' : 'rgba(255,255,255,0.08)',
@@ -62,7 +62,7 @@ export const CreateRoomModal: React.FC<CreateProps> = ({ open, onClose, onCreate
           <Lock size={14} /> Private
         </button>
         <button onClick={() => setIsPrivate(false)}
-          className="rounded-xl p-2.5 border flex items-center justify-center gap-2 text-sm"
+          className="rounded-xl p-2.5 border flex items-center justify-center gap-2 text-sm trey-glass-button"
           style={{
             background: !isPrivate ? 'rgba(0,183,255,0.15)' : 'rgba(8,17,31,0.6)',
             borderColor: !isPrivate ? '#00B7FF' : 'rgba(255,255,255,0.08)',
@@ -78,7 +78,7 @@ export const CreateRoomModal: React.FC<CreateProps> = ({ open, onClose, onCreate
           <div className="flex gap-2 mb-5">
             {[200, 300, 500].map(s => (
               <button key={s} onClick={() => setTargetScore(s)}
-                className="flex-1 py-2 rounded-xl text-sm font-bold border"
+                className="flex-1 py-2 rounded-xl text-sm font-bold border trey-glass-button"
                 style={{
                   background: targetScore === s ? 'rgba(255,200,87,0.15)' : 'rgba(8,17,31,0.6)',
                   borderColor: targetScore === s ? '#FFC857' : 'rgba(255,255,255,0.08)',
@@ -90,7 +90,7 @@ export const CreateRoomModal: React.FC<CreateProps> = ({ open, onClose, onCreate
       )}
 
       <button onClick={handle} disabled={busy}
-        className="w-full py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+        className="w-full py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 trey-glass-button"
         style={{ background: 'linear-gradient(90deg,#00B7FF,#A855F7)', color: '#fff' }}>
         {busy ? <Loader2 size={16} className="animate-spin" /> : null}
         Create Room
@@ -126,7 +126,7 @@ export const JoinRoomModal: React.FC<JoinProps> = ({ open, onClose, onJoin }) =>
       {err && <div className="text-xs text-red-400 mb-2">{err}</div>}
       <p className="text-xs text-slate-500 mb-5">Ask the host for their 6-character code. Public rooms can also be joined this way.</p>
       <button onClick={handle} disabled={busy || code.length !== 6}
-        className="w-full py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-30"
+        className="w-full py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 disabled:opacity-30 trey-glass-button"
         style={{ background: 'linear-gradient(90deg,#00B7FF,#A855F7)', color: '#fff' }}>
         {busy ? <Loader2 size={16} className="animate-spin" /> : null}
         Join Room
@@ -137,7 +137,7 @@ export const JoinRoomModal: React.FC<JoinProps> = ({ open, onClose, onJoin }) =>
 
 const Backdrop: React.FC<{ onClose: () => void; children: React.ReactNode }> = ({ onClose, children }) => (
   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
-    <div className="relative w-full max-w-md rounded-3xl p-6 border"
+    <div className="relative w-full max-w-md rounded-3xl p-6 border trey-glass-panel"
       style={{ background: 'linear-gradient(160deg,#08111F,#05070D)', borderColor: 'rgba(0,183,255,0.3)', boxShadow: '0 0 60px rgba(0,183,255,0.25)' }}
       onClick={e => e.stopPropagation()}>
       <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={20} /></button>

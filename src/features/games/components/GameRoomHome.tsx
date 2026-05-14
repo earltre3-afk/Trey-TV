@@ -104,12 +104,32 @@ export const GameRoomHome: React.FC<Props> = ({
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-8">
         {/* HERO */}
-        <div className="relative rounded-[32px] overflow-hidden border"
+        <div className="relative rounded-[32px] overflow-hidden border trey-table-rim"
           style={{ borderColor: 'rgba(0,183,255,0.4)', boxShadow: '0 0 80px rgba(0,183,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
           <div className="absolute inset-0">
             <img src={HERO_IMG} alt="" className="w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(5,7,13,0.4) 0%, rgba(5,7,13,0.55) 50%, rgba(5,7,13,0.92) 100%)' }} />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(5,7,13,0.85) 0%, rgba(5,7,13,0.35) 50%, rgba(5,7,13,0.6) 100%)' }} />
+          </div>
+
+          <div className="absolute right-4 top-20 hidden sm:block pointer-events-none">
+            <div className="relative w-40 h-44">
+              {[0, 1, 2].map((i) => (
+                <img
+                  key={i}
+                  src="/assets/games/cards/trey-tv-luxury/card-back.png"
+                  alt=""
+                  className="absolute w-24 rounded-xl trey-card-depth"
+                  style={{
+                    right: `${i * 28}px`,
+                    top: `${i * 16}px`,
+                    transform: `rotate(${(i - 1) * 11}deg)`,
+                    opacity: 0.82,
+                  }}
+                  draggable={false}
+                />
+              ))}
+            </div>
           </div>
 
           <div className="relative p-6 md:p-12 min-h-[440px] md:min-h-[520px] flex flex-col justify-end">
@@ -283,7 +303,7 @@ export const GameRoomHome: React.FC<Props> = ({
 };
 
 const Stat: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string }> = ({ icon, label, value, color }) => (
-  <div className="rounded-2xl p-3 backdrop-blur-md border" style={{ background: 'rgba(8,17,31,0.55)', borderColor: color + '30' }}>
+    <div className="rounded-2xl p-3 backdrop-blur-md border trey-glass-panel" style={{ borderColor: color + '30' }}>
     <div className="flex items-center gap-1.5 text-[10px] tracking-widest font-bold" style={{ color }}>
       {icon} {label.toUpperCase()}
     </div>
@@ -318,7 +338,7 @@ const SuitChip: React.FC<{ name: string; plays: string; color: string }> = ({ na
 const QuickAction: React.FC<{ icon: React.ReactNode; label: string; sub: string; color: string; onClick: () => void }> =
 ({ icon, label, sub, color, onClick }) => (
   <button onClick={onClick} className="rounded-2xl p-4 border text-left cursor-pointer hover:bg-white/[0.04] transition-all hover:-translate-y-0.5 backdrop-blur-md group"
-    style={{ background: 'rgba(8,17,31,0.6)', borderColor: color + '35', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)` }}>
+    style={{ borderColor: color + '35', boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)` }}>
     <div className="flex items-center justify-between mb-1">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: color + '18', border: '1px solid ' + color + '40', color }}>
@@ -338,7 +358,7 @@ const GameCard: React.FC<{
   onCreate: () => void; onSolo: () => void;
   onJoinQueue?: () => void; onInvite?: () => void;
 }> = ({ title, tag, desc, color, img, icon, needs, waiting, onCreate, onSolo, onJoinQueue, onInvite }) => (
-  <div className="rounded-[26px] overflow-hidden border transition-all hover:-translate-y-1 group backdrop-blur-md"
+  <div className="rounded-[26px] overflow-hidden border transition-all hover:-translate-y-1 group backdrop-blur-md trey-game-tile-surface"
     style={{ background: 'rgba(8,17,31,0.7)', borderColor: color + '50', boxShadow: `0 0 40px ${color}20, inset 0 1px 0 rgba(255,255,255,0.05)` }}>
     <div className="relative h-40 overflow-hidden">
       <img src={img} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700" />
@@ -354,6 +374,22 @@ const GameCard: React.FC<{
         style={{ background: 'rgba(5,7,13,0.7)', border: '1px solid ' + color + '55', color }}>
         <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
         {waiting} waiting
+      </div>
+      <div className="absolute -bottom-4 left-4 h-20 w-28 pointer-events-none opacity-90 group-hover:translate-y-[-3px] transition-transform duration-500">
+        {[0, 1, 2].map((i) => (
+          <img
+            key={i}
+            src="/assets/games/cards/trey-tv-luxury/card-back.png"
+            alt=""
+            className="absolute h-20 rounded-lg trey-card-depth"
+            style={{
+              left: `${i * 18}px`,
+              transform: `rotate(${(i - 1) * 9}deg)`,
+              boxShadow: `0 8px 16px rgba(0,0,0,0.45), 0 0 16px ${color}22`,
+            }}
+            draggable={false}
+          />
+        ))}
       </div>
     </div>
     <div className="p-5">

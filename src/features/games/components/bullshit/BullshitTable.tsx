@@ -174,7 +174,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
       {/* HEADER */}
       <header className="shrink-0 z-20 backdrop-blur-2xl border-b" style={{ background: 'rgba(8,17,31,0.85)', borderColor: 'rgba(168,85,247,0.3)' }}>
         <div className="px-3 py-2 flex items-center gap-2">
-          <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Back" title="Back"><ArrowLeft size={18} /></button>
+          <button onClick={onBack} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 border border-white/5" aria-label="Back" title="Back"><ArrowLeft size={18} /></button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
             <TreyBrandMark size={20} glow className="shrink-0" />
             <div className="h-4 w-px bg-white/15 shrink-0" />
@@ -185,16 +185,15 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
           </div>
 
           {chatButton}
-          <button onClick={onLegend} className="p-1.5 rounded-lg hover:bg-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
+          <button onClick={onLegend} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 border border-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
         </div>
       </header>
 
       {/* TABLE — flex-1 */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-stretch justify-center">
         <div
-          className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden flex flex-col p-3"
+          className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden flex flex-col p-3 trey-bullshit-felt trey-table-rim"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(168,85,247,0.10), #08111F 70%)',
             borderColor: 'rgba(168,85,247,0.45)',
             boxShadow: '0 0 50px rgba(168,85,247,0.18)',
           }}
@@ -214,7 +213,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             {opponents.map(p => {
               const active = state.currentSeat === p.seat && state.phase === 'playing';
               return (
-                <div key={p.seat} className={`rounded-xl px-2 py-1.5 border text-center ${active ? 'trey-turn-pulse' : ''}`}
+                <div key={p.seat} className={`rounded-xl px-2 py-1.5 border text-center trey-glass-panel ${active ? 'trey-turn-pulse' : ''}`}
                   style={{
                     background: active ? 'rgba(255,200,87,0.12)' : 'rgba(8,17,31,0.6)',
                     borderColor: active ? '#FFC857' : 'rgba(168,85,247,0.25)'
@@ -235,15 +234,23 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
 
           {/* CENTER CLAIM AREA — flex-1 */}
           <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center px-2 py-2">
-            <div className="text-[9px] text-purple-300 tracking-[0.3em] font-black">CURRENT CLAIM</div>
-            <div className={`text-2xl font-black mt-0.5 ${isTrueClaim ? 'trey-win-burst' : ''}`}>
-              {state.lastClaim ? `${state.lastClaim.count} × ${state.lastClaim.rank}` : `Claim ${state.expectedRank}`}
+            <div className={`relative px-5 py-3 rounded-[24px] border backdrop-blur-xl trey-glass-panel ${isTrueClaim ? 'trey-win-burst' : ''}`}
+              style={{
+                borderColor: state.reveal ? (state.reveal.liar ? 'rgba(239,68,68,0.65)' : 'rgba(34,197,94,0.65)') : 'rgba(168,85,247,0.45)',
+                boxShadow: state.reveal
+                  ? `0 0 42px ${state.reveal.liar ? 'rgba(239,68,68,0.26)' : 'rgba(34,197,94,0.24)'}`
+                  : '0 0 36px rgba(168,85,247,0.18), inset 0 1px 0 rgba(255,255,255,0.09)',
+              }}>
+              <div className="text-[9px] text-purple-300 tracking-[0.3em] font-black">CURRENT CLAIM</div>
+              <div className="text-2xl font-black mt-0.5">
+                {state.lastClaim ? `${state.lastClaim.count} x ${state.lastClaim.rank}` : `Claim ${state.expectedRank}`}
+              </div>
+              {state.lastClaim && (
+                <div className="text-[10px] text-slate-400 mt-0.5">by {state.players[state.lastClaim.seat].name}</div>
+              )}
             </div>
-            {state.lastClaim && (
-              <div className="text-[10px] text-slate-400 mt-0.5">by {state.players[state.lastClaim.seat].name}</div>
-            )}
 
-            <div className="flex justify-center gap-1 mt-2 items-center">
+            <div className={`flex justify-center gap-1 mt-3 items-center ${state.phase === 'awaiting-challenge' ? 'trey-pile-tremble' : ''}`}>
               {state.reveal ? (
                 state.reveal.cards.map((id, i) => (
                   <div key={i} className="trey-card-deal" style={{ animationDelay: `${i * 70}ms` }}>
@@ -263,11 +270,12 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             </div>
 
             {state.reveal && (
-              <div className="mt-2 inline-block px-3 py-1 rounded-full text-[11px] font-black tracking-wider"
+              <div className="mt-2 inline-block px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider trey-glass-button"
                 style={{
                   background: state.reveal.liar ? 'rgba(239,68,68,0.18)' : 'rgba(34,197,94,0.18)',
                   color: state.reveal.liar ? '#EF4444' : '#22C55E',
-                  border: '1px solid currentColor'
+                  border: '1px solid currentColor',
+                  boxShadow: `0 0 26px ${state.reveal.liar ? 'rgba(239,68,68,0.34)' : 'rgba(34,197,94,0.30)'}`,
                 }}>
                 {state.reveal.liar ? 'BLUFF CAUGHT!' : 'CLAIM WAS TRUE!'}
               </div>
@@ -290,7 +298,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
           <div className="flex justify-center gap-1.5 mb-2 flex-wrap">
             {isYourTurn && (
               <button onClick={onClaim} disabled={selected.length === 0}
-                className="px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase disabled:opacity-40 active:scale-95 transition"
+                className="min-h-9 px-5 py-2 rounded-full font-black text-[11px] tracking-[0.15em] uppercase disabled:opacity-40 active:scale-95 transition"
                 style={{
                   background: selected.length > 0 ? 'linear-gradient(90deg,#A855F7,#00B7FF)' : 'rgba(255,255,255,0.06)',
                   color: '#fff',

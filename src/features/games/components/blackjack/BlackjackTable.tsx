@@ -219,7 +219,7 @@ const BJView: React.FC<ViewProps> = ({
         <div className="px-3 py-2 flex items-center gap-2">
           <button
             onClick={onBack}
-            className="p-1.5 rounded-xl hover:bg-white/5 border border-white/5"
+            className="w-10 h-10 inline-flex items-center justify-center rounded-xl hover:bg-white/5 border border-white/5"
             aria-label="Back"
           >
             <ArrowLeft size={18} />
@@ -246,7 +246,7 @@ const BJView: React.FC<ViewProps> = ({
           )}
           <button
             onClick={onLegend}
-            className="p-1.5 rounded-xl hover:bg-white/5 border border-white/5"
+            className="w-10 h-10 inline-flex items-center justify-center rounded-xl hover:bg-white/5 border border-white/5"
             aria-label="Info"
           >
             <Info size={16} />
@@ -280,13 +280,8 @@ const BJView: React.FC<ViewProps> = ({
       {/* TABLE */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-center justify-center">
         <div
-          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden flex flex-col ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
+          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden flex flex-col trey-blackjack-felt trey-table-rim ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
           style={{
-            background: `
-              radial-gradient(ellipse at 50% 46%, ${accent}18 0%, transparent 38%),
-              radial-gradient(ellipse at 50% 15%, rgba(255,255,255,0.08) 0%, transparent 34%),
-              linear-gradient(180deg, rgba(16,24,39,0.96) 0%, rgba(5,7,13,0.98) 68%)
-            `,
             borderColor: `${accent}66`,
             boxShadow: `0 0 60px ${accent}24, inset 0 0 68px ${accent}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
           }}
@@ -309,7 +304,15 @@ const BJView: React.FC<ViewProps> = ({
           />
           <div
             className="absolute inset-3 rounded-[28px] border pointer-events-none"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+            style={{ borderColor: "rgba(255,255,255,0.08)", boxShadow: "inset 0 -36px 70px rgba(0,0,0,0.42)" }}
+          />
+          <div
+            className="absolute left-[-8%] right-[-8%] bottom-[-18px] h-24 rounded-[50%] pointer-events-none"
+            style={{
+              background: "linear-gradient(180deg, rgba(255,200,87,0.12), rgba(0,0,0,0.58))",
+              borderTop: "1px solid rgba(255,200,87,0.32)",
+              boxShadow: "0 -10px 28px rgba(255,200,87,0.12), inset 0 12px 22px rgba(255,255,255,0.04)",
+            }}
           />
           <div
             className="absolute left-1/2 top-1/2 w-44 h-44 -translate-x-1/2 -translate-y-1/2 rounded-full border pointer-events-none"
@@ -358,7 +361,7 @@ const BJView: React.FC<ViewProps> = ({
           {/* CENTER ACTION / RESULT RING */}
           <section className="relative z-10 shrink-0 px-4 py-1.5">
             <div
-              className="rounded-3xl border px-3 py-2 text-center backdrop-blur-xl"
+              className="rounded-3xl border px-3 py-2 text-center backdrop-blur-xl trey-glass-panel"
               style={{
                 background:
                   "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025))",
@@ -465,20 +468,17 @@ const BJView: React.FC<ViewProps> = ({
                 <button
                   key={c}
                   onClick={() => setPendingBet(c)}
-                  className="h-10 rounded-full font-black text-[11px] transition-all active:scale-95"
+                  className="h-10 rounded-full font-black text-[11px] transition-all active:scale-95 trey-gold-chip"
                   style={{
-                    background:
-                      pendingBet === c
-                        ? "linear-gradient(135deg,#FFC857,#FFB000)"
-                        : "rgba(255,200,87,0.08)",
                     border:
                       "1px solid " +
                       (pendingBet === c ? "#FFC857" : "rgba(255,200,87,0.28)"),
-                    color: pendingBet === c ? "#05070D" : "#FFC857",
+                    color: pendingBet === c ? "#05070D" : "#FFE4A3",
+                    opacity: pendingBet === c ? 1 : 0.72,
                     boxShadow:
                       pendingBet === c
-                        ? "0 0 18px rgba(255,200,87,0.45), inset 0 1px 0 rgba(255,255,255,0.35)"
-                        : "inset 0 1px 0 rgba(255,255,255,0.05)",
+                        ? "0 0 22px rgba(255,200,87,0.62), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -5px 10px rgba(88,55,4,0.50)"
+                        : "0 5px 12px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.20)",
                   }}
                 >
                   {c >= 1000 ? "1K" : c}
@@ -488,7 +488,7 @@ const BJView: React.FC<ViewProps> = ({
             <button
               disabled={pendingBet > state.balance}
               onClick={() => onBet(pendingBet)}
-              className="w-full py-3 rounded-2xl font-black text-sm disabled:opacity-40 active:scale-[0.98] transition tracking-[0.1em]"
+              className="w-full py-3 rounded-2xl font-black text-sm disabled:opacity-40 active:scale-[0.98] transition tracking-[0.1em] trey-glass-button"
               style={{
                 background: "linear-gradient(90deg,#FFC857,#FFB000)",
                 color: "#05070D",
@@ -514,7 +514,7 @@ const BJView: React.FC<ViewProps> = ({
         {state.phase === "settled" && (
           <button
             onClick={onNext}
-            className="w-full py-3 rounded-2xl font-black text-sm active:scale-[0.98] transition tracking-[0.12em]"
+            className="w-full py-3 rounded-2xl font-black text-sm active:scale-[0.98] transition tracking-[0.12em] trey-glass-button"
             style={{
               background: isWin
                 ? "linear-gradient(90deg,#22C55E,#00B7FF)"
@@ -597,7 +597,7 @@ const ActionBtn: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className="py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] disabled:opacity-30 transition-all active:scale-95"
+    className={`py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] transition-all active:scale-95 trey-glass-button ${disabled ? 'trey-premium-disabled' : ''}`}
     style={{
       background: primary
         ? "linear-gradient(90deg,#FFC857,#FFB000)"

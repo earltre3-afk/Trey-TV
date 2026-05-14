@@ -24,7 +24,7 @@ interface BadgeProps { unread: number; onClick: () => void; accent?: string; }
 export const ChatHeaderButton: React.FC<BadgeProps> = ({ unread, onClick, accent = '#00B7FF' }) => (
   <button
     onClick={onClick}
-    className="relative p-1.5 rounded-lg hover:bg-white/5 transition border border-white/5"
+    className="relative w-10 h-10 rounded-lg hover:bg-white/5 transition border border-white/5 inline-flex items-center justify-center"
     aria-label="Open chat"
     title="Chat"
   >
@@ -106,9 +106,8 @@ export const GameChatDrawer: React.FC<DrawerProps> = ({
         aria-hidden={!open}
       >
         <div
-          className="rounded-t-3xl overflow-hidden border-t border-x relative flex flex-col"
+          className="rounded-t-3xl overflow-hidden border-t border-x relative flex flex-col trey-chat-drawer"
           style={{
-            background: 'linear-gradient(180deg, rgba(10,18,40,0.96), rgba(5,7,13,0.98))',
             borderColor: `${accent}55`,
             boxShadow: `0 -28px 60px rgba(0,0,0,0.65), 0 -8px 36px ${accent}33, inset 0 1px 0 rgba(255,255,255,0.06)`,
             maxHeight: '78dvh',
