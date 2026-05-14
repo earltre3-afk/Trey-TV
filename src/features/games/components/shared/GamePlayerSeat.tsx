@@ -2,18 +2,25 @@
  * GamePlayerSeat.tsx
  * Premium player seat identity component for Trey TV card games.
  *
- * Renders:
- *   - Circular photo / bot SVG portrait / styled initials
- *   - Active turn glow ring (pulses when isCurrentTurn)
- *   - Name directly below avatar
- *   - Compact status (bid/tricks for Spades, card count for BS)
- *   - Dealer badge chip
- *
- * Usage: Mount as pointer-events:none React overlay on top of the Pixi canvas.
- * Position via inline style with top/left percentages matching pixiLayout seat positions.
+ * Seat group layout: [avatar circle] [name] [status line]
+ * Avatar is NEVER placed directly on top of Pixi card stacks.
+ * Positions are set by the parent via AVATAR_SEAT_NORM (not CARD_STACK positions).
  */
 import React, { useId } from 'react';
 import { getBotProfile, type BotProfile, type HairStyle } from '@/features/games/lib/bots/botPlayers';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Size system — CSS clamp() so avatars stay legible on all mobile widths
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SIZES = {
+  // 'sm' = opponent seats
+  sm:     { dim: 'clamp(46px, 12vw, 56px)', namePx: 'clamp(9px, 2.4vw, 12px)',  statusPx: 'clamp(8px, 2vw, 10px)' },
+  // 'md' = user/player seat
+  md:     { dim: 'clamp(54px, 14vw, 66px)', namePx: 'clamp(10px, 2.7vw, 13px)', statusPx: 'clamp(9px, 2.2vw, 11px)' },
+  // 'lg' = dealer (Blackjack)
+  lg:     { dim: 'clamp(50px, 13vw, 60px)', namePx: 'clamp(10px, 2.5vw, 12px)', statusPx: 'clamp(8px, 2.2vw, 10px)' },
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Bot avatar SVG rendering
@@ -66,15 +73,15 @@ function renderHairSvg(style: HairStyle, hair: string): React.ReactElement {
   }
 }
 
-function BotAvatarSvg({ profile, size }: { profile: BotProfile; size: number }) {
+function BotAvatarSvg({ profile }: { profile: BotProfile }) {
   const uid = useId().replace(/:/g, '_');
   return (
     <svg
       viewBox="0 0 64 64"
-      width={size}
-      height={size}
+      width="100%"
+      height="100%"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ display: 'block', flexShrink: 0 }}
+      style={{ display: 'block' }}
     >
       <defs>
         <radialGradient id={`bg_${uid}`} cx="45%" cy="35%" r="75%">
@@ -86,31 +93,16 @@ function BotAvatarSvg({ profile, size }: { profile: BotProfile; size: number }) 
         </clipPath>
       </defs>
       <g clipPath={`url(#clip_${uid})`}>
-        {/* Background */}
         <circle cx="32" cy="32" r="32" fill={`url(#bg_${uid})`} />
-        {/* Hair (rendered before face so face sits on top) */}
         {renderHairSvg(profile.hairStyle, profile.hair)}
-        {/* Face oval */}
         <ellipse cx="32" cy="41" rx="12" ry="13" fill={profile.skin} />
-        {/* Eyes */}
         <circle cx="27.5" cy="38" r="2.2" fill="#0a0806" />
         <circle cx="36.5" cy="38" r="2.2" fill="#0a0806" />
-        {/* Eye shine */}
         <circle cx="26.8" cy="37.2" r="0.9" fill="rgba(255,255,255,0.52)" />
         <circle cx="35.8" cy="37.2" r="0.9" fill="rgba(255,255,255,0.52)" />
-        {/* Inner ambient glow */}
         <circle cx="32" cy="32" r="31" fill="none" stroke={profile.ring} strokeWidth="1" strokeOpacity="0.18" />
       </g>
-      {/* Neon accent ring */}
-      <circle
-        cx="32"
-        cy="32"
-        r="30.5"
-        fill="none"
-        stroke={profile.ring}
-        strokeWidth="1.8"
-        strokeOpacity="0.62"
-      />
+      <circle cx="32" cy="32" r="30.5" fill="none" stroke={profile.ring} strokeWidth="1.8" strokeOpacity="0.62" />
     </svg>
   );
 }
@@ -121,7 +113,7 @@ function BotAvatarSvg({ profile, size }: { profile: BotProfile; size: number }) 
 
 export interface GamePlayerSeatProps {
   displayName: string;
-  /** Real player photo URL (Supabase avatar, etc.) */
+  /** Real player photo URL (Supabase storage, etc.) */
   avatarUrl?: string | null;
   isBot?: boolean;
   isCurrentTurn?: boolean;
@@ -134,15 +126,18 @@ export interface GamePlayerSeatProps {
   cardCount?: number;
   /** Team / game accent color hex */
   accentColor?: string;
-  /** 'sm' = 32px · 'md' = 40px · 'lg' = 48px */
+  /**
+   * 'sm' = opponent seats  (clamp 46–56px)
+   * 'md' = user/player     (clamp 54–66px)
+   * 'lg' = dealer          (clamp 50–60px)
+   */
   size?: 'sm' | 'md' | 'lg';
-  /** Layout position — affects label placement */
+  /** Layout position — used for label placement (unused currently, reserved) */
   position?: 'top' | 'left' | 'right' | 'bottom';
   /** Flash gold when this seat wins a trick */
   winFlash?: boolean;
 }
 
-const SIZE_MAP = { sm: 32, md: 40, lg: 48 } as const;
 const TURN_COLOR = '#FFC857';
 
 export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
@@ -158,12 +153,12 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
   size = 'md',
   winFlash = false,
 }) => {
-  const px = SIZE_MAP[size];
+  const sz = SIZES[size];
   const ringColor = isCurrentTurn ? TURN_COLOR : accentColor;
-  const borderWidth = isCurrentTurn ? 2.5 : 1.5;
+  const borderWidth = isCurrentTurn ? 3 : 1.5;
   const ringGlow = isCurrentTurn
-    ? `0 0 14px ${TURN_COLOR}CC, 0 0 28px ${TURN_COLOR}60`
-    : `0 0 8px ${accentColor}50`;
+    ? `0 0 16px ${TURN_COLOR}CC, 0 0 32px ${TURN_COLOR}60`
+    : `0 0 10px ${accentColor}50`;
 
   const initials = displayName
     .split(' ')
@@ -172,11 +167,8 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
     .slice(0, 2)
     .toUpperCase();
 
-  const botProfile: BotProfile | undefined = (isBot || !avatarUrl) ? getBotProfile(displayName) : undefined;
-
-  // Font sizes scale with avatar size
-  const nameFontSize = size === 'sm' ? 7 : size === 'lg' ? 10 : 8.5;
-  const statusFontSize = size === 'sm' ? 6.5 : 7.5;
+  const botProfile: BotProfile | undefined =
+    isBot || !avatarUrl ? getBotProfile(displayName) : undefined;
 
   return (
     <div
@@ -184,25 +176,23 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 2,
+        gap: 3,
         userSelect: 'none',
       }}
     >
-      {/* Avatar + dealer badge container */}
-      <div style={{ position: 'relative', flexShrink: 0 }}>
-        {/* Avatar circle */}
+      {/* Avatar + optional dealer badge */}
+      <div style={{ position: 'relative', flexShrink: 0, width: sz.dim, height: sz.dim }}>
         <div
           style={{
-            width: px,
-            height: px,
+            width: '100%',
+            height: '100%',
             borderRadius: '50%',
             border: `${borderWidth}px solid ${ringColor}`,
             boxShadow: winFlash
-              ? `0 0 20px ${TURN_COLOR}, 0 0 40px ${TURN_COLOR}80`
+              ? `0 0 24px ${TURN_COLOR}, 0 0 48px ${TURN_COLOR}80`
               : ringGlow,
             overflow: 'hidden',
             position: 'relative',
-            flexShrink: 0,
             animation: isCurrentTurn ? 'trey-seat-pulse 1.7s ease-in-out infinite' : undefined,
             transition: 'border-color 0.25s, box-shadow 0.25s',
             background: '#05070D',
@@ -221,9 +211,8 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
               }}
             />
           ) : botProfile ? (
-            <BotAvatarSvg profile={botProfile} size={px} />
+            <BotAvatarSvg profile={botProfile} />
           ) : (
-            // Initials fallback for real human players without an avatar photo
             <div
               style={{
                 width: '100%',
@@ -232,7 +221,7 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: `linear-gradient(135deg, ${accentColor}28, ${accentColor}0e)`,
-                fontSize: px * 0.33,
+                fontSize: sz.namePx,
                 fontWeight: 900,
                 color: accentColor,
                 letterSpacing: '-0.02em',
@@ -243,22 +232,21 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
           )}
         </div>
 
-        {/* Dealer badge — sits outside the overflow:hidden avatar div */}
         {isDealer && (
           <div
             style={{
               position: 'absolute',
               top: -3,
               right: -3,
-              width: Math.max(14, px * 0.34),
-              height: Math.max(14, px * 0.34),
+              width: 18,
+              height: 18,
               borderRadius: '50%',
               background: 'radial-gradient(circle, #FFC857, #C99326)',
-              border: '1px solid rgba(255,200,87,0.9)',
+              border: '1.5px solid rgba(255,200,87,0.9)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: Math.max(7, px * 0.18),
+              fontSize: 9,
               fontWeight: 900,
               color: '#1A1206',
               boxShadow: '0 0 8px rgba(255,200,87,0.7), inset 0 1px 0 rgba(255,255,255,0.4)',
@@ -273,10 +261,10 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
       {/* Name */}
       <div
         style={{
-          fontSize: nameFontSize,
+          fontSize: sz.namePx,
           fontWeight: 700,
           color: isCurrentTurn ? TURN_COLOR : '#CBD5E1',
-          maxWidth: px + 16,
+          maxWidth: `calc(${sz.dim} + 20px)`,
           textAlign: 'center',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -284,20 +272,19 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
           lineHeight: 1.2,
           textShadow: isCurrentTurn
             ? `0 0 10px ${TURN_COLOR}99`
-            : '0 1px 3px rgba(0,0,0,0.9)',
+            : '0 1px 4px rgba(0,0,0,0.95)',
           transition: 'color 0.25s, text-shadow 0.25s',
         }}
       >
-        {/* Show first name only to save space */}
         {displayName.split(' ')[0]}
       </div>
 
-      {/* Status line — bid/tricks for Spades, card count for BS */}
+      {/* Status line */}
       {bid !== null && bid !== undefined && (
         <div
           style={{
-            fontSize: statusFontSize,
-            color: '#475569',
+            fontSize: sz.statusPx,
+            color: '#64748B',
             fontWeight: 700,
             lineHeight: 1,
             fontVariantNumeric: 'tabular-nums',
@@ -310,8 +297,8 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
       {cardCount !== undefined && (
         <div
           style={{
-            fontSize: statusFontSize,
-            color: '#475569',
+            fontSize: sz.statusPx,
+            color: '#64748B',
             fontWeight: 700,
             lineHeight: 1,
             textShadow: '0 1px 2px rgba(0,0,0,0.8)',

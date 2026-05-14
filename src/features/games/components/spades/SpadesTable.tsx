@@ -6,7 +6,7 @@ import {
 } from '@/features/games/lib/spades/spadesEngine';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
 import { GamePlayerSeat } from '../shared/GamePlayerSeat';
-import { SEAT_PIXI_NORM } from '../pixi/pixiLayout';
+import { AVATAR_SEAT_NORM } from '../pixi/pixiLayout';
 import { ArrowLeft, Info, RotateCw, Loader2, Crown, Flame, Spade } from 'lucide-react';
 
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
@@ -291,14 +291,13 @@ const SpadesView: React.FC<ViewProps> = ({
             onCardClick={setSelected}
           />
 
-          {/* ── Player seat overlays (React layer above Pixi canvas) ── */}
-          {/* Positions match SEAT_PIXI_NORM so avatars align with Pixi card stacks */}
+          {/* ── Player seat overlays — positioned at AVATAR_SEAT_NORM, NOT at card stack positions ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {([0, 1, 2, 3] as const).map(seat => {
               const pos = seatPositions[seat as keyof typeof seatPositions];
               if (!pos) return null;
               const player = state.players[seat];
-              const norm = SEAT_PIXI_NORM[pos];
+              const norm = AVATAR_SEAT_NORM[pos];
               const isMyTeam = (seat % 2) === (mySeat % 2);
               return (
                 <div

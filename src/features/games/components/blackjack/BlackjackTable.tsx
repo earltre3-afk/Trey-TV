@@ -299,21 +299,21 @@ const BJView: React.FC<ViewProps> = ({
             eventKey={pixiEventKey}
           />
 
-          {/* ── Seat identity overlays ── */}
+          {/* ── Seat identity overlays — avatars offset from Pixi card zones ── */}
+          {/* Dealer cards render at Pixi y≈28%; avatar sits above at 8% */}
+          {/* Player cards render at Pixi y≈68%; avatar sits below at 88% */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-            {/* Dealer seat — top of table, matches Pixi dealer card zone */}
-            <div style={{ position: 'absolute', top: '16%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: '8%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
               <GamePlayerSeat
                 displayName="Dealer"
                 isBot
                 isCurrentTurn={state.phase === 'dealer'}
                 accentColor="#FFC857"
-                size="sm"
+                size="lg"
                 position="top"
               />
             </div>
-            {/* Player seat — bottom of table, above the player card zone */}
-            <div style={{ position: 'absolute', top: '82%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: '88%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
               <GamePlayerSeat
                 displayName="You"
                 isBot={false}

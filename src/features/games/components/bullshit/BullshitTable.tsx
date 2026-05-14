@@ -198,12 +198,12 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             background: '#05070D',
           }}
         >
-          {/* ── Opponent + player seat overlays ── */}
+          {/* ── Seat overlays — avatars above Pixi card stacks, not on top of them ── */}
+          {/* Opponent card stacks render at Pixi y≈19%; avatars sit above at 8% */}
+          {/* Player hand fan renders at Pixi y≈82%; avatar sits above at 74% */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-            {/* Opponent seats — distributed across the top zone, matching Pixi positions */}
             {opponents.map((opp, i) => {
               const n = opponents.length;
-              // X positions match Pixi: oppZoneW * i + oppZoneW/2, where oppZoneW = w/n
               const xPct = n === 1 ? 50 : n === 2 ? [25, 75][i] : [16.7, 50, 83.3][i];
               return (
                 <div
@@ -211,7 +211,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                   style={{
                     position: 'absolute',
                     left: `${xPct}%`,
-                    top: '14%',
+                    top: '8%',
                     transform: 'translate(-50%, -50%)',
                     pointerEvents: 'none',
                   }}
@@ -228,8 +228,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                 </div>
               );
             })}
-            {/* Player seat — bottom, matching Pixi hand zone */}
-            <div style={{ position: 'absolute', top: '82%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', top: '74%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
               <GamePlayerSeat
                 displayName={you.name}
                 isBot={you.isBot}

@@ -15,16 +15,23 @@ export interface TableLayout {
 }
 
 /**
- * Normalized (0-1) seat positions that match seatCenter().
- * Used by React seat overlays to align with Pixi card stacks.
- * Keep in sync with seatCenter() below.
+ * React avatar anchor positions (normalized 0-1).
+ * Deliberately OFFSET from Pixi card stack positions so the avatar group
+ * sits clearly above/beside the card stacks — not on top of them.
+ *
+ * bottom: above the player hand fan (fan center is at y=0.84)
+ * left/right: upper quadrant, clearly above the side card stacks (at y≈0.50)
+ * top: very near top, above the top opponent card stack (at y≈0.22)
  */
-export const SEAT_PIXI_NORM = {
-  bottom: { x: 0.50, y: 0.82 },
-  left:   { x: 0.12, y: 0.50 },
-  top:    { x: 0.50, y: 0.16 },
-  right:  { x: 0.88, y: 0.50 },
+export const AVATAR_SEAT_NORM = {
+  bottom: { x: 0.50, y: 0.68 },
+  left:   { x: 0.11, y: 0.36 },
+  top:    { x: 0.50, y: 0.07 },
+  right:  { x: 0.89, y: 0.36 },
 } as const;
+
+/** @deprecated use AVATAR_SEAT_NORM */
+export const SEAT_PIXI_NORM = AVATAR_SEAT_NORM;
 
 /** Build layout from canvas dimensions */
 export function buildLayout(w: number, h: number): TableLayout {
@@ -53,7 +60,7 @@ export function seatCenter(
   switch (rotated) {
     case 0: return { x: w * 0.50, y: h * 0.82 };   // bottom (player)
     case 1: return { x: w * 0.12, y: h * 0.50 };   // left
-    case 2: return { x: w * 0.50, y: h * 0.16 };   // top
+    case 2: return { x: w * 0.50, y: h * 0.22 };   // top — shifted down from 0.16 to clear avatar at 7%
     case 3: return { x: w * 0.88, y: h * 0.50 };   // right
     default: return { x: w / 2, y: h / 2 };
   }

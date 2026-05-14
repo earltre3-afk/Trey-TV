@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Sparkles, X, Send, Wand2, Heart, BarChart3, Mic, Image as ImageIcon, Move } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 
@@ -23,29 +23,39 @@ const PAD = 12;
 
 const INITIAL_POS = { x: 16, y: 200 };
 
-function clampToViewport(x: number, y: number) {
+function clampToViewport(x: number, y: number, isFormPage: boolean = false) {
   if (typeof window === "undefined") return { x, y };
   const isMobile = window.innerWidth < 1024;
-  const bottomPad = isMobile ? 96 : PAD;
+  const safeAreaBottom = typeof window !== "undefined"
+    ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom') || '0')
+    : 0;
+  // On form pages, increase bottom padding to avoid overlapping form elements
+  const baseBottomPad = isMobile ? 120 : PAD;
+  const bottomPad = isFormPage ? Math.max(baseBottomPad, 140) : baseBottomPad;
   const maxX = Math.max(PAD, window.innerWidth - SIZE - PAD);
-  const maxY = Math.max(PAD, window.innerHeight - SIZE - bottomPad);
+  const maxY = Math.max(PAD, window.innerHeight - SIZE - bottomPad - safeAreaBottom);
   return {
     x: Math.min(Math.max(PAD, x), maxX),
     y: Math.min(Math.max(PAD, y), maxY),
   };
 }
 
-function defaultPos() {
+function defaultPos(isFormPage: boolean = false) {
   if (typeof window === "undefined") return { x: 16, y: 200 };
   const isMobile = window.innerWidth < 1024;
   const x = window.innerWidth - SIZE - 16;
-  const y = window.innerHeight - SIZE - (isMobile ? 100 : 24);
-  return clampToViewport(x, y);
+  const baseBottomMargin = isMobile ? 100 : 24;
+  const bottomMargin = isFormPage ? 150 : baseBottomMargin;
+  const y = window.innerHeight - SIZE - bottomMargin;
+  return clampToViewport(x, y, isFormPage);
 }
 
 export function TreyIWidget() {
   const { signIn } = useAuth();
   const nav = useNavigate();
+  const { pathname } = useLocation();
+  // Detect form pages where the widget should be positioned higher
+  const isFormPage = pathname.includes('/music-review/submit') || pathname.includes('/create') || pathname.includes('/upload');
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [text, setText] = useState("");
@@ -75,11 +85,11 @@ export function TreyIWidget() {
   }, []);
 
   const moveTo = useCallback((next: { x: number; y: number }, commit = true) => {
-    const clamped = clampToViewport(next.x, next.y);
+    const clamped = clampToViewport(next.x, next.y, isFormPage);
     posRef.current = clamped;
     applyTransform(clamped.x, clamped.y);
     if (commit) setPos(clamped);
-  }, [applyTransform]);
+  }, [applyTransform, isFormPage]);
 
   useEffect(() => {
     setMounted(true);
@@ -94,9 +104,9 @@ export function TreyIWidget() {
         }
       }
     } catch {}
-    moveTo(defaultPos());
+    moveTo(defaultPos(isFormPage));
     loadedRef.current = true;
-  }, [moveTo]);
+  }, [moveTo, isFormPage]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -116,7 +126,7 @@ export function TreyIWidget() {
   const flushDrag = useCallback(() => {
     dragInfo.current.rafId = null;
     const { pendingX, pendingY } = dragInfo.current;
-    const clamped = clampToViewport(pendingX, pendingY);
+    const clamped = clampToViewport(pendingX, pendingY, isFormPage);
     posRef.current = clamped;
     applyTransform(clamped.x, clamped.y);
     const vx = dragInfo.current.vx;
@@ -124,7 +134,7 @@ export function TreyIWidget() {
     const ry = Math.max(-14, Math.min(14, vx * 0.6));
     const rx = Math.max(-14, Math.min(14, -vy * 0.6));
     setTilt({ rx, ry });
-  }, [applyTransform]);
+  }, [applyTransform, isFormPage]);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
@@ -194,7 +204,7 @@ export function TreyIWidget() {
       const nearRight = start.x > window.innerWidth - SIZE - 48;
       const flicked = speed > 28;
 
-      let to = clampToViewport(start.x, start.y);
+      let to = clampToViewport(start.x, start.y, isFormPage);
       if (nearLeft || nearRight || flicked) {
         const projectedX = start.x + dragInfo.current.vx * 8;
         const projectedY = start.y + dragInfo.current.vy * 8;
@@ -227,7 +237,7 @@ export function TreyIWidget() {
       requestAnimationFrame(step);
     }
     e.stopPropagation();
-  }, [applyTransform]);
+  }, [applyTransform, isFormPage]);
 
   const onLauncherClick = useCallback(() => {
     if (pointerToggleHandledRef.current) {
