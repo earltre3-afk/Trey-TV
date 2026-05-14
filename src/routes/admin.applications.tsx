@@ -4,8 +4,12 @@ import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin-api";
+import { treyIGenerate } from "@/lib/trey-i/vertex.server";
 import { toast } from "sonner";
-import { Crown, Check, X } from "lucide-react";
+import { Crown, Check, X, Sparkles } from "lucide-react";
+import { useState } from "react";
+
+const supabaseAny = supabase as any;
 
 export const Route = createFileRoute("/admin/applications")({
   component: Applications,
@@ -15,11 +19,18 @@ export const Route = createFileRoute("/admin/applications")({
 function Applications() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
+  const [aiSummaries, setAiSummaries] = useState<Record<string, string>>({});
+  const [summarizing, setSummarizing] = useState<Record<string, boolean>>({});
+
   if (!isAdmin) return null;
   const { data } = useQuery({
     queryKey: ["admin", "creator-apps"],
     queryFn: async () => {
-      const { data } = await supabase.from("creator_applications").select("*").order("created_at", { ascending: false });
+      const { data } = await supabaseAny
+        .from("creator_applications")
+        .select("*, profiles(uid)")
+        .eq("application_type", "creator")
+        .order("created_at", { ascending: false });
       return data ?? [];
     },
   });
@@ -40,6 +51,22 @@ function Applications() {
     qc.invalidateQueries({ queryKey: ["admin", "creator-apps"] });
   };
 
+  const summarize = async (app: any) => {
+    setSummarizing(prev => ({ ...prev, [app.id]: true }));
+    try {
+      const prompt = `User ${app.user_id} applied for creator status.\nNiche: ${app.niche}\nBio: ${app.bio}\nReason: ${app.reason}\nLinks: ${(app.social_links as string[])?.join(", ") ?? "None"}`;
+      const res = await treyIGenerate({ data: { task: "admin_summary", prompt } });
+      if ("error" in res) throw new Error(res.error);
+      if ("text" in res) {
+        setAiSummaries(prev => ({ ...prev, [app.id]: res.text }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("AI summary failed");
+    }
+    setSummarizing(prev => ({ ...prev, [app.id]: false }));
+  };
+
   return (
     <AdminShell title="Creator Applications" subtitle="Approve, reject, or request more info.">
       <div className="space-y-2">
@@ -56,13 +83,30 @@ function Applications() {
                   <div className="text-[10px] tracking-[0.25em] text-primary">{a.status.toUpperCase()}</div>
                   <div className="text-[10px] text-muted-foreground">{new Date(a.created_at).toLocaleDateString()}</div>
                 </div>
-                <div className="text-sm font-bold mt-1 truncate">User {a.user_id.slice(0, 8)}…</div>
+                <div className="text-sm font-bold mt-1 truncate">User {a.profiles?.uid || a.user_id.slice(0, 8)}…</div>
                 {a.niche && <div className="text-xs text-muted-foreground">Niche: {a.niche}</div>}
                 {a.bio && <div className="text-xs text-foreground/80 mt-1 line-clamp-2">{a.bio}</div>}
                 {a.reason && <div className="text-xs text-muted-foreground mt-1 italic">"{a.reason}"</div>}
+                
+                {aiSummaries[a.id] && (
+                  <div className="mt-3 rounded-xl bg-[oklch(0.82_0.15_215/0.1)] border border-[oklch(0.82_0.15_215/0.3)] p-3 text-xs text-[oklch(0.82_0.15_215)]">
+                    <div className="font-bold flex items-center gap-1 mb-1"><Sparkles className="size-3" /> AI Summary</div>
+                    {aiSummaries[a.id]}
+                  </div>
+                )}
+                
+                <div className="mt-3 flex items-center gap-2">
+                  <button 
+                    onClick={() => summarize(a)} 
+                    disabled={summarizing[a.id]}
+                    className="text-[10px] px-2 py-1 rounded border border-white/10 bg-white/5 hover:bg-white/10 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Sparkles className="size-3" /> {summarizing[a.id] ? "Summarizing..." : "AI Summarize"}
+                  </button>
+                </div>
               </div>
               {a.status === "pending" && (
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-col gap-2 shrink-0">
                   <button onClick={() => review(a.id, a.user_id, "approved")} className="size-9 rounded-xl bg-primary/15 text-primary border border-primary/40 grid place-items-center hover:bg-primary/25"><Check className="size-4" /></button>
                   <button onClick={() => review(a.id, a.user_id, "rejected")} className="size-9 rounded-xl bg-[oklch(0.65_0.24_15_/_0.15)] text-[oklch(0.65_0.24_15)] border border-[oklch(0.65_0.24_15_/_0.4)] grid place-items-center hover:bg-[oklch(0.65_0.24_15_/_0.25)]"><X className="size-4" /></button>
                 </div>

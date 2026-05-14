@@ -1,17 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Mic, Upload, Link as LinkIcon, ArrowLeft, ArrowRight, Sparkles, Music2, Zap,
   Crown, CheckCircle2, Rocket, Flame, Star, Info, Radio, ListOrdered, Heart, X,
+  Music, Eye, Users, Clock, Pin, Send, Check
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
 import {
-  useMusicReview, generateAIInsight, TIER_META,
+  useMusicReview, TIER_META,
   type Tier, type AIInsight,
 } from "@/lib/music-review-store";
+import { generateMusicReviewInsight } from "@/lib/trey-i/vertex.server";
 import { toast } from "sonner";
-import cashappQR from "@/assets/cashapp-qr.png";
+import neonMic from "@/assets/neon-mic.png";
+import hbvCover from "@/assets/hbv-cover.jpg";
 
 export const Route = createFileRoute("/music-review")({
   component: MusicReviewPage,
@@ -30,20 +33,97 @@ const ACCEPT_MIME = ["audio/mpeg", "audio/wav", "audio/x-wav", "audio/mp4", "aud
 const MAX_BYTES = 30 * 1024 * 1024; // 30MB
 const DRIVE_RE = /^https?:\/\/(drive|docs)\.google\.com\/.+/i;
 
+const GENRES = ["Hip-Hop", "R&B", "Pop", "Indie", "Rock", "Afrobeats", "Electronic", "Country", "Jazz", "Other"];
+
+const TIERS = [
+  { id: "regular", name: "Regular Queue", price: "Free", desc: "Standard FIFO. Get reviewed live.", icon: Crown, color: "gold" },
+  { id: "skip", name: "Skip the Line", price: "$5", desc: "Jump ahead of regular submissions.", icon: Zap, color: "pink" },
+  { id: "super", name: "Super Skip", price: "$10", desc: "Move ahead of Skip submissions too.", icon: Rocket, color: "blue" },
+  { id: "turbo", name: "Turbo Skip", price: "$15", desc: "Top priority. Reviewed first.", icon: Star, color: "pink" },
+] as const;
+
 function MusicReviewPage() {
   return (
     <AppShell wide>
-      <Flow />
+      <PageShell>
+        <Flow />
+      </PageShell>
     </AppShell>
   );
 }
 
+/* ------------------------- PAGE SHELL ------------------------- */
+function Sparks() {
+  const items = Array.from({ length: 8 });
+  return (
+    <div className="lmr-sparks" aria-hidden>
+      {items.map((_, i) => {
+        const x = `${(i * 73) % 100}vw`;
+        const dx = `${((i * 37) % 80) - 40}px`;
+        const dur = `${10 + (i % 7) * 2}s`;
+        const delay = `${(i * 0.7) % 8}s`;
+        return (
+          <span
+            key={i}
+            style={{
+              left: 0,
+              ['--x' as string]: x,
+              ['--dx' as string]: dx,
+              animationDuration: dur,
+              animationDelay: delay,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function WaveformBars() {
+  const bars = Array.from({ length: 28 });
+  const colors = ["var(--color-gold)", "var(--color-pink)", "var(--color-purple)", "var(--color-blue)"];
+  return (
+    <div className="pointer-events-none fixed left-0 right-0 bottom-[88px] z-[1] flex items-end justify-center gap-[3px] px-4 h-16 opacity-60">
+      {bars.map((_, i) => {
+        const h = 18 + Math.abs(Math.sin(i * 0.55) + Math.cos(i * 0.31)) * 50;
+        const c = colors[i % colors.length];
+        return (
+          <span
+            key={i}
+            className="w-[3px] rounded-full"
+            style={{
+              height: `${h}%`,
+              background: `linear-gradient(180deg, ${c}, transparent)`,
+              boxShadow: `0 0 8px ${c}`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function PageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative min-h-screen pb-44 overflow-x-hidden">
+      <div className="lmr-aurora" aria-hidden />
+      <div className="lmr-neon-grid" aria-hidden />
+      <Sparks />
+      <div className="lmr-scan-shimmer relative z-[2]">{children}</div>
+      <WaveformBars />
+    </div>
+  );
+}
+
 /* =========================================================== */
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
 function Flow() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<Step>(1);
   const total = 6;
-  const next = () => setStep((s) => Math.min(total - 1, s + 1));
-  const back = () => setStep((s) => Math.max(0, s - 1));
+  const next = () => setStep((s) => Math.min(total + 1, s + 1) as Step);
+  const back = () => setStep((s) => Math.max(1, s - 1) as Step);
+  const go = (s: Step) => setStep(s);
 
   const [source, setSource] = useState<"file" | "drive">("file");
   const [file, setFile] = useState<File | null>(null);
@@ -60,390 +140,12 @@ function Flow() {
   const [tier, setTier] = useState<Tier>("regular");
   const [paidConfirmed, setPaidConfirmed] = useState(false);
 
-  return (
-    <div className="relative pb-24">
-      <Backdrop />
-      <Header step={step} total={total} />
-      <div className="relative">
-        {step === 0 && <Welcome onNext={next} />}
-        {step === 1 && (
-          <UploadStep
-            source={source} setSource={setSource}
-            file={file} setFile={setFile}
-            driveLink={driveLink} setDriveLink={setDriveLink}
-            onBack={back} onNext={next}
-          />
-        )}
-        {step === 2 && (
-          <InfoStep
-            title={title} setTitle={setTitle}
-            artist={artist} setArtist={setArtist}
-            genre={genre} setGenre={setGenre}
-            notes={notes} setNotes={setNotes}
-            onBack={back}
-            onNext={async () => {
-              setGenerating(true);
-              await new Promise((r) => setTimeout(r, 1100));
-              setInsight(generateAIInsight({ title, artist, genre, notes }));
-              setGenerating(false);
-              next();
-            }}
-            generating={generating}
-          />
-        )}
-        {step === 3 && (
-          <AIStep insight={insight} onBack={back} onNext={next} title={title} artist={artist} />
-        )}
-        {step === 4 && (
-          <TierStep
-            tier={tier} setTier={setTier}
-            paidConfirmed={paidConfirmed} setPaidConfirmed={setPaidConfirmed}
-            onBack={back} onNext={next}
-          />
-        )}
-        {step === 5 && (
-          <ReviewStep
-            source={source} file={file} driveLink={driveLink}
-            title={title} artist={artist} genre={genre} notes={notes}
-            tier={tier} insight={insight}
-            onBack={back}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Header({ step, total }: { step: number; total: number }) {
-  const labels = ["Welcome", "Upload", "Song info", "AI vibe check", "Skip the line", "Review & submit"];
-  return (
-    <div className="relative z-10 mb-6 flex items-center justify-between gap-3">
-      <Link to="/" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
-        <ArrowLeft className="size-4" />
-      </Link>
-      <div className="flex-1 mx-2">
-        <div className="flex items-center gap-1">
-          {Array.from({ length: total }).map((_, i) => (
-            <div key={i} className={`flex-1 h-1 rounded-full transition-all ${i <= step ? "bg-gradient-to-r from-[oklch(0.82_0.16_85)] via-[oklch(0.7_0.25_340)] to-[oklch(0.82_0.15_215)]" : "bg-white/10"}`} />
-          ))}
-        </div>
-        <div className="mt-1 flex items-center justify-between text-[10px] tracking-[0.22em] text-muted-foreground">
-          <span>STEP {step + 1} / {total}</span>
-          <span className="text-foreground/80">{labels[step]}</span>
-        </div>
-      </div>
-      <Link to="/music-review/queue" className="hidden sm:inline-flex items-center gap-1.5 px-3 h-9 rounded-full liquid-glass border border-white/10 text-xs">
-        <ListOrdered className="size-3.5" /> Live Queue
-      </Link>
-    </div>
-  );
-}
-
-function Backdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-0 overflow-hidden">
-      <div className="absolute -top-40 left-1/2 -translate-x-1/2 size-[80vmin] rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85_/_0.35),oklch(0.7_0.25_340_/_0.4),oklch(0.65_0.22_300_/_0.4),oklch(0.82_0.15_215_/_0.35))] blur-3xl opacity-50 animate-conic-spin" />
-      <Equalizer />
-    </div>
-  );
-}
-
-function Equalizer() {
-  return (
-    <div className="absolute bottom-0 inset-x-0 h-40 flex items-end justify-center gap-1 opacity-30">
-      {Array.from({ length: 48 }).map((_, i) => (
-        <span
-          key={i}
-          className="w-1.5 rounded-t bg-gradient-to-t from-[oklch(0.82_0.16_85)] via-[oklch(0.7_0.25_340)] to-[oklch(0.82_0.15_215)]"
-          style={{
-            height: `${20 + (Math.sin(i * 0.7) + 1) * 40}%`,
-            animation: `glow-pulse ${1.6 + (i % 7) * 0.18}s ease-in-out ${i * 0.04}s infinite`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ---------------- Steps ---------------- */
-function Welcome({ onNext }: { onNext: () => void }) {
-  return (
-    <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] gap-6 items-start">
-      <div className="rounded-[28px] liquid-glass neon-border p-6 lg:p-10 shimmer-sweep">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full liquid-glass border border-white/15 text-[10px] tracking-[0.22em]">
-          <span className="size-1.5 rounded-full bg-[oklch(0.65_0.24_15)] animate-glow-pulse" /> LIVE ON TIKTOK
-        </div>
-        <h1 className="font-display mt-4 text-4xl sm:text-5xl xl:text-6xl font-black leading-[0.95] bg-gradient-to-br from-white via-white/80 to-white/60 bg-clip-text text-transparent drop-shadow-[0_4px_30px_oklch(0.7_0.25_340/0.35)]">
-          Live Music<br/>Review.
-        </h1>
-        <p className="mt-4 text-sm sm:text-base text-muted-foreground max-w-lg">
-          Submit your track. Get reviewed live on TikTok by Trey. Walk away with a written review delivered to your inbox.
-        </p>
-        <div className="mt-6 grid sm:grid-cols-3 gap-3">
-          {[
-            { icon: Upload, t: "Submit", b: "MP3, WAV, M4A or Drive link." },
-            { icon: Sparkles, t: "AI vibe check", b: "First impression in seconds." },
-            { icon: Crown, t: "Live review", b: "Reviewed live on TikTok by Trey." },
-          ].map((c) => (
-            <div key={c.t} className="rounded-2xl liquid-glass border border-white/10 p-4">
-              <div className="size-9 rounded-xl bg-primary/15 text-primary grid place-items-center"><c.icon className="size-4" /></div>
-              <div className="mt-3 text-sm font-bold">{c.t}</div>
-              <div className="text-[11px] text-muted-foreground">{c.b}</div>
-            </div>
-          ))}
-        </div>
-        <button onClick={onNext} className="mt-7 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-primary text-primary-foreground font-bold glow-gold tilt-press">
-          Start submission <ArrowRight className="size-4" />
-        </button>
-      </div>
-
-      <aside className="rounded-[28px] liquid-glass neon-border p-5 lg:p-6">
-        <div className="text-[10px] tracking-[0.22em] text-muted-foreground">HOW IT WORKS</div>
-        <ol className="mt-3 space-y-3 text-sm">
-          {[
-            "Upload your song or drop a Google Drive link.",
-            "Tell us about it — title, artist, genre, vibe notes.",
-            "Get an instant AI first-impression while you wait.",
-            "Optional: Skip the line with Cash App tiers.",
-            "Tune into the live show. Your review hits your inbox after.",
-          ].map((s, i) => (
-            <li key={i} className="flex gap-3">
-              <div className="mt-0.5 size-5 shrink-0 rounded-full grid place-items-center text-[10px] font-black bg-primary/20 text-primary">{i + 1}</div>
-              <span className="text-foreground/90">{s}</span>
-            </li>
-          ))}
-        </ol>
-        <div className="mt-5 rounded-2xl bg-[oklch(0.7_0.25_340/0.08)] border border-[oklch(0.7_0.25_340/0.3)] p-3 text-[11px] text-muted-foreground">
-          <Info className="inline size-3 -mt-0.5 mr-1 text-[oklch(0.7_0.25_340)]" />
-          Files capped at 30MB. Only MP3, WAV, M4A or a public Google Drive link.
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function UploadStep({ source, setSource, file, setFile, driveLink, setDriveLink, onBack, onNext }: {
-  source: "file" | "drive"; setSource: (s: "file" | "drive") => void;
-  file: File | null; setFile: (f: File | null) => void;
-  driveLink: string; setDriveLink: (s: string) => void;
-  onBack: () => void; onNext: () => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [drag, setDrag] = useState(false);
-
-  const validate = (f: File): string | null => {
-    const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
-    if (!ACCEPT_EXT.includes(ext) && !ACCEPT_MIME.includes(f.type)) return "Only MP3, WAV, or M4A files are accepted.";
-    if (f.size > MAX_BYTES) return "File is too large (30MB max).";
-    return null;
-  };
-
-  const onPick = (f: File | null) => {
-    if (!f) return;
-    const err = validate(f);
-    if (err) { toast.error(err); return; }
-    setFile(f);
-  };
-
-  const canContinue = source === "file" ? !!file : DRIVE_RE.test(driveLink.trim());
-
-  return (
-    <StepShell title="Drop your track" subtitle="MP3, WAV, M4A — or share a Google Drive link.">
-      <div className="grid sm:grid-cols-2 gap-2 mb-5">
-        <ToggleCard active={source === "file"} onClick={() => setSource("file")} icon={Upload} label="Upload file" sub="Up to 30MB" />
-        <ToggleCard active={source === "drive"} onClick={() => setSource("drive")} icon={LinkIcon} label="Google Drive link" sub="Public/shareable URL" />
-      </div>
-
-      {source === "file" ? (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); onPick(e.dataTransfer.files?.[0] ?? null); }}
-          onClick={() => inputRef.current?.click()}
-          className={`relative cursor-pointer rounded-3xl border-2 border-dashed p-10 text-center transition-all ${drag ? "border-primary bg-primary/5" : "border-white/15 hover:border-white/30"}`}
-        >
-          <input ref={inputRef} type="file" accept=".mp3,.wav,.m4a,audio/*" hidden onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
-          <div className="mx-auto size-14 rounded-2xl bg-primary/15 text-primary grid place-items-center"><Music2 className="size-6" /></div>
-          {file ? (
-            <>
-              <div className="mt-4 text-base font-bold">{file.name}</div>
-              <div className="text-xs text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
-              <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="mt-3 text-xs text-primary hover:underline">Choose a different file</button>
-            </>
-          ) : (
-            <>
-              <div className="mt-4 text-base font-bold">Tap to choose · or drag a file in</div>
-              <div className="text-xs text-muted-foreground mt-1">.mp3 · .wav · .m4a</div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-3xl liquid-glass border border-white/10 p-5">
-          <label className="block">
-            <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1">GOOGLE DRIVE LINK</div>
-            <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-12 focus-within:border-primary/50">
-              <LinkIcon className="size-4 text-muted-foreground" />
-              <input
-                value={driveLink}
-                onChange={(e) => setDriveLink(e.target.value)}
-                type="url"
-                placeholder="https://drive.google.com/file/d/..."
-                className="flex-1 bg-transparent text-sm focus:outline-none"
-              />
-            </div>
-          </label>
-          <div className="mt-3 text-[11px] text-muted-foreground">Make sure the link is set to "Anyone with the link can view".</div>
-        </div>
-      )}
-
-      <Footer onBack={onBack} onNext={onNext} disabled={!canContinue} />
-    </StepShell>
-  );
-}
-
-function InfoStep(props: {
-  title: string; setTitle: (s: string) => void;
-  artist: string; setArtist: (s: string) => void;
-  genre: string; setGenre: (s: string) => void;
-  notes: string; setNotes: (s: string) => void;
-  onBack: () => void; onNext: () => void;
-  generating: boolean;
-}) {
-  const { title, setTitle, artist, setArtist, genre, setGenre, notes, setNotes, onBack, onNext, generating } = props;
-  const ok = title.trim().length > 0 && artist.trim().length > 0;
-  const genres = ["Hip-Hop", "R&B", "Pop", "Indie", "Rock", "Afrobeats", "Electronic", "Country", "Jazz", "Other"];
-  return (
-    <StepShell title="Tell us about it" subtitle="The more we know, the sharper the review.">
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="Song title" value={title} onChange={setTitle} placeholder="e.g. Midnight Bloom" />
-        <Field label="Artist name" value={artist} onChange={setArtist} placeholder="Your stage name" />
-      </div>
-      <div className="mt-3">
-        <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1">GENRE</div>
-        <div className="flex flex-wrap gap-2">
-          {genres.map((g) => (
-            <button key={g} onClick={() => setGenre(g)} className={`px-3 py-1.5 rounded-full text-xs border transition ${genre === g ? "border-primary text-primary bg-primary/10" : "border-white/10 hover:border-white/30"}`}>
-              {g}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-3">
-        <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1">VIBE NOTES (OPTIONAL)</div>
-        <textarea
-          value={notes} onChange={(e) => setNotes(e.target.value)}
-          rows={4} maxLength={400}
-          placeholder="Anything we should know? Inspiration, mood, what to listen for…"
-          className="w-full rounded-xl glass border border-white/10 px-3 py-2 text-sm focus:outline-none focus:border-primary/50 resize-none"
-        />
-        <div className="text-[10px] text-muted-foreground text-right mt-1">{notes.length} / 400</div>
-      </div>
-      <Footer onBack={onBack} onNext={onNext} disabled={!ok || generating} nextLabel={generating ? "Analyzing…" : "Run AI vibe check"} />
-    </StepShell>
-  );
-}
-
-function AIStep({ insight, onBack, onNext, title, artist }: { insight: AIInsight | null; onBack: () => void; onNext: () => void; title: string; artist: string }) {
-  if (!insight) return null;
-  return (
-    <StepShell title="Trey-I first impression" subtitle="A pre-listen vibe read. Not the real review — that comes live.">
-      <div className="rounded-3xl liquid-glass neon-border p-6 lg:p-8 relative overflow-hidden">
-        <div className="absolute -top-20 -right-20 size-64 rounded-full bg-[oklch(0.7_0.25_340/0.15)] blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 size-64 rounded-full bg-[oklch(0.82_0.15_215/0.15)] blur-3xl" />
-        <div className="relative">
-          <div className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-muted-foreground">
-            <Sparkles className="size-3 text-[oklch(0.82_0.15_215)]" /> AI VIBE READ · {title.toUpperCase()} — {artist.toUpperCase()}
-          </div>
-          <div className="mt-3 text-2xl sm:text-3xl font-black bg-gradient-to-r from-[oklch(0.82_0.16_85)] via-[oklch(0.7_0.25_340)] to-[oklch(0.82_0.15_215)] bg-clip-text text-transparent">
-            {insight.vibe}
-          </div>
-          <div className="mt-5 grid sm:grid-cols-3 gap-3">
-            <Stat label="Hype score" value={`${insight.hypeScore}/10`} icon={Flame} />
-            <Stat label="Predicted mood" value={insight.predictedMood} icon={Heart} />
-            <Stat label="Strengths" value={insight.strengths.join(" · ")} icon={Star} />
-          </div>
-          <div className="mt-5 rounded-2xl glass border border-white/10 p-4">
-            <div className="text-[10px] tracking-[0.22em] text-muted-foreground">LISTEN FOR</div>
-            <div className="mt-1 text-sm">{insight.hook}</div>
-          </div>
-        </div>
-      </div>
-      <Footer onBack={onBack} onNext={onNext} nextLabel="Next: Skip the line" />
-    </StepShell>
-  );
-}
-
-function TierStep({ tier, setTier, paidConfirmed, setPaidConfirmed, onBack, onNext }: {
-  tier: Tier; setTier: (t: Tier) => void;
-  paidConfirmed: boolean; setPaidConfirmed: (b: boolean) => void;
-  onBack: () => void; onNext: () => void;
-}) {
-  const tiers: { id: Tier; title: string; price: string; desc: string; icon: typeof Rocket; ring: string; gradient: string }[] = [
-    { id: "regular", title: "Regular Queue", price: "Free", desc: "Standard FIFO. Get reviewed live.", icon: Music2, ring: "border-white/15", gradient: "from-white/10 to-white/5" },
-    { id: "skip",    title: "Skip the Line", price: "$5",   desc: "Jump ahead of regular submissions.", icon: Zap, ring: "border-[oklch(0.82_0.15_215/0.5)]", gradient: "from-[oklch(0.82_0.15_215/0.2)] to-transparent" },
-    { id: "super",   title: "Super Skip",    price: "$10",  desc: "Move ahead of Skip submissions too.", icon: Rocket, ring: "border-[oklch(0.7_0.25_340/0.5)]", gradient: "from-[oklch(0.7_0.25_340/0.2)] to-transparent" },
-    { id: "turbo",   title: "Turbo Skip",    price: "$15",  desc: "Top priority. Reviewed first.", icon: Crown, ring: "border-primary/60", gradient: "from-primary/20 to-transparent" },
-  ];
-  const isPaid = tier !== "regular";
-  const meta = TIER_META[tier];
-
-  return (
-    <StepShell title="Skip the line?" subtitle="Optional. Pay via Cash App and get bumped up the queue.">
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {tiers.map((t) => {
-          const active = tier === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => { setTier(t.id); setPaidConfirmed(false); }}
-              className={`relative text-left rounded-3xl p-5 border-2 transition-all overflow-hidden ${active ? `${t.ring} bg-gradient-to-br ${t.gradient}` : "border-white/10 hover:border-white/25"}`}
-            >
-              {active && <span className="absolute top-3 right-3 size-5 rounded-full bg-primary text-primary-foreground grid place-items-center"><CheckCircle2 className="size-3.5" /></span>}
-              <div className="size-10 rounded-xl bg-white/5 grid place-items-center mb-3"><t.icon className="size-5" /></div>
-              <div className="text-base font-bold">{t.title}</div>
-              <div className="mt-1 text-2xl font-black">{t.price}</div>
-              <div className="mt-2 text-[11px] text-muted-foreground">{t.desc}</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {isPaid && (
-        <div className="mt-5 rounded-3xl liquid-glass neon-border p-5 lg:p-6 grid lg:grid-cols-[auto_1fr] gap-6 items-center">
-          <div className="rounded-3xl bg-black p-4 ring-1 ring-white/10 mx-auto">
-            <img src={cashappQR} alt="Cash App QR — $OfficialTreyTrizzy" className="size-48 sm:size-56 object-contain rounded-xl" />
-          </div>
-          <div>
-            <div className="text-[10px] tracking-[0.22em] text-muted-foreground">PAYMENT</div>
-            <div className="mt-1 text-2xl font-black">${meta.price}.00 via Cash App</div>
-            <div className="mt-1 text-sm">Send to <span className="font-mono text-[oklch(0.78_0.18_150)]">$OfficialTreyTrizzy</span></div>
-            <div className="mt-3 text-[12px] text-muted-foreground">Note: Include your <b>artist name</b> + song title in the Cash App memo so we can match it.</div>
-            <label className="mt-4 flex items-start gap-2 cursor-pointer rounded-xl bg-white/5 border border-white/10 p-3 text-sm">
-              <input type="checkbox" checked={paidConfirmed} onChange={(e) => setPaidConfirmed(e.target.checked)} className="mt-0.5 accent-primary" />
-              <span>I sent <b>${meta.price}.00</b> via Cash App to <span className="font-mono">$OfficialTreyTrizzy</span>.</span>
-            </label>
-            <a href="https://cash.app/$OfficialTreyTrizzy" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-xs text-primary hover:underline">
-              Open in Cash App <ArrowRight className="size-3" />
-            </a>
-          </div>
-        </div>
-      )}
-
-      <Footer onBack={onBack} onNext={onNext} disabled={isPaid && !paidConfirmed} nextLabel="Next: Review" />
-    </StepShell>
-  );
-}
-
-function ReviewStep({ source, file, driveLink, title, artist, genre, notes, tier, insight, onBack }: {
-  source: "file" | "drive"; file: File | null; driveLink: string;
-  title: string; artist: string; genre: string; notes: string;
-  tier: Tier; insight: AIInsight | null; onBack: () => void;
-}) {
   const { user } = useAuth();
   const { add, positionOf } = useMusicReview();
   const nav = useNavigate();
   const [submitting, setSubmitting] = useState(false);
-  const meta = TIER_META[tier];
+  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [queuePos, setQueuePos] = useState<number>(0);
 
   const submit = async () => {
     if (!user) {
@@ -466,100 +168,795 @@ function ReviewStep({ source, file, driveLink, title, artist, genre, notes, tier
       aiFirstImpression: insight ?? undefined,
     });
     const pos = positionOf(sub.id);
+    setSubmittedId(sub.id);
+    setQueuePos(pos);
     toast.success(`You're #${pos} in the live queue`);
-    nav({ to: "/music-review/queue", search: { mine: sub.id } as any });
     setSubmitting(false);
+    go(7);
   };
 
   return (
-    <StepShell title="Looks good?" subtitle="Review your submission and lock it in.">
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="rounded-3xl liquid-glass neon-border p-5">
-          <div className="text-[10px] tracking-[0.22em] text-muted-foreground">YOUR TRACK</div>
-          <div className="mt-2 text-2xl font-black">{title || "Untitled"}</div>
-          <div className="text-sm text-muted-foreground">{artist} · {genre}</div>
-          <div className="mt-3 text-xs">
-            {source === "file" ? <>File: <span className="font-mono">{file?.name}</span></> : <>Drive: <a href={driveLink} target="_blank" rel="noreferrer" className="text-primary underline truncate">{driveLink}</a></>}
-          </div>
-          {notes && <div className="mt-3 text-sm text-foreground/80 italic">"{notes}"</div>}
-        </div>
-        <div className={`rounded-3xl p-5 border ${meta.ring === "border-white/15" ? "border-white/15 liquid-glass" : "liquid-glass " + meta.ring}`}>
-          <div className="text-[10px] tracking-[0.22em] text-muted-foreground">QUEUE TIER</div>
-          <div className={`mt-1 text-2xl font-black ${meta.color}`}>{meta.label}</div>
-          <div className="text-sm text-muted-foreground">{meta.price === 0 ? "Free" : `$${meta.price}.00 · Cash App`}</div>
-          {insight && (
-            <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-3">
-              <div className="text-[10px] tracking-[0.22em] text-muted-foreground">AI FIRST IMPRESSION</div>
-              <div className="mt-1 text-sm font-semibold">{insight.vibe} · {insight.hypeScore}/10</div>
-            </div>
-          )}
+    <div className="relative pt-6 max-w-3xl mx-auto">
+      {step === 1 && <Landing onStart={() => go(2)} />}
+      {step === 2 && (
+        <UploadStep
+          mode={source} setMode={setSource}
+          file={file} setFile={setFile}
+          driveLink={driveLink} setDriveLink={setDriveLink}
+          onBack={() => go(1)} onNext={() => go(3)}
+        />
+      )}
+      {step === 3 && (
+        <SongInfoStep
+          title={title} setTitle={setTitle}
+          artist={artist} setArtist={setArtist}
+          genre={genre} setGenre={setGenre}
+          notes={notes} setNotes={setNotes}
+          onBack={() => go(2)}
+          onNext={async () => {
+            setGenerating(true);
+            try {
+              const res = await generateMusicReviewInsight({ data: { title, artist, genre, notes } });
+              setInsight(res);
+            } catch (err) {
+              console.error("AI generation failed", err);
+              // Fallback to avoid breaking flow
+              setInsight({
+                vibe: "Underground energy",
+                strengths: ["Raw potential", "Authentic feel"],
+                hook: "Listen for the rhythmic pocket on the hook.",
+                hypeScore: 7,
+                predictedMood: "Hype",
+              });
+            }
+            setGenerating(false);
+            go(4);
+          }}
+          generating={generating}
+        />
+      )}
+      {step === 4 && (
+        <VibeCheckStep
+          title={title || "Untitled"} artist={artist || "Unknown"} genre={genre}
+          insight={insight}
+          onBack={() => go(3)} onNext={() => go(5)}
+        />
+      )}
+      {step === 5 && (
+        <TierStep
+          tier={tier} setTier={setTier}
+          paidConfirmed={paidConfirmed} setPaidConfirmed={setPaidConfirmed}
+          onBack={() => go(4)} onNext={() => go(6)}
+        />
+      )}
+      {step === 6 && (
+        <ReviewStep
+          title={title || "Untitled"} artist={artist || "Unknown"} genre={genre}
+          tier={TIERS.find((t) => t.id === tier)!}
+          insight={insight}
+          onBack={() => go(5)} onSubmit={submit}
+          submitting={submitting}
+        />
+      )}
+      {step === 7 && (
+        <LiveQueueStep
+          title={title || "Untitled"} artist={artist || "Unknown"} genre={genre}
+          tier={TIERS.find((t) => t.id === tier)!}
+          insight={insight}
+          position={queuePos}
+          onBack={() => {}}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------- STEP BAR ------------------------- */
+function StepBar({
+  step,
+  total,
+  label,
+  onBack,
+}: {
+  step: number;
+  total: number;
+  label: string;
+  onBack?: () => void;
+}) {
+  return (
+    <div className="mt-4 mb-8">
+      <div className="flex items-center gap-3">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="size-9 shrink-0 rounded-full grid place-items-center border border-white/10 bg-white/5 text-foreground hover:bg-white/10 transition"
+            aria-label="Back"
+          >
+            ←
+          </button>
+        )}
+        <div className="flex-1 flex gap-1.5">
+          {Array.from({ length: total }).map((_, i) => (
+            <div
+              key={i}
+              className={`h-[3px] flex-1 rounded-full ${
+                i < step ? "lmr-step-bar" : "bg-white/10"
+              }`}
+            />
+          ))}
         </div>
       </div>
+      <div className="mt-2 flex items-center justify-between text-[11px] tracking-[0.2em] text-muted-foreground uppercase">
+        <span>Step {step} / {total}</span>
+        <span>{label}</span>
+      </div>
+    </div>
+  );
+}
 
-      <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <button onClick={onBack} className="px-4 h-11 rounded-xl liquid-glass border border-white/10 text-sm font-semibold">Back</button>
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="px-6 h-12 rounded-2xl bg-primary text-primary-foreground font-black glow-gold tilt-press inline-flex items-center justify-center gap-2 disabled:opacity-60"
-        >
-          <Radio className="size-4" /> {submitting ? "Submitting…" : "Submit to live queue"}
+/* ------------------------- STEP 1: LANDING ------------------------- */
+function Landing({ onStart }: { onStart: () => void }) {
+  return (
+    <div className="mt-5">
+      <div className="relative overflow-hidden rounded-[28px] lmr-glass-card lmr-neon-trace p-6 pb-8">
+        <img
+          src={neonMic}
+          alt=""
+          className="pointer-events-none absolute -right-10 -top-4 w-56 opacity-90 lmr-float-y lmr-neon-pulse"
+          loading="eager"
+        />
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/10 text-[11px] tracking-[0.18em] uppercase">
+          <span className="size-2 rounded-full bg-[oklch(0.65_0.25_25)] shadow-[0_0_10px_oklch(0.65_0.25_25)]" />
+          Live on TikTok
+        </div>
+        <h1 className="mt-5 text-[44px] leading-[0.95] font-extrabold font-display">
+          Live Music<br />
+          <span className="text-[oklch(0.86_0.17_92)]">Review.</span>
+        </h1>
+        <p className="mt-4 text-sm text-muted-foreground max-w-[85%]">
+          Submit your track. Get reviewed live on TikTok by Trey. Walk away with a written review delivered to your inbox.
+        </p>
+
+        <div className="mt-6 space-y-3 relative z-10">
+          <FeatureCard glow="gold" icon={<Upload className="size-6 text-[oklch(0.86_0.17_92)]" />} title="Submit" sub="MP3, WAV, M4A or Drive link." />
+          <FeatureCard glow="pink" icon={<Sparkle />} title="AI vibe check" sub="First impression in seconds." />
+          <FeatureCard glow="blue" icon={<Crown className="size-6 text-[oklch(0.86_0.17_92)]" />} title="Live review" sub="Reviewed live on TikTok by Trey." />
+        </div>
+
+        <button onClick={onStart} className="lmr-btn-gold relative z-10 mt-7 w-full h-14 rounded-full font-bold text-base inline-flex items-center justify-center gap-2">
+          Start submission <ArrowRight className="size-5" />
         </button>
       </div>
-    </StepShell>
+    </div>
   );
 }
 
-/* ---------------- Primitives ---------------- */
-function StepShell({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+const Sparkle = () => (
+  <svg viewBox="0 0 24 24" className="size-6 text-[oklch(0.86_0.17_92)]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z" />
+    <path d="M19 16l.7 1.8L21 18.5l-1.3.7L19 21l-.7-1.8L17 18.5l1.3-.7z" />
+  </svg>
+);
+
+function FeatureCard({ icon, title, sub, glow }: { icon: React.ReactNode; title: string; sub: string; glow: "gold" | "pink" | "blue" }) {
+  const glowClass = glow === "gold" ? "lmr-glow-gold" : glow === "pink" ? "lmr-glow-pink" : "lmr-glow-blue";
   return (
-    <section className="relative animate-rise">
-      <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black tracking-tight">{title}</h1>
-      {subtitle && <p className="mt-2 text-sm sm:text-base text-muted-foreground max-w-2xl">{subtitle}</p>}
-      <div className="mt-6">{children}</div>
-    </section>
+    <div className={`rounded-2xl p-4 flex items-center gap-4 bg-black/20 ${glowClass}`}>
+      <div className="size-14 shrink-0 rounded-full grid place-items-center border border-white/10 bg-black/30">
+        {icon}
+      </div>
+      <div className="flex-1">
+        <div className="font-bold text-base">{title}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>
+      </div>
+      <ArrowRight className="size-4 text-muted-foreground" />
+    </div>
   );
 }
 
-function Footer({ onBack, onNext, disabled, nextLabel = "Continue" }: { onBack: () => void; onNext: () => void; disabled?: boolean; nextLabel?: string }) {
+/* ------------------------- STEP 2: UPLOAD ------------------------- */
+function UploadStep({
+  mode, setMode,
+  file, setFile,
+  driveLink, setDriveLink,
+  onBack, onNext
+}: {
+  mode: "file" | "drive"; setMode: (m: "file" | "drive") => void;
+  file: File | null; setFile: (f: File | null) => void;
+  driveLink: string; setDriveLink: (s: string) => void;
+  onBack: () => void; onNext: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [drag, setDrag] = useState(false);
+
+  const validate = (f: File): string | null => {
+    const ext = f.name.toLowerCase().slice(f.name.lastIndexOf("."));
+    if (!ACCEPT_EXT.includes(ext) && !ACCEPT_MIME.includes(f.type)) return "Only MP3, WAV, or M4A files are accepted.";
+    if (f.size > MAX_BYTES) return "File is too large (30MB max).";
+    return null;
+  };
+
+  const onPick = (f: File | null) => {
+    if (!f) return;
+    const err = validate(f);
+    if (err) { toast.error(err); return; }
+    setFile(f);
+  };
+
+  const canContinue = mode === "file" ? !!file : DRIVE_RE.test(driveLink.trim());
+
   return (
-    <div className="mt-6 flex items-center justify-between gap-3">
-      <button onClick={onBack} className="px-4 h-11 rounded-xl liquid-glass border border-white/10 text-sm font-semibold">Back</button>
-      <button onClick={onNext} disabled={disabled} className="px-5 h-11 rounded-xl bg-primary text-primary-foreground font-bold glow-gold tilt-press inline-flex items-center gap-1.5 disabled:opacity-50">
+    <div>
+      <StepBar step={1} total={6} label="Upload" onBack={onBack} />
+      <h1 className="mt-6 text-[40px] leading-[1] font-extrabold font-display">
+        Drop <span className="text-[oklch(0.86_0.17_92)]">your track</span>
+      </h1>
+      <p className="mt-3 text-sm text-muted-foreground">MP3, WAV, M4A — or share a Google Drive link.</p>
+
+      <div className="mt-6 space-y-3">
+        <button
+          onClick={() => setMode("file")}
+          className={`w-full p-4 rounded-2xl flex items-center gap-4 ${mode === "file" ? "lmr-glow-gold bg-black/40" : "border border-white/10 bg-black/20"}`}
+        >
+          <div className={`size-12 rounded-full grid place-items-center ${mode === "file" ? "bg-[oklch(0.86_0.17_92)] text-black" : "bg-white/5 text-muted-foreground"}`}>
+            <Upload className="size-5" />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Upload file</div>
+            <div className="text-xs text-muted-foreground">Up to 30MB</div>
+          </div>
+        </button>
+        <button
+          onClick={() => setMode("drive")}
+          className={`w-full p-4 rounded-2xl flex items-center gap-4 ${mode === "drive" ? "lmr-glow-blue bg-black/40" : "border border-white/10 bg-black/20"}`}
+        >
+          <div className={`size-12 rounded-full grid place-items-center border border-white/10 ${mode === "drive" ? "bg-[oklch(0.7_0.18_240)] text-white" : "bg-white/5 text-muted-foreground"}`}>
+            <LinkIcon className="size-5" />
+          </div>
+          <div className="text-left">
+            <div className="font-bold">Google Drive link</div>
+            <div className="text-xs text-muted-foreground">Public/shareable URL</div>
+          </div>
+        </button>
+      </div>
+
+      {mode === "file" ? (
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); onPick(e.dataTransfer.files?.[0] ?? null); }}
+          onClick={() => inputRef.current?.click()}
+          className={`mt-5 rounded-2xl border-2 border-dashed p-10 text-center transition-all cursor-pointer ${drag ? "border-[oklch(0.86_0.17_92)] bg-[oklch(0.86_0.17_92)]/5" : "border-[oklch(0.72_0.25_350)]/50 bg-black/20 hover:border-white/30"}`}
+        >
+          <input ref={inputRef} type="file" accept=".mp3,.wav,.m4a,audio/*" hidden onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+          <div className="mx-auto size-16 rounded-full grid place-items-center border border-white/10 bg-black/30">
+            <Music className="size-7 text-[oklch(0.86_0.17_92)]" />
+          </div>
+          {file ? (
+            <>
+              <div className="mt-4 text-base font-bold">{file.name}</div>
+              <div className="text-xs text-muted-foreground">{(file.size / (1024 * 1024)).toFixed(2)} MB</div>
+              <button onClick={(e) => { e.stopPropagation(); setFile(null); }} className="mt-3 text-xs text-[oklch(0.86_0.17_92)] hover:underline">Choose a different file</button>
+            </>
+          ) : (
+            <>
+              <p className="mt-4 font-semibold">Tap to choose · or drag a file in</p>
+              <p className="mt-1 text-xs text-muted-foreground">.mp3 · .wav · .m4a</p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-3xl lmr-glass-card border border-white/10 p-5">
+          <label className="block">
+            <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1 uppercase">Google Drive Link</div>
+            <div className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 h-12 focus-within:border-[oklch(0.86_0.17_92)]/50">
+              <LinkIcon className="size-4 text-muted-foreground" />
+              <input
+                value={driveLink}
+                onChange={(e) => setDriveLink(e.target.value)}
+                type="url"
+                placeholder="https://drive.google.com/file/d/..."
+                className="flex-1 bg-transparent text-sm focus:outline-none text-foreground"
+              />
+            </div>
+          </label>
+          <div className="mt-3 text-[11px] text-muted-foreground">Make sure the link is set to "Anyone with the link can view".</div>
+        </div>
+      )}
+
+      <NavRow onBack={onBack} onNext={onNext} nextLabel="Continue" disabled={!canContinue} />
+    </div>
+  );
+}
+
+function NavRow({ onBack, onNext, nextLabel, disabled }: { onBack: () => void; onNext: () => void; nextLabel: string; disabled?: boolean }) {
+  return (
+    <div className="mt-7 flex items-center gap-4">
+      <button onClick={onBack} className="px-7 h-12 rounded-full border border-white/10 bg-black/40 font-medium hover:bg-black/60 transition">Back</button>
+      <button
+        onClick={onNext}
+        disabled={disabled}
+        className="lmr-btn-gold flex-1 h-12 rounded-full font-bold inline-flex items-center justify-center gap-2 disabled:opacity-40 disabled:shadow-none"
+      >
         {nextLabel} <ArrowRight className="size-4" />
       </button>
     </div>
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (s: string) => void; placeholder?: string }) {
+/* ------------------------- STEP 3: SONG INFO ------------------------- */
+function SongInfoStep(props: {
+  title: string; setTitle: (s: string) => void;
+  artist: string; setArtist: (s: string) => void;
+  genre: string; setGenre: (s: string) => void;
+  notes: string; setNotes: (s: string) => void;
+  onBack: () => void; onNext: () => void;
+  generating: boolean;
+}) {
+  const { title, setTitle, artist, setArtist, genre, setGenre, notes, setNotes, onBack, onNext, generating } = props;
+  const ready = title.trim() && artist.trim() && genre;
   return (
-    <label className="block">
-      <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1">{label.toUpperCase()}</div>
-      <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-11 focus-within:border-primary/50">
-        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="flex-1 bg-transparent text-sm focus:outline-none" />
-      </div>
-    </label>
+    <div>
+      <StepBar step={2} total={6} label="Song info" onBack={onBack} />
+      <h1 className="mt-6 text-[36px] leading-[1] font-extrabold font-display">Tell us about it</h1>
+      <p className="mt-2 text-sm text-muted-foreground">The more we know, the sharper the review.</p>
+
+      <InputField label="Song title">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Midnight Bloom" className="lmr-input" />
+      </InputField>
+      <InputField label="Artist name">
+        <input value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="Your stage name" className="lmr-input" />
+      </InputField>
+      <InputField label="Genre">
+        <div className="flex flex-wrap gap-2">
+          {GENRES.map((g) => {
+            const active = genre === g;
+            return (
+              <button
+                key={g}
+                onClick={() => setGenre(g)}
+                className={`px-4 h-10 rounded-full text-sm font-medium border ${active ? "lmr-glow-gold text-[oklch(0.86_0.17_92)] bg-black/40" : "border-white/10 text-foreground bg-black/20"}`}
+              >
+                {g}
+              </button>
+            );
+          })}
+        </div>
+      </InputField>
+      <InputField label="Vibe notes (optional)">
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value.slice(0, 400))}
+          placeholder="Anything we should know? Inspiration, mood, what to listen for..."
+          rows={4}
+          className="lmr-input resize-none"
+        />
+        <div className="mt-1 text-right text-xs text-muted-foreground">{notes.length} / 400</div>
+      </InputField>
+
+      <NavRow onBack={onBack} onNext={onNext} nextLabel={generating ? "Analyzing..." : "Run AI vibe check"} disabled={!ready || generating} />
+      <style>{`
+        .lmr-input {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 14px;
+          padding: 14px 16px;
+          color: white;
+          font-size: 14px;
+          outline: none;
+          transition: border-color .2s, box-shadow .2s;
+        }
+        .lmr-input::placeholder { color: rgba(255, 255, 255, 0.4); }
+        .lmr-input:focus { border-color: oklch(0.86 0.17 92); box-shadow: 0 0 0 3px oklch(0.86 0.17 92 / 0.15); }
+      `}</style>
+    </div>
   );
 }
 
-function ToggleCard({ active, onClick, icon: Icon, label, sub }: { active: boolean; onClick: () => void; icon: typeof Upload; label: string; sub: string }) {
+function InputField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <button onClick={onClick} className={`text-left p-4 rounded-2xl border-2 transition flex items-center gap-3 ${active ? "border-primary bg-primary/10" : "border-white/10 hover:border-white/25"}`}>
-      <div className={`size-10 rounded-xl grid place-items-center ${active ? "bg-primary text-primary-foreground" : "bg-white/5"}`}><Icon className="size-5" /></div>
-      <div>
-        <div className="text-sm font-bold">{label}</div>
-        <div className="text-[11px] text-muted-foreground">{sub}</div>
-      </div>
-    </button>
+    <div className="mt-5">
+      <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground mb-2">{label}</div>
+      {children}
+    </div>
   );
 }
 
-function Stat({ label, value, icon: Icon }: { label: string; value: string; icon: typeof Flame }) {
+/* ------------------------- STEP 4: VIBE CHECK ------------------------- */
+function VibeCheckStep({ title, artist, genre, insight, onBack, onNext }: { title: string; artist: string; genre: string; insight: AIInsight | null; onBack: () => void; onNext: () => void }) {
+  if (!insight) return null;
   return (
-    <div className="rounded-2xl glass border border-white/10 p-3">
-      <div className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-muted-foreground"><Icon className="size-3" /> {label}</div>
-      <div className="mt-1 text-base font-bold">{value}</div>
+    <div>
+      <StepBar step={3} total={6} label="AI vibe check" onBack={onBack} />
+      <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-white/10 text-[11px] tracking-[0.18em] uppercase">
+        <span className="size-2 rounded-full bg-[oklch(0.78_0.18_150)] shadow-[0_0_10px_oklch(0.78_0.18_150)]" />
+        AI Vibe Check
+      </div>
+      <h1 className="mt-4 text-[36px] leading-[1.05] font-extrabold font-display">
+        Your <span className="text-[oklch(0.86_0.17_92)]">vibe</span> check is in
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">A quick first impression before you choose your queue.</p>
+
+      <div className="mt-5 lmr-glass-card lmr-neon-trace rounded-2xl p-4">
+        <div className="flex gap-4">
+          <img src={hbvCover} alt="" className="size-20 rounded-xl object-cover lmr-glow-pink" loading="lazy" />
+          <div className="flex-1 min-w-0">
+            <div className="text-lg font-bold truncate">{title}</div>
+            <div className="text-sm text-muted-foreground">{artist} · {genre}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">File: Upload</div>
+            <div className="mt-2 flex items-center gap-2 text-[oklch(0.86_0.17_92)]">
+              <button className="size-7 rounded-full bg-[oklch(0.86_0.17_92)]/20 grid place-items-center">▶</button>
+              <Wave />
+              <span className="text-xs">0:30</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl lmr-glow-gold p-5 bg-black/30">
+          <div className="flex items-center gap-4">
+            <div className="relative size-24 shrink-0 rounded-full grid place-items-center bg-background border border-[oklch(0.86_0.17_92)]/40 shadow-[0_0_40px_oklch(0.86_0.17_92/0.45)_inset,0_0_30px_oklch(0.86_0.17_92/0.4)]">
+              <span className="text-2xl font-extrabold text-[oklch(0.86_0.17_92)] leading-none">{insight.hypeScore}<span className="text-base">/10</span></span>
+            </div>
+            <div className="flex-1 flex items-start gap-2">
+              <Zap className="size-6 text-[oklch(0.86_0.17_92)] mt-0.5 shrink-0" />
+              <div className="text-2xl font-extrabold text-[oklch(0.86_0.17_92)] leading-tight">{insight.vibe}</div>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            <Chip icon={<Zap className="size-4 text-[oklch(0.86_0.17_92)]" />} title="Mood" value={insight.predictedMood} />
+            <Chip icon={<Music className="size-4 text-[oklch(0.72_0.25_350)]" />} title="Hook" value="Catchy" />
+            <Chip icon={<Users className="size-4 text-[oklch(0.78_0.18_150)]" />} title="Potential" value="Live-friendly" />
+          </div>
+
+          <div className="mt-5">
+            <div className="flex items-center gap-2 text-[oklch(0.65_0.25_300)] text-[11px] tracking-[0.2em] uppercase font-bold">
+              <Sparkle /> Strengths
+            </div>
+            <p className="mt-2 text-sm text-foreground/90 leading-relaxed">
+              {insight.strengths.join(" · ")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex justify-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[oklch(0.78_0.18_150)]/40 bg-[oklch(0.78_0.18_150)]/10 text-xs text-[oklch(0.78_0.18_150)]">
+          <CheckCircle2 className="size-4" /> Saved to review
+        </div>
+      </div>
+
+      <NavRow onBack={onBack} onNext={onNext} nextLabel="Choose queue tier" />
+    </div>
+  );
+}
+
+const Wave = () => (
+  <div className="flex-1 flex items-center gap-[2px] h-5">
+    {Array.from({ length: 32 }).map((_, i) => (
+      <span
+        key={i}
+        className="w-[2px] bg-[oklch(0.86_0.17_92)]/70 rounded-full"
+        style={{ height: `${20 + Math.abs(Math.sin(i * 0.7)) * 70}%` }}
+      />
+    ))}
+  </div>
+);
+
+function Chip({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/5 p-3">
+      <div className="flex items-center gap-1.5">{icon}<span className="text-xs text-muted-foreground">{title}</span></div>
+      <div className="mt-1 font-semibold text-sm truncate" title={value}>{value}</div>
+    </div>
+  );
+}
+
+/* ------------------------- STEP 5: QUEUE TIER ------------------------- */
+const TIER_AMOUNTS: Record<string, number> = { regular: 0, skip: 5, super: 10, turbo: 15 };
+const CASHTAG = "OfficialTreyTrizzy";
+
+function CashAppPayment({ amount, tierName }: { amount: number; tierName: string }) {
+  const cashUrl = `https://cash.app/$${CASHTAG}/${amount}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&margin=12&data=${encodeURIComponent(cashUrl)}`;
+  return (
+    <div className="mt-5 lmr-glass-card lmr-neon-trace rounded-[28px] p-6 step-enter">
+      <div className="mx-auto w-fit">
+        <div className="relative rounded-[28px] bg-[#0a0a0a] p-4 border border-white/10 shadow-[0_0_60px_oklch(0.65_0.25_300/0.35),inset_0_0_30px_oklch(0.65_0.25_300/0.25)]">
+          <div className="rounded-2xl bg-white p-4 shadow-[0_0_40px_oklch(0.78_0.16_220/0.55)]">
+            <img src={qrSrc} alt={`Cash App QR for $${amount} to $${CASHTAG}`} className="block size-56 object-contain" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-6">
+        <div className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground">Payment</div>
+        <div className="mt-1 text-3xl font-extrabold">${amount.toFixed(2)} via Cash App</div>
+        <div className="mt-2 text-base">Send to <span className="font-mono text-[oklch(0.78_0.18_150)]">${`$${CASHTAG}`}</span></div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Note: Include your <span className="text-foreground font-semibold">artist name</span> + song title in the Cash App memo so we can match it.
+        </p>
+      </div>
+      <a
+        href={`https://cash.app/$${CASHTAG}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 inline-flex items-center gap-2 text-[oklch(0.86_0.17_92)] font-bold"
+      >
+        Open in Cash App <ArrowRight className="size-4" />
+      </a>
+      <div className="sr-only">{tierName}</div>
+    </div>
+  );
+}
+
+function TierStep({ tier, setTier, paidConfirmed, setPaidConfirmed, onBack, onNext }: { tier: string; setTier: (s: any) => void; paidConfirmed: boolean; setPaidConfirmed: (b: boolean) => void; onBack: () => void; onNext: () => void }) {
+  const amount = TIER_AMOUNTS[tier] ?? 0;
+  const selected = TIERS.find((t) => t.id === tier)!;
+  const requiresPayment = amount > 0;
+
+  return (
+    <div>
+      <StepBar step={4} total={6} label="Queue tier" onBack={onBack} />
+      <h1 className="mt-6 text-[36px] leading-[1] font-extrabold font-display">
+        Choose <span className="text-[oklch(0.86_0.17_92)]">your</span> queue
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">Pick how fast you want your track reviewed live.</p>
+
+      <div className="mt-6 space-y-3">
+        {TIERS.map((t) => {
+          const active = tier === t.id;
+          const glow =
+            t.color === "gold" ? "lmr-glow-gold" :
+            t.color === "pink" ? "lmr-glow-pink" :
+            "lmr-glow-blue";
+          const iconColor = t.color === "gold" ? "text-[oklch(0.86_0.17_92)]" : t.color === "pink" ? "text-[oklch(0.72_0.25_350)]" : "text-[oklch(0.7_0.18_240)]";
+          const priceColor = t.id === "regular" ? "text-[oklch(0.86_0.17_92)]" : t.color === "pink" ? "text-[oklch(0.72_0.25_350)]" : "text-[oklch(0.7_0.18_240)]";
+          return (
+            <button
+              key={t.id}
+              onClick={() => { setTier(t.id); setPaidConfirmed(false); }}
+              className={`w-full text-left rounded-2xl p-4 flex items-center gap-4 bg-black/20 ${active ? glow : "border border-white/10"}`}
+            >
+              <div className={`size-14 rounded-full grid place-items-center bg-black/40 border border-white/10`}>
+                <t.icon className={`size-6 ${iconColor}`} />
+              </div>
+              <div className="flex-1">
+                <div className="font-bold">{t.name}</div>
+                <div className={`text-xl font-extrabold ${priceColor}`}>{t.price}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{t.desc}</div>
+              </div>
+              {active && (
+                <div className="size-8 rounded-full grid place-items-center border-2 border-[oklch(0.86_0.17_92)] text-[oklch(0.86_0.17_92)] shadow-[0_0_15px_oklch(0.86_0.17_92/0.5)]">
+                  <Check className="size-4" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {requiresPayment && (
+        <div key={tier}>
+          <CashAppPayment amount={amount} tierName={selected.name} />
+          <label className="mt-4 flex items-start gap-3 rounded-2xl border border-white/10 bg-black/30 p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={paidConfirmed}
+              onChange={(e) => setPaidConfirmed(e.target.checked)}
+              className="mt-0.5 size-5 accent-[oklch(0.86_0.17_92)]"
+            />
+            <span className="text-sm">
+              I sent <span className="font-bold">${amount.toFixed(2)}</span> via Cash App to <span className="font-mono text-[oklch(0.78_0.18_150)]">${`$${CASHTAG}`}</span>.
+            </span>
+          </label>
+        </div>
+      )}
+
+      <NavRow onBack={onBack} onNext={onNext} nextLabel={requiresPayment ? "Next: Review" : "Review & submit"} disabled={requiresPayment && !paidConfirmed} />
+    </div>
+  );
+}
+
+/* ------------------------- STEP 6: REVIEW ------------------------- */
+function ReviewStep({ title, artist, genre, tier, insight, onBack, onSubmit, submitting }: { title: string; artist: string; genre: string; tier: typeof TIERS[number]; insight: AIInsight | null; onBack: () => void; onSubmit: () => void; submitting: boolean }) {
+  const Icon = tier.icon;
+  return (
+    <div>
+      <StepBar step={5} total={6} label="Review & submit" onBack={onBack} />
+      <h1 className="mt-6 text-[40px] leading-[1] font-extrabold font-display">Looks good?</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Review your submission and lock it in.</p>
+
+      <div className="mt-5 lmr-glass-card lmr-neon-trace rounded-2xl p-5">
+        <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Your track</div>
+        <div className="mt-3 flex gap-4">
+          <img src={hbvCover} alt="" className="size-24 rounded-xl object-cover lmr-glow-pink" loading="lazy" />
+          <div>
+            <div className="text-2xl font-extrabold">{title}</div>
+            <div className="text-sm text-muted-foreground">{artist} · {genre}</div>
+            <div className="text-sm text-muted-foreground mt-1">File Uploaded / Linked</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 lmr-glass-card lmr-neon-trace rounded-2xl p-5">
+        <div className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Queue tier</div>
+        <div className="mt-3 flex items-center gap-3">
+          <div className="size-12 rounded-full grid place-items-center bg-black/40 border border-white/10">
+            <Icon className="size-5 text-[oklch(0.86_0.17_92)]" />
+          </div>
+          <div>
+            <div className="font-bold">{tier.name}</div>
+            <div className="text-sm text-muted-foreground">{tier.price}</div>
+          </div>
+        </div>
+        {insight && (
+          <div className="mt-4 rounded-xl bg-black/30 border border-white/10 p-3">
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">AI first impression</div>
+            <div className="mt-1 font-semibold">{insight.vibe} · {insight.hypeScore}/10</div>
+          </div>
+        )}
+      </div>
+
+      <button onClick={onBack} className="mt-5 w-full h-12 rounded-full border border-white/10 bg-black/40 font-medium hover:bg-black/60 transition">Back</button>
+      <div className="mt-5 relative">
+        <div className="absolute -inset-3 rounded-full bg-[oklch(0.86_0.17_92)]/30 blur-2xl pointer-events-none" />
+        <button onClick={onSubmit} disabled={submitting} className="lmr-btn-gold relative w-full h-16 rounded-full font-extrabold text-lg inline-flex items-center justify-center gap-3 disabled:opacity-60">
+          <Radio className="size-5" /> {submitting ? "Submitting..." : "Submit to live queue"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------- STEP 7: LIVE QUEUE ------------------------- */
+function LiveQueueStep({ title, artist, genre, tier, insight, position, onBack }: { title: string; artist: string; genre: string; tier: typeof TIERS[number]; insight: AIInsight | null; position: number; onBack: () => void }) {
+  const Icon = tier.icon;
+  const [msg, setMsg] = useState("");
+  return (
+    <div className="pb-12">
+      <StepBar step={6} total={6} label="Review submitted" onBack={onBack} />
+
+      <div className="mt-5 flex items-start justify-between gap-3">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-black/40 text-[11px] tracking-[0.18em] uppercase">
+            <span className="size-2 rounded-full bg-[oklch(0.65_0.25_25)] shadow-[0_0_10px_oklch(0.65_0.25_25)] animate-pulse" /> Live
+          </div>
+          <h1 className="mt-3 text-[32px] leading-[1.05] font-extrabold font-display">
+            You're <span className="text-[oklch(0.86_0.17_92)]">live</span> in the queue
+          </h1>
+        </div>
+        <div className="px-3 py-2 rounded-xl border border-white/10 bg-black/30 text-right">
+          <div className="flex items-center gap-1.5 text-[oklch(0.78_0.18_150)] text-xs"><Eye className="size-3.5" /> Watching live</div>
+          <div className="text-xs text-muted-foreground mt-0.5">● 312</div>
+        </div>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">Trey's team will review your track live. Stay in the room & vibe with the community.</p>
+
+      <div className="mt-5 lmr-glass-card lmr-neon-trace rounded-2xl p-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground">Your submission</div>
+            <div className="mt-2 flex gap-3">
+              <img src={hbvCover} alt="" className="size-16 rounded-lg object-cover lmr-glow-pink" loading="lazy" />
+              <div className="min-w-0">
+                <div className="font-bold truncate">{title}</div>
+                <div className="text-xs text-muted-foreground">{artist} · {genre}</div>
+              </div>
+            </div>
+          </div>
+          <div className="text-center relative">
+            <div className="text-[10px] tracking-[0.2em] uppercase text-[oklch(0.86_0.17_92)]">Your position</div>
+            <div className="relative mt-2 mx-auto w-fit">
+              <div className="absolute inset-0 -m-2 rounded-full bg-[oklch(0.86_0.17_92)]/25 blur-2xl" />
+              <div className="relative text-7xl font-black text-[oklch(0.86_0.17_92)] leading-none drop-shadow-[0_0_30px_oklch(0.86_0.17_92/0.8)]">#{position}</div>
+              <div className="mt-1 mx-auto h-2 w-24 rounded-full bg-gradient-to-r from-transparent via-[oklch(0.86_0.17_92)] to-transparent blur-[2px]" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="size-7 rounded-full grid place-items-center border border-white/10"><Icon className="size-3.5 text-[oklch(0.86_0.17_92)]" /></div>
+            <div>
+              <div className="text-[10px] tracking-[0.18em] uppercase">Queue tier</div>
+              <div className="font-bold text-foreground">{tier.name}</div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5"><Users className="size-3.5 text-muted-foreground" /> {position - 1} people ahead of you</div>
+            <div className="flex items-center gap-1.5"><Clock className="size-3.5 text-muted-foreground" /> Estimated wait: {position * 3} min</div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+          <div className="grid grid-cols-3 items-start gap-1 text-center relative">
+            <span className="absolute top-[58px] left-[18%] right-[55%] border-t border-dashed border-white/20" />
+            <span className="absolute top-[58px] left-[55%] right-[18%] border-t border-dashed border-white/20" />
+            <QueueSlot label="Up now" name="@prodbykai" track='"Late Nights"' grad="from-amber-400 to-rose-500" />
+            <QueueSlot label="Up next" name="@soulgrv" track='"Better Days"' grad="from-blue-400 to-purple-500" />
+            <div>
+              <div className="text-[10px] tracking-[0.2em] uppercase text-[oklch(0.86_0.17_92)]">You</div>
+              <div className="mt-1 mx-auto size-12 rounded-full grid place-items-center border-2 border-[oklch(0.86_0.17_92)] text-[oklch(0.86_0.17_92)] font-extrabold text-xs lmr-glow-gold bg-black">#{position}</div>
+              <div className="text-xs font-bold mt-1 truncate">{title}</div>
+              <div className="text-[10px] text-muted-foreground truncate">{artist} · {genre}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 lmr-glass-card lmr-neon-trace rounded-2xl p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="size-2 rounded-full bg-[oklch(0.78_0.18_150)] shadow-[0_0_10px_oklch(0.78_0.18_150)]" />
+            <span className="text-[11px] tracking-[0.18em] uppercase font-bold">Live Chat Room</span>
+            <span className="text-xs text-muted-foreground">· 320 in the room</span>
+          </div>
+          <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-[oklch(0.65_0.25_300)]/40 bg-[oklch(0.65_0.25_300)]/10 text-xs text-[oklch(0.65_0.25_300)]">
+            <Pin className="size-3" /> Pinned
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-3 text-sm">
+          <ChatMsg color="bg-[oklch(0.7_0.18_240)]" letter="W" name="WaveCheck ⚡" time="2m" body="You got this! 🔥" />
+          <ChatMsg color="bg-[oklch(0.65_0.25_300)]" letter="R" name="RnbVibes" time="2m" body="Who's up next?" />
+          <ChatMsg color="bg-[oklch(0.72_0.25_350)]" letter="M" name="MelodicMind" time="1m" body="This queue moving fast 🚀" />
+          <ChatMsg color="bg-[oklch(0.65_0.25_300)]" letter="P" name="ProlificJay" time="1m" body="Can't wait for Trey to hear this 🙌" />
+          <div className="flex gap-2">
+            <div className="size-8 rounded-full grid place-items-center bg-black/40 border border-white/10 shrink-0">
+              <Radio className="size-3.5 text-[oklch(0.86_0.17_92)]" />
+            </div>
+            <div>
+              <div className="text-xs"><span className="font-bold tracking-wider text-foreground">SYSTEM</span> <span className="text-muted-foreground">just now</span></div>
+              <div className="text-sm">Trey is now reviewing <span className="text-[oklch(0.7_0.18_240)]">@prodbykai</span>'s track live.</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex items-center gap-2 rounded-full border border-white/10 bg-black/20 pl-4 pr-1.5 py-1.5">
+          <input value={msg} onChange={(e) => setMsg(e.target.value)} placeholder="Send a message..." className="flex-1 bg-transparent outline-none text-sm text-foreground" />
+          <button className="size-9 rounded-full grid place-items-center border border-[oklch(0.86_0.17_92)]/50 text-[oklch(0.86_0.17_92)]">
+            <Send className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+        <Pill icon={<Sparkles className="size-3.5" />}>AI vibe check saved</Pill>
+        <Pill icon={<Radio className="size-3.5" />} highlight>View live review</Pill>
+        <Pill icon={<Zap className="size-3.5" />}>{insight ? `${insight.hypeScore}/10` : "Ready"}</Pill>
+      </div>
+    </div>
+  );
+}
+
+function QueueSlot({ label, name, track, grad }: { label: string; name: string; track: string; grad: string }) {
+  return (
+    <div className="relative">
+      <div className="text-[10px] tracking-[0.2em] uppercase text-[oklch(0.86_0.17_92)]/80">{label}</div>
+      <div className={`mt-1 mx-auto size-12 rounded-full bg-gradient-to-br ${grad} border border-white/10 shadow-[0_0_15px_oklch(0.65_0.25_300/0.4)]`} />
+      <div className="text-xs font-bold mt-1 truncate">{name}</div>
+      <div className="text-[10px] text-muted-foreground truncate">{track}</div>
+    </div>
+  );
+}
+
+function ChatMsg({ color, letter, name, time, body }: { color: string; letter: string; name: string; time: string; body: string }) {
+  return (
+    <div className="flex gap-2">
+      <div className={`size-8 rounded-full grid place-items-center text-xs font-bold text-white ${color} shrink-0`}>{letter}</div>
+      <div className="min-w-0">
+        <div className="text-xs"><span className="font-bold text-foreground">{name}</span> <span className="text-muted-foreground">· {time}</span></div>
+        <div className="text-sm">{body}</div>
+      </div>
+    </div>
+  );
+}
+
+function Pill({ children, icon, highlight }: { children: React.ReactNode; icon: React.ReactNode; highlight?: boolean }) {
+  return (
+    <div className={`rounded-full border px-3 py-2 flex items-center justify-center gap-1.5 text-center ${highlight ? "border-[oklch(0.86_0.17_92)]/60 text-[oklch(0.86_0.17_92)] lmr-glow-gold" : "border-white/10 bg-black/20 text-muted-foreground"}`}>
+      {icon}<span className="truncate">{children}</span>
     </div>
   );
 }

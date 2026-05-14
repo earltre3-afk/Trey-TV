@@ -20,7 +20,7 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const swipeRoutes = ["/", "/for-you", "/explore", "/guide", "/prescribe-me", "/rewards"];
+  const swipeRoutes = ["/", "/for-you", "/explore", "/guide", "/prescribe-me", "/rewards", "/games"];
   const currentSwipeIndex = swipeRoutes.findIndex((route) => route === "/" ? location.pathname === "/" : location.pathname.startsWith(route));
   const onTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
     const start = touchStart.current;

@@ -68,7 +68,7 @@ function LockedScreen() {
           </div>
           <h1 className="text-2xl font-bold text-gradient-gold">Submissions are creator-only</h1>
           <div className="mt-6 flex flex-col gap-2">
-            <button onClick={() => navigate({ to: "/premium" })} className="px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold">Apply to become a Creator</button>
+            <button onClick={() => navigate({ to: "/apply/content-creator" })} className="px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold">Apply to become a Creator</button>
             <button onClick={() => navigate({ to: "/creator-hub" })} className="px-4 py-3 rounded-xl text-sm font-semibold glass border border-white/10">Back to Creator Hub</button>
           </div>
         </div>

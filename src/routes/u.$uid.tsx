@@ -20,14 +20,16 @@
  *   - Otherwise → "user"
  */
 
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useAuth } from "@/lib/auth";
-import { useProfile } from "@/hooks/use-profile";
+import { useProfile, useRelationshipStatus, useTopThree } from "@/hooks/use-profile";
 import { currentUser } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
-import { ProfilePageShell } from "@/components/profile/ProfilePageShell";
+import { isTreyOwnerProfile } from "@/lib/trey-owner";
 import type { ProfileData, ViewerRole } from "@/components/profile";
+import { ProfilePageNew } from "@/components/profile/ProfilePageNew";
+import type { ProfileVariant } from "@/components/profile/ProfilePageNew";
 
 export const Route = createFileRoute("/u/$uid")({
   component: PublicProfileRoute,
@@ -44,50 +46,61 @@ export const Route = createFileRoute("/u/$uid")({
 
 function PublicProfileRoute() {
   const { uid } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { user: authUser, isGuest, role, isApprovedCreator } = useAuth();
   const { profile: dbProfile, loading } = useProfile(uid);
 
+  // Load relationship status and Top 3 for authenticated users
+  const { status: relationshipStatus } = useRelationshipStatus(dbProfile?.id || "");
+  const { topThree } = useTopThree(dbProfile?.id || "");
+
   // ── Determine who is viewing ──────────────────────────────────────────
-  const isOwnProfile = !isGuest && (authUser?.uid ?? currentUser.uid) === uid;
+  const isOwnProfile = !isGuest && authUser?.uid === uid;
 
   const viewerRole: ViewerRole = isOwnProfile ? "owner" : isGuest ? "guest" : "user";
 
   // ── Build normalized ProfileData ──────────────────────────────────────
   const profileData = useMemo<ProfileData>(() => {
-    // If loading or no DB profile, fall back to session user or mock
+    // Only the official Trey UID gets the Trey demo fallback. Other profiles
+    // should never inherit @trey fields while their Supabase row is loading.
     if (loading || !dbProfile) {
-      const fallback = authUser ?? currentUser;
+      const isSessionProfile = isOwnProfile && !!authUser;
+      const isTreyProfile = isTreyOwnerProfile({ uid });
+      const fallback = isSessionProfile ? authUser : isTreyProfile ? currentUser : null;
+      const isFallbackCreator =
+        isTreyProfile ||
+        (isSessionProfile && (fallback?.verified === "creator" || role === "creator" || role === "admin"));
       return {
         uid,
-        displayName: fallback.name,
-        handle: fallback.handle,
-        avatarUrl: fallback.avatar as string,
-        bannerUrl: (fallback as any).banner || banner,
-        bio: fallback.bio,
-        location: fallback.location,
-        websiteLink: (fallback as any).link,
-        tagline: (fallback as any).tagline,
-        pronouns: (fallback as any).pronouns,
-        birthday: (fallback as any).birthday,
-        favoriteGenres: (fallback as any).favoriteGenres,
-        favoriteCreators: (fallback as any).favoriteCreators,
-        socialInstagram: (fallback as any).socialInstagram,
-        socialTikTok: (fallback as any).socialTikTok,
-        socialYouTube: (fallback as any).socialYouTube,
-        profileVisibility: (fallback as any).profileVisibility,
-        showLocation: (fallback as any).showLocation,
-        showBirthday: (fallback as any).showBirthday,
+        displayName: fallback?.name ?? (loading ? "Loading profile" : "Profile unavailable"),
+        handle: fallback?.handle ?? uid,
+        avatarUrl: (fallback?.avatar as string | undefined) ?? "",
+        bannerUrl: (fallback as any)?.banner || banner,
+        bio: fallback?.bio,
+        location: fallback?.location,
+        websiteLink: (fallback as any)?.link,
+        tagline: (fallback as any)?.tagline,
+        pronouns: (fallback as any)?.pronouns,
+        birthday: (fallback as any)?.birthday,
+        favoriteGenres: (fallback as any)?.favoriteGenres,
+        favoriteCreators: (fallback as any)?.favoriteCreators,
+        socialInstagram: (fallback as any)?.socialInstagram,
+        socialTikTok: (fallback as any)?.socialTikTok,
+        socialYouTube: (fallback as any)?.socialYouTube,
+        profileVisibility: (fallback as any)?.profileVisibility,
+        showLocation: (fallback as any)?.showLocation,
+        showBirthday: (fallback as any)?.showBirthday,
         joinedDate: undefined,
-        profileType: (role === "creator" || role === "admin") ? "creator" : "user",
-        isCreator: role === "creator" || role === "admin",
-        isVerified: !!fallback.verified,
-        verifiedKind: fallback.verified ?? "user",
-        isFounder: isOwnProfile,
+        profileType: isFallbackCreator ? "creator" : "user",
+        isCreator: isFallbackCreator,
+        isVerified: !!fallback?.verified,
+        verifiedKind: fallback?.verified ?? (isFallbackCreator ? "creator" : "user"),
+        isFounder: isTreyProfile,
         stats: {
-          posts: fallback.stats?.posts ?? 0,
-          followers: fallback.stats?.followers ?? 0,
-          following: fallback.stats?.following ?? 0,
-          prescriptions: fallback.stats?.prescriptions,
+          posts: fallback?.stats?.posts ?? 0,
+          followers: fallback?.stats?.followers ?? 0,
+          following: fallback?.stats?.following ?? 0,
+          prescriptions: fallback?.stats?.prescriptions,
           // Creator extras populated once real data flows in
           episodes: 0,
           subscribers: "—",
@@ -95,20 +108,27 @@ function PublicProfileRoute() {
         },
         rewards: (authUser as any)?.rewards ?? { points: 12480, tier: "GOLD" },
         interests: [],
-        creatorStatus: authUser?.creatorStatus,
-        accentColor: (authUser as any)?.accent ?? null,
+        creatorStatus: isSessionProfile ? authUser?.creatorStatus : undefined,
+        accentColor: isSessionProfile ? ((authUser as any)?.accent ?? null) : null,
       };
     }
 
     // Real Supabase profile
     const isCreatorProfile =
+      dbProfile.creator_status === "approved" ||
+      dbProfile.role === "creator" ||
+      dbProfile.role === "admin" ||
       (isOwnProfile && (role === "creator" || role === "admin"));
+    const isTreyProfile = isTreyOwnerProfile({
+      username: dbProfile.username,
+      public_profile_uid: dbProfile.public_profile_uid,
+    });
 
     return {
       uid,
       displayName: dbProfile.display_name || dbProfile.username || "Anonymous",
       handle: dbProfile.username || "anonymous",
-      avatarUrl: dbProfile.avatar_url || (authUser?.avatar as string) || currentUser.avatar,
+      avatarUrl: dbProfile.avatar_url || "",
       bannerUrl: dbProfile.banner_url || banner,
       bio: dbProfile.bio ?? undefined,
       location: dbProfile.location ?? undefined,
@@ -134,12 +154,12 @@ function PublicProfileRoute() {
       isCreator: isCreatorProfile,
       isVerified: isCreatorProfile || (isOwnProfile && isApprovedCreator),
       verifiedKind: isCreatorProfile ? "creator" : "user",
-      isFounder: isOwnProfile && (role === "admin" || authUser?.uid === currentUser.uid),
+      isFounder: isTreyProfile,
       stats: {
         posts: dbProfile.post_count ?? 0,
         followers: dbProfile.follower_count ?? 0,
         following: dbProfile.following_count ?? 0,
-        prescriptions: currentUser.stats.prescriptions,
+        prescriptions: undefined,
         episodes: 0,
         subscribers: "—",
         watchHours: "—",
@@ -148,10 +168,36 @@ function PublicProfileRoute() {
         ? ((authUser as any)?.rewards ?? { points: 12480, tier: "GOLD" })
         : undefined,
       interests: [],
-      creatorStatus: isOwnProfile ? authUser?.creatorStatus : undefined,
+      creatorStatus: (dbProfile.creator_status as any) ?? (isOwnProfile ? authUser?.creatorStatus : undefined),
       accentColor: dbProfile.profile_accent_color,
+      zodiacSunSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_sun_sign,
+      zodiacMoonSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_moon_sign,
+      zodiacRisingSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_rising_sign,
+      zodiacIsCusp: dbProfile.zodiac_public_opt_in !== false && !!dbProfile.zodiac_is_cusp,
+      zodiacCuspLabel: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_cusp_label,
+      zodiacBadgeKey: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_badge_key,
+      zodiacPublicOptIn: dbProfile.zodiac_public_opt_in !== false,
+      birthChartHighlights: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.birth_chart_json,
     };
   }, [dbProfile, loading, uid, authUser, isGuest, isOwnProfile, role, isApprovedCreator]);
 
-  return <ProfilePageShell profile={profileData} viewerRole={viewerRole} />;
+  if (pathname.endsWith("/channel")) {
+    return <Outlet />;
+  }
+
+  // Determine variant for ProfilePageNew
+  const isTreyProfile = isTreyOwnerProfile({
+    username: dbProfile?.username,
+    public_profile_uid: dbProfile?.public_profile_uid,
+    uid,
+  });
+  const variant: ProfileVariant = isOwnProfile
+    ? isTreyProfile
+      ? "owner"
+      : profileData.isCreator
+        ? "creator"
+        : "user"
+    : "public";
+
+  return <ProfilePageNew profile={profileData} variant={variant} />;
 }

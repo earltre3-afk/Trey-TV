@@ -86,7 +86,7 @@ function CreatorLockedScreen() {
           </p>
           <div className="mt-6 flex flex-col gap-2">
             <button
-              onClick={() => navigate({ to: "/premium" })}
+              onClick={() => navigate({ to: "/apply/content-creator" })}
               className="px-4 py-3 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift"
             >
               Apply to become a Creator

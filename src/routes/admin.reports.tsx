@@ -22,20 +22,34 @@ function ReportsAdmin() {
   const { data } = useQuery({
     queryKey: ["admin", "reports", tab],
     queryFn: async () => {
-      let q = supabase.from("user_reports").select("*").order("created_at", { ascending: false }).limit(200);
-      if (tab !== "all") q = q.eq("status", tab);
-      return (await q).data ?? [];
+      let userReports = supabase.from("user_reports").select("*").order("created_at", { ascending: false }).limit(200);
+      let groupReports = (supabase as any).from("zodiac_group_reports").select("*, group:zodiac_group_threads(group_name, group_key)").order("created_at", { ascending: false }).limit(200);
+      if (tab !== "all") {
+        userReports = userReports.eq("status", tab);
+        groupReports = groupReports.eq("status", tab);
+      }
+      const [users, groups] = await Promise.all([userReports, groupReports]);
+      return [
+        ...((users.data ?? []) as any[]).map((row) => ({ ...row, report_table: "user_reports" })),
+        ...((groups.data ?? []) as any[]).map((row) => ({
+          ...row,
+          report_table: "zodiac_group_reports",
+          target_type: row.message_id ? "zodiac_group_message" : "zodiac_group",
+          target_id: row.message_id ?? row.group_thread_id,
+        })),
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
   const resolve = async (r: any, status: "resolved" | "dismissed") => {
     const reason = prompt(`Notes for ${status}:`) ?? "";
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("user_reports").update({
+    const table = r.report_table === "zodiac_group_reports" ? "zodiac_group_reports" : "user_reports";
+    const { error } = await (supabase as any).from(table).update({
       status, resolved_at: new Date().toISOString(), resolved_by: user?.id,
     }).eq("id", r.id);
     if (error) return toast.error(error.message);
-    await logAdminAction({ action: `report_${status}`, target_type: "report", target_id: r.id, reason, metadata: { target_type: r.target_type, target_id: r.target_id } });
+    await logAdminAction({ action: `report_${status}`, target_type: table, target_id: r.id, reason, metadata: { target_type: r.target_type, target_id: r.target_id } });
     toast.success(`Report ${status}`);
     qc.invalidateQueries({ queryKey: ["admin", "reports"] });
   };
@@ -67,7 +81,7 @@ function ReportsAdmin() {
                   <span className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
                 </div>
                 <div className="text-sm font-bold mt-1">{r.reason}</div>
-                <div className="text-[11px] text-muted-foreground">{r.target_type} · {r.target_id}</div>
+                <div className="text-[11px] text-muted-foreground">{r.target_type} · {r.group?.group_name ?? r.target_id}</div>
                 {r.details && <div className="text-xs text-foreground/80 mt-1 line-clamp-3">{r.details}</div>}
               </div>
               {r.status === "pending" && (

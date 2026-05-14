@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin-api";
 import { toast } from "sonner";
 import { Crown, BadgeCheck } from "lucide-react";
+import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
+import { isPublicProfileUid } from "@/lib/profile-links";
 
 export const Route = createFileRoute("/admin/creators")({
   component: CreatorsAdmin,
@@ -39,14 +41,18 @@ function CreatorsAdmin() {
           <div className="text-center text-sm text-muted-foreground p-6">No approved creators yet.</div>
         ) : data!.map((u: any) => (
           <div key={u.id} className="flex items-center gap-3 p-3 rounded-2xl glass border border-white/10">
-            <img src={u.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.id}`} className="size-10 rounded-full object-cover bg-white/5" alt="" />
+            <ProfilePictureLink publicProfileUid={u.public_profile_uid} label={`Open @${u.username}'s public profile`} className="shrink-0">
+              <img src={u.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.id}`} className="size-10 rounded-full object-cover bg-white/5" alt="" />
+            </ProfilePictureLink>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-semibold flex items-center gap-1 truncate">
                 {u.display_name || u.username} <Crown className="size-3 text-primary" /> {u.gold_verified && <BadgeCheck className="size-3 text-primary" />}
               </div>
               <div className="text-[11px] text-muted-foreground truncate">@{u.username}</div>
             </div>
-            <Link to="/u/$uid" params={{ uid: u.id }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10">View</Link>
+            {isPublicProfileUid(u.public_profile_uid) && (
+              <Link to="/u/$uid" params={{ uid: u.public_profile_uid }} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-white/10">View</Link>
+            )}
             <button onClick={() => revoke(u)} className="px-3 py-1.5 rounded-lg text-xs font-semibold glass border border-rose-400/40 text-rose-300 hover:bg-rose-400/10">Revoke</button>
           </div>
         ))}

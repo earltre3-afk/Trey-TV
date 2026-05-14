@@ -157,3 +157,108 @@ export const treyIGenerate = createServerFn({ method: "POST" })
       return { error: err instanceof Error ? err.message : "Generation failed" };
     }
   });
+
+type InsightInput = {
+  title: string;
+  artist: string;
+  genre: string;
+  notes: string;
+};
+
+export const generateMusicReviewInsight = createServerFn({ method: "POST" })
+  .inputValidator((input: InsightInput) => ({
+    title: String(input.title || "Untitled").slice(0, 100),
+    artist: String(input.artist || "Unknown").slice(0, 100),
+    genre: String(input.genre || "Other").slice(0, 50),
+    notes: String(input.notes || "").slice(0, 500),
+  }))
+  .handler(async ({ data }) => {
+    try {
+      const { genai, model } = buildClient();
+      const prompt = `Title: ${data.title}\nArtist: ${data.artist}\nGenre: ${data.genre}\nVibe Notes: ${data.notes}`;
+      const systemInstruction = 
+        "You are Trey-I, a sharp and experienced A&R for Trey TV. Provide a 'first impression' vibe check for this submitted track info. " +
+        "Output ONLY a valid JSON object matching this schema exactly, with no markdown formatting: " +
+        `{ "vibe": "short 4-6 word description", "strengths": ["string", "string"], "hook": "1 sentence on what to listen for", "hypeScore": number 1-10, "predictedMood": "1 word" }`;
+
+      const result = await genai.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+          maxOutputTokens: 256,
+          responseMimeType: "application/json",
+        } as any,
+      });
+
+      const text =
+        (result as any).text ??
+        (result as any).candidates?.[0]?.content?.parts?.[0]?.text ??
+        "";
+
+      if (!text) throw new Error("Empty response");
+      
+      const parsed = JSON.parse(text);
+      return {
+        vibe: String(parsed.vibe || "Fresh unreleased energy"),
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 3).map(String) : ["Atmosphere", "Potential"],
+        hook: String(parsed.hook || "Listen for the energy shift in the chorus."),
+        hypeScore: typeof parsed.hypeScore === "number" ? Math.min(10, Math.max(1, parsed.hypeScore)) : 7,
+        predictedMood: String(parsed.predictedMood || "Reflective"),
+      };
+    } catch (err) {
+      console.error("[generateMusicReviewInsight]", err);
+      // Fallback
+      return {
+        vibe: "Underground energy",
+        strengths: ["Raw potential", "Authentic feel"],
+        hook: "Listen for the rhythmic pocket on the hook.",
+        hypeScore: 7,
+        predictedMood: "Hype",
+      };
+    }
+  });
+
+export const generateAdminReviewDraft = createServerFn({ method: "POST" })
+  .inputValidator((input: { title: string; artist: string; genre: string; vibe: string; bodyNotes: string }) => ({
+    title: String(input.title || "Untitled").slice(0, 100),
+    artist: String(input.artist || "Unknown").slice(0, 100),
+    genre: String(input.genre || "Other").slice(0, 50),
+    vibe: String(input.vibe || "").slice(0, 100),
+    bodyNotes: String(input.bodyNotes || "").slice(0, 2000),
+  }))
+  .handler(async ({ data }) => {
+    try {
+      const { genai, model } = buildClient();
+      const prompt = `Title: ${data.title}\nArtist: ${data.artist}\nGenre: ${data.genre}\nAI Vibe: ${data.vibe}\nAdmin's Rough Notes: ${data.bodyNotes}`;
+      const systemInstruction = 
+        "You are Trey-I, assisting the A&R admin for Trey TV. Write a professional, encouraging, and constructive music review. " +
+        "Use the provided track info and expand cleanly on the Admin's Rough Notes. " +
+        "If rough notes are empty, generate a plausible, constructive review based on the title/genre/vibe. " +
+        "Do not include the score out of 10. Just write 1-2 polished paragraphs. End with '— Reviewed live on Trey TV'";
+
+      const result = await genai.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+          maxOutputTokens: 500,
+        } as any,
+      });
+
+      const text =
+        (result as any).text ??
+        (result as any).candidates?.[0]?.content?.parts?.[0]?.text ??
+        "";
+
+      if (!text) throw new Error("Empty response");
+      return { text: sanitize(text) };
+    } catch (err) {
+      console.error("[generateAdminReviewDraft]", err);
+      return {
+        text: `"${data.title}" by ${data.artist} lands as a strong track. The ${data.genre.toLowerCase()} foundation gives it a clear identity. Strongest moments live in the hook. To take it to the next level, tighten the transition into the second verse. Overall: a confident submission with commercial DNA.\n\n— Reviewed live on Trey TV`,
+      };
+    }
+  });

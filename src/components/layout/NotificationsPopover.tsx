@@ -3,6 +3,7 @@ import { Heart, MessageCircle, UserPlus, Zap, Sparkles, Radio, CheckCheck, X, Be
 import { Link } from "@tanstack/react-router";
 import { useNotifications, type NotificationItem } from "@/hooks/use-notifications";
 import { toast } from "sonner";
+import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 
 const iconFor = (k: NotificationItem["kind"]) => ({
   like: Heart,
@@ -99,7 +100,9 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
 
                 <div className="relative shrink-0">
                   {n.who ? (
-                    <img src={n.who.avatar} alt="" className="size-10 rounded-full object-cover ring-1 ring-white/10" />
+                    <ProfilePictureLink publicProfileUid={n.who.publicProfileUid} label={`Open @${n.who.handle}'s public profile`}>
+                      <img src={n.who.avatar} alt="" className="size-10 rounded-full object-cover ring-1 ring-white/10" />
+                    </ProfilePictureLink>
                   ) : (
                     <div className={`size-10 rounded-full grid place-items-center ${tintFor(n.kind)}`}>
                       <Icon className="size-5" />

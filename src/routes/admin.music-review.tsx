@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
-import { useMusicReview, generateAIReviewDraft, TIER_META, type Submission } from "@/lib/music-review-store";
+import { useMusicReview, TIER_META, type Submission } from "@/lib/music-review-store";
+import { generateAdminReviewDraft } from "@/lib/trey-i/vertex.server";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/music-review")({
@@ -84,7 +85,7 @@ function AdminMusicReviewPage() {
                         {s.paymentStatus === "verified" && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">paid</span>}
                         {s.topOfDay && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/40 inline-flex items-center gap-1"><Star className="size-2.5" /> Top 3</span>}
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">{s.artist} · {s.genre} · {s.userName}</div>
+                      <div className="text-xs text-muted-foreground truncate">{s.artist} · {s.genre} · {s.userName} ({s.userUid})</div>
                     </div>
                     <div className="flex items-center gap-1">
                       <IconBtn title="Move up" onClick={() => move(s.id, -1)} disabled={i === 0}><ChevronUp className="size-4" /></IconBtn>
@@ -160,8 +161,21 @@ function ReviewComposer({ sub, onClose }: { sub: Submission; onClose: () => void
 
   const draftWithAI = async () => {
     setDrafting(true);
-    await new Promise((r) => setTimeout(r, 900));
-    setBody(generateAIReviewDraft(sub));
+    try {
+      const res = await generateAdminReviewDraft({
+        data: {
+          title: sub.title,
+          artist: sub.artist,
+          genre: sub.genre,
+          vibe: sub.aiFirstImpression?.vibe ?? "",
+          bodyNotes: body,
+        }
+      });
+      setBody(res.text);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate AI draft");
+    }
     setDrafting(false);
   };
 
@@ -185,7 +199,7 @@ function ReviewComposer({ sub, onClose }: { sub: Submission; onClose: () => void
         <button onClick={onClose} className="size-7 grid place-items-center rounded-full hover:bg-white/5"><X className="size-4" /></button>
       </div>
       <div className="text-xl font-black">{sub.title}</div>
-      <div className="text-xs text-muted-foreground">{sub.artist} · {sub.genre} · {sub.userName}</div>
+      <div className="text-xs text-muted-foreground">{sub.artist} · {sub.genre} · {sub.userName} ({sub.userUid})</div>
       {sub.aiFirstImpression && (
         <div className="mt-3 rounded-xl bg-white/5 border border-white/10 p-3 text-xs">
           <div className="font-semibold text-[oklch(0.82_0.15_215)]">{sub.aiFirstImpression.vibe}</div>

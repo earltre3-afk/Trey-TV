@@ -7,7 +7,7 @@ export type Comment = {
   id: string;
   postId: string;
   parentId?: string;
-  author: { id?: string; name: string; handle: string; avatar: string };
+  author: { id?: string; publicProfileUid?: string | null; name: string; handle: string; avatar: string };
   text: string;
   likes: number;
   likedByMe: boolean;
@@ -110,6 +110,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       parentId: row.parent_comment_id || undefined,
       author: {
         id: row.creator_id,
+        publicProfileUid: row.profiles?.public_profile_uid || null,
         name: row.profiles?.display_name || "Unknown",
         handle: row.profiles?.username || "unknown",
         avatar: row.profiles?.avatar_url || "",
@@ -147,6 +148,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       parentId,
       author: {
         id: supabaseUser?.id,
+        publicProfileUid: currentUser.uid || null,
         name: currentUser.name,
         handle: currentUser.handle,
         avatar: currentUser.avatar,

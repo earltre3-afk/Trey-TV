@@ -118,19 +118,19 @@ function CreatorGate({ status }: { status: string }) {
       title: "Creator Studio is for approved creators",
       body: "Apply to join the Trey TV network and unlock the upload, edit studio, analytics, fans, and rewards tools.",
       cta: "Apply to become a Creator",
-      to: "/premium",
+      to: "/apply/content-creator",
     },
     pending: {
       title: "Your creator application is in review",
       body: "Our team is reviewing your channel. You'll be notified the moment you're approved — usually within 48 hours.",
       cta: "View application status",
-      to: "/premium",
+      to: "/apply/content-creator",
     },
     rejected: {
       title: "Your application needs updates",
       body: "We left feedback on your application. Update your channel details and submit again.",
       cta: "Update application",
-      to: "/premium",
+      to: "/apply/content-creator",
     },
     approved: { title: "", body: "", cta: "", to: "/" },
   };

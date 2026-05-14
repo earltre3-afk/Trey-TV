@@ -1,171 +1,262 @@
-import type React from "react";
-import { createFileRoute, useNavigate, Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { ChevronRight, Clock, Diamond, Crown, Star } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Logo } from "@/components/brand/Logo";
+import { ArrowLeft, ArrowRight, ChevronRight, Clock, Crown, Diamond, ShieldCheck, Star, Tv } from "lucide-react";
+import creatorIcon from "@/assets/apply-creator-icon.jpg";
+import goldIcon from "@/assets/apply-gold-icon.jpg";
 
 export const Route = createFileRoute("/apply")({
   component: ApplyRoot,
   head: () => ({
     meta: [
-      { title: "Apply — Trey TV" },
-      { name: "description", content: "Apply to become a creator or get Gold Verification on Trey TV." },
+      { title: "Choose Your Trey TV Path" },
+      { name: "description", content: "Apply to create a channel or request Go verification on Trey TV." },
     ],
   }),
 });
 
-type BottomIcon =
-  | { isLogo: true; label: string }
-  | { isLogo?: false; icon: React.ElementType; label: string };
-
-const BOTTOM_ICONS: BottomIcon[] = [
-  { icon: Star, label: "Curated" },
-  { icon: Diamond, label: "Premium" },
-  { icon: Crown, label: "Exclusive" },
-  { isLogo: true, label: "Trey TV" },
-];
-
 function ApplyRoot() {
   const { location } = useRouterState();
   if (location.pathname !== "/apply") return <Outlet />;
-  return <ApplyChoice />;
+  return <ApplyHub />;
 }
 
-function ApplyChoice() {
-  const { isGuest } = useAuth();
+const FEATURES = [
+  { icon: <Diamond className="h-4 w-4" />, label: "Curated", sub: "Hand-picked content" },
+  { icon: <Crown className="h-4 w-4" />, label: "Premium", sub: "Elite creator status" },
+  { icon: <Star className="h-4 w-4" />, label: "Exclusive", sub: "Invite-only access" },
+];
+
+function ApplyHub() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isGuest) {
-      try { sessionStorage.setItem("treytv_post_auth_redirect", "/apply"); } catch {}
-      navigate({ to: "/login" });
-    }
-  }, [isGuest, navigate]);
-
-  if (isGuest) return null;
+  const handleBack = () => {
+    void navigate({ to: "/" });
+  };
 
   return (
-    <div
-      className="min-h-screen flex flex-col overflow-hidden"
-      style={{ background: "radial-gradient(ellipse 120% 60% at 50% 0%, oklch(0.18 0.08 215 / 0.5) 0%, #02050B 60%)" }}
-    >
-      {/* Ambient glow arcs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-[oklch(0.82_0.15_215_/_0.08)] blur-[120px]" />
-        <div className="absolute -top-20 -right-40 w-[400px] h-[400px] rounded-full bg-[oklch(0.65_0.22_300_/_0.06)] blur-[100px]" />
-      </div>
+    /* ── Full-viewport liquid stage ── */
+    <div className="apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] gold">
+      <div className="grid-veil" aria-hidden />
+      <div className="orb-extra" aria-hidden />
+      <button
+        type="button"
+        onClick={handleBack}
+        className="neon-btn-ghost absolute left-4 top-4 mt-[max(0.5rem,env(safe-area-inset-top))] z-30 gap-2 px-3 py-2 text-xs text-white/75 hover:text-white sm:left-6 sm:top-6 sm:text-sm lg:left-8 lg:top-8"
+        aria-label="Go back"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Back</span>
+      </button>
 
-      <div className="relative flex-1 flex flex-col px-5 pt-10 pb-6 max-w-lg mx-auto w-full">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 -m-4 rounded-full blur-2xl opacity-40 bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85_/_0.6),oklch(0.82_0.15_215_/_0.5),oklch(0.65_0.22_300_/_0.4),oklch(0.82_0.16_85_/_0.6))] animate-conic-spin" />
-            <Logo className="relative h-16 mx-auto drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.8)]" />
+      {/* ══ MOBILE: centred single-column ══ DESKTOP: two-column split ══ */}
+      <div className="mx-auto flex min-h-[100dvh] max-w-7xl flex-col lg:flex-row lg:items-stretch">
+
+        {/* ─── LEFT PANEL — hero / branding ─── */}
+        <div className="flex flex-col items-center justify-center px-6 sm:px-8 py-10 sm:py-12 pt-[max(3rem,calc(env(safe-area-inset-top)+1.5rem))] text-center lg:w-[42%] lg:items-start lg:px-16 lg:py-20 lg:pt-20 lg:text-left xl:px-24">
+
+          {/* Logo */}
+          <Logo className="logo-float h-24 md:h-28 lg:h-32" />
+
+          {/* Headline */}
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl lg:leading-[1.08]">
+            <span className="text-foreground">Choose Your </span>
+            <br className="hidden lg:block" />
+            <span className="title-split-blue">Trey TV</span>
+            <span className="text-foreground"> Path</span>
+          </h1>
+
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground lg:text-base">
+            Apply to create a channel or request Go verification if you're notable. Every creator starts here.
+          </p>
+
+          {/* Feature pills — desktop only */}
+          <div className="mt-8 hidden space-y-3 lg:block">
+            {FEATURES.map((f) => (
+              <div
+                key={f.label}
+                className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-4 py-3 backdrop-blur-sm"
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[oklch(0.85_0.2_240)]"
+                  style={{ boxShadow: "inset 0 0 0 1px oklch(0.65 0.22 245 / 0.4), 0 0 12px oklch(0.6 0.3 245 / 0.18)" }}
+                >
+                  {f.icon}
+                </span>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">{f.label}</p>
+                  <p className="text-xs text-muted-foreground">{f.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Status link */}
+          <Link
+            to="/applications"
+            className="mt-8 inline-flex items-center gap-1.5 text-xs text-white/45 transition hover:text-white lg:mt-10 lg:text-sm"
+          >
+            Check my application status <ChevronRight className="h-3 w-3" />
+          </Link>
+
+          {/* Mobile feature badges */}
+          <div className="mt-6 grid grid-cols-3 gap-2 lg:hidden">
+            {[
+              { icon: <Diamond className="h-3.5 w-3.5" />, label: "Curated" },
+              { icon: <Crown className="h-3.5 w-3.5" />, label: "Premium" },
+              { icon: <Star className="h-3.5 w-3.5" />, label: "Exclusive" },
+            ].map((c) => (
+              <span key={c.label} className="neon-btn-ghost justify-center px-2 py-2 text-xs">
+                <span className="text-[oklch(0.85_0.2_240)]">{c.icon}</span> {c.label}
+              </span>
+            ))}
           </div>
         </div>
 
-        {/* Headline */}
-        <div className="text-center mb-8 space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight leading-tight">
-            Choose Your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[oklch(0.92_0.18_85)] to-primary drop-shadow-[0_0_20px_oklch(0.82_0.16_85_/_0.8)]">
-              Trey TV
-            </span>{" "}
-            Path
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Apply to create a channel or request gold verification if you're notable.
+        {/* ─── RIGHT PANEL — path cards ─── */}
+        <div className="flex flex-col justify-center gap-5 px-6 pb-[max(4rem,env(safe-area-inset-bottom))] lg:w-[58%] lg:py-20 lg:pr-16 xl:pr-24">
+
+          {/* Desktop section eyebrow */}
+          <div className="hidden items-center gap-3 lg:flex">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[oklch(0.65_0.22_245/0.35)]" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[oklch(0.65_0.22_245)]">
+              Select Your Path
+            </span>
+            <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[oklch(0.65_0.22_245/0.35)]" />
+          </div>
+
+          {/* Cards */}
+          <DesktopPathCard
+            variant="creator"
+            image={creatorIcon}
+            tag="Apply to Create"
+            tagIcon={<Tv className="h-4 w-4" />}
+            desc="Launch your own channel, build your brand, and share your vision with the world on Trey TV."
+            cta="Start Creator Application"
+            time="5–7 minutes"
+            to="/apply/content-creator"
+          />
+          <DesktopPathCard
+            variant="gold"
+            image={goldIcon}
+            tag="Go Verification"
+            tagIcon={<ShieldCheck className="h-4 w-4" />}
+            desc="Request a Go badge to verify your notable status and stand out on Trey TV."
+            cta="Request Go Badge"
+            time="3–5 minutes"
+            to="/apply/go-verification"
+          />
+
+          {/* Desktop small print */}
+          <p className="hidden text-center text-xs text-white/30 lg:block">
+            Applications are reviewed by the Trey TV team. Approval is not automatic.
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
 
-        {/* Cards */}
-        <div className="space-y-4 flex-1">
-          {/* Apply to Create — neon blue */}
-          <div className="relative rounded-3xl overflow-hidden border border-[oklch(0.82_0.15_215_/_0.5)] bg-gradient-to-br from-[oklch(0.14_0.06_215_/_0.9)] to-[oklch(0.10_0.04_230_/_0.95)] shadow-[0_0_60px_-10px_oklch(0.82_0.15_215_/_0.5),inset_0_1px_0_oklch(0.82_0.15_215_/_0.3)]">
-            {/* Inner glow edge */}
-            <div className="absolute inset-0 rounded-3xl border border-[oklch(0.82_0.15_215_/_0.2)] pointer-events-none" />
-            <div className="flex items-start gap-4 p-5">
-              {/* Icon scene */}
-              <div className="shrink-0 size-24 rounded-2xl bg-[oklch(0.82_0.15_215_/_0.1)] border border-[oklch(0.82_0.15_215_/_0.3)] grid place-items-center shadow-[inset_0_0_30px_oklch(0.82_0.15_215_/_0.15)]">
-                <span className="text-4xl select-none">🎬</span>
-              </div>
-              <div className="flex-1 min-w-0 py-1">
-                <h2 className="text-xl font-extrabold mb-1">Apply to Create</h2>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Launch your own channel, build your brand, and share your vision with the world on Trey TV.
-                </p>
-                <Link
-                  to="/apply/creator"
-                  className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[oklch(0.55_0.18_215)] hover:bg-[oklch(0.60_0.18_215)] text-white text-sm font-bold transition shadow-[0_0_20px_oklch(0.82_0.15_215_/_0.5)]"
-                >
-                  Start Creator Application <ChevronRight className="size-4" />
-                </Link>
-                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Clock className="size-3" /> 5–7 minutes
-                </div>
-              </div>
-            </div>
+/* ─── Unified card: mobile horizontal, desktop richer ─── */
+function DesktopPathCard({
+  variant,
+  image,
+  tag,
+  tagIcon,
+  desc,
+  cta,
+  time,
+  to,
+}: {
+  variant: "creator" | "gold";
+  image: string;
+  tag: string;
+  tagIcon: React.ReactNode;
+  desc: string;
+  cta: string;
+  time: string;
+  to: string;
+}) {
+  const isGold = variant === "gold";
+  const outer = isGold ? "neon-gold" : "neon-blue";
+  const accent = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
+  const btn = isGold ? "neon-btn-gold" : "neon-btn-blue";
+  const tagBg = isGold
+    ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
+    : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
+
+  return (
+    <div className={`group relative ${outer} p-4 transition-all duration-300 hover:-translate-y-0.5 lg:p-6`}>
+      <Link to={to} className="absolute inset-0 z-10" aria-label={cta} />
+      <div className="swoosh-bg" />
+      <div className="liquid-sheen" />
+
+      {/* ── Mobile layout: horizontal image + text ── */}
+      <div className="relative grid grid-cols-[110px_1fr] items-center gap-3 lg:hidden">
+        <img src={image} alt={tag} loading="lazy" className="h-[110px] w-[110px] rounded-2xl object-cover" />
+        <div className="min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className={`text-lg font-semibold ${accent}`}>{tag}</h3>
+            <ChevronRight className={`h-5 w-5 ${accent}`} />
           </div>
+          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{desc}</p>
+        </div>
+      </div>
+      <div className="relative z-20 mt-3 lg:hidden">
+        <Link to={to} className={`${btn} w-full py-3 text-sm`}>
+          {cta} <ChevronRight className="h-4 w-4" />
+        </Link>
+        <p className={`mt-2 inline-flex items-center gap-1.5 text-xs ${accent}`}>
+          <Clock className="h-3 w-3" /> {time}
+        </p>
+      </div>
 
-          {/* Gold Verification — neon gold */}
-          <div className="relative rounded-3xl overflow-hidden border border-[oklch(0.82_0.16_85_/_0.7)] bg-gradient-to-br from-[oklch(0.16_0.07_85_/_0.95)] to-[oklch(0.11_0.04_70_/_0.98)] shadow-[0_0_70px_-10px_oklch(0.82_0.16_85_/_0.7),inset_0_1px_0_oklch(0.82_0.16_85_/_0.4)]">
-            <div className="absolute inset-0 rounded-3xl border border-[oklch(0.82_0.16_85_/_0.25)] pointer-events-none" />
-            {/* Featured badge */}
-            <div className="absolute top-4 right-4">
-              <span className="inline-flex items-center gap-1 text-[9px] font-bold tracking-[0.15em] px-2.5 py-1 rounded-full bg-primary/20 text-primary border border-primary/50">
-                <Star className="size-2.5" fill="currentColor" /> FEATURED
-              </span>
-            </div>
-            <div className="flex items-start gap-4 p-5 pr-[6rem]">
-              {/* Gold shield */}
-              <div className="shrink-0 size-24 rounded-2xl bg-[oklch(0.82_0.16_85_/_0.15)] border border-[oklch(0.82_0.16_85_/_0.4)] grid place-items-center shadow-[inset_0_0_30px_oklch(0.82_0.16_85_/_0.2),0_0_30px_oklch(0.82_0.16_85_/_0.3)]">
-                <span className="text-4xl select-none">🛡️</span>
-              </div>
-              <div className="flex-1 min-w-0 py-1">
-                <h2 className="text-xl font-extrabold mb-1">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[oklch(0.92_0.18_85)] to-primary">
-                    Gold Verification
-                  </span>
-                </h2>
-                <p className="text-xs text-muted-foreground leading-relaxed mb-4">
-                  Request a gold badge to verify your notable status and stand out on Trey TV.
-                </p>
-                <Link
-                  to="/apply/verification"
-                  className="inline-flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-[oklch(0.65_0.18_75)] to-[oklch(0.70_0.20_80)] hover:from-[oklch(0.70_0.20_80)] hover:to-[oklch(0.75_0.20_85)] text-black text-sm font-bold transition glow-gold"
-                >
-                  Request Gold Badge <ChevronRight className="size-4" />
-                </Link>
-                <div className="mt-2.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Clock className="size-3" /> 3–5 minutes
-                </div>
-              </div>
-            </div>
+      {/* ── Desktop layout: image left, rich content right ── */}
+      <div className="relative hidden lg:flex lg:gap-6">
+        {/* Image with glow wrap */}
+        <div className="shrink-0">
+          <div
+            className="overflow-hidden rounded-2xl"
+            style={{
+              padding: "3px",
+              background: isGold
+                ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
+                : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
+              boxShadow: isGold
+                ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
+                : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
+            }}
+          >
+            <img
+              src={image}
+              alt={tag}
+              loading="lazy"
+              className="h-[140px] w-[140px] rounded-[13px] object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            />
           </div>
         </div>
 
-        {/* Bottom icon row */}
-        <div className="mt-6 grid grid-cols-4 gap-2">
-          {BOTTOM_ICONS.map((item) => (
-            <div key={item.label} className="flex flex-col items-center gap-1.5">
-              <div className="size-14 rounded-2xl liquid-glass border border-white/10 grid place-items-center">
-                {item.isLogo ? (
-                  <Logo className="h-7" />
-                ) : (
-                  <item.icon className="size-6 text-primary" />
-                )}
-              </div>
-              <span className="text-[10px] text-muted-foreground">{item.label}</span>
+        {/* Content */}
+        <div className="flex flex-1 flex-col justify-between py-1">
+          <div>
+            {/* Tag pill */}
+            <div className={`mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${accent} ${tagBg}`}>
+              {tagIcon}
+              {tag}
             </div>
-          ))}
-        </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+          </div>
 
-        {/* Check status link */}
-        <div className="mt-5 text-center">
-          <Link to="/applications" className="text-xs text-muted-foreground hover:text-foreground transition inline-flex items-center gap-1.5">
-            Check my application status <ChevronRight className="size-3" />
-          </Link>
+          <div className="mt-4 flex items-center gap-4">
+            <Link
+              to={to}
+              className={`relative z-20 ${btn} flex-1 py-3 text-sm`}
+            >
+              {cta} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <span className={`inline-flex shrink-0 items-center gap-1.5 text-xs ${accent}`}>
+              <Clock className="h-3.5 w-3.5" /> {time}
+            </span>
+          </div>
         </div>
       </div>
     </div>

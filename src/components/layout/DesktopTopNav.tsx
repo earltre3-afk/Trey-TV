@@ -12,12 +12,13 @@ import { useNotifications } from "@/lib/notifications-store";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 
-type NavLink = { to: string; icon: typeof Home; label: string; badge?: number };
+type NavLink = { to: string; icon?: typeof Home; label: string; badge?: number };
 
 const guestLinks: readonly NavLink[] = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/explore", icon: Compass, label: "Discover" },
   { to: "/guide", icon: CalendarDays, label: "Guide" },
+  { to: "/games", label: "Games" },
 ];
 
 const signedInLinks: readonly NavLink[] = [
@@ -26,6 +27,7 @@ const signedInLinks: readonly NavLink[] = [
   { to: "/explore", icon: Compass, label: "Discover" },
   { to: "/guide", icon: CalendarDays, label: "Guide" },
   { to: "/prescribe-me", icon: Heart, label: "Prescribe" },
+  { to: "/games", label: "Games" },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
 ];
 
@@ -86,7 +88,7 @@ export function DesktopTopNav() {
                     : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 }`}
               >
-                <l.icon className="size-4" />
+                {l.icon && <l.icon className="size-4" />}
                 <span>{l.label}</span>
                 {l.label === "Inbox" && !isGuest ? (
                   <span className="ml-0.5 size-4 grid place-items-center rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold text-white">

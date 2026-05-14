@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Tv, Radio, Bell, BookmarkPlus, CalendarPlus, UserPlus, Play, Lock, Filter,
+  Tv, Radio, Bell, BookmarkPlus, CalendarPlus, Play, Lock, Filter,
   Crown, ChevronLeft, ChevronRight, Check,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
@@ -9,7 +9,6 @@ import {
   channels, scheduleSlots, episodeById, channelById, categories, type ScheduleSlot,
 } from "@/lib/watch-data";
 import { useGuide } from "@/lib/guide-store";
-import { useFollow } from "@/lib/follow-store";
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription, DrawerFooter,
 } from "@/components/ui/drawer";
@@ -358,7 +357,6 @@ function SlotSheet({ slot, open, onClose }: { slot: ScheduleSlot; open: boolean;
   const ep = episodeById(slot.episodeId)!;
   const ch = channelById(slot.channelId)!;
   const { has, toggle } = useGuide();
-  const { isFollowing, toggle: toggleFollow } = useFollow();
   const start = new Date(slot.startsAt);
 
   const action = (label: string, key: Parameters<typeof toggle>[0], icon: any) => {
@@ -374,8 +372,6 @@ function SlotSheet({ slot, open, onClose }: { slot: ScheduleSlot; open: boolean;
       </button>
     );
   };
-
-  const following = isFollowing(ch.handle);
 
   return (
     <Drawer open={open} onOpenChange={(v) => !v && onClose()}>
@@ -405,13 +401,14 @@ function SlotSheet({ slot, open, onClose }: { slot: ScheduleSlot; open: boolean;
           {action("Watch Later", "watchLater", Play)}
           {action("My Schedule", "mySchedule", CalendarPlus)}
           {action("Reminder", "reminders", Bell)}
-          <button
-            onClick={() => { toggleFollow({ id: ch.id, name: ch.name, handle: ch.handle, avatar: ch.avatar }); toast(following ? `Unfollowed ${ch.name}` : `Following ${ch.name}`); }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition ${following ? "border-primary bg-primary/10 text-primary" : "border-white/10 hover:border-white/30"}`}
+          <Link
+            to="/channel/$handle"
+            params={{ handle: ch.handle }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 hover:border-white/30 transition"
           >
-            <UserPlus className="size-4" />
-            <span className="text-sm font-semibold">{following ? "Following" : "Follow Creator"}</span>
-          </button>
+            <Crown className="size-4" />
+            <span className="text-sm font-semibold">Open Creator</span>
+          </Link>
         </div>
 
         <DrawerFooter>

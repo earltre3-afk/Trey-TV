@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,8 @@ import { logAdminAction } from "@/lib/admin-api";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Search, Shield, ShieldOff, BadgeCheck, Crown, Ban, UserCheck } from "lucide-react";
+import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
+import { isPublicProfileUid } from "@/lib/profile-links";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersAdmin,
@@ -119,7 +121,9 @@ function UsersAdmin() {
         {!isLoading && (data?.length ?? 0) === 0 && <div className="rounded-3xl liquid-glass border border-white/10 p-8 text-center text-sm text-muted-foreground">No users match.</div>}
         {data?.map((u: any) => (
           <div key={u.id} className="p-4 rounded-2xl liquid-glass border border-white/10 flex items-center gap-3">
-            <img src={u.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.id}`} alt="" className="size-10 rounded-full object-cover bg-white/5" />
+            <ProfilePictureLink publicProfileUid={u.public_profile_uid} label={`Open @${u.username}'s public profile`} className="shrink-0">
+              <img src={u.avatar_url || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.id}`} alt="" className="size-10 rounded-full object-cover bg-white/5" />
+            </ProfilePictureLink>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="text-sm font-bold truncate">{u.display_name || u.username}</div>
@@ -133,6 +137,11 @@ function UsersAdmin() {
               {u.ban_reason && <div className="text-[11px] text-rose-300/80 mt-0.5 italic line-clamp-1">"{u.ban_reason}"{u.banned_until ? ` · until ${new Date(u.banned_until).toLocaleDateString()}` : ""}</div>}
             </div>
             <div className="flex flex-wrap gap-1.5 justify-end">
+              {isPublicProfileUid(u.public_profile_uid) && (
+                <Link to="/u/$uid" params={{ uid: u.public_profile_uid }} title="View profile" className="grid h-8 place-items-center rounded-lg border border-white/10 px-2 text-[11px] font-semibold glass hover:bg-white/5">
+                  View
+                </Link>
+              )}
               <button onClick={() => toggleGold(u)} title="Toggle Gold" className="size-8 grid place-items-center rounded-lg glass border border-white/10 hover:bg-white/5">
                 <BadgeCheck className={`size-4 ${u.gold_verified ? "text-primary" : "text-muted-foreground"}`} />
               </button>

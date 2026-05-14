@@ -13,11 +13,12 @@ export type AdminStats = {
 };
 
 export async function fetchAdminStats(): Promise<AdminStats> {
+  const supabaseAny = supabase as any;
   const counts = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "banned"),
-    supabase.from("creator_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("verification_applications").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    supabaseAny.from("creator_applications").select("id", { count: "exact", head: true }).eq("application_type", "creator").eq("status", "pending"),
+    supabaseAny.from("creator_applications").select("id", { count: "exact", head: true }).eq("application_type", "verification").eq("status", "pending"),
     supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("reward_redemptions").select("id", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("gold_verified", true),

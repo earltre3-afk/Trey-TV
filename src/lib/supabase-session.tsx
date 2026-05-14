@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { isTreyOwnerEmail } from "@/lib/trey-owner";
 
 export type AdminRole = "owner" | "admin" | "moderator" | null;
 
@@ -15,8 +16,6 @@ type Ctx = {
 };
 
 const C = createContext<Ctx | null>(null);
-
-const OWNER_EMAIL = "californiatrey@gmail.com";
 
 export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -45,12 +44,16 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
 
   async function loadAdmin(uid: string, email?: string | null) {
     const { data } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
+    if (data?.role === "owner") {
+      setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
+      return;
+    }
     if (data?.role) {
       setAdminRole(data.role as AdminRole);
       return;
     }
-    // Owner email fallback — grants owner access even before the DB row is created
-    setAdminRole(email === OWNER_EMAIL ? "owner" : null);
+    // Owner email fallback grants owner access even before the DB row is created.
+    setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
   }
 
   const value: Ctx = {

@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useAuth as useLovableAuth } from "@/lib/auth";
+import { applyAccentColor } from "@/hooks/use-accent-color";
 
 export function CurrentUserSync() {
   const currentUser = useCurrentUser();
   const { user: lovableUser, updateUser } = useLovableAuth();
 
   useEffect(() => {
-    if (!currentUser || !lovableUser) return;
+    if (!currentUser?.uid || !lovableUser) return;
 
     // Compare stable fields to avoid infinite update loops
     if (
@@ -35,6 +36,8 @@ export function CurrentUserSync() {
         role: currentUser.role,
       });
     }
+
+    applyAccentColor(currentUser.accent || "#FFC857");
   }, [currentUser, lovableUser, updateUser]);
 
   return null;

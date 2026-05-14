@@ -52,15 +52,16 @@ export function useCurrentUser(): SessionUser {
 
             const rewardPoints = Number(rewardBalance?.current_balance ?? 0);
             const rewardTier = pointsToRewardTier(Number(rewardBalance?.lifetime_earned ?? rewardPoints)).tier as any;
+            const publicUid = data.public_profile_uid || data.id || "";
             const mappedProfile: SessionUser = {
-              name: data.display_name || fallbackUser.name,
-              handle: data.username || fallbackUser.handle,
-              uid: data.public_profile_uid || fallbackUser.uid,
-              avatar: data.avatar_url || fallbackUser.avatar,
-              banner: data.banner_url || fallbackUser.banner,
-              bio: data.bio || fallbackUser.bio,
-              location: data.location || fallbackUser.location,
-              link: data.link_url || fallbackUser.link,
+              name: data.display_name || data.username || "Trey TV Member",
+              handle: data.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member"),
+              uid: publicUid,
+              avatar: data.avatar_url || "",
+              banner: data.banner_url || "",
+              bio: data.bio || "",
+              location: data.location || "",
+              link: data.link_url || "",
               accent: (data.profile_accent_color as any) || "gold",
               tagline: data.tagline || "",
               pronouns: data.pronouns || "",
@@ -70,7 +71,7 @@ export function useCurrentUser(): SessionUser {
               socialInstagram: data.social_instagram || "",
               socialTikTok: data.social_tiktok || "",
               socialYouTube: data.social_youtube || "",
-              verified: verified || fallbackUser.verified,
+              verified,
               role: (data.role as any) || "user",
               stats: fallbackUser.stats,
               rewards: { points: rewardPoints, tier: rewardTier },
@@ -99,9 +100,18 @@ export function useCurrentUser(): SessionUser {
   }, [user, loading]);
 
   const defaultSessionUser: SessionUser = {
-    ...fallbackUser,
+    name: "Trey TV Member",
+    handle: "member",
+    uid: "",
+    avatar: "",
+    banner: "",
+    bio: "",
+    location: "",
+    link: "",
+    verified: undefined,
+    stats: fallbackUser.stats,
     role: "user",
-    accent: "gold",
+    accent: "#FFC857",
     rewards: { points: 12480, tier: "GOLD" },
   };
 

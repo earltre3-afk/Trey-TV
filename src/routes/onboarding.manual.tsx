@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   ArrowLeft, ArrowRight, Check, Sparkles,
   User, MapPin, Heart, Share2, Lock, CheckCircle,
@@ -8,6 +8,9 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { saveOnboardingProfile, finalizeOnboarding, treyICheckUsername } from "@/lib/trey-i/onboarding.server";
+import { confirmZodiacIdentity } from "@/lib/zodiac.server";
+import { calculateZodiacIdentity, type BirthTimePrecision, type ZodiacIdentity } from "@/lib/zodiac";
+import { ZodiacBadge } from "@/components/zodiac";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding/manual")({
@@ -22,12 +25,13 @@ export const Route = createFileRoute("/onboarding/manual")({
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Step = "identity" | "about" | "preferences" | "socials" | "privacy" | "review";
-const STEPS: Step[] = ["identity", "about", "preferences", "socials", "privacy", "review"];
+type Step = "identity" | "about" | "zodiac" | "preferences" | "socials" | "privacy" | "review";
+const STEPS: Step[] = ["identity", "about", "zodiac", "preferences", "socials", "privacy", "review"];
 
 const STEP_META: Record<Step, { label: string; icon: React.ElementType }> = {
   identity:    { label: "Identity",     icon: User },
   about:       { label: "About",        icon: MapPin },
+  zodiac:      { label: "Zodiac",       icon: Sparkles },
   preferences: { label: "Preferences", icon: Heart },
   socials:     { label: "Socials",      icon: Share2 },
   privacy:     { label: "Privacy",      icon: Lock },
@@ -60,6 +64,12 @@ type FormData = {
   bio: string;
   location: string;
   date_of_birth: string;
+  birth_location_label: string;
+  birth_time_precision: BirthTimePrecision;
+  birth_time_local: string;
+  birth_timezone: string;
+  zodiac_confirmed: boolean;
+  zodiac_public_opt_in: boolean;
   show_birthday: boolean;
   favorite_categories: string[];
   favorite_moods: string[];
@@ -89,6 +99,12 @@ function ManualOnboarding() {
     bio: "",
     location: "",
     date_of_birth: "",
+    birth_location_label: "",
+    birth_time_precision: "unknown",
+    birth_time_local: "",
+    birth_timezone: "",
+    zodiac_confirmed: false,
+    zodiac_public_opt_in: true,
     show_birthday: false,
     favorite_categories: [],
     favorite_moods: [],
@@ -141,6 +157,13 @@ function ManualOnboarding() {
   const stepIdx  = STEPS.indexOf(step);
   const isFirst  = stepIdx === 0;
   const progress = ((stepIdx) / (STEPS.length - 1)) * 100;
+  const zodiacPreview = useMemo(() => calculateZodiacIdentity({
+    dateOfBirth: form.date_of_birth,
+    birthLocationLabel: form.birth_location_label || form.location,
+    birthTimePrecision: form.birth_time_precision,
+    birthTimeLocal: form.birth_time_local,
+    birthTimezone: form.birth_timezone,
+  }), [form.date_of_birth, form.birth_location_label, form.location, form.birth_time_precision, form.birth_time_local, form.birth_timezone]);
 
   const goNext = () => { if (stepIdx < STEPS.length - 1) setStep(STEPS[stepIdx + 1]); };
   const goBack = () => {
@@ -149,7 +172,9 @@ function ManualOnboarding() {
   };
 
   const canAdvanceIdentity = form.display_name.trim().length >= 2 && usernameHint === "available";
-  const canAdvance = step === "identity" ? canAdvanceIdentity : true;
+  const canAdvanceAbout = !form.date_of_birth || !!zodiacPreview;
+  const canAdvanceZodiac = !form.date_of_birth || form.zodiac_confirmed;
+  const canAdvance = step === "identity" ? canAdvanceIdentity : step === "about" ? canAdvanceAbout : step === "zodiac" ? canAdvanceZodiac : true;
 
   const handleFinish = async () => {
     if (!accessToken) return;
@@ -178,6 +203,19 @@ function ManualOnboarding() {
           },
         },
       });
+      if (form.date_of_birth && form.zodiac_confirmed) {
+        await confirmZodiacIdentity({
+          data: {
+            accessToken,
+            dateOfBirth: form.date_of_birth,
+            birthLocationLabel: form.birth_location_label || form.location || undefined,
+            birthTimeLocal: form.birth_time_local || undefined,
+            birthTimePrecision: form.birth_time_precision,
+            birthTimezone: form.birth_timezone || undefined,
+            zodiacPublicOptIn: form.zodiac_public_opt_in,
+          },
+        });
+      }
       const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken } });
       window.location.href = `/u/${publicProfileUid}?tour=1`;
     } catch (err) {
@@ -275,6 +313,31 @@ function ManualOnboarding() {
               setLocation={(v) => set("location", v)}
               setDob={(v) => set("date_of_birth", v)}
               setShowBirthday={(v) => set("show_birthday", v)}
+            />
+          )}
+          {step === "zodiac" && (
+            <ZodiacLockStep
+              form={form}
+              identity={zodiacPreview}
+              setBirthLocation={(v) => {
+                set("birth_location_label", v);
+                set("zodiac_confirmed", false);
+              }}
+              setBirthTimePrecision={(v) => {
+                set("birth_time_precision", v);
+                set("zodiac_confirmed", false);
+              }}
+              setBirthTimeLocal={(v) => {
+                set("birth_time_local", v);
+                set("zodiac_confirmed", false);
+              }}
+              setBirthTimezone={(v) => {
+                set("birth_timezone", v);
+                set("zodiac_confirmed", false);
+              }}
+              setPublicOptIn={(v) => set("zodiac_public_opt_in", v)}
+              confirm={() => set("zodiac_confirmed", true)}
+              edit={() => set("zodiac_confirmed", false)}
             />
           )}
           {step === "preferences" && (
@@ -478,6 +541,125 @@ function AboutStep({
           Show birthday on my profile
         </label>
       )}
+    </div>
+  );
+}
+
+function ZodiacLockStep({
+  form,
+  identity,
+  setBirthLocation,
+  setBirthTimePrecision,
+  setBirthTimeLocal,
+  setBirthTimezone,
+  setPublicOptIn,
+  confirm,
+  edit,
+}: {
+  form: FormData;
+  identity: ZodiacIdentity | null;
+  setBirthLocation: (v: string) => void;
+  setBirthTimePrecision: (v: BirthTimePrecision) => void;
+  setBirthTimeLocal: (v: string) => void;
+  setBirthTimezone: (v: string) => void;
+  setPublicOptIn: (v: boolean) => void;
+  confirm: () => void;
+  edit: () => void;
+}) {
+  if (!form.date_of_birth) {
+    return (
+      <div className="space-y-4">
+        <StepHeading title="Personal identity" sub="Add a birthday on the previous step to unlock your zodiac identity." />
+        <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-4 text-sm text-muted-foreground">
+          Zodiac identity is optional here, but it needs a date of birth before Trey TV can calculate it.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <StepHeading title="Lock your zodiac identity" sub="Review the details before this becomes part of your permanent Trey TV profile." />
+      <Field label="BIRTH LOCATION">
+        <TextInput value={form.birth_location_label} onChange={setBirthLocation} placeholder="Memphis, TN (optional)" />
+      </Field>
+      <Field label="BIRTH TIMEZONE">
+        <TextInput value={form.birth_timezone} onChange={setBirthTimezone} placeholder="America/Chicago (optional)" />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="BIRTH TIME">
+          <select
+            value={form.birth_time_precision}
+            onChange={(e) => setBirthTimePrecision(e.target.value as BirthTimePrecision)}
+            className="w-full h-10 rounded-xl bg-white/5 border border-white/10 px-3 text-sm focus:outline-none focus:border-primary/50 transition"
+          >
+            <option value="unknown">I don't know</option>
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+            <option value="night">Night</option>
+            <option value="exact">Exact time</option>
+          </select>
+        </Field>
+        {form.birth_time_precision === "exact" && (
+          <Field label="EXACT TIME">
+            <input
+              type="time"
+              value={form.birth_time_local}
+              onChange={(e) => setBirthTimeLocal(e.target.value)}
+              className="w-full h-10 rounded-xl bg-white/5 border border-white/10 px-3 text-sm focus:outline-none focus:border-primary/50 transition"
+            />
+          </Field>
+        )}
+      </div>
+
+      {identity && (
+        <div className="rounded-3xl liquid-glass neon-border p-4 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <ZodiacBadge sign={identity.sunSign} isCusp={identity.isCusp} cuspLabel={identity.cuspLabel} />
+            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{identity.confidence.replace("_", " ")}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <ReviewMini label="DOB" value={form.date_of_birth} />
+            <ReviewMini label="Location" value={form.birth_location_label || "Not provided"} />
+            <ReviewMini label="Timezone" value={form.birth_timezone || "Estimated"} />
+            <ReviewMini label="Birth time" value={form.birth_time_precision === "exact" ? form.birth_time_local || "Exact" : form.birth_time_precision.replace("_", " ")} />
+            <ReviewMini label="Cusp" value={identity.isCusp ? identity.cuspLabel ?? "Cusp Soul" : "No"} />
+            <ReviewMini label="Method" value={identity.calculationMethod.replaceAll("_", " ")} />
+          </div>
+          <label className="flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.zodiac_public_opt_in}
+              onChange={(e) => setPublicOptIn(e.target.checked)}
+              className="mt-0.5 size-4"
+            />
+            Show my zodiac badge and privacy-safe chart highlights on my public profile.
+          </label>
+          <div className="rounded-2xl bg-primary/10 border border-primary/25 p-3 text-xs text-muted-foreground">
+            Your zodiac identity is about to be added to your Trey TV profile. Once confirmed, this becomes part of your permanent profile identity unless support corrects an error.
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={confirm} className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-black glow-gold">
+              {form.zodiac_confirmed ? "Zodiac Identity Confirmed" : "Confirm Zodiac Identity"}
+            </button>
+            {form.zodiac_confirmed && (
+              <button type="button" onClick={edit} className="h-10 rounded-xl border border-white/10 px-3 text-xs font-semibold">
+                Edit Birth Details
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white/5 border border-white/10 p-2">
+      <div className="text-[9px] tracking-[0.18em] text-muted-foreground uppercase">{label}</div>
+      <div className="mt-0.5 font-bold truncate">{value}</div>
     </div>
   );
 }

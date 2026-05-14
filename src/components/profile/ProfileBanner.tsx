@@ -17,19 +17,25 @@ import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { recordUserTrace } from "@/lib/user-trace";
 import type { ProfileContext } from "./ProfileTypes";
 import { AnimatedBanner } from "./AnimatedBanner";
+import { toggleFollow } from "@/lib/social-relationships";
+import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
 
 interface ProfileBannerProps extends ProfileContext {
   onBack: () => void;
+  followingThis?: boolean;
+  onFollow?: (nextFollowing: boolean) => void;
+  profileUserId?: string;
 }
 
-export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBack }: ProfileBannerProps) {
+export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBack, followingThis, onFollow, profileUserId, relationshipStatus }: ProfileBannerProps) {
   const { updateUser } = useAuth();
   const { user: supabaseUser } = useSupabaseAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const isCreator = profileType === "creator";
+  const isSiteOwnerProfile = Boolean(profile.isFounder);
 
-  const heroFrame = isOwner
+  const heroFrame = isSiteOwnerProfile
     ? "owner-neon owner-glass owner-scan rounded-3xl overflow-hidden"
     : isCreator
       ? "glass neon-border rounded-3xl overflow-hidden"
@@ -54,7 +60,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
         {/* Owner neon tint overlay */}
-        {isOwner && (
+        {isSiteOwnerProfile && (
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,oklch(0.82_0.16_85_/_0.25),transparent_55%),radial-gradient(circle_at_85%_90%,oklch(0.7_0.25_340_/_0.22),transparent_55%)]"
@@ -62,7 +68,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
         )}
 
         {/* Creator cinematic tint */}
-        {isCreator && !isOwner && (
+        {isCreator && !isSiteOwnerProfile && (
           <div
             aria-hidden
             className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,oklch(0.7_0.25_340_/_0.2),transparent_60%),radial-gradient(circle_at_80%_70%,oklch(0.65_0.22_300_/_0.2),transparent_60%)]"
@@ -70,7 +76,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
         )}
 
         {/* Owner ribbon */}
-        {isOwner && (
+        {isSiteOwnerProfile && (
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full owner-ribbon text-[10px] font-bold tracking-[0.25em] text-black">
             <Crown className="size-3.5" /> OWNER
           </div>
@@ -163,12 +169,16 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
         <div className="hidden lg:flex absolute inset-x-0 bottom-0 p-8 gap-6 items-end">
           {/* Avatar */}
           <div
-            className={`${isCreator ? "size-28 xl:size-32 rounded-2xl" : "size-32 xl:size-36 rounded-full"} conic-ring bg-background shrink-0 ${isOwner ? "animate-float" : ""}`}
+            className={`${isCreator ? "size-28 xl:size-32 rounded-2xl" : "size-32 xl:size-36 rounded-full"} conic-ring bg-background shrink-0 ${isSiteOwnerProfile ? "animate-float" : ""}`}
           >
-            <img
+            <AvatarWithFallback
               src={profile.avatarUrl}
               alt={profile.displayName}
-              className={`size-full ${isCreator ? "rounded-2xl" : "rounded-full"} object-cover ring-2 ring-white/20`}
+              name={profile.displayName}
+              uid={profile.uid}
+              size="2xl"
+              shape={isCreator ? "square" : "circle"}
+              className="size-full ring-2 ring-white/20"
             />
           </div>
 
@@ -179,19 +189,33 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
 
           {/* Desktop CTA buttons */}
           <div className="flex items-center gap-2 pb-2">
-            <DesktopActionButtons profile={profile} isOwner={isOwner} viewerRole={viewerRole} profileType={profileType} />
+            <DesktopActionButtons
+              profile={profile}
+              isOwner={isOwner}
+              viewerRole={viewerRole}
+              profileType={profileType}
+              followingThis={followingThis}
+              onFollow={onFollow}
+              profileUserId={profileUserId}
+              canFollow={relationshipStatus?.can_follow !== false}
+              canMessage={relationshipStatus?.can_message !== false}
+            />
           </div>
         </div>
       </div>
 
       {/* Mobile-only avatar overlap */}
       <div
-        className={`lg:hidden absolute left-1/2 -translate-x-1/2 -bottom-12 ${isCreator ? "size-24 sm:size-28 rounded-2xl" : "size-24 sm:size-28 rounded-full"} conic-ring bg-background animate-float ${isOwner ? "ring-2 ring-primary/40" : ""}`}
+        className={`lg:hidden absolute left-1/2 -translate-x-1/2 -bottom-12 ${isCreator ? "size-24 sm:size-28 rounded-2xl" : "size-24 sm:size-28 rounded-full"} conic-ring bg-background animate-float ${isSiteOwnerProfile ? "ring-2 ring-primary/40" : ""}`}
       >
-        <img
+        <AvatarWithFallback
           src={profile.avatarUrl}
           alt={profile.displayName}
-          className={`size-full ${isCreator ? "rounded-2xl" : "rounded-full"} object-cover ring-2 ring-white/20`}
+          name={profile.displayName}
+          uid={profile.uid}
+          size="2xl"
+          shape={isCreator ? "square" : "circle"}
+          className="size-full ring-2 ring-white/20"
         />
       </div>
       <div className="lg:hidden h-12" />
@@ -208,14 +232,15 @@ function DesktopIdentityText({
   profile, isOwner, profileType,
 }: Pick<ProfileContext, "profile" | "viewerRole" | "profileType"> & { isOwner: boolean }) {
   const isCreator = profileType === "creator";
+  const isSiteOwnerProfile = Boolean(profile.isFounder);
   return (
     <>
-      <h1 className={`text-3xl xl:text-4xl font-bold leading-tight flex items-center gap-2 ${isOwner ? "text-gradient-gold" : ""}`}>
+      <h1 className={`text-3xl xl:text-4xl font-bold leading-tight flex items-center gap-2 ${isSiteOwnerProfile ? "text-gradient-gold" : ""}`}>
         {profile.displayName}
         {profile.isVerified && (
           <VerifiedBadge kind={profile.verifiedKind ?? (isCreator ? "creator" : "user")} className="!size-5" />
         )}
-        {isOwner && (
+        {isSiteOwnerProfile && (
           <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold tracking-[0.25em] px-2.5 py-1 rounded-full owner-ribbon text-black">
             <ShieldCheck className="size-3" /> OWNER
           </span>
@@ -225,7 +250,7 @@ function DesktopIdentityText({
       <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
         <span>@{profile.handle}</span>
         {isCreator && (
-          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/40">
+          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[oklch(0.82_0.16_85_/_0.15)] text-[oklch(0.82_0.16_85)] border border-[oklch(0.82_0.16_85_/_0.4)]">
             <Crown className="size-3" /> Verified Creator
           </span>
         )}
@@ -234,7 +259,7 @@ function DesktopIdentityText({
             <VerifiedBadge kind="user" className="!size-3" /> Verified
           </span>
         )}
-        {isOwner && profile.isFounder && (
+        {isSiteOwnerProfile && (
           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[oklch(0.7_0.25_340_/_0.18)] text-[oklch(0.85_0.25_340)] border border-[oklch(0.7_0.25_340_/_0.5)]">
             <Sparkles className="size-3" /> Founder
           </span>
@@ -259,12 +284,30 @@ function DesktopIdentityText({
 
 // ─── Desktop banner action buttons ───────────────────────────────────────────
 
-import { UserPlus, MessageCircle } from "lucide-react";
+import { UserCheck, UserPlus, MessageCircle } from "lucide-react";
 
 function DesktopActionButtons({
-  profile, isOwner, viewerRole, profileType,
-}: Pick<ProfileContext, "profile" | "viewerRole" | "profileType"> & { isOwner: boolean }) {
+  profile, isOwner, viewerRole, profileType, followingThis, onFollow, profileUserId, canFollow, canMessage,
+}: Pick<ProfileContext, "profile" | "viewerRole" | "profileType"> & {
+  isOwner: boolean;
+  followingThis?: boolean;
+  onFollow?: (nextFollowing: boolean) => void;
+  profileUserId?: string;
+  canFollow?: boolean;
+  canMessage?: boolean;
+}) {
   const isCreator = profileType === "creator";
+  const [busy, setBusy] = useState(false);
+
+  const handleFollow = async () => {
+    if (!profileUserId || busy) return;
+    const previous = Boolean(followingThis);
+    setBusy(true);
+    onFollow?.(!previous);
+    const success = await toggleFollow(profileUserId, previous);
+    setBusy(false);
+    if (!success) onFollow?.(previous);
+  };
 
   if (isOwner) {
     return (
@@ -290,14 +333,20 @@ function DesktopActionButtons({
 
   return (
     <>
-      <button
-        id={`follow-btn-${profile.uid}-desktop`}
-        className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold tilt-press bg-primary text-primary-foreground glow-gold"
-      >
-        <UserPlus className="size-4" />
-        {isCreator ? "Follow" : "Follow"}
-      </button>
-      {!isCreator && (
+      {canFollow !== false && (
+        <button
+          id={`follow-btn-${profile.uid}-desktop`}
+          onClick={handleFollow}
+          disabled={!profileUserId || busy}
+          className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold tilt-press disabled:opacity-60 ${
+            followingThis ? "glass border border-white/15" : "bg-primary text-primary-foreground glow-gold"
+          }`}
+        >
+          {followingThis ? <UserCheck className="size-4" /> : <UserPlus className="size-4" />}
+          {followingThis ? "Following" : "Follow"}
+        </button>
+      )}
+      {!isCreator && canMessage !== false && (
         <Link
           to="/inbox"
           search={{ to: profile.handle }}

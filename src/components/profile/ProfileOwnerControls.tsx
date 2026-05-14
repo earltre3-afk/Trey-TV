@@ -9,7 +9,7 @@
 import { Link } from "@tanstack/react-router";
 import {
   Gem, Crown, TrendingUp, Sparkles, BookmarkCheck, Heart,
-  BarChart2, Settings, CheckCircle2,
+  BarChart2, Settings, CheckCircle2, Tv,
 } from "lucide-react";
 import type { ProfileContext } from "./ProfileTypes";
 import { ProfileSectionCard } from "./ProfileSectionCard";
@@ -76,6 +76,27 @@ export function ProfileOwnerControls({ profile, profileType }: Props) {
               <div className="text-[11px] text-muted-foreground">Manage shows, analytics, fans</div>
             </div>
             <div className="text-xs text-primary font-semibold shrink-0">Open →</div>
+          </div>
+        </Link>
+      )}
+
+      {isCreator && (
+        <Link
+          to="/u/$uid/channel"
+          params={{ uid: profile.uid }}
+          id="creator-channel-owner-card"
+          className="block rounded-3xl liquid-glass liquid-hover border border-primary/25 p-4 relative overflow-hidden group"
+        >
+          <div aria-hidden className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+          <div className="relative flex items-center gap-3">
+            <div className="size-12 rounded-2xl grid place-items-center bg-primary/15 text-primary glow-gold shrink-0">
+              <Tv className="size-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-bold">Creator Channel</div>
+              <div className="text-[11px] text-muted-foreground">Open your public channel hub</div>
+            </div>
+            <div className="text-xs text-primary font-semibold shrink-0">View {">"}</div>
           </div>
         </Link>
       )}

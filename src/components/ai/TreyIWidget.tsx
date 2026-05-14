@@ -53,6 +53,7 @@ export function TreyIWidget() {
   const [pos, setPos] = useState(INITIAL_POS);
   const posRef = useRef(INITIAL_POS);
   const loadedRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
   const [dragging, setDragging] = useState(false);
   const dragInfo = useRef<{
     dx: number; dy: number; moved: boolean;
@@ -67,7 +68,6 @@ export function TreyIWidget() {
   const pointerToggleHandledRef = useRef(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
 
-  // Apply position directly to DOM during drag for smoothest motion (no React re-renders)
   const applyTransform = useCallback((x: number, y: number) => {
     const el = btnRef.current;
     if (!el) return;
@@ -82,6 +82,7 @@ export function TreyIWidget() {
   }, [applyTransform]);
 
   useEffect(() => {
+    setMounted(true);
     try {
       const raw = localStorage.getItem(POS_KEY);
       if (raw) {
@@ -101,11 +102,11 @@ export function TreyIWidget() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, open]);
 
-  // persist (only after initial load to avoid clobbering saved value with INITIAL_POS)
   useEffect(() => {
     if (!loadedRef.current) return;
     try { localStorage.setItem(POS_KEY, JSON.stringify(pos)); } catch {}
   }, [pos]);
+
   useEffect(() => {
     const onResize = () => moveTo(posRef.current);
     window.addEventListener("resize", onResize);
@@ -118,7 +119,6 @@ export function TreyIWidget() {
     const clamped = clampToViewport(pendingX, pendingY);
     posRef.current = clamped;
     applyTransform(clamped.x, clamped.y);
-    // subtle tilt based on velocity for premium feel
     const vx = dragInfo.current.vx;
     const vy = dragInfo.current.vy;
     const ry = Math.max(-14, Math.min(14, vx * 0.6));
@@ -152,7 +152,6 @@ export function TreyIWidget() {
     const ny = e.clientY - dragInfo.current.dy;
     const now = performance.now();
     const dt = Math.max(1, now - dragInfo.current.lastT);
-    // exponential moving average for smooth velocity
     const instVx = (e.clientX - dragInfo.current.lastX) / dt * 16;
     const instVy = (e.clientY - dragInfo.current.lastY) / dt * 16;
     dragInfo.current.vx = dragInfo.current.vx * 0.7 + instVx * 0.3;
@@ -188,8 +187,6 @@ export function TreyIWidget() {
       return;
     }
 
-    // Soft magnetic snap: only pull to an edge if released near one or flicked hard.
-    // Otherwise honor the drop position so the orb truly remembers where you put it.
     if (typeof window !== "undefined") {
       const start = posRef.current;
       const speed = Math.hypot(dragInfo.current.vx, dragInfo.current.vy);
@@ -271,9 +268,8 @@ export function TreyIWidget() {
     }
   };
 
-  // panel position: pop out beside launcher horizontally
   const panelStyle = (() => {
-    if (typeof window === "undefined") return { left: pos.x, top: pos.y };
+    if (!mounted || typeof window === "undefined") return { left: pos.x, top: pos.y };
     const W = Math.min(380, window.innerWidth - 2 * PAD);
     const H = Math.min(560, window.innerHeight * 0.75);
     const onLeft = pos.x + SIZE / 2 < window.innerWidth / 2;
@@ -286,7 +282,6 @@ export function TreyIWidget() {
 
   return (
     <>
-      {/* Floating launcher */}
       <button
         ref={btnRef}
         type="button"
@@ -324,16 +319,14 @@ export function TreyIWidget() {
               : "shadow-[0_10px_30px_-10px_oklch(0_0_0_/_0.5)]"
           }`}
         >
-          {/* Permeating dread — outer ominous halo */}
           <span aria-hidden className="pointer-events-none absolute -inset-10 rounded-full bg-[radial-gradient(circle,oklch(0.25_0.15_300_/_0.55),oklch(0.1_0.08_320_/_0.35)_45%,transparent_72%)] blur-2xl animate-dread-breathe" />
           <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-full bg-[conic-gradient(from_0deg,transparent,oklch(0.18_0.12_320_/_0.7),transparent_40%,oklch(0.22_0.18_280_/_0.6),transparent_75%)] blur-xl opacity-80 animate-dread-spin" />
           <span aria-hidden className="pointer-events-none absolute -inset-2 rounded-full ring-1 ring-[oklch(0.7_0.25_340_/_0.45)] animate-dread-ring" />
           <span aria-hidden className="pointer-events-none absolute -inset-4 rounded-full ring-1 ring-[oklch(0.65_0.22_300_/_0.35)] animate-dread-ring [animation-delay:1.2s]" />
           <span aria-hidden className="pointer-events-none absolute -inset-6 rounded-full ring-1 ring-[oklch(0.55_0.2_320_/_0.25)] animate-dread-ring [animation-delay:2.4s]" />
           <span aria-hidden className="pointer-events-none absolute -inset-3 rounded-full bg-[radial-gradient(ellipse_at_30%_20%,oklch(0.7_0.25_340_/_0.4),transparent_60%),radial-gradient(ellipse_at_70%_80%,oklch(0.55_0.22_280_/_0.4),transparent_60%)] blur-md animate-dread-drift mix-blend-screen" />
-
           <span aria-hidden className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,oklch(0.82_0.16_85),oklch(0.7_0.25_340),oklch(0.65_0.22_300),oklch(0.82_0.15_215),oklch(0.82_0.16_85))] animate-conic-spin opacity-90 blur-[1px]" />
-          <span aria-hidden className="absolute inset-0.5 rounded-full bg-background" />
+          <span aria-hidden className="absolute inset-0.5 rounded-full bg-[oklch(0.13_0.02_270)]" />
           <span aria-hidden className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-glow-pulse" />
           <Sparkles className="relative size-6 text-primary drop-shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)] animate-dread-flicker" />
           <span className="absolute -top-1 -right-1 size-3 rounded-full bg-[oklch(0.7_0.25_340)] ring-2 ring-background animate-glow-pulse" />
@@ -345,14 +338,12 @@ export function TreyIWidget() {
         </span>
       </button>
 
-      {/* Panel — anchored to launcher position */}
       <div
         style={{ position: "fixed", ...panelStyle }}
-        className={`fixed z-[10030] max-h-[75vh] flex flex-col rounded-3xl liquid-glass neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
+        className={`fixed z-[10030] max-h-[75vh] flex flex-col rounded-3xl treyi-chatbox-frost neon-border shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] origin-bottom-right transition-all duration-300 ${
           open ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"
         }`}
       >
-        {/* Header */}
         <div className="relative p-4 border-b border-white/5 overflow-hidden">
           <div className="absolute -top-10 -right-10 size-32 rounded-full bg-[radial-gradient(circle,oklch(0.7_0.25_340_/_0.5),transparent_70%)] blur-xl" />
           <div className="relative flex items-center gap-3">
@@ -374,7 +365,6 @@ export function TreyIWidget() {
           </div>
         </div>
 
-        {/* Messages */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
           {msgs.map((m) => (
             <div key={m.id} className={`flex ${m.from === "you" ? "justify-end" : "justify-start"} animate-rise`}>

@@ -6,6 +6,7 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 
 type FeedCreator = {
   id: string;
+  publicProfileUid?: string | null;
   name: string;
   handle: string;
   avatar: string;
@@ -15,6 +16,7 @@ type FeedCreator = {
 
 const fallbackCreator: FeedCreator = {
   id: "me",
+  publicProfileUid: currentUser.uid,
   name: currentUser.name,
   handle: currentUser.handle,
   avatar: currentUser.avatar,
@@ -72,6 +74,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   const storageKey = `${KEY}:${profileUser.uid}`;
   const meAsCreator: FeedCreator = {
     id: profileUser.uid,
+    publicProfileUid: profileUser.uid,
     name: profileUser.name,
     handle: profileUser.handle,
     avatar: profileUser.avatar,

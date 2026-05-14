@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type NotificationItem = {
   id: string;
   kind: "like" | "comment" | "follow" | "live" | "trey" | "boost";
-  who?: { name: string; avatar: string; handle: string };
+  who?: { name: string; avatar: string; handle: string; publicProfileUid?: string | null };
   text: string;
   time: string;
   unread: boolean;
@@ -15,6 +15,7 @@ type DbActor = {
   display_name: string | null;
   username: string | null;
   avatar_url: string | null;
+  public_profile_uid: string | null;
 };
 
 type DbRow = {
@@ -74,6 +75,7 @@ function mapRow(row: DbRow): NotificationItem {
           name: actor.display_name ?? actor.username,
           avatar: actor.avatar_url ?? "",
           handle: actor.username,
+          publicProfileUid: actor.public_profile_uid ?? null,
         }
       : undefined;
 
@@ -103,7 +105,7 @@ export function useNotifications() {
         .from("notifications")
         .select(`
           id, type, message, read_at, created_at, post_id, metadata,
-          actor:profiles!notifications_actor_id_fkey(display_name, username, avatar_url)
+          actor:profiles!notifications_actor_id_fkey(public_profile_uid, display_name, username, avatar_url)
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false })

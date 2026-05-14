@@ -15,6 +15,7 @@ const NAV = [
   { to: "/admin/verification", label: "Verification", icon: BadgeCheck },
   { to: "/admin/content-approval", label: "Content", icon: Film },
   { to: "/admin/reports", label: "Reports", icon: Flag },
+  { to: "/admin/zodiac", label: "Zodiac", icon: Sparkles },
   { to: "/admin/rewards", label: "Rewards", icon: Gift },
   { to: "/admin/profile-decorations", label: "Decorations", icon: Palette },
   { to: "/admin/site-editor", label: "Site Editor", icon: FileText },

@@ -17,7 +17,7 @@ export type SessionUser = {
   bio: string;
   location?: string;
   link?: string;
-  accent?: "gold" | "magenta" | "cyan" | "purple";
+  accent?: string;
   verified?: "creator" | "user";
   role: Role;
   stats: { posts: number; followers: string; following: number; prescriptions: string };
@@ -56,7 +56,7 @@ const KEY = "treytv_session_v1";
 const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   ...defaultUser,
   banner: "",
-  accent: "gold",
+  accent: "#FFC857",
   profileVisibility: "public",
   showLocation: true,
   showBirthday: false,
@@ -65,33 +65,39 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   rewards: { points: 12480, tier: "GOLD" },
 });
 
-const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "guest"> = "user"): SessionUser => ({
-  ...defaultUser,
-  name: profile?.display_name || defaultUser.name,
-  handle: profile?.username || defaultUser.handle,
-  uid: profile?.public_profile_uid || defaultUser.uid,
-  avatar: profile?.avatar_url || defaultUser.avatar,
-  banner: profile?.banner_url || defaultUser.banner,
-  bio: profile?.bio || defaultUser.bio,
-  location: profile?.location || defaultUser.location,
-  link: profile?.link_url || defaultUser.link,
-  accent: profile?.profile_accent_color || "gold",
-  verified: profile?.verified_creator || profile?.verification_type === "creator" ? "creator" : profile?.is_verified ? "user" : defaultUser.verified,
-  role: (profile?.role as Role) || fallbackRole,
-  creatorStatus: profile?.creator_status ?? (fallbackRole === "creator" || fallbackRole === "admin" ? "approved" : "not_applied"),
-  tagline: profile?.tagline ?? "",
-  pronouns: profile?.pronouns ?? "",
-  birthday: profile?.birthday ?? "",
-  favoriteGenres: profile?.favorite_genres ?? "",
-  favoriteCreators: profile?.favorite_creators ?? "",
-  socialInstagram: profile?.social_instagram ?? "",
-  socialTikTok: profile?.social_tiktok ?? "",
-  socialYouTube: profile?.social_youtube ?? "",
-  profileVisibility: profile?.profile_visibility ?? "public",
-  showLocation: profile?.show_location ?? true,
-  showBirthday: profile?.show_birthday ?? false,
-  rewards: { points: 0, tier: "WHITE" },
-});
+const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "guest"> = "user"): SessionUser => {
+  const publicUid = profile?.public_profile_uid || profile?.id || "";
+  const handle = profile?.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member");
+  const isCreator = Boolean(profile?.verified_creator || profile?.verification_type === "creator" || profile?.creator_status === "approved");
+
+  return {
+    ...defaultUser,
+    name: profile?.display_name || profile?.username || "Trey TV Member",
+    handle,
+    uid: publicUid,
+    avatar: profile?.avatar_url || "",
+    banner: profile?.banner_url || "",
+    bio: profile?.bio || "",
+    location: profile?.location || "",
+    link: profile?.link_url || "",
+    accent: profile?.profile_accent_color || "#FFC857",
+    verified: isCreator ? "creator" : profile?.is_verified ? "user" : undefined,
+    role: (profile?.role as Role) || fallbackRole,
+    creatorStatus: profile?.creator_status ?? (fallbackRole === "creator" || fallbackRole === "admin" ? "approved" : "not_applied"),
+    tagline: profile?.tagline ?? "",
+    pronouns: profile?.pronouns ?? "",
+    birthday: profile?.birthday ?? "",
+    favoriteGenres: profile?.favorite_genres ?? "",
+    favoriteCreators: profile?.favorite_creators ?? "",
+    socialInstagram: profile?.social_instagram ?? "",
+    socialTikTok: profile?.social_tiktok ?? "",
+    socialYouTube: profile?.social_youtube ?? "",
+    profileVisibility: profile?.profile_visibility ?? "public",
+    showLocation: profile?.show_location ?? true,
+    showBirthday: profile?.show_birthday ?? false,
+    rewards: { points: 0, tier: "WHITE" },
+  };
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { isRealAdmin, isOwner, user: supaUser } = useSupabaseSession();

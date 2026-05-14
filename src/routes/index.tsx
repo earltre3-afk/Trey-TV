@@ -11,10 +11,13 @@ import {
   shows, channels, allEpisodes, channelById, showById, episodeById,
   rails, featuredHero,
 } from "@/lib/watch-data";
-import { useFollow } from "@/lib/follow-store";
 import { useGuide } from "@/lib/guide-store";
 import { Logo } from "@/components/brand/Logo";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { getDailyZodiacReading } from "@/lib/zodiac.server";
+import { zodiacSymbol } from "@/lib/zodiac";
+import { ReadingOfTheDay } from "@/components/zodiac";
 
 export const Route = createFileRoute("/")({
   component: WatchNow,
@@ -342,6 +345,32 @@ function SignedInWatchNow() {
         completed: false,
         updatedAt: 0,
       }));
+  const [zodiac, setZodiac] = useState<any>(null);
+  const [reading, setReading] = useState<any>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getUser().then(async ({ data }) => {
+      const userId = data.user?.id;
+      if (!userId) return;
+      const { data: profile } = await (supabase as any)
+        .from("profiles")
+        .select("zodiac_sun_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_public_opt_in")
+        .eq("id", userId)
+        .maybeSingle();
+      if (cancelled || !profile?.zodiac_sun_sign || profile.zodiac_public_opt_in === false) return;
+      setZodiac(profile);
+      const daily = await getDailyZodiacReading({
+        data: {
+          zodiacSign: profile.zodiac_sun_sign,
+          cuspLabel: profile.zodiac_is_cusp ? profile.zodiac_cusp_label : null,
+          isCusp: !!profile.zodiac_is_cusp,
+        },
+      });
+      if (!cancelled) setReading(daily);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <AppShell wide>
@@ -411,6 +440,22 @@ function SignedInWatchNow() {
           </div>
         </div>
       </div>
+
+      {zodiac?.zodiac_sun_sign && reading && (
+        <div className="mb-8">
+          <ReadingOfTheDay
+            sign={zodiac.zodiac_sun_sign}
+            symbol={zodiacSymbol(zodiac.zodiac_sun_sign)}
+            dailyReading={reading.short_message ?? reading.full_message}
+            energyWord={reading.energy_word}
+            luckyColor={reading.lucky_color}
+            luckyNumber={reading.lucky_number}
+            recommendedAction={reading.recommended_action}
+            isCusp={!!zodiac.zodiac_is_cusp}
+            cuspNote={zodiac.zodiac_is_cusp ? "You were born where two energies meet. Today, don't choose one side of yourself. Use both." : undefined}
+          />
+        </div>
+      )}
 
       {/* Continue Watching */}
       <Rail title="Continue Watching" icon={Play}>
@@ -490,10 +535,8 @@ function Rail({ title, icon: Icon, accent, children }: { title: string; icon: ty
 }
 
 function PosterCard({ show }: { show: ReturnType<typeof showById> }) {
-  const { isFollowing, toggle: toggleFollow } = useFollow();
   if (!show) return null;
   const ch = channelById(show.channelId);
-  const handle = ch?.handle ?? "";
   return (
     <Link to="/watch/$id" params={{ id: show.episodes[0].id }} className="snap-start shrink-0 w-40 sm:w-48 group">
       <div className="relative aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/10 group-hover:ring-primary/60 transition">
@@ -507,12 +550,11 @@ function PosterCard({ show }: { show: ReturnType<typeof showById> }) {
       </div>
       <div className="mt-2 flex items-center justify-between">
         <span className="text-[10px] text-muted-foreground">{show.category}</span>
-        <button
-          onClick={(e) => { e.preventDefault(); if (ch) { toggleFollow({ id: ch.id, name: ch.name, handle: ch.handle, avatar: ch.avatar }); toast(isFollowing(ch.handle) ? `Unfollowed ${ch.name}` : `Following ${ch.name}`); } }}
-          className={`text-[10px] px-2 py-0.5 rounded-full border transition ${handle && isFollowing(handle) ? "border-primary/60 text-primary bg-primary/10" : "border-white/15 text-muted-foreground hover:text-foreground"}`}
-        >
-          {handle && isFollowing(handle) ? "Following" : "+ Follow"}
-        </button>
+        {ch && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/15 text-muted-foreground group-hover:text-foreground">
+            @{ch.handle}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -562,8 +604,6 @@ function EpisodeCard({ ep, progress }: { ep: ReturnType<typeof episodeById>; pro
 }
 
 function ChannelCard({ ch }: { ch: typeof channels[number] }) {
-  const { isFollowing, toggle: toggleFollow } = useFollow();
-  const following = isFollowing(ch.handle);
   return (
     <Link to="/channel/$handle" params={{ handle: ch.handle }} className="snap-start shrink-0 w-40 sm:w-44 text-center group">
       <div className="relative mx-auto size-28 sm:size-32 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-primary/60 transition">
@@ -572,12 +612,9 @@ function ChannelCard({ ch }: { ch: typeof channels[number] }) {
       </div>
       <div className="mt-3 text-sm font-bold truncate">{ch.name}</div>
       <div className="text-[11px] text-muted-foreground truncate">@{ch.handle} · {ch.followers}</div>
-      <button
-        onClick={(e) => { e.preventDefault(); toggleFollow({ id: ch.id, name: ch.name, handle: ch.handle, avatar: ch.avatar }); toast(following ? `Unfollowed ${ch.name}` : `Following ${ch.name}`); }}
-        className={`mt-2 inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full border transition ${following ? "border-primary/60 bg-primary/10 text-primary" : "border-white/15 text-muted-foreground hover:text-foreground"}`}
-      >
-        {following ? "Following" : "+ Follow"}
-      </button>
+      <span className="mt-2 inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-full border border-white/15 text-muted-foreground group-hover:text-foreground transition">
+        Open Channel
+      </span>
     </Link>
   );
 }

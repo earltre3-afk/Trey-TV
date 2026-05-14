@@ -29,6 +29,7 @@ export type Message = {
 
 export type Peer = {
   id: string;
+  publicProfileUid?: string | null;
   name: string;
   handle: string;
   avatar: string;
@@ -158,8 +159,8 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         .from("direct_messages")
         .select(`
           id, sender_id, recipient_id, body, message_type, media_url, media_type, voice_duration, ghost_expires_at, ghost_label, read_at, created_at,
-          sender:sender_id ( id, display_name, username, avatar_url, verification_type ),
-          recipient:recipient_id ( id, display_name, username, avatar_url, verification_type )
+          sender:sender_id ( id, public_profile_uid, display_name, username, avatar_url, verification_type ),
+          recipient:recipient_id ( id, public_profile_uid, display_name, username, avatar_url, verification_type )
         `)
         .or(`sender_id.eq.${supabaseUser.id},recipient_id.eq.${supabaseUser.id}`)
         .order("created_at", { ascending: false })
@@ -185,6 +186,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
               id: peerId,
               peer: {
                 id: peerProfile?.id || peerId,
+                publicProfileUid: peerProfile?.public_profile_uid || null,
                 name: peerProfile?.display_name || "Unknown",
                 handle: peerProfile?.username || "unknown",
                 avatar: peerProfile?.avatar_url || "",
@@ -253,12 +255,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
           const { data: peerProfile } = await supabase
             .from("profiles")
-            .select("id, display_name, username, avatar_url, verification_type")
+            .select("id, public_profile_uid, display_name, username, avatar_url, verification_type")
             .eq("id", row.sender_id)
             .maybeSingle();
 
           const peer: Peer = {
             id: row.sender_id,
+            publicProfileUid: peerProfile?.public_profile_uid || null,
             name: peerProfile?.display_name || "Unknown",
             handle: peerProfile?.username || "unknown",
             avatar: peerProfile?.avatar_url || "",
@@ -347,11 +350,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     if (supabaseUser) {
       const supabase = createBrowserClient();
-      supabase.from("profiles").select("id, display_name, username, avatar_url, verification_type").eq("username", handle).single().then(({data}) => {
+      supabase.from("profiles").select("id, public_profile_uid, display_name, username, avatar_url, verification_type").eq("username", handle).single().then(({data}) => {
         if (data) {
           const p = data as any;
           const peer: Peer = {
             id: p.id,
+            publicProfileUid: p.public_profile_uid || null,
             name: p.display_name || handle,
             handle: p.username || handle,
             avatar: p.avatar_url || "",

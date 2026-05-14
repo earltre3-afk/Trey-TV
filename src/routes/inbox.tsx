@@ -9,6 +9,7 @@ import {
   Check,
   CheckCheck,
   Crown,
+  Flag,
   Filter,
   Ghost,
   Image as ImageIcon,
@@ -45,8 +46,11 @@ import { ChatOnboarding } from "@/components/inbox/ChatOnboarding";
 import { PlusMenu } from "@/components/inbox/PlusMenu";
 import { GhostMessagePopup } from "@/components/inbox/GhostMessagePopup";
 import { NeonEmojiPicker } from "@/components/inbox/NeonEmojiPicker";
+import { Tremoji } from "@/components/inbox/Tremoji";
 import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications-store";
+import { createBrowserClient } from "@/lib/supabase-browser";
+import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -135,6 +139,10 @@ function Inbox() {
   const [showGhostPopup, setShowGhostPopup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [ghostDraft, setGhostDraft] = useState("");
+  const [matchedGroups, setMatchedGroups] = useState<any[]>([]);
+  const [openGroup, setOpenGroup] = useState<any | null>(null);
+  const [groupMessages, setGroupMessages] = useState<any[]>([]);
+  const [groupDraft, setGroupDraft] = useState("");
 
   const [recording, setRecording] = useState(false);
   const [recorderMs, setRecorderMs] = useState(0);
@@ -149,6 +157,141 @@ function Inbox() {
     const id = ensureFromHandle(to);
     if (id) setOpenId(id);
   }, [to, ensureFromHandle]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    const loadGroups = async () => {
+      const supabase = createBrowserClient() as any;
+      const { data: auth } = await supabase.auth.getUser();
+      const userId = auth.user?.id;
+      if (!userId) return;
+      const { data, error } = await supabase
+        .from("zodiac_group_members")
+        .select("group_thread_id, source, joined_at, thread:zodiac_group_threads(id, group_type, group_key, group_name, group_description, zodiac_sign, city, interest_key, min_age, max_age)")
+        .eq("user_id", userId)
+        .is("left_at", null)
+        .order("joined_at", { ascending: false })
+        .limit(6);
+      if (!cancelled && !error) setMatchedGroups(data ?? []);
+    };
+    loadGroups().catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.uid]);
+
+  const leaveMatchedGroup = async (groupThreadId: string) => {
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) return;
+    const { error } = await supabase
+      .from("zodiac_group_members")
+      .update({ left_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .eq("group_thread_id", groupThreadId);
+    if (error) {
+      toast.error("Could not leave group");
+      return;
+    }
+    setMatchedGroups((groups) => groups.filter((g) => g.group_thread_id !== groupThreadId));
+    if (openGroup?.id === groupThreadId) setOpenGroup(null);
+    toast.success("Group removed from your inbox");
+  };
+
+  const loadGroupMessages = useCallback(async (group: any) => {
+    const supabase = createBrowserClient() as any;
+    const { data, error } = await supabase
+      .from("zodiac_group_messages")
+      .select("id, body, sender_id, created_at, sender:sender_id(id, public_profile_uid, display_name, username, avatar_url)")
+      .eq("group_thread_id", group.id)
+      .eq("moderation_status", "active")
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (!error) setGroupMessages(data ?? []);
+  }, []);
+
+  const openMatchedGroup = useCallback((group: any) => {
+    setOpenId(null);
+    setOpenGroup(group);
+    void loadGroupMessages(group);
+  }, [loadGroupMessages]);
+
+  useEffect(() => {
+    if (!openGroup?.id) return;
+    const supabase = createBrowserClient() as any;
+    const channel = supabase
+      .channel(`zodiac-group:${openGroup.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "zodiac_group_messages",
+          filter: `group_thread_id=eq.${openGroup.id}`,
+        },
+        () => {
+          void loadGroupMessages(openGroup);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadGroupMessages, openGroup]);
+
+  const sendGroupMessage = async () => {
+    if (!openGroup || !groupDraft.trim()) return;
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) return toast.error("Please sign in to send messages");
+    const text = groupDraft.trim();
+    setGroupDraft("");
+    const { error } = await supabase.from("zodiac_group_messages").insert({
+      group_thread_id: openGroup.id,
+      sender_id: userId,
+      body: text,
+    });
+    if (error) {
+      toast.error("Could not send group message");
+      setGroupDraft(text);
+      return;
+    }
+    await loadGroupMessages(openGroup);
+  };
+
+  const reportGroup = async (group: any, messageId?: string) => {
+    const reason = window.prompt("What should moderation review?");
+    if (!reason?.trim()) return;
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) return;
+    const { error } = await supabase.from("zodiac_group_reports").insert({
+      reporter_id: userId,
+      group_thread_id: group.id,
+      message_id: messageId ?? null,
+      reason: reason.trim(),
+    });
+    if (error) return toast.error("Could not submit report");
+    toast.success("Report sent to moderation");
+  };
+
+  const blockGroupMember = async (group: any, blockedUserId: string) => {
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId || !blockedUserId || blockedUserId === userId) return;
+    const { error } = await supabase.from("zodiac_group_blocks").upsert({
+      blocker_id: userId,
+      blocked_user_id: blockedUserId,
+      group_thread_id: group.id,
+    });
+    if (error) return toast.error("Could not block member");
+    toast.success("Member blocked in this group");
+    await loadGroupMessages(group);
+  };
 
   const threadStats = useMemo(() => {
     const priority = threads.filter((t) => t.pinned || unreadOf(t.id) > 1).length;
@@ -290,7 +433,7 @@ function Inbox() {
         />
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(360px,430px)_1fr] lg:h-[calc(100dvh-10rem)]">
-          <section className={`${openId ? "hidden lg:flex" : "flex"} relative min-h-[calc(100dvh-12rem)] lg:min-h-0 flex-col overflow-hidden rounded-[32px] liquid-glass border border-white/10 shadow-[0_24px_90px_-45px_oklch(0.82_0.15_215_/_0.65)]`}>
+          <section className={`${openId || openGroup ? "hidden lg:flex" : "flex"} relative min-h-[calc(100dvh-12rem)] lg:min-h-0 flex-col overflow-hidden rounded-[32px] liquid-glass border border-white/10 shadow-[0_24px_90px_-45px_oklch(0.82_0.15_215_/_0.65)]`}>
             <div className="pointer-events-none absolute -left-20 top-20 opacity-[0.12] mix-blend-screen"><div className="chat-orb-1" /></div>
             <div className="pointer-events-none absolute -right-20 top-80 opacity-[0.12] mix-blend-screen"><div className="chat-orb-2" /></div>
             <div className="relative z-10 border-b border-white/10 p-4 sm:p-5">
@@ -304,7 +447,7 @@ function Inbox() {
                 onNote={() => toast("Your note is ready")}
                 onPick={(handle) => {
                   const id = ensureFromHandle(handle);
-                  if (id) setOpenId(id);
+                  if (id) { setOpenGroup(null); setOpenId(id); }
                 }}
               />
             )}
@@ -314,6 +457,9 @@ function Inbox() {
             )}
 
             <div className="flex-1 overflow-y-auto px-2 py-2 no-scrollbar">
+              {matchedGroups.length > 0 && tab === "all" && (
+                <MatchedGroupsList groups={matchedGroups} onOpen={openMatchedGroup} onLeave={leaveMatchedGroup} />
+              )}
               {(tab === "all" || tab === "priority" || tab === "collabs" || tab === "ai") && (
                 <ul className="space-y-2">
                   {filtered.map((t, i) => (
@@ -325,22 +471,33 @@ function Inbox() {
                       active={openId === t.id}
                       ai={tab === "ai" || isCollabText(messagesOf(t.id).at(-1)?.text)}
                       index={i}
-                      onClick={() => setOpenId(t.id)}
+                      onClick={() => { setOpenGroup(null); setOpenId(t.id); }}
                     />
                   ))}
                   {filtered.length === 0 && <EmptyList onCompose={() => setNewOpen(true)} />}
                 </ul>
               )}
 
-              {tab === "requests" && <RequestsList onOpen={(handle) => { const id = ensureFromHandle(handle); if (id) setOpenId(id); }} />}
+              {tab === "requests" && <RequestsList onOpen={(handle) => { const id = ensureFromHandle(handle); if (id) { setOpenGroup(null); setOpenId(id); } }} />}
               {tab === "activity" && <ActivityList />}
             </div>
 
             <QuickActionDock actions={quickActions} />
           </section>
 
-          <section className={`${openId ? "flex" : "hidden lg:flex"} min-h-[calc(100dvh-12rem)] lg:min-h-0 flex-col overflow-hidden rounded-[32px] liquid-glass border border-white/10 shadow-[0_24px_90px_-45px_oklch(0.7_0.25_340_/_0.55)]`}>
-            {open ? (
+          <section className={`${openId || openGroup ? "flex" : "hidden lg:flex"} min-h-[calc(100dvh-12rem)] lg:min-h-0 flex-col overflow-hidden rounded-[32px] liquid-glass border border-white/10 shadow-[0_24px_90px_-45px_oklch(0.7_0.25_340_/_0.55)]`}>
+            {openGroup ? (
+              <GroupChatPanel
+                group={openGroup}
+                messages={groupMessages}
+                draft={groupDraft}
+                onDraft={setGroupDraft}
+                onSend={sendGroupMessage}
+                onBack={() => setOpenGroup(null)}
+                onReport={reportGroup}
+                onBlock={blockGroupMember}
+              />
+            ) : open ? (
               <>
                 <ThreadHeader
                   open={open}
@@ -365,7 +522,9 @@ function Inbox() {
 
                     {peerTyping && (
                       <div className="flex items-end gap-2 justify-start animate-msg-pop">
-                        <img src={open.peer.avatar} className="size-7 rounded-full object-cover" alt="" />
+                        <ProfilePictureLink publicProfileUid={open.peer.publicProfileUid} label={`Open @${open.peer.handle}'s public profile`}>
+                          <img src={open.peer.avatar} className="size-7 rounded-full object-cover" alt="" />
+                        </ProfilePictureLink>
                         <div className="msg-bubble-them rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
                           <span className="typing-dot" /><span className="typing-dot" /><span className="typing-dot" />
                         </div>
@@ -423,7 +582,7 @@ function Inbox() {
         </div>
       </div>
 
-      <NewConversationSheet open={newOpen} onClose={() => setNewOpen(false)} onPicked={(id) => setOpenId(id)} />
+      <NewConversationSheet open={newOpen} onClose={() => setNewOpen(false)} onPicked={(id) => { setOpenGroup(null); setOpenId(id); }} />
       <ChatOnboarding />
     </AppShell>
   );
@@ -599,10 +758,10 @@ function ThreadCard({ thread, last, unread, active, ai, index, onClick }: { thre
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,oklch(1_1_1_/_0.03),transparent_60%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         {priority && <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-[linear-gradient(#FFC857,#7C3AED)]" />}
         <div className="flex gap-2.5 sm:gap-3">
-          <div className="relative size-10 shrink-0 rounded-full conic-ring sm:size-12">
+          <ProfilePictureLink publicProfileUid={thread.peer.publicProfileUid} label={`Open @${thread.peer.handle}'s public profile`} className="relative size-10 shrink-0 rounded-full conic-ring sm:size-12">
             <img src={thread.peer.avatar} className="size-10 rounded-full object-cover sm:size-12" alt="" />
             {thread.peer.online && <span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
-          </div>
+          </ProfilePictureLink>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-1.5">
               <div className="min-w-0">
@@ -640,10 +799,10 @@ function ThreadHeader({ open, peerTyping, onBack, onAi }: { open: any; peerTypin
         <button onClick={onBack} className="lg:hidden size-10 grid place-items-center rounded-full glass border border-white/10" aria-label="Back">
           <ArrowLeft className="size-4" />
         </button>
-        <div className="relative size-12 shrink-0 rounded-full conic-ring">
+        <ProfilePictureLink publicProfileUid={open.peer.publicProfileUid} label={`Open @${open.peer.handle}'s public profile`} className="relative size-12 shrink-0 rounded-full conic-ring">
           <img src={open.peer.avatar} className="size-12 rounded-full object-cover" alt="" />
           {open.peer.online && <span className="absolute bottom-0 right-0 size-3 rounded-full bg-[oklch(0.78_0.18_150)] ring-2 ring-background" />}
-        </div>
+        </ProfilePictureLink>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-base font-black">{open.peer.name}</span>
@@ -692,7 +851,11 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
 
   return (
     <div className={`relative flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} animate-msg-pop group/msg`} style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
-      {!mine && !prevSameSide && <img src={open.peer.avatar} className="size-7 rounded-full object-cover ring-1 ring-white/10" alt="" />}
+      {!mine && !prevSameSide && (
+        <ProfilePictureLink publicProfileUid={open.peer.publicProfileUid} label={`Open @${open.peer.handle}'s public profile`}>
+          <img src={open.peer.avatar} className="size-7 rounded-full object-cover ring-1 ring-white/10" alt="" />
+        </ProfilePictureLink>
+      )}
       {!mine && prevSameSide && <div className="w-7 shrink-0" />}
       <div className={`relative flex max-w-[72%] flex-col ${mine ? "items-end" : "items-start"}`}>
         {isGhost && (
@@ -720,7 +883,7 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
           </div>
         )}
         <div className={`absolute -top-8 ${mine ? "right-0" : "left-0"} opacity-0 transition-all duration-150 group-hover/msg:opacity-100 group-hover/msg:-translate-y-0.5`}>
-          <div className="flex items-center gap-0.5 rounded-full border border-white/15 bg-[rgba(8,17,31,.92)] px-2 py-1.5 backdrop-blur-xl shadow-[0_4px_24px_-8px_oklch(0.7_0.25_340_/_0.4)]">
+          <div className="flex items-center gap-1 rounded-full border border-white/15 bg-[rgba(8,17,31,.92)] px-2 py-1.5 backdrop-blur-xl shadow-[0_4px_24px_-8px_oklch(0.7_0.25_340_/_0.4)]">
             {[
               { e: "❤️", label: "Love" }, { e: "🔥", label: "Fire" }, { e: "😂", label: "Laugh" },
               { e: "👏", label: "Clap" }, { e: "💎", label: "Gem" },
@@ -728,15 +891,21 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
               <button
                 key={label}
                 onClick={() => toast(`${label} reaction sent`)}
-                className="rounded-full px-1.5 py-0.5 text-sm hover:bg-white/10 hover:scale-125 active:scale-100 transition-all duration-100"
+                className="tremoji-btn"
                 aria-label={label}
               >
-                {e}
+                <Tremoji emoji={e} label={label} size={28} />
               </button>
             ))}
           </div>
         </div>
-        {message.reactions && <div className={`absolute -bottom-2 ${mine ? "left-1" : "right-1"} rounded-full border border-white/10 bg-[rgba(8,17,31,.86)] px-1.5 py-0.5 text-xs`}>{message.reactions.join(" ")}</div>}
+        {message.reactions && (
+          <div className={`absolute -bottom-3 ${mine ? "left-1" : "right-1"} flex items-center gap-1 rounded-full border border-white/10 bg-[rgba(8,17,31,.86)] px-1.5 py-1`}>
+            {message.reactions.map((r: string, i: number) => (
+              <Tremoji key={`${r}-${i}`} emoji={r} size={20} />
+            ))}
+          </div>
+        )}
         <div className={`mt-1 flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "justify-end" : ""}`}>
           <span>{fmtTime(message.ts)}</span>
           {mine && (message.status === "read" ? <CheckCheck className="size-3 text-[oklch(0.82_0.15_215)]" /> : message.status === "delivered" ? <CheckCheck className="size-3" /> : <Check className="size-3" />)}
@@ -880,6 +1049,146 @@ function ComposerButton({ icon: Icon, label, active, onClick }: { icon: LucideIc
     <button onClick={onClick} className={`grid size-8 place-items-center rounded-xl transition ${active ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-white/5 hover:text-primary"}`} aria-label={label}>
       <Icon className="size-4" />
     </button>
+  );
+}
+
+function GroupChatPanel({
+  group,
+  messages,
+  draft,
+  onDraft,
+  onSend,
+  onBack,
+  onReport,
+  onBlock,
+}: {
+  group: any;
+  messages: any[];
+  draft: string;
+  onDraft: (value: string) => void;
+  onSend: () => void;
+  onBack: () => void;
+  onReport: (group: any, messageId?: string) => void;
+  onBlock: (group: any, blockedUserId: string) => void;
+}) {
+  return (
+    <>
+      <div className="border-b border-white/10 p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/[0.04] lg:hidden" aria-label="Back to inbox">
+            <ArrowLeft className="size-4" />
+          </button>
+          <div className="grid size-11 shrink-0 place-items-center rounded-2xl border border-primary/30 bg-primary/10 text-primary">
+            <MessageCircle className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-black">{group.group_name}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{group.group_description ?? "Matched by Trey TV"}</div>
+          </div>
+          <button onClick={() => onReport(group)} className="grid size-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground hover:text-foreground" aria-label="Report group">
+            <Flag className="size-4" />
+          </button>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <MiniChip label="Matched by Trey TV" tone="gold" />
+          {group.zodiac_sign && <MiniChip label={group.zodiac_sign} tone="violet" />}
+          {group.city && <MiniChip label={group.city} tone="blue" />}
+          <MiniChip label="Age-safe group" tone="pink" />
+        </div>
+      </div>
+
+      <div className="relative flex-1 overflow-y-auto p-4 sm:p-5 no-scrollbar">
+        <div className="space-y-3">
+          {messages.length === 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-muted-foreground">
+              This matched group is ready. Start the first conversation.
+            </div>
+          )}
+          {messages.map((message) => {
+            const sender = Array.isArray(message.sender) ? message.sender[0] : message.sender;
+            return (
+              <div key={message.id} className="group rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+                <div className="flex items-start gap-3">
+                  <ProfilePictureLink publicProfileUid={sender?.public_profile_uid} label={`Open @${sender?.username || "member"}'s public profile`}>
+                    <img src={sender?.avatar_url || ""} className="size-8 rounded-full bg-white/10 object-cover" alt="" />
+                  </ProfilePictureLink>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-xs font-black">{sender?.display_name || sender?.username || "Member"}</span>
+                      <span className="text-[10px] text-muted-foreground">{fmtAgo(new Date(message.created_at).getTime())}</span>
+                    </div>
+                    <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed">{message.body}</p>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button onClick={() => onReport(group, message.id)} className="text-muted-foreground hover:text-foreground" aria-label="Report message">
+                      <Flag className="size-3.5" />
+                    </button>
+                    <button onClick={() => onBlock(group, message.sender_id)} className="text-muted-foreground hover:text-foreground" aria-label="Block member">
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="border-t border-white/10 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+        <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 focus-within:border-primary/40">
+          <input
+            value={draft}
+            onChange={(event) => onDraft(event.target.value)}
+            onKeyDown={(event) => event.key === "Enter" && !event.shiftKey && onSend()}
+            placeholder={`Message ${group.group_name}`}
+            className="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground"
+          />
+          <button onClick={onSend} disabled={!draft.trim()} className="grid size-10 place-items-center rounded-xl send-btn-rocket disabled:opacity-50" aria-label="Send group message">
+            <Send className="size-4" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function MatchedGroupsList({ groups, onOpen, onLeave }: { groups: any[]; onOpen: (group: any) => void; onLeave: (id: string) => void }) {
+  return (
+    <div className="mb-3 space-y-2 px-1">
+      <div className="flex items-center gap-2 px-2 text-[10px] font-black uppercase tracking-[0.22em] text-primary">
+        <Sparkles className="size-3" /> Matched by Trey TV
+      </div>
+      {groups.map((membership) => {
+        const group = Array.isArray(membership.thread) ? membership.thread[0] : membership.thread;
+        if (!group) return null;
+        const reason =
+          group.group_type === "zodiac" ? "Based on your zodiac"
+          : group.group_type === "cusp" ? "Based on your Cusp Soul badge"
+          : group.city ? "Based on your city"
+          : "Based on your interests";
+        return (
+          <div key={group.id} className="rounded-2xl border border-primary/20 bg-[linear-gradient(135deg,oklch(0.82_0.16_85/.09),oklch(0.65_0.22_300/.08),oklch(0.82_0.15_215/.07))] p-3">
+            <div className="flex items-start gap-3">
+              <button onClick={() => onOpen(group)} className="grid size-10 shrink-0 place-items-center rounded-xl border border-primary/30 bg-primary/10 text-primary" aria-label={`Open ${group.group_name}`}>
+                <MessageCircle className="size-4" />
+              </button>
+              <button onClick={() => onOpen(group)} className="min-w-0 flex-1 text-left">
+                <div className="truncate text-sm font-black">{group.group_name}</div>
+                <div className="mt-0.5 text-[11px] text-muted-foreground">{reason}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <MiniChip label="Matched by Trey TV" tone="gold" />
+                  {group.zodiac_sign && <MiniChip label={group.zodiac_sign} tone="violet" />}
+                  {group.city && <MiniChip label={group.city} tone="blue" />}
+                </div>
+              </button>
+              <button onClick={() => onLeave(group.id)} className="grid size-8 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground hover:text-foreground" aria-label="Leave matched group">
+                <X className="size-3.5" />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

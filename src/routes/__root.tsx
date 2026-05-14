@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -16,13 +17,13 @@ import { ActivityProvider } from "@/lib/activity-store";
 import { SubmissionsProvider } from "@/lib/submissions-store";
 import { FeedProvider } from "@/lib/feed-store";
 import { CommentsProvider } from "@/lib/comments-store";
-import { FollowProvider } from "@/lib/follow-store";
 import { MessagesProvider } from "@/lib/messages-store";
 import { GuideProvider } from "@/lib/guide-store";
 import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 import { GiftBurstHost } from "@/components/gifts/GiftBurst";
 import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
+import { useAccentColor } from "@/hooks/use-accent-color";
 
 import appCss from "../styles.css?url";
 
@@ -139,6 +140,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const showWelcomeSplash = pathname === "/";
+
+  // Apply user's profile accent color globally
+  useAccentColor();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -149,20 +155,18 @@ function RootComponent() {
             <SubmissionsProvider>
               <FeedProvider>
                 <CommentsProvider>
-                  <FollowProvider>
-                    <MessagesProvider>
-                      <GuideProvider>
-                        <MusicReviewProvider>
-                          <WelcomeSplash onDone={() => undefined} />
-                          <Outlet />
-                          <BottomNav />
-                          <TreyIWidget />
-                          <GiftBurstHost />
-                          <Toaster />
-                        </MusicReviewProvider>
-                      </GuideProvider>
-                    </MessagesProvider>
-                  </FollowProvider>
+                  <MessagesProvider>
+                    <GuideProvider>
+                      <MusicReviewProvider>
+                        {showWelcomeSplash && <WelcomeSplash onDone={() => undefined} />}
+                        <Outlet />
+                        <BottomNav />
+                        <TreyIWidget />
+                        <GiftBurstHost />
+                        <Toaster />
+                      </MusicReviewProvider>
+                    </GuideProvider>
+                  </MessagesProvider>
                 </CommentsProvider>
               </FeedProvider>
             </SubmissionsProvider>

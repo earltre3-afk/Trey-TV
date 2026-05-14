@@ -9,6 +9,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useSupabaseReactions } from "@/hooks/use-supabase-reactions";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useComments, type Comment } from "@/lib/comments-store";
+import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
+import { isPublicProfileUid } from "@/lib/profile-links";
 
 type Post = (typeof Posts)[number];
 
@@ -40,6 +42,9 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const reshareCount = post.reshares + (reshared ? 1 : 0);
 
   const meta = { title: post.text.split("\n")[0].slice(0, 60), creator: post.creator.handle, thumb: post.media };
+  const creatorPublicProfileUid =
+    (post.creator as any).publicProfileUid ||
+    (isPublicProfileUid((post.creator as any).id) ? (post.creator as any).id : null);
 
   const requireAuth = (fn: () => void) => () => {
     if (isGuest) { toast("Sign up to interact"); nav({ to: "/signup" }); return; }
@@ -73,19 +78,24 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-center gap-3 p-4">
-        <Link
-          to="/channel/$handle"
-          params={{ handle: post.creator.handle }}
+        <ProfilePictureLink
+          publicProfileUid={creatorPublicProfileUid}
+          label={`Open @${post.creator.handle}'s public profile`}
           className="relative size-10 rounded-full conic-ring shrink-0 hover:scale-105 transition-transform"
-          aria-label={`Open @${post.creator.handle}'s profile`}
         >
           <img src={post.creator.avatar} alt="" className="size-10 rounded-full object-cover" />
-        </Link>
+        </ProfilePictureLink>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline">
-              {post.creator.name}
-            </Link>
+            {creatorPublicProfileUid ? (
+              <Link to="/u/$uid" params={{ uid: creatorPublicProfileUid }} className="font-semibold hover:underline">
+                {post.creator.name}
+              </Link>
+            ) : (
+              <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline">
+                {post.creator.name}
+              </Link>
+            )}
             <VerifiedBadge kind={post.creator.verified} />
             <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="text-xs text-muted-foreground hover:text-foreground">
               @{post.creator.handle} · {post.timeAgo}
@@ -263,15 +273,21 @@ function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c
   const [draft, setDraft] = useState(c.text);
   return (
     <div className="flex gap-2.5">
-      <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="shrink-0">
+      <ProfilePictureLink publicProfileUid={c.author.publicProfileUid} label={`Open @${c.author.handle}'s public profile`} className="shrink-0">
         <img src={c.author.avatar} alt="" className={`${compact ? "size-7" : "size-8"} rounded-full object-cover ring-1 ring-white/10`} />
-      </Link>
+      </ProfilePictureLink>
       <div className="flex-1 min-w-0">
         <div className="rounded-2xl bg-white/[0.04] border border-white/5 px-3 py-2">
           <div className="flex items-center gap-1.5 text-xs">
-            <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="font-semibold hover:underline">
-              {c.author.name}
-            </Link>
+            {c.author.publicProfileUid ? (
+              <Link to="/u/$uid" params={{ uid: c.author.publicProfileUid }} className="font-semibold hover:underline">
+                {c.author.name}
+              </Link>
+            ) : (
+              <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="font-semibold hover:underline">
+                {c.author.name}
+              </Link>
+            )}
             <span className="text-muted-foreground">· {timeAgo(c.createdAt)}{c.editedAt ? " · edited" : ""}</span>
           </div>
           {editing ? (

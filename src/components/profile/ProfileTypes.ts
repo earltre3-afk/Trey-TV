@@ -55,6 +55,14 @@ export interface ProfileData {
   profileVisibility?: "public" | "members_only" | "private";
   showLocation?: boolean;
   showBirthday?: boolean;
+  zodiacSunSign?: string | null;
+  zodiacMoonSign?: string | null;
+  zodiacRisingSign?: string | null;
+  zodiacIsCusp?: boolean;
+  zodiacCuspLabel?: string | null;
+  zodiacBadgeKey?: string | null;
+  zodiacPublicOptIn?: boolean;
+  birthChartHighlights?: Record<string, unknown> | null;
 
   // Profile type & verification
   profileType: ProfileType;
@@ -77,6 +85,31 @@ export interface ProfileData {
   accentColor?: string | null;
 }
 
+/** Relationship status between viewer and profile owner */
+export interface RelationshipStatus {
+  is_following: boolean;
+  is_followed_by: boolean;
+  is_mutual_follow: boolean;
+  is_blocked: boolean;
+  is_blocked_by: boolean;
+  can_follow: boolean;
+  can_message: boolean;
+  can_add_to_top_three: boolean;
+}
+
+/** Top 3 entry for a profile */
+export interface TopThreeEntry {
+  id: string;
+  profile_user_id: string;
+  featured_user_id: string;
+  position: number;
+  featured_username: string | null;
+  featured_display_name: string | null;
+  featured_avatar_url: string | null;
+  featured_public_profile_uid: string | null;
+  is_mutual_top_three: boolean;
+}
+
 /** Context passed down to all profile sub-components */
 export interface ProfileContext {
   profile: ProfileData;
@@ -85,4 +118,6 @@ export interface ProfileContext {
   isOwner: boolean;
   isPublicUser: boolean;
   isGuest: boolean;
+  relationshipStatus?: RelationshipStatus;
+  topThree?: TopThreeEntry[];
 }

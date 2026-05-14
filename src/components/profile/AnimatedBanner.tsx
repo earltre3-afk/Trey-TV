@@ -13,18 +13,21 @@ export function AnimatedBanner({
   fallback,
   className,
   alt = "",
+  forceVideo = false,
 }: {
   src?: string | null;
   fallback: string;
   className?: string;
   alt?: string;
+  forceVideo?: boolean;
 }) {
   const url = src && src.length > 0 ? src : fallback;
 
   const isVideo = useMemo(() => {
+    if (forceVideo) return true;
     const u = url.toLowerCase().split("?")[0];
     return /\.(mp4|webm|mov)$/.test(u) || u.startsWith("blob:") && /video/.test(src ?? "");
-  }, [url, src]);
+  }, [forceVideo, url, src]);
 
   if (isVideo) {
     return (

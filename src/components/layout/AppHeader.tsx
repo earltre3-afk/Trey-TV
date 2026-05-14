@@ -15,6 +15,7 @@ const tabs = [
   { id: "guide", label: "Guide" },
   { id: "prescribe", label: "Prescribe Me" },
   { id: "rewards", label: "Rewards" },
+  { id: "games", label: "Games" },
 ] as const;
 
 export function AppHeader({
@@ -40,6 +41,7 @@ export function AppHeader({
     : location.pathname.startsWith("/guide") ? "guide"
     : location.pathname.startsWith("/prescribe-me") ? "prescribe"
     : location.pathname.startsWith("/rewards") ? "rewards"
+    : location.pathname.startsWith("/games") ? "games"
     : activeTab;
 
   return (
@@ -107,6 +109,7 @@ export function AppHeader({
             if (t.id === "guide") navigate({ to: "/guide" });
             if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
             if (t.id === "rewards") navigate({ to: "/rewards" });
+            if (t.id === "games") navigate({ to: "/games" });
             onTabChange?.(t.id);
           };
           return (

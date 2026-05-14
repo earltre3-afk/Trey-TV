@@ -3,9 +3,6 @@ import { useState } from "react";
 import { Search, TrendingUp, Flame, Music, Film, Mic2, Gamepad2, Sparkles, Play, Eye, Radio, ArrowRight } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { creators, posts, prescribed } from "@/lib/mock-data";
-import { useFollow } from "@/lib/follow-store";
-import { useAuth } from "@/lib/auth";
-import { toast } from "sonner";
 
 function stableK(seed: string, min: number, range: number) {
   let h = 0;
@@ -37,8 +34,6 @@ const filters = ["All", "Music", "Shows", "Live", "Podcasts", "Gaming", "Lifesty
 function Explore() {
   const [active, setActive] = useState("All");
   const hero = posts[0];
-  const follow = useFollow();
-  const { isGuest } = useAuth();
   const nav = useNavigate();
 
   return (
@@ -158,9 +153,7 @@ function Explore() {
             <button className="text-xs text-primary hover:underline">See all</button>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {creators.map((c) => {
-              const followed = follow.isFollowing(c.handle);
-              return (
+            {creators.map((c) => (
                 <Link
                   to="/channel/$handle"
                   params={{ handle: c.handle }}
@@ -178,24 +171,11 @@ function Explore() {
                     <div className="text-sm font-semibold truncate">{c.name}</div>
                     <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault(); e.stopPropagation();
-                      if (isGuest) { nav({ to: "/signup" }); return; }
-                      const nowFollowing = follow.toggle({ id: c.id, name: c.name, handle: c.handle, avatar: c.avatar as unknown as string });
-                      toast.success(nowFollowing ? `Added ${c.name} to your friends` : `Removed ${c.name}`);
-                    }}
-                    className={`text-[11px] px-3 py-1 rounded-full border transition ${
-                      !isGuest && followed
-                        ? "border-primary/60 bg-primary/15 text-primary"
-                        : "border-primary/40 text-primary hover:bg-primary/10"
-                    }`}
-                  >
-                    {!isGuest && followed ? "Friends" : "Follow"}
-                  </button>
+                  <span className="text-[11px] px-3 py-1 rounded-full border border-primary/40 text-primary group-hover:bg-primary/10 transition">
+                    View Profile
+                  </span>
                 </Link>
-              );
-            })}
+            ))}
           </div>
         </section>
 

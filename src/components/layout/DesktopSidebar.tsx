@@ -7,6 +7,7 @@ import { Logo } from "@/components/brand/Logo";
 import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
+import { useAuth } from "@/lib/auth";
 
 const primary = [
   { to: "/", icon: Home, label: "Home" },
@@ -30,6 +31,11 @@ const collections = [
 
 export function DesktopSidebar() {
   const { pathname } = useLocation();
+  const { user, isCreator: authIsCreator, isAdmin: authIsAdmin } = useAuth();
+  const profileUid = user?.uid ?? currentUser.uid;
+  const profileAvatar = user?.avatar ?? currentUser.avatar;
+  const profileName = user?.name ?? currentUser.name;
+  const profileHandle = user?.handle ?? currentUser.handle;
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
 
   return (
@@ -58,16 +64,16 @@ export function DesktopSidebar() {
           </Link>
         </div>
 
-        <Link to="/u/$uid" params={{ uid: currentUser.uid }} className="flex items-center gap-3 p-2 rounded-2xl glass neon-border hover-lift">
+        <Link to="/u/$uid" params={{ uid: profileUid }} className="flex items-center gap-3 p-2 rounded-2xl glass neon-border hover-lift">
           <div className="relative size-11 rounded-full conic-ring shrink-0">
-            <img src={currentUser.avatar} className="size-11 rounded-full object-cover" alt="" />
+            <img src={profileAvatar} className="size-11 rounded-full object-cover" alt="" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold flex items-center gap-1 truncate">
-              {currentUser.name}
-              <VerifiedBadge kind="creator" className="!size-3.5" />
+              {profileName}
+              <VerifiedBadge kind={authIsAdmin ? "admin" : authIsCreator ? "creator" : "user"} className="!size-3.5" />
             </div>
-            <div className="text-[11px] text-muted-foreground truncate">@{currentUser.handle}</div>
+            <div className="text-[11px] text-muted-foreground truncate">@{profileHandle}</div>
           </div>
         </Link>
       </div>

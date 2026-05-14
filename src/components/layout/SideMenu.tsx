@@ -1,4 +1,4 @@
-import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays, Award } from "lucide-react";
+import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays, Award, Dices } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -19,6 +19,7 @@ const items: Item[] = [
   { icon: Bookmark, label: "Collections", sub: "Your Saved Content", to: "/collections", color: "text-[oklch(0.65_0.22_300)]" },
   { icon: Activity, label: "Activity", sub: "Your interactions", to: "/activity", color: "text-[oklch(0.82_0.15_215)]" },
   { icon: Gem, label: "Rewards", sub: "Points · Gifts · Perks", to: "/rewards", color: "text-primary" },
+  { icon: Dices, label: "Games", sub: "Lounge · Cards · Coming Soon", to: "/games", color: "text-[#00B7FF]" },
   { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/go-live", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Award, label: "Apply", sub: "Become a creator", to: "/apply", color: "text-primary" },
 ];

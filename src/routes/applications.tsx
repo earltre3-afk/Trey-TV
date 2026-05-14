@@ -226,7 +226,7 @@ function VerificationCard({ app, userAvatar, userName, userHandle }: {
         {/* Action buttons */}
         {(app.status === "draft" || app.status === "needs_more_info") && (
           <Link
-            to="/apply/verification"
+            to="/apply/go-verification"
             className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold text-sm text-black"
             style={{ background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))", boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)" }}
           >
@@ -306,7 +306,7 @@ function CreatorCard({ app }: { app: Application }) {
 
       <div className="flex gap-2">
         {(app.status === "draft" || app.status === "needs_more_info") && (
-          <Link to="/apply/creator" className="flex-1 py-2.5 rounded-2xl bg-primary/15 border border-primary/40 text-primary text-xs font-bold text-center hover:bg-primary/25 transition flex items-center justify-center gap-1.5">
+          <Link to="/apply/content-creator" className="flex-1 py-2.5 rounded-2xl bg-primary/15 border border-primary/40 text-primary text-xs font-bold text-center hover:bg-primary/25 transition flex items-center justify-center gap-1.5">
             <FileEdit className="size-3.5" />
             {app.status === "draft" ? "Continue Application" : "Update & Resubmit"}
           </Link>

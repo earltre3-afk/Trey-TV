@@ -5,7 +5,7 @@ import zay from "@/assets/creator-zay.jpg";
 import postStudio from "@/assets/post-studio.jpg";
 import postNight from "@/assets/post-night.jpg";
 import postConcert from "@/assets/post-concert.jpg";
-import profileTrey from "@/assets/profile-trey.jpg";
+import profileTrey from "@/assets/pixel-profile-portrait.jpg";
 
 export const creators = [
   { id: "chris", name: "Chris H.", handle: "chrishorizon", avatar: chris, ring: "magenta" as const, live: true, verified: "creator" as const },

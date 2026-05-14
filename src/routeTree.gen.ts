@@ -23,6 +23,7 @@ import { Route as LatestRouteImport } from './routes/latest'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as GuideRouteImport } from './routes/guide'
 import { Route as GoLiveRouteImport } from './routes/go-live'
+import { Route as GamesRouteImport } from './routes/games'
 import { Route as ForYouRouteImport } from './routes/for-you'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
@@ -73,7 +74,10 @@ import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApplyVerificationRouteImport } from './routes/apply.verification'
+import { Route as ApplyGoVerificationRouteImport } from './routes/apply.go-verification'
 import { Route as ApplyCreatorRouteImport } from './routes/apply.creator'
+import { Route as ApplyContentCreatorRouteImport } from './routes/apply.content-creator'
+import { Route as AdminZodiacRouteImport } from './routes/admin.zodiac'
 import { Route as AdminViewAsRouteImport } from './routes/admin.view-as'
 import { Route as AdminVideosRouteImport } from './routes/admin.videos'
 import { Route as AdminVerificationRouteImport } from './routes/admin.verification'
@@ -90,6 +94,7 @@ import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
+import { Route as UUidChannelRouteImport } from './routes/u.$uid.channel'
 import { Route as OauthJwksJsonRouteImport } from './routes/oauth.jwks.json'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
 
@@ -161,6 +166,11 @@ const GuideRoute = GuideRouteImport.update({
 const GoLiveRoute = GoLiveRouteImport.update({
   id: '/go-live',
   path: '/go-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesRoute = GamesRouteImport.update({
+  id: '/games',
+  path: '/games',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForYouRoute = ForYouRouteImport.update({
@@ -416,10 +426,25 @@ const ApplyVerificationRoute = ApplyVerificationRouteImport.update({
   path: '/verification',
   getParentRoute: () => ApplyRoute,
 } as any)
+const ApplyGoVerificationRoute = ApplyGoVerificationRouteImport.update({
+  id: '/go-verification',
+  path: '/go-verification',
+  getParentRoute: () => ApplyRoute,
+} as any)
 const ApplyCreatorRoute = ApplyCreatorRouteImport.update({
   id: '/creator',
   path: '/creator',
   getParentRoute: () => ApplyRoute,
+} as any)
+const ApplyContentCreatorRoute = ApplyContentCreatorRouteImport.update({
+  id: '/content-creator',
+  path: '/content-creator',
+  getParentRoute: () => ApplyRoute,
+} as any)
+const AdminZodiacRoute = AdminZodiacRouteImport.update({
+  id: '/zodiac',
+  path: '/zodiac',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminViewAsRoute = AdminViewAsRouteImport.update({
   id: '/view-as',
@@ -501,6 +526,11 @@ const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => AdminRoute,
 } as any)
+const UUidChannelRoute = UUidChannelRouteImport.update({
+  id: '/channel',
+  path: '/channel',
+  getParentRoute: () => UUidRoute,
+} as any)
 const OauthJwksJsonRoute = OauthJwksJsonRouteImport.update({
   id: '/oauth/jwks/json',
   path: '/oauth/jwks/json',
@@ -530,6 +560,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
+  '/games': typeof GamesRoute
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -560,7 +591,10 @@ export interface FileRoutesByFullPath {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/admin/zodiac': typeof AdminZodiacRoute
+  '/apply/content-creator': typeof ApplyContentCreatorRoute
   '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -590,12 +624,13 @@ export interface FileRoutesByFullPath {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
-  '/u/$uid': typeof UUidRoute
+  '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/u/$uid/channel': typeof UUidChannelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -614,6 +649,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
+  '/games': typeof GamesRoute
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -644,7 +680,10 @@ export interface FileRoutesByTo {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/admin/zodiac': typeof AdminZodiacRoute
+  '/apply/content-creator': typeof ApplyContentCreatorRoute
   '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -674,12 +713,13 @@ export interface FileRoutesByTo {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
-  '/u/$uid': typeof UUidRoute
+  '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio': typeof CreatorStudioIndexRoute
   '/legal': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/u/$uid/channel': typeof UUidChannelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -700,6 +740,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
   '/for-you': typeof ForYouRoute
+  '/games': typeof GamesRoute
   '/go-live': typeof GoLiveRoute
   '/guide': typeof GuideRoute
   '/inbox': typeof InboxRoute
@@ -730,7 +771,10 @@ export interface FileRoutesById {
   '/admin/verification': typeof AdminVerificationRoute
   '/admin/videos': typeof AdminVideosRoute
   '/admin/view-as': typeof AdminViewAsRoute
+  '/admin/zodiac': typeof AdminZodiacRoute
+  '/apply/content-creator': typeof ApplyContentCreatorRoute
   '/apply/creator': typeof ApplyCreatorRoute
+  '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -760,12 +804,13 @@ export interface FileRoutesById {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
-  '/u/$uid': typeof UUidRoute
+  '/u/$uid': typeof UUidRouteWithChildren
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/u/$uid/channel': typeof UUidChannelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -787,6 +832,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/following'
     | '/for-you'
+    | '/games'
     | '/go-live'
     | '/guide'
     | '/inbox'
@@ -817,7 +863,10 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/admin/zodiac'
+    | '/apply/content-creator'
     | '/apply/creator'
+    | '/apply/go-verification'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -853,6 +902,7 @@ export interface FileRouteTypes {
     | '/legal/'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
+    | '/u/$uid/channel'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -871,6 +921,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/following'
     | '/for-you'
+    | '/games'
     | '/go-live'
     | '/guide'
     | '/inbox'
@@ -901,7 +952,10 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/admin/zodiac'
+    | '/apply/content-creator'
     | '/apply/creator'
+    | '/apply/go-verification'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -937,6 +991,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
+    | '/u/$uid/channel'
   id:
     | '__root__'
     | '/'
@@ -956,6 +1011,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/following'
     | '/for-you'
+    | '/games'
     | '/go-live'
     | '/guide'
     | '/inbox'
@@ -986,7 +1042,10 @@ export interface FileRouteTypes {
     | '/admin/verification'
     | '/admin/videos'
     | '/admin/view-as'
+    | '/admin/zodiac'
+    | '/apply/content-creator'
     | '/apply/creator'
+    | '/apply/go-verification'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1022,6 +1081,7 @@ export interface FileRouteTypes {
     | '/legal/'
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
+    | '/u/$uid/channel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1042,6 +1102,7 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
   ForYouRoute: typeof ForYouRoute
+  GamesRoute: typeof GamesRoute
   GoLiveRoute: typeof GoLiveRoute
   GuideRoute: typeof GuideRoute
   InboxRoute: typeof InboxRoute
@@ -1065,7 +1126,7 @@ export interface RootRouteChildren {
   OauthRevokeRoute: typeof OauthRevokeRoute
   OauthTokenRoute: typeof OauthTokenRoute
   OauthUserinfoRoute: typeof OauthUserinfoRoute
-  UUidRoute: typeof UUidRoute
+  UUidRoute: typeof UUidRouteWithChildren
   WatchIdRoute: typeof WatchIdRoute
   LegalIndexRoute: typeof LegalIndexRoute
   OauthJwksJsonRoute: typeof OauthJwksJsonRoute
@@ -1169,6 +1230,13 @@ declare module '@tanstack/react-router' {
       path: '/go-live'
       fullPath: '/go-live'
       preLoaderRoute: typeof GoLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/for-you': {
@@ -1521,12 +1589,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyVerificationRouteImport
       parentRoute: typeof ApplyRoute
     }
+    '/apply/go-verification': {
+      id: '/apply/go-verification'
+      path: '/go-verification'
+      fullPath: '/apply/go-verification'
+      preLoaderRoute: typeof ApplyGoVerificationRouteImport
+      parentRoute: typeof ApplyRoute
+    }
     '/apply/creator': {
       id: '/apply/creator'
       path: '/creator'
       fullPath: '/apply/creator'
       preLoaderRoute: typeof ApplyCreatorRouteImport
       parentRoute: typeof ApplyRoute
+    }
+    '/apply/content-creator': {
+      id: '/apply/content-creator'
+      path: '/content-creator'
+      fullPath: '/apply/content-creator'
+      preLoaderRoute: typeof ApplyContentCreatorRouteImport
+      parentRoute: typeof ApplyRoute
+    }
+    '/admin/zodiac': {
+      id: '/admin/zodiac'
+      path: '/zodiac'
+      fullPath: '/admin/zodiac'
+      preLoaderRoute: typeof AdminZodiacRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/view-as': {
       id: '/admin/view-as'
@@ -1640,6 +1729,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/u/$uid/channel': {
+      id: '/u/$uid/channel'
+      path: '/channel'
+      fullPath: '/u/$uid/channel'
+      preLoaderRoute: typeof UUidChannelRouteImport
+      parentRoute: typeof UUidRoute
+    }
     '/oauth/jwks/json': {
       id: '/oauth/jwks/json'
       path: '/oauth/jwks/json'
@@ -1685,6 +1781,7 @@ interface AdminRouteChildren {
   AdminVerificationRoute: typeof AdminVerificationRoute
   AdminVideosRoute: typeof AdminVideosRoute
   AdminViewAsRoute: typeof AdminViewAsRoute
+  AdminZodiacRoute: typeof AdminZodiacRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -1704,17 +1801,22 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminVerificationRoute: AdminVerificationRoute,
   AdminVideosRoute: AdminVideosRoute,
   AdminViewAsRoute: AdminViewAsRoute,
+  AdminZodiacRoute: AdminZodiacRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ApplyRouteChildren {
+  ApplyContentCreatorRoute: typeof ApplyContentCreatorRoute
   ApplyCreatorRoute: typeof ApplyCreatorRoute
+  ApplyGoVerificationRoute: typeof ApplyGoVerificationRoute
   ApplyVerificationRoute: typeof ApplyVerificationRoute
 }
 
 const ApplyRouteChildren: ApplyRouteChildren = {
+  ApplyContentCreatorRoute: ApplyContentCreatorRoute,
   ApplyCreatorRoute: ApplyCreatorRoute,
+  ApplyGoVerificationRoute: ApplyGoVerificationRoute,
   ApplyVerificationRoute: ApplyVerificationRoute,
 }
 
@@ -1820,6 +1922,16 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
 
+interface UUidRouteChildren {
+  UUidChannelRoute: typeof UUidChannelRoute
+}
+
+const UUidRouteChildren: UUidRouteChildren = {
+  UUidChannelRoute: UUidChannelRoute,
+}
+
+const UUidRouteWithChildren = UUidRoute._addFileChildren(UUidRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -1838,6 +1950,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
   ForYouRoute: ForYouRoute,
+  GamesRoute: GamesRoute,
   GoLiveRoute: GoLiveRoute,
   GuideRoute: GuideRoute,
   InboxRoute: InboxRoute,
@@ -1861,7 +1974,7 @@ const rootRouteChildren: RootRouteChildren = {
   OauthRevokeRoute: OauthRevokeRoute,
   OauthTokenRoute: OauthTokenRoute,
   OauthUserinfoRoute: OauthUserinfoRoute,
-  UUidRoute: UUidRoute,
+  UUidRoute: UUidRouteWithChildren,
   WatchIdRoute: WatchIdRoute,
   LegalIndexRoute: LegalIndexRoute,
   OauthJwksJsonRoute: OauthJwksJsonRoute,

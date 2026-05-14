@@ -101,6 +101,12 @@ const STEPS = [
   { label: "Review &\nSubmit",    short: "5" },
 ];
 
+type ExistingVerification = {
+  id: string;
+  status: "pending" | "approved" | "rejected" | "revoked";
+  review_notes?: string | null;
+};
+
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
 const G = {
@@ -120,7 +126,7 @@ function GInput({ label, value, onChange, placeholder, type = "text" }: {
       <input
         type={type} value={value} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/5 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.7)] transition"
+        className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-black/25 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
         style={{ borderColor: G.goldDim }}
       />
     </div>
@@ -137,7 +143,7 @@ function GSelect({ label, value, onChange, options, placeholder }: {
       <div className="relative">
         <select
           value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl text-sm bg-white/5 border focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.7)] transition text-foreground"
+          className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl text-sm bg-black/25 border focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition text-foreground shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
           style={{ borderColor: G.goldDim }}
         >
           {placeholder && <option value="" className="bg-[#020508]">{placeholder}</option>}
@@ -160,7 +166,7 @@ function GTextarea({ label, value, onChange, placeholder, rows = 3, hint }: {
       <textarea
         value={value} rows={rows} placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/5 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.7)] transition resize-none"
+        className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-black/25 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition resize-none shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
         style={{ borderColor: G.goldDim }}
       />
     </div>
@@ -230,12 +236,12 @@ function SectionCard({ emoji, title, sub, children }: {
 }) {
   return (
     <div
-      className="rounded-3xl p-5 space-y-5"
+      className="apply-shell-panel rounded-[28px] p-5 space-y-5"
       style={{
-        background: "oklch(0.09 0.03 85 / 0.9)",
-        border: `1px solid ${G.goldDim}`,
-        boxShadow: `0 0 40px oklch(0.82 0.16 85 / 0.12), inset 0 1px 0 oklch(0.82 0.16 85 / 0.15)`,
-      }}
+        "--apply-panel-edge": "oklch(0.82 0.16 85 / 0.72)",
+        "--apply-panel-glow": "oklch(0.82 0.16 85 / 0.18)",
+        "--apply-panel-shadow": "oklch(0.82 0.16 85 / 0.75)",
+      } as React.CSSProperties}
     >
       <div className="flex items-center gap-3">
         <div
@@ -749,6 +755,63 @@ function VerificationSubmitted() {
   );
 }
 
+function ExistingVerificationState({ app }: { app: ExistingVerification }) {
+  const navigate = useNavigate();
+  const statusCopy: Record<ExistingVerification["status"], { title: string; body: string }> = {
+    pending: {
+      title: "Your Gold Verification Request Is Under Review",
+      body: "We already have your verification request in the review queue. Track the latest status from your applications page.",
+    },
+    approved: {
+      title: "Your Gold Verification Is Approved",
+      body: "Your profile has already been approved for gold verification.",
+    },
+    rejected: {
+      title: "Verification Decision Posted",
+      body: "Your verification request has a review decision. Check your applications page for review notes.",
+    },
+    revoked: {
+      title: "Verification Needs Review",
+      body: "Your verification status needs admin review before a new request can be submitted.",
+    },
+  };
+  const copy = statusCopy[app.status] ?? statusCopy.pending;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center px-5" style={{ background: "radial-gradient(ellipse 100% 50% at 50% 0%, oklch(0.22 0.09 85 / 0.6) 0%, #020508 55%)" }}>
+      <div className="w-full max-w-md rounded-3xl p-6 text-center" style={{ background: "oklch(0.09 0.03 85 / 0.9)", border: `1px solid ${G.goldDim}`, boxShadow: `0 0 60px oklch(0.82 0.16 85 / 0.25)` }}>
+        <Logo className="h-12 mx-auto drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.8)]" />
+        <div className="mx-auto mt-6 size-20 rounded-[1.75rem] grid place-items-center text-4xl" style={{ background: "linear-gradient(145deg, oklch(0.78 0.22 78), oklch(0.62 0.20 68))", border: "2px solid oklch(0.85 0.20 82 / 0.8)", boxShadow: `0 0 50px oklch(0.82 0.16 85 / 0.75)` }}>
+          🛡️
+        </div>
+        <h1 className="mt-6 text-2xl font-extrabold leading-tight">{copy.title}</h1>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{copy.body}</p>
+        {app.review_notes && (
+          <p className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-muted-foreground italic">
+            "{app.review_notes}"
+          </p>
+        )}
+        <div className="mt-6 grid gap-3">
+          <button
+            onClick={() => navigate({ to: "/applications" })}
+            className="w-full py-4 rounded-full font-bold text-sm text-black"
+            style={{ background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`, boxShadow: `0 0 34px oklch(0.82 0.16 85 / 0.55)` }}
+          >
+            View Verification Status
+          </button>
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="w-full py-4 rounded-full font-semibold text-sm"
+            style={{ background: "oklch(0.15 0.06 215 / 0.7)", border: `1px solid ${G.blueDim}` }}
+          >
+            Back to Trey TV
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Validation ────────────────────────────────────────────────────────────────
 
 function validate(step: number, d: VerifData): string | null {
@@ -780,6 +843,7 @@ function GoldVerificationApplication() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [appId, setAppId] = useState<string | null>(null);
+  const [existingApp, setExistingApp] = useState<ExistingVerification | null>(null);
 
   useEffect(() => {
     if (isGuest) {
@@ -802,15 +866,27 @@ function GoldVerificationApplication() {
     let dead = false;
     void (async () => {
       try {
+        const { data: auth } = await supabase.auth.getUser();
+        const authUserId = auth.user?.id;
+        if (!authUserId) return;
+
         const { data: row } = await (supabase as any)
           .from("creator_applications")
-          .select("id, verification_data")
+          .select("id, status, review_notes, verification_data")
           .eq("application_type", "verification")
-          .in("status", ["draft", "needs_more_info"])
+          .eq("user_id", authUserId)
           .limit(1).maybeSingle();
-        if (dead || !row?.verification_data) return;
+        if (dead || !row) return;
+        if (!["draft", "needs_more_info"].includes(row.status)) {
+          setExistingApp({
+            id: row.id,
+            status: row.status,
+            review_notes: row.review_notes,
+          });
+          return;
+        }
         setAppId(row.id);
-        setData((p) => ({ ...p, ...row.verification_data }));
+        if (row.verification_data) setData((p) => ({ ...p, ...row.verification_data }));
       } catch {}
     })();
     return () => { dead = true; };
@@ -830,7 +906,10 @@ function GoldVerificationApplication() {
   }, []);
 
   const upsert = async (status: "draft" | "pending") => {
-    const payload = { application_type: "verification", status, verification_data: data, updated_at: new Date().toISOString() };
+    const { data: auth } = await supabase.auth.getUser();
+    const authUserId = auth.user?.id;
+    if (!authUserId) throw new Error("Please sign in before submitting a verification request.");
+    const payload = { user_id: authUserId, application_type: "verification", status, verification_data: data, updated_at: new Date().toISOString() };
     if (appId) {
       const { error } = await (supabase as any).from("creator_applications").update(payload).eq("id", appId);
       if (error) throw error;
@@ -868,50 +947,44 @@ function GoldVerificationApplication() {
 
   if (isGuest) return null;
   if (submitted) return <VerificationSubmitted />;
+  if (existingApp) return <ExistingVerificationState app={existingApp} />;
 
   return (
-    <div
-      className="flex flex-col overflow-hidden"
-      style={{ height: "100dvh", background: "radial-gradient(ellipse 100% 35% at 50% 0%, oklch(0.20 0.08 85 / 0.45) 0%, #020508 50%)" }}
-    >
+    <div className="apply-scroll-page apply-luxe-page flex min-h-[100dvh] flex-col overflow-x-hidden">
       {/* ── Header: pill buttons matching reference screenshots ── */}
-      <header className="shrink-0 flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "oklch(0.82 0.16 85 / 0.12)", background: "oklch(0.06 0.02 85 / 0.95)", backdropFilter: "blur(20px)" }}>
+      <header className="relative mx-auto flex w-full max-w-5xl shrink-0 items-start justify-between px-4 pt-5">
         <button
           onClick={step === 0 ? () => navigate({ to: "/apply" }) : handleBack}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition"
-          style={{ background: "oklch(0.82 0.15 215 / 0.12)", border: `1px solid ${G.blueDim}`, color: G.blue }}
+          className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition"
         >
-          <ChevronLeft className="size-3.5" /> Back to Apply
+          <ChevronLeft className="size-4 text-[oklch(0.82_0.15_215)]" /> <span className="hidden sm:inline">Back to Apply</span><span className="sm:hidden">Back</span>
         </button>
+        <Logo className="absolute left-1/2 top-3 h-14 sm:h-20 -translate-x-1/2 drop-shadow-[0_0_30px_oklch(0.82_0.16_85_/_0.85)]" />
         <button
           onClick={handleDraft}
           disabled={saving}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition disabled:opacity-50"
-          style={{ background: "oklch(0.82 0.16 85 / 0.10)", border: `1px solid ${G.goldDim}`, color: G.gold }}
+          className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
         >
-          {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+          {saving ? <Loader2 className="size-4 animate-spin text-[oklch(0.82_0.16_85)]" /> : <Save className="size-4 text-[oklch(0.82_0.16_85)]" />}
           Save Draft
         </button>
       </header>
 
       {/* ── Logo + title on every step ── */}
-      <div className="shrink-0 text-center py-4 px-5">
-        <div style={{ filter: "drop-shadow(0 0 20px oklch(0.82 0.16 85 / 0.7))" }}>
-          <Logo className="h-12 mx-auto" />
-        </div>
-        <h1 className="text-lg font-extrabold mt-2">
-          <span style={{ color: G.gold }}>Gold Verification</span> Request
+      <div className="shrink-0 px-5 pb-3 pt-14 sm:pt-20 text-center">
+        <h1 className="text-4xl font-extrabold tracking-normal sm:text-5xl">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[oklch(0.98_0.12_95)] via-[oklch(0.82_0.16_85)] to-white drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.7)]">Gold Verification</span> Request
         </h1>
       </div>
 
       {/* ── Step progress ── */}
-      <div className="shrink-0 px-5 pb-4">
+      <div className="mx-auto w-full max-w-5xl shrink-0 px-5 pb-5">
         <StepBar current={step} />
       </div>
 
       {/* ── Scrollable content ── */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-4 max-w-lg mx-auto w-full">
-        <div className="animate-rise">
+      <div className="flex-1 px-4 pb-8">
+        <div className="animate-rise mx-auto w-full max-w-5xl">
           {step === 0 && <Step1 d={data} set={(k, v) => set(k, v as any)} avatar={user?.avatar ?? ""} />}
           {step === 1 && <Step2 d={data} set={(k, v) => set(k, v as any)} toggle={toggle} />}
           {step === 2 && <Step3 d={data} set={(k, v) => set(k, v as any)} />}
@@ -923,9 +996,9 @@ function GoldVerificationApplication() {
       {/* ── Footer: two pill buttons matching reference screenshots ── */}
       <div
         className="shrink-0 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),1rem)]"
-        style={{ background: "oklch(0.06 0.02 85 / 0.95)", borderTop: `1px solid oklch(0.82 0.16 85 / 0.12)`, backdropFilter: "blur(20px)" }}
+        style={{ background: "linear-gradient(180deg, transparent, oklch(0.02 0.01 240 / 0.92))" }}
       >
-        <div className="max-w-lg mx-auto flex gap-3">
+        <div className="mx-auto flex max-w-5xl gap-4">
           {step > 0 && (
             <button
               onClick={handleBack}

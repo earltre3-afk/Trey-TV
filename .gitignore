@@ -37,3 +37,9 @@ dist-ssr
 *.sw?
 .vercel
 supabase/.temp/
+
+# Temporary Agent and System Files
+*.pid
+tmp/
+_donor/
+/*.png
