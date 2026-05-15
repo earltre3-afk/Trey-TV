@@ -214,13 +214,32 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
       <main className="flex-1 min-h-0 px-3 py-2 flex items-stretch justify-center">
         <div
           data-game-table
-          className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden"
+          className="relative w-full h-full max-w-md mx-auto rounded-[26px] overflow-hidden ombre-border"
           style={{
-            borderColor: 'rgba(168,85,247,0.45)',
-            boxShadow: '0 0 50px rgba(168,85,247,0.18)',
-            background: '#05070D',
+            background: 'radial-gradient(120% 90% at 50% 0%, oklch(0.30 0.14 295) 0%, oklch(0.20 0.10 290) 30%, oklch(0.13 0.07 285) 60%, oklch(0.08 0.03 280) 100%)',
+            boxShadow: '0 0 70px oklch(0.72 0.24 300 / 0.22), 0 0 100px oklch(0.84 0.16 215 / 0.12)',
           }}
         >
+          {/* Top gloss */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 z-[1]" style={{ background: 'linear-gradient(180deg, oklch(1 0 0 / 0.06) 0%, transparent 55%)' }} />
+          {/* Color wash */}
+          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-50 z-[1]" style={{ background: 'radial-gradient(80% 60% at 15% 110%, oklch(0.84 0.14 82 / 0.16) 0%, transparent 60%), radial-gradient(70% 50% at 90% 5%, oklch(0.84 0.16 215 / 0.18) 0%, transparent 60%)' }} />
+          {/* Grain */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.05] z-[1]" style={{ backgroundImage: 'radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)', backgroundSize: '3px 3px' }} />
+          {/* Gold filigree corners */}
+          <span className="filigree-corner z-[2]" style={{ top: 6, left: 6 }} />
+          <span className="filigree-corner z-[2]" style={{ top: 6, right: 6, transform: 'scaleX(-1)' }} />
+          <span className="filigree-corner z-[2]" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
+          <span className="filigree-corner z-[2]" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
+          {/* Center logo watermark */}
+          <img src="/assets/games/spades-elite/treytv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-auto z-[1]" style={{ opacity: 0.10, filter: 'drop-shadow(0 0 10px oklch(0.72 0.26 300 / 0.3))' }} />
+          {/* Double gold ring */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full breathe z-[1]" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.35)', boxShadow: '0 0 18px oklch(0.72 0.26 300 / 0.20)' }} />
+          {/* Sparkles */}
+          <span className="sparkle z-[2]" style={{ top: '16%', left: '22%', animationDelay: '0.5s' }} />
+          <span className="sparkle z-[2]" style={{ top: '28%', right: '18%', animationDelay: '2.0s' }} />
+          <span className="sparkle z-[2]" style={{ bottom: '32%', right: '24%', animationDelay: '1.1s' }} />
+
           {/* ── Seat overlays — avatars above Pixi card stacks, not on top of them ── */}
           {/* Opponent card stacks render at Pixi y≈19%; avatars sit above at 8% */}
           {/* Player hand fan renders at Pixi y≈82%; avatar sits above at 74% */}

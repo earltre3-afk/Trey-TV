@@ -4,17 +4,16 @@ import {
   newSpadesGame, placeBid, playCard, legalCards, botBid, botPlay, startNextRound,
   SpadesState,
 } from '@/features/games/lib/spades/spadesEngine';
-import { TreyBrandMark } from '../shared/TreyBrandMark';
+import { cardIdToUrl } from '../pixi/pixiAssets';
+import { ChevronLeft, Crown, Info, Loader2, MessageCircle, RotateCw } from 'lucide-react';
 import { GamePlayerSeat } from '../shared/GamePlayerSeat';
 import { TreyCard } from '../shared/TreyCard';
 import { AVATAR_SEAT_NORM } from '../pixi/pixiLayout';
-import { ArrowLeft, Info, RotateCw, Loader2, Crown, Flame, Spade } from 'lucide-react';
 
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
-import { PixiSpadesTableLazy } from '../pixi/PixiGameTables';
 
 interface Props {
   onBack: () => void;
@@ -25,6 +24,15 @@ interface Props {
 }
 
 const SUIT_MAP: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
+
+const ELITE_ASSET_BASE = '/assets/games/spades-elite';
+const ELITE_PORTRAITS: Record<string, string> = {
+  aaliyah: `${ELITE_ASSET_BASE}/player-aaliyah.jpg`,
+  marcus: `${ELITE_ASSET_BASE}/player-marcus.jpg`,
+  jamal: `${ELITE_ASSET_BASE}/player-jamal.jpg`,
+  you: `${ELITE_ASSET_BASE}/player-trey.jpg`,
+  trey: `${ELITE_ASSET_BASE}/player-trey.jpg`,
+};
 
 const BOT_BID_DELAY_MS = 1800;
 const BOT_CARD_DELAY_MS = 2200;
@@ -181,6 +189,136 @@ interface ViewProps {
   chatDrawer?: React.ReactNode;
 }
 
+function elitePortraitFor(name: string, fallback: string | null | undefined) {
+  if (fallback) return fallback;
+  return ELITE_PORTRAITS[name.trim().toLowerCase()] ?? ELITE_PORTRAITS.you;
+}
+
+function EliteCard({ cardId, size = 'md', selected = false, isLegal = true, style }: {
+  cardId: string;
+  size?: 'sm' | 'md' | 'lg';
+  selected?: boolean;
+  isLegal?: boolean;
+  style?: React.CSSProperties;
+}) {
+  const dims = size === 'lg'
+    ? { w: 60, h: 86, radius: 10 }
+    : size === 'sm'
+      ? { w: 36, h: 52, radius: 7 }
+      : { w: 46, h: 66, radius: 9 };
+  const suit = cardId.slice(-1).toUpperCase();
+  const neon = suit === 'S' ? 'var(--neon-violet)' : suit === 'H' ? 'var(--neon-magenta)' : suit === 'D' ? 'var(--neon-cyan)' : 'var(--neon-lime)';
+  const faceUrl = cardIdToUrl(cardId);
+
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        width: dims.w,
+        height: dims.h,
+        borderRadius: dims.radius,
+        background: 'linear-gradient(160deg, oklch(0.10 0.03 282) 0%, oklch(0.05 0.015 280) 100%)',
+        boxShadow: selected
+          ? `0 0 26px ${neon}, 0 0 52px color-mix(in oklch, ${neon} 35%, transparent), 0 16px 32px oklch(0 0 0 / 0.75)`
+          : `var(--shadow-card), inset 0 0 0 1px ${neon}`,
+        opacity: !isLegal && !selected ? 0.45 : 1,
+        ...style,
+      }}
+    >
+      {faceUrl && <img src={faceUrl} alt={cardId} className="absolute inset-0 h-full w-full object-cover" loading="lazy" />}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(180deg, oklch(1 0 0 / 0.08) 0%, transparent 30%, transparent 70%, oklch(0 0 0 / 0.18) 100%)' }} />
+      {selected && <span className="selected-card-glow" aria-hidden />}
+    </div>
+  );
+}
+
+function EliteCardBack({ style }: { style?: React.CSSProperties }) {
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        width: 28,
+        height: 40,
+        borderRadius: 5,
+        background: 'radial-gradient(120% 90% at 50% 0%, oklch(0.18 0.08 285) 0%, oklch(0.09 0.04 282) 55%, oklch(0.04 0.015 280) 100%)',
+        boxShadow: 'inset 0 0 0 1px oklch(0.84 0.14 82 / 0.55), inset 0 0 8px oklch(0.72 0.24 300 / 0.4), 0 3px 6px oklch(0 0 0 / 0.6)',
+        ...style,
+      }}
+    >
+      <div className="absolute inset-[2px] rounded-[3px] pointer-events-none" style={{ border: '0.5px solid oklch(0.84 0.14 82 / 0.35)', boxShadow: 'inset 0 0 6px oklch(0.72 0.24 300 / 0.35)' }} />
+      <img src="/assets/games/cards/trey-tv-luxury/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+    </div>
+  );
+}
+
+function EliteFannedBacks({ count = 5, rotate = 0 }: { count?: number; rotate?: number }) {
+  return (
+    <div className="relative" style={{ width: 56, height: 50, transform: `rotate(${rotate}deg)` }}>
+      {Array.from({ length: Math.min(count, 5) }).map((_, i) => {
+        const offset = (i - (Math.min(count, 5) - 1) / 2) * 8;
+        return (
+          <EliteCardBack
+            key={i}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '50%',
+              transform: `translateX(-50%) translateX(${offset}px) rotate(${offset * 0.6}deg)`,
+              zIndex: i,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ElitePortrait({ src, active, dealer, size = 52 }: { src: string; active?: boolean; dealer?: boolean; size?: number }) {
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      {active && <span className="neon-ring-soft" aria-hidden />}
+      {active && <span className="neon-ring" aria-hidden />}
+      <div
+        className="absolute inset-0 rounded-full p-[2px]"
+        style={{
+          background: active
+            ? 'conic-gradient(from 180deg, var(--neon-violet), var(--neon-cyan), var(--neon-magenta), var(--gold-glow), var(--neon-violet))'
+            : 'linear-gradient(135deg, var(--neon-cyan), var(--neon-violet), var(--neon-magenta))',
+          boxShadow: active
+            ? '0 0 18px var(--neon-violet), 0 0 32px oklch(0.84 0.16 215 / 0.5)'
+            : '0 0 14px oklch(0.72 0.24 300 / 0.55), 0 0 22px oklch(0.84 0.16 215 / 0.3)',
+        }}
+      >
+        <img src={src} alt="" width={size} height={size} loading="lazy" className="w-full h-full rounded-full object-cover" style={{ background: 'var(--night)' }} />
+      </div>
+      {dealer && (
+        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold z-10"
+          style={{ background: 'var(--gradient-gold)', color: 'var(--night)', boxShadow: '0 2px 6px oklch(0 0 0 / 0.6), 0 0 10px var(--gold-glow)' }}>
+          D
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EliteSeatLabel({ name, meta, status }: { name: string; meta: string; status?: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 mt-1">
+      <div className="px-2.5 py-1 rounded-md text-center gold-hairline"
+        style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(14px) saturate(140%)', boxShadow: 'var(--shadow-glass)' }}>
+        <div className="font-display text-[11px] font-semibold leading-none text-white" style={{ letterSpacing: '0.14em' }}>{name}</div>
+        <div className="text-[8.5px] leading-none mt-1 tracking-[0.18em] font-numerals" style={{ color: 'oklch(0.72 0.04 260)' }}>{meta}</div>
+      </div>
+      {status && (
+        <div className="text-[9px] font-extrabold px-2 py-0.5 rounded font-display brushed-gold"
+          style={{ color: 'var(--night)', border: '1px solid oklch(0.62 0.14 70 / 0.7)', boxShadow: '0 0 16px var(--gold-glow), inset 0 1px 0 oklch(1 0 0 / 0.5), inset 0 -1px 0 oklch(0 0 0 / 0.3)', letterSpacing: '0.22em' }}>
+          {status}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SpadesView: React.FC<ViewProps> = ({
   state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer,
   onPlayCard,
@@ -206,32 +344,28 @@ const SpadesView: React.FC<ViewProps> = ({
     }
   }, [selectionResetKey, setSelected]);
 
-  const seatPositions = useMemo(() => {
-    const map: Record<number, 'bottom' | 'left' | 'top' | 'right'> = {} as any;
-    map[mySeat] = 'bottom';
-    map[(mySeat + 1) % 4] = 'left';
-    map[(mySeat + 2) % 4] = 'top';
-    map[(mySeat + 3) % 4] = 'right';
-    return map;
-  }, [mySeat]);
-
   const myTeam = (mySeat % 2) as 0 | 1;
   const teamWeScore = state.teamScores[myTeam];
   const teamThemScore = state.teamScores[1 - myTeam];
 
-  const [winnerFlash, setWinnerFlash] = useState<number | null>(null);
-  const prevTrickLen = useRef(state.trick.length);
-  useEffect(() => {
-    if (prevTrickLen.current === 3 && state.trick.length === 0 && state.lastTrickWinner !== null) {
-      setWinnerFlash(state.lastTrickWinner);
-      const t = setTimeout(() => setWinnerFlash(null), 750);
-      return () => clearTimeout(t);
-    }
-    prevTrickLen.current = state.trick.length;
-  }, [state.trick.length, state.lastTrickWinner]);
-
   const dealerSeat = ((state.round - 1) + 3) % 4;
-  const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}:${selected ?? 'none'}`;
+
+  // Map each absolute seat to a position label relative to mySeat
+  const seatPositions = useMemo(() => {
+    const positions: Record<number, 'top' | 'left' | 'right'> = {};
+    const relToPos = ['bottom', 'left', 'top', 'right'] as const;
+    for (let s = 0; s < 4; s++) {
+      const rel = (s - mySeat + 4) % 4;
+      if (rel !== 0) {
+        positions[s] = relToPos[rel] as 'top' | 'left' | 'right';
+      }
+    }
+    return positions;
+  }, [mySeat]);
+
+  // winnerFlash: seat that just won a trick (null while trick is still building)
+  const winnerFlash: number | null = null;
+
   const handleCardTap = useCallback((cardId: string) => {
     if (!isMyTurn || !legalSet.has(cardId)) return;
     const now = Date.now();
@@ -281,27 +415,18 @@ const SpadesView: React.FC<ViewProps> = ({
         <div className="px-3 py-2 flex items-center gap-2">
           <button onClick={onBack} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition" aria-label="Back"
             style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(14px)' }}>
-            <ArrowLeft size={18} />
+            <ChevronLeft size={18} />
           </button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
-            {/* Official Trey TV brandmark (transparent, no white box) */}
-            <TreyBrandMark size={20} glow className="shrink-0" />
-            <div className="h-4 w-px bg-white/15 shrink-0" />
-            <Spade size={13} className="text-cyan-300 shrink-0" />
-
-            <div className="text-sm font-black tracking-tight truncate">Spades</div>
+            <img src={`${ELITE_ASSET_BASE}/treytv-logo.png`} alt="Trey TV" className="h-8 w-auto object-contain shrink-0"
+              style={{ filter: 'drop-shadow(0 0 8px oklch(0.84 0.16 215 / 0.55)) drop-shadow(0 0 14px oklch(0.72 0.26 300 / 0.4))' }} />
+            <div className="text-sm font-black tracking-[0.28em] truncate">SPADES</div>
             <div className="text-[10px] text-slate-500 font-bold tabular-nums">· R{state.round}</div>
             {roomCode && (
               <div className="text-[9px] font-mono text-amber-300 tracking-wider ml-1 truncate">· {roomCode}</div>
             )}
           </div>
 
-          {state.spadesBroken && (
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black tracking-widest shrink-0"
-              style={{ background: 'rgba(244,63,94,0.15)', border: '1px solid rgba(244,63,94,0.45)', color: '#FB7185' }}>
-              <Flame size={9} /> BROKEN
-            </div>
-          )}
           {chatButton}
           <button onClick={onLegend} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Suit legend" title="Suit legend"><Info size={16} /></button>
         </div>
@@ -336,7 +461,7 @@ const SpadesView: React.FC<ViewProps> = ({
           <span className="filigree-corner" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
           <span className="filigree-corner" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
           {/* Center logo */}
-          <img src="/assets/trey-tv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-auto" style={{ opacity: 0.12, filter: 'drop-shadow(0 0 12px oklch(0.84 0.14 82 / 0.3))' }} />
+          <img src={`${ELITE_ASSET_BASE}/treytv-logo.png`} alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-auto object-contain" style={{ opacity: 0.85, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.55)) drop-shadow(0 0 18px oklch(0.84 0.14 82 / 0.35))' }} />
           {/* Double gold ring */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] rounded-full breathe" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.40)', boxShadow: '0 0 20px oklch(0.84 0.14 82 / 0.25)' }} />
           {/* Sparkles */}
@@ -345,27 +470,32 @@ const SpadesView: React.FC<ViewProps> = ({
           <span className="sparkle" style={{ bottom: '28%', left: '30%', animationDelay: '2.6s' }} />
           <span className="sparkle" style={{ bottom: '35%', right: '26%', animationDelay: '0.8s' }} />
 
-          <PixiSpadesTableLazy
-            hands={state.players.map(p => p.hand)}
-            trick={state.trick}
-            mySeat={mySeat}
-            currentSeat={state.currentSeat}
-            winnerSeat={winnerFlash}
-            selectedCardId={selected}
-            legalCards={yourLegal}
-            accent="#00B7FF"
-            eventKey={pixiEventKey}
-            onCardClick={handleCardTap}
-            renderHand={false}
-          />
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[160px]">
+            {state.trick.map((t, i) => {
+              const relSeat = (t.seat - mySeat + 4) % 4;
+              const slot = relSeat === 0 ? { x: 0, y: 46, r: 0 } : relSeat === 1 ? { x: -46, y: 8, r: -14 } : relSeat === 2 ? { x: 0, y: -42, r: -6 } : { x: 46, y: 8, r: 14 };
+              return (
+                <EliteCard
+                  key={`${t.seat}-${t.cardId}-${i}`}
+                  cardId={t.cardId}
+                  size="md"
+                  style={{ position: 'absolute', left: '50%', top: '50%', transform: `translate(-50%, -50%) translate(${slot.x}px, ${slot.y}px) rotate(${slot.r}deg)`, zIndex: i + 1 }}
+                />
+              );
+            })}
+            {state.trick.length < 4 && (
+              <div className="absolute left-1/2 top-1/2 w-[46px] h-[66px] rounded-[9px]"
+                style={{ transform: 'translate(-50%, -50%) translateY(46px)', border: '1px dashed oklch(0.84 0.16 215 / 0.55)', background: 'oklch(0.84 0.16 215 / 0.06)', boxShadow: '0 0 14px oklch(0.84 0.16 215 / 0.25)' }} />
+            )}
+          </div>
 
           {/* ── Player seat overlays — positioned at AVATAR_SEAT_NORM, NOT at card stack positions ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {([0, 1, 2, 3] as const).map(seat => {
-              const pos = seatPositions[seat as keyof typeof seatPositions];
-              if (!pos || pos === 'bottom') return null;
+              const pos = seatPositions[seat];
+              if (!pos) return null; // mySeat has no entry — rendered separately below
               const player = state.players[seat];
-              const norm = AVATAR_SEAT_NORM[pos];
+              const norm = AVATAR_SEAT_NORM[pos as keyof typeof AVATAR_SEAT_NORM];
               const isMyTeam = (seat % 2) === (mySeat % 2);
               return (
                 <div

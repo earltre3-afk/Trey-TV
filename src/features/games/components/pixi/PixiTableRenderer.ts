@@ -55,21 +55,16 @@ export function buildTableScene(
   const colors = STYLE_COLORS[style];
   const { w, h } = layout;
 
-  // ── Outer rim (casino table edge) ──────────────────────────────
+  // ── Outer rim / felt — transparent so CSS gradient background shows through ──
   const rim = new Graphics();
   const rimPad = Math.min(w, h) * 0.032;
   rim.roundRect(0, 0, w, h, Math.min(28, w * 0.07))
-    .fill({ color: colors.rim, alpha: 1 });
-  // Rim highlight stripe (top)
-  rim.roundRect(rimPad * 0.3, rimPad * 0.3, w - rimPad * 0.6, h - rimPad * 0.6, Math.min(24, w * 0.06))
-    .fill({ color: 0x000000, alpha: 0.01 })
-    .stroke({ color: 0xffffff, alpha: 0.12, width: 1 });
+    .fill({ color: colors.rim, alpha: 0 });
   tableLayer.addChild(rim);
 
-  // ── Felt surface ──────────────────────────────────────────────
   const felt = new Graphics();
   felt.roundRect(rimPad, rimPad, w - rimPad * 2, h - rimPad * 2, Math.min(20, w * 0.05))
-    .fill({ color: colors.felt, alpha: 1 });
+    .fill({ color: colors.felt, alpha: 0 });
   tableLayer.addChild(felt);
 
   // Felt grain (fine crosshatch pattern for texture)

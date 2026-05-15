@@ -286,13 +286,32 @@ const BJView: React.FC<ViewProps> = ({
       <main className="flex-1 min-h-0 px-3 py-2 flex items-center justify-center">
         <div
           data-game-table
-          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
+          className={`relative w-full h-full max-w-md mx-auto rounded-[32px] overflow-hidden ombre-border ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
           style={{
-            borderColor: `${accent}66`,
-            boxShadow: `0 0 60px ${accent}24, inset 0 0 68px ${accent}10, inset 0 1px 0 rgba(255,255,255,0.08)`,
-            background: '#05070D',
+            background: 'radial-gradient(120% 90% at 50% 0%, oklch(0.26 0.09 82) 0%, oklch(0.17 0.06 78) 30%, oklch(0.11 0.04 72) 60%, oklch(0.07 0.02 68) 100%)',
+            boxShadow: `0 0 70px oklch(0.84 0.14 82 / 0.20), 0 0 100px oklch(0.72 0.24 300 / 0.12)`,
           }}
         >
+          {/* Top gloss */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2" style={{ background: 'linear-gradient(180deg, oklch(1 0 0 / 0.07) 0%, transparent 55%)', zIndex: 1 }} />
+          {/* Color wash */}
+          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-50 z-[1]" style={{ background: 'radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.22) 0%, transparent 60%), radial-gradient(70% 50% at 85% 5%, oklch(0.84 0.16 215 / 0.12) 0%, transparent 60%)' }} />
+          {/* Grain */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.05] z-[1]" style={{ backgroundImage: 'radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)', backgroundSize: '3px 3px' }} />
+          {/* Gold filigree corners */}
+          <span className="filigree-corner z-[2]" style={{ top: 6, left: 6 }} />
+          <span className="filigree-corner z-[2]" style={{ top: 6, right: 6, transform: 'scaleX(-1)' }} />
+          <span className="filigree-corner z-[2]" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
+          <span className="filigree-corner z-[2]" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
+          {/* Center logo watermark */}
+          <img src="/assets/games/spades-elite/treytv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-auto z-[1]" style={{ opacity: 0.10, filter: 'drop-shadow(0 0 10px oklch(0.84 0.14 82 / 0.25))' }} />
+          {/* Double gold ring */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full breathe z-[1]" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.38)', boxShadow: '0 0 18px oklch(0.84 0.14 82 / 0.22)' }} />
+          {/* Sparkles */}
+          <span className="sparkle z-[2]" style={{ top: '15%', left: '20%', animationDelay: '0.3s' }} />
+          <span className="sparkle z-[2]" style={{ top: '25%', right: '16%', animationDelay: '1.8s' }} />
+          <span className="sparkle z-[2]" style={{ bottom: '30%', left: '28%', animationDelay: '0s' }} />
+
           {/* Pixi renders the entire table scene: felt, rim, dealer cards, player cards, chips */}
           <PixiBlackjackTableLazy
             dealerCards={state.dealer}
