@@ -6,6 +6,7 @@ import {
 } from '@/features/games/lib/spades/spadesEngine';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
 import { GamePlayerSeat } from '../shared/GamePlayerSeat';
+import { TreyCard } from '../shared/TreyCard';
 import { AVATAR_SEAT_NORM } from '../pixi/pixiLayout';
 import { ArrowLeft, Info, RotateCw, Loader2, Crown, Flame, Spade } from 'lucide-react';
 
@@ -22,6 +23,8 @@ interface Props {
   roomId?: string;
   identity?: PlayerIdentity;
 }
+
+const SUIT_MAP: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
 
 const BOT_BID_DELAY_MS = 1800;
 const BOT_CARD_DELAY_MS = 2200;
@@ -158,12 +161,6 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
 
 
 // ============================================
-// HAND ROW — fits all cards on screen, no overflow
-// Measures container width and computes overlap so every card is visible.
-// ============================================
-const CARD_W = 42; // xs card width in px
-
-// ============================================
 // SHARED VIEW — mobile-first, no-scroll, fixed viewport
 // ============================================
 interface ViewProps {
@@ -193,20 +190,6 @@ const SpadesView: React.FC<ViewProps> = ({
   const isMyTurn = state.currentSeat === mySeat;
   const yourLegal = useMemo(() => state.phase === 'playing' && isMyTurn ? legalCards(state, mySeat) : [], [state, mySeat, isMyTurn]);
   const legalSet = useMemo(() => new Set(yourLegal), [yourLegal]);
-  const handHitTargets = useMemo(() => {
-    const count = you.hand.length;
-    const spacingPct = Math.min(5.1, 62 / Math.max(count, 1));
-    const totalPct = spacingPct * Math.max(count - 1, 0);
-
-    return you.hand.map((cardId, index) => {
-      const t = count > 1 ? (index / (count - 1)) * 2 - 1 : 0;
-      return {
-        cardId,
-        left: `calc(50% + ${-totalPct / 2 + index * spacingPct}%)`,
-        transform: `translate(-50%, -50%) rotate(${t * 2.4}deg)`,
-      };
-    });
-  }, [you.hand]);
 
   useEffect(() => {
     if (selected && !legalSet.has(selected)) setSelected(null);
@@ -236,6 +219,15 @@ const SpadesView: React.FC<ViewProps> = ({
     }
     prevTrickLen.current = state.trick.length;
   }, [state.trick.length, state.lastTrickWinner]);
+
+  // Reset selected card when a trick clears (new trick starts)
+  const prevTrickLenRef = useRef(state.trick.length);
+  useEffect(() => {
+    if (state.trick.length === 0 && prevTrickLenRef.current > 0) {
+      setSelected(null);
+    }
+    prevTrickLenRef.current = state.trick.length;
+  }, [state.trick.length, setSelected]);
 
   const dealerSeat = ((state.round - 1) + 3) % 4;
   const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}:${selected ?? 'none'}`;
@@ -286,7 +278,8 @@ const SpadesView: React.FC<ViewProps> = ({
           boxShadow: '0 6px 24px rgba(0,0,0,0.4)',
         }}>
         <div className="px-3 py-2 flex items-center gap-2">
-          <button onClick={onBack} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition border border-white/5" aria-label="Back">
+          <button onClick={onBack} className="w-10 h-10 inline-flex items-center justify-center rounded-lg hover:bg-white/5 transition" aria-label="Back"
+            style={{ background: 'var(--glass)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(14px)' }}>
             <ArrowLeft size={18} />
           </button>
           <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -324,12 +317,33 @@ const SpadesView: React.FC<ViewProps> = ({
       <main className="flex-1 min-h-0 relative flex items-center justify-center px-2 py-1.5">
         <div
           data-game-table
-          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden"
+          className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden ombre-border"
           style={{
-            border: '1.5px solid rgba(0,183,255,0.32)',
-            background: '#05070D',
+            background: 'radial-gradient(120% 90% at 50% 0%, oklch(0.32 0.13 280) 0%, oklch(0.20 0.10 270) 30%, oklch(0.14 0.08 255) 60%, oklch(0.10 0.06 240) 100%)',
+            boxShadow: '0 0 60px oklch(0.72 0.26 300 / 0.22), 0 0 90px oklch(0.84 0.16 215 / 0.15)',
           }}
         >
+          {/* Top gloss */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2" style={{ background: 'linear-gradient(180deg, oklch(1 0 0 / 0.06) 0%, oklch(1 0 0 / 0.01) 50%, transparent 100%)' }} />
+          {/* Color wash */}
+          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-60" style={{ background: 'radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.18) 0%, transparent 60%), radial-gradient(80% 60% at 90% 0%, oklch(0.84 0.16 215 / 0.16) 0%, transparent 60%)' }} />
+          {/* Grain */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)', backgroundSize: '3px 3px' }} />
+          {/* Gold filigree corners */}
+          <span className="filigree-corner" style={{ top: 6, left: 6 }} />
+          <span className="filigree-corner" style={{ top: 6, right: 6, transform: 'scaleX(-1)' }} />
+          <span className="filigree-corner" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
+          <span className="filigree-corner" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
+          {/* Center logo */}
+          <img src="/assets/trey-tv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-auto" style={{ opacity: 0.12, filter: 'drop-shadow(0 0 12px oklch(0.84 0.14 82 / 0.3))' }} />
+          {/* Double gold ring */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] rounded-full breathe" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.40)', boxShadow: '0 0 20px oklch(0.84 0.14 82 / 0.25)' }} />
+          {/* Sparkles */}
+          <span className="sparkle" style={{ top: '18%', left: '22%', animationDelay: '0s' }} />
+          <span className="sparkle" style={{ top: '30%', right: '18%', animationDelay: '1.4s' }} />
+          <span className="sparkle" style={{ bottom: '28%', left: '30%', animationDelay: '2.6s' }} />
+          <span className="sparkle" style={{ bottom: '35%', right: '26%', animationDelay: '0.8s' }} />
+
           <PixiSpadesTableLazy
             hands={state.players.map(p => p.hand)}
             trick={state.trick}
@@ -341,36 +355,8 @@ const SpadesView: React.FC<ViewProps> = ({
             accent="#00B7FF"
             eventKey={pixiEventKey}
             onCardClick={handleCardTap}
+            renderHand={false}
           />
-
-          {/* ── Mobile hand hit targets — Pixi stays visual, DOM keeps taps reliable ── */}
-          {state.phase === 'playing' && isMyTurn && (
-            <div className="absolute inset-0" aria-hidden="true" style={{ zIndex: 12, pointerEvents: 'none' }}>
-              {handHitTargets.filter(({ cardId }) => legalSet.has(cardId)).map(({ cardId, left, transform }) => (
-                <button
-                  key={cardId}
-                  type="button"
-                  data-spades-card-hit={cardId}
-                  tabIndex={-1}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    handleCardTap(cardId);
-                  }}
-                  className="absolute rounded-lg"
-                  style={{
-                    left,
-                    top: '70%',
-                    width: 'clamp(34px, 8.8vw, 46px)',
-                    height: 'clamp(76px, 19vw, 102px)',
-                    transform,
-                    pointerEvents: 'auto',
-                    opacity: 0,
-                    touchAction: 'manipulation',
-                  }}
-                />
-              ))}
-            </div>
-          )}
 
           {/* ── Player seat overlays — positioned at AVATAR_SEAT_NORM, NOT at card stack positions ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
@@ -457,6 +443,45 @@ const SpadesView: React.FC<ViewProps> = ({
         </div>
       </main>
 
+      {/* React hand section — replaces Pixi hand rendering */}
+      {state.phase !== 'game-over' && (
+        <section className="shrink-0 z-20 px-2 pt-1" style={{ overflow: 'visible' }}>
+          <div className="relative flex items-end justify-center" style={{ height: 120 }}>
+            {(() => {
+              const myHand = state.players[mySeat]?.hand ?? [];
+              const total = myHand.length;
+              if (total === 0) return null;
+              const center = (total - 1) / 2;
+              const spreadX = Math.min(28, 350 / Math.max(total, 1));
+              const arc = 2.4;
+              return myHand.map((cardId, i) => {
+                const offset = i - center;
+                const isSelected = cardId === selected;
+                const isLegal = yourLegal.length === 0 || yourLegal.includes(cardId);
+                return (
+                  <button
+                    key={cardId}
+                    onClick={() => {
+                      if (!isMyTurn || !isLegal) return;
+                      setSelected(isSelected ? null : cardId);
+                    }}
+                    className="absolute bottom-0 transition-all duration-200 ease-out focus:outline-none"
+                    style={{
+                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -36 : Math.abs(offset) * 1.8}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.18 : 1})`,
+                      zIndex: isSelected ? 100 : i + 1,
+                      pointerEvents: state.phase === 'playing' ? 'auto' : 'none',
+                    }}
+                    aria-label={cardId}
+                    aria-pressed={isSelected}
+                  >
+                    <TreyCard cardId={cardId} selected={isSelected} isLegal={isLegal} />
+                  </button>
+                );
+              });
+            })()}
+          </div>
+        </section>
+      )}
 
       {/* BOTTOM ACTION PANEL — bidding OR play hand */}
       {state.phase === 'bidding' && isMyTurn && (
@@ -518,7 +543,7 @@ const SpadesView: React.FC<ViewProps> = ({
       )}
 
       {state.phase !== 'bidding' && state.phase !== 'game-over' && (
-        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2 relative overflow-hidden"
+        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2 relative overflow-hidden liquid-shimmer"
           style={{
             background: 'linear-gradient(180deg, rgba(5,7,13,0.96), rgba(5,7,13,0.99))',
             borderColor: 'rgba(0,183,255,0.35)',
@@ -535,12 +560,17 @@ const SpadesView: React.FC<ViewProps> = ({
               disabled={!selected || !yourLegal.includes(selected) || !isMyTurn}
               className="px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase transition-all disabled:opacity-30 active:scale-95 relative overflow-hidden"
               style={{
-                background: selected && yourLegal.includes(selected) && isMyTurn ? 'linear-gradient(90deg,#00B7FF,#A855F7)' : 'rgba(255,255,255,0.06)',
+                background: selected && yourLegal.includes(selected) && isMyTurn ? 'var(--gradient-cta)' : 'rgba(255,255,255,0.06)',
                 boxShadow: selected && yourLegal.includes(selected) && isMyTurn ? '0 0 26px rgba(0,183,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3)' : 'none',
                 color: selected && yourLegal.includes(selected) && isMyTurn ? '#fff' : '#94A3B8',
                 border: '1px solid ' + (selected && yourLegal.includes(selected) && isMyTurn ? 'transparent' : 'rgba(255,255,255,0.1)'),
               }}>
-              Play Card
+              {selected && yourLegal.includes(selected) && isMyTurn
+                ? `PLAY ${selected.slice(0, -1)}${SUIT_MAP[selected.slice(-1).toUpperCase()] ?? selected.slice(-1)}`
+                : 'Play Card'}
+              {selected && yourLegal.includes(selected) && isMyTurn && (
+                <span className="absolute inset-0 holo-sheen" />
+              )}
             </button>
           </div>
         </section>
@@ -670,13 +700,23 @@ const ScoreCard: React.FC<{ label: string; score: number; bid: number; tricks: n
             <span className="text-amber-300">{bags}b</span>
           </div>
         </div>
-        <div key={popKey}
-          className="text-2xl font-black tracking-tight tabular-nums trey-score-pop"
-          style={{
-            color: '#fff',
-            textShadow: `0 0 14px ${color}80, 0 0 2px ${color}`,
-            fontFamily: "'Cinzel', serif",
-          }}>{score}</div>
+        <div className="flex flex-col items-end">
+          <div key={popKey}
+            className="text-2xl font-black tracking-tight tabular-nums trey-score-pop"
+            style={{
+              color: '#fff',
+              textShadow: `0 0 14px ${color}80, 0 0 2px ${color}`,
+              fontFamily: "'Cinzel', serif",
+            }}>{score}</div>
+          <div className="flex items-center gap-1 mt-1">
+            <span style={{ fontSize: 7, color: 'oklch(0.65 0.03 250)', letterSpacing: '0.18em', fontWeight: 700 }}>BAGS</span>
+            <div className="flex gap-[2px]">
+              {Array.from({ length: Math.min(bags, 10) }).map((_, i) => (
+                <span key={i} style={{ width: 4, height: 4, borderRadius: '50%', background: color, boxShadow: `0 0 4px ${color}`, display: 'inline-block' }} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

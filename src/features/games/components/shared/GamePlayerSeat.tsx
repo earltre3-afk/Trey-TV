@@ -207,20 +207,25 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
     >
       {/* Avatar + optional dealer badge */}
       <div style={{ position: 'relative', flexShrink: 0, width: sz.dim, height: sz.dim }}>
+        {isCurrentTurn && <span className="neon-ring-soft" aria-hidden />}
+        {isCurrentTurn && <span className="neon-ring" aria-hidden />}
         <div
           style={{
             width: '100%',
             height: '100%',
             borderRadius: '50%',
-            border: `${borderWidth}px solid ${ringColor}`,
+            border: winFlash
+              ? `2px solid transparent`
+              : `${borderWidth}px solid ${ringColor}`,
             boxShadow: winFlash
-              ? `0 0 24px ${TURN_COLOR}, 0 0 48px ${TURN_COLOR}80`
-              : ringGlow,
+              ? undefined
+              : isCurrentTurn ? undefined : ringGlow,
+            background: winFlash
+              ? `conic-gradient(from 0deg, oklch(0.92 0.18 88), oklch(0.84 0.14 82), oklch(0.96 0.10 88), oklch(0.84 0.14 82), oklch(0.92 0.18 88)) border-box`
+              : '#05070D',
             overflow: 'hidden',
             position: 'relative',
-            animation: isCurrentTurn ? 'trey-seat-pulse 1.7s ease-in-out infinite' : undefined,
             transition: 'border-color 0.25s, box-shadow 0.25s',
-            background: '#05070D',
           }}
         >
           {avatarUrl ? (
@@ -283,7 +288,7 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
         )}
       </div>
 
-      {/* Name */}
+      {/* Name — glass chip */}
       <div
         style={{
           fontSize: sz.namePx,
@@ -299,6 +304,12 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
             ? `0 0 10px ${TURN_COLOR}99`
             : '0 1px 4px rgba(0,0,0,0.95)',
           transition: 'color 0.25s, text-shadow 0.25s',
+          background: 'var(--glass)',
+          border: '1px solid var(--glass-border)',
+          backdropFilter: 'blur(14px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          padding: '2.5px 8px',
+          borderRadius: 999,
         }}
       >
         {displayName.split(' ')[0]}

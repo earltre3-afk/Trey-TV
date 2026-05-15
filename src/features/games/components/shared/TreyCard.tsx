@@ -1,108 +1,101 @@
-import React from 'react';
-import { CardDef, SUIT_DISPLAY, getCard } from '@/features/games/lib/cards/cardManifest';
+// TreyCard.tsx
+// React card component for the player hand fan (not Pixi).
+// Uses official Trey TV luxury card face images via cardIdToUrl().
+import React, { type CSSProperties } from 'react';
+import { cardIdToUrl } from '../pixi/pixiAssets';
 
 interface TreyCardProps {
-  cardId?: string;
+  cardId: string;
   faceDown?: boolean;
-  size?: 'xs' | 'sm' | 'md' | 'lg';
   selected?: boolean;
-  playable?: boolean;
-  dimmed?: boolean;
+  isLegal?: boolean; // if false, dim the card
   onClick?: () => void;
-  className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }
 
-const SIZE_MAP = {
-  xs: { w: 42,  h: 62  },
-  sm: { w: 58,  h: 86  },
-  md: { w: 78,  h: 114 },
-  lg: { w: 108, h: 158 },
-};
-
-/* ============================================================
-   Premium Trey TV Card
-   - Glossy gradient surface + holographic shimmer sweep
-   - Suit-themed neon edges & corner ink
-   - Face cards (J/Q/K) and Ace receive bespoke ornament
-   - Card back: dark liquid-glass + OFFICIAL Trey TV brandmark
-     rendered as SVG (no white box, fully transparent)
-   ============================================================ */
-export const TreyCard: React.FC<TreyCardProps> = ({
-  cardId, faceDown, size = 'md', selected, playable, dimmed, onClick, className, style,
-}) => {
-  const dims = SIZE_MAP[size];
-  const card: CardDef | null = cardId && !faceDown ? getCard(cardId) : null;
-  const suitMeta = card ? SUIT_DISPLAY[card.suit] : null;
-
-  const baseStyle: React.CSSProperties = {
-    width: dims.w,
-    height: dims.h,
-    ...style,
-  };
-
-  /* ===== CARD BACK ===== */
-  if (faceDown || !card) {
-    return (
-      <div
-        onClick={onClick}
-        className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 trey-card-depth ${onClick ? 'cursor-pointer active:scale-95' : ''} ${selected ? 'trey-card-depth-selected' : ''} ${className || ''}`}
-        style={{
-          ...baseStyle,
-          boxShadow: '0 14px 30px rgba(0,0,0,0.68), 0 0 28px rgba(0,183,255,0.24), inset 0 1px 0 rgba(255,255,255,0.20)',
-        }}
-      >
-        <img
-          src="/assets/games/cards/trey-tv-luxury/card-back.png"
-          alt="Card back"
-          className="absolute inset-0 w-full h-full object-cover"
-          draggable={false}
-        />
-        {/* holographic shimmer sweep */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl">
-          <div className="trey-card-shimmer absolute -inset-y-2 w-1/3"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent)' }} />
-        </div>
-      </div>
-    );
-  }
-
-
-
-
-  /* ===== CARD FACE — PNG ===== */
-  const c = suitMeta!.color;
-  const glow = suitMeta!.glow;
-
-  const ring = selected
-    ? `0 0 0 2px ${c}, 0 0 36px ${glow}, 0 10px 26px rgba(0,0,0,0.6)`
-    : playable
-      ? `0 0 22px ${glow}, 0 4px 16px rgba(0,0,0,0.55)`
-      : `0 4px 16px rgba(0,0,0,0.55)`;
+export const TreyCard: React.FC<TreyCardProps> = ({ cardId, faceDown, selected, isLegal = true, onClick, style }) => {
+  const faceUrl = faceDown ? null : cardIdToUrl(cardId);
+  const suit = cardId.slice(-1).toUpperCase();
+  const rank = cardId.slice(0, -1).toUpperCase();
+  const isRed = suit === 'H' || suit === 'D';
+  const SUIT_GLYPH: Record<string, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
 
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-xl overflow-hidden select-none transition-all duration-300 trey-card-depth ${onClick ? 'cursor-pointer hover:-translate-y-1 active:scale-95' : ''} ${selected ? 'trey-card-depth-selected' : ''} ${dimmed ? 'opacity-35 saturate-50' : ''} ${className || ''}`}
-      style={{ ...baseStyle, boxShadow: ring }}
+      style={{
+        position: 'relative',
+        width: 60,
+        height: 86,
+        borderRadius: 10,
+        overflow: 'hidden',
+        background: faceDown
+          ? 'radial-gradient(120% 90% at 50% 0%, oklch(0.18 0.08 285) 0%, oklch(0.09 0.04 282) 55%, oklch(0.04 0.015 280) 100%)'
+          : 'linear-gradient(160deg, #0d1124 0%, #060910 100%)',
+        boxShadow: selected
+          ? '0 0 26px var(--neon-cyan), 0 0 52px oklch(0.84 0.16 215 / 0.35), 0 16px 32px rgba(0,0,0,0.75)'
+          : '0 10px 24px -8px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.5)',
+        opacity: !isLegal && !selected ? 0.45 : 1,
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'opacity 0.2s',
+        flexShrink: 0,
+        ...style,
+      }}
     >
-      <img
-        src={card.assetPath}
-        alt={`${card.rank} of ${card.suit}`}
-        className="absolute inset-0 w-full h-full object-cover"
-        draggable={false}
-      />
-
-      {/* selected breathing glow overlay */}
-      {selected && (
-        <div className="absolute inset-0 rounded-xl pointer-events-none trey-card-breathe" style={{ color: c }} />
+      {faceDown ? (
+        // Card back with official Trey TV card-back image
+        <img
+          src="/assets/games/cards/trey-tv-luxury/card-back.png"
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : faceUrl ? (
+        // Official Trey TV luxury card face
+        <>
+          <img
+            src={faceUrl}
+            alt={`${rank}${SUIT_GLYPH[suit] ?? suit}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.18) 100%)',
+            pointerEvents: 'none',
+          }} />
+        </>
+      ) : (
+        // Fallback: procedural card (no face image)
+        <>
+          <div style={{
+            position: 'absolute', top: 4, left: 5,
+            fontSize: 12, fontWeight: 700, lineHeight: 1,
+            color: isRed ? '#e44' : '#b5c7f5',
+            fontFamily: "Georgia, 'Times New Roman', serif",
+            textShadow: isRed ? '0 0 6px #f44' : '0 0 6px #88aaff',
+          }}>
+            <div>{rank}</div>
+            <div style={{ fontSize: 10, marginTop: 1 }}>{SUIT_GLYPH[suit] ?? suit}</div>
+          </div>
+          <div style={{
+            position: 'absolute', inset: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 28, color: isRed ? '#e44' : '#b5c7f5',
+            textShadow: isRed ? '0 0 10px #f44' : '0 0 10px #88aaff',
+          }}>
+            {SUIT_GLYPH[suit] ?? suit}
+          </div>
+          <div style={{
+            position: 'absolute', bottom: 4, right: 5, transform: 'rotate(180deg)',
+            fontSize: 12, fontWeight: 700, lineHeight: 1,
+            color: isRed ? '#e44' : '#b5c7f5',
+            fontFamily: "Georgia, 'Times New Roman', serif",
+          }}>
+            <div>{rank}</div>
+            <div style={{ fontSize: 10, marginTop: 1 }}>{SUIT_GLYPH[suit] ?? suit}</div>
+          </div>
+        </>
       )}
-
-      {/* holographic shimmer */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl">
-        <div className="trey-card-shimmer absolute -inset-y-2 w-1/3"
-          style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.10), transparent)' }} />
-      </div>
+      {selected && <span className="selected-card-glow" aria-hidden />}
     </div>
   );
 };
