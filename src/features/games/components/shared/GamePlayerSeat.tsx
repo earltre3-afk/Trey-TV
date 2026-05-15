@@ -29,47 +29,43 @@ const SIZES = {
 function renderHairSvg(style: HairStyle, hair: string): React.ReactElement {
   switch (style) {
     case 'afro':
-      return <ellipse cx="32" cy="21" rx="19" ry="14" fill={hair} />;
+      return <path d="M11 31C8 20 14 9 25 8c2-5 12-6 16-1 11 1 17 10 14 23-4-6-10-9-23-9-12 0-18 4-21 10Z" fill={hair} />;
     case 'short':
-      return <ellipse cx="32" cy="17" rx="13" ry="8" fill={hair} />;
+      return <path d="M16 26C16 13 25 8 33 8c9 0 16 6 16 18-8-5-22-6-33 0Z" fill={hair} />;
     case 'natural':
-      return <ellipse cx="32" cy="20" rx="17" ry="13" fill={hair} />;
+      return <path d="M12 29C10 16 18 7 32 7s22 9 20 22c-10-8-28-8-40 0Z" fill={hair} />;
     case 'mohawk':
-      return <rect x="27" y="5" width="10" height="23" rx="5" fill={hair} />;
+      return <path d="M27 5c4-2 8-2 11 0l-1 25H26L27 5Z" fill={hair} />;
     case 'long':
       return (
         <>
-          <ellipse cx="32" cy="14" rx="16" ry="12" fill={hair} />
-          <rect x="11" y="16" width="8" height="44" rx="4" fill={hair} />
-          <rect x="45" y="16" width="8" height="44" rx="4" fill={hair} />
+          <path d="M14 57C8 36 12 8 32 8s24 28 18 49H14Z" fill={hair} />
+          <path d="M16 29C19 14 43 14 48 29c-10-7-22-8-32 0Z" fill="rgba(255,255,255,0.10)" />
         </>
       );
     case 'braids':
       return (
         <>
-          <rect x="20" y="6" width="4" height="36" rx="2" fill={hair} />
-          <rect x="27" y="4" width="4" height="40" rx="2" fill={hair} />
-          <rect x="33" y="4" width="4" height="40" rx="2" fill={hair} />
-          <rect x="40" y="6" width="4" height="36" rx="2" fill={hair} />
+          <path d="M15 26C17 13 24 8 32 8s15 5 17 18c-8-5-25-5-34 0Z" fill={hair} />
+          {[18, 24, 30, 36, 42].map((x) => <rect key={x} x={x} y="13" width="4" height="34" rx="2" fill={hair} />)}
         </>
       );
     case 'waves':
       return (
         <path
-          d="M13 23 Q19 14 25 23 Q31 32 37 23 Q43 14 51 23 L52 8 Q42 2 32 2 Q22 2 12 8 Z"
+          d="M13 25 Q18 13 25 22 Q31 30 38 22 Q44 13 51 25 L51 13 Q42 7 32 7 Q22 7 13 13 Z"
           fill={hair}
         />
       );
     case 'locs':
       return (
         <>
-          <ellipse cx="22" cy="17" rx="5" ry="15" fill={hair} />
-          <ellipse cx="32" cy="14" rx="5" ry="18" fill={hair} />
-          <ellipse cx="42" cy="17" rx="5" ry="15" fill={hair} />
+          <path d="M15 27C17 14 24 8 32 8s15 6 17 19c-8-6-25-6-34 0Z" fill={hair} />
+          {[18, 25, 32, 39, 46].map((x, i) => <rect key={x} x={x} y={14 + (i % 2) * 2} width="5" height="32" rx="2.5" fill={hair} />)}
         </>
       );
     default:
-      return <ellipse cx="32" cy="18" rx="14" ry="10" fill={hair} />;
+      return <path d="M16 26C17 14 25 8 32 8c9 0 15 6 16 18-8-5-23-5-32 0Z" fill={hair} />;
   }
 }
 
@@ -88,19 +84,43 @@ function BotAvatarSvg({ profile }: { profile: BotProfile }) {
           <stop offset="0%" stopColor={profile.bgFrom} />
           <stop offset="100%" stopColor={profile.bgTo} />
         </radialGradient>
+        <linearGradient id={`skin_${uid}`} x1="22" y1="18" x2="44" y2="55">
+          <stop offset="0%" stopColor="#fff6e8" stopOpacity="0.28" />
+          <stop offset="36%" stopColor={profile.skin} />
+          <stop offset="100%" stopColor="#140806" stopOpacity="0.46" />
+        </linearGradient>
+        <linearGradient id={`suit_${uid}`} x1="18" y1="50" x2="47" y2="64">
+          <stop offset="0%" stopColor="#0c1628" />
+          <stop offset="100%" stopColor="#05070d" />
+        </linearGradient>
+        <filter id={`soft_${uid}`} x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.55" />
+        </filter>
         <clipPath id={`clip_${uid}`}>
           <circle cx="32" cy="32" r="31.5" />
         </clipPath>
       </defs>
       <g clipPath={`url(#clip_${uid})`}>
         <circle cx="32" cy="32" r="32" fill={`url(#bg_${uid})`} />
-        {renderHairSvg(profile.hairStyle, profile.hair)}
-        <ellipse cx="32" cy="41" rx="12" ry="13" fill={profile.skin} />
-        <circle cx="27.5" cy="38" r="2.2" fill="#0a0806" />
-        <circle cx="36.5" cy="38" r="2.2" fill="#0a0806" />
-        <circle cx="26.8" cy="37.2" r="0.9" fill="rgba(255,255,255,0.52)" />
-        <circle cx="35.8" cy="37.2" r="0.9" fill="rgba(255,255,255,0.52)" />
-        <circle cx="32" cy="32" r="31" fill="none" stroke={profile.ring} strokeWidth="1" strokeOpacity="0.18" />
+        <circle cx="18" cy="14" r="18" fill="#fff" opacity="0.09" />
+        <path d="M13 64c2-11 10-17 19-17s17 6 19 17H13Z" fill={`url(#suit_${uid})`} filter={`url(#soft_${uid})`} />
+        <path d="M23 49h18l-3 10H26l-3-10Z" fill={profile.skin} opacity="0.92" />
+        <g filter={`url(#soft_${uid})`}>
+          {renderHairSvg(profile.hairStyle, profile.hair)}
+          <path
+            d="M19 32c0-12 5-20 13-20s13 8 13 20c0 11-5 20-13 20S19 43 19 32Z"
+            fill={`url(#skin_${uid})`}
+          />
+          <path d="M20 31c1-8 5-14 12-14s11 6 12 14c-7-4-16-4-24 0Z" fill={profile.hair} opacity="0.88" />
+          <path d="M25 35c2-1 4-1 6 0M34 35c2-1 4-1 6 0" stroke="#120806" strokeWidth="1.5" strokeLinecap="round" opacity="0.62" />
+          <circle cx="28" cy="38" r="1.35" fill="#080606" />
+          <circle cx="37" cy="38" r="1.35" fill="#080606" />
+          <path d="M32 38.5c-1.2 2.8-1.1 4.1 1 4.4" stroke="#2a120c" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.45" />
+          <path d="M28 46c2.6 1.7 5.4 1.7 8 0" stroke="#2a0d0d" strokeWidth="1.2" strokeLinecap="round" fill="none" opacity="0.7" />
+          <path d="M21 27c4-5 8-7 12-7" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" opacity="0.12" />
+        </g>
+        <path d="M6 54C18 58 45 58 58 54v10H6V54Z" fill="#000" opacity="0.18" />
+        <circle cx="32" cy="32" r="31" fill="none" stroke={profile.ring} strokeWidth="1" strokeOpacity="0.16" />
       </g>
       <circle cx="32" cy="32" r="30.5" fill="none" stroke={profile.ring} strokeWidth="1.8" strokeOpacity="0.62" />
     </svg>
@@ -151,6 +171,7 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
   cardCount,
   accentColor = '#00B7FF',
   size = 'md',
+  position,
   winFlash = false,
 }) => {
   const sz = SIZES[size];
@@ -168,10 +189,14 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
     .toUpperCase();
 
   const botProfile: BotProfile | undefined =
-    isBot || !avatarUrl ? getBotProfile(displayName) : undefined;
+    isBot ? getBotProfile(displayName) : undefined;
 
   return (
     <div
+      data-game-player-seat
+      data-seat-name={displayName}
+      data-seat-bot={isBot ? 'true' : 'false'}
+      data-seat-position={position}
       style={{
         display: 'flex',
         flexDirection: 'column',

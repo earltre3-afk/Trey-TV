@@ -24,10 +24,10 @@ export interface TableLayout {
  * top: very near top, above the top opponent card stack (at y≈0.22)
  */
 export const AVATAR_SEAT_NORM = {
-  bottom: { x: 0.50, y: 0.68 },
-  left:   { x: 0.11, y: 0.36 },
-  top:    { x: 0.50, y: 0.07 },
-  right:  { x: 0.89, y: 0.36 },
+  bottom: { x: 0.50, y: 0.90 },
+  left:   { x: 0.16, y: 0.40 },
+  top:    { x: 0.50, y: 0.12 },
+  right:  { x: 0.84, y: 0.40 },
 } as const;
 
 /** @deprecated use AVATAR_SEAT_NORM */
@@ -58,10 +58,10 @@ export function seatCenter(
   const rotated = (seat - bottomSeat + 4) % 4;
   const { w, h } = layout;
   switch (rotated) {
-    case 0: return { x: w * 0.50, y: h * 0.82 };   // bottom (player)
-    case 1: return { x: w * 0.12, y: h * 0.50 };   // left
-    case 2: return { x: w * 0.50, y: h * 0.22 };   // top — shifted down from 0.16 to clear avatar at 7%
-    case 3: return { x: w * 0.88, y: h * 0.50 };   // right
+    case 0: return { x: w * 0.50, y: h * 0.73 };   // bottom hand lane, above player rail
+    case 1: return { x: w * 0.29, y: h * 0.42 };   // left stack tied to left seat
+    case 2: return { x: w * 0.50, y: h * 0.25 };   // top stack below top seat
+    case 3: return { x: w * 0.71, y: h * 0.42 };   // right stack tied to right seat
     default: return { x: w / 2, y: h / 2 };
   }
 }

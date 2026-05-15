@@ -233,28 +233,30 @@ function renderBS(scene: BSScene, props: PixiBullshitProps) {
 
   // ── Player hand at bottom ───────────────────────────────────
   const myHand = props.myHand;
-  const fanItems = fanLayout(myHand.length, cardW, w * 0.82, cardH * 0.1);
-  const handY = h * 0.82;
+  const handCardW = cardW * 0.90;
+  const handCardH = cardH * 0.90;
+  const fanItems = fanLayout(myHand.length, handCardW, w * 0.64, handCardH * 0.1);
+  const handY = h * 0.70;
 
   myHand.forEach((cardId, i) => {
     const fan = fanItems[i];
     const isSel = props.selectedCards.includes(cardId);
 
     const card = makeCardSprite({
-      cardW, cardH,
+      cardW: handCardW, cardH: handCardH,
       faceDown: false,
       faceTex: cardFaces.get(cardId) ?? null,
       backTex: cardBack,
       accent,
     });
     card.x = cx + fan.dx;
-    card.y = handY + fan.dy + (isSel ? -cardH * 0.14 : 0);
+    card.y = handY + fan.dy + (isSel ? -handCardH * 0.18 : 0);
     card.rotation = fan.rotation;
     card.scale.set(isSel ? 1.06 : 1);
 
     if (isSel) {
       const selGlow = new Graphics();
-      selGlow.roundRect(-cardW / 2 - 4, -cardH / 2 - 4, cardW + 8, cardH + 8, cardW * 0.15)
+      selGlow.roundRect(-handCardW / 2 - 4, -handCardH / 2 - 4, handCardW + 8, handCardH + 8, handCardW * 0.15)
         .fill({ color: accent, alpha: 0.18 })
         .stroke({ color: accent, alpha: 0.8, width: 1.8 });
       card.addChildAt(selGlow, 0);

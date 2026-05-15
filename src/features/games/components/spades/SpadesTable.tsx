@@ -71,6 +71,7 @@ const LocalSpades: React.FC<Props> = ({ onBack, onLegend, targetScore = 500 }) =
       onNextRound={() => setState(startNextRound)}
       onPlayAgain={() => setState(newSpadesGame(['You','Aaliyah','Marcus','Jamal'], targetScore))}
       onBack={onBack} onLegend={onLegend}
+      myAvatarUrl={null}
     />
   );
 };
@@ -121,6 +122,7 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
       onPlayAgain={onBack}
       onBack={onBack} onLegend={onLegend}
       roomCode={room.room?.room_code}
+      myAvatarUrl={identity.avatarUrl}
       chatButton={
         <ChatHeaderButton unread={chat.unread} accent="#00B7FF" onClick={() => setChatOpen(true)} />
       }
@@ -163,12 +165,13 @@ interface ViewProps {
   onBack: () => void;
   onLegend: () => void;
   roomCode?: string;
+  myAvatarUrl?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
 
 const SpadesView: React.FC<ViewProps> = ({
-  state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, chatButton, chatDrawer,
+  state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer,
 }) => {
 
   const you = state.players[mySeat];
@@ -270,8 +273,9 @@ const SpadesView: React.FC<ViewProps> = ({
       </header>
 
       {/* FELT — flexes to fill remaining space */}
-      <main className="flex-1 min-h-0 relative flex items-center justify-center px-2 py-2">
+      <main className="flex-1 min-h-0 relative flex items-center justify-center px-2 py-1.5">
         <div
+          data-game-table
           className="relative w-full h-full max-w-md mx-auto rounded-[28px] overflow-hidden"
           style={{
             border: '1.5px solid rgba(0,183,255,0.32)',
@@ -295,7 +299,7 @@ const SpadesView: React.FC<ViewProps> = ({
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
             {([0, 1, 2, 3] as const).map(seat => {
               const pos = seatPositions[seat as keyof typeof seatPositions];
-              if (!pos) return null;
+              if (!pos || pos === 'bottom') return null;
               const player = state.players[seat];
               const norm = AVATAR_SEAT_NORM[pos];
               const isMyTeam = (seat % 2) === (mySeat % 2);
@@ -318,7 +322,7 @@ const SpadesView: React.FC<ViewProps> = ({
                     bid={player.bid}
                     tricks={player.tricksWon}
                     accentColor={isMyTeam ? '#00B7FF' : '#A855F7'}
-                    size={pos === 'bottom' ? 'md' : 'sm'}
+                    size="sm"
                     position={pos}
                     winFlash={winnerFlash === seat}
                   />
@@ -326,13 +330,60 @@ const SpadesView: React.FC<ViewProps> = ({
               );
             })}
           </div>
+
+          <div className="absolute inset-x-2 bottom-2 pointer-events-none" style={{ zIndex: 14 }}>
+            <div
+              className="relative overflow-hidden rounded-[22px] border px-3 py-2 flex items-center gap-3"
+              style={{
+                minHeight: 72,
+                background: 'linear-gradient(90deg, rgba(3,8,18,0.90), rgba(8,17,31,0.74))',
+                borderColor: isMyTurn ? 'rgba(255,200,87,0.62)' : 'rgba(0,183,255,0.30)',
+                boxShadow: isMyTurn
+                  ? '0 0 28px rgba(255,200,87,0.22), inset 0 1px 0 rgba(255,255,255,0.08)'
+                  : '0 10px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(18px)',
+              }}
+            >
+              <div className="absolute inset-x-3 top-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(0,183,255,0.65), rgba(255,200,87,0.45), transparent)' }} />
+              <GamePlayerSeat
+                displayName={you.name}
+                avatarUrl={myAvatarUrl}
+                isBot={you.isBot}
+                isCurrentTurn={isMyTurn}
+                isDealer={dealerSeat === mySeat}
+                bid={you.bid}
+                tricks={you.tricksWon}
+                accentColor="#00B7FF"
+                size="md"
+                position="bottom"
+                winFlash={winnerFlash === mySeat}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[9px] tracking-[0.30em] font-black" style={{ color: isMyTurn ? '#FFC857' : '#00B7FF' }}>
+                  {isMyTurn ? 'ACTIVE SEAT' : 'YOUR SEAT'}
+                </div>
+                <div className="text-sm font-black truncate mt-0.5">{you.name}</div>
+                <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] font-bold tabular-nums">
+                  <span className="rounded-full px-2 py-0.5 border text-cyan-200" style={{ background: 'rgba(0,183,255,0.10)', borderColor: 'rgba(0,183,255,0.32)' }}>
+                    Bid {you.bid ?? '-'}
+                  </span>
+                  <span className="rounded-full px-2 py-0.5 border text-slate-200" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)' }}>
+                    Tricks {you.tricksWon}
+                  </span>
+                  <span className="rounded-full px-2 py-0.5 border text-amber-200" style={{ background: 'rgba(255,200,87,0.08)', borderColor: 'rgba(255,200,87,0.22)' }}>
+                    {you.hand.length} cards
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
 
       {/* BOTTOM ACTION PANEL — bidding OR play hand */}
       {state.phase === 'bidding' && isMyTurn && (
-        <section className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3 relative overflow-hidden"
+        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3 relative overflow-hidden"
           style={{
             background: 'linear-gradient(180deg, rgba(5,7,13,0.96), rgba(5,7,13,0.99))',
             borderColor: 'rgba(0,183,255,0.35)',
@@ -378,7 +429,7 @@ const SpadesView: React.FC<ViewProps> = ({
       )}
 
       {state.phase === 'bidding' && !isMyTurn && (
-        <section className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3 relative overflow-hidden"
+        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3 relative overflow-hidden"
           style={{ background: 'rgba(5,7,13,0.94)', borderColor: 'rgba(0,183,255,0.28)' }}>
           <div className="absolute inset-x-0 top-0 h-px"
             style={{ background: 'linear-gradient(90deg, transparent, rgba(0,183,255,0.5), transparent)' }} />
@@ -390,7 +441,7 @@ const SpadesView: React.FC<ViewProps> = ({
       )}
 
       {state.phase !== 'bidding' && state.phase !== 'game-over' && (
-        <section className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2 relative overflow-hidden"
+        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2 relative overflow-hidden"
           style={{
             background: 'linear-gradient(180deg, rgba(5,7,13,0.96), rgba(5,7,13,0.99))',
             borderColor: 'rgba(0,183,255,0.35)',

@@ -138,22 +138,22 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     container.x = pos.x;
     container.y = pos.y;
 
-    // Draw stacked face-down cards
+    // Draw grouped face-down card stacks near each seat without covering portraits.
     for (let i = 0; i < stackCount; i++) {
       const card = makeCardSprite({
-        cardW: cardW * 0.72, cardH: cardH * 0.72,
+        cardW: cardW * 0.66, cardH: cardH * 0.66,
         faceDown: true,
         backTex: cardBack,
         accent,
       });
       const isHoriz = relSeat === 2; // top seat — horizontal fan
       if (isHoriz) {
-        card.x = (i - (stackCount - 1) / 2) * cardW * 0.22;
+        card.x = (i - (stackCount - 1) / 2) * cardW * 0.20;
         card.y = i * -1.5;
       } else {
-        card.x = (i - (stackCount - 1) / 2) * cardW * 0.14;
-        card.y = i * -2;
-        card.rotation = (i - (stackCount - 1) / 2) * 0.04;
+        card.x = (i - (stackCount - 1) / 2) * cardW * 0.12;
+        card.y = i * -1.5;
+        card.rotation = (i - (stackCount - 1) / 2) * 0.025;
       }
       container.addChild(card);
     }
@@ -167,23 +167,34 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
   });
 
   if (props.currentSeat === props.mySeat) {
-    const myPos = seatCenter(props.mySeat as 0 | 1 | 2 | 3, layout, props.mySeat);
-    scene.turnRing.x = myPos.x;
-    scene.turnRing.y = myPos.y;
-    scene.turnRing.alpha = 1;
+    scene.turnRing.alpha = 0;
   } else if (!([1, 2, 3].some(r => (props.mySeat + r) % 4 === props.currentSeat))) {
     scene.turnRing.alpha = 0;
   }
 
   // ── Center trick landing slots (always visible, faint ghost outlines) ──────
-  const trickSlots: Record<number, { x: number; y: number }> = {
-    0: { x: cx,              y: cy + cardH * 0.52 },  // bottom
-    1: { x: cx - cardW * 0.88, y: cy },               // left
-    2: { x: cx,              y: cy - cardH * 0.52 },  // top
-    3: { x: cx + cardW * 0.88, y: cy },               // right
+  const trickCenterY = cy - cardH * 0.18;
+  const trickSlots: Record<number, { x: number; y: number; r: number }> = {
+    0: { x: cx,                y: trickCenterY + cardH * 0.50, r: 0 },  // bottom
+    1: { x: cx - cardW * 0.74, y: trickCenterY,              r: -0.025 }, // left
+    2: { x: cx,                y: trickCenterY - cardH * 0.50, r: 0 },  // top
+    3: { x: cx + cardW * 0.74, y: trickCenterY,              r: 0.025 },  // right
   };
 
-  // Draw faint slot outlines so the center doesn't look empty
+  const inset = new Graphics();
+  inset
+    .roundRect(cx - cardW * 1.40, trickCenterY - cardH * 0.96, cardW * 2.8, cardH * 1.92, cardW * 0.28)
+    .fill({ color: 0x020815, alpha: 0.24 })
+    .stroke({ color: accent, alpha: 0.14, width: 1.0 });
+  centerContainer.addChild(inset);
+
+  const innerGlow = new Graphics();
+  innerGlow
+    .ellipse(cx, trickCenterY, cardW * 1.42, cardH * 0.88)
+    .fill({ color: accent, alpha: props.trick.length > 0 ? 0.045 : 0.018 });
+  centerContainer.addChild(innerGlow);
+
+  // Draw landing-slot outlines so played cards sit in a clean trick zone.
   const slotW = cardW * 0.88;
   const slotH = cardH * 0.88;
   const slotR = slotW * 0.1;
@@ -191,8 +202,8 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     const slotBg = new Graphics();
     slotBg
       .roundRect(x - slotW / 2, y - slotH / 2, slotW, slotH, slotR)
-      .fill({ color: 0xffffff, alpha: 0.025 })
-      .stroke({ color: accent, alpha: 0.18, width: 1.2 });
+      .fill({ color: 0xffffff, alpha: props.trick.length > 0 ? 0.020 : 0.008 })
+      .stroke({ color: accent, alpha: props.trick.length > 0 ? 0.16 : 0.075, width: 1 });
     centerContainer.addChild(slotBg);
   });
 
@@ -208,7 +219,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     });
     card.x = slot.x;
     card.y = slot.y;
-    card.rotation = (relSeat % 2 === 0 ? 0 : 0.06) + (Math.random() * 0.04 - 0.02);
+    card.rotation = slot.r;
 
     if (!scene.table.reducedMotion) {
       const fromPos = seatCenter(seat as 0 | 1 | 2 | 3, layout, props.mySeat);
@@ -248,8 +259,10 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
 
   // ── My hand (bottom) ───────────────────────────────────────
   const myHand = props.hands[props.mySeat] ?? [];
-  const fanItems = fanLayout(myHand.length, cardW, w * 0.82, cardH * 0.12);
-  const handY = h * 0.84;
+  const handCardW = cardW * 0.90;
+  const handCardH = cardH * 0.90;
+  const fanItems = fanLayout(myHand.length, handCardW, w * 0.64, handCardH * 0.10);
+  const handY = h * 0.70;
 
   myHand.forEach((cardId, i) => {
     const fan = fanItems[i];
@@ -258,7 +271,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     const dimFactor = props.legalCards.length > 0 && !isLegal ? 0 : 1;
 
     const card = makeCardSprite({
-      cardW, cardH,
+      cardW: handCardW, cardH: handCardH,
       faceDown: false,
       faceTex: cardFaces.get(cardId) ?? null,
       backTex: cardBack,
@@ -266,14 +279,14 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
       dimFactor,
     });
     card.x = cx + fan.dx;
-    card.y = handY + fan.dy + (isSelected ? -cardH * 0.14 : 0);
+    card.y = handY + fan.dy + (isSelected ? -handCardH * 0.18 : 0);
     card.rotation = fan.rotation;
     card.scale.set(isSelected ? 1.06 : 1);
 
     // Playable glow ring
     if (isLegal && !isSelected) {
       const glow = new Graphics();
-      glow.roundRect(-cardW / 2 - 2, -cardH / 2 - 2, cardW + 4, cardH + 4, cardW * 0.13)
+      glow.roundRect(-handCardW / 2 - 2, -handCardH / 2 - 2, handCardW + 4, handCardH + 4, handCardW * 0.13)
         .fill({ color: accent, alpha: 0.12 })
         .stroke({ color: accent, alpha: 0.55, width: 1.2 });
       card.addChildAt(glow, 0);
@@ -281,7 +294,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     // Selected glow
     if (isSelected) {
       const selGlow = new Graphics();
-      selGlow.roundRect(-cardW / 2 - 4, -cardH / 2 - 4, cardW + 8, cardH + 8, cardW * 0.15)
+      selGlow.roundRect(-handCardW / 2 - 4, -handCardH / 2 - 4, handCardW + 8, handCardH + 8, handCardW * 0.15)
         .fill({ color: 0xffc857, alpha: 0.18 })
         .stroke({ color: 0xffc857, alpha: 0.8, width: 1.8 });
       card.addChildAt(selGlow, 0);

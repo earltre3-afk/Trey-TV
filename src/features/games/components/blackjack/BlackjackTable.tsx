@@ -72,6 +72,7 @@ const LocalBJ: React.FC<Props> = ({ onBack, onLegend }) => {
       onStand={() => setState(stand)}
       onDouble={() => setState(doubleDown)}
       onNext={() => setState(nextHand)}
+      playerAvatarUrl={null}
     />
   );
 };
@@ -109,6 +110,7 @@ const ServerBJ: React.FC<
       onStand={() => send("stand")}
       onDouble={() => send("double")}
       onNext={() => send("next")}
+      playerAvatarUrl={identity.avatarUrl}
       chatButton={
         <ChatHeaderButton
           unread={chat.unread}
@@ -142,6 +144,7 @@ interface ViewProps {
   onDouble: () => void;
   onNext: () => void;
   roomCode?: string;
+  playerAvatarUrl?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
@@ -156,6 +159,7 @@ const BJView: React.FC<ViewProps> = ({
   onDouble,
   onNext,
   roomCode,
+  playerAvatarUrl,
   chatButton,
   chatDrawer,
 }) => {
@@ -281,6 +285,7 @@ const BJView: React.FC<ViewProps> = ({
       {/* PIXI TABLE — primary game visual layer */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-center justify-center">
         <div
+          data-game-table
           className={`relative w-full h-full max-w-md mx-auto rounded-[32px] border overflow-hidden ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
           style={{
             borderColor: `${accent}66`,
@@ -316,6 +321,7 @@ const BJView: React.FC<ViewProps> = ({
             <div style={{ position: 'absolute', top: '88%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
               <GamePlayerSeat
                 displayName="You"
+                avatarUrl={playerAvatarUrl}
                 isBot={false}
                 isCurrentTurn={state.phase === 'player'}
                 accentColor="#00B7FF"
@@ -372,6 +378,7 @@ const BJView: React.FC<ViewProps> = ({
 
       {/* BOTTOM ACTION PANEL */}
       <section
+        data-game-action-panel
         className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3"
         style={{
           background:

@@ -70,7 +70,7 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
     onCall={() => setState(s => callBullshit(s, 0))}
     onPass={() => setState(passChallenge)}
     onRestart={() => { setState(newBullshitGame(['You','Aaliyah','Marcus','Jamal'])); setSelected([]); }}
-    onBack={onBack} onLegend={onLegend} />;
+    onBack={onBack} onLegend={onLegend} myAvatarUrl={null} />;
 };
 
 const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> = ({ roomId, identity, onBack, onLegend }) => {
@@ -120,6 +120,7 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
     onCall={() => room.sendMove({ type: 'call', seat: mySeat })}
     onPass={() => room.sendMove({ type: 'pass', seat: mySeat })}
     onRestart={onBack} onBack={onBack} onLegend={onLegend} roomCode={room.room?.room_code}
+    myAvatarUrl={identity.avatarUrl}
     chatButton={<ChatHeaderButton unread={chat.unread} accent="#A855F7" onClick={() => setChatOpen(true)} />}
     chatDrawer={
       <GameChatDrawer
@@ -141,11 +142,12 @@ interface ViewProps {
   selected: string[]; setSelected: (s: string[] | ((p: string[]) => string[])) => void;
   onClaim: () => void; onCall: () => void; onPass: () => void; onRestart: () => void;
   onBack: () => void; onLegend: () => void; roomCode?: string;
+  myAvatarUrl?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
 
-const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onClaim, onCall, onPass, onRestart, onBack, onLegend, roomCode, chatButton, chatDrawer }) => {
+const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onClaim, onCall, onPass, onRestart, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer }) => {
   const you = state.players[mySeat];
   const isYourTurn = state.phase === 'playing' && state.currentSeat === mySeat;
   const canCall = state.phase === 'awaiting-challenge' && state.lastClaim && state.lastClaim.seat !== mySeat;
@@ -191,6 +193,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
       {/* TABLE — flex-1 */}
       <main className="flex-1 min-h-0 px-3 py-2 flex items-stretch justify-center">
         <div
+          data-game-table
           className="relative w-full h-full max-w-md mx-auto rounded-[26px] border-2 overflow-hidden"
           style={{
             borderColor: 'rgba(168,85,247,0.45)',
@@ -228,9 +231,18 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                 </div>
               );
             })}
-            <div style={{ position: 'absolute', top: '74%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', insetInline: 8, bottom: 8, pointerEvents: 'none' }}>
+              <div className="relative overflow-hidden rounded-[22px] border px-3 py-2 flex items-center gap-3"
+                style={{
+                  minHeight: 72,
+                  background: 'linear-gradient(90deg, rgba(8,6,18,0.90), rgba(18,10,31,0.76))',
+                  borderColor: isYourTurn ? 'rgba(255,200,87,0.60)' : 'rgba(168,85,247,0.34)',
+                  boxShadow: isYourTurn ? '0 0 26px rgba(255,200,87,0.20), inset 0 1px 0 rgba(255,255,255,0.08)' : '0 10px 28px rgba(0,0,0,0.34)',
+                  backdropFilter: 'blur(18px)',
+                }}>
               <GamePlayerSeat
                 displayName={you.name}
+                avatarUrl={myAvatarUrl}
                 isBot={you.isBot}
                 isCurrentTurn={isYourTurn}
                 cardCount={you.hand.length}
@@ -238,6 +250,17 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                 size="md"
                 position="bottom"
               />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[9px] tracking-[0.30em] font-black" style={{ color: isYourTurn ? '#FFC857' : '#C4A6FF' }}>
+                    {isYourTurn ? 'ACTIVE SEAT' : 'YOUR SEAT'}
+                  </div>
+                  <div className="text-sm font-black truncate mt-0.5">{you.name}</div>
+                  <div className="mt-1 inline-flex rounded-full px-2 py-0.5 border text-[10px] font-bold text-purple-100"
+                    style={{ background: 'rgba(168,85,247,0.10)', borderColor: 'rgba(168,85,247,0.28)' }}>
+                    {you.hand.length} cards
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -298,7 +321,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
 
       {/* BOTTOM ACTION PANEL */}
       {state.phase !== 'game-over' && (
-        <section className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2"
+        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2"
           style={{ background: 'rgba(8,17,31,0.96)', borderColor: 'rgba(168,85,247,0.3)', boxShadow: '0 -10px 30px rgba(168,85,247,0.18)' }}>
           <div className="flex justify-center gap-1.5 mb-2 flex-wrap">
             {isYourTurn && (
