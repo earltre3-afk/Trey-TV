@@ -23,6 +23,10 @@ interface Props {
   identity?: PlayerIdentity;
 }
 
+const BOT_BID_DELAY_MS = 1800;
+const BOT_CARD_DELAY_MS = 2200;
+const BOT_TRICK_CLOSE_DELAY_MS = 3000;
+
 function spadesApplyMove(state: SpadesState, move: { type: string; seat: number; payload?: any }): SpadesState {
   switch (move.type) {
     case 'bid': return placeBid(state, move.seat, move.payload.bid);
@@ -50,12 +54,12 @@ const LocalSpades: React.FC<Props> = ({ onBack, onLegend, targetScore = 500 }) =
   useEffect(() => {
     if (state.phase === 'bidding' && state.players[state.currentSeat].isBot) {
       const seat = state.currentSeat;
-      const t = setTimeout(() => setState(s => placeBid(s, seat, botBid(s, seat))), 700);
+      const t = setTimeout(() => setState(s => placeBid(s, seat, botBid(s, seat))), BOT_BID_DELAY_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'playing' && state.players[state.currentSeat].isBot) {
       const seat = state.currentSeat;
-      const delay = state.trick.length === 3 ? 900 : 650;
+      const delay = state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS;
       const t = setTimeout(() => setState(s => playCard(s, seat, botPlay(s, seat))), delay);
       return () => clearTimeout(t);
     }
@@ -96,12 +100,12 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
     if (!seatPlayer || !seatPlayer.is_bot) return;
     if (state.phase === 'bidding') {
       const seat = state.currentSeat;
-      const t = setTimeout(() => room.setHostState(placeBid(state, seat, botBid(state, seat))), 800);
+      const t = setTimeout(() => room.setHostState(placeBid(state, seat, botBid(state, seat))), BOT_BID_DELAY_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'playing') {
       const seat = state.currentSeat;
-      const delay = state.trick.length === 3 ? 1000 : 700;
+      const delay = state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS;
       const t = setTimeout(() => room.setHostState(playCard(state, seat, botPlay(state, seat))), delay);
       return () => clearTimeout(t);
     }

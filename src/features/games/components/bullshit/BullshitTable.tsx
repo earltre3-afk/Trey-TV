@@ -15,6 +15,10 @@ import { PixiBullshitTableLazy } from '../pixi/PixiGameTables';
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
 
+const BOT_CLAIM_DELAY_MS = 2400;
+const BOT_CHALLENGE_DELAY_MS = 2600;
+const REVEAL_CLEAR_DELAY_MS = 3400;
+
 function bsApply(state: BSState, move: { type: string; seat: number; payload?: any }): BSState {
   switch (move.type) {
     case 'claim': return makeClaim(state, move.seat, move.payload.cardIds, move.payload.rank);
@@ -43,7 +47,7 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
       const t = setTimeout(() => {
         const { cardIds, rank } = botClaim(state, seat);
         setState(s => makeClaim(s, seat, cardIds, rank));
-      }, 1100);
+      }, BOT_CLAIM_DELAY_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'awaiting-challenge') {
@@ -52,14 +56,14 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
         const caller = callerSeats.find(s => botShouldCall(state, s));
         if (caller !== undefined) setState(s => callBullshit(s, caller));
         else setState(passChallenge);
-      }, 1400);
+      }, BOT_CHALLENGE_DELAY_MS);
       return () => clearTimeout(t);
     }
   }, [state.phase, state.currentSeat, state.lastClaim?.cardIds.join(',')]);
 
   useEffect(() => {
     if (state.reveal) {
-      const t = setTimeout(() => setState(s => ({ ...s, reveal: null })), 2600);
+      const t = setTimeout(() => setState(s => ({ ...s, reveal: null })), REVEAL_CLEAR_DELAY_MS);
       return () => clearTimeout(t);
     }
   }, [state.reveal]);
@@ -92,7 +96,7 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
       const t = setTimeout(() => {
         const { cardIds, rank } = botClaim(state, seat);
         room.setHostState(makeClaim(state, seat, cardIds, rank));
-      }, 1200);
+      }, BOT_CLAIM_DELAY_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'awaiting-challenge') {
@@ -101,14 +105,14 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
         const caller = botCallers.find(s => botShouldCall(state, s));
         if (caller !== undefined) room.setHostState(callBullshit(state, caller));
         else room.setHostState(passChallenge(state));
-      }, 1500);
+      }, BOT_CHALLENGE_DELAY_MS);
       return () => clearTimeout(t);
     }
   }, [room.isHost, state?.phase, state?.currentSeat, state?.lastClaim?.cardIds.join(','), room.players.length]);
 
   useEffect(() => {
     if (!room.isHost || !state?.reveal) return;
-    const t = setTimeout(() => room.setHostState({ ...state, reveal: null }), 2600);
+    const t = setTimeout(() => room.setHostState({ ...state, reveal: null }), REVEAL_CLEAR_DELAY_MS);
     return () => clearTimeout(t);
   }, [room.isHost, state?.reveal]);
 
