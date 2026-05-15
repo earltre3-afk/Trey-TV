@@ -6,7 +6,7 @@ import {
 } from '@/features/games/lib/spades/spadesEngine';
 import { cardIdToUrl } from '../pixi/pixiAssets';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
-import { ArrowLeft, Crown, Info, Loader2, RotateCw, Spade } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, Crown, Info, Loader2, RotateCw, Spade } from 'lucide-react';
 import { GamePlayerSeat } from '../shared/GamePlayerSeat';
 import { TreyCard } from '../shared/TreyCard';
 import { AVATAR_SEAT_NORM } from '../pixi/pixiLayout';
@@ -220,7 +220,8 @@ function EliteCard({ cardId, size = 'md', selected = false, isLegal = true, styl
   );
 }
 
-function EliteCardBack({ style }: { style?: React.CSSProperties }) {
+/** Single card back — Trey TV luxury back with gold-bordered glass frame */
+function CardBack({ style }: { style?: React.CSSProperties }) {
   return (
     <div
       className="relative overflow-hidden"
@@ -235,6 +236,50 @@ function EliteCardBack({ style }: { style?: React.CSSProperties }) {
     >
       <div className="absolute inset-[2px] rounded-[3px] pointer-events-none" style={{ border: '0.5px solid oklch(0.84 0.14 82 / 0.35)', boxShadow: 'inset 0 0 6px oklch(0.72 0.24 300 / 0.35)' }} />
       <img src="/assets/games/cards/trey-tv-luxury/card-back.png" alt="" className="absolute inset-0 w-full h-full object-cover" />
+    </div>
+  );
+}
+
+/** Fanned stack of card backs — shows an opponent's hand count */
+function FannedBacks({ count = 5, rotate = 0 }: { count?: number; rotate?: number }) {
+  const n = Math.max(1, Math.min(count, 7));
+  return (
+    <div className="relative" style={{ width: 56, height: 50, transform: `rotate(${rotate}deg)` }}>
+      {Array.from({ length: n }).map((_, i) => {
+        const spread = 8;
+        const offset = (i - (n - 1) / 2) * spread;
+        return (
+          <CardBack
+            key={i}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: '50%',
+              transform: `translateX(-50%) translateX(${offset}px) rotate(${offset * 0.6}deg)`,
+              zIndex: i,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/** Liquid glass surface chip */
+function GlassChip({ children, className = '', style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      className={className}
+      style={{
+        background: 'var(--glass)',
+        border: '1px solid var(--glass-border)',
+        backdropFilter: 'blur(14px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+        boxShadow: 'var(--shadow-glass)',
+        ...style,
+      }}
+    >
+      {children}
     </div>
   );
 }
@@ -322,16 +367,13 @@ const SpadesView: React.FC<ViewProps> = ({
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {/* ambient halos */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 -left-32 w-[420px] h-[420px] rounded-full blur-[140px] trey-ambient-glow"
-          style={{ background: 'radial-gradient(circle, rgba(0,183,255,0.22) 0%, transparent 70%)' }} />
-        <div className="absolute bottom-0 -right-32 w-[420px] h-[420px] rounded-full blur-[140px] trey-ambient-glow"
-          style={{ background: 'radial-gradient(circle, rgba(168,85,247,0.20) 0%, transparent 70%)' }} />
-        {/* subtle film grain via noise */}
-        <div className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
-          style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '3px 3px' }} />
-      </div>
+      {/* ambient neon halos — violet top-left, cyan top-right, magenta bottom */}
+      <div className="pointer-events-none absolute -top-32 -left-24 w-[360px] h-[360px] rounded-full"
+        style={{ background: 'radial-gradient(closest-side, oklch(0.72 0.26 300 / 0.35), transparent 70%)', filter: 'blur(20px)' }} />
+      <div className="pointer-events-none absolute -top-24 -right-24 w-[320px] h-[320px] rounded-full"
+        style={{ background: 'radial-gradient(closest-side, oklch(0.84 0.16 215 / 0.30), transparent 70%)', filter: 'blur(20px)' }} />
+      <div className="pointer-events-none absolute -bottom-20 left-1/2 -translate-x-1/2 w-[420px] h-[260px] rounded-full"
+        style={{ background: 'radial-gradient(closest-side, oklch(0.70 0.27 0 / 0.22), transparent 70%)', filter: 'blur(24px)' }} />
 
       {/* COMPACT HEADER */}
       <header className="shrink-0 z-20 backdrop-blur-2xl border-b relative"
@@ -384,13 +426,16 @@ const SpadesView: React.FC<ViewProps> = ({
           <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-60" style={{ background: 'radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.18) 0%, transparent 60%), radial-gradient(80% 60% at 90% 0%, oklch(0.84 0.16 215 / 0.16) 0%, transparent 60%)' }} />
           {/* Grain */}
           <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)', backgroundSize: '3px 3px' }} />
+          {/* Center overhead spotlight */}
+          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[260px] h-[260px] rounded-full"
+            style={{ background: 'radial-gradient(circle, oklch(0.92 0.04 90 / 0.12) 0%, oklch(0.84 0.16 215 / 0.08) 35%, transparent 70%)', filter: 'blur(4px)' }} />
           {/* Gold filigree corners */}
           <span className="filigree-corner" style={{ top: 6, left: 6 }} />
           <span className="filigree-corner" style={{ top: 6, right: 6, transform: 'scaleX(-1)' }} />
           <span className="filigree-corner" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
           <span className="filigree-corner" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
           {/* Center logo watermark */}
-          <img src="/assets/trey-tv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[120px] h-auto" style={{ opacity: 0.12, filter: 'drop-shadow(0 0 12px oklch(0.84 0.14 82 / 0.30))' }} />
+          <img src="/assets/trey-tv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140px] h-auto" style={{ opacity: 0.28, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.55)) drop-shadow(0 0 18px oklch(0.84 0.14 82 / 0.35))' }} />
           {/* Double gold ring */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] rounded-full breathe" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.40)', boxShadow: '0 0 20px oklch(0.84 0.14 82 / 0.25)' }} />
           {/* Sparkles */}
@@ -426,30 +471,48 @@ const SpadesView: React.FC<ViewProps> = ({
               const player = state.players[seat];
               const norm = AVATAR_SEAT_NORM[pos as keyof typeof AVATAR_SEAT_NORM];
               const isMyTeam = (seat % 2) === (mySeat % 2);
+              // FannedBacks offset relative to avatar norm (as fraction of table dims)
+              const fanDx = pos === 'top' ? -0.13 : pos === 'left' ? 0.12 : -0.12;
+              const fanDy = pos === 'top' ? 0.02 : 0.0;
+              const fanRotate = pos === 'top' ? -18 : pos === 'left' ? 70 : -70;
+              const cardCount = Math.min(player.hand.length, 7);
               return (
-                <div
-                  key={seat}
-                  style={{
-                    position: 'absolute',
-                    top: `${norm.y * 100}%`,
-                    left: `${norm.x * 100}%`,
-                    transform: 'translate(-50%, -50%)',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <GamePlayerSeat
-                    displayName={player.name}
-                    isBot={player.isBot}
-                    isCurrentTurn={state.currentSeat === seat}
-                    isDealer={dealerSeat === seat}
-                    bid={player.bid}
-                    tricks={player.tricksWon}
-                    accentColor={isMyTeam ? '#00B7FF' : '#A855F7'}
-                    size="sm"
-                    position={pos}
-                    winFlash={winnerFlash === seat}
-                  />
-                </div>
+                <React.Fragment key={seat}>
+                  {/* Card back fan */}
+                  {cardCount > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: `${(norm.y + fanDy) * 100}%`,
+                      left: `${(norm.x + fanDx) * 100}%`,
+                      transform: 'translate(-50%, -50%)',
+                    }}>
+                      <FannedBacks count={cardCount} rotate={fanRotate} />
+                    </div>
+                  )}
+                  {/* Avatar + name chip */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: `${norm.y * 100}%`,
+                      left: `${norm.x * 100}%`,
+                      transform: 'translate(-50%, -50%)',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    <GamePlayerSeat
+                      displayName={player.name}
+                      isBot={player.isBot}
+                      isCurrentTurn={state.currentSeat === seat}
+                      isDealer={dealerSeat === seat}
+                      bid={player.bid}
+                      tricks={player.tricksWon}
+                      accentColor={isMyTeam ? '#00B7FF' : '#A855F7'}
+                      size="sm"
+                      position={pos}
+                      winFlash={winnerFlash === seat}
+                    />
+                  </div>
+                </React.Fragment>
               );
             })}
           </div>
@@ -610,36 +673,67 @@ const SpadesView: React.FC<ViewProps> = ({
       )}
 
       {state.phase !== 'bidding' && state.phase !== 'game-over' && (
-        <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2 relative overflow-hidden liquid-shimmer"
-          style={{
-            background: 'linear-gradient(180deg, rgba(5,7,13,0.96), rgba(5,7,13,0.99))',
-            borderColor: 'rgba(0,183,255,0.35)',
-            boxShadow: '0 -14px 36px rgba(0,183,255,0.22), inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}>
-          <div className="absolute inset-x-0 top-0 h-px"
-            style={{ background: 'linear-gradient(90deg, transparent, rgba(0,183,255,0.7), rgba(168,85,247,0.7), transparent)' }} />
-          {/* status + play button row */}
-          <div className="flex items-center justify-between gap-2 mb-2 px-2">
-            <div className="text-[9px] tracking-[0.3em] font-bold truncate" style={{ color: isMyTurn ? '#FFC857' : '#64748B' }}>
-              {isMyTurn ? 'YOUR TURN' : `${state.players[state.currentSeat].name.toUpperCase()} TO PLAY`}
-            </div>
-            <button onClick={onPlayClick}
-              disabled={!selected || !yourLegal.includes(selected) || !isMyTurn}
-              className="px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase transition-all disabled:opacity-30 active:scale-95 relative overflow-hidden"
-              style={{
-                background: selected && yourLegal.includes(selected) && isMyTurn ? 'var(--gradient-cta)' : 'rgba(255,255,255,0.06)',
-                boxShadow: selected && yourLegal.includes(selected) && isMyTurn ? '0 0 26px rgba(0,183,255,0.6), inset 0 1px 0 rgba(255,255,255,0.3)' : 'none',
-                color: selected && yourLegal.includes(selected) && isMyTurn ? '#fff' : '#94A3B8',
-                border: '1px solid ' + (selected && yourLegal.includes(selected) && isMyTurn ? 'transparent' : 'rgba(255,255,255,0.1)'),
-              }}>
-              {selected && yourLegal.includes(selected) && isMyTurn
-                ? `PLAY ${selected.slice(0, -1)}${SUIT_MAP[selected.slice(-1).toUpperCase()] ?? selected.slice(-1)}`
-                : 'Play Card'}
-              {selected && yourLegal.includes(selected) && isMyTurn && (
-                <span className="absolute inset-0 holo-sheen" />
-              )}
-            </button>
-          </div>
+        <section data-game-action-panel className="shrink-0 z-30 px-2 pb-2 pt-1">
+          {(() => {
+            const selSuit = selected ? selected.slice(-1).toUpperCase() : '';
+            const selNeon = selSuit === 'S' ? 'var(--neon-violet)' : selSuit === 'H' ? 'var(--neon-magenta)' : selSuit === 'D' ? 'var(--neon-cyan)' : 'var(--neon-lime)';
+            const canPlay = !!(selected && yourLegal.includes(selected) && isMyTurn);
+            return (
+              <GlassChip
+                className="rounded-2xl px-3 py-2.5 liquid-shimmer"
+                style={{ boxShadow: 'var(--shadow-glass), 0 -6px 24px oklch(0 0 0 / 0.5), inset 0 0 0 1px oklch(1 0 0 / 0.08), 0 0 30px oklch(0.72 0.26 300 / 0.18)' }}
+              >
+                {/* Status row */}
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {isMyTurn && (
+                      <span
+                        className="brushed-gold text-[10px] font-extrabold tracking-[0.26em] px-2 py-0.5 rounded"
+                        style={{ color: 'var(--night)', boxShadow: '0 0 16px var(--gold-glow), inset 0 1px 0 oklch(1 0 0 / 0.5), inset 0 -1px 0 oklch(0 0 0 / 0.3)', border: '1px solid oklch(0.62 0.14 70 / 0.7)' }}
+                      >
+                        YOUR TURN
+                      </span>
+                    )}
+                    <span className="text-[11px]" style={{ color: 'oklch(0.84 0.04 260)' }}>
+                      {isMyTurn ? 'Choose a card to play' : `${state.players[state.currentSeat].name} to play`}
+                    </span>
+                  </div>
+                  <span className="text-[12px] breathe" style={{ color: 'var(--gold)', textShadow: '0 0 8px var(--gold-glow)' }}>✦</span>
+                </div>
+                {/* Button row */}
+                <div className="flex items-center gap-2">
+                  <button
+                    className="flex items-center gap-1.5 px-3 h-11 rounded-xl text-[11px] font-semibold text-white tracking-[0.18em]"
+                    style={{ background: 'var(--glass-strong)', border: '1px solid var(--glass-border)', backdropFilter: 'blur(10px)', boxShadow: 'inset 0 1px 0 oklch(1 0 0 / 0.12)' }}
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5" />
+                    SORT
+                  </button>
+                  <button
+                    onClick={onPlayClick}
+                    disabled={!canPlay}
+                    className="relative flex-1 h-11 rounded-xl text-[13px] font-extrabold tracking-[0.18em] text-white flex items-center justify-center gap-1.5 transition-transform active:scale-[0.98] overflow-hidden disabled:opacity-30"
+                    style={{
+                      background: canPlay ? 'var(--gradient-cta)' : 'oklch(1 0 0 / 0.05)',
+                      border: `1px solid ${canPlay ? selNeon : 'oklch(1 0 0 / 0.10)'}`,
+                      boxShadow: canPlay ? `0 0 28px ${selNeon}, 0 8px 22px oklch(0 0 0 / 0.65), inset 0 1px 0 oklch(1 0 0 / 0.30), inset 0 -1px 0 oklch(0 0 0 / 0.35)` : 'none',
+                    }}
+                  >
+                    {canPlay && <span className="absolute inset-0 holo-sheen" aria-hidden />}
+                    <span className="relative">PLAY</span>
+                    {selected && (
+                      <span
+                        className="relative font-numerals text-[15px]"
+                        style={{ color: 'white', textShadow: canPlay ? `0 0 10px ${selNeon}, 0 0 18px ${selNeon}` : undefined }}
+                      >
+                        {selected.slice(0, -1)}{SUIT_MAP[selected.slice(-1).toUpperCase()] ?? selected.slice(-1)}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </GlassChip>
+            );
+          })()}
         </section>
       )}
 
