@@ -18,6 +18,7 @@ interface Props { onBack: () => void; onLegend: () => void; roomId?: string; ide
 const BOT_CLAIM_DELAY_MS = 2400;
 const BOT_CHALLENGE_DELAY_MS = 2600;
 const REVEAL_CLEAR_DELAY_MS = 3400;
+const HUMAN_TURN_TIMEOUT_MS = 15000;
 
 function bsApply(state: BSState, move: { type: string; seat: number; payload?: any }): BSState {
   switch (move.type) {
@@ -42,21 +43,22 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    if (state.phase === 'playing' && state.players[state.currentSeat].isBot) {
+    if (state.phase === 'playing') {
       const seat = state.currentSeat;
       const t = setTimeout(() => {
         const { cardIds, rank } = botClaim(state, seat);
         setState(s => makeClaim(s, seat, cardIds, rank));
-      }, BOT_CLAIM_DELAY_MS);
+      }, state.players[seat].isBot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'awaiting-challenge') {
       const callerSeats = state.players.filter(p => p.isBot && p.seat !== state.lastClaim?.seat).map(p => p.seat);
+      const hasHumanCaller = state.players.some(p => !p.isBot && p.seat !== state.lastClaim?.seat);
       const t = setTimeout(() => {
         const caller = callerSeats.find(s => botShouldCall(state, s));
         if (caller !== undefined) setState(s => callBullshit(s, caller));
         else setState(passChallenge);
-      }, BOT_CHALLENGE_DELAY_MS);
+      }, hasHumanCaller ? HUMAN_TURN_TIMEOUT_MS : BOT_CHALLENGE_DELAY_MS);
       return () => clearTimeout(t);
     }
   }, [state.phase, state.currentSeat, state.lastClaim?.cardIds.join(',')]);
@@ -86,29 +88,32 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
   const chat = useChat({ roomId, identity, mySeat: room.mySeat, isOpen: chatOpen });
   const state = room.state as BSState | null;
   const mySeat = room.mySeat;
+  const roomPlayersKey = room.players.map(p => `${p.seat_index}:${p.display_name}:${p.is_bot}`).join('|');
 
   useEffect(() => {
     if (!room.isHost || !state) return;
-    if (state.phase === 'playing') {
-      const seatPlayer = room.players.find(p => p.seat_index === state.currentSeat);
-      if (!seatPlayer?.is_bot) return;
-      const seat = state.currentSeat;
+    const activeState = syncBSPlayersFromRoom(state, room.players);
+    if (activeState !== state) room.setHostState(activeState);
+    if (activeState.phase === 'playing') {
+      const seatPlayer = room.players.find(p => p.seat_index === activeState.currentSeat);
+      const seat = activeState.currentSeat;
       const t = setTimeout(() => {
-        const { cardIds, rank } = botClaim(state, seat);
-        room.setHostState(makeClaim(state, seat, cardIds, rank));
-      }, BOT_CLAIM_DELAY_MS);
+        const { cardIds, rank } = botClaim(activeState, seat);
+        room.setHostState(makeClaim(activeState, seat, cardIds, rank));
+      }, seatPlayer?.is_bot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
-    if (state.phase === 'awaiting-challenge') {
-      const botCallers = room.players.filter(p => p.is_bot && p.seat_index !== state.lastClaim?.seat).map(p => p.seat_index);
+    if (activeState.phase === 'awaiting-challenge') {
+      const botCallers = room.players.filter(p => p.is_bot && p.seat_index !== activeState.lastClaim?.seat).map(p => p.seat_index);
+      const hasHumanCaller = room.players.some(p => !p.is_bot && p.seat_index !== activeState.lastClaim?.seat);
       const t = setTimeout(() => {
-        const caller = botCallers.find(s => botShouldCall(state, s));
-        if (caller !== undefined) room.setHostState(callBullshit(state, caller));
-        else room.setHostState(passChallenge(state));
-      }, BOT_CHALLENGE_DELAY_MS);
+        const caller = botCallers.find(s => botShouldCall(activeState, s));
+        if (caller !== undefined) room.setHostState(callBullshit(activeState, caller));
+        else room.setHostState(passChallenge(activeState));
+      }, hasHumanCaller ? HUMAN_TURN_TIMEOUT_MS : BOT_CHALLENGE_DELAY_MS);
       return () => clearTimeout(t);
     }
-  }, [room.isHost, state?.phase, state?.currentSeat, state?.lastClaim?.cardIds.join(','), room.players.length]);
+  }, [room.isHost, state?.phase, state?.currentSeat, state?.lastClaim?.cardIds.join(','), roomPlayersKey]);
 
   useEffect(() => {
     if (!room.isHost || !state?.reveal) return;
@@ -383,3 +388,18 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
     </div>
   );
 };
+
+function syncBSPlayersFromRoom(state: BSState, players: Array<{ seat_index: number; display_name: string; is_bot: boolean }>) {
+  let changed = false;
+  const next: BSState = JSON.parse(JSON.stringify(state));
+  players.forEach((player) => {
+    const seat = player.seat_index;
+    if (seat < 0 || seat >= next.players.length) return;
+    if (next.players[seat].name !== player.display_name || next.players[seat].isBot !== player.is_bot) {
+      next.players[seat].name = player.display_name;
+      next.players[seat].isBot = player.is_bot;
+      changed = true;
+    }
+  });
+  return changed ? next : state;
+}

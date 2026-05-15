@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import {
   RoomRow, PlayerRow, SessionRow,
   getRoomPlayers, getActiveSession,
-  updateSessionState, recordMove, heartbeat, endSession,
+  updateSessionState, recordMove, heartbeat, endSession, replaceDisconnectedPlayersWithBots,
 } from '../lib/services/roomService';
 import { PlayerIdentity } from '../lib/services/identity';
 
@@ -18,6 +18,8 @@ export interface RealtimeRoomState {
   loading: boolean;
   error: string | null;
 }
+
+const STALE_PLAYER_MS = 30000;
 
 /**
  * useRealtimeRoom — Polling-based room sync.
@@ -43,6 +45,7 @@ export function useRealtimeRoom(
   dataRef.current = data;
   const pollTimer = useRef<any>(null);
   const hbTimer = useRef<any>(null);
+  const staleTimer = useRef<any>(null);
 
   const loadAll = useCallback(async (rid: string) => {
     try {
@@ -62,7 +65,7 @@ export function useRealtimeRoom(
         // with a stale poll response.
         state: pickFreshestState(prev, session),
         mySeat: me ? me.seat_index : prev.mySeat,
-        isHost: !!me?.is_host,
+        isHost: isTableRunner(players, me),
         loading: false,
         error: null,
       }));
@@ -89,12 +92,22 @@ export function useRealtimeRoom(
       heartbeat(roomId, identity.userId).catch(() => {});
     }, 15000);
 
+    staleTimer.current = setInterval(() => {
+      const current = dataRef.current;
+      if (!current.room || !current.isHost) return;
+      replaceDisconnectedPlayersWithBots(roomId)
+        .then((replaced) => { if (replaced.length > 0) loadAll(roomId); })
+        .catch(() => {});
+    }, 5000);
+
     return () => {
       cancelled = true;
       if (pollTimer.current) clearInterval(pollTimer.current);
       if (hbTimer.current) clearInterval(hbTimer.current);
+      if (staleTimer.current) clearInterval(staleTimer.current);
       pollTimer.current = null;
       hbTimer.current = null;
+      staleTimer.current = null;
     };
   }, [roomId, identity.userId, loadAll]);
 
@@ -147,4 +160,21 @@ function pickFreshestState(prev: RealtimeRoomState, dbSession: SessionRow | null
   const prevUpdated = new Date(prev.session.updated_at).getTime();
   const dbUpdated = new Date(dbSession.updated_at).getTime();
   return dbUpdated >= prevUpdated ? (dbSession.state_json ?? prev.state) : prev.state;
+}
+
+function isTableRunner(players: PlayerRow[], me: PlayerRow | undefined) {
+  if (!me || me.is_bot || !me.is_connected) return false;
+  if (me.is_host) return true;
+  const cutoff = Date.now() - STALE_PLAYER_MS;
+  const connectedHost = players.find(p => (
+    p.is_host &&
+    !p.is_bot &&
+    p.is_connected &&
+    new Date(p.last_seen_at).getTime() >= cutoff
+  ));
+  if (connectedHost) return false;
+  const connectedRealPlayers = players
+    .filter(p => !p.is_bot && p.is_connected)
+    .sort((a, b) => a.seat_index - b.seat_index);
+  return connectedRealPlayers[0]?.id === me.id;
 }

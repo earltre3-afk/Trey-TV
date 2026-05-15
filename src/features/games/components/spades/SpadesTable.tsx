@@ -26,6 +26,8 @@ interface Props {
 const BOT_BID_DELAY_MS = 1800;
 const BOT_CARD_DELAY_MS = 2200;
 const BOT_TRICK_CLOSE_DELAY_MS = 3000;
+const HUMAN_TURN_TIMEOUT_MS = 15000;
+const DOUBLE_TAP_PLAY_MS = 450;
 
 function spadesApplyMove(state: SpadesState, move: { type: string; seat: number; payload?: any }): SpadesState {
   switch (move.type) {
@@ -52,14 +54,17 @@ const LocalSpades: React.FC<Props> = ({ onBack, onLegend, targetScore = 500 }) =
   const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state.phase === 'bidding' && state.players[state.currentSeat].isBot) {
+    if (state.phase === 'bidding') {
       const seat = state.currentSeat;
-      const t = setTimeout(() => setState(s => placeBid(s, seat, botBid(s, seat))), BOT_BID_DELAY_MS);
+      const delay = state.players[seat].isBot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
+      const t = setTimeout(() => setState(s => placeBid(s, seat, botBid(s, seat))), delay);
       return () => clearTimeout(t);
     }
-    if (state.phase === 'playing' && state.players[state.currentSeat].isBot) {
+    if (state.phase === 'playing') {
       const seat = state.currentSeat;
-      const delay = state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS;
+      const delay = state.players[seat].isBot
+        ? (state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS)
+        : HUMAN_TURN_TIMEOUT_MS;
       const t = setTimeout(() => setState(s => playCard(s, seat, botPlay(s, seat))), delay);
       return () => clearTimeout(t);
     }
@@ -70,7 +75,7 @@ const LocalSpades: React.FC<Props> = ({ onBack, onLegend, targetScore = 500 }) =
       state={state} mySeat={0}
       selected={selected} setSelected={setSelected}
       onBid={(n) => setState(s => placeBid(s, 0, n))}
-      onPlay={() => selected && setState(s => playCard(s, 0, selected!)) && setSelected(null)}
+      onPlayCard={(cardId) => { setState(s => playCard(s, 0, cardId)); setSelected(null); }}
       onPlayClick={() => { if (selected) { setState(s => playCard(s, 0, selected)); setSelected(null); } }}
       onNextRound={() => setState(startNextRound)}
       onPlayAgain={() => setState(newSpadesGame(['You','Aaliyah','Marcus','Jamal'], targetScore))}
@@ -93,23 +98,28 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
 
   const state = room.state as SpadesState | null;
   const mySeat = room.mySeat;
+  const roomPlayersKey = room.players.map(p => `${p.seat_index}:${p.display_name}:${p.is_bot}`).join('|');
 
   useEffect(() => {
     if (!room.isHost || !state || !room.session) return;
-    const seatPlayer = room.players.find(p => p.seat_index === state.currentSeat);
-    if (!seatPlayer || !seatPlayer.is_bot) return;
-    if (state.phase === 'bidding') {
-      const seat = state.currentSeat;
-      const t = setTimeout(() => room.setHostState(placeBid(state, seat, botBid(state, seat))), BOT_BID_DELAY_MS);
+    const activeState = syncSpadesPlayersFromRoom(state, room.players);
+    if (activeState !== state) room.setHostState(activeState);
+    const seatPlayer = room.players.find(p => p.seat_index === activeState.currentSeat);
+    if (activeState.phase === 'bidding') {
+      const seat = activeState.currentSeat;
+      const delay = seatPlayer?.is_bot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
+      const t = setTimeout(() => room.setHostState(placeBid(activeState, seat, botBid(activeState, seat))), delay);
       return () => clearTimeout(t);
     }
-    if (state.phase === 'playing') {
-      const seat = state.currentSeat;
-      const delay = state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS;
-      const t = setTimeout(() => room.setHostState(playCard(state, seat, botPlay(state, seat))), delay);
+    if (activeState.phase === 'playing') {
+      const seat = activeState.currentSeat;
+      const delay = seatPlayer?.is_bot
+        ? (activeState.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS)
+        : HUMAN_TURN_TIMEOUT_MS;
+      const t = setTimeout(() => room.setHostState(playCard(activeState, seat, botPlay(activeState, seat))), delay);
       return () => clearTimeout(t);
     }
-  }, [room.isHost, state?.phase, state?.currentSeat, state?.trick.length, room.players.length]);
+  }, [room.isHost, state?.phase, state?.currentSeat, state?.trick.length, roomPlayersKey]);
 
   if (room.loading || !state || mySeat === null) {
     return <div className="h-[100dvh] flex items-center justify-center text-slate-400" style={{ background: '#05070D' }}><Loader2 className="animate-spin mr-2" /> Syncing room…</div>;
@@ -120,7 +130,7 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
       state={state} mySeat={mySeat}
       selected={selected} setSelected={setSelected}
       onBid={(n) => room.sendMove({ type: 'bid', seat: mySeat, payload: { bid: n } })}
-      onPlay={() => selected && room.sendMove({ type: 'play', seat: mySeat, payload: { cardId: selected } })}
+      onPlayCard={(cardId) => { room.sendMove({ type: 'play', seat: mySeat, payload: { cardId } }); setSelected(null); }}
       onPlayClick={() => { if (selected) { room.sendMove({ type: 'play', seat: mySeat, payload: { cardId: selected } }); setSelected(null); } }}
       onNextRound={() => room.sendMove({ type: 'next-round', seat: mySeat })}
       onPlayAgain={onBack}
@@ -162,7 +172,7 @@ interface ViewProps {
   selected: string | null;
   setSelected: (s: string | null) => void;
   onBid: (n: number) => void;
-  onPlay: () => void;
+  onPlayCard: (cardId: string) => void;
   onPlayClick: () => void;
   onNextRound: () => void;
   onPlayAgain: () => void;
@@ -176,6 +186,7 @@ interface ViewProps {
 
 const SpadesView: React.FC<ViewProps> = ({
   state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer,
+  onPlayCard,
 }) => {
 
   const you = state.players[mySeat];
@@ -215,6 +226,7 @@ const SpadesView: React.FC<ViewProps> = ({
   const teamThemScore = state.teamScores[1 - myTeam];
 
   const [winnerFlash, setWinnerFlash] = useState<number | null>(null);
+  const lastCardTap = useRef<{ cardId: string; at: number } | null>(null);
   const prevTrickLen = useRef(state.trick.length);
   useEffect(() => {
     if (prevTrickLen.current === 3 && state.trick.length === 0 && state.lastTrickWinner !== null) {
@@ -227,6 +239,19 @@ const SpadesView: React.FC<ViewProps> = ({
 
   const dealerSeat = ((state.round - 1) + 3) % 4;
   const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}:${selected ?? 'none'}`;
+  const handleCardTap = useCallback((cardId: string) => {
+    if (!isMyTurn || !legalSet.has(cardId)) return;
+    const now = Date.now();
+    const lastTap = lastCardTap.current;
+    const isDoubleTap = selected === cardId || (lastTap?.cardId === cardId && now - lastTap.at <= DOUBLE_TAP_PLAY_MS);
+    if (isDoubleTap) {
+      onPlayCard(cardId);
+      lastCardTap.current = null;
+      return;
+    }
+    setSelected(cardId);
+    lastCardTap.current = { cardId, at: now };
+  }, [isMyTurn, legalSet, onPlayCard, selected, setSelected]);
 
   return (
     <div
@@ -315,7 +340,7 @@ const SpadesView: React.FC<ViewProps> = ({
             legalCards={yourLegal}
             accent="#00B7FF"
             eventKey={pixiEventKey}
-            onCardClick={setSelected}
+            onCardClick={handleCardTap}
           />
 
           {/* ── Mobile hand hit targets — Pixi stays visual, DOM keeps taps reliable ── */}
@@ -329,7 +354,7 @@ const SpadesView: React.FC<ViewProps> = ({
                   tabIndex={-1}
                   onClick={(event) => {
                     event.preventDefault();
-                    setSelected(cardId);
+                    handleCardTap(cardId);
                   }}
                   className="absolute rounded-lg"
                   style={{
@@ -587,6 +612,21 @@ const SpadesView: React.FC<ViewProps> = ({
 // SUB-COMPONENTS
 // ============================================
 function teamOfSeat(seat: number): 0 | 1 { return (seat % 2) as 0 | 1; }
+
+function syncSpadesPlayersFromRoom(state: SpadesState, players: Array<{ seat_index: number; display_name: string; is_bot: boolean }>) {
+  let changed = false;
+  const next: SpadesState = JSON.parse(JSON.stringify(state));
+  players.forEach((player) => {
+    const seat = player.seat_index;
+    if (seat < 0 || seat >= next.players.length) return;
+    if (next.players[seat].name !== player.display_name || next.players[seat].isBot !== player.is_bot) {
+      next.players[seat].name = player.display_name;
+      next.players[seat].isBot = player.is_bot;
+      changed = true;
+    }
+  });
+  return changed ? next : state;
+}
 
 const ScoreCard: React.FC<{ label: string; score: number; bid: number; tricks: number; bags: number; color: string }> =
 ({ label, score, bid, tricks, bags, color }) => {

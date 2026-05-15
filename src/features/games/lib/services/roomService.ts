@@ -59,6 +59,8 @@ export interface SessionRow {
   updated_at: string;
 }
 
+const STALE_PLAYER_MS = 30000;
+
 export async function createRoom(opts: {
   identity: PlayerIdentity;
   gameType: GameType;
@@ -327,6 +329,42 @@ export async function heartbeat(roomId: string, userId: string) {
     .update({ is_connected: true, last_seen_at: new Date().toISOString() })
     .eq('room_id', roomId)
     .eq('user_id', userId);
+}
+
+export async function replaceDisconnectedPlayersWithBots(roomId: string, staleMs = STALE_PLAYER_MS) {
+  const players = await getRoomPlayers(roomId);
+  const cutoff = Date.now() - staleMs;
+  const stalePlayers = players.filter((p) => {
+    if (p.is_bot) return false;
+    if (!p.is_connected) return true;
+    return new Date(p.last_seen_at).getTime() < cutoff;
+  });
+
+  if (stalePlayers.length === 0) return [];
+
+  const updates = stalePlayers.map((p, index) => {
+    const displayName = BOT_NAMES[(p.seat_index + index) % BOT_NAMES.length];
+    return supabase
+      .from('game_room_players')
+      .update({
+        user_id: `bot-${roomId.slice(0, 6)}-${p.seat_index}`,
+        display_name: displayName,
+        is_bot: true,
+        is_connected: true,
+        is_ready: true,
+        is_host: false,
+        last_seen_at: new Date().toISOString(),
+      })
+      .eq('id', p.id);
+  });
+
+  await Promise.all(updates);
+  await supabase
+    .from('game_rooms')
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq('id', roomId);
+
+  return stalePlayers.map(p => p.seat_index);
 }
 
 export async function listActiveRooms(): Promise<RoomRow[]> {
