@@ -338,6 +338,26 @@ const BJView: React.FC<ViewProps> = ({
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
             <TableLabel label="YOU" value={state.player.length > 0 ? playerVal : undefined} color="#00B7FF" />
           </div>
+          <div
+            className="absolute left-1/2 top-[28%] -translate-x-1/2 -translate-y-1/2 rounded-[18px] pointer-events-none transition-opacity"
+            style={{
+              width: 'min(72%, 300px)',
+              height: 'clamp(82px, 18vh, 132px)',
+              border: '1px solid rgba(255,200,87,0.45)',
+              boxShadow: state.phase === 'dealer' ? '0 0 28px rgba(255,200,87,0.30), inset 0 0 24px rgba(255,200,87,0.08)' : 'none',
+              opacity: state.phase === 'dealer' ? 1 : 0.18,
+            }}
+          />
+          <div
+            className="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 rounded-[18px] pointer-events-none transition-opacity"
+            style={{
+              width: 'min(78%, 320px)',
+              height: 'clamp(92px, 20vh, 144px)',
+              border: '1px solid rgba(0,183,255,0.50)',
+              boxShadow: state.phase === 'player' ? '0 0 30px rgba(0,183,255,0.34), inset 0 0 24px rgba(0,183,255,0.08)' : 'none',
+              opacity: state.phase === 'player' ? 1 : 0.16,
+            }}
+          />
 
           {/* Center info strip — table rules + result badge */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none flex flex-col items-center gap-1">

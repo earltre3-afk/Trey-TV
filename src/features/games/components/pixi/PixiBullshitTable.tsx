@@ -47,6 +47,8 @@ export interface PixiBullshitProps {
   /** Callback when a card in the hand is clicked */
   onCardClick?: (cardId: string) => void;
   className?: string;
+  /** If false, skip rendering the player hand fan (hand is rendered in React instead) */
+  renderHand?: boolean;
 }
 
 interface BSScene {
@@ -232,45 +234,47 @@ function renderBS(scene: BSScene, props: PixiBullshitProps) {
   }
 
   // ── Player hand at bottom ───────────────────────────────────
-  const myHand = props.myHand;
-  const handCardW = cardW * 0.90;
-  const handCardH = cardH * 0.90;
-  const fanItems = fanLayout(myHand.length, handCardW, w * 0.64, handCardH * 0.1);
-  const handY = h * 0.70;
+  if (props.renderHand !== false) {
+    const myHand = props.myHand;
+    const handCardW = cardW * 0.90;
+    const handCardH = cardH * 0.90;
+    const fanItems = fanLayout(myHand.length, handCardW, w * 0.64, handCardH * 0.1);
+    const handY = h * 0.70;
 
-  myHand.forEach((cardId, i) => {
-    const fan = fanItems[i];
-    const isSel = props.selectedCards.includes(cardId);
+    myHand.forEach((cardId, i) => {
+      const fan = fanItems[i];
+      const isSel = props.selectedCards.includes(cardId);
 
-    const card = makeCardSprite({
-      cardW: handCardW, cardH: handCardH,
-      faceDown: false,
-      faceTex: cardFaces.get(cardId) ?? null,
-      backTex: cardBack,
-      accent,
+      const card = makeCardSprite({
+        cardW: handCardW, cardH: handCardH,
+        faceDown: false,
+        faceTex: cardFaces.get(cardId) ?? null,
+        backTex: cardBack,
+        accent,
+      });
+      card.x = cx + fan.dx;
+      card.y = handY + fan.dy + (isSel ? -handCardH * 0.18 : 0);
+      card.rotation = fan.rotation;
+      card.scale.set(isSel ? 1.06 : 1);
+
+      if (isSel) {
+        const selGlow = new Graphics();
+        selGlow.roundRect(-handCardW / 2 - 4, -handCardH / 2 - 4, handCardW + 8, handCardH + 8, handCardW * 0.15)
+          .fill({ color: accent, alpha: 0.18 })
+          .stroke({ color: accent, alpha: 0.8, width: 1.8 });
+        card.addChildAt(selGlow, 0);
+      }
+
+      // Interactivity
+      card.eventMode = 'static';
+      card.cursor = 'pointer';
+      card.on('pointerdown', () => {
+        if (props.onCardClick) props.onCardClick(cardId);
+      });
+
+      handContainer.addChild(card);
     });
-    card.x = cx + fan.dx;
-    card.y = handY + fan.dy + (isSel ? -handCardH * 0.18 : 0);
-    card.rotation = fan.rotation;
-    card.scale.set(isSel ? 1.06 : 1);
-
-    if (isSel) {
-      const selGlow = new Graphics();
-      selGlow.roundRect(-handCardW / 2 - 4, -handCardH / 2 - 4, handCardW + 8, handCardH + 8, handCardW * 0.15)
-        .fill({ color: accent, alpha: 0.18 })
-        .stroke({ color: accent, alpha: 0.8, width: 1.8 });
-      card.addChildAt(selGlow, 0);
-    }
-    
-    // Interactivity
-    card.eventMode = 'static';
-    card.cursor = 'pointer';
-    card.on('pointerdown', () => {
-      if (props.onCardClick) props.onCardClick(cardId);
-    });
-
-    handContainer.addChild(card);
-  });
+  }
 }
 
 const PixiBullshitTable: React.FC<PixiBullshitProps> = (props) => {

@@ -5,6 +5,7 @@ import {
 } from '@/features/games/lib/bullshit/bullshitEngine';
 import { TreyBrandMark } from '../shared/TreyBrandMark';
 import { GamePlayerSeat } from '../shared/GamePlayerSeat';
+import { TreyCard } from '../shared/TreyCard';
 import { ArrowLeft, Info, Loader2, Flame } from 'lucide-react';
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
@@ -164,6 +165,16 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
 
   const isCaughtBluff = state.reveal?.liar;
   const pixiEventKey = `${state.phase}:${state.lastClaim?.cardIds.join('|') ?? 'none'}:${state.pile.length}:${state.reveal?.cards.join('|') ?? 'none'}:${state.reveal?.liar ?? 'none'}`;
+  const selectionResetKey = `${state.phase}:${state.currentSeat}:${state.lastClaim?.cardIds.join('|') ?? 'none'}:${state.pile.length}:${you.hand.length}`;
+
+  useEffect(() => {
+    setSelected([]);
+  }, [selectionResetKey, setSelected]);
+
+  const toggleSelectedCard = useCallback((cardId: string) => {
+    if (!isYourTurn) return;
+    setSelected(s => s.includes(cardId) ? s.filter(x => x !== cardId) : (s.length < 4 ? [...s, cardId] : s));
+  }, [isYourTurn, setSelected]);
 
   return (
     <div
@@ -285,10 +296,8 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             expectedRank={state.expectedRank}
             accent="#A855F7"
             eventKey={pixiEventKey}
-            onCardClick={(cardId) => {
-              if (!isYourTurn) return;
-              setSelected(s => s.includes(cardId) ? s.filter(x => x !== cardId) : (s.length < 4 ? [...s, cardId] : s));
-            }}
+            onCardClick={toggleSelectedCard}
+            renderHand={false}
           />
 
           {/* Floating info overlay */}
@@ -328,12 +337,54 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
         </div>
       </main>
 
+      {state.phase !== 'game-over' && (
+        <section className="shrink-0 z-20 px-2 pt-1" style={{ overflow: 'visible' }}>
+          <div className="relative flex items-end justify-center" style={{ height: 120, pointerEvents: 'none' }}>
+            {(() => {
+              const total = you.hand.length;
+              if (total === 0) return null;
+              const center = (total - 1) / 2;
+              const viewportWidth = typeof window === 'undefined' ? 390 : window.innerWidth;
+              const handWidth = Math.min(372, Math.max(304, viewportWidth - 34));
+              const spreadX = Math.min(27, (handWidth - 70) / Math.max(total - 1, 1));
+              const arc = 2.2;
+              return you.hand.map((cardId, i) => {
+                const offset = i - center;
+                const isSelected = selected.includes(cardId);
+                return (
+                  <button
+                    type="button"
+                    key={cardId}
+                    onClick={() => toggleSelectedCard(cardId)}
+                    className="absolute bottom-0 transition-all duration-200 ease-out focus:outline-none"
+                    style={{
+                      left: '50%',
+                      width: 60,
+                      height: 86,
+                      marginLeft: -30,
+                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -40 : Math.abs(offset) * 1.5}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.16 : 1})`,
+                      zIndex: isSelected ? 100 + i : i + 1,
+                      pointerEvents: isYourTurn ? 'auto' : 'none',
+                    }}
+                    aria-label={cardId}
+                    aria-pressed={isSelected}
+                  >
+                    <TreyCard cardId={cardId} selected={isSelected} isLegal={isYourTurn} />
+                  </button>
+                );
+              });
+            })()}
+          </div>
+        </section>
+      )}
+
       {/* BOTTOM ACTION PANEL */}
       {state.phase !== 'game-over' && (
         <section data-game-action-panel className="shrink-0 z-30 backdrop-blur-2xl border-t pt-2 pb-2.5 px-2"
           style={{ background: 'rgba(8,17,31,0.96)', borderColor: 'rgba(168,85,247,0.3)', boxShadow: '0 -10px 30px rgba(168,85,247,0.18)' }}>
           <div className="flex justify-center gap-1.5 mb-2 flex-wrap">
             {isYourTurn && (
+              <>
               <button onClick={onClaim} disabled={selected.length === 0}
                 className="min-h-9 px-5 py-2 rounded-full font-black text-[11px] tracking-[0.15em] uppercase disabled:opacity-40 active:scale-95 transition"
                 style={{
@@ -344,6 +395,13 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                 }}>
                 Play {selected.length || 0} × {state.expectedRank}
               </button>
+              {selected.length > 0 && (
+                <div className="self-center rounded-full px-2.5 py-1 border text-[10px] font-black text-purple-100"
+                  style={{ background: 'rgba(168,85,247,0.12)', borderColor: 'rgba(168,85,247,0.36)' }}>
+                  {selected.length} selected
+                </div>
+              )}
+              </>
             )}
             {canCall && (
               <>

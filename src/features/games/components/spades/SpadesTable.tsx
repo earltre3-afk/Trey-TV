@@ -190,10 +190,21 @@ const SpadesView: React.FC<ViewProps> = ({
   const isMyTurn = state.currentSeat === mySeat;
   const yourLegal = useMemo(() => state.phase === 'playing' && isMyTurn ? legalCards(state, mySeat) : [], [state, mySeat, isMyTurn]);
   const legalSet = useMemo(() => new Set(yourLegal), [yourLegal]);
+  const lastCardTap = useRef<{ cardId: string; at: number } | null>(null);
 
   useEffect(() => {
     if (selected && !legalSet.has(selected)) setSelected(null);
   }, [legalSet, selected, setSelected]);
+
+  const selectionResetKey = `${state.round}:${state.phase}:${state.currentSeat}:${state.trick.length}:${you.hand.length}`;
+  const prevSelectionResetKey = useRef(selectionResetKey);
+  useEffect(() => {
+    if (prevSelectionResetKey.current !== selectionResetKey) {
+      setSelected(null);
+      lastCardTap.current = null;
+      prevSelectionResetKey.current = selectionResetKey;
+    }
+  }, [selectionResetKey, setSelected]);
 
   const seatPositions = useMemo(() => {
     const map: Record<number, 'bottom' | 'left' | 'top' | 'right'> = {} as any;
@@ -209,7 +220,6 @@ const SpadesView: React.FC<ViewProps> = ({
   const teamThemScore = state.teamScores[1 - myTeam];
 
   const [winnerFlash, setWinnerFlash] = useState<number | null>(null);
-  const lastCardTap = useRef<{ cardId: string; at: number } | null>(null);
   const prevTrickLen = useRef(state.trick.length);
   useEffect(() => {
     if (prevTrickLen.current === 3 && state.trick.length === 0 && state.lastTrickWinner !== null) {
@@ -219,15 +229,6 @@ const SpadesView: React.FC<ViewProps> = ({
     }
     prevTrickLen.current = state.trick.length;
   }, [state.trick.length, state.lastTrickWinner]);
-
-  // Reset selected card when a trick clears (new trick starts)
-  const prevTrickLenRef = useRef(state.trick.length);
-  useEffect(() => {
-    if (state.trick.length === 0 && prevTrickLenRef.current > 0) {
-      setSelected(null);
-    }
-    prevTrickLenRef.current = state.trick.length;
-  }, [state.trick.length, setSelected]);
 
   const dealerSeat = ((state.round - 1) + 3) % 4;
   const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}:${selected ?? 'none'}`;
@@ -446,30 +447,37 @@ const SpadesView: React.FC<ViewProps> = ({
       {/* React hand section — replaces Pixi hand rendering */}
       {state.phase !== 'game-over' && (
         <section className="shrink-0 z-20 px-2 pt-1" style={{ overflow: 'visible' }}>
-          <div className="relative flex items-end justify-center" style={{ height: 120 }}>
+          <div className="relative flex items-end justify-center" style={{ height: 120, pointerEvents: 'none' }}>
             {(() => {
               const myHand = state.players[mySeat]?.hand ?? [];
               const total = myHand.length;
               if (total === 0) return null;
               const center = (total - 1) / 2;
-              const spreadX = Math.min(28, 350 / Math.max(total, 1));
+              const viewportWidth = typeof window === 'undefined' ? 390 : window.innerWidth;
+              const handWidth = Math.min(372, Math.max(304, viewportWidth - 34));
+              const spreadX = Math.min(27, (handWidth - 70) / Math.max(total - 1, 1));
               const arc = 2.4;
               return myHand.map((cardId, i) => {
                 const offset = i - center;
                 const isSelected = cardId === selected;
-                const isLegal = yourLegal.length === 0 || yourLegal.includes(cardId);
+                const isLegal = state.phase !== 'playing' || legalSet.has(cardId);
                 return (
                   <button
+                    type="button"
                     key={cardId}
                     onClick={() => {
-                      if (!isMyTurn || !isLegal) return;
-                      setSelected(isSelected ? null : cardId);
+                      if (state.phase !== 'playing' || !isMyTurn || !isLegal) return;
+                      handleCardTap(cardId);
                     }}
                     className="absolute bottom-0 transition-all duration-200 ease-out focus:outline-none"
                     style={{
-                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -36 : Math.abs(offset) * 1.8}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.18 : 1})`,
+                      left: '50%',
+                      width: 60,
+                      height: 86,
+                      marginLeft: -30,
+                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -42 : Math.abs(offset) * 1.6}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.18 : 1})`,
                       zIndex: isSelected ? 100 : i + 1,
-                      pointerEvents: state.phase === 'playing' ? 'auto' : 'none',
+                      pointerEvents: state.phase === 'playing' && isMyTurn && isLegal ? 'auto' : 'none',
                     }}
                     aria-label={cardId}
                     aria-pressed={isSelected}
