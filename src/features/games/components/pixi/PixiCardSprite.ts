@@ -7,7 +7,7 @@
  *   - Drop shadow, gloss layer, and depth effect
  *   - Selection lift with smooth easing
  */
-import { Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
 
 export interface CardSpriteOptions {
   cardW: number;
@@ -17,6 +17,8 @@ export interface CardSpriteOptions {
   faceDown?: boolean;
   /** Face texture (from loaded assets). If null, shows a premium procedural face. */
   faceTex?: Texture | null;
+  /** Gameplay card id, used to keep procedural fallback readable while textures load. */
+  cardId?: string;
   /** Back texture — must be the official Trey TV card-back */
   backTex?: Texture | null;
   /** Accent color for procedural mode */
@@ -35,6 +37,7 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
     radius = cardW * 0.1,
     faceDown = true,
     faceTex = null,
+    cardId,
     backTex = null,
     accent = 0x00b7ff,
     dimFactor = 1,
@@ -113,6 +116,13 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
       body.addChild(letter);
     } else {
       // Procedural face — rank + suit symbols
+      const cardMeta = parseCardId(cardId);
+      const suitFill = cardMeta.suit === 'H' ? 0xef4444
+        : cardMeta.suit === 'D' ? 0x00b7ff
+          : cardMeta.suit === 'C' ? 0x22c55e
+            : cardMeta.suit === 'S' ? 0xa855f7
+              : accent;
+
       const rankGfx = new Graphics();
       rankGfx.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius)
         .fill({ color: 0x0e1f30, alpha: 1 });
@@ -122,9 +132,54 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
       const diamond = new Graphics();
       const ds = cardW * 0.22;
       diamond.poly([ 0, -ds, ds, 0, 0, ds, -ds, 0 ])
-        .fill({ color: accent, alpha: 0.35 })
-        .stroke({ color: accent, alpha: 0.7, width: 1 });
+        .fill({ color: suitFill, alpha: 0.25 })
+        .stroke({ color: suitFill, alpha: 0.7, width: 1 });
       body.addChild(diamond);
+
+      const rankStyle = {
+        fontFamily: 'Inter, Arial, sans-serif',
+        fontSize: Math.max(10, cardW * 0.22),
+        fontWeight: '900' as const,
+        fill: 0xf8fafc,
+      };
+      const suitStyle = {
+        fontFamily: 'Inter, Arial, sans-serif',
+        fontSize: Math.max(10, cardW * 0.18),
+        fontWeight: '900' as const,
+        fill: suitFill,
+      };
+
+      const topRank = new Text({ text: cardMeta.rank, style: rankStyle });
+      topRank.anchor.set(0, 0);
+      topRank.x = -cardW / 2 + cardW * 0.10;
+      topRank.y = -cardH / 2 + cardH * 0.07;
+      body.addChild(topRank);
+
+      const topSuit = new Text({ text: cardMeta.suit, style: suitStyle });
+      topSuit.anchor.set(0, 0);
+      topSuit.x = topRank.x;
+      topSuit.y = topRank.y + cardH * 0.13;
+      body.addChild(topSuit);
+
+      const centerSuit = new Text({ text: cardMeta.suit, style: { ...suitStyle, fontSize: Math.max(16, cardW * 0.34) } });
+      centerSuit.anchor.set(0.5);
+      centerSuit.x = 0;
+      centerSuit.y = 0;
+      body.addChild(centerSuit);
+
+      const bottomRank = new Text({ text: cardMeta.rank, style: rankStyle });
+      bottomRank.anchor.set(1, 1);
+      bottomRank.rotation = Math.PI;
+      bottomRank.x = cardW / 2 - cardW * 0.10;
+      bottomRank.y = cardH / 2 - cardH * 0.07;
+      body.addChild(bottomRank);
+
+      const bottomSuit = new Text({ text: cardMeta.suit, style: suitStyle });
+      bottomSuit.anchor.set(1, 1);
+      bottomSuit.rotation = Math.PI;
+      bottomSuit.x = bottomRank.x;
+      bottomSuit.y = bottomRank.y - cardH * 0.13;
+      body.addChild(bottomSuit);
     }
   }
 
@@ -153,3 +208,11 @@ export function getCardLiftTransform(selected: boolean): { scaleY: number; dy: n
 }
 
 function cardLiftPx() { return 10; }
+
+function parseCardId(cardId?: string): { rank: string; suit: string } {
+  if (!cardId || cardId.length < 2) return { rank: '?', suit: '?' };
+  return {
+    rank: cardId.slice(0, -1).toUpperCase(),
+    suit: cardId.slice(-1).toUpperCase(),
+  };
+}

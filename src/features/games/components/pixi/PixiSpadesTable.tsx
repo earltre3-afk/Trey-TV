@@ -101,16 +101,12 @@ async function buildSpadesScene(
 
   table.cardLayer.addChild(...seatContainers, centerContainer, handContainer, turnRing);
 
-  const allCards = props.hands.flat().concat(props.trick.map(t => t.cardId)).filter(Boolean);
-  const [cardBack, cardFaces] = await Promise.all([
-    loadCardBack(),
-    loadCardFaces(allCards),
-  ]);
+  const cardBack = await loadCardBack();
 
   return {
     table, seatContainers, centerContainer, handContainer, turnRing,
     tweens: [], sparks: [],
-    cardBack, cardFaces,
+    cardBack, cardFaces: new Map(),
     layout,
     lastEventKey: '',
   };
@@ -214,6 +210,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
       cardW: cardW * 0.88, cardH: cardH * 0.88,
       faceDown: false,
       faceTex: cardFaces.get(cardId) ?? null,
+      cardId,
       backTex: cardBack,
       accent,
     });
@@ -274,6 +271,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
       cardW: handCardW, cardH: handCardH,
       faceDown: false,
       faceTex: cardFaces.get(cardId) ?? null,
+      cardId,
       backTex: cardBack,
       accent,
       dimFactor,
@@ -331,13 +329,21 @@ const PixiSpadesTable: React.FC<PixiSpadesProps> = (props) => {
       }
       sceneRef.current = scene;
 
-      const allCards = propsRef.current.hands.flat()
-        .concat(propsRef.current.trick.map(t => t.cardId));
-      const newFaces = await loadCardFaces(allCards.filter(id => !scene.cardFaces.has(id)));
-      newFaces.forEach((t, id) => scene.cardFaces.set(id, t));
+      const loadMissingFaces = (s: SpadesScene) => {
+        const p = propsRef.current;
+        const newCards = p.hands.flat()
+          .concat(p.trick.map(t => t.cardId))
+          .filter(id => !s.cardFaces.has(id));
+        if (newCards.length === 0) return;
+        loadCardFaces(newCards).then(newFaces => {
+          newFaces.forEach((tex, id) => s.cardFaces.set(id, tex));
+          if (sceneRef.current === s) renderSpades(s, propsRef.current);
+        });
+      };
 
       renderSpades(scene, propsRef.current);
       scene.lastEventKey = propsRef.current.eventKey;
+      loadMissingFaces(scene);
 
       ro = new ResizeObserver(([entry]) => {
         const { width, height } = entry.contentRect;
@@ -367,15 +373,8 @@ const PixiSpadesTable: React.FC<PixiSpadesProps> = (props) => {
 
         const p = propsRef.current;
         if (p.eventKey !== s.lastEventKey) {
-          const newCards = p.hands.flat().concat(p.trick.map(t => t.cardId)).filter(id => !s.cardFaces.has(id));
-          if (newCards.length > 0) {
-            loadCardFaces(newCards).then(newFaces => {
-              newFaces.forEach((tex, id) => s.cardFaces.set(id, tex));
-              if (sceneRef.current === s) renderSpades(s, propsRef.current);
-            });
-          } else {
-            renderSpades(s, propsRef.current);
-          }
+          renderSpades(s, propsRef.current);
+          loadMissingFaces(s);
           s.lastEventKey = p.eventKey;
         }
       });

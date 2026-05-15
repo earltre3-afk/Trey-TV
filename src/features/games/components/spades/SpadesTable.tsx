@@ -177,6 +177,20 @@ const SpadesView: React.FC<ViewProps> = ({
   const you = state.players[mySeat];
   const isMyTurn = state.currentSeat === mySeat;
   const yourLegal = useMemo(() => state.phase === 'playing' && isMyTurn ? legalCards(state, mySeat) : [], [state, mySeat, isMyTurn]);
+  const handHitTargets = useMemo(() => {
+    const count = you.hand.length;
+    const spacingPct = Math.min(5.1, 62 / Math.max(count, 1));
+    const totalPct = spacingPct * Math.max(count - 1, 0);
+
+    return you.hand.map((cardId, index) => {
+      const t = count > 1 ? (index / (count - 1)) * 2 - 1 : 0;
+      return {
+        cardId,
+        left: `calc(50% + ${-totalPct / 2 + index * spacingPct}%)`,
+        transform: `translate(-50%, -50%) rotate(${t * 2.4}deg)`,
+      };
+    });
+  }, [you.hand]);
 
   const seatPositions = useMemo(() => {
     const map: Record<number, 'bottom' | 'left' | 'top' | 'right'> = {} as any;
@@ -203,7 +217,7 @@ const SpadesView: React.FC<ViewProps> = ({
   }, [state.trick.length, state.lastTrickWinner]);
 
   const dealerSeat = ((state.round - 1) + 3) % 4;
-  const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}`;
+  const pixiEventKey = `${state.round}:${state.phase}:${state.trick.map(t => `${t.seat}-${t.cardId}`).join('|')}:${winnerFlash ?? 'none'}:${state.lastTrickWinner ?? 'none'}:${selected ?? 'none'}`;
 
   return (
     <div
@@ -294,6 +308,35 @@ const SpadesView: React.FC<ViewProps> = ({
             eventKey={pixiEventKey}
             onCardClick={setSelected}
           />
+
+          {/* ── Mobile hand hit targets — Pixi stays visual, DOM keeps taps reliable ── */}
+          {state.phase === 'playing' && isMyTurn && (
+            <div className="absolute inset-0" aria-hidden="true" style={{ zIndex: 12, pointerEvents: 'none' }}>
+              {handHitTargets.map(({ cardId, left, transform }) => (
+                <button
+                  key={cardId}
+                  type="button"
+                  data-spades-card-hit={cardId}
+                  tabIndex={-1}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setSelected(cardId);
+                  }}
+                  className="absolute rounded-lg"
+                  style={{
+                    left,
+                    top: '70%',
+                    width: 'clamp(34px, 8.8vw, 46px)',
+                    height: 'clamp(76px, 19vw, 102px)',
+                    transform,
+                    pointerEvents: 'auto',
+                    opacity: 0,
+                    touchAction: 'manipulation',
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* ── Player seat overlays — positioned at AVATAR_SEAT_NORM, NOT at card stack positions ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
