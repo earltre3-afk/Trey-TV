@@ -177,6 +177,7 @@ const SpadesView: React.FC<ViewProps> = ({
   const you = state.players[mySeat];
   const isMyTurn = state.currentSeat === mySeat;
   const yourLegal = useMemo(() => state.phase === 'playing' && isMyTurn ? legalCards(state, mySeat) : [], [state, mySeat, isMyTurn]);
+  const legalSet = useMemo(() => new Set(yourLegal), [yourLegal]);
   const handHitTargets = useMemo(() => {
     const count = you.hand.length;
     const spacingPct = Math.min(5.1, 62 / Math.max(count, 1));
@@ -191,6 +192,10 @@ const SpadesView: React.FC<ViewProps> = ({
       };
     });
   }, [you.hand]);
+
+  useEffect(() => {
+    if (selected && !legalSet.has(selected)) setSelected(null);
+  }, [legalSet, selected, setSelected]);
 
   const seatPositions = useMemo(() => {
     const map: Record<number, 'bottom' | 'left' | 'top' | 'right'> = {} as any;
@@ -312,7 +317,7 @@ const SpadesView: React.FC<ViewProps> = ({
           {/* ── Mobile hand hit targets — Pixi stays visual, DOM keeps taps reliable ── */}
           {state.phase === 'playing' && isMyTurn && (
             <div className="absolute inset-0" aria-hidden="true" style={{ zIndex: 12, pointerEvents: 'none' }}>
-              {handHitTargets.map(({ cardId, left, transform }) => (
+              {handHitTargets.filter(({ cardId }) => legalSet.has(cardId)).map(({ cardId, left, transform }) => (
                 <button
                   key={cardId}
                   type="button"

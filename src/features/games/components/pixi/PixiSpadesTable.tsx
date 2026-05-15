@@ -302,7 +302,7 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     card.eventMode = 'static';
     card.cursor = isLegal ? 'pointer' : 'default';
     card.on('pointerdown', () => {
-      if (props.onCardClick) props.onCardClick(cardId);
+      if (isLegal && props.onCardClick) props.onCardClick(cardId);
     });
 
     handContainer.addChild(card);
