@@ -644,46 +644,6 @@ export function ProfilePageNew({
         </div>
       </div>
 
-      {/* ── BOTTOM NAV ─────────────────────────────────────── */}
-      <nav aria-label="Primary" className="fixed bottom-3 left-1/2 -translate-x-1/2 panel px-2 py-1.5 flex items-center gap-0.5 z-30 max-w-md w-[calc(100%-1.5rem)]" style={{ overflow: "visible" }}>
-        {[
-          { I: Home, l: "Home", to: "/" as const },
-          { I: Sparkle, l: "For You", to: "/for-you" as const },
-          { I: Compass, l: "Discover", to: "/explore" as const },
-        ].map(({ I, l, to }) => (
-          <Link key={l} to={to} className="flex-1 flex flex-col items-center gap-0.5 py-1 text-[9px] text-muted-foreground hover:text-white transition-colors">
-            <I className="w-4 h-4" /> {l}
-          </Link>
-        ))}
-        <div className="flex-1 flex justify-center -mt-5">
-          <div className="w-10 h-10 rounded-full border-2 flex items-center justify-center bg-[#05070D]" style={{ borderColor: GOLD, boxShadow: `0 0 18px ${GOLD}88` }}>
-            <Plus className="w-5 h-5" style={{ color: GOLD }} strokeWidth={2.5} />
-          </div>
-        </div>
-        {[
-          { I: BookOpen, l: "Guide", to: "/guide" as const },
-          { I: Inbox, l: "Inbox", to: "/inbox" as const },
-        ].map(({ I, l, to }) => (
-          <Link key={l} to={to} className="flex-1 flex flex-col items-center gap-0.5 py-1 text-[9px] text-muted-foreground hover:text-white transition-colors">
-            <I className="w-4 h-4" /> {l}
-          </Link>
-        ))}
-        {isGuest ? (
-          <Link to="/login" className="flex-1 flex flex-col items-center gap-0.5 py-1 text-[9px] transition-colors" style={{ color: GOLD }}>
-            <div className="w-5 h-5 rounded-full overflow-hidden border" style={{ borderColor: GOLD, boxShadow: `0 0 8px ${GOLD}88` }}>
-              <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
-            </div>
-            Sign in
-          </Link>
-        ) : (
-          <Link to="/u/$uid" params={{ uid: myUid }} className="flex-1 flex flex-col items-center gap-0.5 py-1 text-[9px] transition-colors" style={{ color: GOLD }}>
-            <div className="w-5 h-5 rounded-full overflow-hidden border" style={{ borderColor: GOLD, boxShadow: `0 0 8px ${GOLD}88` }}>
-              <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
-            </div>
-            Profile
-          </Link>
-        )}
-      </nav>
 
       {/* ── NOTE OF THE DAY POPUP (owner only) ───────────── */}
       {noteOpen && (

@@ -156,8 +156,9 @@ function GuestWatchNow() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {channels.slice(0, 8).map((c) => (
             <div key={c.id} className="rounded-3xl liquid-glass neon-border p-4 text-center">
-              <div className="mx-auto size-16 rounded-full conic-ring overflow-hidden">
+              <div className="relative mx-auto size-16 rounded-full conic-ring overflow-hidden">
                 <img src={c.avatar} alt="" className="size-full object-cover" />
+                <div className="absolute inset-0 rounded-full pixel-ring-pulse" />
               </div>
               <div className="mt-3 text-sm font-bold truncate">{c.name}</div>
               <div className="text-[11px] text-muted-foreground">@{c.handle} · {c.followers}</div>
@@ -171,14 +172,22 @@ function GuestWatchNow() {
 
       {/* GUIDE PREVIEW */}
       <Section title="The Guide" subtitle="A modern TV guide for creator programming. See what's on now and what's coming up." action={<Link to="/guide" className="text-sm text-primary hover:underline inline-flex items-center gap-1">Open Guide <ArrowRight className="size-3.5" /></Link>}>
-        <div className="rounded-3xl liquid-glass neon-border p-4 overflow-x-auto no-scrollbar">
+        <div
+          className="rounded-3xl liquid-glass neon-border p-4 overflow-x-auto no-scrollbar"
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
           <div className="flex gap-3 min-w-max">
             {channels.slice(0, 5).map((c) => {
               const ep = allEpisodes.find((e) => e.channelId === c.id);
               return (
                 <div key={c.id} className="w-56 shrink-0 rounded-2xl glass border border-white/10 p-3">
                   <div className="flex items-center gap-2">
-                    <img src={c.avatar} className="size-8 rounded-full object-cover" alt="" />
+                    <div className="relative size-8 rounded-full conic-ring overflow-hidden">
+                      <img src={c.avatar} className="size-full object-cover" alt="" />
+                      <div className="absolute inset-0 rounded-full pixel-ring-pulse" />
+                    </div>
                     <div className="min-w-0">
                       <div className="text-xs font-semibold truncate">{c.name}</div>
                       <div className="text-[10px] text-muted-foreground">{c.category}</div>
@@ -304,7 +313,12 @@ function Section({
 function PreviewRail({ title, items, footer }: { title: string; items: { id: string; title: string; sub: string; img: string; locked?: boolean }[]; footer?: React.ReactNode }) {
   return (
     <Section title={title}>
-      <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 snap-x">
+      <div
+        className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 snap-x"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         {items.map((it) => (
           <div key={it.id} className="snap-start shrink-0 w-44 sm:w-52">
             <div className="relative aspect-[2/3] rounded-2xl overflow-hidden ring-1 ring-white/10 group">
@@ -404,11 +418,32 @@ function SignedInWatchNow() {
                 </div>
               </div>
 
+              {/* Mobile creator card — visible on tablet/smaller desktop */}
+              <div className="xl:hidden mt-6">
+                <div className="rounded-2xl liquid-glass border border-white/10 p-4 backdrop-blur-md">
+                  <div className="flex items-center gap-3">
+                    <div className="relative size-12 rounded-full conic-ring overflow-hidden">
+                      <img src={heroChannel.avatar} className="size-full object-cover" alt="" />
+                      <div className="absolute inset-0 rounded-full pixel-ring-pulse" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] tracking-widest text-primary">FROM THE CREATOR</div>
+                      <div className="text-sm font-bold truncate">{heroChannel.name}</div>
+                      <div className="text-[11px] text-muted-foreground">@{heroChannel.handle}</div>
+                    </div>
+                    <Link to="/channel/$handle" params={{ handle: heroChannel.handle }} className="text-[11px] px-3 py-1.5 rounded-full border border-primary/40 text-primary hover:bg-primary/10 font-semibold">View Channel</Link>
+                  </div>
+                </div>
+              </div>
+
               {/* Desktop side panel — Up Next + creator */}
               <aside className="hidden xl:flex flex-col gap-3 self-end">
                 <div className="rounded-2xl liquid-glass border border-white/10 p-4 backdrop-blur-md">
                   <div className="flex items-center gap-3">
-                    <img src={heroChannel.avatar} className="size-10 rounded-full object-cover ring-2 ring-primary/40" alt="" />
+                    <div className="relative size-10 rounded-full conic-ring overflow-hidden">
+                      <img src={heroChannel.avatar} className="size-full object-cover" alt="" />
+                      <div className="absolute inset-0 rounded-full pixel-ring-pulse" />
+                    </div>
                     <div className="min-w-0">
                       <div className="text-[10px] tracking-widest text-primary">FROM THE CREATOR</div>
                       <div className="text-sm font-bold truncate">{heroChannel.name}</div>
@@ -527,7 +562,12 @@ function Rail({ title, icon: Icon, accent, children }: { title: string; icon: ty
         </h2>
         <button className="text-xs text-muted-foreground hover:text-primary inline-flex items-center gap-1">See all <ChevronRight className="size-3" /></button>
       </div>
-      <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-8 px-3 lg:px-8 snap-x">
+      <div
+        className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 lg:-mx-8 px-3 lg:px-8 snap-x"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </section>
@@ -606,8 +646,9 @@ function EpisodeCard({ ep, progress }: { ep: ReturnType<typeof episodeById>; pro
 function ChannelCard({ ch }: { ch: typeof channels[number] }) {
   return (
     <Link to="/channel/$handle" params={{ handle: ch.handle }} className="snap-start shrink-0 w-40 sm:w-44 text-center group">
-      <div className="relative mx-auto size-28 sm:size-32 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-primary/60 transition">
+      <div className="relative mx-auto size-28 sm:size-32 rounded-full conic-ring overflow-hidden">
         <img src={ch.avatar} alt="" className="absolute inset-0 size-full object-cover" />
+        <div className="absolute inset-0 rounded-full pixel-ring-pulse" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_55%,black/.7)]" />
       </div>
       <div className="mt-3 text-sm font-bold truncate">{ch.name}</div>

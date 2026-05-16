@@ -51,6 +51,7 @@ import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications-store";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
+import { FwdPickerSheet } from "@/components/fwd/FwdPickerSheet";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -118,6 +119,7 @@ function Inbox() {
     send: sendMessage,
     sendGhost,
     sendMedia,
+    sendFwdGif,
     sendVoice,
     markRead,
     ensureFromHandle,
@@ -138,6 +140,7 @@ function Inbox() {
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showGhostPopup, setShowGhostPopup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFwdPicker, setShowFwdPicker] = useState(false);
   const [ghostDraft, setGhostDraft] = useState("");
   const [matchedGroups, setMatchedGroups] = useState<any[]>([]);
   const [openGroup, setOpenGroup] = useState<any | null>(null);
@@ -258,6 +261,23 @@ function Inbox() {
       setGroupDraft(text);
       return;
     }
+    await loadGroupMessages(openGroup);
+  };
+
+  const sendGroupFwdGif = async (gif: { title?: string | null; url: string }) => {
+    if (!openGroup) return;
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const userId = auth.user?.id;
+    if (!userId) return toast.error("Please sign in to send with FWD");
+    const body = gif.title ? `FWD · ${gif.title}\n${gif.url}` : `FWD GIF\n${gif.url}`;
+    const { error } = await supabase.from("zodiac_group_messages").insert({
+      group_thread_id: openGroup.id,
+      sender_id: userId,
+      body,
+    });
+    if (error) return toast.error("FWD GIF failed");
+    toast.success("Sent with FWD");
     await loadGroupMessages(openGroup);
   };
 
@@ -567,6 +587,7 @@ function Inbox() {
                   onGhostDraft={setGhostDraft}
                   fileInputRef={fileInputRef}
                   onPhotoSelect={onPhotoSelect}
+                  onOpenFwd={() => setShowFwdPicker(true)}
                   onSendGhost={(secs, label) => {
                     if (openId) sendGhost(openId, draft || ghostDraft, secs, label);
                     setDraft("");
@@ -583,6 +604,17 @@ function Inbox() {
       </div>
 
       <NewConversationSheet open={newOpen} onClose={() => setNewOpen(false)} onPicked={(id) => { setOpenGroup(null); setOpenId(id); }} />
+      <FwdPickerSheet
+        context={openGroup ? "group_chat" : "message"}
+        open={showFwdPicker}
+        treyTvUid={profileUid}
+        onClose={() => setShowFwdPicker(false)}
+        onSelect={(gif) => {
+          if (openId) void sendFwdGif(openId, gif);
+          else if (openGroup) void sendGroupFwdGif(gif);
+          else toast.error("Pick a conversation first");
+        }}
+      />
       <ChatOnboarding />
     </AppShell>
   );
@@ -971,6 +1003,7 @@ function Composer(props: {
   onGhostDraft: (v: string) => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onPhotoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onOpenFwd: () => void;
   onSendGhost: (secs: number, label: string) => void;
 }) {
   return (
@@ -994,6 +1027,7 @@ function Composer(props: {
             props.onPlusMenu(false);
             props.onGhostPopup(true);
           }}
+          onFwd={props.onOpenFwd}
           onPhoto={() => { props.onPlusMenu(false); props.fileInputRef.current?.click(); }}
           onClose={() => props.onPlusMenu(false)}
         />

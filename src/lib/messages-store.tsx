@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { createMessageMediaUrl, uploadMessageMedia } from "@/lib/supabase-storage";
 import { toast } from "sonner";
+import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 export type MsgStatus = "sent" | "delivered" | "read";
 
@@ -53,6 +54,7 @@ type Ctx = {
   send: (threadId: string, text: string) => void;
   sendGhost: (threadId: string, text: string, durationSecs: number, label: string) => void;
   sendMedia: (threadId: string, file: File) => Promise<void>;
+  sendFwdGif: (threadId: string, gif: FwdGifPayload) => Promise<void>;
   sendVoice: (threadId: string, blob: Blob, durationSecs: number) => Promise<void>;
   openThread: (peer: Peer) => string;
   markRead: (threadId: string) => void;
@@ -540,6 +542,53 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     toast.success(`${mediaType === "video" ? "Video" : "Image"} sent`);
   };
 
+  const sendFwdGif: Ctx["sendFwdGif"] = async (threadId, gif) => {
+    if (!supabaseUser) { toast.error("Please sign in to send with FWD"); return; }
+    const localId = uid();
+    const ts = Date.now();
+    const label = gif.title ? `FWD · ${gif.title}` : "FWD GIF";
+    setMessages((s) => [...s, {
+      id: localId,
+      threadId,
+      from: "me",
+      text: label,
+      ts,
+      status: "sent",
+      mediaUrl: gif.url,
+      mediaType: "image",
+    }]);
+
+    if (isUUID(threadId)) {
+      try {
+        const supabase = createBrowserClient() as any;
+        const { data, error } = await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: supabaseUser.id,
+            recipient_id: threadId,
+            body: label,
+            message_type: "image",
+            media_url: gif.url,
+            media_type: "image",
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        setMessages((s) => s.map((m) => m.id === localId ? { ...m, id: data.id, status: "delivered" } : m));
+      } catch (error) {
+        console.error("Failed to send FWD GIF:", error);
+        toast.error("FWD GIF failed");
+        setMessages((s) => s.filter((m) => m.id !== localId));
+        return;
+      }
+    } else {
+      setTimeout(() => setMessages((s) => s.map((m) => m.id === localId ? { ...m, status: "delivered" } : m)), 800);
+    }
+
+    toast.success("Sent with FWD");
+  };
+
   const sendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
     if (!supabaseUser) { toast.error("Please sign in to send voice notes"); return; }
     const localId = uid();
@@ -586,7 +635,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, sendGhost, sendMedia, sendVoice, openThread, markRead, ensureFromHandle }}>
+    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, sendGhost, sendMedia, sendFwdGif, sendVoice, openThread, markRead, ensureFromHandle }}>
       {children}
     </C.Provider>
   );

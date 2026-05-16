@@ -102,6 +102,7 @@ import { Route as AdminApplicationsRouteImport } from './routes/admin.applicatio
 import { Route as UUidChannelRouteImport } from './routes/u.$uid.channel'
 import { Route as OauthJwksJsonRouteImport } from './routes/oauth.jwks.json'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
+import { Route as ApiFwdOauthAuthorizeRouteImport } from './routes/api.fwd.oauth.authorize'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
@@ -571,6 +572,11 @@ const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminContentApprovalRoute,
 } as any)
+const ApiFwdOauthAuthorizeRoute = ApiFwdOauthAuthorizeRouteImport.update({
+  id: '/api/fwd/oauth/authorize',
+  path: '/api/fwd/oauth/authorize',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -666,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -759,6 +766,7 @@ export interface FileRoutesByTo {
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -855,6 +863,7 @@ export interface FileRoutesById {
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -952,6 +961,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/api/fwd/oauth/authorize'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1045,6 +1055,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/api/fwd/oauth/authorize'
   id:
     | '__root__'
     | '/'
@@ -1140,6 +1151,7 @@ export interface FileRouteTypes {
     | '/admin/content-approval/$id'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/api/fwd/oauth/authorize'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1188,6 +1200,7 @@ export interface RootRouteChildren {
   WatchIdRoute: typeof WatchIdRoute
   LegalIndexRoute: typeof LegalIndexRoute
   OauthJwksJsonRoute: typeof OauthJwksJsonRoute
+  ApiFwdOauthAuthorizeRoute: typeof ApiFwdOauthAuthorizeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1843,6 +1856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminContentApprovalIdRouteImport
       parentRoute: typeof AdminContentApprovalRoute
     }
+    '/api/fwd/oauth/authorize': {
+      id: '/api/fwd/oauth/authorize'
+      path: '/api/fwd/oauth/authorize'
+      fullPath: '/api/fwd/oauth/authorize'
+      preLoaderRoute: typeof ApiFwdOauthAuthorizeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2089,6 +2109,7 @@ const rootRouteChildren: RootRouteChildren = {
   WatchIdRoute: WatchIdRoute,
   LegalIndexRoute: LegalIndexRoute,
   OauthJwksJsonRoute: OauthJwksJsonRoute,
+  ApiFwdOauthAuthorizeRoute: ApiFwdOauthAuthorizeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

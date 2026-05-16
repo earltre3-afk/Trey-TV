@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Outlet, createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
 import { useSupabaseSession } from "@/lib/supabase-session";
@@ -21,9 +21,11 @@ export const Route = createFileRoute("/admin")({
 });
 
 function Admin() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { isAdmin } = useAuth();
   const { adminRole, user: supaUser } = useSupabaseSession();
   if (!isAdmin) return null;
+  if (pathname !== "/admin") return <Outlet />;
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["admin", "stats"],

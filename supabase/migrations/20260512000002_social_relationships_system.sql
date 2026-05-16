@@ -268,7 +268,7 @@ begin
 
   if _existing_count >= 3 then
     raise exception 'maximum 3 Top 3 entries allowed';
-  end;
+  end if;
 
   -- If position is taken, shift existing entries
   update public.profile_top_three
@@ -361,7 +361,7 @@ begin
     from public.profile_top_three
     where profile_user_id = _profile_user_id and featured_user_id = _featured_user_id;
     return _result;
-  end;
+  end if;
 
   if _new_position < _old_position then
     -- Moving up: shift entries between new and old position down
@@ -381,7 +381,7 @@ begin
       and position > _old_position
       and position <= _new_position
       and featured_user_id <> _featured_user_id;
-  end;
+  end if;
 
   -- Update the entry's position
   update public.profile_top_three
@@ -400,7 +400,7 @@ returns table (
   id uuid,
   profile_user_id uuid,
   featured_user_id uuid,
-  position int,
+  "position" int,
   created_at timestamptz,
   updated_at timestamptz,
   featured_username text,

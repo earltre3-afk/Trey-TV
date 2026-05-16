@@ -1,8 +1,9 @@
-import { Ghost, Image as ImageIcon, X } from "lucide-react";
+import { Ghost, Image as ImageIcon, Sparkles, X } from "lucide-react";
 
 interface PlusMenuProps {
   onGhostMessage: () => void;
   onPhoto: () => void;
+  onFwd: () => void;
   onClose: () => void;
 }
 
@@ -18,6 +19,16 @@ const MENU_ITEMS = [
     isGold: true,
   },
   {
+    id: "fwd",
+    label: "FWD",
+    description: "GIFs & reactions",
+    icon: Sparkles,
+    gradient: "linear-gradient(135deg, oklch(0.78 0.18 150), oklch(0.82 0.15 215))",
+    glow: "oklch(0.78 0.18 150 / 0.5)",
+    textColor: "oklch(0.78 0.18 150)",
+    isGold: false,
+  },
+  {
     id: "photo",
     label: "Photo / Video",
     description: "Share media from your device",
@@ -29,9 +40,10 @@ const MENU_ITEMS = [
   },
 ];
 
-export function PlusMenu({ onGhostMessage, onPhoto, onClose }: PlusMenuProps) {
+export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose }: PlusMenuProps) {
   const handleAction = (id: string) => {
     if (id === "ghost") onGhostMessage();
+    else if (id === "fwd") onFwd();
     else if (id === "photo") onPhoto();
     onClose();
   };

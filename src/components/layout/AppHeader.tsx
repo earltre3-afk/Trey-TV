@@ -99,7 +99,12 @@ export function AppHeader({
         <NotificationsPopover open={notifOpen} onClose={() => setNotifOpen(false)} />
       </div>
 
-      <nav className="flex items-center gap-1 px-1 sm:px-2 pb-2 overflow-x-auto no-scrollbar">
+      <nav
+        className="flex items-center gap-1 px-1 sm:px-2 pb-2 overflow-x-auto no-scrollbar"
+        onTouchStart={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
         {tabs.map((t) => {
           const active = computed === t.id;
           const handleClick = () => {

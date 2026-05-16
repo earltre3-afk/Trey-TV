@@ -13,7 +13,7 @@ export function BottomNav() {
   const profileAvatar = user?.avatar ?? currentUser.avatar;
   const onProfile = pathname.startsWith("/u/");
 
-  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/");
+  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/music-review");
   if (hideNav) return null;
 
   return (

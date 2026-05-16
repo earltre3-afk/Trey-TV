@@ -180,6 +180,7 @@ function DesktopPathCard({
   const outer = isGold ? "neon-gold" : "neon-blue";
   const accent = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
   const btn = isGold ? "neon-btn-gold" : "neon-btn-blue";
+  const ctaText = isGold ? "!text-white" : "";
   const tagBg = isGold
     ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
     : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
@@ -202,7 +203,7 @@ function DesktopPathCard({
         </div>
       </div>
       <div className="relative z-20 mt-3 lg:hidden">
-        <Link to={to} className={`${btn} w-full py-3 text-sm`}>
+        <Link to={to} className={`${btn} ${ctaText} w-full py-3 text-sm`}>
           {cta} <ChevronRight className="h-4 w-4" />
         </Link>
         <p className={`mt-2 inline-flex items-center gap-1.5 text-xs ${accent}`}>
@@ -249,7 +250,7 @@ function DesktopPathCard({
           <div className="mt-4 flex items-center gap-4">
             <Link
               to={to}
-              className={`relative z-20 ${btn} flex-1 py-3 text-sm`}
+              className={`relative z-20 ${btn} ${ctaText} flex-1 py-3 text-sm`}
             >
               {cta} <ArrowRight className="h-4 w-4" />
             </Link>

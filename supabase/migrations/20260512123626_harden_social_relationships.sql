@@ -374,7 +374,7 @@ returns table (
   id uuid,
   profile_user_id uuid,
   featured_user_id uuid,
-  position int,
+  "position" int,
   created_at timestamptz,
   updated_at timestamptz,
   featured_username text,

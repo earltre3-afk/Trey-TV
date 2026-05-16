@@ -63,7 +63,6 @@ const FALLBACK_POPULAR = [
 function ChannelPage() {
   const { handle } = Route.useParams();
   const { user, isGuest } = useAuth();
-  const myUid = user?.uid ?? "";
   const store = useSubmissions();
   const goBack = useGoBack("/explore");
 
@@ -888,78 +887,6 @@ function ChannelPage() {
           </div>
         </main>
       </div>
-
-      {/* ── Mobile bottom nav ──────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-3 left-3 right-3 z-30">
-        <div
-          className="rounded-full px-3 h-16 flex items-center justify-between"
-          style={{
-            background: "rgba(8,8,18,0.9)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            backdropFilter: "blur(28px) saturate(160%)",
-          }}
-        >
-          {([
-            { I: Home, label: "Home", to: "/" },
-            { I: Compass, label: "Explore", to: "/explore" },
-          ] as const).map(({ I, label, to }) => (
-            <Link
-              key={label}
-              to={to}
-              className="flex flex-col items-center gap-0.5 px-3 text-white/55 hover:text-white transition"
-            >
-              <I className="w-[18px] h-[18px]" />
-              <span className="text-[10px] font-semibold">{label}</span>
-            </Link>
-          ))}
-
-          {/* Center logo button */}
-          <Link to="/" className="flex flex-col items-center -mt-7 active:scale-95 transition">
-            <div
-              className="p-[3px] bg-[#05070D] rounded-full"
-              style={{
-                boxShadow:
-                  "0 0 0 3px rgba(168,85,247,0.45), 0 0 0 6px rgba(168,85,247,0.18)",
-                animation: "glow-pulse 2.6s ease-in-out infinite",
-              }}
-            >
-              <div
-                className="size-14 rounded-full flex items-center justify-center"
-                style={{
-                  background:
-                    "radial-gradient(circle at 30% 25%, rgba(168,85,247,0.45), rgba(0,0,0,0.6))",
-                }}
-              >
-                <img
-                  src={treyTvLogo}
-                  alt="Trey TV"
-                  className="size-10 object-contain"
-                  style={{ filter: "drop-shadow(0 0 6px rgba(255,200,87,0.7))" }}
-                />
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/inbox"
-            className="flex flex-col items-center gap-0.5 px-3 text-white/55 hover:text-white transition"
-          >
-            <Inbox className="w-[18px] h-[18px]" />
-            <span className="text-[10px] font-semibold">Inbox</span>
-          </Link>
-          {isGuest ? (
-            <Link to="/login" className="flex flex-col items-center gap-0.5 px-3 text-white/55 hover:text-white transition">
-              <User className="w-[18px] h-[18px]" />
-              <span className="text-[10px] font-semibold">Sign in</span>
-            </Link>
-          ) : (
-            <Link to="/u/$uid" params={{ uid: myUid }} className="flex flex-col items-center gap-0.5 px-3 text-white/55 hover:text-white transition">
-              <User className="w-[18px] h-[18px]" />
-              <span className="text-[10px] font-semibold">Profile</span>
-            </Link>
-          )}
-        </div>
-      </nav>
 
       <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={handle} />
     </div>

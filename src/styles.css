@@ -316,10 +316,24 @@
   .apply-scroll-page {
     min-height: 100vh;
     min-height: 100dvh;
-    overflow-x: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
     overscroll-behavior-y: contain;
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
+  }
+  .apply-scroll-page.overflow-x-hidden {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  html:has(.apply-scroll-page) {
+    overflow-x: clip;
+    overflow-y: auto;
+  }
+  body:has(.apply-scroll-page),
+  #root:has(.apply-scroll-page) {
+    overflow-x: clip;
+    overflow-y: visible;
   }
 
   .apply-luxe-page {
@@ -1416,6 +1430,70 @@
   }
   .wizard-outer-pad { padding: 1rem !important; }
   .wizard-section-pad { padding: 1.1rem !important; }
+}
+
+/* Trey TV games mobile hardening */
+.trey-game-room {
+  width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+  background: #05070d;
+  color-scheme: dark;
+  --trey-safe-top: env(safe-area-inset-top, 0px);
+  --trey-safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+}
+
+.trey-game-room *,
+.trey-game-room *::before,
+.trey-game-room *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.trey-mobile-header {
+  padding-top: var(--trey-safe-top);
+}
+
+.trey-bottom-dock {
+  padding-bottom: calc(var(--trey-safe-bottom) + 0.75rem) !important;
+}
+
+.trey-safe-modal {
+  padding-bottom: calc(var(--trey-safe-bottom) + 0.75rem);
+}
+
+.trey-hand-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.trey-hand-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.trey-tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.trey-card-rail {
+  touch-action: pan-x;
+  scroll-snap-type: x proximity;
+}
+
+.trey-card-rail > * {
+  scroll-snap-align: center;
+}
+
+@media (max-width: 430px) {
+  .trey-game-room .mobile-tight-copy {
+    letter-spacing: 0.14em !important;
+  }
+
+  .trey-game-room .mobile-game-card {
+    border-radius: 24px !important;
+  }
 }
 
 /* Coin face — used for tier preview & burst */

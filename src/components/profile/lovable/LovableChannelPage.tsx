@@ -337,17 +337,17 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
                     </div>
 
                     <h1
-                      className="font-display font-extrabold text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight"
-                      style={{ textShadow: "0 6px 30px rgba(0,0,0,0.7)" }}
+                      className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight break-words overflow-hidden"
+                      style={{ textShadow: "0 6px 30px rgba(0,0,0,0.7)", maxWidth: "100%", wordWrap: "break-word" }}
                     >
                       {profile.name.toUpperCase()}
                     </h1>
 
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <span className="text-[13px] font-medium" style={{ color: PURPLE }}>
+                    <div className="mt-2 flex items-center gap-1.5 min-w-0">
+                      <span className="text-[13px] font-medium truncate" style={{ color: PURPLE }}>
                         @{profile.handle}
                       </span>
-                      {profile.isVerified && <BadgeCheck className="w-4 h-4 fill-[#A855F7] text-black" />}
+                      {profile.isVerified && <BadgeCheck className="w-4 h-4 fill-[#A855F7] text-black shrink-0" />}
                     </div>
 
                     <p className="mt-3 text-[13px] md:text-sm text-white/85 leading-relaxed">{profile.bio || "Creator channel is being built."}</p>

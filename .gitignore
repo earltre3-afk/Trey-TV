@@ -43,3 +43,5 @@ supabase/.temp/
 tmp/
 _donor/
 /*.png
+
+.vercel

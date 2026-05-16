@@ -88,7 +88,7 @@ export function DesktopTopNav() {
                     : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 }`}
               >
-                {l.icon && <l.icon className="size-4" />}
+                {l.icon && (() => { const Icon = l.icon; return <Icon className="size-4" />; })()}
                 <span>{l.label}</span>
                 {l.label === "Inbox" && !isGuest ? (
                   <span className="ml-0.5 size-4 grid place-items-center rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold text-white">
@@ -118,17 +118,20 @@ export function DesktopTopNav() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMoreOpen(false)} />
                   <div className="absolute left-0 top-full mt-2 w-64 rounded-2xl glass-strong border border-white/10 p-2 shadow-[0_30px_80px_-20px_oklch(0_0_0_/_0.8)] z-50 animate-rise">
-                    {moreLinks.map((l) => (
-                      <Link
-                        key={l.to}
-                        to={l.to}
-                        onClick={() => setMoreOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition"
-                      >
-                        <l.icon className="size-4" />
-                        {l.label}
-                      </Link>
-                    ))}
+                    {moreLinks.map((l) => {
+                      const Icon = l.icon ?? Sparkles;
+                      return (
+                        <Link
+                          key={l.to}
+                          to={l.to}
+                          onClick={() => setMoreOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition"
+                        >
+                          <Icon className="size-4" />
+                          {l.label}
+                        </Link>
+                      );
+                    })}
                   </div>
                 </>
               )}

@@ -9,6 +9,7 @@ import {
 } from "./lib/developers/oauth-http.server";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -34,6 +35,9 @@ function brandedErrorResponse(): Response {
 
 function handleOAuthApiRequest(request: Request): Promise<Response> | Response | null {
   const url = new URL(request.url);
+
+  const fwdOAuthResponse = handleFwdOAuthRequest(request);
+  if (fwdOAuthResponse) return fwdOAuthResponse;
 
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);
   if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
