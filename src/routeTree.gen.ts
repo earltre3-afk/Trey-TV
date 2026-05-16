@@ -54,6 +54,7 @@ import { Route as OnboardingImportScreenshotRouteImport } from './routes/onboard
 import { Route as OauthUserinfoRouteImport } from './routes/oauth.userinfo'
 import { Route as OauthTokenRouteImport } from './routes/oauth.token'
 import { Route as OauthRevokeRouteImport } from './routes/oauth.revoke'
+import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
@@ -328,6 +329,11 @@ const OauthTokenRoute = OauthTokenRouteImport.update({
 const OauthRevokeRoute = OauthRevokeRouteImport.update({
   id: '/oauth/revoke',
   path: '/oauth/revoke',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthAuthorizeRoute = OauthAuthorizeRouteImport.update({
@@ -656,6 +662,7 @@ export interface FileRoutesByFullPath {
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/oauth/revoke': typeof OauthRevokeRoute
   '/oauth/token': typeof OauthTokenRoute
   '/oauth/userinfo': typeof OauthUserinfoRoute
@@ -750,6 +757,7 @@ export interface FileRoutesByTo {
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/oauth/revoke': typeof OauthRevokeRoute
   '/oauth/token': typeof OauthTokenRoute
   '/oauth/userinfo': typeof OauthUserinfoRoute
@@ -847,6 +855,7 @@ export interface FileRoutesById {
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/oauth/revoke': typeof OauthRevokeRoute
   '/oauth/token': typeof OauthTokenRoute
   '/oauth/userinfo': typeof OauthUserinfoRoute
@@ -945,6 +954,7 @@ export interface FileRouteTypes {
     | '/legal/data-deletion'
     | '/music-review/queue'
     | '/oauth/authorize'
+    | '/oauth/consent'
     | '/oauth/revoke'
     | '/oauth/token'
     | '/oauth/userinfo'
@@ -1039,6 +1049,7 @@ export interface FileRouteTypes {
     | '/legal/data-deletion'
     | '/music-review/queue'
     | '/oauth/authorize'
+    | '/oauth/consent'
     | '/oauth/revoke'
     | '/oauth/token'
     | '/oauth/userinfo'
@@ -1135,6 +1146,7 @@ export interface FileRouteTypes {
     | '/legal/data-deletion'
     | '/music-review/queue'
     | '/oauth/authorize'
+    | '/oauth/consent'
     | '/oauth/revoke'
     | '/oauth/token'
     | '/oauth/userinfo'
@@ -1193,6 +1205,7 @@ export interface RootRouteChildren {
   LegalSlugRoute: typeof LegalSlugRoute
   LegalDataDeletionRoute: typeof LegalDataDeletionRoute
   OauthAuthorizeRoute: typeof OauthAuthorizeRoute
+  OauthConsentRoute: typeof OauthConsentRoute
   OauthRevokeRoute: typeof OauthRevokeRoute
   OauthTokenRoute: typeof OauthTokenRoute
   OauthUserinfoRoute: typeof OauthUserinfoRoute
@@ -1518,6 +1531,13 @@ declare module '@tanstack/react-router' {
       path: '/oauth/revoke'
       fullPath: '/oauth/revoke'
       preLoaderRoute: typeof OauthRevokeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/authorize': {
@@ -2102,6 +2122,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalSlugRoute: LegalSlugRoute,
   LegalDataDeletionRoute: LegalDataDeletionRoute,
   OauthAuthorizeRoute: OauthAuthorizeRoute,
+  OauthConsentRoute: OauthConsentRoute,
   OauthRevokeRoute: OauthRevokeRoute,
   OauthTokenRoute: OauthTokenRoute,
   OauthUserinfoRoute: OauthUserinfoRoute,

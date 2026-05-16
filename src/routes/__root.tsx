@@ -144,7 +144,8 @@ function RootComponent() {
   const showWelcomeSplash = pathname === "/";
   const isImmersivePrescribeMe = pathname.startsWith("/prescribe-me");
   const isImmersiveGameRoom = pathname.startsWith("/games");
-  const hideGlobalMobileChrome = isImmersivePrescribeMe || isImmersiveGameRoom;
+  const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
+  const hideGlobalMobileChrome = isImmersivePrescribeMe || isImmersiveGameRoom || isFocusedAuthSurface;
 
   // Apply user's profile accent color globally
   useAccentColor();
