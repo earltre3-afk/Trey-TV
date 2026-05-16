@@ -7,6 +7,7 @@ import {
   handleOAuthUserInfo,
   handleOpenIdConfiguration,
 } from "./lib/developers/oauth-http.server";
+import { handleAuthLogout, handleAuthMe, handleAuthSession } from "./lib/auth-http.server";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
@@ -38,6 +39,10 @@ function handleOAuthApiRequest(request: Request): Promise<Response> | Response |
 
   const fwdOAuthResponse = handleFwdOAuthRequest(request);
   if (fwdOAuthResponse) return fwdOAuthResponse;
+
+  if (url.pathname === "/api/auth/session") return handleAuthSession(request);
+  if (url.pathname === "/api/auth/me") return handleAuthMe(request);
+  if (url.pathname === "/api/auth/logout") return handleAuthLogout(request);
 
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);
   if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
