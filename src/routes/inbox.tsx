@@ -608,6 +608,7 @@ function Inbox() {
         context={openGroup ? "group_chat" : "message"}
         open={showFwdPicker}
         treyTvUid={profileUid}
+        draft={draft}
         onClose={() => setShowFwdPicker(false)}
         onSelect={(gif) => {
           if (openId) void sendFwdGif(openId, gif);

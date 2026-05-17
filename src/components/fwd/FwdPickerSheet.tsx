@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ExternalLink, X } from "lucide-react";
-import { buildFwdPickerUrl, parseFwdPickerMessage, type FwdGifPayload, type FwdPickerContext } from "@/lib/fwd/picker";
+import { buildFwdPickerUrl, parseFwdPickerMessage, sendDraftUpdate, type FwdGifPayload, type FwdPickerContext } from "@/lib/fwd/picker";
 
 type FwdPickerSheetProps = {
   context: FwdPickerContext;
@@ -8,11 +8,23 @@ type FwdPickerSheetProps = {
   onSelect: (gif: FwdGifPayload) => void;
   open: boolean;
   treyTvUid?: string | null;
+  /** Current message draft — forwarded to the picker so AI can suggest GIFs as the user types */
+  draft?: string;
 };
 
-export function FwdPickerSheet({ context, onClose, onSelect, open, treyTvUid }: FwdPickerSheetProps) {
-  const pickerUrl = useMemo(() => buildFwdPickerUrl({ context, treyTvUid }), [context, treyTvUid]);
+export function FwdPickerSheet({ context, onClose, onSelect, open, treyTvUid, draft }: FwdPickerSheetProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  // Seed the URL with the draft at open time so the initial load already has AI predictions
+  const pickerUrl = useMemo(
+    () => buildFwdPickerUrl({ context, treyTvUid, draft }),
+    // Intentionally omit `draft` from deps: URL is fixed at open time.
+    // Live updates are sent via postMessage (see effect below).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [context, treyTvUid, open],
+  );
+
+  // Listen for GIF selection from the iframe
   useEffect(() => {
     if (!open) return;
 
@@ -26,6 +38,12 @@ export function FwdPickerSheet({ context, onClose, onSelect, open, treyTvUid }: 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [onClose, onSelect, open]);
+
+  // Relay live draft updates to the picker as the user types
+  useEffect(() => {
+    if (!open) return;
+    sendDraftUpdate(iframeRef.current?.contentWindow, draft ?? "");
+  }, [draft, open]);
 
   if (!open) return null;
 
@@ -48,6 +66,7 @@ export function FwdPickerSheet({ context, onClose, onSelect, open, treyTvUid }: 
         </div>
 
         <iframe
+          ref={iframeRef}
           title="FWD GIF picker"
           src={pickerUrl}
           className="min-h-0 flex-1 bg-black"
