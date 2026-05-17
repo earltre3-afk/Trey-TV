@@ -1,5 +1,5 @@
 import { Plus, Radio, Wand2, CalendarClock, Video, FileText, Mic } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 type WheelItem = {
@@ -18,11 +18,11 @@ const ITEMS: WheelItem[] = [
   { icon: CalendarClock, label: "Schedule", to: "/creator-studio/schedule", color: "oklch(0.78 0.18 150)" },
 ];
 
-const RADIUS = 96; // px
 const HOLD_MS = 240;
 
 export function CreateWheel() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<number | null>(null);
   const holdTimer = useRef<number | null>(null);
@@ -35,25 +35,6 @@ export function CreateWheel() {
     setHovered(null);
     didOpen.current = false;
     pressOrigin.current = null;
-  };
-
-  const pickIndexFromPoint = (clientX: number, clientY: number) => {
-    if (!fabRef.current) return null;
-    const r = fabRef.current.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dx = clientX - cx;
-    const dy = clientY - cy;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 28) return null;
-    // angle: 0 = right, going CCW because we draw with -sin
-    let ang = Math.atan2(-dy, dx); // -PI..PI
-    // Top of wheel is angle = PI/2. We position items starting from top going clockwise.
-    // Map angle to index. Item i sits at angle = PI/2 - (i / n) * 2PI
-    const n = ITEMS.length;
-    let idx = Math.round(((Math.PI / 2 - ang) / (2 * Math.PI)) * n);
-    idx = ((idx % n) + n) % n;
-    return idx;
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -69,8 +50,9 @@ export function CreateWheel() {
 
   const onPointerMove = (e: React.PointerEvent) => {
     if (!didOpen.current) return;
-    const idx = pickIndexFromPoint(e.clientX, e.clientY);
-    setHovered(idx);
+    const target = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+    const rawIndex = target?.closest<HTMLElement>("[data-create-menu-index]")?.dataset.createMenuIndex;
+    setHovered(rawIndex ? Number(rawIndex) : null);
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
@@ -79,12 +61,7 @@ export function CreateWheel() {
       holdTimer.current = null;
     }
     if (didOpen.current) {
-      const idx = pickIndexFromPoint(e.clientX, e.clientY);
-      if (idx != null) {
-        const item = ITEMS[idx];
-        navigate({ to: item.to });
-      }
-      close();
+      didOpen.current = false;
     } else {
       // short tap → default create
       navigate({ to: "/create" });
@@ -102,13 +79,21 @@ export function CreateWheel() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
+    const onScroll = () => close();
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [open]);
+
+  useEffect(() => {
+    close();
+  }, [pathname]);
 
   return (
     <>
-      {/* Backdrop */}
       {open && (
         <div
           className="fixed inset-0 z-[9998] backdrop-blur-md animate-fade-in"
@@ -119,53 +104,39 @@ export function CreateWheel() {
 
       <div className="flex-1 flex justify-center" style={{ overflow: "visible" }}>
         <div className="relative" style={{ marginTop: "-1.75rem" }}>
-          {/* Radial items */}
-          {open &&
-            ITEMS.map((item, i) => {
-              const angle = Math.PI / 2 - (i / ITEMS.length) * Math.PI * 2;
-              const x = Math.cos(angle) * RADIUS;
-              const y = -Math.sin(angle) * RADIUS;
-              const Icon = item.icon;
-              const isHover = hovered === i;
-              return (
-                <div
-                  key={item.label}
-                  className="absolute pointer-events-none animate-scale-in"
-                  style={{
-                    left: "50%",
-                    top: "50%",
-                    transform: `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${isHover ? 1.18 : 1})`,
-                    transition: "transform 160ms cubic-bezier(0.34,1.56,0.64,1)",
-                    animationDelay: `${i * 30}ms`,
-                    animationFillMode: "backwards",
-                    zIndex: 10000,
-                  }}
-                >
-                  <div
-                    className="size-14 rounded-full grid place-items-center glass-strong border"
-                    style={{
-                      borderColor: isHover ? item.color : "oklch(1 0 0 / 0.15)",
-                      boxShadow: isHover
-                        ? `0 0 24px ${item.color}, 0 0 0 2px ${item.color}`
-                        : "0 8px 24px oklch(0 0 0 / 0.5)",
-                      color: item.color,
-                    }}
-                  >
-                    <Icon className="size-6" />
-                  </div>
-                  <div
-                    className="absolute left-1/2 -translate-x-1/2 mt-1.5 text-[10px] font-semibold whitespace-nowrap px-1.5 py-0.5 rounded-md"
-                    style={{
-                      top: "100%",
-                      color: isHover ? item.color : "oklch(1 0 0 / 0.85)",
-                      background: "oklch(0 0 0 / 0.55)",
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                </div>
-              );
-            })}
+          {open && (
+            <div
+              className="fixed left-1/2 z-[10000] w-[min(92vw,380px)] -translate-x-1/2 rounded-[28px] border border-white/15 bg-[#05070D]/95 p-3 shadow-[0_24px_80px_-24px_oklch(0.65_0.22_300_/_0.9)] backdrop-blur-2xl animate-scale-in"
+              style={{ bottom: "calc(5.75rem + env(safe-area-inset-bottom))" }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.26em] text-muted-foreground">Create</div>
+              <div className="grid grid-cols-2 gap-2">
+                {ITEMS.map((item, i) => {
+                  const Icon = item.icon;
+                  const isHover = hovered === i;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      data-create-menu-index={i}
+                      onClick={() => {
+                        navigate({ to: item.to });
+                        close();
+                      }}
+                      className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-left active:scale-[0.98]"
+                      style={{ boxShadow: isHover ? `0 0 20px ${item.color}55` : undefined }}
+                    >
+                      <span className="grid size-9 shrink-0 place-items-center rounded-xl" style={{ background: `${item.color}22`, color: item.color, border: `1px solid ${item.color}66` }}>
+                        <Icon className="size-4" />
+                      </span>
+                      <span className="min-w-0 text-sm font-bold text-white">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* FAB */}
           <button

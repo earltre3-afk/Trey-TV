@@ -28,6 +28,9 @@ export function ProfilePictureLink({
       params={{ uid }}
       className={className}
       aria-label={label}
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
     >
       {children}
     </Link>

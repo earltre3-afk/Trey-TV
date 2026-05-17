@@ -1,0 +1,73 @@
+{
+  "fileType": "trey-tv-interactive-story",
+  "formatVersion": "1.1",
+  "story": {
+    "id": "new_story_id",
+    "title": "New Interactive Story",
+    "slug": "new-interactive-story",
+    "genre": "Drama",
+    "description": "A playable Trey TV interactive story package.",
+    "coverImage": "cover_image_key_or_url",
+    "initialSceneId": "opening_scene",
+    "initialMeters": {
+      "trust_ari": 50,
+      "trust_dante": 50,
+      "trust_malik_to_micah": 75,
+      "trust_micah_to_malik": 75,
+      "suspicion_mom": 10,
+      "suspicion_coach": 10,
+      "suspicion_valentina": 10,
+      "risk_level": 20
+    }
+  },
+  "characters": [
+    {
+      "character_id": "main_character",
+      "display_name": "Main Character",
+      "role": "Lead",
+      "portrait": "main_character",
+      "voice_key": "main_character_voice",
+      "short_description": "A short character description shown in Cast & Connections."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "opening_scene",
+      "title": "Opening Scene",
+      "image": "opening_scene",
+      "imageFit": "cover",
+      "imagePosition": "center 35%",
+      "activeCharacterIds": ["main_character"],
+      "lines": [
+        { "type": "narration", "text": "The first scene opens with a clean narrated beat.", "voice_key": "narrator_voice", "lineIndex": 0 },
+        { "type": "dialogue", "character_id": "main_character", "speakerName": "Main", "text": "This line becomes playable dialogue.", "voice_key": "main_character_voice", "emotion": "focused", "lineIndex": 1 }
+      ],
+      "choices": [
+        {
+          "id": "make_the_move",
+          "label": "A",
+          "text": "Make the bold move.",
+          "tone": "Bold",
+          "nextSceneId": "bold_result",
+          "stateDelta": { "risk_level": 10 },
+          "affectedCharacterIds": ["main_character"],
+          "relationshipImpactType": "Respect",
+          "impactSummary": "You pushed the story into a bolder path."
+        }
+      ]
+    },
+    {
+      "id": "bold_result",
+      "title": "Bold Result",
+      "narration": "The story responds to the choice and moves into a new branch.",
+      "image": "bold_result",
+      "imageFit": "cover",
+      "imagePosition": "center 35%",
+      "activeCharacterIds": ["main_character"],
+      "isEnding": true,
+      "endingTitle": "Bold Ending",
+      "endingTagline": "You chose the move that changed everything.",
+      "endingSummary": "The package successfully became a playable story."
+    }
+  ]
+}

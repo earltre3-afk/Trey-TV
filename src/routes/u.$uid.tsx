@@ -161,7 +161,7 @@ function PublicProfileRoute() {
         following: dbProfile.following_count ?? 0,
         prescriptions: undefined,
         episodes: 0,
-        subscribers: "—",
+        subscribers: dbProfile.subscriber_count ?? 0,
         watchHours: "—",
       },
       rewards: isOwnProfile
@@ -173,6 +173,8 @@ function PublicProfileRoute() {
       gifOfDayUrl: (dbProfile as any).gif_of_day_url ?? null,
       gifOfDayPosterUrl: (dbProfile as any).gif_of_day_poster_url ?? null,
       gifOfDayCaption: (dbProfile as any).gif_of_day_caption ?? null,
+      showFwdGifsOnProfile: !!(dbProfile as any).show_fwd_gifs_on_profile,
+      profileUserId: dbProfile.id,
       zodiacSunSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_sun_sign,
       zodiacMoonSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_moon_sign,
       zodiacRisingSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_rising_sign,

@@ -88,6 +88,8 @@ export interface ProfileData {
   gifOfDayUrl?: string | null;
   gifOfDayPosterUrl?: string | null;
   gifOfDayCaption?: string | null;
+  showFwdGifsOnProfile?: boolean;
+  profileUserId?: string | null;
 }
 
 /** Relationship status between viewer and profile owner */

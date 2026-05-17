@@ -38,6 +38,11 @@ export interface SupabaseProfile {
   follower_count?: number;
   following_count?: number;
   post_count?: number;
+  subscriber_count?: number;
+  show_fwd_gifs_on_profile?: boolean | null;
+  gif_of_day_url?: string | null;
+  gif_of_day_poster_url?: string | null;
+  gif_of_day_caption?: string | null;
 }
 
 export function useProfile(publicUid: string) {
@@ -54,7 +59,7 @@ export function useProfile(publicUid: string) {
         const supabase = createBrowserClient();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status")
+          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile")
           .eq("public_profile_uid", publicUid)
           .single();
 
@@ -62,10 +67,11 @@ export function useProfile(publicUid: string) {
           throw error;
         }
 
-        const [followersResult, followingResult, postsResult] = await Promise.all([
+        const [followersResult, followingResult, postsResult, subscribersResult] = await Promise.all([
           supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", (data as any).id),
           supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", (data as any).id),
           supabase.from("user_feed_posts").select("id", { count: "exact", head: true }).eq("user_id", (data as any).id),
+          (supabase as any).from("creator_subscriptions").select("id", { count: "exact", head: true }).eq("subscribed_to_id", (data as any).id),
         ]);
 
         if (mounted) {
@@ -74,6 +80,7 @@ export function useProfile(publicUid: string) {
             follower_count: followersResult.count ?? 0,
             following_count: followingResult.count ?? 0,
             post_count: postsResult.count ?? 0,
+            subscriber_count: subscribersResult.count ?? 0,
           });
           setError(null);
         }

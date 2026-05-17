@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
-import { Gamepad2, Spade, Layers, Sparkles, Users, KeyRound, Bot, ShieldCheck, Crown, Settings, Info, Heart, Diamond, Club, ChevronRight, Zap, Trophy, Wifi, Inbox, UserPlus, Search } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Gamepad2, Spade, Layers, Sparkles, Users, KeyRound, Bot, ShieldCheck, Crown, Settings, Info, Heart, Diamond, Club, ChevronRight, Zap, Trophy, Wifi, Inbox, UserPlus, BookOpen } from 'lucide-react';
 import { GameType } from '@/features/games/lib/services/roomService';
+import { InteractiveStoriesSection } from '@/components/games/InteractiveStoriesSection';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { getQueueCounts } from '@/features/games/lib/services/matchmakingService';
 import { getPendingInboxCount } from '@/features/games/lib/services/socialService';
@@ -31,6 +33,7 @@ export const GameRoomHome: React.FC<Props> = ({
   onLaunchSolo, onCreateRoom, onJoinRoom, onAdmin, onLegend, displayName, userId, onEditName,
   onJoinQueue, onOpenFriends, onOpenInbox,
 }) => {
+  const navigate = useNavigate();
   const [queueCounts, setQueueCounts] = useState<Record<GameType, number>>({ spades: 0, blackjack: 0, bullshit: 0 });
   const [inboxCount, setInboxCount] = useState(0);
 
@@ -99,10 +102,25 @@ export const GameRoomHome: React.FC<Props> = ({
           )}
           <button onClick={onLegend} className="p-2 rounded-xl hover:bg-white/5 transition" title="Suit legend"><Info size={18} /></button>
           <button onClick={onAdmin} className="p-2 rounded-xl hover:bg-white/5 transition" title="Admin"><Settings size={18} /></button>
+          <button
+            type="button"
+            onClick={() => navigate({ to: '/' })}
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 transition hover:bg-white/5"
+            title="Back to Home"
+          >
+            <ArrowLeft size={14} /> Back to Home
+          </button>
         </div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 md:px-6 pt-6 md:pt-8">
+        <button
+          type="button"
+          onClick={() => navigate({ to: '/' })}
+          className="mb-4 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-black text-slate-200 backdrop-blur-md transition hover:bg-white/[0.08] sm:hidden"
+        >
+          <ArrowLeft size={14} /> Back to Home
+        </button>
         {/* HERO */}
         <div className="relative rounded-[32px] overflow-hidden border trey-table-rim"
           style={{ borderColor: 'rgba(0,183,255,0.4)', boxShadow: '0 0 80px rgba(0,183,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)' }}>
@@ -176,10 +194,11 @@ export const GameRoomHome: React.FC<Props> = ({
         </div>
 
         {/* Quick actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-6">
           <QuickAction icon={<Users size={18} />} label="Create Private Room" sub="Invite friends with a 6-char code" color="#00B7FF" onClick={() => onCreateRoom()} />
           <QuickAction icon={<KeyRound size={18} />} label="Join by Code" sub="Enter a room code your friend shared" color="#FFC857" onClick={onJoinRoom} />
           <QuickAction icon={<Bot size={18} />} label="Solo with Bots" sub="Instant local table — no waiting" color="#A855F7" onClick={() => onLaunchSolo('spades')} />
+          <QuickAction icon={<BookOpen size={18} />} label="Interactive Stories" sub="Switch Kicks and The God Ram" color="#D8B4FE" onClick={() => navigate({ to: '/games/interactive-stories' })} />
         </div>
 
         {/* Featured */}
@@ -214,6 +233,9 @@ export const GameRoomHome: React.FC<Props> = ({
             </div>
           </div>
         </div>
+
+        {/* Interactive Stories — cinematic story-game mode */}
+        <InteractiveStoriesSection />
 
         {/* All games */}
         <SectionTitle icon={<Layers size={18} className="text-cyan-300" />} label="Choose Game" sub="Public queue · invite friends · private room" />

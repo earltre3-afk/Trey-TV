@@ -60,6 +60,7 @@ import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queu
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as GamesSpadesRouteImport } from './routes/games.spades'
+import { Route as GamesInteractiveStoriesRouteImport } from './routes/games.interactive-stories'
 import { Route as GamesBullshitRouteImport } from './routes/games.bullshit'
 import { Route as GamesBlackjackRouteImport } from './routes/games.blackjack'
 import { Route as DevelopersDocsRouteImport } from './routes/developers.docs'
@@ -100,9 +101,16 @@ import { Route as AdminCreatorsRouteImport } from './routes/admin.creators'
 import { Route as AdminContentApprovalRouteImport } from './routes/admin.content-approval'
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
+import { Route as GamesInteractiveStoriesIndexRouteImport } from './routes/games.interactive-stories.index'
 import { Route as UUidChannelRouteImport } from './routes/u.$uid.channel'
 import { Route as OauthJwksJsonRouteImport } from './routes/oauth.jwks.json'
+import { Route as GamesInteractiveStoriesStorySlugRouteImport } from './routes/games.interactive-stories.$storySlug'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
+import { Route as GamesInteractiveStoriesShareShareSlugRouteImport } from './routes/games.interactive-stories.share.$shareSlug'
+import { Route as GamesInteractiveStoriesStorySlugPlaythroughsRouteImport } from './routes/games.interactive-stories.$storySlug.playthroughs'
+import { Route as GamesInteractiveStoriesStorySlugPlayRouteImport } from './routes/games.interactive-stories.$storySlug.play'
+import { Route as GamesInteractiveStoriesStorySlugCharactersRouteImport } from './routes/games.interactive-stories.$storySlug.characters'
+import { Route as GamesInteractiveStoriesStorySlugBranchesRouteImport } from './routes/games.interactive-stories.$storySlug.branches'
 import { Route as ApiFwdOauthAuthorizeRouteImport } from './routes/api.fwd.oauth.authorize'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
@@ -361,6 +369,11 @@ const GamesSpadesRoute = GamesSpadesRouteImport.update({
   path: '/spades',
   getParentRoute: () => GamesRoute,
 } as any)
+const GamesInteractiveStoriesRoute = GamesInteractiveStoriesRouteImport.update({
+  id: '/interactive-stories',
+  path: '/interactive-stories',
+  getParentRoute: () => GamesRoute,
+} as any)
 const GamesBullshitRoute = GamesBullshitRouteImport.update({
   id: '/bullshit',
   path: '/bullshit',
@@ -563,6 +576,12 @@ const AdminApplicationsRoute = AdminApplicationsRouteImport.update({
   path: '/applications',
   getParentRoute: () => AdminRoute,
 } as any)
+const GamesInteractiveStoriesIndexRoute =
+  GamesInteractiveStoriesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => GamesInteractiveStoriesRoute,
+  } as any)
 const UUidChannelRoute = UUidChannelRouteImport.update({
   id: '/channel',
   path: '/channel',
@@ -573,11 +592,47 @@ const OauthJwksJsonRoute = OauthJwksJsonRouteImport.update({
   path: '/oauth/jwks/json',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesInteractiveStoriesStorySlugRoute =
+  GamesInteractiveStoriesStorySlugRouteImport.update({
+    id: '/$storySlug',
+    path: '/$storySlug',
+    getParentRoute: () => GamesInteractiveStoriesRoute,
+  } as any)
 const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => AdminContentApprovalRoute,
 } as any)
+const GamesInteractiveStoriesShareShareSlugRoute =
+  GamesInteractiveStoriesShareShareSlugRouteImport.update({
+    id: '/share/$shareSlug',
+    path: '/share/$shareSlug',
+    getParentRoute: () => GamesInteractiveStoriesRoute,
+  } as any)
+const GamesInteractiveStoriesStorySlugPlaythroughsRoute =
+  GamesInteractiveStoriesStorySlugPlaythroughsRouteImport.update({
+    id: '/playthroughs',
+    path: '/playthroughs',
+    getParentRoute: () => GamesInteractiveStoriesStorySlugRoute,
+  } as any)
+const GamesInteractiveStoriesStorySlugPlayRoute =
+  GamesInteractiveStoriesStorySlugPlayRouteImport.update({
+    id: '/play',
+    path: '/play',
+    getParentRoute: () => GamesInteractiveStoriesStorySlugRoute,
+  } as any)
+const GamesInteractiveStoriesStorySlugCharactersRoute =
+  GamesInteractiveStoriesStorySlugCharactersRouteImport.update({
+    id: '/characters',
+    path: '/characters',
+    getParentRoute: () => GamesInteractiveStoriesStorySlugRoute,
+  } as any)
+const GamesInteractiveStoriesStorySlugBranchesRoute =
+  GamesInteractiveStoriesStorySlugBranchesRouteImport.update({
+    id: '/branches',
+    path: '/branches',
+    getParentRoute: () => GamesInteractiveStoriesStorySlugRoute,
+  } as any)
 const ApiFwdOauthAuthorizeRoute = ApiFwdOauthAuthorizeRouteImport.update({
   id: '/api/fwd/oauth/authorize',
   path: '/api/fwd/oauth/authorize',
@@ -657,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/developers/docs': typeof DevelopersDocsRoute
   '/games/blackjack': typeof GamesBlackjackRoute
   '/games/bullshit': typeof GamesBullshitRoute
+  '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
@@ -677,9 +733,16 @@ export interface FileRoutesByFullPath {
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
+  '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
+  '/games/interactive-stories/$storySlug/characters': typeof GamesInteractiveStoriesStorySlugCharactersRoute
+  '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
+  '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
+  '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -772,9 +835,16 @@ export interface FileRoutesByTo {
   '/games': typeof GamesIndexRoute
   '/legal': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/games/interactive-stories': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
+  '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
+  '/games/interactive-stories/$storySlug/characters': typeof GamesInteractiveStoriesStorySlugCharactersRoute
+  '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
+  '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
+  '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -850,6 +920,7 @@ export interface FileRoutesById {
   '/developers/docs': typeof DevelopersDocsRoute
   '/games/blackjack': typeof GamesBlackjackRoute
   '/games/bullshit': typeof GamesBullshitRoute
+  '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
@@ -870,9 +941,16 @@ export interface FileRoutesById {
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
+  '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
+  '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
+  '/games/interactive-stories/$storySlug/characters': typeof GamesInteractiveStoriesStorySlugCharactersRoute
+  '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
+  '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
+  '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -949,6 +1027,7 @@ export interface FileRouteTypes {
     | '/developers/docs'
     | '/games/blackjack'
     | '/games/bullshit'
+    | '/games/interactive-stories'
     | '/games/spades'
     | '/legal/$slug'
     | '/legal/data-deletion'
@@ -969,9 +1048,16 @@ export interface FileRouteTypes {
     | '/games/'
     | '/legal/'
     | '/admin/content-approval/$id'
+    | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
+    | '/games/interactive-stories/$storySlug/branches'
+    | '/games/interactive-stories/$storySlug/characters'
+    | '/games/interactive-stories/$storySlug/play'
+    | '/games/interactive-stories/$storySlug/playthroughs'
+    | '/games/interactive-stories/share/$shareSlug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1064,9 +1150,16 @@ export interface FileRouteTypes {
     | '/games'
     | '/legal'
     | '/admin/content-approval/$id'
+    | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/games/interactive-stories'
     | '/api/fwd/oauth/authorize'
+    | '/games/interactive-stories/$storySlug/branches'
+    | '/games/interactive-stories/$storySlug/characters'
+    | '/games/interactive-stories/$storySlug/play'
+    | '/games/interactive-stories/$storySlug/playthroughs'
+    | '/games/interactive-stories/share/$shareSlug'
   id:
     | '__root__'
     | '/'
@@ -1141,6 +1234,7 @@ export interface FileRouteTypes {
     | '/developers/docs'
     | '/games/blackjack'
     | '/games/bullshit'
+    | '/games/interactive-stories'
     | '/games/spades'
     | '/legal/$slug'
     | '/legal/data-deletion'
@@ -1161,9 +1255,16 @@ export interface FileRouteTypes {
     | '/games/'
     | '/legal/'
     | '/admin/content-approval/$id'
+    | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
     | '/u/$uid/channel'
+    | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
+    | '/games/interactive-stories/$storySlug/branches'
+    | '/games/interactive-stories/$storySlug/characters'
+    | '/games/interactive-stories/$storySlug/play'
+    | '/games/interactive-stories/$storySlug/playthroughs'
+    | '/games/interactive-stories/share/$shareSlug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1575,6 +1676,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesSpadesRouteImport
       parentRoute: typeof GamesRoute
     }
+    '/games/interactive-stories': {
+      id: '/games/interactive-stories'
+      path: '/interactive-stories'
+      fullPath: '/games/interactive-stories'
+      preLoaderRoute: typeof GamesInteractiveStoriesRouteImport
+      parentRoute: typeof GamesRoute
+    }
     '/games/bullshit': {
       id: '/games/bullshit'
       path: '/bullshit'
@@ -1855,6 +1963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminApplicationsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/games/interactive-stories/': {
+      id: '/games/interactive-stories/'
+      path: '/'
+      fullPath: '/games/interactive-stories/'
+      preLoaderRoute: typeof GamesInteractiveStoriesIndexRouteImport
+      parentRoute: typeof GamesInteractiveStoriesRoute
+    }
     '/u/$uid/channel': {
       id: '/u/$uid/channel'
       path: '/channel'
@@ -1869,12 +1984,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthJwksJsonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/interactive-stories/$storySlug': {
+      id: '/games/interactive-stories/$storySlug'
+      path: '/$storySlug'
+      fullPath: '/games/interactive-stories/$storySlug'
+      preLoaderRoute: typeof GamesInteractiveStoriesStorySlugRouteImport
+      parentRoute: typeof GamesInteractiveStoriesRoute
+    }
     '/admin/content-approval/$id': {
       id: '/admin/content-approval/$id'
       path: '/$id'
       fullPath: '/admin/content-approval/$id'
       preLoaderRoute: typeof AdminContentApprovalIdRouteImport
       parentRoute: typeof AdminContentApprovalRoute
+    }
+    '/games/interactive-stories/share/$shareSlug': {
+      id: '/games/interactive-stories/share/$shareSlug'
+      path: '/share/$shareSlug'
+      fullPath: '/games/interactive-stories/share/$shareSlug'
+      preLoaderRoute: typeof GamesInteractiveStoriesShareShareSlugRouteImport
+      parentRoute: typeof GamesInteractiveStoriesRoute
+    }
+    '/games/interactive-stories/$storySlug/playthroughs': {
+      id: '/games/interactive-stories/$storySlug/playthroughs'
+      path: '/playthroughs'
+      fullPath: '/games/interactive-stories/$storySlug/playthroughs'
+      preLoaderRoute: typeof GamesInteractiveStoriesStorySlugPlaythroughsRouteImport
+      parentRoute: typeof GamesInteractiveStoriesStorySlugRoute
+    }
+    '/games/interactive-stories/$storySlug/play': {
+      id: '/games/interactive-stories/$storySlug/play'
+      path: '/play'
+      fullPath: '/games/interactive-stories/$storySlug/play'
+      preLoaderRoute: typeof GamesInteractiveStoriesStorySlugPlayRouteImport
+      parentRoute: typeof GamesInteractiveStoriesStorySlugRoute
+    }
+    '/games/interactive-stories/$storySlug/characters': {
+      id: '/games/interactive-stories/$storySlug/characters'
+      path: '/characters'
+      fullPath: '/games/interactive-stories/$storySlug/characters'
+      preLoaderRoute: typeof GamesInteractiveStoriesStorySlugCharactersRouteImport
+      parentRoute: typeof GamesInteractiveStoriesStorySlugRoute
+    }
+    '/games/interactive-stories/$storySlug/branches': {
+      id: '/games/interactive-stories/$storySlug/branches'
+      path: '/branches'
+      fullPath: '/games/interactive-stories/$storySlug/branches'
+      preLoaderRoute: typeof GamesInteractiveStoriesStorySlugBranchesRouteImport
+      parentRoute: typeof GamesInteractiveStoriesStorySlugRoute
     }
     '/api/fwd/oauth/authorize': {
       id: '/api/fwd/oauth/authorize'
@@ -2015,9 +2172,54 @@ const DevelopersRouteWithChildren = DevelopersRoute._addFileChildren(
   DevelopersRouteChildren,
 )
 
+interface GamesInteractiveStoriesStorySlugRouteChildren {
+  GamesInteractiveStoriesStorySlugBranchesRoute: typeof GamesInteractiveStoriesStorySlugBranchesRoute
+  GamesInteractiveStoriesStorySlugCharactersRoute: typeof GamesInteractiveStoriesStorySlugCharactersRoute
+  GamesInteractiveStoriesStorySlugPlayRoute: typeof GamesInteractiveStoriesStorySlugPlayRoute
+  GamesInteractiveStoriesStorySlugPlaythroughsRoute: typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
+}
+
+const GamesInteractiveStoriesStorySlugRouteChildren: GamesInteractiveStoriesStorySlugRouteChildren =
+  {
+    GamesInteractiveStoriesStorySlugBranchesRoute:
+      GamesInteractiveStoriesStorySlugBranchesRoute,
+    GamesInteractiveStoriesStorySlugCharactersRoute:
+      GamesInteractiveStoriesStorySlugCharactersRoute,
+    GamesInteractiveStoriesStorySlugPlayRoute:
+      GamesInteractiveStoriesStorySlugPlayRoute,
+    GamesInteractiveStoriesStorySlugPlaythroughsRoute:
+      GamesInteractiveStoriesStorySlugPlaythroughsRoute,
+  }
+
+const GamesInteractiveStoriesStorySlugRouteWithChildren =
+  GamesInteractiveStoriesStorySlugRoute._addFileChildren(
+    GamesInteractiveStoriesStorySlugRouteChildren,
+  )
+
+interface GamesInteractiveStoriesRouteChildren {
+  GamesInteractiveStoriesStorySlugRoute: typeof GamesInteractiveStoriesStorySlugRouteWithChildren
+  GamesInteractiveStoriesIndexRoute: typeof GamesInteractiveStoriesIndexRoute
+  GamesInteractiveStoriesShareShareSlugRoute: typeof GamesInteractiveStoriesShareShareSlugRoute
+}
+
+const GamesInteractiveStoriesRouteChildren: GamesInteractiveStoriesRouteChildren =
+  {
+    GamesInteractiveStoriesStorySlugRoute:
+      GamesInteractiveStoriesStorySlugRouteWithChildren,
+    GamesInteractiveStoriesIndexRoute: GamesInteractiveStoriesIndexRoute,
+    GamesInteractiveStoriesShareShareSlugRoute:
+      GamesInteractiveStoriesShareShareSlugRoute,
+  }
+
+const GamesInteractiveStoriesRouteWithChildren =
+  GamesInteractiveStoriesRoute._addFileChildren(
+    GamesInteractiveStoriesRouteChildren,
+  )
+
 interface GamesRouteChildren {
   GamesBlackjackRoute: typeof GamesBlackjackRoute
   GamesBullshitRoute: typeof GamesBullshitRoute
+  GamesInteractiveStoriesRoute: typeof GamesInteractiveStoriesRouteWithChildren
   GamesSpadesRoute: typeof GamesSpadesRoute
   GamesIndexRoute: typeof GamesIndexRoute
 }
@@ -2025,6 +2227,7 @@ interface GamesRouteChildren {
 const GamesRouteChildren: GamesRouteChildren = {
   GamesBlackjackRoute: GamesBlackjackRoute,
   GamesBullshitRoute: GamesBullshitRoute,
+  GamesInteractiveStoriesRoute: GamesInteractiveStoriesRouteWithChildren,
   GamesSpadesRoute: GamesSpadesRoute,
   GamesIndexRoute: GamesIndexRoute,
 }

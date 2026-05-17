@@ -5,6 +5,7 @@ import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
 import { useAuth } from "@/hooks/use-auth";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSupabaseReactions } from "@/hooks/use-supabase-reactions";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useComments, type Comment } from "@/lib/comments-store";
@@ -22,6 +23,7 @@ function fmt(n: number) {
 export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
   const { isSignedIn, user } = useAuth();
+  const currentProfile = useCurrentUser();
   const isGuest = !isSignedIn;
   const nav = useNavigate();
 
@@ -37,7 +39,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [commentGif, setCommentGif] = useState<FwdGifPayload | null>(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const { byPost, loaded: commentsLoaded, add, toggleLike, edit, remove, isMine } = useComments();
-  const treyTvUid = (user as any)?.uid ?? null;
+  const treyTvUid = currentProfile.uid || (user as any)?.id || null;
   const allComments = byPost(post.id);
   const commentCount = commentsLoaded(post.id) ? allComments.length : Math.max(post.comments, allComments.length);
   const topComments = allComments.filter((c) => !c.parentId);
@@ -128,7 +130,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">Creator</span>
           </div>
         </div>
-        <button onClick={() => toast("Post options")} className="size-8 grid place-items-center text-muted-foreground hover:text-foreground tilt-press" aria-label="more">
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toast("Post options"); }} className="size-8 grid place-items-center text-muted-foreground hover:text-foreground tilt-press" aria-label="more">
           <MoreHorizontal className="size-5" />
         </button>
       </div>
@@ -158,7 +160,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
         <div className="relative">
           <button
             type="button"
-            onClick={() => setPickerOpen((v) => !v)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickerOpen((v) => !v); }}
             onMouseEnter={() => setPickerOpen(true)}
             disabled={reactionPending}
             className={`flex items-center gap-1.5 transition tilt-press disabled:opacity-70 ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
@@ -179,7 +181,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
                 <button
                   key={r.key}
                   type="button"
-                  onClick={() => onReactionPick(r.key)}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onReactionPick(r.key); }}
                   disabled={reactionPending}
                   title={r.label}
                   className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform disabled:opacity-60 ${reaction === r.key ? "bg-white/10" : ""}`}
@@ -194,20 +196,23 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
 
         <button
           type="button"
-          onClick={() => setCommentsOpen((v) => !v)}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCommentsOpen((v) => !v); }}
           className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           aria-expanded={commentsOpen}
         >
           <MessageCircle className="size-5" /> {commentCount}
         </button>
-        <button onClick={requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })(); }} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
         </button>
-        <button onClick={requireAuth(() => toggleSave(post.id, meta))} className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); requireAuth(() => toggleSave(post.id, meta))(); }} className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Bookmark className={`size-5 ${saved ? "fill-current animate-burst" : ""}`} /> {fmt(saveCount)}
         </button>
         <button
-          onClick={async () => {
+          type="button"
+          onClick={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             logShare(post.id, meta);
             try { await navigator.share?.({ title: post.creator.name, text: post.text }); }
             catch { await navigator.clipboard?.writeText(`${post.creator.name}: ${post.text}`); toast("Link copied"); }

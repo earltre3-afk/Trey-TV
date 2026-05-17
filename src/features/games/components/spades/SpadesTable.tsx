@@ -141,6 +141,7 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
       onBack={onBack} onLegend={onLegend}
       roomCode={room.room?.room_code}
       myAvatarUrl={identity.avatarUrl}
+      myPublicProfileUid={identity.publicProfileUid}
       chatButton={
         <ChatHeaderButton unread={chat.unread} accent="#00B7FF" onClick={() => setChatOpen(true)} />
       }
@@ -178,6 +179,7 @@ interface ViewProps {
   onLegend: () => void;
   roomCode?: string;
   myAvatarUrl?: string | null;
+  myPublicProfileUid?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
@@ -285,7 +287,7 @@ function GlassChip({ children, className = '', style }: { children: React.ReactN
 }
 
 const SpadesView: React.FC<ViewProps> = ({
-  state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer,
+  state, mySeat, selected, setSelected, onBid, onPlayClick, onNextRound, onPlayAgain, onBack, onLegend, roomCode, myAvatarUrl, myPublicProfileUid, chatButton, chatDrawer,
   onPlayCard,
 }) => {
 
@@ -534,6 +536,7 @@ const SpadesView: React.FC<ViewProps> = ({
               <GamePlayerSeat
                 displayName={you.name}
                 avatarUrl={myAvatarUrl}
+                publicProfileUid={myPublicProfileUid}
                 isBot={you.isBot}
                 isCurrentTurn={isMyTurn}
                 isDealer={dealerSeat === mySeat}

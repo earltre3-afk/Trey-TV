@@ -131,6 +131,7 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
     onPass={() => room.sendMove({ type: 'pass', seat: mySeat })}
     onRestart={onBack} onBack={onBack} onLegend={onLegend} roomCode={room.room?.room_code}
     myAvatarUrl={identity.avatarUrl}
+    myPublicProfileUid={identity.publicProfileUid}
     chatButton={<ChatHeaderButton unread={chat.unread} accent="#A855F7" onClick={() => setChatOpen(true)} />}
     chatDrawer={
       <GameChatDrawer
@@ -153,11 +154,12 @@ interface ViewProps {
   onClaim: () => void; onCall: () => void; onPass: () => void; onRestart: () => void;
   onBack: () => void; onLegend: () => void; roomCode?: string;
   myAvatarUrl?: string | null;
+  myPublicProfileUid?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
 
-const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onClaim, onCall, onPass, onRestart, onBack, onLegend, roomCode, myAvatarUrl, chatButton, chatDrawer }) => {
+const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onClaim, onCall, onPass, onRestart, onBack, onLegend, roomCode, myAvatarUrl, myPublicProfileUid, chatButton, chatDrawer }) => {
   const you = state.players[mySeat];
   const isYourTurn = state.phase === 'playing' && state.currentSeat === mySeat;
   const canCall = state.phase === 'awaiting-challenge' && state.lastClaim && state.lastClaim.seat !== mySeat;
@@ -282,6 +284,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
               <GamePlayerSeat
                 displayName={you.name}
                 avatarUrl={myAvatarUrl}
+                publicProfileUid={myPublicProfileUid}
                 isBot={you.isBot}
                 isCurrentTurn={isYourTurn}
                 cardCount={you.hand.length}

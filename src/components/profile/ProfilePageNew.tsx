@@ -19,6 +19,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProfileData } from "./ProfileTypes";
+import { useFollowState, useSubscribeState } from "@/lib/profile-identity";
+import { createBrowserClient } from "@/lib/supabase-browser";
+import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
+import { useFwdGifLibrary } from "@/lib/fwd-gif-api";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import staticBanner from "@/assets/lovable-hero-bg.jpg";
 import staticPortrait from "@/assets/lovable-profile-portrait.jpg";
@@ -167,6 +171,17 @@ export function ProfilePageNew({
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteTab, setNoteTab] = useState<"note" | "gif">("note");
   const [note, setNote] = useState("");
+  const [localFollowers, setLocalFollowers] = useState(Number(profile.stats.followers) || 0);
+  const [localSubscribers, setLocalSubscribers] = useState(Number(profile.stats.subscribers) || 0);
+  const [showFwdGifs, setShowFwdGifs] = useState(!!profile.showFwdGifsOnProfile);
+  const [showFwdPicker, setShowFwdPicker] = useState(false);
+  const followState = useFollowState(profile.profileUserId, false, (next) => {
+    setLocalFollowers((count) => Math.max(0, count + (next ? 1 : -1)));
+  });
+  const subscribeState = useSubscribeState(profile.profileUserId, false, (next) => {
+    setLocalSubscribers((count) => Math.max(0, count + (next ? 1 : -1)));
+  });
+  const fwdLibrary = useFwdGifLibrary("created", 12, 0);
 
   const isPublic = variant === "public";
   const showOwnerBadge = variant === "owner";
@@ -177,6 +192,7 @@ export function ProfilePageNew({
   const showGiftButton = profile.isCreator && variant !== "user";
   const showOwnerControls = variant === "owner";
   const showCreatorControls = variant === "creator"; // edit profile for creators
+  const fwdGifs = showOwnerControls && fwdLibrary.data?.ok ? fwdLibrary.data.data.gifs : [];
 
   const bannerSrc = profile.bannerUrl || staticBanner;
   const avatarSrc = profile.avatarUrl || staticPortrait;
@@ -191,6 +207,27 @@ export function ProfilePageNew({
   const onShare = async () => {
     try { await navigator.share?.({ title: profile.displayName, url: location.href }); }
     catch { await navigator.clipboard?.writeText(location.href); toast.success("Link copied"); }
+  };
+
+  const onMessage = () => {
+    navigate({ to: "/inbox", search: { to: profile.handle } as any });
+  };
+
+  const toggleFwdVisibility = async () => {
+    if (!authUser || !profile.profileUserId || authUser.uid !== profile.uid) return;
+    const next = !showFwdGifs;
+    setShowFwdGifs(next);
+    const supabase = createBrowserClient();
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update({ show_fwd_gifs_on_profile: next })
+      .eq("id", profile.profileUserId);
+    if (error) {
+      setShowFwdGifs(!next);
+      toast.error("Could not update FWD visibility");
+      return;
+    }
+    toast.success(next ? "FWD GIFs visible on your profile" : "FWD GIFs hidden from your profile");
   };
 
   const channelLink = `/channel/${profile.handle}` as const;
@@ -318,12 +355,12 @@ export function ProfilePageNew({
             {!showOwnerControls && !showCreatorControls && (
               <div className={`mt-3 grid gap-2 max-w-md mx-auto ${showGiftButton ? "grid-cols-4" : "grid-cols-3"}`}>
                 {[
-                  { l: "Follow", I: UserPlus, c: NEON_PURPLE, primary: true },
-                  { l: "Subscribe", I: Sparkles, c: GOLD, primary: false },
-                  { l: "Message", I: Mail, c: NEON_BLUE, primary: false },
-                  ...(showGiftButton ? [{ l: "Gift", I: Heart, c: PINK, primary: false }] : []),
-                ].map(({ l, I, c, primary }) => (
-                  <button key={l} className="cert-btn group" data-primary={primary ? "true" : "false"} style={{ "--btn-c": c } as React.CSSProperties}>
+                  { l: followState.following ? "Followed" : "Follow", I: followState.following ? BadgeCheck : UserPlus, c: NEON_PURPLE, primary: true, onClick: followState.toggle, disabled: followState.pending },
+                  { l: subscribeState.subscribed ? "Subscribed" : "Subscribe", I: Sparkles, c: GOLD, primary: false, onClick: subscribeState.toggle, disabled: subscribeState.pending },
+                  { l: "Message", I: Mail, c: NEON_BLUE, primary: false, onClick: onMessage, disabled: false },
+                  ...(showGiftButton ? [{ l: "Gift", I: Heart, c: PINK, primary: false, onClick: () => toast("Gift picker opens from creator profiles soon."), disabled: false }] : []),
+                ].map(({ l, I, c, primary, onClick, disabled }) => (
+                  <button key={l} type="button" disabled={disabled} onClick={onClick} className="cert-btn group disabled:opacity-60" data-primary={primary ? "true" : "false"} style={{ "--btn-c": c } as React.CSSProperties}>
                     <span aria-hidden className="cert-btn__border" />
                     <span aria-hidden className="cert-btn__surface" />
                     <span aria-hidden className="cert-btn__cert">
@@ -429,9 +466,9 @@ export function ProfilePageNew({
             <div className="panel neon-border grid grid-cols-4 divide-x divide-white/5 reveal" style={{ animationDelay: ".08s" }}>
               {[
                 { I: FileText, c: NEON_BLUE, v: fmt(profile.stats.posts || 0), l: "Posts" },
-                { I: Users, c: NEON_PURPLE, v: fmt(profile.stats.followers || 0), l: "Followers" },
+                { I: Users, c: NEON_PURPLE, v: fmt(localFollowers || 0), l: "Followers" },
                 { I: UserPlus, c: PINK, v: fmt(profile.stats.following || 0), l: "Following" },
-                { I: Sparkles, c: GOLD, v: fmt(profile.stats.prescriptions || 0), l: "Rx" },
+                { I: Sparkles, c: GOLD, v: fmt(localSubscribers || 0), l: "Subs" },
               ].map(({ I, c, v, l }) => (
                 <button key={l} className="flex items-center justify-center gap-1.5 px-1 py-2.5 transition hover:bg-white/[0.03] active:scale-[0.98]">
                   <I className="w-3.5 h-3.5" style={{ color: c, filter: `drop-shadow(0 0 6px ${c})` }} />
@@ -463,6 +500,48 @@ export function ProfilePageNew({
                 </div>
                 {profile.gifOfDayCaption && (
                   <p className="mt-2 text-[11px] text-foreground/70 text-center">{profile.gifOfDayCaption}</p>
+                )}
+              </div>
+            )}
+
+            {(showOwnerControls || showFwdGifs) && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".095s" }}>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
+                  <h3 className="text-xs font-semibold">FWD GIF Library</h3>
+                  <span className="ml-auto rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">FWD</span>
+                </div>
+                {showOwnerControls && (
+                  <div className="mb-3 flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
+                    <div className="text-left">
+                      <div className="text-[11px] font-bold">{showFwdGifs ? "Visible on profile" : "Hidden from public profile"}</div>
+                      <div className="text-[10px] text-muted-foreground">Only public/allowed FWD GIFs are shown.</div>
+                    </div>
+                    <button type="button" onClick={toggleFwdVisibility} className="rounded-full border border-white/15 px-3 py-1.5 text-[10px] font-bold active:scale-95" style={{ color: showFwdGifs ? GOLD : NEON_BLUE }}>
+                      {showFwdGifs ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                )}
+                {showFwdGifs && fwdGifs.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {fwdGifs.map((gif) => {
+                      const src = gif.poster_url || gif.preview_url || gif.gif_url || gif.media_url || gif.source_url || "";
+                      return (
+                        <a key={gif.id} href={`https://fwd.treytv.com/gif/${gif.id}`} className="group aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]" target="_blank" rel="noreferrer">
+                          <img src={src} alt={gif.title || "FWD GIF"} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                        </a>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-center text-[11px] text-muted-foreground">
+                    {showOwnerControls ? "Choose GIFs in FWD or feature a GIF of the Day from Edit Profile." : "No public FWD GIFs yet."}
+                  </div>
+                )}
+                {showOwnerControls && (
+                  <button type="button" onClick={() => setShowFwdPicker(true)} className="mt-3 w-full rounded-full border border-white/15 px-3 py-2 text-[11px] font-bold text-white/90 active:scale-95">
+                    Choose from FWD
+                  </button>
                 )}
               </div>
             )}
@@ -718,6 +797,16 @@ export function ProfilePageNew({
           </div>
         </div>
       )}
+      <FwdGifPicker
+        open={showFwdPicker}
+        context="profile"
+        treyTvUid={myUid || null}
+        onClose={() => setShowFwdPicker(false)}
+        onSelect={() => {
+          setShowFwdPicker(false);
+          toast.success("FWD GIF selected. Use Edit Profile to feature it as GIF of the Day.");
+        }}
+      />
     </div>
   );
 }

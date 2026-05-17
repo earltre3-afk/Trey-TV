@@ -77,6 +77,9 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         creator_id,
         parent_comment_id,
         body,
+        gif_url,
+        gif_poster_url,
+        gif_fwd_id,
         edited_at,
         created_at
       `)
@@ -139,6 +142,9 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
           avatar: profile?.avatar_url || "",
         },
         text: row.body,
+        gifUrl: row.gif_url ?? null,
+        gifPosterUrl: row.gif_poster_url ?? null,
+        gifFwdId: row.gif_fwd_id ?? null,
         likes: likesByComment.get(row.id) ?? 0,
         likedByMe: likedByMe.has(row.id),
         createdAt: new Date(row.created_at).getTime(),

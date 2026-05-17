@@ -155,7 +155,8 @@ export function useSupabaseReactions(postId: string, initialLikesCount: number =
       const freshCount = await fetchCount();
       if (freshCount !== null) setLikeCount(freshCount);
       return { ok: true };
-    } catch {
+    } catch (err) {
+      console.error("[useSupabaseReactions] toggleReaction failed:", err);
       setReaction(previousReaction);
       setLikeCount(previousCount);
       return { ok: false, reason: "unavailable" };

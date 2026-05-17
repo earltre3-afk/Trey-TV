@@ -135,6 +135,7 @@ export interface GamePlayerSeatProps {
   displayName: string;
   /** Real player photo URL (Supabase storage, etc.) */
   avatarUrl?: string | null;
+  publicProfileUid?: string | null;
   isBot?: boolean;
   isCurrentTurn?: boolean;
   isDealer?: boolean;
@@ -163,6 +164,7 @@ const TURN_COLOR = '#FFC857';
 export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
   displayName,
   avatarUrl,
+  publicProfileUid,
   isBot = false,
   isCurrentTurn = false,
   isDealer = false,
@@ -191,13 +193,20 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
   const botProfile: BotProfile | undefined =
     isBot ? getBotProfile(displayName) : undefined;
 
+  const profileHref = !isBot && publicProfileUid ? `/u/${encodeURIComponent(publicProfileUid)}` : null;
+  const Wrapper = profileHref ? 'a' : 'div';
+
   return (
-    <div
+    <Wrapper
+      {...(profileHref ? { href: profileHref, onClick: (event: React.MouseEvent) => event.stopPropagation() } : {})}
       data-game-player-seat
       data-seat-name={displayName}
       data-seat-bot={isBot ? 'true' : 'false'}
       data-seat-position={position}
       style={{
+        textDecoration: 'none',
+        cursor: profileHref ? 'pointer' : 'default',
+        pointerEvents: profileHref ? 'auto' : 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -343,6 +352,6 @@ export const GamePlayerSeat: React.FC<GamePlayerSeatProps> = ({
           {cardCount} cards
         </div>
       )}
-    </div>
+    </Wrapper>
   );
 };

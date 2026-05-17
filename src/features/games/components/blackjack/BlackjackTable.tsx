@@ -111,6 +111,7 @@ const ServerBJ: React.FC<
       onDouble={() => send("double")}
       onNext={() => send("next")}
       playerAvatarUrl={identity.avatarUrl}
+      playerPublicProfileUid={identity.publicProfileUid}
       chatButton={
         <ChatHeaderButton
           unread={chat.unread}
@@ -145,6 +146,7 @@ interface ViewProps {
   onNext: () => void;
   roomCode?: string;
   playerAvatarUrl?: string | null;
+  playerPublicProfileUid?: string | null;
   chatButton?: React.ReactNode;
   chatDrawer?: React.ReactNode;
 }
@@ -160,6 +162,7 @@ const BJView: React.FC<ViewProps> = ({
   onNext,
   roomCode,
   playerAvatarUrl,
+  playerPublicProfileUid,
   chatButton,
   chatDrawer,
 }) => {
@@ -341,6 +344,7 @@ const BJView: React.FC<ViewProps> = ({
               <GamePlayerSeat
                 displayName="You"
                 avatarUrl={playerAvatarUrl}
+                publicProfileUid={playerPublicProfileUid}
                 isBot={false}
                 isCurrentTurn={state.phase === 'player'}
                 accentColor="#00B7FF"
