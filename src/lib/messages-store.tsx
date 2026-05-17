@@ -570,6 +570,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             message_type: "image",
             media_url: gif.url,
             media_type: "image",
+            gif_fwd_id: gif.gif_id ?? null,
           })
           .select("id")
           .single();

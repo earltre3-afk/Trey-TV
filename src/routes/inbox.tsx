@@ -51,7 +51,7 @@ import { useAuth } from "@/lib/auth";
 import { useNotifications } from "@/lib/notifications-store";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
-import { FwdPickerSheet } from "@/components/fwd/FwdPickerSheet";
+import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -604,8 +604,8 @@ function Inbox() {
       </div>
 
       <NewConversationSheet open={newOpen} onClose={() => setNewOpen(false)} onPicked={(id) => { setOpenGroup(null); setOpenId(id); }} />
-      <FwdPickerSheet
-        context={openGroup ? "group_chat" : "message"}
+      <FwdGifPicker
+        context={openGroup ? "message" : "message"}
         open={showFwdPicker}
         treyTvUid={profileUid}
         draft={draft}

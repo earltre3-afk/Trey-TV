@@ -83,6 +83,11 @@ export interface ProfileData {
   // Creator-specific extras
   creatorStatus?: "not_applied" | "pending" | "approved" | "rejected";
   accentColor?: string | null;
+
+  // GIF of the Day (FWD integration)
+  gifOfDayUrl?: string | null;
+  gifOfDayPosterUrl?: string | null;
+  gifOfDayCaption?: string | null;
 }
 
 /** Relationship status between viewer and profile owner */

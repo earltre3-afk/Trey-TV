@@ -10,6 +10,7 @@ import {
   Eye,
   Globe,
   HelpCircle,
+  Image as ImageIcon,
   Instagram,
   Link2,
   Lock,
@@ -42,6 +43,8 @@ import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { recordUserTrace } from "@/lib/user-trace";
 import { isPublicProfileUid } from "@/lib/profile-links";
 import bannerFallback from "@/assets/edit-profile-banner-cosmic.jpg";
+import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
+import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 export const Route = createFileRoute("/edit-profile")({
   component: EditProfile,
@@ -125,6 +128,9 @@ function EditProfile() {
   const [avatarUpload, setAvatarUpload] = useState<File | null>(null);
   const [bannerUpload, setBannerUpload] = useState<File | null>(null);
   const [topThreeOpen, setTopThreeOpen] = useState(false);
+  const [gifOfDay, setGifOfDay] = useState<FwdGifPayload | null>(null);
+  const [gifOfDayCaption, setGifOfDayCaption] = useState("");
+  const [showGifOfDayPicker, setShowGifOfDayPicker] = useState(false);
   const avatarFile = useRef<HTMLInputElement | null>(null);
   const bannerFile = useRef<HTMLInputElement | null>(null);
   const goBack = useGoBack(`/u/${base.uid}`);
@@ -236,6 +242,14 @@ function EditProfile() {
           banner_url: persistedBanner,
           profile_accent_color: draft.accent,
           updated_at: new Date().toISOString(),
+          ...(gifOfDay ? {
+            gif_of_day_id: gifOfDay.gif_id ?? null,
+            gif_of_day_url: gifOfDay.url,
+            gif_of_day_poster_url: gifOfDay.preview_url ?? null,
+            gif_of_day_provider: "fwd",
+            gif_of_day_caption: gifOfDayCaption.trim() || null,
+            gif_of_day_set_at: new Date().toISOString(),
+          } : {}),
         };
 
         if (isPublicProfileUid(existingPublicUid)) {
@@ -489,6 +503,55 @@ function EditProfile() {
             </div>
           </section>
 
+          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--cyan)", ["--accent-2" as string]: "var(--gold)" } as CSSProperties}>
+            <span className="aurora-bg" aria-hidden />
+            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "2.5s" } as CSSProperties} aria-hidden />
+            <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
+              <ImageIcon className="size-4 text-[var(--cyan)]" /> GIF OF THE DAY
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">Pick a GIF from your FWD library to feature on your profile. Changes save when you click Save Changes.</p>
+            {gifOfDay ? (
+              <div className="flex items-start gap-3">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10">
+                  <img src={gifOfDay.preview_url ?? gifOfDay.url} alt="GIF of the Day" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setGifOfDay(null)}
+                    className="absolute right-1 top-1 size-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+                    aria-label="Remove GIF of the Day"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <input
+                    value={gifOfDayCaption}
+                    onChange={(e) => setGifOfDayCaption(e.target.value)}
+                    placeholder="Add a caption… (optional)"
+                    maxLength={80}
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm focus:outline-none focus:border-primary/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowGifOfDayPicker(true)}
+                    className="mt-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                  >
+                    Change GIF
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowGifOfDayPicker(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 bg-white/[0.03] px-4 py-6 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground hover:bg-white/[0.06]"
+              >
+                <ImageIcon className="size-5" />
+                Choose your GIF of the Day from FWD
+              </button>
+            )}
+          </section>
+
           <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--magenta)", ["--accent-2" as string]: "var(--gold)" } as CSSProperties}>
             <span className="aurora-bg" aria-hidden />
             <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "3s" } as CSSProperties} aria-hidden />
@@ -559,6 +622,13 @@ function EditProfile() {
 
       <ProfilePreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} draft={draft} profileUid={profileUid} accentVar={accentVar} bannerFallback={bannerFallback} />
       <TopThreeEditor open={topThreeOpen} onClose={() => setTopThreeOpen(false)} onSave={() => qc.invalidateQueries({ queryKey: ["current-user"] })} />
+      <FwdGifPicker
+        open={showGifOfDayPicker}
+        context="profile"
+        treyTvUid={profileUid}
+        onClose={() => setShowGifOfDayPicker(false)}
+        onSelect={(gif) => { setGifOfDay(gif); setShowGifOfDayPicker(false); }}
+      />
     </AppShell>
   );
 }

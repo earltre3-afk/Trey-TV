@@ -443,6 +443,30 @@ export function ProfilePageNew({
               ))}
             </div>
 
+            {/* GIF of the Day */}
+            {profile.gifOfDayUrl && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".09s" }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
+                  <h3 className="font-semibold text-xs">GIF of the Day</h3>
+                  <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground">FWD</span>
+                </div>
+                <div className="relative overflow-hidden rounded-xl border border-white/10 max-h-52">
+                  <img
+                    src={profile.gifOfDayPosterUrl ?? profile.gifOfDayUrl}
+                    alt="GIF of the Day"
+                    className="w-full object-cover"
+                    loading="lazy"
+                    onMouseEnter={(e) => { if (profile.gifOfDayUrl && profile.gifOfDayUrl !== profile.gifOfDayPosterUrl) (e.currentTarget as HTMLImageElement).src = profile.gifOfDayUrl; }}
+                    onMouseLeave={(e) => { if (profile.gifOfDayPosterUrl) (e.currentTarget as HTMLImageElement).src = profile.gifOfDayPosterUrl; }}
+                  />
+                </div>
+                {profile.gifOfDayCaption && (
+                  <p className="mt-2 text-[11px] text-foreground/70 text-center">{profile.gifOfDayCaption}</p>
+                )}
+              </div>
+            )}
+
             {/* Bio / About */}
             <div className="panel neon-border p-3 reveal relative" style={{ animationDelay: ".1s" }}>
               <div className="mb-3">

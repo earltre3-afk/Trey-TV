@@ -1,16 +1,17 @@
-import { useState } from "react";
-import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check } from "lucide-react";
+import { useState, useCallback } from "react";
+import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
-import { useAuth as useMockAuth } from "@/lib/auth";
 import { useAuth } from "@/hooks/use-auth";
 import { useSupabaseReactions } from "@/hooks/use-supabase-reactions";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useComments, type Comment } from "@/lib/comments-store";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 import { isPublicProfileUid } from "@/lib/profile-links";
+import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
+import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 type Post = (typeof Posts)[number];
 
@@ -20,7 +21,7 @@ function fmt(n: number) {
 
 export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, user } = useAuth();
   const isGuest = !isSignedIn;
   const nav = useNavigate();
 
@@ -33,8 +34,12 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
-  const { byPost, add, toggleLike, edit, remove, isMine } = useComments();
+  const [commentGif, setCommentGif] = useState<FwdGifPayload | null>(null);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const { byPost, loaded: commentsLoaded, add, toggleLike, edit, remove, isMine } = useComments();
+  const treyTvUid = (user as any)?.uid ?? null;
   const allComments = byPost(post.id);
+  const commentCount = commentsLoaded(post.id) ? allComments.length : Math.max(post.comments, allComments.length);
   const topComments = allComments.filter((c) => !c.parentId);
   const repliesOf = (id: string) => allComments.filter((c) => c.parentId === id);
 
@@ -49,6 +54,26 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const requireAuth = (fn: () => void) => () => {
     if (isGuest) { toast("Sign up to interact"); nav({ to: "/signup" }); return; }
     fn();
+  };
+
+  const onCommentLike = async (id: string) => {
+    if (isGuest) {
+      toast("Sign up to like comments");
+      nav({ to: "/signup" });
+      return;
+    }
+    const ok = await toggleLike(id);
+    if (!ok) toast("Couldn't update comment like. Try again.");
+  };
+
+  const onCommentEdit = async (id: string, text: string) => {
+    const ok = await edit(id, text);
+    if (!ok) toast("Couldn't edit comment. Try again.");
+  };
+
+  const onCommentDelete = async (id: string) => {
+    const ok = await remove(id);
+    if (!ok) toast("Couldn't delete comment. Try again.");
   };
 
   const onReactionPick = async (k: ReactionKey) => {
@@ -173,7 +198,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           aria-expanded={commentsOpen}
         >
-          <MessageCircle className="size-5" /> {post.comments + allComments.length}
+          <MessageCircle className="size-5" /> {commentCount}
         </button>
         <button onClick={requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
@@ -197,7 +222,7 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       {commentsOpen && (
         <div className="border-t border-white/10 bg-black/20 px-4 py-4 animate-rise">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold">Comments · {allComments.length}</h4>
+            <h4 className="text-sm font-semibold">Comments · {commentCount}</h4>
             <button onClick={() => setCommentsOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close comments">
               <X className="size-4" />
             </button>
@@ -209,11 +234,11 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             )}
             {topComments.map((c) => (
               <li key={c.id} className="space-y-2">
-                <CommentRow c={c} mine={isMine(c)} onLike={() => toggleLike(c.id)} onReply={() => setReplyTo(c)} onEdit={(t) => edit(c.id, t)} onDelete={() => remove(c.id)} />
+                <CommentRow c={c} mine={isMine(c)} onLike={() => onCommentLike(c.id)} onReply={() => setReplyTo(c)} onEdit={(t) => onCommentEdit(c.id, t)} onDelete={() => onCommentDelete(c.id)} />
                 {repliesOf(c.id).length > 0 && (
                   <ul className="pl-10 space-y-2 border-l border-white/10 ml-4">
                     {repliesOf(c.id).map((r) => (
-                      <li key={r.id}><CommentRow c={r} mine={isMine(r)} onLike={() => toggleLike(r.id)} onReply={() => setReplyTo(c)} onEdit={(t) => edit(r.id, t)} onDelete={() => remove(r.id)} compact /></li>
+                      <li key={r.id}><CommentRow c={r} mine={isMine(r)} onLike={() => onCommentLike(r.id)} onReply={() => setReplyTo(c)} onEdit={(t) => onCommentEdit(r.id, t)} onDelete={() => onCommentDelete(r.id)} compact /></li>
                     ))}
                   </ul>
                 )}
@@ -232,25 +257,70 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
               onSubmit={(e) => {
                 e.preventDefault();
                 if (isGuest) { toast("Sign up to comment"); nav({ to: "/signup" }); return; }
-                add(post.id, newComment, replyTo?.id);
-                setNewComment(""); setReplyTo(null);
+                void (async () => {
+                  const gifPayload = commentGif ? {
+                    gifUrl: commentGif.url,
+                    gifPosterUrl: commentGif.preview_url ?? null,
+                    gifFwdId: commentGif.gif_id ?? null,
+                  } : undefined;
+                  const ok = await add(post.id, newComment, replyTo?.id, gifPayload);
+                  if (!ok) {
+                    toast("Comment couldn't post. Try again.");
+                    return;
+                  }
+                  setNewComment("");
+                  setReplyTo(null);
+                  setCommentGif(null);
+                })();
               }}
-              className="flex items-center gap-2"
+              className="flex flex-col gap-2"
             >
-              <input
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                placeholder={replyTo ? "Write a reply…" : "Add a comment…"}
-                className="flex-1 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm focus:outline-none focus:border-primary/60"
-              />
-              <button
-                type="submit"
-                disabled={!newComment.trim()}
-                className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-40 hover:opacity-90"
-              >
-                Post
-              </button>
+              {commentGif && (
+                <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10">
+                  <img src={commentGif.preview_url ?? commentGif.url} alt="GIF" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setCommentGif(null)}
+                    className="absolute top-1 right-1 size-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isGuest) { toast("Sign up to add GIFs"); nav({ to: "/signup" }); return; }
+                    setShowGifPicker(true);
+                  }}
+                  className="grid size-9 shrink-0 place-items-center rounded-full bg-white/5 border border-white/10 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                  aria-label="Add GIF"
+                >
+                  <ImageIcon className="size-4" />
+                </button>
+                <input
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder={replyTo ? "Write a reply…" : "Add a comment…"}
+                  className="flex-1 rounded-full bg-white/5 border border-white/10 px-4 py-2 text-sm focus:outline-none focus:border-primary/60"
+                />
+                <button
+                  type="submit"
+                  disabled={!newComment.trim() && !commentGif}
+                  className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold disabled:opacity-40 hover:opacity-90"
+                >
+                  Post
+                </button>
+              </div>
             </form>
+            <FwdGifPicker
+              open={showGifPicker}
+              context="comment"
+              treyTvUid={treyTvUid}
+              onClose={() => setShowGifPicker(false)}
+              onSelect={(gif) => { setCommentGif(gif); setShowGifPicker(false); }}
+            />
           </div>
         </div>
       )}
@@ -268,7 +338,7 @@ function timeAgo(ts: number) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c: Comment; mine?: boolean; onLike: () => void; onReply: () => void; onEdit: (text: string) => void; onDelete: () => void; compact?: boolean }) {
+function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c: Comment; mine?: boolean; onLike: () => void | Promise<void>; onReply: () => void; onEdit: (text: string) => void | Promise<void>; onDelete: () => void | Promise<void>; compact?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(c.text);
   return (
@@ -298,11 +368,31 @@ function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c
                 autoFocus
                 className="flex-1 rounded-lg bg-white/5 border border-white/10 px-2 py-1 text-sm focus:outline-none focus:border-primary/60"
               />
-              <button onClick={() => { if (draft.trim()) { onEdit(draft); setEditing(false); } }} className="text-primary"><Check className="size-4" /></button>
+              <button
+                onClick={() => {
+                  if (!draft.trim()) return;
+                  void Promise.resolve(onEdit(draft)).then(() => setEditing(false));
+                }}
+                className="text-primary"
+              >
+                <Check className="size-4" />
+              </button>
               <button onClick={() => { setDraft(c.text); setEditing(false); }} className="text-muted-foreground"><X className="size-4" /></button>
             </div>
           ) : (
-            <p className="text-sm mt-0.5 break-words whitespace-pre-wrap">{c.text}</p>
+            <div className="mt-0.5">
+              {c.text && <p className="text-sm break-words whitespace-pre-wrap">{c.text}</p>}
+              {c.gifUrl && (
+                <img
+                  src={c.gifPosterUrl ?? c.gifUrl}
+                  alt="GIF"
+                  className="mt-1 max-w-[200px] rounded-xl object-cover border border-white/10"
+                  loading="lazy"
+                  onMouseEnter={(e) => { if (c.gifUrl && c.gifUrl !== c.gifPosterUrl) (e.currentTarget as HTMLImageElement).src = c.gifUrl; }}
+                  onMouseLeave={(e) => { if (c.gifPosterUrl) (e.currentTarget as HTMLImageElement).src = c.gifPosterUrl; }}
+                />
+              )}
+            </div>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 px-1 text-[11px] text-muted-foreground">

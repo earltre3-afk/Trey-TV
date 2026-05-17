@@ -13,14 +13,18 @@ export type Comment = {
   likedByMe: boolean;
   createdAt: number;
   editedAt?: number;
+  gifUrl?: string | null;
+  gifPosterUrl?: string | null;
+  gifFwdId?: string | null;
 };
 
 type Ctx = {
   byPost: (postId: string) => Comment[];
-  add: (postId: string, text: string, parentId?: string) => void;
-  toggleLike: (id: string) => void;
-  remove: (id: string) => void;
-  edit: (id: string, text: string) => void;
+  loaded: (postId: string) => boolean;
+  add: (postId: string, text: string, parentId?: string, gif?: { gifUrl?: string | null; gifPosterUrl?: string | null; gifFwdId?: string | null }) => Promise<boolean>;
+  toggleLike: (id: string) => Promise<boolean>;
+  remove: (id: string) => Promise<boolean>;
+  edit: (id: string, text: string) => Promise<boolean>;
   isMine: (c: Comment) => boolean;
 };
 
@@ -35,17 +39,25 @@ const SEED: Comment[] = [
 const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 
 export function CommentsProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Comment[]>(SEED);
+  const [items, setItems] = useState<Comment[]>([]);
+  const [loadedPosts, setLoadedPosts] = useState<Set<string>>(() => new Set());
   const fetchedPosts = useRef<Set<string>>(new Set());
   const currentUser = useCurrentUser();
   const { user: supabaseUser } = useSupabaseAuth();
 
   useEffect(() => {
-    if (supabaseUser) return;
+    if (supabaseUser) {
+      setItems([]);
+      setLoadedPosts(new Set());
+      fetchedPosts.current.clear();
+      return;
+    }
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
+      setItems(raw ? JSON.parse(raw) : SEED);
+    } catch {
+      setItems(SEED);
+    }
   }, [supabaseUser?.id]);
 
   useEffect(() => {
@@ -66,13 +78,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         parent_comment_id,
         body,
         edited_at,
-        created_at,
-        profiles:creator_id (
-          display_name,
-          username,
-          avatar_url,
-          public_profile_uid
-        )
+        created_at
       `)
       .eq("post_id", postId)
       .eq("moderation_status", "visible")
@@ -81,21 +87,36 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       console.error("Failed to fetch comments for post:", error);
+      setLoadedPosts((prev) => new Set(prev).add(postId));
       return;
     }
 
     const rows = (data ?? []) as any[];
     const ids = rows.map((row) => row.id);
+    const creatorIds = [...new Set(rows.map((row) => row.creator_id).filter(Boolean))];
     let reactionRows: any[] = [];
+    const profilesById = new Map<string, any>();
 
-    if (ids.length > 0) {
-      const { data: reactions, error: reactionError } = await (supabase as any)
-        .from("user_comment_reactions")
-        .select("comment_id, user_id")
-        .in("comment_id", ids);
+    await Promise.all([
+      ids.length > 0
+        ? (supabase as any)
+            .from("user_comment_reactions")
+            .select("comment_id, user_id")
+            .in("comment_id", ids)
+        : Promise.resolve({ data: [], error: null }),
+      creatorIds.length > 0
+        ? (supabase as any)
+            .from("profiles")
+            .select("id, display_name, username, avatar_url, public_profile_uid")
+            .in("id", creatorIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]).then(([reactionResult, profileResult]) => {
+      if (!reactionResult.error) reactionRows = reactionResult.data ?? [];
+      if (!profileResult.error) {
+        (profileResult.data ?? []).forEach((profile: any) => profilesById.set(profile.id, profile));
+      }
+    });
 
-      if (!reactionError) reactionRows = reactions ?? [];
-    }
 
     const likesByComment = new Map<string, number>();
     const likedByMe = new Set<string>();
@@ -104,28 +125,32 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       if (supabaseUser && row.user_id === supabaseUser.id) likedByMe.add(row.comment_id);
     });
 
-    const dbComments: Comment[] = rows.map((row) => ({
-      id: row.id,
-      postId: row.post_id,
-      parentId: row.parent_comment_id || undefined,
-      author: {
-        id: row.creator_id,
-        publicProfileUid: row.profiles?.public_profile_uid || null,
-        name: row.profiles?.display_name || "Unknown",
-        handle: row.profiles?.username || "unknown",
-        avatar: row.profiles?.avatar_url || "",
-      },
-      text: row.body,
-      likes: likesByComment.get(row.id) ?? 0,
-      likedByMe: likedByMe.has(row.id),
-      createdAt: new Date(row.created_at).getTime(),
-      editedAt: row.edited_at ? new Date(row.edited_at).getTime() : undefined,
-    }));
+    const dbComments: Comment[] = rows.map((row) => {
+      const profile = profilesById.get(row.creator_id);
+      return {
+        id: row.id,
+        postId: row.post_id,
+        parentId: row.parent_comment_id || undefined,
+        author: {
+          id: row.creator_id,
+          publicProfileUid: profile?.public_profile_uid || null,
+          name: profile?.display_name || profile?.username || "Trey TV Member",
+          handle: profile?.username || "member",
+          avatar: profile?.avatar_url || "",
+        },
+        text: row.body,
+        likes: likesByComment.get(row.id) ?? 0,
+        likedByMe: likedByMe.has(row.id),
+        createdAt: new Date(row.created_at).getTime(),
+        editedAt: row.edited_at ? new Date(row.edited_at).getTime() : undefined,
+      };
+    });
 
     setItems((prev) => {
       const localOnly = supabaseUser ? [] : prev.filter((c) => !isUUID(c.id));
       return [...localOnly, ...prev.filter((c) => c.postId !== postId && isUUID(c.id)), ...dbComments];
     });
+    setLoadedPosts((prev) => new Set(prev).add(postId));
   };
 
   const byPost: Ctx["byPost"] = (postId) => {
@@ -138,8 +163,11 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     return items.filter((c) => c.postId === postId).sort((a, b) => a.createdAt - b.createdAt);
   };
 
-  const add: Ctx["add"] = async (postId, text, parentId) => {
-    if (!text.trim()) return;
+  const loaded: Ctx["loaded"] = (postId) => loadedPosts.has(postId);
+
+  const add: Ctx["add"] = async (postId, text, parentId, gif) => {
+    const trimmed = text.trim();
+    if (!trimmed && !gif?.gifUrl) return false;
 
     const localId = (typeof crypto !== "undefined" && crypto.randomUUID?.()) || `c-${Date.now()}`;
     const newComment: Comment = {
@@ -153,15 +181,18 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         handle: currentUser.handle,
         avatar: currentUser.avatar,
       },
-      text: text.trim(),
+      text: trimmed,
       likes: 0,
       likedByMe: false,
       createdAt: Date.now(),
+      gifUrl: gif?.gifUrl ?? null,
+      gifPosterUrl: gif?.gifPosterUrl ?? null,
+      gifFwdId: gif?.gifFwdId ?? null,
     };
 
     setItems((s) => [...s, newComment]);
 
-    if (!supabaseUser) return;
+    if (!supabaseUser) return true;
 
     const supabase = createBrowserClient();
     const { data, error } = await (supabase as any)
@@ -169,8 +200,11 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       .insert({
         post_id: postId,
         parent_comment_id: parentId || null,
-        body: text.trim(),
+        body: trimmed || null,
         creator_id: supabaseUser.id,
+        gif_url: gif?.gifUrl ?? null,
+        gif_poster_url: gif?.gifPosterUrl ?? null,
+        gif_fwd_id: gif?.gifFwdId ?? null,
       })
       .select("id, created_at")
       .single();
@@ -178,7 +212,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error("Failed to add comment:", error);
       setItems((s) => s.filter((x) => x.id !== localId));
-      return;
+      return false;
     }
 
     if (data) {
@@ -188,11 +222,12 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         createdAt: data.created_at ? new Date(data.created_at).getTime() : x.createdAt,
       } : x));
     }
+    return true;
   };
 
-  const toggleLike: Ctx["toggleLike"] = (id) => {
+  const toggleLike: Ctx["toggleLike"] = async (id) => {
     const comment = items.find((c) => c.id === id);
-    if (!comment) return;
+    if (!comment) return false;
 
     const nextLiked = !comment.likedByMe;
     setItems((s) => s.map((c) => c.id === id ? {
@@ -201,42 +236,42 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       likes: Math.max(0, c.likes + (nextLiked ? 1 : -1)),
     } : c));
 
-    if (!supabaseUser || !isUUID(id)) return;
+    if (!supabaseUser || !isUUID(id)) return true;
 
-    void (async () => {
-      try {
-        const supabase = createBrowserClient();
-        const result = nextLiked
-          ? await (supabase as any).from("user_comment_reactions").upsert({
-              comment_id: id,
-              user_id: supabaseUser.id,
-              reaction_type: "like",
-            }, { onConflict: "comment_id,user_id" })
-          : await (supabase as any)
-              .from("user_comment_reactions")
-              .delete()
-              .eq("comment_id", id)
-              .eq("user_id", supabaseUser.id);
+    try {
+      const supabase = createBrowserClient();
+      const result = nextLiked
+        ? await (supabase as any).from("user_comment_reactions").upsert({
+            comment_id: id,
+            user_id: supabaseUser.id,
+            reaction_type: "like",
+          }, { onConflict: "comment_id,user_id" })
+        : await (supabase as any)
+            .from("user_comment_reactions")
+            .delete()
+            .eq("comment_id", id)
+            .eq("user_id", supabaseUser.id);
 
-        if (result.error) throw result.error;
-      } catch (error) {
-        console.error("Failed to persist comment reaction:", error);
-        setItems((s) => s.map((c) => c.id === id ? {
-          ...c,
-          likedByMe: !nextLiked,
-          likes: Math.max(0, c.likes + (nextLiked ? -1 : 1)),
-        } : c));
-      }
-    })();
+      if (result.error) throw result.error;
+      return true;
+    } catch (error) {
+      console.error("Failed to persist comment reaction:", error);
+      setItems((s) => s.map((c) => c.id === id ? {
+        ...c,
+        likedByMe: !nextLiked,
+        likes: Math.max(0, c.likes + (nextLiked ? -1 : 1)),
+      } : c));
+      return false;
+    }
   };
 
   const remove: Ctx["remove"] = async (id) => {
     const comment = items.find((c) => c.id === id);
-    if (!comment) return;
+    if (!comment) return false;
 
     setItems((s) => s.filter((c) => c.id !== id && c.parentId !== id));
 
-    if (!supabaseUser || !isUUID(id)) return;
+    if (!supabaseUser || !isUUID(id)) return true;
 
     const supabase = createBrowserClient();
     const { error } = await (supabase as any)
@@ -248,36 +283,41 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     if (error) {
       console.error("Failed to delete comment:", error);
       void fetchCommentsForPost(comment.postId);
+      return false;
     }
+    return true;
   };
 
-  const edit: Ctx["edit"] = (id, text) => {
+  const edit: Ctx["edit"] = async (id, text) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed) return false;
+    const comment = items.find((c) => c.id === id);
+    if (!comment) return false;
 
     setItems((s) => s.map((c) => c.id === id ? { ...c, text: trimmed, editedAt: Date.now() } : c));
 
-    if (!supabaseUser || !isUUID(id)) return;
+    if (!supabaseUser || !isUUID(id)) return true;
 
-    void (async () => {
-      try {
-        const supabase = createBrowserClient();
-        const { error } = await (supabase as any)
-          .from("user_post_comments")
-          .update({ body: trimmed, edited_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-          .eq("id", id)
-          .eq("creator_id", supabaseUser.id);
-        if (error) throw error;
-      } catch (error) {
-        console.error("Failed to edit comment:", error);
-      }
-    })();
+    try {
+      const supabase = createBrowserClient();
+      const { error } = await (supabase as any)
+        .from("user_post_comments")
+        .update({ body: trimmed, edited_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("creator_id", supabaseUser.id);
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error("Failed to edit comment:", error);
+      setItems((s) => s.map((c) => c.id === id ? comment : c));
+      return false;
+    }
   };
 
   const isMine: Ctx["isMine"] = (c) =>
     (!!supabaseUser && c.author.id === supabaseUser.id) || c.author.handle === currentUser.handle;
 
-  return <C.Provider value={{ byPost, add, toggleLike, remove, edit, isMine }}>{children}</C.Provider>;
+  return <C.Provider value={{ byPost, loaded, add, toggleLike, remove, edit, isMine }}>{children}</C.Provider>;
 }
 
 export function useComments() {
