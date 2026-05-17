@@ -88,6 +88,7 @@ async function fwdFetch<T>(
   }
 }
 
+type StatusInput = { accessToken: string };
 type LibraryInput = { accessToken: string; tab: FwdGifLibraryTab; limit?: number; offset?: number };
 type CaptureInput = {
   accessToken: string;
@@ -105,6 +106,17 @@ type CaptureInput = {
 type SaveInput = { accessToken: string; id: string };
 type MarkUsedInput = { accessToken: string; id?: string | null; gif_url?: string | null };
 type RemoveInput = { accessToken: string; id: string };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// checkFwdStatus — lightweight check: does this user have a public_profile_uid?
+// ─────────────────────────────────────────────────────────────────────────────
+export const checkFwdStatus = createServerFn({ method: "GET" })
+  .inputValidator((input: StatusInput) => input)
+  .handler(async ({ data: input }) => {
+    const { user } = await verifyTreyIUser(input.accessToken);
+    const treyTvUid = await getTreyTvUid(user.id);
+    return { ok: true as const, connected: !!treyTvUid, treyTvUid: treyTvUid ?? null };
+  });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // getFwdGifLibrary

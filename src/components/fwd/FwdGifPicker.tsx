@@ -185,6 +185,43 @@ type LibraryGridProps = {
   onSelect: (item: FwdGifItem) => void;
 };
 
+const CONNECT_ERRORS = [
+  "No FWD account linked",
+  "No Trey TV UID on profile",
+  "not connected",
+  "Not signed in",
+];
+
+function isConnectError(error: string | undefined): boolean {
+  if (!error) return false;
+  return CONNECT_ERRORS.some((s) => error.includes(s));
+}
+
+function ConnectFwdCta() {
+  const returnTo = typeof window !== "undefined" ? encodeURIComponent(window.location.href) : "";
+  const signupUrl = `https://fwd.treytv.com/signup?returnTo=${returnTo}`;
+  return (
+    <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 px-8 text-center">
+      <div className="text-4xl select-none">🔗</div>
+      <div>
+        <p className="font-semibold text-foreground">Connect FWD</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Connect FWD to use your GIF library in Trey TV messages.
+        </p>
+      </div>
+      <a
+        href={signupUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-80"
+      >
+        Connect FWD
+        <ExternalLink className="size-3" />
+      </a>
+    </div>
+  );
+}
+
 function LibraryGrid({ tab, onSelect }: LibraryGridProps) {
   const { data, isLoading, isError } = useFwdGifLibrary(tab);
 
@@ -196,12 +233,17 @@ function LibraryGrid({ tab, onSelect }: LibraryGridProps) {
     );
   }
 
+  const errorMsg = !data?.ok ? (data as { ok: false; error: string } | undefined)?.error : undefined;
+
   if (isError || !data || !data.ok) {
+    if (isConnectError(errorMsg)) {
+      return <ConnectFwdCta />;
+    }
     return (
       <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 px-6 text-center">
         <ImageOff className="size-8 text-muted-foreground/50" />
         <p className="text-sm text-muted-foreground">
-          {!data?.ok ? (data as { error: string }).error : "Could not load your GIF library."}
+          {errorMsg ?? "Could not load your GIF library."}
         </p>
       </div>
     );

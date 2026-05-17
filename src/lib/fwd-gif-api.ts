@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSupabaseSession } from "@/lib/supabase-session";
 import {
+  checkFwdStatus,
   getFwdGifLibrary,
   captureFwdGif,
   saveFwdGif,
@@ -11,6 +12,21 @@ import {
 } from "@/lib/fwd-gif-api.server";
 
 export type { FwdGifItem, FwdGifLibraryTab };
+
+export function useFwdConnectionStatus() {
+  const { session } = useSupabaseSession();
+  const accessToken = session?.access_token ?? null;
+
+  return useQuery({
+    queryKey: ["fwd-connection-status", accessToken],
+    queryFn: async () => {
+      if (!accessToken) return { ok: true as const, connected: false, treyTvUid: null };
+      return checkFwdStatus({ data: { accessToken } });
+    },
+    enabled: !!accessToken,
+    staleTime: 60_000,
+  });
+}
 
 export function useFwdGifLibrary(tab: FwdGifLibraryTab, limit = 48, offset = 0) {
   const { session } = useSupabaseSession();

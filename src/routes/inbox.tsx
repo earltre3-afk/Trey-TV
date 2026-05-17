@@ -52,6 +52,8 @@ import { useNotifications } from "@/lib/notifications-store";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
+import { useFwdConnectionStatus } from "@/lib/fwd-gif-api";
+import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -141,11 +143,15 @@ function Inbox() {
   const [showGhostPopup, setShowGhostPopup] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFwdPicker, setShowFwdPicker] = useState(false);
+  const [gifAttachment, setGifAttachment] = useState<FwdGifPayload | null>(null);
+
+  const { data: fwdStatus } = useFwdConnectionStatus();
   const [ghostDraft, setGhostDraft] = useState("");
   const [matchedGroups, setMatchedGroups] = useState<any[]>([]);
   const [openGroup, setOpenGroup] = useState<any | null>(null);
   const [groupMessages, setGroupMessages] = useState<any[]>([]);
   const [groupDraft, setGroupDraft] = useState("");
+  const [callRequests, setCallRequests] = useState<Record<string, string>>({});
 
   const [recording, setRecording] = useState(false);
   const [recorderMs, setRecorderMs] = useState(0);
@@ -361,15 +367,30 @@ function Inbox() {
 
   const onSend = () => {
     if (!openId) return;
-    if (!draft.trim()) {
+    if (!draft.trim() && !gifAttachment) {
       toast.error("Message cannot be blank");
       return;
     }
-    sendMessage(openId, draft);
+    if (gifAttachment) {
+      void sendFwdGif(openId, gifAttachment, draft.trim() || undefined);
+      setGifAttachment(null);
+    } else {
+      sendMessage(openId, draft);
+    }
     setDraft("");
     setTimeout(() => setPeerTyping(true), 600);
     setTimeout(() => setPeerTyping(false), 2800);
   };
+
+  const handleOpenFwd = useCallback(() => {
+    if (!user) { toast.error("Please sign in to use FWD GIFs"); return; }
+    if (fwdStatus && !fwdStatus.connected) {
+      const returnTo = typeof window !== "undefined" ? encodeURIComponent(window.location.href) : "";
+      window.open(`https://fwd.treytv.com/signup?returnTo=${returnTo}`, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setShowFwdPicker(true);
+  }, [user, fwdStatus]);
 
   const stopAndSendVoice = useCallback(() => {
     const mr = mediaRecorderRef.current;
@@ -440,6 +461,53 @@ function Inbox() {
     { label: "Create Collab", icon: UserPlus, onClick: () => toast.success("Collab room draft created") },
     { label: "Voice Note", icon: Mic, onClick: startRecording },
   ];
+
+  const requestCall = useCallback(async (callType: "audio" | "video") => {
+    if (!open) return;
+    if (!user) {
+      toast.error("Please sign in to call");
+      return;
+    }
+    const hasMediaSupport =
+      typeof navigator !== "undefined" &&
+      !!navigator.mediaDevices &&
+      typeof navigator.mediaDevices.getUserMedia === "function" &&
+      typeof window !== "undefined" &&
+      window.isSecureContext;
+    if (!hasMediaSupport) {
+      toast.error("Calling needs a secure browser with microphone support. A call request was not sent.");
+      return;
+    }
+    const supabase = createBrowserClient() as any;
+    const { data: auth } = await supabase.auth.getUser();
+    const callerId = auth.user?.id;
+    if (!callerId) {
+      toast.error("Please sign in to call");
+      return;
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(open.peer.id)) {
+      toast.error("This conversation cannot receive browser calls yet.");
+      return;
+    }
+    setCallRequests((s) => ({ ...s, [open.id]: "requested" }));
+    const { error } = await supabase.from("call_requests").insert({
+      caller_id: callerId,
+      recipient_id: open.peer.id,
+      thread_id: open.id,
+      call_type: callType,
+      status: "requested",
+    });
+    if (error) {
+      setCallRequests((s) => {
+        const next = { ...s };
+        delete next[open.id];
+        return next;
+      });
+      toast.error(error.message || "Could not request call");
+      return;
+    }
+    toast.success(callType === "video" ? "Video call requested" : "Call requested");
+  }, [open, user]);
 
   return (
     <AppShell wide>
@@ -522,8 +590,10 @@ function Inbox() {
                 <ThreadHeader
                   open={open}
                   peerTyping={peerTyping}
+                  callStatus={callRequests[open.id]}
                   onBack={() => setOpenId(null)}
                   onAi={() => setAiDismissed((s) => ({ ...s, [open.id]: false }))}
+                  onCall={requestCall}
                 />
                 <PinnedMessageBar open={open} last={lastOpenMessage} />
 
@@ -587,7 +657,9 @@ function Inbox() {
                   onGhostDraft={setGhostDraft}
                   fileInputRef={fileInputRef}
                   onPhotoSelect={onPhotoSelect}
-                  onOpenFwd={() => setShowFwdPicker(true)}
+                  onOpenFwd={handleOpenFwd}
+                  gifAttachment={gifAttachment}
+                  onRemoveGif={() => setGifAttachment(null)}
                   onSendGhost={(secs, label) => {
                     if (openId) sendGhost(openId, draft || ghostDraft, secs, label);
                     setDraft("");
@@ -605,15 +677,18 @@ function Inbox() {
 
       <NewConversationSheet open={newOpen} onClose={() => setNewOpen(false)} onPicked={(id) => { setOpenGroup(null); setOpenId(id); }} />
       <FwdGifPicker
-        context={openGroup ? "message" : "message"}
+        context="message"
         open={showFwdPicker}
         treyTvUid={profileUid}
         draft={draft}
         onClose={() => setShowFwdPicker(false)}
         onSelect={(gif) => {
-          if (openId) void sendFwdGif(openId, gif);
-          else if (openGroup) void sendGroupFwdGif(gif);
-          else toast.error("Pick a conversation first");
+          setShowFwdPicker(false);
+          if (openGroup) {
+            void sendGroupFwdGif(gif);
+          } else {
+            setGifAttachment(gif);
+          }
         }}
       />
       <ChatOnboarding />
@@ -825,7 +900,21 @@ function ThreadCard({ thread, last, unread, active, ai, index, onClick }: { thre
   );
 }
 
-function ThreadHeader({ open, peerTyping, onBack, onAi }: { open: any; peerTyping: boolean; onBack: () => void; onAi: () => void }) {
+function ThreadHeader({
+  open,
+  peerTyping,
+  callStatus,
+  onBack,
+  onAi,
+  onCall,
+}: {
+  open: any;
+  peerTyping: boolean;
+  callStatus?: string;
+  onBack: () => void;
+  onAi: () => void;
+  onCall: (callType: "audio" | "video") => void;
+}) {
   return (
     <div className="border-b border-white/10 p-3 sm:p-4">
       <div className="flex items-center gap-3">
@@ -849,12 +938,17 @@ function ThreadHeader({ open, peerTyping, onBack, onAi }: { open: any; peerTypin
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <IconBtn icon={Phone} label="Call" onClick={() => toast("Calling...")} />
-          <IconBtn icon={Video} label="Video" onClick={() => toast("Video call")} />
+          <IconBtn icon={Phone} label={callStatus === "requested" ? "Call requested" : "Call"} onClick={() => onCall("audio")} />
+          <IconBtn icon={Video} label="Video call" onClick={() => onCall("video")} />
           <IconBtn icon={Bot} label="AI tools" onClick={onAi} />
           <IconBtn icon={MoreHorizontal} label="More" onClick={() => toast("Conversation options")} />
         </div>
       </div>
+      {callStatus === "requested" && (
+        <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/[0.08] px-3 py-2 text-xs font-semibold text-primary">
+          Calling... request saved. They can answer from their inbox notification flow when realtime calling is available.
+        </div>
+      )}
     </div>
   );
 }
@@ -898,7 +992,14 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
             <div className="ghost-timer-badge"><Timer className="size-2.5" /><span>{timeLeft}s left</span></div>
           </div>
         )}
-        {hasMedia && (
+        {hasMedia && message.isGif && (
+          <GifMessageCard
+            gifUrl={message.mediaUrl!}
+            posterUrl={message.gifPosterUrl}
+            title={message.gifTitle}
+          />
+        )}
+        {hasMedia && !message.isGif && (
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]" style={{ maxWidth: 240 }}>
             {message.mediaType === "video" ? <video src={message.mediaUrl} controls className="w-full" style={{ maxHeight: 220 }} /> : <img src={message.mediaUrl} alt="media" className="w-full object-cover" style={{ maxHeight: 220 }} />}
           </div>
@@ -910,7 +1011,7 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
             <audio src={message.voiceUrl} controls className="voice-audio" />
           </div>
         )}
-        {!isGhost && !hasMedia && !hasVoice && message.text && (
+        {!isGhost && (!hasMedia || message.isGif) && !hasVoice && message.text?.trim() && (
           <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${mine ? "msg-bubble-mine rounded-br-sm" : "msg-bubble-them rounded-bl-sm"}`}>
             <span className="relative z-[1]">{message.text}</span>
           </div>
@@ -943,6 +1044,30 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
           <span>{fmtTime(message.ts)}</span>
           {mine && (message.status === "read" ? <CheckCheck className="size-3 text-[oklch(0.82_0.15_215)]" /> : message.status === "delivered" ? <CheckCheck className="size-3" /> : <Check className="size-3" />)}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GifMessageCard({ gifUrl, posterUrl, title }: { gifUrl: string; posterUrl?: string; title?: string }) {
+  const [playing, setPlaying] = useState(false);
+  return (
+    <div
+      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] cursor-pointer"
+      style={{ maxWidth: 240 }}
+      onMouseEnter={() => setPlaying(true)}
+      onMouseLeave={() => setPlaying(false)}
+      onClick={() => setPlaying((p) => !p)}
+    >
+      {posterUrl && !playing && (
+        <img src={posterUrl} alt={title ?? "GIF"} className="w-full object-cover" style={{ maxHeight: 200 }} />
+      )}
+      {(playing || !posterUrl) && (
+        <img src={gifUrl} alt={title ?? "GIF"} className="w-full object-cover" style={{ maxHeight: 200 }} />
+      )}
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
+        <span className="rounded-full border border-white/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-black tracking-[0.2em] text-primary">FWD</span>
+        {title && <span className="truncate text-[10px] text-white/70 ml-2">{title}</span>}
       </div>
     </div>
   );
@@ -1005,8 +1130,11 @@ function Composer(props: {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onPhotoSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenFwd: () => void;
+  gifAttachment: FwdGifPayload | null;
+  onRemoveGif: () => void;
   onSendGhost: (secs: number, label: string) => void;
 }) {
+  const canSend = props.draft.trim().length > 0 || !!props.gifAttachment;
   return (
     <div className="relative border-t border-white/10 p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
       <input ref={props.fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={props.onPhotoSelect} />
@@ -1028,10 +1156,36 @@ function Composer(props: {
             props.onPlusMenu(false);
             props.onGhostPopup(true);
           }}
-          onFwd={props.onOpenFwd}
+          onFwd={() => { props.onPlusMenu(false); props.onOpenFwd(); }}
           onPhoto={() => { props.onPlusMenu(false); props.fileInputRef.current?.click(); }}
           onClose={() => props.onPlusMenu(false)}
         />
+      )}
+
+      {/* GIF attachment preview */}
+      {props.gifAttachment && (
+        <div className="mb-2 flex items-start gap-2 rounded-2xl border border-[oklch(0.78_0.18_150_/_0.4)] bg-[oklch(0.78_0.18_150_/_0.08)] p-2">
+          <div className="relative shrink-0 overflow-hidden rounded-xl" style={{ width: 80, height: 60 }}>
+            <img
+              src={props.gifAttachment.preview_url ?? props.gifAttachment.url}
+              alt={props.gifAttachment.title ?? "GIF"}
+              className="h-full w-full object-cover"
+            />
+            <span className="absolute bottom-0.5 left-0.5 rounded-full border border-white/20 bg-black/60 px-1 py-0.5 text-[8px] font-black tracking-[0.2em] text-primary">FWD</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-[oklch(0.78_0.18_150)]">FWD GIF attached</p>
+            {props.gifAttachment.title && <p className="mt-0.5 truncate text-[10px] text-muted-foreground">{props.gifAttachment.title}</p>}
+            <p className="mt-0.5 text-[10px] text-muted-foreground">Add a message or send as is</p>
+          </div>
+          <button
+            onClick={props.onRemoveGif}
+            className="grid size-7 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[0.04] text-muted-foreground hover:text-foreground"
+            aria-label="Remove GIF"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
       )}
 
       {props.recording ? (
@@ -1049,14 +1203,27 @@ function Composer(props: {
           <ComposerButton active={props.showPlusMenu} icon={Plus} label="More options" onClick={() => { props.onEmojiPicker(false); props.onPlusMenu(!props.showPlusMenu); }} />
           <ComposerButton icon={ImageIcon} label="Attach media" onClick={() => props.fileInputRef.current?.click()} />
           <ComposerButton active={props.showEmojiPicker} icon={Smile} label="Emoji" onClick={() => { props.onPlusMenu(false); props.onEmojiPicker(!props.showEmojiPicker); }} />
+          <button
+            onClick={() => { props.onPlusMenu(false); props.onEmojiPicker(false); props.onOpenFwd(); }}
+            className={[
+              "grid size-8 place-items-center rounded-xl transition",
+              props.gifAttachment
+                ? "bg-[oklch(0.78_0.18_150_/_0.18)] text-[oklch(0.78_0.18_150)]"
+                : "text-muted-foreground hover:bg-white/5 hover:text-primary",
+            ].join(" ")}
+            aria-label="FWD GIF"
+            title="Add FWD GIF"
+          >
+            <Sparkles className="size-4" />
+          </button>
           <input
             value={props.draft}
             onChange={(e) => props.onDraft(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && props.onSend()}
-            placeholder={`Message ${props.openName.split(" ")[0]}…`}
+            placeholder={props.gifAttachment ? "Add a message… (optional)" : `Message ${props.openName.split(" ")[0]}…`}
             className="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground"
           />
-          {props.draft.trim() ? (
+          {canSend ? (
             <button
               onClick={props.onSend}
               aria-label="Send"
@@ -1312,7 +1479,7 @@ function StatusChip({ icon: Icon, label, tone }: { icon: LucideIcon; label: stri
 }
 
 function IconBtn({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
-  return <button onClick={onClick} className="size-9 grid place-items-center rounded-full hover:bg-white/5 tilt-press" aria-label={label}><Icon className="size-4" /></button>;
+  return <button type="button" onClick={onClick} className="size-9 grid place-items-center rounded-full hover:bg-white/5 tilt-press" aria-label={label} title={label}><Icon className="size-4" /></button>;
 }
 
 function EmptyList({ onCompose }: { onCompose: () => void }) {

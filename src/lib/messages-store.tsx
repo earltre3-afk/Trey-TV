@@ -26,6 +26,11 @@ export type Message = {
   // Voice note
   voiceUrl?: string;
   voiceDuration?: number; // seconds
+  // FWD GIF attachment
+  isGif?: boolean;
+  gifFwdId?: string;
+  gifPosterUrl?: string;
+  gifTitle?: string;
 };
 
 export type Peer = {
@@ -54,7 +59,7 @@ type Ctx = {
   send: (threadId: string, text: string) => void;
   sendGhost: (threadId: string, text: string, durationSecs: number, label: string) => void;
   sendMedia: (threadId: string, file: File) => Promise<void>;
-  sendFwdGif: (threadId: string, gif: FwdGifPayload) => Promise<void>;
+  sendFwdGif: (threadId: string, gif: FwdGifPayload, text?: string) => Promise<void>;
   sendVoice: (threadId: string, blob: Blob, durationSecs: number) => Promise<void>;
   openThread: (peer: Peer) => string;
   markRead: (threadId: string) => void;
@@ -160,7 +165,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("direct_messages")
         .select(`
-          id, sender_id, recipient_id, body, message_type, media_url, media_type, voice_duration, ghost_expires_at, ghost_label, read_at, created_at,
+          id, sender_id, recipient_id, body, message_type, media_url, media_type, voice_duration, ghost_expires_at, ghost_label, read_at, created_at, gif_fwd_id, gif_poster_url, gif_title,
           sender:sender_id ( id, public_profile_uid, display_name, username, avatar_url, verification_type ),
           recipient:recipient_id ( id, public_profile_uid, display_name, username, avatar_url, verification_type )
         `)
@@ -205,20 +210,25 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           if (row.read_at) status = "read";
           else if (isMeSender) status = "sent";
 
+          const isGifMsg = row.message_type === "gif" || (row.gif_fwd_id != null && row.media_url);
           const resolvedMediaUrl = await createMessageMediaUrl(row.media_url);
           dbMsgs.push({
             id: row.id,
             threadId: peerId,
             from: isMeSender ? "me" : "them",
-            text: row.body,
+            text: row.body ?? "",
             ts: new Date(row.created_at).getTime(),
             status,
             ghostExpiresAt: row.ghost_expires_at ? new Date(row.ghost_expires_at).getTime() : undefined,
             ghostLabel: row.ghost_label ?? undefined,
             mediaUrl: row.message_type === "voice" ? undefined : resolvedMediaUrl,
-            mediaType: row.media_type === "video" ? "video" : row.media_type === "image" ? "image" : undefined,
+            mediaType: row.media_type === "video" ? "video" : (row.media_type === "image" || isGifMsg) ? "image" : undefined,
             voiceUrl: row.message_type === "voice" ? resolvedMediaUrl : undefined,
             voiceDuration: row.voice_duration ? Number(row.voice_duration) : undefined,
+            isGif: !!isGifMsg,
+            gifFwdId: row.gif_fwd_id ?? undefined,
+            gifPosterUrl: row.gif_poster_url ?? undefined,
+            gifTitle: row.gif_title ?? undefined,
           });
         }
 
@@ -277,20 +287,25 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             return [{ id: row.sender_id, peer, lastReadAt: 0, myLastReadAt: 0 }, ...prev];
           });
 
+          const isGifMsg = row.message_type === "gif" || (row.gif_fwd_id != null && row.media_url);
           const resolvedMediaUrl = await createMessageMediaUrl(row.media_url);
           setMessages((prev) => prev.some((m) => m.id === row.id) ? prev : [...prev, {
             id: row.id,
             threadId: row.sender_id,
             from: "them",
-            text: row.body,
+            text: row.body ?? "",
             ts: new Date(row.created_at).getTime(),
             status: row.read_at ? "read" : "delivered",
             ghostExpiresAt: row.ghost_expires_at ? new Date(row.ghost_expires_at).getTime() : undefined,
             ghostLabel: row.ghost_label ?? undefined,
             mediaUrl: row.message_type === "voice" ? undefined : resolvedMediaUrl,
-            mediaType: row.media_type === "video" ? "video" : row.media_type === "image" ? "image" : undefined,
+            mediaType: row.media_type === "video" ? "video" : (row.media_type === "image" || isGifMsg) ? "image" : undefined,
             voiceUrl: row.message_type === "voice" ? resolvedMediaUrl : undefined,
             voiceDuration: row.voice_duration ? Number(row.voice_duration) : undefined,
+            isGif: !!isGifMsg,
+            gifFwdId: row.gif_fwd_id ?? undefined,
+            gifPosterUrl: row.gif_poster_url ?? undefined,
+            gifTitle: row.gif_title ?? undefined,
           }]);
         }
       )
@@ -542,20 +557,24 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     toast.success(`${mediaType === "video" ? "Video" : "Image"} sent`);
   };
 
-  const sendFwdGif: Ctx["sendFwdGif"] = async (threadId, gif) => {
+  const sendFwdGif: Ctx["sendFwdGif"] = async (threadId, gif, text) => {
     if (!supabaseUser) { toast.error("Please sign in to send with FWD"); return; }
     const localId = uid();
     const ts = Date.now();
-    const label = gif.title ? `FWD · ${gif.title}` : "FWD GIF";
+    const displayText = text?.trim() || gif.title || "";
     setMessages((s) => [...s, {
       id: localId,
       threadId,
       from: "me",
-      text: label,
+      text: displayText,
       ts,
       status: "sent",
       mediaUrl: gif.url,
       mediaType: "image",
+      isGif: true,
+      gifFwdId: gif.gif_id || undefined,
+      gifPosterUrl: gif.preview_url || undefined,
+      gifTitle: gif.title || undefined,
     }]);
 
     if (isUUID(threadId)) {
@@ -566,19 +585,21 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           .insert({
             sender_id: supabaseUser.id,
             recipient_id: threadId,
-            body: label,
-            message_type: "image",
+            body: displayText || null,
+            message_type: "gif",
             media_url: gif.url,
             media_type: "image",
             gif_fwd_id: gif.gif_id ?? null,
+            gif_poster_url: gif.preview_url ?? null,
+            gif_title: gif.title ?? null,
           })
           .select("id")
           .single();
 
         if (error) throw error;
         setMessages((s) => s.map((m) => m.id === localId ? { ...m, id: data.id, status: "delivered" } : m));
-      } catch (error) {
-        console.error("Failed to send FWD GIF:", error);
+      } catch (err) {
+        console.error("Failed to send FWD GIF:", err);
         toast.error("FWD GIF failed");
         setMessages((s) => s.filter((m) => m.id !== localId));
         return;
