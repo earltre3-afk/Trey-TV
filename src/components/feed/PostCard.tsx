@@ -1,9 +1,11 @@
-import { useState, useCallback } from "react";
-import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check, Image as ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check, Image as ImageIcon, Loader2, ExternalLink, Forward } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
 import { useActivity, REACTIONS, type ReactionKey } from "@/lib/activity-store";
+import { useFeed, type UserPost } from "@/lib/feed-store";
 import { useAuth } from "@/hooks/use-auth";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSupabaseReactions } from "@/hooks/use-supabase-reactions";
@@ -13,17 +15,20 @@ import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 import { isPublicProfileUid } from "@/lib/profile-links";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
+import { useFwdConnectionStatus } from "@/lib/fwd-gif-api";
 
-type Post = (typeof Posts)[number];
+type Post = (typeof Posts)[number] & Partial<UserPost>;
 
 function fmt(n: number) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
 }
 
-export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
+export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
+  const { addPost, updatePost, removePost } = useFeed();
   const { isSignedIn, user } = useAuth();
   const currentProfile = useCurrentUser();
+  const fwdStatus = useFwdConnectionStatus();
   const isGuest = !isSignedIn;
   const nav = useNavigate();
 
@@ -38,6 +43,15 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [commentGif, setCommentGif] = useState<FwdGifPayload | null>(null);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editText, setEditText] = useState(post.text);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [fwdOpen, setFwdOpen] = useState(false);
+  const [fwdPickerOpen, setFwdPickerOpen] = useState(false);
+  const [fwdCaption, setFwdCaption] = useState("");
+  const [selectedFwdGif, setSelectedFwdGif] = useState<FwdGifPayload | null>(null);
+  const [busyAction, setBusyAction] = useState<"edit" | "delete" | "fwd" | null>(null);
   const { byPost, loaded: commentsLoaded, add, toggleLike, edit, remove, isMine } = useComments();
   const treyTvUid = currentProfile.uid || (user as any)?.id || null;
   const allComments = byPost(post.id);
@@ -52,10 +66,111 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
   const creatorPublicProfileUid =
     (post.creator as any).publicProfileUid ||
     (isPublicProfileUid((post.creator as any).id) ? (post.creator as any).id : null);
+  const isOwner = Boolean(user?.id && post.ownerId && post.ownerId === user.id);
+  const isFwdPost = post.sourceType === "fwd";
+
+  useEffect(() => {
+    if (!postMenuOpen && !editOpen && !deleteOpen && !fwdOpen && !fwdPickerOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setPostMenuOpen(false);
+      setEditOpen(false);
+      setDeleteOpen(false);
+      setFwdOpen(false);
+      setFwdPickerOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [postMenuOpen, editOpen, deleteOpen, fwdOpen, fwdPickerOpen]);
 
   const requireAuth = (fn: () => void) => () => {
     if (isGuest) { toast("Sign up to interact"); nav({ to: "/signup" }); return; }
     fn();
+  };
+
+  const closePostModals = () => {
+    setPostMenuOpen(false);
+    setEditOpen(false);
+    setDeleteOpen(false);
+    setFwdOpen(false);
+    setFwdPickerOpen(false);
+  };
+
+  const openEdit = () => {
+    if (!isOwner) {
+      toast.error("Only the post owner can do this");
+      return;
+    }
+    setEditText(post.text);
+    setPostMenuOpen(false);
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    const next = editText.trim();
+    if (!next) {
+      toast.error("Post text can't be empty");
+      return;
+    }
+    setBusyAction("edit");
+    const result = await updatePost(post.id, { text: next });
+    setBusyAction(null);
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not update post");
+      return;
+    }
+    toast.success("Post updated");
+    setEditOpen(false);
+  };
+
+  const confirmDelete = async () => {
+    setBusyAction("delete");
+    const result = await removePost(post.id);
+    setBusyAction(null);
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not delete post");
+      return;
+    }
+    toast.success("Post deleted");
+    closePostModals();
+  };
+
+  const openFwdComposer = () => {
+    if (isGuest) {
+      toast("Sign up to post with FWD");
+      nav({ to: "/signup" });
+      return;
+    }
+    setPostMenuOpen(false);
+    setFwdOpen(true);
+  };
+
+  const postFwdGif = async () => {
+    if (!selectedFwdGif?.url) {
+      toast.error("Choose a GIF first");
+      return;
+    }
+    const caption = fwdCaption.trim();
+    setBusyAction("fwd");
+    addPost({
+      text: caption || selectedFwdGif.title || "FWD GIF",
+      media: selectedFwdGif.url,
+      sourceType: "fwd",
+      gifFwdId: selectedFwdGif.gif_id ?? null,
+      gifPosterUrl: selectedFwdGif.preview_url ?? null,
+      gifTitle: selectedFwdGif.title ?? null,
+      tags: ["FWD"],
+    });
+    setBusyAction(null);
+    toast.success("FWD posted to Trey TV");
+    setFwdCaption("");
+    setSelectedFwdGif(null);
+    setFwdOpen(false);
+  };
+
+  const configureFwd = () => {
+    const returnTo = encodeURIComponent(window.location.href);
+    window.open(`https://fwd.treytv.com/signup?returnTo=${returnTo}`, "_blank", "noopener,noreferrer");
   };
 
   const onCommentLike = async (id: string) => {
@@ -130,7 +245,18 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">Creator</span>
           </div>
         </div>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); toast("Post options"); }} className="size-8 grid place-items-center text-muted-foreground hover:text-foreground tilt-press" aria-label="more">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setPostMenuOpen(true);
+          }}
+          className="size-8 grid place-items-center text-muted-foreground hover:text-foreground tilt-press"
+          aria-label="Open post actions"
+          aria-haspopup="dialog"
+          aria-expanded={postMenuOpen}
+        >
           <MoreHorizontal className="size-5" />
         </button>
       </div>
@@ -140,12 +266,19 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
       {post.media && (
         <div className="px-0 sm:px-3">
           <div className="relative rounded-none sm:rounded-2xl overflow-hidden border-y border-x-0 sm:border-x border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
-            <img src={post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
-            <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
-              <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
-                {playing ? <Pause className="size-6 fill-white text-white" /> : <Play className="size-6 fill-white text-white" />}
+            <img src={isFwdPost ? (post.gifPosterUrl || post.media) : post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
+            {isFwdPost && (
+              <span className="absolute left-3 top-3 rounded-full border border-primary/40 bg-black/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-primary backdrop-blur">
+                FWD GIF
               </span>
-            </button>
+            )}
+            {!isFwdPost && (
+              <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
+                <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
+                  {playing ? <Pause className="size-6 fill-white text-white" /> : <Play className="size-6 fill-white text-white" />}
+                </span>
+              </button>
+            )}
             {post.duration && (
               <span className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-md bg-black/60 backdrop-blur border border-white/10">
                 {post.duration}
@@ -165,10 +298,17 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
             disabled={reactionPending}
             className={`flex items-center gap-1.5 transition tilt-press disabled:opacity-70 ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
             style={current ? { color: current.color } : undefined}
+            aria-label={current ? `Reaction selected: ${current.label}` : "Choose a reaction"}
+            aria-pressed={Boolean(current)}
+            title={current ? current.label : "Choose a reaction"}
           >
-            <span className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}>
-              {current?.emoji ?? "🔥"}
-            </span>
+            {current ? (
+              <span className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}>
+                {current.emoji}
+              </span>
+            ) : (
+              <Heart className="size-5" aria-hidden="true" />
+            )}
             <span className="text-xs font-semibold">{fmt(likeCount)}</span>
           </button>
 
@@ -329,7 +469,239 @@ export function PostCard({ post, index = 0 }: { post: Post; index?: number }) {
           </div>
         </div>
       )}
+
+      {postMenuOpen && (
+        <PostActionSheet
+          isOwner={isOwner}
+          onClose={() => setPostMenuOpen(false)}
+          onEdit={openEdit}
+          onDelete={() => {
+            if (!isOwner) {
+              toast.error("Only the post owner can do this");
+              return;
+            }
+            setPostMenuOpen(false);
+            setDeleteOpen(true);
+          }}
+          onFwd={openFwdComposer}
+        />
+      )}
+
+      {editOpen && (
+        <ModalShell title="Edit post" eyebrow="Owner tools" onClose={() => setEditOpen(false)}>
+          <textarea
+            value={editText}
+            onChange={(event) => setEditText(event.currentTarget.value.slice(0, 500))}
+            autoFocus
+            className="min-h-36 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none focus:border-primary/60"
+          />
+          <div className="mt-4 flex items-center justify-end gap-2">
+            <button type="button" onClick={() => setEditOpen(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white">
+              Cancel
+            </button>
+            <button type="button" onClick={() => void saveEdit()} disabled={busyAction === "edit"} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60">
+              {busyAction === "edit" && <Loader2 className="size-4 animate-spin" />} Save
+            </button>
+          </div>
+        </ModalShell>
+      )}
+
+      {deleteOpen && (
+        <ModalShell title="Delete this post?" eyebrow="Confirm action" onClose={() => setDeleteOpen(false)}>
+          <p className="text-sm leading-6 text-white/70">
+            This removes the post from Trey TV. Reactions, comments, saves, and repost activity attached to this post will no longer appear with it.
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button type="button" onClick={() => setDeleteOpen(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white">
+              Cancel
+            </button>
+            <button type="button" onClick={() => void confirmDelete()} disabled={busyAction === "delete"} className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+              {busyAction === "delete" && <Loader2 className="size-4 animate-spin" />} Delete
+            </button>
+          </div>
+        </ModalShell>
+      )}
+
+      {fwdOpen && (
+        <ModalShell title="Post with FWD" eyebrow="GIF composer" onClose={() => setFwdOpen(false)}>
+          {selectedFwdGif ? (
+            <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/50">
+              <img src={selectedFwdGif.preview_url ?? selectedFwdGif.url} alt={selectedFwdGif.title ?? "Selected GIF"} className="max-h-72 w-full object-cover" />
+              <button type="button" onClick={() => setSelectedFwdGif(null)} className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/70 text-white">
+                <X className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setFwdPickerOpen(true)}
+              className="flex min-h-44 w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
+            >
+              <ImageIcon className="size-8" />
+              <span className="text-sm font-bold">Choose from saved GIFs or search FWD</span>
+            </button>
+          )}
+
+          <textarea
+            value={fwdCaption}
+            onChange={(event) => setFwdCaption(event.currentTarget.value.slice(0, 500))}
+            placeholder="Add a caption..."
+            className="mt-3 min-h-24 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-primary/60"
+          />
+
+          {fwdStatus.data && !fwdStatus.data.connected && (
+            <button type="button" onClick={configureFwd} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline">
+              Configure FWD <ExternalLink className="size-3.5" />
+            </button>
+          )}
+
+          <div className="mt-4 flex items-center justify-between gap-2">
+            <button type="button" onClick={() => setFwdPickerOpen(true)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:text-white">
+              {selectedFwdGif ? "Change GIF" : "Browse GIFs"}
+            </button>
+            <button type="button" onClick={() => void postFwdGif()} disabled={!selectedFwdGif || busyAction === "fwd"} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60">
+              {busyAction === "fwd" && <Loader2 className="size-4 animate-spin" />} Post FWD
+            </button>
+          </div>
+
+          <FwdGifPicker
+            open={fwdPickerOpen}
+            context="profile"
+            treyTvUid={treyTvUid}
+            draft={fwdCaption}
+            onClose={() => setFwdPickerOpen(false)}
+            onSelect={(gif) => {
+              setSelectedFwdGif(gif);
+              setFwdPickerOpen(false);
+            }}
+          />
+        </ModalShell>
+      )}
     </article>
+  );
+}
+
+function PostActionSheet({
+  isOwner,
+  onClose,
+  onEdit,
+  onDelete,
+  onFwd,
+}: {
+  isOwner: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onFwd: () => void;
+}) {
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  return (
+    <div
+      className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 px-3 pb-[calc(env(safe-area-inset-bottom)+5rem)] backdrop-blur-sm sm:items-center sm:pb-0"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Post actions"
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/95 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] ring-1 ring-primary/15 backdrop-blur-xl"
+        onTouchStart={(event) => setTouchStartY(event.touches[0]?.clientY ?? null)}
+        onTouchEnd={(event) => {
+          if (touchStartY == null) return;
+          const endY = event.changedTouches[0]?.clientY ?? touchStartY;
+          if (endY - touchStartY > 70) onClose();
+          setTouchStartY(null);
+        }}
+      >
+        <div className="border-b border-white/10 px-4 py-3">
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Post actions</div>
+          {!isOwner && <div className="mt-1 text-xs text-white/50">Only the post owner can edit or delete.</div>}
+        </div>
+        <div className="p-2">
+          <ActionRow icon={Pencil} label="Edit" disabled={!isOwner} onClick={onEdit} />
+          <ActionRow icon={Trash2} label="Delete" danger disabled={!isOwner} onClick={onDelete} />
+          <ActionRow icon={Forward} label="FWD" onClick={onFwd} />
+        </div>
+        <button type="button" onClick={onClose} className="w-full border-t border-white/10 px-4 py-3 text-sm font-semibold text-white/60 hover:bg-white/5 hover:text-white">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActionRow({
+  icon: Icon,
+  label,
+  disabled,
+  danger,
+  onClick,
+}: {
+  icon: typeof Pencil;
+  label: string;
+  disabled?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+}) {
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={disabled ? "Only the post owner can do this" : label}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition ${
+        danger ? "text-red-300 hover:bg-red-500/10" : "text-white/85 hover:bg-white/[0.07] hover:text-white"
+      } disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent`}
+    >
+      <Icon className="size-4" />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function ModalShell({
+  title,
+  eyebrow,
+  onClose,
+  children,
+}: {
+  title: string;
+  eyebrow: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 px-3 pb-[calc(env(safe-area-inset-bottom)+5rem)] backdrop-blur-md sm:items-center sm:pb-0"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950/95 p-4 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] ring-1 ring-primary/15 backdrop-blur-xl"
+        onTouchStart={(event) => setTouchStartY(event.touches[0]?.clientY ?? null)}
+        onTouchEnd={(event) => {
+          if (touchStartY == null) return;
+          const endY = event.changedTouches[0]?.clientY ?? touchStartY;
+          if (endY - touchStartY > 70) onClose();
+          setTouchStartY(null);
+        }}
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">{eyebrow}</div>
+            <h3 className="mt-1 font-display text-xl font-black text-white">{title}</h3>
+          </div>
+          <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/70 hover:text-white" aria-label="Close">
+            <X className="size-4" />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
   );
 }
 

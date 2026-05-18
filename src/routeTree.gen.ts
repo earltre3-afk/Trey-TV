@@ -59,6 +59,7 @@ import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
+import { Route as GamesTrunoRouteImport } from './routes/games.truno'
 import { Route as GamesSpadesRouteImport } from './routes/games.spades'
 import { Route as GamesInteractiveStoriesRouteImport } from './routes/games.interactive-stories'
 import { Route as GamesBullshitRouteImport } from './routes/games.bullshit'
@@ -363,6 +364,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
   id: '/legal/$slug',
   path: '/legal/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const GamesTrunoRoute = GamesTrunoRouteImport.update({
+  id: '/truno',
+  path: '/truno',
+  getParentRoute: () => GamesRoute,
 } as any)
 const GamesSpadesRoute = GamesSpadesRouteImport.update({
   id: '/spades',
@@ -714,6 +720,7 @@ export interface FileRoutesByFullPath {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -816,6 +823,7 @@ export interface FileRoutesByTo {
   '/games/blackjack': typeof GamesBlackjackRoute
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/spades': typeof GamesSpadesRoute
+  '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -922,6 +930,7 @@ export interface FileRoutesById {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
@@ -1029,6 +1038,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -1131,6 +1141,7 @@ export interface FileRouteTypes {
     | '/games/blackjack'
     | '/games/bullshit'
     | '/games/spades'
+    | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -1236,6 +1247,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
     | '/music-review/queue'
@@ -1668,6 +1680,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/$slug'
       preLoaderRoute: typeof LegalSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/games/truno': {
+      id: '/games/truno'
+      path: '/truno'
+      fullPath: '/games/truno'
+      preLoaderRoute: typeof GamesTrunoRouteImport
+      parentRoute: typeof GamesRoute
     }
     '/games/spades': {
       id: '/games/spades'
@@ -2221,6 +2240,7 @@ interface GamesRouteChildren {
   GamesBullshitRoute: typeof GamesBullshitRoute
   GamesInteractiveStoriesRoute: typeof GamesInteractiveStoriesRouteWithChildren
   GamesSpadesRoute: typeof GamesSpadesRoute
+  GamesTrunoRoute: typeof GamesTrunoRoute
   GamesIndexRoute: typeof GamesIndexRoute
 }
 
@@ -2229,6 +2249,7 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesBullshitRoute: GamesBullshitRoute,
   GamesInteractiveStoriesRoute: GamesInteractiveStoriesRouteWithChildren,
   GamesSpadesRoute: GamesSpadesRoute,
+  GamesTrunoRoute: GamesTrunoRoute,
   GamesIndexRoute: GamesIndexRoute,
 }
 

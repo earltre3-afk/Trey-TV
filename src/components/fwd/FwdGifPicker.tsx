@@ -62,7 +62,7 @@ export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "me
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-md sm:items-center"
+      className="fixed inset-0 z-[110] flex items-end justify-center bg-black/70 backdrop-blur-md sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label="FWD GIF library"
