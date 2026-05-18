@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, UserPlus, Copy, Bot, ChevronRight, Send, LogOut, Crown, GripVertical } from 'lucide-react';
 import TrunoLogo from '../components/TrunoLogo';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface Props {
   onNavigate: (view: string, params?: any) => void;
@@ -22,6 +23,7 @@ const chatMessages = [
 ];
 
 const RoomScreen: React.FC<Props> = ({ onNavigate }) => {
+  const currentUser = useCurrentUser();
   const [rules, setRules] = useState({ classic: true, action: true, wild: true, team: false });
   const [copied, setCopied] = useState(false);
 
@@ -79,10 +81,14 @@ const RoomScreen: React.FC<Props> = ({ onNavigate }) => {
             <div className="space-y-1.5">
               {players.map((p, i) => (
                 <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-zinc-900/60">
-                  <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center text-[10px] font-black text-white`}>{p.name[0]}</div>
+                  {p.isHost && currentUser.avatar ? (
+                    <img src={currentUser.avatar} alt="Host" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center text-[10px] font-black text-white`}>{p.isHost ? (currentUser.name?.[0] || p.name[0]) : p.name[0]}</div>
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold ${p.isHost ? 'text-fuchsia-300' : 'text-white'}`}>{p.name}</span>
+                      <span className={`text-xs font-bold ${p.isHost ? 'text-fuchsia-300' : 'text-white'}`}>{p.isHost ? currentUser.name || p.name : p.name}</span>
                       {p.sub && <span className="text-[10px] text-purple-300">{p.sub}</span>}
                       {p.isHost && <Crown size={11} className="text-amber-400" />}
                     </div>
@@ -108,8 +114,12 @@ const RoomScreen: React.FC<Props> = ({ onNavigate }) => {
             <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(157,78,221,0.2), transparent 70%)' }} />
             <div className="absolute inset-8 rounded-full border border-purple-500/30" />
             <div className="absolute top-2 left-1/2 -translate-x-1/2 flex flex-col items-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-700 ring-2 ring-fuchsia-500/50" />
-              <span className="text-[9px] font-bold text-fuchsia-300 mt-1">Trey-1</span>
+              {currentUser.avatar ? (
+                <img src={currentUser.avatar} alt="Host" className="w-10 h-10 rounded-full object-cover ring-2 ring-fuchsia-500/50" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-700 ring-2 ring-fuchsia-500/50" />
+              )}
+              <span className="text-[9px] font-bold text-fuchsia-300 mt-1">{currentUser.name || 'Host'}</span>
               <span className="text-[8px] text-amber-300">Host</span>
             </div>
             <div className="absolute top-1/2 left-2 -translate-y-1/2 flex flex-col items-center">

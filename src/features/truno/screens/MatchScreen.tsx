@@ -3,6 +3,7 @@ import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Cloc
 import TrunoCard from '../components/TrunoCard';
 import { TrunoCard as TCard, sampleHand } from '../lib/cards';
 import { avatarFor } from '../lib/avatars';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface Props {
   onNavigate: (view: string, params?: any) => void;
@@ -24,6 +25,7 @@ const chatMessages = [
 const reactions = ['🔥', '😂', '😮', '👏', '+'];
 
 const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
+  const currentUser = useCurrentUser();
   const [hand, setHand] = useState<TCard[]>(sampleHand());
   const [selected, setSelected] = useState<string | null>(null);
   const [voice, setVoice] = useState(true);
@@ -107,7 +109,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
               <div key={i} className="w-3 h-8 rounded-sm border border-purple-500/40" style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: 'rgba(157,78,221,0.1)' }} />
             ))}
           </div>
-          <PlayerAvatar p={opponents[0]} cards={12} />
+          <PlayerAvatar p={{ name: currentUser.name || opponents[0].name, score: opponents[0].score, avatar: currentUser.avatar }} cards={hand.length} />
         </div>
 
         <div className="absolute top-1/2 left-0 -translate-y-1/2 flex flex-col items-center">
@@ -246,11 +248,11 @@ const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
   );
 };
 
-const PlayerAvatar: React.FC<{ p: { name: string; score: number }; cards: number }> = ({ p, cards }) => (
+const PlayerAvatar: React.FC<{ p: { name: string; score: number; avatar?: string }; cards: number }> = ({ p, cards }) => (
   <div className="flex flex-col items-center">
     <div className="relative">
       <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]">
-        <img src={avatarFor(p.name)} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        <img src={p.avatar || avatarFor(p.name)} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
       </div>
       <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border border-zinc-700 text-[10px] font-black text-white flex items-center justify-center">{cards}</span>
       <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black" />
