@@ -9,6 +9,7 @@
 //   â€¢ User-controllable: mute, autoplay, replay, skip.
 
 import { supabase } from './supabase';
+import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter, StoryVoiceConfig } from './storyVoiceTypes';
 
 export type VoiceCharacterId =
   | 'narrator'
@@ -56,14 +57,22 @@ const KEY = 'trey_voice_settings_v1';
 export interface VoiceSettings {
   muted: boolean;
   autoplay: boolean;
+  volume: number;
 }
 
 export function loadVoiceSettings(): VoiceSettings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        muted: !!parsed.muted,
+        autoplay: !!parsed.autoplay,
+        volume: typeof parsed.volume === 'number' ? parsed.volume : 0.85,
+      };
+    }
   } catch {}
-  return { muted: false, autoplay: true };
+  return { muted: false, autoplay: false, volume: 0.85 };
 }
 
 export function saveVoiceSettings(s: VoiceSettings) {
@@ -74,6 +83,7 @@ export function saveVoiceSettings(s: VoiceSettings) {
 
 let currentAudio: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;
+let currentUtterance: SpeechSynthesisUtterance | null = null;
 let playbackGeneration = 0;
 let activePlaybackToken: string | null = null;
 const audioCache = new Map<string, string>();
@@ -83,7 +93,8 @@ export interface VoiceQueueLine {
   scene_id: string;
   beat_id?: string;
   line_id: string;
-  character_id: VoiceCharacterId;
+  character_id: string;
+  voice?: StoryVoiceConfig | null;
   voice_key?: string;
   lineIndex: number;
   text: string;
@@ -91,8 +102,9 @@ export interface VoiceQueueLine {
   status?: 'queued' | 'loading' | 'playing' | 'finished' | 'skipped' | 'cancelled';
 }
 
-function cacheKey(characterId: VoiceCharacterId, text: string) {
-  return `${characterId}::${text.trim().toLowerCase().slice(0, 240)}`;
+function cacheKey(characterId: string, text: string, voice?: StoryVoiceConfig | null) {
+  const voicePart = voice?.voiceId || voice?.voiceName || voice?.voiceProvider || characterId;
+  return `${characterId}::${voicePart}::${text.trim().toLowerCase().slice(0, 240)}`;
 }
 
 function debugVoice(event: string, payload: Record<string, unknown>) {
@@ -110,6 +122,10 @@ export function stopVoice() {
     try { currentAudio.pause(); currentAudio.currentTime = 0; } catch {}
     currentAudio = null;
   }
+  if (currentUtterance) {
+    try { window.speechSynthesis?.cancel(); } catch {}
+    currentUtterance = null;
+  }
   currentUrl = null;
   debugVoice('stop', { playbackGeneration });
 }
@@ -125,11 +141,14 @@ export function isCurrentPlaybackToken(token?: string | null) {
 }
 
 export async function generateVoiceLine(
-  characterId: VoiceCharacterId,
-  text: string
-): Promise<string> {
-  const key = cacheKey(characterId, text);
+  characterId: string,
+  text: string,
+  voice?: StoryVoiceConfig | null
+): Promise<string | null> {
+  if (voice?.voiceProvider === 'none') return null;
+  const key = cacheKey(characterId, text, voice);
   if (audioCache.has(key)) return audioCache.get(key)!;
+  if (voice?.voiceProvider === 'system') return null;
 
   // Use raw fetch (binary response â€” supabase.functions.invoke would JSON-parse).
   const { data: { session } } = await supabase.auth.getSession();
@@ -143,7 +162,12 @@ export async function generateVoiceLine(
       Authorization: `Bearer ${token}`,
       apikey: sb.supabaseKey,
     },
-    body: JSON.stringify({ text, character_id: characterId }),
+    body: JSON.stringify({
+      text,
+      character_id: toVoiceId(characterId),
+      story_character_id: characterId,
+      voice,
+    }),
   });
   if (!resp.ok) throw new Error(`Voice request failed: ${resp.status}`);
   const blob = await resp.blob();
@@ -152,18 +176,73 @@ export async function generateVoiceLine(
   return url;
 }
 
+function normalizeVolume(volume?: number) {
+  if (!Number.isFinite(volume)) return loadVoiceSettings().volume;
+  return Math.max(0, Math.min(1, Number(volume)));
+}
+
+function speakWithBrowserVoice(
+  characterId: string,
+  text: string,
+  opts: {
+    voice?: StoryVoiceConfig | null;
+    volume?: number;
+    onEnded?: () => void;
+    onError?: (e: unknown) => void;
+    playbackToken?: string;
+    lineIndex?: number;
+  }
+): SpeechSynthesisUtterance | null {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    return null;
+  }
+
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    const requestedName = opts.voice?.voiceName || VOICE_PROFILES[toVoiceId(characterId)]?.display_name;
+    const voices = window.speechSynthesis.getVoices?.() || [];
+    const matchedVoice = requestedName
+      ? voices.find((candidate) => candidate.name.toLowerCase().includes(requestedName.toLowerCase()))
+      : undefined;
+    if (matchedVoice) utterance.voice = matchedVoice;
+    utterance.volume = normalizeVolume(opts.volume);
+    utterance.rate = typeof opts.voice?.settings?.rate === 'number' ? Number(opts.voice.settings.rate) : 0.96;
+    utterance.pitch = typeof opts.voice?.settings?.pitch === 'number' ? Number(opts.voice.settings.pitch) : 1;
+    utterance.onend = () => {
+      if (currentUtterance === utterance && isCurrentPlaybackToken(opts.playbackToken)) {
+        currentUtterance = null;
+        debugVoice('speech-finished', { characterId, token: opts.playbackToken, lineIndex: opts.lineIndex });
+        opts.onEnded?.();
+      }
+    };
+    utterance.onerror = (event) => {
+      if (isCurrentPlaybackToken(opts.playbackToken)) opts.onError?.(event);
+    };
+    currentUtterance = utterance;
+    debugVoice('speech-playing', { characterId, token: opts.playbackToken, lineIndex: opts.lineIndex });
+    window.speechSynthesis.speak(utterance);
+    return utterance;
+  } catch (error) {
+    opts.onError?.(error);
+    return null;
+  }
+}
+
 export async function playVoiceLine(
-  characterId: VoiceCharacterId,
+  characterId: string,
   text: string,
   opts: {
     muted?: boolean;
+    volume?: number;
+    voice?: StoryVoiceConfig | null;
     onEnded?: () => void;
     onError?: (e: unknown) => void;
     playbackToken?: string;
     sceneId?: string;
     lineIndex?: number;
   } = {}
-): Promise<HTMLAudioElement | null> {
+): Promise<HTMLAudioElement | SpeechSynthesisUtterance | null> {
   const token = opts.playbackToken || createPlaybackToken(opts.sceneId || 'single-line');
   const generationAtStart = playbackGeneration;
 
@@ -171,6 +250,10 @@ export async function playVoiceLine(
   if (currentAudio) {
     try { currentAudio.pause(); currentAudio.currentTime = 0; } catch {}
     currentAudio = null;
+  }
+  if (currentUtterance) {
+    try { window.speechSynthesis?.cancel(); } catch {}
+    currentUtterance = null;
   }
   currentUrl = null;
   activePlaybackToken = token;
@@ -182,7 +265,7 @@ export async function playVoiceLine(
 
   try {
     debugVoice('loading', { characterId, token, lineIndex: opts.lineIndex, text: text.slice(0, 80) });
-    const url = await generateVoiceLine(characterId, text);
+    const url = await generateVoiceLine(characterId, text, opts.voice);
 
     // Async/race-condition guard: stale voice requests never get to speak.
     if (generationAtStart !== playbackGeneration || !isCurrentPlaybackToken(token)) {
@@ -190,7 +273,19 @@ export async function playVoiceLine(
       return null;
     }
 
+    if (!url) {
+      return speakWithBrowserVoice(characterId, text, {
+        voice: opts.voice,
+        volume: opts.volume,
+        onEnded: opts.onEnded,
+        onError: opts.onError,
+        playbackToken: token,
+        lineIndex: opts.lineIndex,
+      });
+    }
+
     const audio = new Audio(url);
+    audio.volume = normalizeVolume(opts.volume);
     currentAudio = audio;
     currentUrl = url;
     audio.addEventListener('ended', () => {
@@ -207,9 +302,45 @@ export async function playVoiceLine(
     await audio.play();
     return audio;
   } catch (e) {
-    if (isCurrentPlaybackToken(token)) opts.onError?.(e);
-    return null;
+    if (!isCurrentPlaybackToken(token)) return null;
+    debugVoice('provider-fallback', { characterId, token, error: e instanceof Error ? e.message : String(e) });
+    return speakWithBrowserVoice(characterId, text, {
+      voice: opts.voice,
+      volume: opts.volume,
+      onEnded: opts.onEnded,
+      onError: opts.onError,
+      playbackToken: token,
+      lineIndex: opts.lineIndex,
+    });
   }
+}
+
+function normalizeName(value?: string | null) {
+  return (value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+export function resolveStoryVoiceForLine(
+  line: Pick<StoryBeatVoiceLine, 'type' | 'character_id' | 'characterId' | 'speakerId' | 'speakerName' | 'voice'>,
+  characterVoices?: StoryCharacterVoices,
+  characters: StoryVoiceCharacter[] = []
+): { characterId: string; speakerName: string; voice: StoryVoiceConfig | null } {
+  const isNarration = line.type === 'narration';
+  const rawSpeakerId = line.character_id || line.characterId || line.speakerId;
+  const speakerById = rawSpeakerId
+    ? characters.find((candidate) => candidate.character_id === rawSpeakerId || normalizeName(candidate.character_id) === normalizeName(rawSpeakerId))
+    : undefined;
+  const speakerByName = !speakerById && line.speakerName
+    ? characters.find((candidate) => normalizeName(candidate.display_name) === normalizeName(line.speakerName))
+    : undefined;
+  const character = speakerById || speakerByName;
+  const characterId = isNarration ? 'narrator' : (character?.character_id || rawSpeakerId || 'narrator');
+  const speakerName = isNarration ? 'Narrator' : (line.speakerName || character?.display_name || VOICE_PROFILES[toVoiceId(characterId)]?.display_name || 'Narrator');
+  const voice = line.voice
+    || (characterId === 'narrator' ? characterVoices?.narrator : characterVoices?.characters?.[characterId])
+    || character?.voice
+    || (characterId === 'narrator' ? characterVoices?.narrator : null);
+
+  return { characterId, speakerName, voice: voice || null };
 }
 
 export async function playVoiceQueue(
@@ -232,6 +363,7 @@ export async function playVoiceQueue(
     await new Promise<void>((resolve) => {
       playVoiceLine(line.character_id, line.text, {
         muted: opts.muted,
+        voice: line.voice,
         playbackToken: token,
         sceneId: opts.sceneId,
         lineIndex: line.lineIndex,

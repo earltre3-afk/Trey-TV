@@ -1,3 +1,5 @@
+import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter } from './storyVoiceTypes';
+
 export type Tone = 'Risky' | 'Safe' | 'Romantic' | 'Funny' | 'Bold';
 
 /** What kind of relationship pressure does this choice create? */
@@ -48,6 +50,12 @@ export interface ChapterRecord {
   imagePosition?: string;
   /** Locked scene id used to pull image metadata and resume playthroughs. */
   sceneId?: string;
+  /** Structured narration/dialogue lines preserved from installed .ttstory packages. */
+  voiceLines?: StoryBeatVoiceLine[];
+  /** Story-level narrator and character voice configuration. */
+  characterVoices?: StoryCharacterVoices;
+  /** Character metadata used for speaker-name and portrait resolution. */
+  storyCharacters?: StoryVoiceCharacter[];
   summary?: string;
   toneTag?: Tone;
   choiceMade?: { label: string; text: string; tone: Tone };

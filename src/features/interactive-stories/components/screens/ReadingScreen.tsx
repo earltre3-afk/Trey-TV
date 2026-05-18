@@ -6,7 +6,8 @@ import { Branch } from '../../lib/storyTypes';
 import { MeterBar } from '../MeterBar';
 import { VoicePlayer, VoiceSettingsToolbar } from '../VoicePlayer';
 import { CHARACTERS, CHARACTER_PHOTO_MAP, getImageMeta } from '../../lib/storyData';
-import { VoiceCharacterId, toVoiceId, stopVoice, loadVoiceSettings } from '../../lib/voiceLines';
+import { VoiceCharacterId, toVoiceId, stopVoice, loadVoiceSettings, resolveStoryVoiceForLine } from '../../lib/voiceLines';
+import type { StoryBeatVoiceLine, StoryVoiceConfig } from '../../lib/storyVoiceTypes';
 
 
 interface Props {
@@ -18,8 +19,43 @@ interface Props {
 }
 
 type Beat =
-  | { kind: 'narration'; text: string; speakerId: 'narrator' }
-  | { kind: 'dialogue'; text: string; speakerId: VoiceCharacterId; speakerName: string; avatar: string };
+  | { kind: 'narration'; text: string; speakerId: string; speakerName: string; voice?: StoryVoiceConfig | null }
+  | { kind: 'dialogue'; text: string; speakerId: string; speakerName: string; avatar: string; voice?: StoryVoiceConfig | null };
+
+function characterAvatar(characterId: string, fallback?: string) {
+  const match = CHARACTERS.find((candidate) => candidate.id === characterId);
+  if (!match) return fallback || '/interactive-stories/portraits/narrator.png';
+  const map = CHARACTER_PHOTO_MAP[match.mapKey];
+  return map?.image || match.image || fallback || '/interactive-stories/portraits/narrator.png';
+}
+
+function beatsFromStructuredLines(lines: StoryBeatVoiceLine[] | undefined, chapter: Branch['chapters'][number]): Beat[] {
+  if (!lines?.length) return [];
+  return [...lines]
+    .filter((line) => typeof line.text === 'string' && line.text.trim())
+    .sort((a, b) => (a.lineIndex || 0) - (b.lineIndex || 0))
+    .map((line) => {
+      const resolved = resolveStoryVoiceForLine(line, chapter.characterVoices, chapter.storyCharacters);
+      const isDialogue = line.type === 'dialogue' || (resolved.characterId !== 'narrator' && line.type !== 'narration');
+      if (!isDialogue) {
+        return {
+          kind: 'narration',
+          text: line.text.trim(),
+          speakerId: 'narrator',
+          speakerName: 'Narrator',
+          voice: resolved.voice,
+        };
+      }
+      return {
+        kind: 'dialogue',
+        text: line.text.trim(),
+        speakerId: resolved.characterId,
+        speakerName: resolved.speakerName,
+        avatar: characterAvatar(resolved.characterId, chapter.storyCharacters?.find((c) => c.character_id === resolved.characterId)?.portrait),
+        voice: resolved.voice,
+      };
+    });
+}
 
 /** Parse a chapter's prose into beats (narration + character dialogue). */
 function parseBeats(prose: string): Beat[] {
@@ -63,7 +99,7 @@ function parseBeats(prose: string): Beat[] {
         // Look for speaker tag in the "before" segment first, then "after".
         const spk = findSpeakerInText(before) || findSpeakerInText(after);
         if (spk) lastSpeaker = spk;
-        beats.push({ kind: 'narration', text: before, speakerId: 'narrator' });
+        beats.push({ kind: 'narration', text: before, speakerId: 'narrator', speakerName: 'Narrator' });
       } else {
         const spk = findSpeakerInText(after);
         if (spk) lastSpeaker = spk;
@@ -80,15 +116,15 @@ function parseBeats(prose: string): Beat[] {
         });
       } else {
         // Unattributed dialogue â†’ narrator reads it.
-        beats.push({ kind: 'narration', text: `"${quoted}"`, speakerId: 'narrator' });
+        beats.push({ kind: 'narration', text: `"${quoted}"`, speakerId: 'narrator', speakerName: 'Narrator' });
       }
       lastIndex = m.index + m[0].length;
     }
     const tail = p.slice(lastIndex).trim();
     if (!hadQuote) {
-      beats.push({ kind: 'narration', text: p, speakerId: 'narrator' });
+      beats.push({ kind: 'narration', text: p, speakerId: 'narrator', speakerName: 'Narrator' });
     } else if (tail && !/^[,;.\s]+$/.test(tail)) {
-      beats.push({ kind: 'narration', text: tail, speakerId: 'narrator' });
+      beats.push({ kind: 'narration', text: tail, speakerId: 'narrator', speakerName: 'Narrator' });
     }
   }
 
@@ -101,7 +137,10 @@ export const ReadingScreen: React.FC<Props> = ({
   const chapter = branch.chapters[branch.chapters.length - 1];
   const [railOpen, setRailOpen] = useState(false);
 
-  const beats = useMemo(() => parseBeats(chapter.prose), [chapter.prose]);
+  const beats = useMemo(() => {
+    const structured = beatsFromStructuredLines(chapter.voiceLines, chapter);
+    return structured.length ? structured : parseBeats(chapter.prose);
+  }, [chapter]);
   const [revealCount, setRevealCount] = useState(1);
   const visibleBeats = beats.slice(0, revealCount);
   const isComplete = revealCount >= beats.length;
@@ -179,7 +218,12 @@ export const ReadingScreen: React.FC<Props> = ({
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/50">
           <span>{Math.min(revealCount, beats.length)}/{beats.length}</span>
           <button
-            onClick={skipAll}
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              skipAll();
+            }}
             className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-white/70"
           >
             <SkipForward className="h-3 w-3" /> Skip
@@ -230,6 +274,8 @@ export const ReadingScreen: React.FC<Props> = ({
                       <VoicePlayer
                         characterId="narrator"
                         text={b.text}
+                        speakerName={b.speakerName}
+                        voice={b.voice}
                         compact
                         autoplayKey={settings.autoplay ? `${branch.id}-${playbackSceneId}-${i}` : undefined}
                         playbackToken={playbackToken}
@@ -272,6 +318,7 @@ export const ReadingScreen: React.FC<Props> = ({
                       <VoicePlayer
                         characterId={b.speakerId}
                         text={b.text}
+                        voice={b.voice}
                         speakerName={b.speakerName}
                         avatarUrl={b.avatar}
                         compact
@@ -300,7 +347,11 @@ export const ReadingScreen: React.FC<Props> = ({
       {isComplete && (
         <div className="space-y-2.5 px-5 pt-6">
           <button
-            onClick={onContinue}
+            type="button"
+            onClick={() => {
+              stopVoice();
+              onContinue();
+            }}
             className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-4 font-display text-base font-bold uppercase tracking-widest text-white shadow-lg shadow-violet-500/30 transition-transform active:scale-[0.98]"
           >
             Continue
@@ -308,7 +359,11 @@ export const ReadingScreen: React.FC<Props> = ({
           </button>
           {onReread && branch.chapters.length > 1 && (
             <button
-              onClick={onReread}
+              type="button"
+              onClick={() => {
+                stopVoice();
+                onReread();
+              }}
               className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-xs font-bold uppercase tracking-widest text-white/80 transition-colors hover:bg-white/10"
             >
               <Layers className="h-3.5 w-3.5" /> Re-read Chapters

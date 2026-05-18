@@ -1,5 +1,6 @@
 ﻿import { Branch, Choice, Meters, StateDelta, Tone } from './storyTypes';
 import { INITIAL_METERS } from './storyData';
+import type { StoryCharacterVoices, StoryVoiceConfig, StoryVoiceProvider } from './storyVoiceTypes';
 
 export const TREY_STORY_FILE_EXTENSION = '.ttstory';
 export const TREY_STORY_MIME = 'application/vnd.treytv.interactive-story+json';
@@ -20,6 +21,7 @@ export interface TreyStoryCharacter {
   role: string;
   portrait?: string;
   voice_key?: string;
+  voice?: StoryVoiceConfig;
   short_description?: string;
 }
 
@@ -31,6 +33,7 @@ export interface TreyStoryDialogueLine {
   speakerId?: string;
   speakerName?: string;
   text: string;
+  voice?: StoryVoiceConfig;
   voice_key?: string;
   voiceKey?: string;
   emotion?: string;
@@ -81,6 +84,7 @@ export interface TreyStoryPackage {
     coverImage?: string;
     initialSceneId: string;
     initialMeters?: Partial<Meters>;
+    characterVoices?: StoryCharacterVoices;
   };
   characters: TreyStoryCharacter[];
   scenes: TreyStoryScene[];
@@ -131,6 +135,51 @@ function normalizeAssetPath(value: unknown, kind: 'characters' | 'scenes'): stri
   return `/interactive-stories/${kind}/${hasExtension ? raw : `${raw}.png`}`;
 }
 
+function normalizeVoiceProvider(value: unknown): StoryVoiceProvider {
+  const provider = typeof value === 'string' ? value.trim().toLowerCase() : 'system';
+  if (provider === 'elevenlabs' || provider === 'openai' || provider === 'uploaded' || provider === 'none') return provider;
+  return 'system';
+}
+
+function normalizeVoiceConfig(value: unknown): StoryVoiceConfig | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  return {
+    voiceProvider: normalizeVoiceProvider(raw.voiceProvider || raw.voice_provider || raw.provider),
+    voiceId: typeof raw.voiceId === 'string' ? raw.voiceId : (typeof raw.voice_id === 'string' ? raw.voice_id : null),
+    voiceName: typeof raw.voiceName === 'string' ? raw.voiceName : (typeof raw.voice_name === 'string' ? raw.voice_name : null),
+    audioStyle: typeof raw.audioStyle === 'string' ? raw.audioStyle : (typeof raw.audio_style === 'string' ? raw.audio_style : null),
+    settings: raw.settings && typeof raw.settings === 'object' ? raw.settings as Record<string, unknown> : null,
+  };
+}
+
+function normalizeCharacterVoices(value: unknown, characters: TreyStoryCharacter[]): StoryCharacterVoices | undefined {
+  const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const rawCharacters = raw.characters && typeof raw.characters === 'object'
+    ? raw.characters as Record<string, unknown>
+    : {};
+  const characterVoiceMap: Record<string, StoryVoiceConfig> = {};
+
+  for (const character of characters) {
+    const explicit = normalizeVoiceConfig(rawCharacters[character.character_id]) || character.voice;
+    if (explicit) characterVoiceMap[character.character_id] = explicit;
+  }
+
+  const narrator = normalizeVoiceConfig(raw.narrator) || {
+    voiceProvider: 'system' as const,
+    voiceId: null,
+    voiceName: 'Narrator',
+    audioStyle: 'cinematic narrator',
+    settings: null,
+  };
+
+  if (!Object.keys(characterVoiceMap).length && !narrator) return undefined;
+  return {
+    narrator,
+    characters: characterVoiceMap,
+  };
+}
+
 function decodeBase64Url(payload: string): string {
   const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
   const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
@@ -173,6 +222,7 @@ function getSceneLines(scene: Partial<TreyStoryScene>): TreyStoryDialogueLine[] 
       ...line,
       id: line.id || `line_${index + 1}`,
       text: line.text.trim(),
+      voice: normalizeVoiceConfig(line.voice),
       lineIndex: typeof line.lineIndex === 'number' ? line.lineIndex : index,
     }))
     .sort((a, b) => (a.lineIndex || 0) - (b.lineIndex || 0));
@@ -202,7 +252,7 @@ function normalizeCharacters(characters: unknown): TreyStoryCharacter[] {
 
   const seen = new Set<string>();
   return characters.map((raw, index) => {
-    const item = raw as Partial<TreyStoryCharacter> & { id?: string; name?: string; image?: string };
+    const item = raw as Partial<TreyStoryCharacter> & { id?: string; name?: string; image?: string; voice?: unknown };
     const characterId = normalizeMachineId(item.character_id || item.id || item.name, `character_${index + 1}`);
     if (seen.has(characterId)) throw new TreyStoryPackageError(`Duplicate character_id: ${characterId}.`);
     seen.add(characterId);
@@ -214,6 +264,7 @@ function normalizeCharacters(characters: unknown): TreyStoryCharacter[] {
       role: String(item.role || 'Character').trim(),
       portrait: normalizeAssetPath(item.portrait || item.image || characterId, 'characters'),
       voice_key: item.voice_key,
+      voice: normalizeVoiceConfig(item.voice),
       short_description: item.short_description,
     };
   });
@@ -319,11 +370,16 @@ export function parseTreyStoryPackage(raw: string): TreyStoryPackage {
   if (!pkg.story || typeof pkg.story !== 'object') throw new TreyStoryPackageError('Missing story object.');
   assertString(pkg.story.id, 'story.id');
   assertString(pkg.story.title, 'story.title');
-  assertString(pkg.story.slug, 'story.slug');
   assertString(pkg.story.initialSceneId, 'story.initialSceneId');
 
-  const characters = normalizeCharacters(pkg.characters);
-  const scenes = normalizeScenes(pkg.scenes, pkg.story.initialSceneId);
+  const storyRecord = pkg.story as typeof pkg.story & {
+    characters?: unknown;
+    scenes?: unknown;
+    character_voices?: unknown;
+  };
+  const characters = normalizeCharacters(pkg.characters || storyRecord.characters);
+  const scenes = normalizeScenes(pkg.scenes || storyRecord.scenes, pkg.story.initialSceneId);
+  const characterVoices = normalizeCharacterVoices(pkg.story.characterVoices || storyRecord.character_voices, characters);
 
   return {
     fileType: TREY_STORY_FILE_TYPE,
@@ -331,12 +387,13 @@ export function parseTreyStoryPackage(raw: string): TreyStoryPackage {
     story: {
       id: normalizeMachineId(pkg.story.id, 'story'),
       title: pkg.story.title.trim(),
-      slug: normalizeMachineId(pkg.story.slug, pkg.story.id).replace(/_/g, '-'),
+      slug: normalizeMachineId(pkg.story.slug || pkg.story.title || pkg.story.id, pkg.story.id).replace(/_/g, '-'),
       genre: pkg.story.genre,
       description: pkg.story.description,
       coverImage: normalizeAssetPath(pkg.story.coverImage || scenes[0]?.image, 'scenes'),
       initialSceneId: pkg.story.initialSceneId,
       initialMeters: normalizeInitialMeters(pkg.story.initialMeters),
+      characterVoices,
     },
     characters,
     scenes,
@@ -479,6 +536,9 @@ export function createBranchFromStoryPackage(pkg: TreyStoryPackage): Branch {
         imageFit: first.imageFit,
         imagePosition: first.imagePosition,
         sceneId: first.id,
+        voiceLines: first.lines,
+        characterVoices: pkg.story.characterVoices,
+        storyCharacters: pkg.characters,
         summary: (first.endingSummary || first.narration || sceneToProse(first)).slice(0, 220),
       },
     ],
@@ -516,7 +576,7 @@ export function createBranchFromStoryPackage(pkg: TreyStoryPackage): Branch {
 export function resolveInstalledStoryChoice(
   branch: Branch,
   choice: Choice
-): { prose: string; image?: string; imageFit?: 'cover' | 'contain'; imagePosition?: string; sceneId?: string; state_delta: StateDelta; tone_tag: Tone; chapter_title: string; chapter_summary: string; is_ending: boolean; ending_unlocked: string | null; ending_tagline: string | null; next_stop_point: { prompt: string; choices: Choice[] } | null } | null {
+): { prose: string; image?: string; imageFit?: 'cover' | 'contain'; imagePosition?: string; sceneId?: string; voiceLines?: TreyStoryDialogueLine[]; characterVoices?: StoryCharacterVoices; storyCharacters?: TreyStoryCharacter[]; state_delta: StateDelta; tone_tag: Tone; chapter_title: string; chapter_summary: string; is_ending: boolean; ending_unlocked: string | null; ending_tagline: string | null; next_stop_point: { prompt: string; choices: Choice[] } | null } | null {
   const pkg = getInstalledStoryPackage(branch.storyId);
   if (!pkg) return null;
   const targetSceneId = choice.nextSceneId || String(branch.flags.current_scene_id || pkg.story.initialSceneId);
@@ -531,6 +591,9 @@ export function resolveInstalledStoryChoice(
     imageFit: scene.imageFit,
     imagePosition: scene.imagePosition,
     sceneId: scene.id,
+    voiceLines: scene.lines,
+    characterVoices: pkg.story.characterVoices,
+    storyCharacters: pkg.characters,
     state_delta: choice.stateDelta || {},
     tone_tag: choice.tone || 'Bold',
     chapter_title: scene.title,

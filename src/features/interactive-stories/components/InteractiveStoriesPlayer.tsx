@@ -274,6 +274,9 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
         imageFit: result.imageFit,
         imagePosition: result.imagePosition,
         sceneId: result.sceneId,
+        voiceLines: result.voiceLines,
+        characterVoices: result.characterVoices,
+        storyCharacters: result.storyCharacters,
         summary: result.state.chapter_summary,
         toneTag: result.state.tone_tag,
         choiceMade: choice.tone

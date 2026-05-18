@@ -2,6 +2,7 @@
 import { CHAPTER_1, INITIAL_METERS, CHAPTER_1_CHOICES, IMAGES } from './storyData';
 import { resolveInstalledStoryChoice } from './treyStoryPackage';
 import { supabase } from './supabase';
+import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter } from './storyVoiceTypes';
 
 const STORAGE_KEY = 'switchkicks_branches_v1';
 const ENDINGS_KEY = 'switchkicks_endings_v1';
@@ -116,6 +117,9 @@ export interface AIResult {
   imageFit?: 'cover' | 'contain';
   imagePosition?: string;
   sceneId?: string;
+  voiceLines?: StoryBeatVoiceLine[];
+  characterVoices?: StoryCharacterVoices;
+  storyCharacters?: StoryVoiceCharacter[];
   state: {
     state_delta: StateDelta;
     tone_tag: Tone;
@@ -137,6 +141,9 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
       imageFit: installedResult.imageFit,
       imagePosition: installedResult.imagePosition,
       sceneId: installedResult.sceneId,
+      voiceLines: installedResult.voiceLines,
+      characterVoices: installedResult.characterVoices,
+      storyCharacters: installedResult.storyCharacters,
       state: {
         state_delta: installedResult.state_delta,
         tone_tag: installedResult.tone_tag,
