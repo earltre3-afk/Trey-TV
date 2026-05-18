@@ -24,12 +24,40 @@ const chatMessages = [
 const reactions = ['🔥', '😂', '😮', '👏', '+'];
 
 const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
-  const [hand] = useState<TCard[]>(sampleHand());
+  const [hand, setHand] = useState<TCard[]>(sampleHand());
   const [selected, setSelected] = useState<string | null>(null);
   const [voice, setVoice] = useState(true);
   const [chat, setChat] = useState(true);
 
-  const topCard: TCard = { id: 'top', color: 'blue', symbol: 'number', value: 7, label: '7' };
+  const [topCard, setTopCard] = useState<TCard>({ id: 'top', color: 'blue', symbol: 'number', value: 7, label: '7' });
+
+  const handlePlayCard = (card: TCard) => {
+    setHand((prev) => prev.filter((c) => c.id !== card.id));
+    setTopCard(card);
+    setSelected(null);
+  };
+
+  const handleCardTap = (card: TCard) => {
+    if (selected === card.id) {
+      handlePlayCard(card);
+    } else {
+      setSelected(card.id);
+    }
+  };
+
+  const handleDrawCard = () => {
+    const colors: ('red'|'blue'|'green'|'yellow'|'black')[] = ['red', 'blue', 'green', 'yellow'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomValue = Math.floor(Math.random() * 9) + 1;
+    const newCard: TCard = {
+      id: `drawn-${Date.now()}-${Math.random()}`,
+      color: randomColor,
+      symbol: 'number',
+      value: randomValue,
+      label: randomValue.toString()
+    };
+    setHand((prev) => [...prev, newCard]);
+  };
 
   return (
     <div className="px-3 pb-24">
@@ -134,14 +162,14 @@ const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
                 zIndex: isSel ? 100 : 10 + i,
               }}
             >
-              <TrunoCard card={c} size="sm" playable onClick={() => setSelected(c.id)} selected={isSel} />
+              <TrunoCard card={c} size="sm" playable onClick={() => handleCardTap(c)} selected={isSel} />
             </div>
           );
         })}
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-2">
-        <button className="rounded-2xl border border-purple-500/40 bg-zinc-950/70 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10">
+        <button onClick={handleDrawCard} className="rounded-2xl border border-purple-500/40 bg-zinc-950/70 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10">
           <Plus size={16} /> Draw
         </button>
         <button className="rounded-2xl py-3 font-black text-sm relative overflow-hidden group">
@@ -152,7 +180,14 @@ const MatchScreen: React.FC<Props> = ({ onNavigate }) => {
             <div className="text-[9px] text-fuchsia-100 mt-0.5">If you have 1 card left</div>
           </div>
         </button>
-        <button className="rounded-2xl border border-cyan-500/40 bg-zinc-950/70 py-3 text-cyan-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-cyan-500/10">
+        <button 
+          onClick={() => {
+            const cardToPlay = hand.find(c => c.id === selected);
+            if (cardToPlay) handlePlayCard(cardToPlay);
+          }}
+          disabled={!selected}
+          className={`rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${selected ? 'border-cyan-500/40 bg-zinc-950/70 text-cyan-300 hover:bg-cyan-500/10' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600'}`}
+        >
           ▶ Play Card
         </button>
       </div>
