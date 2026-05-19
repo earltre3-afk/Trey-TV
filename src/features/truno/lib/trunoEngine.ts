@@ -5,6 +5,18 @@ export type TrunoMove =
   | { type: 'draw'; playerId: string }
   | { type: 'call-truno'; playerId: string };
 
+export interface TrunoMoveEvent {
+  kind: TrunoMove['type'];
+  playerId: string;
+  playerName: string;
+  message: string;
+  card?: TrunoCard;
+  effect?: 'skip' | 'reverse' | 'draw_two' | 'wild' | 'wild_draw_four' | 'win';
+  targetPlayerId?: string;
+  targetPlayerName?: string;
+  color?: TrunoGameState['currentColor'];
+}
+
 export interface TrunoPlayer {
   id: string;
   name: string;
@@ -121,14 +133,87 @@ export function maybeRunBotTurn(state: TrunoGameState, maxTurns = 16): TrunoGame
   let next = cloneState(state);
   let turns = 0;
   while (next.phase === 'playing' && currentPlayer(next)?.isBot && turns < maxTurns) {
-    const bot = currentPlayer(next)!;
-    const playable = bot.hand.find((card) => isPlayableCard(card, next));
-    next = playable
-      ? applyPlayerMove(next, { type: 'play', playerId: bot.id, cardId: playable.id, wildColor: chooseBotColor(bot) })
-      : applyPlayerMove(next, { type: 'draw', playerId: bot.id });
+    const result = applyBotMove(next);
+    if (!result || result.state.lastMoveId === next.lastMoveId) break;
+    next = result.state;
     turns++;
   }
   return next;
+}
+
+export function applyBotMove(state: TrunoGameState): { state: TrunoGameState; event: TrunoMoveEvent } | null {
+  if (state.phase !== 'playing') return null;
+  const bot = currentPlayer(state);
+  if (!bot?.isBot) return null;
+  const playable = bot.hand.find((card) => isPlayableCard(card, state));
+  const move: TrunoMove = playable
+    ? { type: 'play', playerId: bot.id, cardId: playable.id, wildColor: chooseBotColor(bot) }
+    : { type: 'draw', playerId: bot.id };
+  const next = applyPlayerMove(state, move);
+  return { state: next, event: describeMoveEvent(state, move, next) };
+}
+
+export function describeMoveEvent(before: TrunoGameState, move: TrunoMove, after: TrunoGameState): TrunoMoveEvent {
+  const player = before.players.find((p) => p.id === move.playerId) ?? currentPlayer(before);
+  const playerName = player?.name ?? 'Player';
+  const base = {
+    kind: move.type,
+    playerId: move.playerId,
+    playerName,
+  };
+
+  if (move.type === 'draw') {
+    return {
+      ...base,
+      message: `${playerName} drew a card.`,
+    };
+  }
+
+  if (move.type === 'call-truno') {
+    return {
+      ...base,
+      message: after.message || `${playerName} called TRUNO.`,
+    };
+  }
+
+  const card = player?.hand.find((c) => c.id === move.cardId);
+  if (!card) {
+    return {
+      ...base,
+      message: after.message || `${playerName} played a card.`,
+    };
+  }
+
+  const target = actionTarget(before, card);
+  const effect = effectForCard(card, after);
+  let message = `${playerName} played ${describeCard(card)}.`;
+  if (effect === 'skip' && target) message = `${playerName} played ${describeCard(card)}. ${target.name} was skipped.`;
+  if (effect === 'reverse') message = `${playerName} played ${describeCard(card)}. Reverse.`;
+  if (effect === 'draw_two' && target) message = `${playerName} played ${describeCard(card)}. ${target.name} drew two.`;
+  if (effect === 'wild_draw_four' && target) message = `${playerName} played ${describeCard(card)}. ${target.name} drew four.`;
+  if (effect === 'wild') message = `${playerName} played ${describeCard(card)} and chose ${after.currentColor}.`;
+  if (after.phase === 'ended' && after.winnerId === move.playerId) message = `${playerName} played ${describeCard(card)} and won the table.`;
+
+  return {
+    ...base,
+    card,
+    effect,
+    targetPlayerId: target?.id,
+    targetPlayerName: target?.name,
+    color: after.currentColor,
+    message,
+  };
+}
+
+export function describeCard(card: TrunoCard): string {
+  const color = card.color === 'black' || card.color === 'purple' ? 'Wild' : titleCase(card.color);
+  if (card.symbol === 'number') return `${color} ${card.value ?? card.label}`;
+  if (card.symbol === 'draw_two') return `${color} Draw Two`;
+  if (card.symbol === 'wild_draw_four') return 'Wild Draw Four';
+  if (card.symbol === 'reverse') return `${color} Reverse`;
+  if (card.symbol === 'skip') return `${color} Skip`;
+  if (card.symbol === 'wild') return 'Wild';
+  return `${color} ${card.label}`;
 }
 
 export function currentPlayer(state: TrunoGameState): TrunoPlayer | null {
@@ -227,6 +312,24 @@ function applyCardEffect(state: TrunoGameState, card: TrunoCard, name: string) {
   advanceTurn(state);
 }
 
+function actionTarget(state: TrunoGameState, card: TrunoCard): TrunoPlayer | null {
+  if (!['skip', 'draw_two', 'wild_draw_four'].includes(card.symbol)) return null;
+  const total = state.players.length;
+  if (total === 0) return null;
+  const targetIndex = (state.currentPlayerIndex + state.direction + total) % total;
+  return state.players[targetIndex] ?? null;
+}
+
+function effectForCard(card: TrunoCard, after: TrunoGameState): TrunoMoveEvent['effect'] | undefined {
+  if (after.phase === 'ended') return 'win';
+  if (card.symbol === 'skip') return 'skip';
+  if (card.symbol === 'reverse') return 'reverse';
+  if (card.symbol === 'draw_two') return 'draw_two';
+  if (card.symbol === 'wild_draw_four') return 'wild_draw_four';
+  if (card.symbol === 'wild') return 'wild';
+  return undefined;
+}
+
 function advanceTurn(state: TrunoGameState, steps = 1) {
   const total = state.players.length;
   for (let i = 0; i < steps; i++) {
@@ -248,4 +351,8 @@ function chooseBotColor(bot: TrunoPlayer): TrunoGameState['currentColor'] {
 function stamp(state: TrunoGameState, id: string) {
   state.turn += 1;
   state.lastMoveId = `${state.turn}:${id}`;
+}
+
+function titleCase(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
