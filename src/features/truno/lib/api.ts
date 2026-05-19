@@ -1,6 +1,8 @@
 // TRUNO Supabase data layer
 import { supabase } from '@/lib/supabase';
 
+const TOURNAMENT_BACKEND_ENABLED = false;
+
 export interface TrunoRoomRow {
   id: string;
   room_code: string;
@@ -74,6 +76,9 @@ export function subscribeOpenRooms(onChange: () => void) {
 
 // ---- TOURNAMENTS ----
 export async function listUpcomingTournaments(limit = 10): Promise<TrunoTournamentRow[]> {
+  void limit;
+  if (!TOURNAMENT_BACKEND_ENABLED) return [];
+
   const { data, error } = await supabase
     .from('truno_tournaments')
     .select('*')
@@ -90,6 +95,9 @@ export async function listUpcomingTournaments(limit = 10): Promise<TrunoTourname
 }
 
 export async function getTournament(id: string): Promise<TrunoTournamentRow | null> {
+  void id;
+  if (!TOURNAMENT_BACKEND_ENABLED) return null;
+
   const { data, error } = await supabase
     .from('truno_tournaments').select('*').eq('id', id).maybeSingle();
   if (error) { console.error('[truno] getTournament', error); return null; }
@@ -97,6 +105,8 @@ export async function getTournament(id: string): Promise<TrunoTournamentRow | nu
 }
 
 export function subscribeTournaments(onChange: () => void) {
+  if (!TOURNAMENT_BACKEND_ENABLED) return () => {};
+
   const channel = supabase
     .channel('truno_tournaments_live')
     .on(

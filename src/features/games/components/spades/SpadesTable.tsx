@@ -15,6 +15,7 @@ import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
+import treyTvLogo from '@/assets/trey-tv-logo.png';
 
 interface Props {
   onBack: () => void;
@@ -437,7 +438,7 @@ const SpadesView: React.FC<ViewProps> = ({
           <span className="filigree-corner" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
           <span className="filigree-corner" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
           {/* Center logo watermark */}
-          <img src="/assets/trey-tv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140px] h-auto" style={{ opacity: 0.28, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.55)) drop-shadow(0 0 18px oklch(0.84 0.14 82 / 0.35))' }} />
+          <img src={treyTvLogo} alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140px] h-auto" style={{ opacity: 0.28, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.55)) drop-shadow(0 0 18px oklch(0.84 0.14 82 / 0.35))' }} />
           {/* Double gold ring */}
           <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[160px] h-[160px] rounded-full breathe" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.40)', boxShadow: '0 0 20px oklch(0.84 0.14 82 / 0.25)' }} />
           {/* Sparkles */}
