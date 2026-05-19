@@ -100,7 +100,7 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
       <div className="relative z-10">
         {view === 'home'         && <HomeScreen         onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
         {view === 'match'        && <MatchScreen         onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} mode={matchParams?.mode ?? 'quick'} />}
-        {view === 'room'         && <RoomScreen          onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} roomError={roomError} onJoinRoom={joinRoom} onRoomReady={(id) => setRoomId(id)} />}
+        {view === 'room'         && <RoomScreen          onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} roomError={roomError} suppressActiveSession={!!matchParams?.suppressActiveSession} onJoinRoom={joinRoom} onRoomReady={(id) => setRoomId(id)} />}
         {view === 'tournament'   && <TournamentScreen    onNavigate={navigate} />}
         {view === 'leaderboard'  && <LeaderboardScreen />}
         {view === 'clubs'        && <ClubsScreen         onNavigate={navigate} />}

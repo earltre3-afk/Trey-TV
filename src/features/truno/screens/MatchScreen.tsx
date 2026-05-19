@@ -158,13 +158,13 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     setChatDraft('');
   };
 
-  const leaveTarget = roomId ? 'room' : 'home';
+  const leaveParams = roomId ? { roomId, suppressActiveSession: true } : undefined;
 
   return (
     <div className="px-3 pb-24">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => onNavigate(leaveTarget, roomId ? { roomId } : undefined)} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+          <button onClick={() => onNavigate(roomId ? 'room' : 'home', leaveParams)} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
           </button>
           <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">
@@ -177,7 +177,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onNavigate(leaveTarget, roomId ? { roomId } : undefined)}
+            onClick={() => onNavigate(roomId ? 'room' : 'home', leaveParams)}
             className="px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-sm font-bold hover:bg-pink-500/10"
           >
             Leave Match
