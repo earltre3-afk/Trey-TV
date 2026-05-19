@@ -81,7 +81,9 @@ export async function listUpcomingTournaments(limit = 10): Promise<TrunoTourname
     .order('starts_at', { ascending: true })
     .limit(limit);
   if (error) {
-    console.error('[truno] listUpcomingTournaments error', error);
+    if (!isMissingOrUnavailableRelation(error)) {
+      console.warn('[truno] listUpcomingTournaments unavailable');
+    }
     return [];
   }
   return (data ?? []) as TrunoTournamentRow[];
@@ -161,4 +163,15 @@ export function formatCountdown(startsAt: string): string {
   const s = totalSec % 60;
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function isMissingOrUnavailableRelation(error: { code?: string; message?: string; details?: string }) {
+  const text = `${error.code ?? ''} ${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+  return (
+    error.code === '42P01' ||
+    error.code === 'PGRST205' ||
+    text.includes('truno_tournaments') ||
+    text.includes('could not find the table') ||
+    text.includes('does not exist')
+  );
 }

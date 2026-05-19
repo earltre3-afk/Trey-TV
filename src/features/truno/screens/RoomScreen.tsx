@@ -20,11 +20,12 @@ interface Props {
   identity: PlayerIdentity;
   roomId: string | null;
   roomError?: string | null;
+  suppressActiveSession?: boolean;
   onJoinRoom: (code: string) => Promise<void>;
   onRoomReady: (roomId: string) => void;
 }
 
-const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, onJoinRoom, onRoomReady }) => {
+const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, suppressActiveSession = false, onJoinRoom, onRoomReady }) => {
   const currentUser = useCurrentUser();
   const [room, setRoom] = useState<RoomRow | null>(null);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -45,7 +46,7 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     const nextRoom = roomRow as RoomRow | null;
     setRoom(nextRoom);
     setPlayers(seated);
-    if (session) onNavigate('match', { roomId });
+    if (session && !suppressActiveSession) onNavigate('match', { roomId });
   };
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     const timer = setInterval(load, 2000);
     return () => { cancelled = true; clearInterval(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomId, suppressActiveSession]);
 
   const seats = room?.max_players ?? 4;
   const filledSeats = useMemo(() => (
@@ -74,10 +75,10 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
       setFeedback('Create a real private room before sharing a code.');
       return;
     }
-    await navigator.clipboard?.writeText(room.room_code);
-    setCopied(true);
-    setFeedback('Room code copied.');
-    setTimeout(() => { setCopied(false); setFeedback(null); }, 1600);
+    const ok = await copyTextSafely(room.room_code);
+    setCopied(ok);
+    setFeedback(ok ? 'Room code copied.' : `Copy blocked. Room code: ${room.room_code}`);
+    setTimeout(() => { setCopied(false); setFeedback(null); }, ok ? 1600 : 5000);
   };
 
   const handleInvite = async () => {
@@ -382,3 +383,31 @@ const TableSeat: React.FC<{ player: PlayerRow | null; seat: number; isYou: boole
 };
 
 export default RoomScreen;
+
+async function copyTextSafely(text: string) {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall through to the legacy selection copy path below.
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
+}
