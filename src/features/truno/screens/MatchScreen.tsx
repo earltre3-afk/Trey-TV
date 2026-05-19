@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Clock, Play, RotateCw } from 'lucide-react';
+import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Clock, Play, RotateCw, Sparkles } from 'lucide-react';
 import TrunoCard from '../components/TrunoCard';
 import { avatarFor } from '../lib/avatars';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -36,6 +36,7 @@ type ActionLogItem = {
   id: string;
   text: string;
   tone: 'play' | 'draw' | 'effect' | 'system';
+  label: string;
 };
 
 type TableEffect = {
@@ -120,15 +121,17 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const showMoveEvent = useCallback((event: TrunoMoveEvent, moveId?: string) => {
     if (moveId) observedMoveRef.current = moveId;
     const tone: ActionLogItem['tone'] = event.effect ? 'effect' : event.kind === 'draw' ? 'draw' : event.kind === 'play' ? 'play' : 'system';
+    const label = logLabelFromEvent(event);
     setTurnNotice(event.message);
     setActionLog((prev) => [
       {
         id: `${Date.now()}:${event.playerId}:${event.kind}`,
         text: event.message,
         tone,
+        label,
       },
       ...prev,
-    ].slice(0, 6));
+    ].slice(0, 5));
 
     if (event.kind === 'play') setDiscardPulse((count) => count + 1);
     if (event.kind === 'draw') setDrawPulse((count) => count + 1);
@@ -225,9 +228,9 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     observedMoveRef.current = state.lastMoveId;
     setTurnNotice(state.message);
     setActionLog((prev) => [
-      { id: `${Date.now()}:${state.lastMoveId}`, text: state.message, tone: 'system' as const },
+      { id: `${Date.now()}:${state.lastMoveId}`, text: state.message, tone: 'system' as const, label: 'TABLE' },
       ...prev,
-    ].slice(0, 6));
+    ].slice(0, 5));
   }, [isRoomHost, roomId, state]);
 
   if (!state) {
@@ -250,6 +253,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const roomCode = room.room?.room_code ?? (roomId ? 'Loading' : mode === 'ai' ? 'AI MATCH' : 'QUICK PLAY');
   const tableLabel = roomId ? 'PRIVATE TABLE' : mode === 'ai' ? 'AI PRACTICE TABLE' : 'QUICK PLAY TABLE';
   const waitingLabel = myTurn ? 'YOUR TURN' : botIsThinking && activePlayer ? `${activePlayer.name} THINKING` : `${activePlayer?.name ?? 'Table'} TURN`;
+  const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) ?? null : null;
+  const handSpread = Math.max(29, Math.min(44, 330 / Math.max(me.hand.length, 1)));
 
   const commitMove = async (move: TrunoMove) => {
     setNotice(null);
@@ -335,15 +340,45 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     onNavigate(roomId ? 'room' : 'home', roomId ? { roomId, suppressActiveSession: true } : undefined);
   };
 
+  const handleBackToTruno = () => {
+    clearSequencer();
+    onNavigate('home');
+  };
+
+  const handlePlayAgain = async () => {
+    const next = createTrunoGame(state.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      isBot: player.isBot,
+    })));
+    setSelected(null);
+    setNotice(null);
+    setActionLog([]);
+    setTableEffect(null);
+    setTurnNotice(`${next.players[0]?.name ?? 'Player'} starts.`);
+    observedMoveRef.current = next.lastMoveId;
+    if (roomId) {
+      if (!isRoomHost) {
+        setNotice('The room host can start the next table.');
+        return;
+      }
+      await roomSetHostState(next);
+      return;
+    }
+    setLocalState(next);
+  };
+
   return (
     <div className="px-3 pb-24">
       <style>{`
         @keyframes truno-pop { 0% { transform: scale(0.92); filter: brightness(1); } 45% { transform: scale(1.1); filter: brightness(1.4); } 100% { transform: scale(1); filter: brightness(1); } }
         @keyframes truno-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
         @keyframes truno-float { 0% { opacity: 0; transform: translateY(14px) scale(0.92); } 20%, 80% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-16px) scale(1.04); } }
+        @keyframes truno-ring { 0%, 100% { transform: scale(1); opacity: 0.45; } 50% { transform: scale(1.12); opacity: 0.9; } }
+        @keyframes truno-thinking { 0%, 100% { opacity: 0.35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
       `}</style>
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <button onClick={handleLeaveMatch} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
@@ -356,10 +391,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
             <span className="text-sm font-bold text-white">{roomCode}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleLeaveMatch}
-            className="px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-sm font-bold hover:bg-pink-500/10"
+            className="min-h-10 px-3 sm:px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-500/10"
           >
             Leave Match
           </button>
@@ -369,10 +404,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       </div>
 
-      <div className="mx-auto w-fit rounded-full bg-zinc-950/80 border border-fuchsia-500/30 px-4 py-1.5 mb-4 flex items-center gap-3">
+      <div className={`mx-auto max-w-full w-fit rounded-full bg-zinc-950/80 border px-4 py-1.5 mb-4 flex items-center gap-3 ${myTurn ? 'border-emerald-400/50 shadow-[0_0_22px_rgba(52,211,153,0.25)]' : 'border-fuchsia-500/30'}`}>
         <span className="text-xs font-bold text-fuchsia-300">{tableLabel}</span>
         <span className="text-xs text-zinc-500">|</span>
-        <span className="text-xs text-zinc-300">{turnNotice || state.message}</span>
+        <span className="text-xs text-zinc-300 truncate">{turnNotice || state.message}</span>
       </div>
 
       <div className="relative aspect-square max-w-md mx-auto">
@@ -407,8 +442,11 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
 
         {tableEffect && (
-          <div className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}>
-            {tableEffect.label}
+          <div className={`pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}>
+            <span className="inline-flex items-center gap-2">
+              {tableEffect.tone === 'wild' || tableEffect.tone === 'win' ? <Sparkles size={18} /> : null}
+              {tableEffect.label}
+            </span>
           </div>
         )}
 
@@ -422,7 +460,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       </div>
 
       <div className="mt-2 flex items-center justify-center gap-2 text-xs">
-        <button className={`flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-zinc-900/80 border-zinc-800 text-zinc-400'}`}>
+        <button className={`min-h-9 flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.2)]' : botIsThinking ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-200' : 'bg-zinc-900/80 border-zinc-800 text-zinc-400'}`}>
           <ChevronDown size={14} className="rotate-180" /> {waitingLabel}
         </button>
         <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300">
@@ -431,12 +469,16 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       </div>
 
       {actionLog.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
-          <div className="text-[10px] font-black tracking-wider text-zinc-500 mb-2">RECENT MOVES</div>
-          <div className="grid gap-1.5">
-            {actionLog.slice(0, 4).map((item) => (
-              <div key={item.id} className={`text-[11px] rounded-lg px-2 py-1 border ${logClass(item.tone)}`}>
-                {item.text}
+        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/65 p-2.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="text-[10px] font-black tracking-wider text-zinc-500">RECENT MOVES</div>
+            <div className="text-[10px] text-zinc-600">real table actions</div>
+          </div>
+          <div className="grid gap-1">
+            {actionLog.slice(0, 3).map((item) => (
+              <div key={item.id} className={`grid grid-cols-[3.25rem_1fr] items-center gap-2 text-[11px] rounded-lg px-2 py-1.5 border ${logClass(item.tone)}`}>
+                <span className="text-[9px] font-black tracking-wider opacity-80">{item.label}</span>
+                <span className="truncate">{item.text}</span>
               </div>
             ))}
           </div>
@@ -444,8 +486,26 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       )}
 
       {state.phase === 'ended' && (
-        <div className="mt-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-sm font-black text-amber-300">
-          {state.players.find((p) => p.id === state.winnerId)?.name ?? 'A player'} wins the table.
+        <div className="mt-3 rounded-3xl border border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-zinc-950 p-4 text-center shadow-[0_0_34px_rgba(251,191,36,0.14)]">
+          <div className="mx-auto mb-2 w-12 h-12 rounded-full border border-amber-400/60 bg-amber-400/15 flex items-center justify-center text-amber-200">
+            <Trophy size={24} />
+          </div>
+          <div className="text-[10px] font-black tracking-[0.24em] text-amber-300">TABLE COMPLETE</div>
+          <div className="mt-1 text-xl font-black text-white">{winner?.id === me.id ? 'You win the table' : `${winner?.name ?? 'A player'} wins the table`}</div>
+          <p className="mt-1 text-xs text-zinc-400">Start a clean rematch when everyone is ready.</p>
+          <div className={`mt-4 grid gap-2 ${roomId ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
+            <button onClick={handlePlayAgain} className="min-h-11 rounded-2xl border border-emerald-400/50 bg-emerald-500/10 text-emerald-200 text-sm font-black hover:bg-emerald-500/15">
+              Play Again
+            </button>
+            <button onClick={handleBackToTruno} className="min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/10 text-fuchsia-200 text-sm font-black hover:bg-fuchsia-500/15">
+              Back to Truno
+            </button>
+            {roomId && (
+              <button onClick={handleLeaveMatch} className="min-h-11 rounded-2xl border border-pink-500/45 bg-pink-500/10 text-pink-200 text-sm font-black hover:bg-pink-500/15">
+                Leave Room
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -455,7 +515,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       )}
 
-      <div className="mt-3 relative flex justify-center items-end overflow-visible" style={{ height: 130 }}>
+      <div className="mt-3 relative flex justify-center items-end overflow-visible" style={{ height: 150 }}>
         {me.hand.map((c, i) => {
           const mid = Math.floor(me.hand.length / 2);
           const offset = i - mid;
@@ -467,28 +527,33 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
               key={c.id}
               className={`absolute transition-transform duration-200 ${invalid ? 'animate-[truno-shake_0.35s_ease-in-out]' : ''}`}
               style={{
-                transform: `translateX(${offset * 42}px) translateY(${Math.abs(offset) * 4}px) rotate(${offset * 5}deg) ${isSel ? 'translateY(-20px) scale(1.1)' : ''}`,
+                transform: `translateX(${offset * handSpread}px) translateY(${Math.abs(offset) * 3}px) rotate(${offset * 4}deg) ${isSel ? 'translateY(-28px) scale(1.12)' : ''}`,
                 zIndex: isSel ? 100 : 10 + i,
               }}
             >
+              {isSel && (
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border border-cyan-300/50 bg-cyan-400/15 px-2 py-0.5 text-[9px] font-black tracking-wider text-cyan-100 whitespace-nowrap">
+                  SELECTED
+                </div>
+              )}
               <TrunoCard
                 card={c}
                 size="sm"
                 playable={playable}
                 onClick={() => handleCardTap(c.id)}
                 selected={isSel}
-                className={playable ? 'ring-2 ring-cyan-300/25' : ''}
+                className={`${playable ? 'ring-2 ring-cyan-300/25' : ''} ${invalid ? 'ring-4 ring-pink-400/70' : ''}`}
               />
             </div>
           );
         })}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className="rounded-2xl border border-purple-500/40 bg-zinc-950/70 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40">
+      <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
+        <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
           <Plus size={16} /> Draw
         </button>
-        <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50">
+        <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
           <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
           <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
           <div className="relative">
@@ -499,7 +564,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         <button
           onClick={handlePlay}
           disabled={!canPlaySelected || state.phase === 'ended'}
-          className={`rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/70 text-cyan-300 hover:bg-cyan-500/10' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600'}`}
+          className={`min-h-14 rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/80 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.15)]' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
         >
           <Play size={15} /> Play Card
         </button>
@@ -568,7 +633,7 @@ const TablePlayer: React.FC<{
 }> = ({ player, relativeIndex, playerCount, active, thinking, pulsing, isYou, avatar }) => {
   const position = seatPosition(relativeIndex, playerCount);
   return (
-    <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
+      <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
       <div className={`flex items-center gap-1 mb-1 transition ${pulsing ? 'animate-[truno-pop_0.45s_ease-out]' : ''}`}>
         {Array.from({ length: Math.min(5, player.hand.length) }).map((_, i) => (
           <div key={i} className="w-3 h-8 rounded-sm border border-purple-500/40" style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: 'rgba(157,78,221,0.1)' }} />
@@ -576,14 +641,20 @@ const TablePlayer: React.FC<{
       </div>
       <div className="flex flex-col items-center">
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? 'ring-emerald-400 shadow-[0_0_26px_rgba(0,255,136,0.55)]' : 'ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]'}`}>
+          {active && (
+            <div className="absolute -inset-2 rounded-full border border-emerald-300/50 animate-[truno-ring_1.45s_ease-in-out_infinite]" />
+          )}
+          <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? 'ring-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.58)]' : 'ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]'}`}>
             <img src={avatar || avatarFor(player.name)} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <span className={`absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border text-[10px] font-black text-white flex items-center justify-center ${pulsing ? 'border-cyan-300 animate-[truno-pop_0.45s_ease-out]' : 'border-zinc-700'}`}>{player.hand.length}</span>
           <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-black ${active ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
         </div>
         <span className="mt-1 text-[11px] font-bold text-white">{isYou ? 'You' : player.name}</span>
-        <span className={`text-[10px] flex items-center gap-0.5 ${thinking ? 'text-cyan-300' : 'text-amber-400'}`}>{thinking ? 'THINKING' : player.isBot ? 'BOT' : 'PLAYER'}</span>
+        <span className={`text-[10px] flex items-center gap-1 ${thinking ? 'text-cyan-300' : active ? 'text-emerald-300' : 'text-amber-400'}`}>
+          {thinking && <span className="inline-flex gap-0.5" aria-hidden="true"><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_infinite]" /><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.15s_infinite]" /><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.3s_infinite]" /></span>}
+          {thinking ? 'THINKING' : active ? 'ACTIVE' : player.isBot ? 'BOT' : 'PLAYER'}
+        </span>
       </div>
     </div>
   );
@@ -616,6 +687,18 @@ function effectFromEvent(event: TrunoMoveEvent): TableEffect {
   if (event.effect === 'wild') return { id: `${Date.now()}:wild`, label: `${event.color?.toUpperCase() ?? 'WILD'}`, tone: 'wild' };
   if (event.effect === 'win') return { id: `${Date.now()}:win`, label: 'TRUNO', tone: 'win' };
   return null;
+}
+
+function logLabelFromEvent(event: TrunoMoveEvent) {
+  if (event.effect === 'skip') return 'SKIP';
+  if (event.effect === 'reverse') return 'REVERSE';
+  if (event.effect === 'draw_two') return '+2';
+  if (event.effect === 'wild_draw_four') return '+4';
+  if (event.effect === 'wild') return 'WILD';
+  if (event.effect === 'win') return 'WIN';
+  if (event.kind === 'draw') return 'DRAW';
+  if (event.kind === 'call-truno') return 'TRUNO';
+  return 'PLAY';
 }
 
 function effectClass(tone: NonNullable<TableEffect>['tone']) {
