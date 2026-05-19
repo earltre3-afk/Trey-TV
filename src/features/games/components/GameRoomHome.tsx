@@ -36,7 +36,7 @@ export const GameRoomHome: React.FC<Props> = ({
   onJoinQueue, onOpenFriends, onOpenInbox,
 }) => {
   const navigate = useNavigate();
-  const [queueCounts, setQueueCounts] = useState<Record<GameType, number>>({ spades: 0, blackjack: 0, bullshit: 0 });
+  const [queueCounts, setQueueCounts] = useState<Record<GameType, number>>({ spades: 0, blackjack: 0, bullshit: 0, truno: 0 });
   const [inboxCount, setInboxCount] = useState(0);
 
   useEffect(() => {
@@ -502,4 +502,3 @@ const TrunoGameCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
     </div>
   </div>
 );
-

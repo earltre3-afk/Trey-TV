@@ -1,6 +1,6 @@
 // TRUNO — Trey TV's original card game. Main module entry point.
 // Pattern mirrors GameRoomModule.tsx for consistency.
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import HomeScreen from './screens/HomeScreen';
 import MatchScreen from './screens/MatchScreen';
 import RoomScreen from './screens/RoomScreen';
@@ -13,6 +13,9 @@ import PassScreen from './screens/PassScreen';
 import TutorialScreen from './screens/TutorialScreen';
 import VictoryScreen from './screens/VictoryScreen';
 import PlayScreen from './screens/PlayScreen';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { createRoom, joinRoomByCode } from '@/features/games/lib/services/roomService';
+import { identityFromTreyUser } from '@/features/games/lib/services/identity';
 
 export type TrunoView =
   | 'home'
@@ -36,8 +39,17 @@ interface Props {
 const SCREEN_BG = 'min-h-screen bg-zinc-950 text-white font-sans antialiased overflow-x-hidden';
 
 const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) => {
+  const currentUser = useCurrentUser();
+  const identity = useMemo(() => identityFromTreyUser({
+    name: currentUser.name,
+    username: currentUser.handle,
+    publicProfileUid: currentUser.uid,
+    avatarUrl: currentUser.avatar,
+  }), [currentUser.avatar, currentUser.handle, currentUser.name, currentUser.uid]);
   const [view, setView] = useState<TrunoView>(initialView);
   const [matchParams, setMatchParams] = useState<any>(null);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomError, setRoomError] = useState<string | null>(null);
 
   const navigate = (nextView: string, params?: any) => {
     if (nextView === 'exit') {
@@ -46,6 +58,31 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
     }
     setMatchParams(params ?? null);
     setView(nextView as TrunoView);
+  };
+
+  const startLocalMatch = (mode: 'quick' | 'ai' = 'quick') => {
+    setRoomId(null);
+    navigate('match', { mode });
+  };
+
+  const createPrivateRoom = async () => {
+    setRoomError(null);
+    try {
+      const { room } = await createRoom({ identity, gameType: 'truno', isPrivate: true, targetScore: 500 });
+      setRoomId(room.id);
+      navigate('room', { roomId: room.id });
+    } catch (e: any) {
+      setRoomError(e?.message || 'Could not create a Truno room.');
+      navigate('room', { unavailable: true });
+    }
+  };
+
+  const joinRoom = async (code: string) => {
+    setRoomError(null);
+    const { room } = await joinRoomByCode(code, identity);
+    if (room.game_type !== 'truno') throw new Error('That code belongs to another Trey TV game.');
+    setRoomId(room.id);
+    navigate('room', { roomId: room.id });
   };
 
   return (
@@ -61,9 +98,9 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
       </div>
 
       <div className="relative z-10">
-        {view === 'home'         && <HomeScreen         onNavigate={navigate} />}
-        {view === 'match'        && <MatchScreen         onNavigate={navigate} />}
-        {view === 'room'         && <RoomScreen          onNavigate={navigate} />}
+        {view === 'home'         && <HomeScreen         onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
+        {view === 'match'        && <MatchScreen         onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} mode={matchParams?.mode ?? 'quick'} />}
+        {view === 'room'         && <RoomScreen          onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} roomError={roomError} onJoinRoom={joinRoom} onRoomReady={(id) => setRoomId(id)} />}
         {view === 'tournament'   && <TournamentScreen    onNavigate={navigate} />}
         {view === 'leaderboard'  && <LeaderboardScreen />}
         {view === 'clubs'        && <ClubsScreen         onNavigate={navigate} />}
@@ -72,7 +109,7 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
         {view === 'pass'         && <PassScreen />}
         {view === 'tutorial'     && <TutorialScreen      onNavigate={navigate} />}
         {view === 'victory'      && <VictoryScreen       onNavigate={navigate} />}
-        {view === 'play'         && <PlayScreen          onNavigate={navigate} />}
+        {view === 'play'         && <PlayScreen          onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
       </div>
     </div>
   );

@@ -13,7 +13,19 @@ const modes = [
   { key: 'victory',  title: 'Last Victory', desc: 'Review your latest win',                Icon: Trophy,   view: 'victory',     grad: 'from-amber-600 to-fuchsia-700',  text: 'text-amber-300',   border: 'border-amber-500/40' },
 ];
 
-const PlayScreen: React.FC<{ onNavigate: (v: string) => void }> = ({ onNavigate }) => {
+const PlayScreen: React.FC<{ onNavigate: (v: string) => void; onQuickPlay: () => void; onAiMatch: () => void; onPlayFriends: () => void }> = ({
+  onNavigate,
+  onQuickPlay,
+  onAiMatch,
+  onPlayFriends,
+}) => {
+  const handleMode = (key: string, view: string) => {
+    if (key === 'quick') onQuickPlay();
+    else if (key === 'ai') onAiMatch();
+    else if (key === 'friends') onPlayFriends();
+    else onNavigate(view);
+  };
+
   return (
     <div className="px-3 pb-24 space-y-4">
       <div className="flex flex-col items-center">
@@ -24,7 +36,7 @@ const PlayScreen: React.FC<{ onNavigate: (v: string) => void }> = ({ onNavigate 
         {modes.map(m => (
           <button
             key={m.key}
-            onClick={() => onNavigate(m.view)}
+            onClick={() => handleMode(m.key, m.view)}
             className={`relative rounded-2xl border ${m.border} bg-zinc-950/70 backdrop-blur-xl p-4 text-left hover:scale-[1.02] transition-all overflow-hidden group`}
           >
             <div className={`absolute -inset-4 bg-gradient-to-br ${m.grad} opacity-0 group-hover:opacity-20 blur-2xl transition-opacity`} />
@@ -45,7 +57,7 @@ const PlayScreen: React.FC<{ onNavigate: (v: string) => void }> = ({ onNavigate 
           {['Easy', 'Normal', 'Smart', 'Savage'].map((d, i) => (
             <button
               key={d}
-              onClick={() => onNavigate('match')}
+              onClick={onAiMatch}
               className={`py-2.5 rounded-xl border text-xs font-bold
                 ${i === 0 ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-300' : ''}
                 ${i === 1 ? 'border-cyan-500/40 bg-cyan-500/5 text-cyan-300' : ''}

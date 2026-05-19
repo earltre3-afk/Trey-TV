@@ -96,6 +96,7 @@ export const RoomLobby: React.FC<Props> = ({ roomId, identity, onBack, onSession
     spades:    { name: 'Spades',    color: '#00B7FF' },
     blackjack: { name: 'Blackjack', color: '#FFC857' },
     bullshit:  { name: 'Bullshit',  color: '#A855F7' },
+    truno:     { name: 'Truno',     color: '#D946EF' },
   }[room.game_type];
 
   return (

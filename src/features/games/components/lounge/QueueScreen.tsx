@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Loader2, Users, Sparkles, CheckCircle2, X, UserPlus,
-  Zap, Clock, Spade, Layers, Crown, ChevronRight,
+  Zap, Clock, Spade, Layers, Crown, ChevronRight, Shuffle,
 } from 'lucide-react';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { GameType, MAX_PLAYERS_BY_GAME } from '@/features/games/lib/services/roomService';
@@ -26,6 +26,7 @@ const GAME_META: Record<GameType, { name: string; tag: string; desc: string; col
   spades: { name: 'Spades', tag: 'TEAMS · 4 PLAYERS', desc: 'Bidding, books, and bag pressure with a partner.', color: '#00B7FF', icon: <Spade size={16} /> },
   blackjack: { name: 'Blackjack', tag: 'SOLO TABLE · 1 PLAYER', desc: 'Beat the dealer in the neon lounge.', color: '#FFC857', icon: <Layers size={16} /> },
   bullshit: { name: 'Bullshit / Cheat', tag: 'BLUFFING · 3-4 PLAYERS', desc: 'Call the bluff before the table flips.', color: '#A855F7', icon: <Crown size={16} /> },
+  truno: { name: 'Truno', tag: 'COLOR MATCH - 2-4 PLAYERS', desc: 'Match colors, fire action cards, and call TRUNO.', color: '#D946EF', icon: <Shuffle size={16} /> },
 };
 
 type Phase = 'searching' | 'almost' | 'found';

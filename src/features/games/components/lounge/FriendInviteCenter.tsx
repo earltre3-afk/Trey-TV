@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, UserPlus, Send, X, Check, Search, Users, Trash2,
-  Spade, Layers, Crown, Sparkles,
+  Spade, Layers, Crown, Sparkles, Shuffle,
 } from 'lucide-react';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { GameType } from '@/features/games/lib/services/roomService';
@@ -26,6 +26,7 @@ const GAME_LABEL: Record<GameType, { name: string; color: string; icon: React.Re
   spades:    { name: 'Spades',    color: '#00B7FF', icon: <Spade size={14} /> },
   blackjack: { name: 'Blackjack', color: '#FFC857', icon: <Layers size={14} /> },
   bullshit:  { name: 'Bullshit',  color: '#A855F7', icon: <Crown size={14} /> },
+  truno:     { name: 'Truno',     color: '#D946EF', icon: <Shuffle size={14} /> },
 };
 
 export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultGame = 'spades', roomId, roomCode }) => {
@@ -159,7 +160,7 @@ export const FriendInviteCenter: React.FC<Props> = ({ identity, onBack, defaultG
           style={{ background: 'rgba(8,17,31,0.65)', borderColor: gm.color + '40', boxShadow: `0 0 40px ${gm.color}18` }}>
           <div className="text-[10px] tracking-[0.3em] font-bold mb-3" style={{ color: gm.color }}>INVITE TO</div>
           <div className="grid grid-cols-3 gap-2">
-            {(['spades','blackjack','bullshit'] as GameType[]).map(g => {
+            {(['spades','blackjack','bullshit','truno'] as GameType[]).map(g => {
               const meta = GAME_LABEL[g];
               const active = game === g;
               return (

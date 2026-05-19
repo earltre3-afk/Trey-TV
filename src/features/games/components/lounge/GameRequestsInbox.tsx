@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import {
-  ArrowLeft, Inbox, Check, X, Spade, Layers, Crown, Mail, Clock, Send,
+  ArrowLeft, Inbox, Check, X, Spade, Layers, Crown, Mail, Clock, Send, Shuffle,
 } from 'lucide-react';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { GameType } from '@/features/games/lib/services/roomService';
@@ -21,6 +21,7 @@ const GAME_META: Record<GameType, { name: string; color: string; icon: React.Rea
   spades:    { name: 'Spades',    color: '#00B7FF', icon: <Spade size={14} /> },
   blackjack: { name: 'Blackjack', color: '#FFC857', icon: <Layers size={14} /> },
   bullshit:  { name: 'Bullshit',  color: '#A855F7', icon: <Crown size={14} /> },
+  truno:     { name: 'Truno',     color: '#D946EF', icon: <Shuffle size={14} /> },
 };
 
 export const GameRequestsInbox: React.FC<Props> = ({ identity, onBack, onAccept }) => {
