@@ -53,6 +53,7 @@ export function toVoiceId(appCharacterId?: string | null): VoiceCharacterId {
 // -- Settings storage --------------------------------------------------------
 
 const KEY = 'trey_voice_settings_v1';
+export const VOICE_SETTINGS_EVENT = 'trey_voice_settings_changed';
 
 export interface VoiceSettings {
  muted: boolean;
@@ -67,16 +68,19 @@ export function loadVoiceSettings(): VoiceSettings {
  const parsed = JSON.parse(raw);
  return {
  muted: !!parsed.muted,
- autoplay: !!parsed.autoplay,
+ autoplay: parsed.autoplay !== false,
  volume: typeof parsed.volume === 'number' ? parsed.volume : 0.85,
  };
  }
  } catch {}
- return { muted: false, autoplay: false, volume: 0.85 };
+ return { muted: false, autoplay: true, volume: 0.85 };
 }
 
 export function saveVoiceSettings(s: VoiceSettings) {
  localStorage.setItem(KEY, JSON.stringify(s));
+ try {
+ window.dispatchEvent(new CustomEvent<VoiceSettings>(VOICE_SETTINGS_EVENT, { detail: s }));
+ } catch {}
 }
 
 // -- Audio playback ----------------------------------------------------------
@@ -146,9 +150,9 @@ export async function generateVoiceLine(
  voice?: StoryVoiceConfig | null
 ): Promise<string | null> {
  if (voice?.voiceProvider === 'none') return null;
+ if (!voice || voice.voiceProvider === 'system' || !voice.voiceProvider) return null;
  const key = cacheKey(characterId, text, voice);
  if (audioCache.has(key)) return audioCache.get(key)!;
- if (voice?.voiceProvider === 'system') return null;
 
  // Use raw fetch (binary response — supabase.functions.invoke would JSON-parse).
  const { data: { session } } = await supabase.auth.getSession();

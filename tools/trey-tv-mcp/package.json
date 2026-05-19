@@ -1,0 +1,14 @@
+{
+  "name": "@trey-tv/local-mcp-wrapper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --dir ../.. exec tsc -p tools/trey-tv-mcp/tsconfig.json",
+    "typecheck": "pnpm --dir ../.. exec tsc -p tools/trey-tv-mcp/tsconfig.json --noEmit",
+    "start": "node dist/server.js",
+    "dev": "pnpm build && node dist/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  }
+}

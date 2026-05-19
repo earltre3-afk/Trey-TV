@@ -93,7 +93,7 @@ const validateReviewInput = (input: ReviewInput): ReviewInput => {
   };
 };
 
-async function verifyAdmin(accessToken: string): Promise<AdminUser> {
+export async function verifyAdmin(accessToken: string): Promise<AdminUser> {
   const token = accessToken.trim();
   if (!token) {
     throw new Error("Admin access required");

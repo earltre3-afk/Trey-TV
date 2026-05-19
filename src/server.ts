@@ -11,6 +11,7 @@ import { handleAuthLogout, handleAuthMe, handleAuthSession } from "./lib/auth-ht
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
+import { handlePluginApiRequest } from "./lib/plugins/registry";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -34,11 +35,14 @@ function brandedErrorResponse(): Response {
   });
 }
 
-function handleOAuthApiRequest(request: Request): Promise<Response> | Response | null {
+async function handleOAuthApiRequest(request: Request): Promise<Response | null> {
   const url = new URL(request.url);
 
   const fwdOAuthResponse = handleFwdOAuthRequest(request);
   if (fwdOAuthResponse) return fwdOAuthResponse;
+
+  const pluginResponse = await handlePluginApiRequest(request);
+  if (pluginResponse) return pluginResponse;
 
   if (url.pathname === "/api/auth/session") return handleAuthSession(request);
   if (url.pathname === "/api/auth/me") return handleAuthMe(request);
@@ -97,8 +101,8 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const oauthResponse = handleOAuthApiRequest(request);
-      if (oauthResponse) return await oauthResponse;
+      const oauthResponse = await handleOAuthApiRequest(request);
+      if (oauthResponse) return oauthResponse;
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

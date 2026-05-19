@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Gamepad2, Spade, Layers, Sparkles, Users, KeyRound, Bot, ShieldCheck, Crown, Settings, Info, Heart, Diamond, Club, ChevronRight, Zap, Trophy, Wifi, Inbox, UserPlus, BookOpen } from 'lucide-react';
+import { ArrowLeft, Gamepad2, Spade, Layers, Sparkles, Users, KeyRound, Bot, ShieldCheck, Crown, Settings, Info, Heart, Diamond, Club, ChevronRight, Zap, Trophy, Wifi, Inbox, UserPlus, BookOpen, Shuffle } from 'lucide-react';
 import { GameType } from '@/features/games/lib/services/roomService';
 import { InteractiveStoriesSection } from '@/components/games/InteractiveStoriesSection';
 import { TreyBrandMark } from '@/features/games/components/shared/TreyBrandMark';
 import { getQueueCounts } from '@/features/games/lib/services/matchmakingService';
 import { getPendingInboxCount } from '@/features/games/lib/services/socialService';
 import { isGameBackendEnabled } from '@/features/games/lib/gameBackend';
+
+const TRUNO_IMG = 'https://d64gsuwffb70l.cloudfront.net/6a05312f4c99412b68631f27_1778727630972_8f322cdb.jpg';
 
 
 interface Props {
@@ -197,7 +199,7 @@ export const GameRoomHome: React.FC<Props> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-6">
           <QuickAction icon={<Users size={18} />} label="Create Private Room" sub="Invite friends with a 6-char code" color="#00B7FF" onClick={() => onCreateRoom()} />
           <QuickAction icon={<KeyRound size={18} />} label="Join by Code" sub="Enter a room code your friend shared" color="#FFC857" onClick={onJoinRoom} />
-          <QuickAction icon={<Bot size={18} />} label="Solo with Bots" sub="Instant local table — no waiting" color="#A855F7" onClick={() => onLaunchSolo('spades')} />
+          <QuickAction icon={<Shuffle size={18} />} label="Play Truno" sub="Match colors. Call TRUNO. Own the table." color="#D946EF" onClick={() => navigate({ to: '/games/truno' })} />
           <QuickAction icon={<BookOpen size={18} />} label="Interactive Stories" sub="Switch Kicks and The God Ram" color="#D8B4FE" onClick={() => navigate({ to: '/games/interactive-stories' })} />
         </div>
 
@@ -239,7 +241,7 @@ export const GameRoomHome: React.FC<Props> = ({
 
         {/* All games */}
         <SectionTitle icon={<Layers size={18} className="text-cyan-300" />} label="Choose Game" sub="Public queue · invite friends · private room" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <GameCard title="Spades" tag="TRICK-TAKING · 4P" desc="Team strategy. Bids, books, and pressure." color="#00B7FF" img={SPADES_IMG} icon={<Spade size={16} />}
             needs={4} waiting={queueCounts.spades}
             onJoinQueue={onJoinQueue ? () => onJoinQueue('spades') : undefined}
@@ -255,6 +257,7 @@ export const GameRoomHome: React.FC<Props> = ({
             onJoinQueue={onJoinQueue ? () => onJoinQueue('bullshit') : undefined}
             onInvite={onOpenFriends}
             onCreate={() => onCreateRoom('bullshit')} onSolo={() => onLaunchSolo('bullshit')} />
+          <TrunoGameCard onClick={() => navigate({ to: '/games/truno' })} />
         </div>
 
         {/* How it works */}
@@ -451,3 +454,52 @@ const GameCard: React.FC<{
     </div>
   </div>
 );
+
+const TrunoGameCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <div
+    onClick={onClick}
+    className="rounded-[26px] overflow-hidden border transition-all hover:-translate-y-1 group backdrop-blur-md cursor-pointer"
+    style={{
+      background: 'rgba(8,17,31,0.7)',
+      borderColor: '#D946EF50',
+      boxShadow: '0 0 40px #D946EF20, inset 0 1px 0 rgba(255,255,255,0.05)',
+    }}
+  >
+    <div className="relative h-40 overflow-hidden">
+      <img src={TRUNO_IMG} alt="Truno" className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700" />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, transparent 0%, rgba(8,17,31,0.4) 50%, rgba(8,17,31,0.98) 100%)' }} />
+      <div className="absolute top-3 left-3 text-[10px] tracking-[0.25em] font-black px-2.5 py-1 rounded-md backdrop-blur-md"
+        style={{ background: '#D946EF25', color: '#D946EF', border: '1px solid #D946EF60' }}>
+        COLOR MATCH · 2-8P
+      </div>
+      <div className="absolute top-3 right-3 text-[10px] tracking-[0.25em] font-black px-2.5 py-1 rounded-md backdrop-blur-md"
+        style={{ background: 'rgba(5,7,13,0.7)', color: '#D946EF', border: '1px solid #D946EF55' }}>
+        🆕 NEW
+      </div>
+      <div className="absolute bottom-3 right-3 w-10 h-10 rounded-2xl flex items-center justify-center backdrop-blur-md text-lg"
+        style={{ background: '#D946EF20', border: '1px solid #D946EF60', boxShadow: '0 0 18px #D946EF40' }}>
+        🌀
+      </div>
+    </div>
+    <div className="p-5">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="font-black text-2xl tracking-tight">Truno</h3>
+        <div className="text-[10px] font-bold text-slate-500 mt-1.5">2–8 Players</div>
+      </div>
+      <p className="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">
+        Trey TV's original card game. Match colors, stack action cards, and call TRUNO when you're down to one.
+      </p>
+      <button
+        className="w-full text-xs font-black px-3 py-2.5 rounded-2xl transition hover:brightness-110 inline-flex items-center justify-center gap-2"
+        style={{
+          background: 'linear-gradient(90deg, #D946EF, #A855F7)',
+          color: '#fff',
+          boxShadow: '0 0 24px #D946EF55',
+        }}
+      >
+        <Shuffle size={13} /> Play Truno
+      </button>
+    </div>
+  </div>
+);
+

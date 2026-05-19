@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Play, RotateCcw, Loader2, CircleStop } from 'lucide-r
 import {
   VOICE_PROFILES,
   VoiceCharacterId,
+  VOICE_SETTINGS_EVENT,
   loadVoiceSettings,
   saveVoiceSettings,
   playVoiceLine,
@@ -49,6 +50,15 @@ export const VoicePlayer: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const profile = VOICE_PROFILES[characterId as VoiceCharacterId] || VOICE_PROFILES.narrator;
   const lastAutoplayKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const syncSettings = (event: Event) => {
+      const detail = (event as CustomEvent<typeof settings>).detail;
+      setSettings(detail || loadVoiceSettings());
+    };
+    window.addEventListener(VOICE_SETTINGS_EVENT, syncSettings);
+    return () => window.removeEventListener(VOICE_SETTINGS_EVENT, syncSettings);
+  }, []);
 
   const play = async () => {
     setLoading(true);
@@ -179,6 +189,15 @@ export const VoicePlayer: React.FC<Props> = ({
 /** Toolbar to toggle autoplay + mute globally. */
 export const VoiceSettingsToolbar: React.FC = () => {
   const [settings, setSettings] = useState(loadVoiceSettings());
+
+  useEffect(() => {
+    const syncSettings = (event: Event) => {
+      const detail = (event as CustomEvent<typeof settings>).detail;
+      setSettings(detail || loadVoiceSettings());
+    };
+    window.addEventListener(VOICE_SETTINGS_EVENT, syncSettings);
+    return () => window.removeEventListener(VOICE_SETTINGS_EVENT, syncSettings);
+  }, []);
 
   const update = (patch: Partial<typeof settings>) => {
     const next = { ...settings, ...patch };

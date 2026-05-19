@@ -26,10 +26,15 @@ const fallbackCreator: FeedCreator = {
 
 export type UserPost = {
   id: string;
+  ownerId?: string | null;
   creator: FeedCreator;
   timeAgo: string;
   text: string;
   media?: string;
+  sourceType?: "trey" | "fwd" | string;
+  gifFwdId?: string | null;
+  gifPosterUrl?: string | null;
+  gifTitle?: string | null;
   duration?: string;
   likes: number;
   comments: number;
@@ -42,8 +47,18 @@ export type UserPost = {
 
 type Ctx = {
   posts: UserPost[];
-  addPost: (input: { text: string; audience?: UserPost["audience"]; tags?: string[]; media?: string }) => UserPost;
-  removePost: (id: string) => void;
+  addPost: (input: {
+    text: string;
+    audience?: UserPost["audience"];
+    tags?: string[];
+    media?: string;
+    sourceType?: UserPost["sourceType"];
+    gifFwdId?: string | null;
+    gifPosterUrl?: string | null;
+    gifTitle?: string | null;
+  }) => UserPost;
+  updatePost: (id: string, input: { text: string }) => Promise<{ ok: boolean; reason?: string }>;
+  removePost: (id: string) => Promise<{ ok: boolean; reason?: string }>;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -53,7 +68,8 @@ const SERVER_FALLBACK_CTX: Ctx = {
   addPost: () => {
     throw new Error("FeedProvider is required before adding posts");
   },
-  removePost: () => undefined,
+  updatePost: async () => ({ ok: false, reason: "FeedProvider is required" }),
+  removePost: async () => ({ ok: false, reason: "FeedProvider is required" }),
 };
 
 function timeAgo(ts: number) {
@@ -105,7 +121,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         const supabase = createBrowserClient();
         const { data, error } = await (supabase as any)
           .from("user_feed_posts")
-          .select("id, body, media_url, audience, tags, metrics, created_at")
+          .select("id, user_id, body, media_url, audience, tags, metrics, created_at, source_type, gif_fwd_id, gif_poster_url, gif_title")
           .eq("user_id", supabaseUser.id)
           .order("created_at", { ascending: false })
           .limit(100);
@@ -115,10 +131,15 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
         setRaw(((data ?? []) as any[]).map((row) => ({
           id: row.id,
+          ownerId: row.user_id,
           creator: meAsCreator,
           timeAgo: timeAgo(new Date(row.created_at).getTime()),
           text: row.body,
           media: row.media_url ?? undefined,
+          sourceType: row.source_type ?? "trey",
+          gifFwdId: row.gif_fwd_id ?? null,
+          gifPosterUrl: row.gif_poster_url ?? null,
+          gifTitle: row.gif_title ?? null,
           duration: undefined,
           likes: Number(row.metrics?.likes ?? 0),
           comments: Number(row.metrics?.comments ?? 0),
@@ -141,11 +162,20 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
   const posts = raw.map((p) => ({ ...p, timeAgo: timeAgo(p.createdAt) }));
 
-  const addPost: Ctx["addPost"] = ({ text, audience = "Everyone", tags = [], media }) => {
+  const addPost: Ctx["addPost"] = ({
+    text,
+    audience = "Everyone",
+    tags = [],
+    media,
+    sourceType = "trey",
+    gifFwdId = null,
+    gifPosterUrl = null,
+    gifTitle = null,
+  }) => {
     const id = (typeof crypto !== "undefined" && crypto.randomUUID?.()) || `p-${Date.now()}`;
     const post: UserPost = {
-      id, creator: meAsCreator, timeAgo: "now",
-      text, media, duration: undefined,
+      id, ownerId: supabaseUser?.id ?? null, creator: meAsCreator, timeAgo: "now",
+      text, media, sourceType, gifFwdId, gifPosterUrl, gifTitle, duration: undefined,
       likes: 0, comments: 0, reshares: 0, saves: 0,
       audience, tags, createdAt: Date.now(),
     };
@@ -161,6 +191,10 @@ export function FeedProvider({ children }: { children: ReactNode }) {
               public_profile_uid: profileUser.uid,
               body: text,
               media_url: media ?? null,
+              source_type: sourceType,
+              gif_fwd_id: gifFwdId,
+              gif_poster_url: gifPosterUrl,
+              gif_title: gifTitle,
               audience,
               tags,
               metrics: { likes: 0, comments: 0, reshares: 0, saves: 0 },
@@ -181,21 +215,65 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     return post;
   };
 
-  const removePost: Ctx["removePost"] = (id) => {
-    setRaw((s) => s.filter((p) => p.id !== id));
-    if (supabaseUser) {
-      void (async () => {
-        try {
-          const supabase = createBrowserClient();
-          await (supabase as any).from("user_feed_posts").delete().eq("id", id).eq("user_id", supabaseUser.id);
-        } catch (error) {
-          console.error("Failed to remove UID feed post:", error);
-        }
-      })();
+  const updatePost: Ctx["updatePost"] = async (id, { text }) => {
+    if (!supabaseUser) return { ok: false, reason: "Sign in to edit posts." };
+    const previous = raw;
+    const post = raw.find((p) => p.id === id);
+    if (!post || post.ownerId !== supabaseUser.id) {
+      return { ok: false, reason: "Only the post owner can edit this." };
+    }
+
+    setRaw((s) => s.map((p) => p.id === id ? { ...p, text } : p));
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await (supabase as any)
+        .from("user_feed_posts")
+        .update({ body: text, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .eq("user_id", supabaseUser.id)
+        .select("id")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data?.id) throw new Error("Only the post owner can edit this.");
+      return { ok: true };
+    } catch (error) {
+      setRaw(previous);
+      console.error("Failed to update UID feed post:", error);
+      return { ok: false, reason: error instanceof Error ? error.message : "Post update failed." };
     }
   };
 
-  return <C.Provider value={{ posts, addPost, removePost }}>{children}</C.Provider>;
+  const removePost: Ctx["removePost"] = async (id) => {
+    if (!supabaseUser) return { ok: false, reason: "Sign in to delete posts." };
+    const previous = raw;
+    const post = raw.find((p) => p.id === id);
+    if (!post || post.ownerId !== supabaseUser.id) {
+      return { ok: false, reason: "Only the post owner can delete this." };
+    }
+
+    setRaw((s) => s.filter((p) => p.id !== id));
+    try {
+      const supabase = createBrowserClient();
+      const { data, error } = await (supabase as any)
+        .from("user_feed_posts")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", supabaseUser.id)
+        .select("id")
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data?.id) throw new Error("Only the post owner can delete this.");
+      return { ok: true };
+    } catch (error) {
+      setRaw(previous);
+      console.error("Failed to remove UID feed post:", error);
+      return { ok: false, reason: error instanceof Error ? error.message : "Post delete failed." };
+    }
+  };
+
+  return <C.Provider value={{ posts, addPost, updatePost, removePost }}>{children}</C.Provider>;
 }
 
 export function useFeed() {
