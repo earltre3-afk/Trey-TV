@@ -31,6 +31,8 @@ const BOT_THINK_MAX_MS = 1200;
 const BOT_AFTER_ACTION_DELAY_MS = 650;
 const ACTION_EFFECT_MS = 900;
 const MAX_VISIBLE_BOT_STEPS = 16;
+const CARD_DOUBLE_TAP_MS = 320;
+const CARD_PLAY_GUARD_MS = 700;
 
 type ActionLogItem = {
   id: string;
@@ -70,6 +72,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const [drawPulse, setDrawPulse] = useState(0);
   const [pulsePlayerId, setPulsePlayerId] = useState<string | null>(null);
   const [invalidCardId, setInvalidCardId] = useState<string | null>(null);
+  const tapRef = useRef<{ cardId: string | null; at: number }>({ cardId: null, at: 0 });
+  const playGuardRef = useRef<{ cardId: string | null; at: number }>({ cardId: null, at: 0 });
 
   const sequencerRef = useRef<{ running: boolean; token: number; lastKey: string | null }>({
     running: false,
@@ -233,6 +237,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     ].slice(0, 5));
   }, [isRoomHost, roomId, state]);
 
+  useEffect(() => {
+    playGuardRef.current = { cardId: null, at: 0 };
+  }, [state?.currentPlayerIndex, state?.turn]);
+
   if (!state) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center text-zinc-400">
@@ -281,7 +289,14 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     setSelected(null);
   };
 
-  const handleCardTap = (cardId: string) => {
+  const flashInvalidCard = (cardId: string, message: string) => {
+    setInvalidCardId(cardId);
+    setNotice(message);
+    const timer = setTimeout(() => setInvalidCardId(null), 400);
+    timeoutsRef.current.push(timer);
+  };
+
+  const attemptPlayCard = (cardId: string) => {
     const card = me.hand.find((c) => c.id === cardId);
     if (!card) return;
     if (!myTurn) {
@@ -290,10 +305,33 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     }
     if (!isPlayableCard(card, state)) {
       setSelected(null);
-      setInvalidCardId(cardId);
-      setNotice('That card does not match the current color, number, or action.');
-      const timer = setTimeout(() => setInvalidCardId(null), 400);
-      timeoutsRef.current.push(timer);
+      flashInvalidCard(cardId, 'That card does not match the current color, number, or action.');
+      return;
+    }
+    const now = Date.now();
+    if (playGuardRef.current.cardId === cardId && now - playGuardRef.current.at < CARD_PLAY_GUARD_MS) return;
+    playGuardRef.current = { cardId, at: now };
+    void commitMove({ type: 'play', playerId: me.id, cardId, wildColor: mostCommonColor(me.hand) });
+  };
+
+  const handleCardTap = (cardId: string) => {
+    const now = Date.now();
+    const isDoubleTap = tapRef.current.cardId === cardId && now - tapRef.current.at < CARD_DOUBLE_TAP_MS;
+    tapRef.current = { cardId, at: now };
+    if (isDoubleTap) {
+      attemptPlayCard(cardId);
+      return;
+    }
+
+    const card = me.hand.find((c) => c.id === cardId);
+    if (!card) return;
+    if (!myTurn) {
+      setNotice(`Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      return;
+    }
+    if (!isPlayableCard(card, state)) {
+      setSelected(null);
+      flashInvalidCard(cardId, 'That card does not match the current color, number, or action.');
       return;
     }
     setSelected((prev) => prev === cardId ? null : cardId);
