@@ -1,19 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Clock, Play } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Clock, Play, RotateCw } from 'lucide-react';
 import TrunoCard from '../components/TrunoCard';
 import { avatarFor } from '../lib/avatars';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
 import {
+  applyBotMove,
   applyPlayerMove,
   createTrunoGame,
   currentPlayer,
+  describeMoveEvent,
   isPlayableCard,
-  maybeRunBotTurn,
   topCard,
   TrunoGameState,
   TrunoMove,
+  TrunoMoveEvent,
 } from '../lib/trunoEngine';
 
 interface Props {
@@ -22,6 +24,26 @@ interface Props {
   roomId?: string | null;
   mode?: 'quick' | 'ai';
 }
+
+const HUMAN_AFTER_PLAY_DELAY_MS = 450;
+const BOT_THINK_MIN_MS = 700;
+const BOT_THINK_MAX_MS = 1200;
+const BOT_AFTER_ACTION_DELAY_MS = 650;
+const ACTION_EFFECT_MS = 900;
+const MAX_VISIBLE_BOT_STEPS = 16;
+
+type ActionLogItem = {
+  id: string;
+  text: string;
+  tone: 'play' | 'draw' | 'effect' | 'system';
+};
+
+type TableEffect = {
+  id: string;
+  label: string;
+  tone: 'skip' | 'reverse' | 'draw' | 'wild' | 'win';
+  targetPlayerId?: string;
+} | null;
 
 const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mode = 'quick' }) => {
   const currentUser = useCurrentUser();
@@ -39,7 +61,22 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const [chatDraft, setChatDraft] = useState('');
   const [localChat, setLocalChat] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const lastBotTurn = useRef<string | null>(null);
+  const [turnNotice, setTurnNotice] = useState<string>('Your turn.');
+  const [actionLog, setActionLog] = useState<ActionLogItem[]>([]);
+  const [thinkingPlayerId, setThinkingPlayerId] = useState<string | null>(null);
+  const [tableEffect, setTableEffect] = useState<TableEffect>(null);
+  const [discardPulse, setDiscardPulse] = useState(0);
+  const [drawPulse, setDrawPulse] = useState(0);
+  const [pulsePlayerId, setPulsePlayerId] = useState<string | null>(null);
+  const [invalidCardId, setInvalidCardId] = useState<string | null>(null);
+
+  const sequencerRef = useRef<{ running: boolean; token: number; lastKey: string | null }>({
+    running: false,
+    token: 0,
+    lastKey: null,
+  });
+  const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const observedMoveRef = useRef<string | null>(null);
 
   const applyRoomMove = useCallback((state: TrunoGameState, move: { type: string; seat: number; payload?: any }) => {
     const player = state.players[move.seat];
@@ -62,17 +99,136 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const room = useRealtimeRoom(roomId, identity, applyRoomMove, extractMeta);
   const state = (roomId ? room.state : localState) as TrunoGameState | null;
 
+  const clearSequencer = useCallback(() => {
+    sequencerRef.current.token += 1;
+    sequencerRef.current.running = false;
+    setThinkingPlayerId(null);
+    timeoutsRef.current.forEach((timer) => clearTimeout(timer));
+    timeoutsRef.current = [];
+  }, []);
+
+  useEffect(() => () => clearSequencer(), [clearSequencer]);
+
+  const sleep = useCallback((ms: number) => new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      timeoutsRef.current = timeoutsRef.current.filter((item) => item !== timer);
+      resolve();
+    }, ms);
+    timeoutsRef.current.push(timer);
+  }), []);
+
+  const showMoveEvent = useCallback((event: TrunoMoveEvent, moveId?: string) => {
+    if (moveId) observedMoveRef.current = moveId;
+    const tone: ActionLogItem['tone'] = event.effect ? 'effect' : event.kind === 'draw' ? 'draw' : event.kind === 'play' ? 'play' : 'system';
+    setTurnNotice(event.message);
+    setActionLog((prev) => [
+      {
+        id: `${Date.now()}:${event.playerId}:${event.kind}`,
+        text: event.message,
+        tone,
+      },
+      ...prev,
+    ].slice(0, 6));
+
+    if (event.kind === 'play') setDiscardPulse((count) => count + 1);
+    if (event.kind === 'draw') setDrawPulse((count) => count + 1);
+    if (event.kind === 'draw') setPulsePlayerId(event.playerId);
+    if (event.effect === 'draw_two' || event.effect === 'wild_draw_four') setPulsePlayerId(event.targetPlayerId ?? null);
+
+    const effect = effectFromEvent(event);
+    if (effect) {
+      setTableEffect(effect);
+      const timer = setTimeout(() => setTableEffect(null), ACTION_EFFECT_MS);
+      timeoutsRef.current.push(timer);
+    }
+
+    const pulseTimer = setTimeout(() => setPulsePlayerId(null), ACTION_EFFECT_MS);
+    timeoutsRef.current.push(pulseTimer);
+  }, []);
+
+  const roomSetHostState = room.setHostState;
+  const seatedHostCanRunBots = room.players.some((player) => (
+    player.user_id === identity.userId &&
+    player.is_host &&
+    !player.is_bot
+  ));
+  const engineHostCanRunBots = !!roomId && state?.players[0]?.id === identity.userId;
+  const isRoomHost = room.isHost || seatedHostCanRunBots || engineHostCanRunBots;
+
+  const runBotSequence = useCallback(async (startState: TrunoGameState, token: number) => {
+    let workingState = startState;
+    let steps = 0;
+    await sleep(HUMAN_AFTER_PLAY_DELAY_MS);
+
+    while (
+      sequencerRef.current.token === token &&
+      workingState.phase === 'playing' &&
+      currentPlayer(workingState)?.isBot &&
+      steps < MAX_VISIBLE_BOT_STEPS
+    ) {
+      const bot = currentPlayer(workingState)!;
+      setThinkingPlayerId(bot.id);
+      setTurnNotice(`${bot.name} is thinking...`);
+      await sleep(randomBetween(BOT_THINK_MIN_MS, BOT_THINK_MAX_MS));
+      if (sequencerRef.current.token !== token) return;
+
+      const result = applyBotMove(workingState);
+      if (!result || result.state.lastMoveId === workingState.lastMoveId) break;
+
+      showMoveEvent(result.event, result.state.lastMoveId);
+      workingState = result.state;
+
+      if (roomId) {
+        await roomSetHostState(result.state);
+      } else {
+        setLocalState(result.state);
+      }
+
+      await sleep(BOT_AFTER_ACTION_DELAY_MS);
+      steps++;
+    }
+
+    if (sequencerRef.current.token !== token) return;
+    const nextActive = currentPlayer(workingState);
+    setThinkingPlayerId(null);
+    sequencerRef.current.running = false;
+
+    if (workingState.phase === 'ended') {
+      setTurnNotice(workingState.message);
+    } else if (nextActive?.isBot && steps >= MAX_VISIBLE_BOT_STEPS) {
+      setNotice('The table paused bot play to keep the turn sequence safe.');
+    } else if (nextActive?.id === identity.userId || (!roomId && !nextActive?.isBot)) {
+      setTurnNotice('Your turn.');
+    } else if (nextActive) {
+      setTurnNotice(`Waiting for ${nextActive.name}.`);
+    }
+  }, [identity.userId, roomId, roomSetHostState, showMoveEvent, sleep]);
+
   useEffect(() => {
-    if (!roomId || !state || !room.isHost || state.phase === 'ended') return;
+    if (!state || state.phase === 'ended') return;
     const active = currentPlayer(state);
     if (!active?.isBot) return;
-    if (lastBotTurn.current === state.lastMoveId) return;
-    lastBotTurn.current = state.lastMoveId;
-    const next = maybeRunBotTurn(state);
-    if (next.lastMoveId !== state.lastMoveId) {
-      room.setHostState(next);
-    }
-  }, [roomId, room, state]);
+    if (roomId && !isRoomHost) return;
+
+    const key = `${state.lastMoveId}:${state.currentPlayerIndex}:${active.id}`;
+    if (sequencerRef.current.running || sequencerRef.current.lastKey === key) return;
+    sequencerRef.current.running = true;
+    sequencerRef.current.lastKey = key;
+    const token = sequencerRef.current.token + 1;
+    sequencerRef.current.token = token;
+    void runBotSequence(state, token);
+  }, [isRoomHost, roomId, runBotSequence, state]);
+
+  useEffect(() => {
+    if (!roomId || isRoomHost) return;
+    if (!state || state.lastMoveId === observedMoveRef.current || state.lastMoveId === 'start') return;
+    observedMoveRef.current = state.lastMoveId;
+    setTurnNotice(state.message);
+    setActionLog((prev) => [
+      { id: `${Date.now()}:${state.lastMoveId}`, text: state.message, tone: 'system' as const },
+      ...prev,
+    ].slice(0, 6));
+  }, [isRoomHost, roomId, state]);
 
   if (!state) {
     return (
@@ -84,16 +240,28 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   const activePlayer = currentPlayer(state);
   const mySeat = roomId ? room.mySeat ?? 0 : state.players.findIndex((p) => !p.isBot);
-  const me = state.players[mySeat] ?? state.players.find((p) => !p.isBot) ?? state.players[0];
-  const myTurn = activePlayer?.id === me.id && state.phase === 'playing';
+  const bottomSeat = mySeat >= 0 ? mySeat : 0;
+  const me = state.players[bottomSeat] ?? state.players.find((p) => !p.isBot) ?? state.players[0];
+  const botIsThinking = !!thinkingPlayerId || !!activePlayer?.isBot;
+  const myTurn = activePlayer?.id === me.id && state.phase === 'playing' && !sequencerRef.current.running;
   const top = topCard(state);
   const selectedCard = me.hand.find((card) => card.id === selected) ?? null;
   const canPlaySelected = !!selectedCard && myTurn && isPlayableCard(selectedCard, state);
   const roomCode = room.room?.room_code ?? (roomId ? 'Loading' : mode === 'ai' ? 'AI MATCH' : 'QUICK PLAY');
   const tableLabel = roomId ? 'PRIVATE TABLE' : mode === 'ai' ? 'AI PRACTICE TABLE' : 'QUICK PLAY TABLE';
+  const waitingLabel = myTurn ? 'YOUR TURN' : botIsThinking && activePlayer ? `${activePlayer.name} THINKING` : `${activePlayer?.name ?? 'Table'} TURN`;
 
   const commitMove = async (move: TrunoMove) => {
     setNotice(null);
+    if (!state) return;
+    const next = applyPlayerMove(state, move);
+    const event = describeMoveEvent(state, move, next);
+    if (next.lastMoveId === state.lastMoveId && next.message !== state.message) {
+      setNotice(next.message);
+      return;
+    }
+    showMoveEvent(event, next.lastMoveId);
+
     if (roomId) {
       await room.sendMove({
         type: move.type,
@@ -103,7 +271,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       setSelected(null);
       return;
     }
-    setLocalState((prev) => maybeRunBotTurn(applyPlayerMove(prev, move)));
+
+    setLocalState(next);
     setSelected(null);
   };
 
@@ -116,7 +285,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     }
     if (!isPlayableCard(card, state)) {
       setSelected(null);
+      setInvalidCardId(cardId);
       setNotice('That card does not match the current color, number, or action.');
+      const timer = setTimeout(() => setInvalidCardId(null), 400);
+      timeoutsRef.current.push(timer);
       return;
     }
     setSelected((prev) => prev === cardId ? null : cardId);
@@ -158,13 +330,22 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     setChatDraft('');
   };
 
-  const leaveParams = roomId ? { roomId, suppressActiveSession: true } : undefined;
+  const handleLeaveMatch = () => {
+    clearSequencer();
+    onNavigate(roomId ? 'room' : 'home', roomId ? { roomId, suppressActiveSession: true } : undefined);
+  };
 
   return (
     <div className="px-3 pb-24">
+      <style>{`
+        @keyframes truno-pop { 0% { transform: scale(0.92); filter: brightness(1); } 45% { transform: scale(1.1); filter: brightness(1.4); } 100% { transform: scale(1); filter: brightness(1); } }
+        @keyframes truno-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
+        @keyframes truno-float { 0% { opacity: 0; transform: translateY(14px) scale(0.92); } 20%, 80% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-16px) scale(1.04); } }
+      `}</style>
+
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => onNavigate(roomId ? 'room' : 'home', leaveParams)} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+          <button onClick={handleLeaveMatch} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
           </button>
           <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">
@@ -177,7 +358,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => onNavigate(roomId ? 'room' : 'home', leaveParams)}
+            onClick={handleLeaveMatch}
             className="px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-sm font-bold hover:bg-pink-500/10"
           >
             Leave Match
@@ -191,7 +372,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       <div className="mx-auto w-fit rounded-full bg-zinc-950/80 border border-fuchsia-500/30 px-4 py-1.5 mb-4 flex items-center gap-3">
         <span className="text-xs font-bold text-fuchsia-300">{tableLabel}</span>
         <span className="text-xs text-zinc-500">|</span>
-        <span className="text-xs text-zinc-300">{state.message}</span>
+        <span className="text-xs text-zinc-300">{turnNotice || state.message}</span>
       </div>
 
       <div className="relative aspect-square max-w-md mx-auto">
@@ -204,32 +385,63 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           <TablePlayer
             key={player.id}
             player={player}
-            index={index}
+            relativeIndex={(index - bottomSeat + state.players.length) % state.players.length}
+            playerCount={state.players.length}
             active={activePlayer?.id === player.id}
+            thinking={thinkingPlayerId === player.id}
+            pulsing={pulsePlayerId === player.id || tableEffect?.targetPlayerId === player.id}
             isYou={player.id === me.id}
             avatar={player.id === me.id ? currentUser.avatar : undefined}
           />
         ))}
 
         <div className="absolute inset-0 flex items-center justify-center gap-3">
-          <TrunoCard card={{ id: 'deck', color: 'black', symbol: 'wild', label: 'W' }} faceDown size="md" />
-          {top && <TrunoCard card={top} size="md" playable />}
+          <div key={drawPulse} className={drawPulse ? 'animate-[truno-pop_0.45s_ease-out]' : ''}>
+            <TrunoCard card={{ id: 'deck', color: 'black', symbol: 'wild', label: 'W' }} faceDown size="md" />
+          </div>
+          {top && (
+            <div key={`${top.id}:${discardPulse}`} className={discardPulse ? 'animate-[truno-pop_0.45s_ease-out]' : ''}>
+              <TrunoCard card={top} size="md" playable />
+            </div>
+          )}
         </div>
+
+        {tableEffect && (
+          <div className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}>
+            {tableEffect.label}
+          </div>
+        )}
 
         <div className="absolute left-1/2 -translate-x-1/2 bottom-1/4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/80 border border-zinc-800">
           <span className="text-[10px] text-zinc-400">Current Color</span>
           <div className={`w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] ${colorClass(state.currentColor)}`} />
+          <span className="text-[10px] text-zinc-500">|</span>
+          <RotateCw size={12} className={`text-cyan-300 ${state.direction === -1 ? '-scale-x-100' : ''}`} />
+          <span className="text-[10px] text-zinc-300">{state.direction === 1 ? 'Clockwise' : 'Counter'}</span>
         </div>
       </div>
 
       <div className="mt-2 flex items-center justify-center gap-2 text-xs">
         <button className={`flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300' : 'bg-zinc-900/80 border-zinc-800 text-zinc-400'}`}>
-          <ChevronDown size={14} className="rotate-180" /> {myTurn ? 'YOUR TURN' : `${activePlayer?.name ?? 'Table'} TURN`}
+          <ChevronDown size={14} className="rotate-180" /> {waitingLabel}
         </button>
         <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300">
           <Clock size={12} /> Turn {state.turn}
         </span>
       </div>
+
+      {actionLog.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-3">
+          <div className="text-[10px] font-black tracking-wider text-zinc-500 mb-2">RECENT MOVES</div>
+          <div className="grid gap-1.5">
+            {actionLog.slice(0, 4).map((item) => (
+              <div key={item.id} className={`text-[11px] rounded-lg px-2 py-1 border ${logClass(item.tone)}`}>
+                {item.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {state.phase === 'ended' && (
         <div className="mt-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-center text-sm font-black text-amber-300">
@@ -249,16 +461,24 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           const offset = i - mid;
           const isSel = selected === c.id;
           const playable = myTurn && isPlayableCard(c, state);
+          const invalid = invalidCardId === c.id;
           return (
             <div
               key={c.id}
-              className="absolute transition-transform"
+              className={`absolute transition-transform duration-200 ${invalid ? 'animate-[truno-shake_0.35s_ease-in-out]' : ''}`}
               style={{
                 transform: `translateX(${offset * 42}px) translateY(${Math.abs(offset) * 4}px) rotate(${offset * 5}deg) ${isSel ? 'translateY(-20px) scale(1.1)' : ''}`,
                 zIndex: isSel ? 100 : 10 + i,
               }}
             >
-              <TrunoCard card={c} size="sm" playable={playable} onClick={() => handleCardTap(c.id)} selected={isSel} />
+              <TrunoCard
+                card={c}
+                size="sm"
+                playable={playable}
+                onClick={() => handleCardTap(c.id)}
+                selected={isSel}
+                className={playable ? 'ring-2 ring-cyan-300/25' : ''}
+              />
             </div>
           );
         })}
@@ -336,30 +556,34 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   );
 };
 
-const TablePlayer: React.FC<{ player: TrunoGameState['players'][number]; index: number; active: boolean; isYou: boolean; avatar?: string }> = ({ player, index, active, isYou, avatar }) => {
-  const positions = [
-    'top-0 left-1/2 -translate-x-1/2',
-    'top-1/2 right-0 -translate-y-1/2',
-    'bottom-0 left-1/2 -translate-x-1/2',
-    'top-1/2 left-0 -translate-y-1/2',
-  ];
+const TablePlayer: React.FC<{
+  player: TrunoGameState['players'][number];
+  relativeIndex: number;
+  playerCount: number;
+  active: boolean;
+  thinking: boolean;
+  pulsing: boolean;
+  isYou: boolean;
+  avatar?: string;
+}> = ({ player, relativeIndex, playerCount, active, thinking, pulsing, isYou, avatar }) => {
+  const position = seatPosition(relativeIndex, playerCount);
   return (
-    <div className={`absolute ${positions[index] ?? positions[0]} flex flex-col items-center`}>
-      <div className="flex items-center gap-1 mb-1">
+    <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
+      <div className={`flex items-center gap-1 mb-1 transition ${pulsing ? 'animate-[truno-pop_0.45s_ease-out]' : ''}`}>
         {Array.from({ length: Math.min(5, player.hand.length) }).map((_, i) => (
           <div key={i} className="w-3 h-8 rounded-sm border border-purple-500/40" style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: 'rgba(157,78,221,0.1)' }} />
         ))}
       </div>
       <div className="flex flex-col items-center">
         <div className="relative">
-          <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 ${active ? 'ring-emerald-400' : 'ring-fuchsia-500/60'} shadow-[0_0_20px_rgba(255,0,128,0.45)]`}>
+          <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? 'ring-emerald-400 shadow-[0_0_26px_rgba(0,255,136,0.55)]' : 'ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]'}`}>
             <img src={avatar || avatarFor(player.name)} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
-          <span className="absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border border-zinc-700 text-[10px] font-black text-white flex items-center justify-center">{player.hand.length}</span>
+          <span className={`absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border text-[10px] font-black text-white flex items-center justify-center ${pulsing ? 'border-cyan-300 animate-[truno-pop_0.45s_ease-out]' : 'border-zinc-700'}`}>{player.hand.length}</span>
           <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-black ${active ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
         </div>
         <span className="mt-1 text-[11px] font-bold text-white">{isYou ? 'You' : player.name}</span>
-        <span className="text-[10px] text-amber-400 flex items-center gap-0.5">{player.isBot ? 'BOT' : 'PLAYER'}</span>
+        <span className={`text-[10px] flex items-center gap-0.5 ${thinking ? 'text-cyan-300' : 'text-amber-400'}`}>{thinking ? 'THINKING' : player.isBot ? 'BOT' : 'PLAYER'}</span>
       </div>
     </div>
   );
@@ -377,6 +601,61 @@ function mostCommonColor(hand: TrunoGameState['players'][number]['hand']): Truno
   const ranked = colors.map((color) => ({ color, n: hand.filter((card) => card.color === color).length }));
   ranked.sort((a, b) => b.n - a.n);
   return ranked[0]?.color ?? 'red';
+}
+
+function randomBetween(min: number, max: number) {
+  return Math.floor(min + Math.random() * (max - min + 1));
+}
+
+function effectFromEvent(event: TrunoMoveEvent): TableEffect {
+  if (!event.effect) return null;
+  if (event.effect === 'skip') return { id: `${Date.now()}:skip`, label: 'SKIP', tone: 'skip', targetPlayerId: event.targetPlayerId };
+  if (event.effect === 'reverse') return { id: `${Date.now()}:reverse`, label: 'REVERSE', tone: 'reverse' };
+  if (event.effect === 'draw_two') return { id: `${Date.now()}:draw2`, label: '+2', tone: 'draw', targetPlayerId: event.targetPlayerId };
+  if (event.effect === 'wild_draw_four') return { id: `${Date.now()}:draw4`, label: '+4', tone: 'wild', targetPlayerId: event.targetPlayerId };
+  if (event.effect === 'wild') return { id: `${Date.now()}:wild`, label: `${event.color?.toUpperCase() ?? 'WILD'}`, tone: 'wild' };
+  if (event.effect === 'win') return { id: `${Date.now()}:win`, label: 'TRUNO', tone: 'win' };
+  return null;
+}
+
+function effectClass(tone: NonNullable<TableEffect>['tone']) {
+  if (tone === 'skip') return 'border-pink-400/60 bg-pink-500/20 text-pink-200 shadow-[0_0_28px_rgba(236,72,153,0.4)]';
+  if (tone === 'reverse') return 'border-cyan-400/60 bg-cyan-500/20 text-cyan-200 shadow-[0_0_28px_rgba(34,211,238,0.4)]';
+  if (tone === 'draw') return 'border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_28px_rgba(168,85,247,0.4)]';
+  if (tone === 'wild') return 'border-amber-400/60 bg-amber-500/20 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.35)]';
+  return 'border-emerald-400/60 bg-emerald-500/20 text-emerald-100 shadow-[0_0_28px_rgba(52,211,153,0.4)]';
+}
+
+function logClass(tone: ActionLogItem['tone']) {
+  if (tone === 'effect') return 'border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-100';
+  if (tone === 'draw') return 'border-purple-500/25 bg-purple-500/10 text-purple-100';
+  if (tone === 'play') return 'border-cyan-500/25 bg-cyan-500/10 text-cyan-100';
+  return 'border-zinc-800 bg-zinc-900/50 text-zinc-300';
+}
+
+function seatPosition(relativeIndex: number, playerCount: number) {
+  const two = [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'top-0 left-1/2 -translate-x-1/2',
+  ];
+  const three = [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'top-1/2 left-0 -translate-y-1/2',
+    'top-1/2 right-0 -translate-y-1/2',
+  ];
+  const fourPlus = [
+    'bottom-0 left-1/2 -translate-x-1/2',
+    'top-1/2 left-0 -translate-y-1/2',
+    'top-0 left-1/2 -translate-x-1/2',
+    'top-1/2 right-0 -translate-y-1/2',
+    'top-5 left-16',
+    'top-5 right-16',
+    'bottom-12 left-4',
+    'bottom-12 right-4',
+  ];
+  if (playerCount <= 2) return two[relativeIndex] ?? two[0];
+  if (playerCount === 3) return three[relativeIndex] ?? three[0];
+  return fourPlus[relativeIndex] ?? fourPlus[0];
 }
 
 export default MatchScreen;

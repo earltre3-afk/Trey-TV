@@ -11,6 +11,7 @@ import {
   RoomRow,
   startGameSession,
   leaveRoom,
+  heartbeat,
 } from '@/features/games/lib/services/roomService';
 import { FriendInviteCenter } from '@/features/games/components/lounge/FriendInviteCenter';
 import { supabase } from '@/lib/supabase';
@@ -62,6 +63,15 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     return () => { cancelled = true; clearInterval(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, suppressActiveSession]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    heartbeat(roomId, identity.userId).catch(() => {});
+    const timer = setInterval(() => {
+      heartbeat(roomId, identity.userId).catch(() => {});
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [identity.userId, roomId]);
 
   const seats = room?.max_players ?? 4;
   const filledSeats = useMemo(() => (
