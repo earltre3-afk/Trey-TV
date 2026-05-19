@@ -12,13 +12,14 @@ import { RoomLobby } from './components/lounge/RoomLobby';
 import { QueueScreen } from './components/lounge/QueueScreen';
 import { FriendInviteCenter } from './components/lounge/FriendInviteCenter';
 import { GameRequestsInbox } from './components/lounge/GameRequestsInbox';
+import TrunoMatchScreen from '@/features/truno/screens/MatchScreen';
 import { getOrCreateIdentity, identityFromTreyUser, setDisplayName, PlayerIdentity, TreyGameUserInput } from './lib/services/identity';
 import {
   createRoom, joinRoomByCode, GameType, getActiveSession, findRoomByCode,
 } from './lib/services/roomService';
 import { GameRequest } from './lib/services/socialService';
 
-export type GameView = 'home' | 'lobby' | 'spades' | 'blackjack' | 'bullshit' | 'admin' | 'queue' | 'friends' | 'inbox';
+export type GameView = 'home' | 'lobby' | 'spades' | 'blackjack' | 'bullshit' | 'truno' | 'admin' | 'queue' | 'friends' | 'inbox';
 
 interface RoomCtx { roomId: string; gameType: GameType; }
 
@@ -110,6 +111,18 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
       : { onBack: handleBackToHome, onLegend: () => setLegendOpen(true) };
     if (game === 'spades') return <SpadesTable {...commonProps} />;
     if (game === 'blackjack') return <BlackjackTable {...commonProps} />;
+    if (game === 'truno') {
+      return (
+        <TrunoMatchScreen
+          identity={identity}
+          roomId={room?.roomId}
+          onNavigate={(next) => {
+            if (next === 'room' && room) setView('lobby');
+            else handleBackToHome();
+          }}
+        />
+      );
+    }
     return <BullshitTable {...commonProps} />;
   };
 
@@ -196,6 +209,7 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
       {view === 'spades' && renderGameTable('spades')}
       {view === 'blackjack' && renderGameTable('blackjack')}
       {view === 'bullshit' && renderGameTable('bullshit')}
+      {view === 'truno' && renderGameTable('truno')}
       {view === 'admin' && <AdminPanel onBack={handleBackToHome} />}
 
       <SuitLegendModal open={legendOpen} onClose={() => setLegendOpen(false)} />

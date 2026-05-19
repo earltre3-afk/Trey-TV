@@ -37,6 +37,7 @@ export const MIN_TO_START: Record<GameType, number> = {
   spades: 4,
   blackjack: 1,
   bullshit: 3,
+  truno: 2,
 };
 
 export interface QueueSnapshot {
@@ -138,7 +139,7 @@ export async function getQueueSnapshot(userId: string, gameType: GameType): Prom
 }
 
 export async function getQueueCounts(): Promise<Record<GameType, number>> {
-  const counts: Record<GameType, number> = { spades: 0, blackjack: 0, bullshit: 0 };
+  const counts: Record<GameType, number> = { spades: 0, blackjack: 0, bullshit: 0, truno: 0 };
   try {
     const { data, error } = await supabase
       .from('game_queue_entries')

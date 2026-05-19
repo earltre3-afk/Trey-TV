@@ -4,8 +4,9 @@ import { generateRoomCode, PlayerIdentity } from './identity';
 import { newSpadesGame } from '@/features/games/lib/spades/spadesEngine';
 import { newBlackjackGame } from '@/features/games/lib/blackjack/blackjackEngine';
 import { newBullshitGame } from '@/features/games/lib/bullshit/bullshitEngine';
+import { createTrunoGame } from '@/features/truno/lib/trunoEngine';
 
-export type GameType = 'spades' | 'blackjack' | 'bullshit';
+export type GameType = 'spades' | 'blackjack' | 'bullshit' | 'truno';
 
 const BOT_NAMES = ['Aaliyah','Marcus','Jamal','Zion','Nova','Drei','Lyric','Sage'];
 
@@ -13,6 +14,7 @@ export const MAX_PLAYERS_BY_GAME: Record<GameType, number> = {
   spades: 4,
   blackjack: 1,
   bullshit: 4,
+  truno: 4,
 };
 
 export interface RoomRow {
@@ -249,10 +251,22 @@ export async function startGameSession(roomId: string, gameType: GameType): Prom
   } else if (gameType === 'blackjack') {
     state = newBlackjackGame(2500);
     phase = state.phase; currentSeat = 0;
-  } else {
+  } else if (gameType === 'bullshit') {
     const padded = seatNames.length >= 2 ? seatNames : [...seatNames, 'Bot 1', 'Bot 2'];
     const s = newBullshitGame(padded);
     state = s; phase = s.phase; currentSeat = s.currentSeat;
+  } else {
+    const orderedPlayers = (players || []).map((p: any) => ({
+      id: p.user_id,
+      name: p.display_name,
+      isBot: !!p.is_bot,
+    }));
+    while (orderedPlayers.length < 2) {
+      const seat = orderedPlayers.length;
+      orderedPlayers.push({ id: `bot-${roomId.slice(0, 6)}-${seat}`, name: `Bot ${seat + 1}`, isBot: true });
+    }
+    const s = createTrunoGame(orderedPlayers);
+    state = s; phase = s.phase; currentSeat = s.currentPlayerIndex; round = s.turn;
   }
 
   // close any prior active session
