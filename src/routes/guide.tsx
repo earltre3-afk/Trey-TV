@@ -218,8 +218,103 @@ function GuidePage() {
         </div>
       </Section>
 
+      {/* All Live Channels (Pluto) — local-dev only via PLUTO_ENABLED. */}
+      <AllLiveChannelsSection />
+
       {openSlot && <SlotSheet slot={openSlot} open onClose={() => setOpenSlot(null)} />}
     </AppShell>
+  );
+}
+
+// ── Pluto: All Live Channels ───────────────────────────────────────────────
+type PlutoChannelLite = {
+  id: string;
+  name: string;
+  slug: string | null;
+  number: number | null;
+  logo: string | null;
+  summary: string | null;
+};
+
+function AllLiveChannelsSection() {
+  const [channels, setChannels] = useState<PlutoChannelLite[]>([]);
+  const [count, setCount] = useState<number>(0);
+  const [errored, setErrored] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/pluto/channels?limit=1000");
+        if (!res.ok) { if (!cancelled) setErrored(true); return; }
+        const data = (await res.json()) as { count: number; channels: PlutoChannelLite[] };
+        if (cancelled) return;
+        setChannels(data.channels);
+        setCount(data.count);
+      } catch {
+        if (!cancelled) setErrored(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="mb-8">
+        <h2 className="text-base sm:text-lg font-bold mb-3">All Live Channels</h2>
+        <div className="text-xs text-white/40">Loading channels…</div>
+      </section>
+    );
+  }
+  if (errored || channels.length === 0) {
+    return null;
+  }
+
+  const visible = showAll ? channels : channels.slice(0, 60);
+
+  return (
+    <section className="mb-8">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-base sm:text-lg font-bold inline-flex items-center gap-2">
+          <Tv className="size-4 text-primary" /> All Live Channels
+          <span className="text-[10px] tracking-widest text-white/40 font-normal">· {count} channels</span>
+        </h2>
+        {channels.length > 60 && (
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            className="text-xs text-primary hover:underline"
+          >
+            {showAll ? "Show less" : `Show all (${count})`}
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+        {visible.map((c) => (
+          <Link
+            key={c.id}
+            to="/live/$id"
+            params={{ id: c.id }}
+            className="group rounded-lg border border-white/10 bg-black/30 p-2 hover:bg-white/5 hover:border-white/20 transition flex flex-col items-center gap-1.5"
+          >
+            <div className="aspect-square w-full rounded bg-black/40 grid place-items-center overflow-hidden">
+              {c.logo ? (
+                <img src={c.logo} alt="" className="size-full object-contain p-1 transition-transform group-hover:scale-105" loading="lazy" />
+              ) : (
+                <Tv className="size-5 text-white/30" />
+              )}
+            </div>
+            <div className="min-w-0 w-full text-center">
+              <div className="text-[10px] font-semibold truncate">{c.name}</div>
+              {c.number ? <div className="text-[9px] text-white/40">Ch. {c.number}</div> : null}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

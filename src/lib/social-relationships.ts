@@ -458,3 +458,43 @@ export async function searchUsersForTopThree(query: string, limit: number = 20):
     return [];
   }
 }
+
+export async function getMutualFollows(): Promise<any[]> {
+  try {
+    const supabase = createBrowserClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    // Query follows where follower_id is current user
+    const { data: followingData } = await supabase
+      .from("follows")
+      .select("following_id")
+      .eq("follower_id", user.id);
+
+    if (!followingData || followingData.length === 0) return [];
+    const followingIds = followingData.map((f: any) => f.following_id);
+
+    // Query follows where follower_id is in followingIds AND following_id is current user
+    const { data: mutualData } = await supabase
+      .from("follows")
+      .select(`
+        follower_id,
+        follower_profile:profiles!follows_follower_id_fkey (
+          id,
+          public_profile_uid,
+          username,
+          display_name,
+          avatar_url,
+          verification_type
+        )
+      `)
+      .eq("following_id", user.id)
+      .in("follower_id", followingIds);
+
+    if (!mutualData) return [];
+    return mutualData.map((m: any) => m.follower_profile).filter(Boolean);
+  } catch (error) {
+    console.error("Error fetching mutual follows:", error);
+    return [];
+  }
+}

@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
-import { Volume2, VolumeX, Play, RotateCcw, Loader2, CircleStop } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Volume2, VolumeX, Play, RotateCcw, Loader2 } from 'lucide-react';
 import {
   VOICE_PROFILES,
   VoiceCharacterId,
@@ -103,11 +103,6 @@ export const VoicePlayer: React.FC<Props> = ({
     action();
   };
 
-  const skip = () => {
-    stopVoice();
-    setLoading(false);
-  };
-
   if (compact) {
     return (
       <div className="flex items-center gap-2">
@@ -126,14 +121,6 @@ export const VoicePlayer: React.FC<Props> = ({
           className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/15"
         >
           {settings.muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-        </button>
-        <button
-          type="button"
-          onClick={(event) => handleButton(event, skip)}
-          aria-label="Skip voice"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/15"
-        >
-          <CircleStop className="h-3.5 w-3.5" />
         </button>
       </div>
     );
@@ -174,19 +161,10 @@ export const VoicePlayer: React.FC<Props> = ({
       >
         {settings.muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
       </button>
-      <button
-        type="button"
-        onClick={(event) => handleButton(event, skip)}
-        aria-label="Skip voice"
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 hover:bg-white/15"
-      >
-        <CircleStop className="h-4 w-4" />
-      </button>
     </div>
   );
 };
 
-/** Toolbar to toggle autoplay + mute globally. */
 export const VoiceSettingsToolbar: React.FC = () => {
   const [settings, setSettings] = useState(loadVoiceSettings());
 
@@ -199,8 +177,8 @@ export const VoiceSettingsToolbar: React.FC = () => {
     return () => window.removeEventListener(VOICE_SETTINGS_EVENT, syncSettings);
   }, []);
 
-  const update = (patch: Partial<typeof settings>) => {
-    const next = { ...settings, ...patch };
+  const toggleMute = () => {
+    const next = { ...settings, muted: !settings.muted };
     setSettings(next);
     saveVoiceSettings(next);
     if (next.muted) stopVoice();
@@ -213,46 +191,17 @@ export const VoiceSettingsToolbar: React.FC = () => {
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
-          update({ autoplay: !settings.autoplay });
+          toggleMute();
         }}
-        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
-          settings.autoplay
-            ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/40'
-            : 'border border-white/15 bg-white/5 text-white/70'
-        }`}
-      >
-        Autoplay {settings.autoplay ? 'On' : 'Off'}
-      </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          update({ muted: !settings.muted });
-        }}
-        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors ${
+        className={`flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors border ${
           settings.muted
-            ? 'bg-red-600/80 text-white'
-            : 'border border-white/15 bg-white/5 text-white/70'
+            ? 'border-red-500/30 bg-red-500/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+            : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.15)]'
         }`}
       >
-        {settings.muted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-        {settings.muted ? 'Voices Off' : 'Voices On'}
+        {settings.muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+        {settings.muted ? 'Muted' : 'Listening'}
       </button>
-      <label className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/70 sm:flex">
-        <span>Volume</span>
-        <input
-          type="range"
-          aria-label="Voice volume"
-          min={0}
-          max={1}
-          step={0.05}
-          value={settings.volume}
-          onClick={(event) => event.stopPropagation()}
-          onChange={(event) => update({ volume: Number(event.currentTarget.value) })}
-          className="h-1 w-20 accent-violet-400"
-        />
-      </label>
     </div>
   );
 };

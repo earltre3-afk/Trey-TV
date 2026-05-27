@@ -52,8 +52,9 @@ import { useNotifications } from "@/lib/notifications-store";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
-import { useFwdConnectionStatus } from "@/lib/fwd-gif-api";
-import type { FwdGifPayload } from "@/lib/fwd/picker";
+import { buildFwdGifDetailUrl, type FwdGifPayload } from "@/lib/fwd/picker";
+import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
+import { getMutualFollows } from "@/lib/social-relationships";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -112,7 +113,38 @@ function isCollabText(text = "") {
 function Inbox() {
   const { to } = Route.useSearch();
   const { user } = useAuth();
+  const markUsed = useMarkFwdGifUsed();
   const { unreadCount } = useNotifications();
+
+  const [mutualFollows, setMutualFollows] = useState<any[]>([]);
+  const [loadingMutuals, setLoadingMutuals] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchMutuals = async () => {
+      setLoadingMutuals(true);
+      try {
+        const dbMutuals = await getMutualFollows();
+        if (cancelled) return;
+        setMutualFollows(dbMutuals);
+      } catch (err) {
+        console.error("Error loading mutuals inside inbox:", err);
+      } finally {
+        if (!cancelled) setLoadingMutuals(false);
+      }
+    };
+    if (user) {
+      fetchMutuals();
+    }
+  }, [user]);
+
+  const isMutual = useCallback((peer: any) => {
+    if (!peer) return false;
+    if (peer.handle === "chrishorizon" || peer.handle === "treyipicks") return true;
+    if (peer.id === "chris" || peer.id === "treyi") return true;
+    return mutualFollows.some((m) => m.username === peer.handle || m.id === peer.id);
+  }, [mutualFollows]);
+
   const {
     threads,
     messagesOf,
@@ -145,7 +177,6 @@ function Inbox() {
   const [showFwdPicker, setShowFwdPicker] = useState(false);
   const [gifAttachment, setGifAttachment] = useState<FwdGifPayload | null>(null);
 
-  const { data: fwdStatus } = useFwdConnectionStatus();
   const [ghostDraft, setGhostDraft] = useState("");
   const [matchedGroups, setMatchedGroups] = useState<any[]>([]);
   const [openGroup, setOpenGroup] = useState<any | null>(null);
@@ -319,11 +350,36 @@ function Inbox() {
     await loadGroupMessages(group);
   };
 
-  const threadStats = useMemo(() => {
-    const priority = threads.filter((t) => t.pinned || unreadOf(t.id) > 1).length;
-    const collabs = threads.filter((t) => isCollabText(messagesOf(t.id).at(-1)?.text)).length;
-    return { priority, collabs, requests: requests.length, online: threads.filter((t) => t.peer.online).length };
-  }, [threads, messagesOf, unreadOf]);
+  const stats = useMemo(() => {
+    let priorityCount = 0;
+    let collabsCount = 0;
+    let aiCount = 0;
+
+    threads.forEach((t) => {
+      const msgs = messagesOf(t.id);
+      const last = msgs.at(-1);
+      const unread = unreadOf(t.id);
+      const isMut = isMutual(t.peer);
+
+      if (isMut) {
+        if (t.pinned || unread > 1) priorityCount++;
+        if (isCollabText(last?.text)) collabsCount++;
+        if (unread > 0 || isCollabText(last?.text)) aiCount++;
+      }
+    });
+
+    const onlineMutuals = threads.filter((t) => t.peer.online && isMutual(t.peer)).length;
+    const nonMutualThreads = threads.filter((t) => !isMutual(t.peer));
+
+    return {
+      online: onlineMutuals,
+      collabs: collabsCount,
+      priority: priorityCount,
+      requests: nonMutualThreads.length,
+      totalMutualUnread: threads.reduce((acc, t) => isMutual(t.peer) ? acc + unreadOf(t.id) : acc, 0),
+      totalNonMutualUnread: threads.reduce((acc, t) => !isMutual(t.peer) ? acc + unreadOf(t.id) : acc, 0),
+    };
+  }, [threads, messagesOf, unreadOf, isMutual]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -333,10 +389,14 @@ function Inbox() {
       const haystack = [t.peer.name, t.peer.handle, last?.text ?? ""].join(" ").toLowerCase();
       if (q && !haystack.includes(q)) return false;
       if (focusMode && unreadOf(t.id) === 0 && !t.pinned) return false;
-      if (tab === "priority") return t.pinned || unreadOf(t.id) > 1;
-      if (tab === "collabs") return isCollabText(last?.text);
-      if (tab === "ai") return unreadOf(t.id) > 0 || isCollabText(last?.text);
-      return tab === "all";
+      
+      const isMut = isMutual(t.peer);
+      if (tab === "all") return isMut;
+      if (tab === "requests") return !isMut;
+      if (tab === "priority") return isMut && (t.pinned || unreadOf(t.id) > 1);
+      if (tab === "collabs") return isMut && isCollabText(last?.text);
+      if (tab === "ai") return isMut && (unreadOf(t.id) > 0 || isCollabText(last?.text));
+      return false;
     });
 
     return [...base].sort((a, b) => {
@@ -347,7 +407,7 @@ function Inbox() {
         (pinned ? 5000 : 0) + unreadOf(id) * 1000 + (online ? 75 : 0) + (messagesOf(id).at(-1)?.ts ?? 0) / 100000000;
       return score(b.id, b.pinned, b.peer.online) - score(a.id, a.pinned, a.peer.online);
     });
-  }, [threads, query, tab, focusMode, smartSort, messagesOf, unreadOf]);
+  }, [threads, query, tab, focusMode, smartSort, messagesOf, unreadOf, isMutual]);
 
   const open = threads.find((t) => t.id === openId) ?? null;
   const thread = openId ? messagesOf(openId) : [];
@@ -373,6 +433,7 @@ function Inbox() {
     }
     if (gifAttachment) {
       void sendFwdGif(openId, gifAttachment, draft.trim() || undefined);
+      markUsed.mutate({ id: gifAttachment.gif_id, gif_url: gifAttachment.url });
       setGifAttachment(null);
     } else {
       sendMessage(openId, draft);
@@ -384,13 +445,8 @@ function Inbox() {
 
   const handleOpenFwd = useCallback(() => {
     if (!user) { toast.error("Please sign in to use FWD GIFs"); return; }
-    if (fwdStatus && !fwdStatus.connected) {
-      const returnTo = typeof window !== "undefined" ? encodeURIComponent(window.location.href) : "";
-      window.open(`https://fwd.treytv.com/signup?returnTo=${returnTo}`, "_blank", "noopener,noreferrer");
-      return;
-    }
     setShowFwdPicker(true);
-  }, [user, fwdStatus]);
+  }, [user]);
 
   const stopAndSendVoice = useCallback(() => {
     const mr = mediaRecorderRef.current;
@@ -513,8 +569,8 @@ function Inbox() {
     <AppShell wide>
       <div className="mx-auto flex max-w-[1480px] flex-col gap-4 px-3 sm:px-0">
         <InboxTopRail
-          unread={totalUnread + unreadCount}
-          online={threadStats.online}
+          unread={stats.totalMutualUnread + unreadCount}
+          online={stats.online}
           profileUid={profileUid}
           profileAvatar={profileAvatar}
           onSearch={() => document.getElementById("inbox-command-search")?.focus()}
@@ -525,9 +581,9 @@ function Inbox() {
             <div className="pointer-events-none absolute -left-20 top-20 opacity-[0.12] mix-blend-screen"><div className="chat-orb-1" /></div>
             <div className="pointer-events-none absolute -right-20 top-80 opacity-[0.12] mix-blend-screen"><div className="chat-orb-2" /></div>
             <div className="relative z-10 border-b border-white/10 p-4 sm:p-5">
-              <InboxHero totalUnread={totalUnread} stats={threadStats} onCompose={() => setNewOpen(true)} />
+              <InboxHero totalUnread={stats.totalMutualUnread} stats={stats} onCompose={() => setNewOpen(true)} />
               <SearchCommand value={query} onChange={setQuery} onAi={() => setTab("ai")} />
-              <FilterPills tab={tab} onTab={setTab} totalUnread={totalUnread} stats={threadStats} />
+              <FilterPills tab={tab} onTab={setTab} stats={stats} />
             </div>
 
             {tab !== "activity" && tab !== "requests" && (
@@ -548,7 +604,7 @@ function Inbox() {
               {matchedGroups.length > 0 && tab === "all" && (
                 <MatchedGroupsList groups={matchedGroups} onOpen={openMatchedGroup} onLeave={leaveMatchedGroup} />
               )}
-              {(tab === "all" || tab === "priority" || tab === "collabs" || tab === "ai") && (
+              {(tab === "all" || tab === "priority" || tab === "collabs" || tab === "ai" || tab === "requests") && (
                 <ul className="space-y-2">
                   {filtered.map((t, i) => (
                     <ThreadCard
@@ -566,7 +622,6 @@ function Inbox() {
                 </ul>
               )}
 
-              {tab === "requests" && <RequestsList onOpen={(handle) => { const id = ensureFromHandle(handle); if (id) { setOpenGroup(null); setOpenId(id); } }} />}
               {tab === "activity" && <ActivityList />}
             </div>
 
@@ -724,7 +779,7 @@ function InboxTopRail({ unread, online, profileUid, profileAvatar, onSearch }: {
 function InboxHero({ totalUnread, stats, onCompose }: { totalUnread: number; stats: { requests: number; priority: number; collabs: number }; onCompose: () => void }) {
   const counters = [
     { label: "Unread", value: totalUnread },
-    { label: "Requests", value: stats.requests },
+    { label: "Unknown", value: stats.requests },
     { label: "Priority", value: stats.priority },
   ];
   return (
@@ -779,13 +834,13 @@ function SearchCommand({ value, onChange, onAi }: { value: string; onChange: (v:
   );
 }
 
-function FilterPills({ tab, onTab, totalUnread, stats }: { tab: Tab; onTab: (tab: Tab) => void; totalUnread: number; stats: { requests: number; priority: number; collabs: number } }) {
+function FilterPills({ tab, onTab, stats }: { tab: Tab; onTab: (tab: Tab) => void; stats: { requests: number; priority: number; collabs: number; totalMutualUnread: number; totalNonMutualUnread: number } }) {
   const tabs: { id: Tab; label: string; count?: number; disabled?: boolean }[] = [
     { id: "ai", label: "AI Match" },
-    { id: "all", label: "Online", count: totalUnread },
+    { id: "all", label: "Online", count: stats.totalMutualUnread },
     { id: "collabs", label: "Collab Ready", count: stats.collabs },
     { id: "priority", label: "Same Vibes", count: stats.priority },
-    { id: "requests", label: "Verified", count: stats.requests },
+    { id: "requests", label: "Unknown", count: stats.requests },
     { id: "activity", label: "Activity", count: activity.length },
   ];
   return (
@@ -976,6 +1031,38 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
   const hasVoice = !!message.voiceUrl;
   const timeLeft = isGhost ? Math.max(0, Math.ceil((message.ghostExpiresAt - Date.now()) / 1000)) : 0;
 
+  const isShare = message.text?.startsWith("[TTV_SHARE:");
+  const shareData = useMemo(() => {
+    if (!isShare || !message.text) return null;
+    try {
+      const content = message.text.slice(11, -1); // remove [TTV_SHARE: and ]
+      const parts = content.split(":");
+      
+      // If it contains % (e.g. URI encoded), parse using the new robust way:
+      if (content.includes("%")) {
+        if (parts.length >= 4) {
+          const type = decodeURIComponent(parts[0]);
+          const postId = decodeURIComponent(parts[1]);
+          const text = decodeURIComponent(parts[2]);
+          const media = decodeURIComponent(parts[3] || "");
+          return { type, postId, text, media: media || null };
+        }
+      }
+      
+      // Fallback for old format:
+      if (parts.length >= 4) {
+        const type = parts[0];
+        const postId = parts[1];
+        const media = parts[parts.length - 1];
+        const text = parts.slice(2, parts.length - 1).join(":");
+        return { type, postId, text, media: media || null };
+      }
+    } catch (e) {
+      console.error("Failed to parse share message", e);
+    }
+    return null;
+  }, [message.text, isShare]);
+
   return (
     <div className={`relative flex items-end gap-2 ${mine ? "justify-end" : "justify-start"} animate-msg-pop group/msg`} style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}>
       {!mine && !prevSameSide && (
@@ -997,6 +1084,7 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
             gifUrl={message.mediaUrl!}
             posterUrl={message.gifPosterUrl}
             title={message.gifTitle}
+            fwdGifId={message.gifFwdId}
           />
         )}
         {hasMedia && !message.isGif && (
@@ -1012,9 +1100,36 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
           </div>
         )}
         {!isGhost && (!hasMedia || message.isGif) && !hasVoice && message.text?.trim() && (
-          <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${mine ? "msg-bubble-mine rounded-br-sm" : "msg-bubble-them rounded-bl-sm"}`}>
-            <span className="relative z-[1]">{message.text}</span>
-          </div>
+          isShare && shareData ? (
+            <Link
+              to="/watch/$id"
+              params={{ id: shareData.postId }}
+              className="block w-full max-w-[280px] rounded-2xl border border-white/10 bg-[#05070D]/90 p-3 hover:border-primary/45 hover:scale-[1.02] transition-all shadow-[0_10px_30px_rgba(0,0,0,0.5)] group/share text-left"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <div className="size-6 rounded-full conic-ring overflow-hidden flex items-center justify-center bg-primary/10">
+                  <span className="text-[9px] font-bold text-primary">TTV</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] font-semibold text-primary truncate">SHARED POST</div>
+                </div>
+              </div>
+              {shareData.media && (
+                <div className="relative rounded-xl overflow-hidden aspect-video border border-white/5 mb-2 bg-black/40">
+                  <img src={shareData.media} alt="" className="w-full h-full object-cover group-hover/share:scale-[1.05] transition-transform duration-500" />
+                </div>
+              )}
+              <p className="text-xs text-foreground/90 line-clamp-3 leading-relaxed whitespace-pre-wrap">{shareData.text}</p>
+              <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between text-[9px] text-muted-foreground">
+                <span>Tap to view post</span>
+                <span className="text-primary font-bold">Watch Now →</span>
+              </div>
+            </Link>
+          ) : (
+            <div className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed ${mine ? "msg-bubble-mine rounded-br-sm" : "msg-bubble-them rounded-bl-sm"}`}>
+              <span className="relative z-[1]">{message.text}</span>
+            </div>
+          )
         )}
         <div className={`absolute -top-8 ${mine ? "right-0" : "left-0"} opacity-0 transition-all duration-150 group-hover/msg:opacity-100 group-hover/msg:-translate-y-0.5`}>
           <div className="flex items-center gap-1 rounded-full border border-white/15 bg-[rgba(8,17,31,.92)] px-2 py-1.5 backdrop-blur-xl shadow-[0_4px_24px_-8px_oklch(0.7_0.25_340_/_0.4)]">
@@ -1049,27 +1164,24 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
   );
 }
 
-function GifMessageCard({ gifUrl, posterUrl, title }: { gifUrl: string; posterUrl?: string; title?: string }) {
-  const [playing, setPlaying] = useState(false);
+function GifMessageCard({ gifUrl, posterUrl, title, fwdGifId }: { gifUrl: string; posterUrl?: string; title?: string; fwdGifId?: string }) {
+  const detailUrl = buildFwdGifDetailUrl(fwdGifId);
   return (
-    <div
-      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] cursor-pointer"
+    <a
+      href={detailUrl}
+      target="_blank"
+      rel="noreferrer"
+      className="group relative block overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] cursor-pointer transition hover:border-primary/45"
       style={{ maxWidth: 240 }}
-      onMouseEnter={() => setPlaying(true)}
-      onMouseLeave={() => setPlaying(false)}
-      onClick={() => setPlaying((p) => !p)}
+      aria-label="Open FWD GIF"
     >
-      {posterUrl && !playing && (
-        <img src={posterUrl} alt={title ?? "GIF"} className="w-full object-cover" style={{ maxHeight: 200 }} />
-      )}
-      {(playing || !posterUrl) && (
-        <img src={gifUrl} alt={title ?? "GIF"} className="w-full object-cover" style={{ maxHeight: 200 }} />
-      )}
+      {posterUrl && <img src={posterUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm" />}
+      <img src={gifUrl} alt={title ?? "FWD GIF"} className="relative w-full object-cover" style={{ maxHeight: 200 }} />
       <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
         <span className="rounded-full border border-white/20 bg-black/40 px-1.5 py-0.5 text-[9px] font-black tracking-[0.2em] text-primary">FWD</span>
         {title && <span className="truncate text-[10px] text-white/70 ml-2">{title}</span>}
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -1166,10 +1278,13 @@ function Composer(props: {
       {props.gifAttachment && (
         <div className="mb-2 flex items-start gap-2 rounded-2xl border border-[oklch(0.78_0.18_150_/_0.4)] bg-[oklch(0.78_0.18_150_/_0.08)] p-2">
           <div className="relative shrink-0 overflow-hidden rounded-xl" style={{ width: 80, height: 60 }}>
+            {props.gifAttachment.preview_url && (
+              <img src={props.gifAttachment.preview_url} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-35 blur-sm" />
+            )}
             <img
-              src={props.gifAttachment.preview_url ?? props.gifAttachment.url}
-              alt={props.gifAttachment.title ?? "GIF"}
-              className="h-full w-full object-cover"
+              src={props.gifAttachment.url}
+              alt={props.gifAttachment.title ?? "FWD GIF"}
+              className="relative h-full w-full object-cover"
             />
             <span className="absolute bottom-0.5 left-0.5 rounded-full border border-white/20 bg-black/60 px-1 py-0.5 text-[8px] font-black tracking-[0.2em] text-primary">FWD</span>
           </div>

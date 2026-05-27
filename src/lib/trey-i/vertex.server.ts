@@ -12,7 +12,8 @@ export type VertexTask =
   | "bio"
   | "prescribe_reasoning"
   | "mood_suggestions"
-  | "admin_summary";
+  | "admin_summary"
+  | "moderate_chat";
 
 type VertexInput = {
   task: VertexTask;
@@ -25,7 +26,7 @@ export type VertexResult = { text: string } | { error: string };
 const VALID_TASKS: VertexTask[] = [
   "widget_chat", "caption", "title", "description", "hashtags",
   "hook", "promo_caption", "bio", "prescribe_reasoning",
-  "mood_suggestions", "admin_summary",
+  "mood_suggestions", "admin_summary", "moderate_chat",
 ];
 
 const SYSTEM_PROMPTS: Record<VertexTask, string> = {
@@ -77,6 +78,19 @@ const SYSTEM_PROMPTS: Record<VertexTask, string> = {
   admin_summary:
     "You are an admin assistant for Trey TV. Summarize the provided data clearly and concisely for a moderator. " +
     "Highlight key metrics, anomalies, or action items. Plain prose, no markdown headers.",
+
+  moderate_chat:
+    "You are Trey-I, a real-time chat moderator for Trey TV. Evaluate the user's message " +
+    "for safety. Reply with ONLY a JSON object on a single line, no markdown fences, no commentary:\n" +
+    "{ \"verdict\": \"clean\"|\"nudge\"|\"block\"|\"timeout\", \"severity\": \"none\"|\"low\"|\"medium\"|\"high\", \"reason\": \"short reason or empty\" }\n\n" +
+    "Rules:\n" +
+    "- clean: normal speech, banter, profanity directed at no one. Severity: none.\n" +
+    "- nudge: rude, heated, or borderline. Publish anyway with a private warning. Severity: low.\n" +
+    "- block: insults at a specific person, harassment, sexual content, spam links, doxxing, " +
+    "  self-harm encouragement, hate-speech. Severity: medium.\n" +
+    "- timeout: slurs, threats, illegal content, sexualized minors. Severity: high.\n\n" +
+    "Be conservative — when in doubt, prefer nudge over block. Trey TV embraces creator energy; " +
+    "do not censor harmless trash-talk.",
 };
 
 const MODEL_VERTEX = "gemini-2.5-flash";

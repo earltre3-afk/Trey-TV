@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Home, Compass, Inbox, Bookmark, Plus,
@@ -11,6 +11,10 @@ import { useAuth } from "@/lib/auth";
 import { useSubmissions, type Submission } from "@/lib/submissions-store";
 import { useGoBack } from "@/hooks/use-go-back";
 import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
+import { ChannelChatPanel } from "@/components/chat/ChannelChatPanel";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import { createWatchParty } from "@/lib/watch-party/party.server";
+import { Users } from "lucide-react";
 import { isTreyOwnerHandle } from "@/lib/trey-owner";
 import { toggleFollow as doToggleFollow, getSocialCounts, type SocialCounts } from "@/lib/social-relationships";
 import { createBrowserClient } from "@/lib/supabase-browser";
@@ -470,6 +474,31 @@ function ChannelPage() {
             </div>
           </section>
 
+          {/* ── LIVE NOW (Pluto live channel mapped from handle) ─────────── */}
+          {/* Local-dev only — disabled in prod via PLUTO_ENABLED flag. */}
+          <section className="px-5 md:px-10 lg:px-14 mt-4">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/50 text-red-400 text-[10px] tracking-widest font-bold">
+                <span className="size-1.5 rounded-full bg-red-400 animate-pulse" /> LIVE NOW
+              </span>
+              <span className="text-xs text-white/60">Live channel for @{handle}</span>
+              <StartWatchPartyButton channelId={`ch-${handle}`} className="ml-auto" />
+            </div>
+            <div className="grid gap-3 lg:grid-cols-[1fr_360px]">
+              <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black">
+                <iframe
+                  src={`/api/pluto/player?channel=${encodeURIComponent(handle)}`}
+                  title={`@${handle} live`}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  className="size-full border-0"
+                />
+              </div>
+              {/* Community chat (text only, AI-moderated by Trey-I) */}
+              <ChannelChatPanel handle={handle} className="h-auto lg:h-full min-h-[360px]" />
+            </div>
+          </section>
+
           {/* ── TABS ─────────────────────────────────────── */}
           <div className="px-5 md:px-10 lg:px-14 mt-2">
             <div className="channel-tabs">
@@ -890,5 +919,52 @@ function ChannelPage() {
 
       <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={handle} />
     </div>
+  );
+}
+
+// "Start watch party" CTA next to LIVE NOW header. Authed users only.
+function StartWatchPartyButton({ channelId, className }: { channelId: string; className?: string }) {
+  const { session } = useSupabaseSession();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+
+  if (!session?.access_token) {
+    return (
+      <Link
+        to="/login"
+        className={`text-xs px-3 py-1.5 rounded-full border border-white/15 hover:bg-white/5 inline-flex items-center gap-1.5 ${className ?? ""}`}
+      >
+        <Users className="size-3.5" />
+        Sign in to host a party
+      </Link>
+    );
+  }
+
+  const onClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await createWatchParty({ data: { accessToken: session.access_token, channelId } });
+      if (!res.ok) {
+        toast.error(`Couldn't create party: ${res.error}`);
+        return;
+      }
+      navigate({ to: "/watch-party/$id", params: { id: res.partyId } });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className={`text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground font-semibold hover:bg-primary/90 inline-flex items-center gap-1.5 disabled:opacity-50 ${className ?? ""}`}
+    >
+      <Users className="size-3.5" />
+      {busy ? "Starting…" : "Start watch party"}
+    </button>
   );
 }

@@ -3,6 +3,7 @@ import { TrunoCard } from './cards';
 export type TrunoMove =
   | { type: 'play'; playerId: string; cardId: string; wildColor?: TrunoCard['color'] }
   | { type: 'draw'; playerId: string }
+  | { type: 'keep'; playerId: string }
   | { type: 'call-truno'; playerId: string };
 
 export interface TrunoMoveEvent {
@@ -38,6 +39,7 @@ export interface TrunoGameState {
   turn: number;
   lastMoveId: string;
   trunoCalledBy: string | null;
+  pendingDrawPlayCardId?: string | null;
 }
 
 const COLORS: Exclude<TrunoCard['color'], 'black' | 'purple'>[] = ['red', 'blue', 'green', 'yellow'];
@@ -72,6 +74,7 @@ export function createTrunoGame(players: Array<{ id: string; name: string; isBot
     turn: 1,
     lastMoveId: 'start',
     trunoCalledBy: null,
+    pendingDrawPlayCardId: null,
   };
 }
 
@@ -98,23 +101,53 @@ export function applyPlayerMove(state: TrunoGameState, move: TrunoMove): TrunoGa
     return next;
   }
 
-  if (move.type === 'draw') {
-    drawCards(next, player, 1);
-    next.message = `${player.name} drew a card.`;
+  if (move.type === 'keep') {
+    next.pendingDrawPlayCardId = null;
+    next.message = `${player.name} kept the drawn card.`;
     advanceTurn(next);
-    stamp(next, `draw:${player.id}`);
+    stamp(next, `keep:${player.id}`);
+    return next;
+  }
+
+  if (move.type === 'draw') {
+    next.pendingDrawPlayCardId = null;
+    if (next.deck.length === 0) recycleDiscard(next);
+    const drawn = next.deck.shift();
+    if (drawn) {
+      player.hand.push(drawn);
+      const playable = isPlayableCard(drawn, next);
+      if (playable) {
+        next.pendingDrawPlayCardId = drawn.id;
+        next.message = `${player.name} drew a playable card: ${describeCard(drawn)}. Play or keep it?`;
+        stamp(next, `draw_pending:${player.id}:${drawn.id}`);
+      } else {
+        next.message = `${player.name} drew a card.`;
+        advanceTurn(next);
+        stamp(next, `draw:${player.id}`);
+      }
+    } else {
+      next.message = `${player.name} tried to draw but the deck was empty.`;
+      advanceTurn(next);
+      stamp(next, `draw:${player.id}`);
+    }
     return next;
   }
 
   const cardIndex = player.hand.findIndex((c) => c.id === move.cardId);
   if (cardIndex < 0) return { ...next, message: 'Card is no longer in your hand.' };
   const card = player.hand[cardIndex];
+
+  if (next.pendingDrawPlayCardId && next.pendingDrawPlayCardId !== card.id) {
+    return { ...next, message: 'You must play the drawn card or keep it.' };
+  }
+
   if (!isPlayableCard(card, next)) return { ...next, message: 'That card is not playable right now.' };
 
   player.hand.splice(cardIndex, 1);
   next.discardPile.push(card);
   next.currentColor = normalizeColor(card, move.wildColor);
   next.trunoCalledBy = null;
+  next.pendingDrawPlayCardId = null;
 
   if (player.hand.length === 0) {
     next.phase = 'ended';
@@ -145,10 +178,23 @@ export function applyBotMove(state: TrunoGameState): { state: TrunoGameState; ev
   if (state.phase !== 'playing') return null;
   const bot = currentPlayer(state);
   if (!bot?.isBot) return null;
-  const playable = bot.hand.find((card) => isPlayableCard(card, state));
-  const move: TrunoMove = playable
-    ? { type: 'play', playerId: bot.id, cardId: playable.id, wildColor: chooseBotColor(bot) }
-    : { type: 'draw', playerId: bot.id };
+
+  let move: TrunoMove;
+  if (state.pendingDrawPlayCardId) {
+    const cardId = state.pendingDrawPlayCardId;
+    const card = bot.hand.find((c) => c.id === cardId);
+    if (card && isPlayableCard(card, state)) {
+      move = { type: 'play', playerId: bot.id, cardId, wildColor: chooseBotColor(bot) };
+    } else {
+      move = { type: 'keep', playerId: bot.id };
+    }
+  } else {
+    const playable = bot.hand.find((card) => isPlayableCard(card, state));
+    move = playable
+      ? { type: 'play', playerId: bot.id, cardId: playable.id, wildColor: chooseBotColor(bot) }
+      : { type: 'draw', playerId: bot.id };
+  }
+
   const next = applyPlayerMove(state, move);
   return { state: next, event: describeMoveEvent(state, move, next) };
 }
@@ -162,10 +208,20 @@ export function describeMoveEvent(before: TrunoGameState, move: TrunoMove, after
     playerName,
   };
 
-  if (move.type === 'draw') {
+  if (move.type === 'keep') {
     return {
       ...base,
-      message: `${playerName} drew a card.`,
+      message: `${playerName} kept the drawn card.`,
+    };
+  }
+
+  if (move.type === 'draw') {
+    const msg = after.pendingDrawPlayCardId
+      ? `${playerName} drew a playable card and is deciding...`
+      : `${playerName} drew a card.`;
+    return {
+      ...base,
+      message: msg,
     };
   }
 

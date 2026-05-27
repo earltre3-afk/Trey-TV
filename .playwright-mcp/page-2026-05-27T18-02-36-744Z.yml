@@ -1,0 +1,248 @@
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - region "Notifications alt+T"
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - img "Trey TV" [ref=e7]
+        - navigation [ref=e8]:
+          - button "Watch Now" [ref=e9] [cursor=pointer]
+          - button "Guide" [ref=e10] [cursor=pointer]
+          - button "Games" [ref=e11] [cursor=pointer]
+          - button "My Profile" [ref=e12] [cursor=pointer]
+          - button "Settings" [ref=e13] [cursor=pointer]
+        - button "Trey Trizzy PREMIUM" [ref=e14] [cursor=pointer]:
+          - generic [ref=e15]:
+            - generic [ref=e16]:
+              - generic [ref=e17]: Trey Trizzy
+              - img [ref=e18]
+            - generic [ref=e20]: PREMIUM
+          - img
+      - generic [ref=e22]:
+        - complementary [ref=e23]:
+          - navigation [ref=e24]:
+            - button "Home" [ref=e25] [cursor=pointer]:
+              - img [ref=e26]
+              - generic [ref=e29]: Home
+            - button "Live TV" [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+              - generic [ref=e37]: Live TV
+            - button "Games" [ref=e38] [cursor=pointer]:
+              - img [ref=e39]
+              - generic [ref=e41]: Games
+            - button "Browse" [ref=e42] [cursor=pointer]:
+              - img [ref=e43]
+              - generic [ref=e48]: Browse
+            - button "Music" [ref=e49] [cursor=pointer]:
+              - img [ref=e50]
+              - generic [ref=e53]: Music
+            - button "My List" [ref=e54] [cursor=pointer]:
+              - img [ref=e55]
+              - generic [ref=e57]: My List
+            - button "Search" [ref=e58] [cursor=pointer]:
+              - img [ref=e59]
+              - generic [ref=e62]: Search
+            - button "PREMIUM" [ref=e63] [cursor=pointer]:
+              - img [ref=e64]
+              - generic [ref=e66]: PREMIUM
+        - main [ref=e67]:
+          - generic [ref=e68]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: Trey TV Original
+              - 'heading "Kingmaker: The Change" [level=1] [ref=e74]'
+              - paragraph [ref=e75]: A cinematic story of power, pressure, and legacy. Every move changes the crown.
+              - generic [ref=e76]:
+                - button "Watch Now" [active] [ref=e77] [cursor=pointer]:
+                  - img [ref=e78]
+                  - generic [ref=e80]: Watch Now
+                - button "My List" [ref=e81] [cursor=pointer]:
+                  - img [ref=e82]
+                  - generic [ref=e83]: My List
+            - generic [ref=e84]: 4K ULTRA HD
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - heading "Featured" [level=2] [ref=e94]
+              - button "View All ›" [ref=e95] [cursor=pointer]
+            - generic [ref=e96]:
+              - button "NEW Life of a Creator Documentary Series" [ref=e97] [cursor=pointer]:
+                - generic [ref=e98]:
+                  - generic [ref=e101]: NEW
+                  - generic [ref=e102]:
+                    - generic [ref=e103]: Life of a Creator
+                    - generic [ref=e104]: Documentary Series
+              - button "EPIC Trizzy Takeover Epic Series" [ref=e105] [cursor=pointer]:
+                - generic [ref=e106]:
+                  - generic [ref=e109]: EPIC
+                  - generic [ref=e110]:
+                    - generic [ref=e111]: Trizzy Takeover
+                    - generic [ref=e112]: Epic Series
+              - button "NEW EPISODES After Hours Late Night" [ref=e113] [cursor=pointer]:
+                - generic [ref=e114]:
+                  - generic [ref=e117]: NEW EPISODES
+                  - generic [ref=e118]:
+                    - generic [ref=e119]: After Hours
+                    - generic [ref=e120]: Late Night
+              - button "On The Road Docuseries" [ref=e121] [cursor=pointer]:
+                - generic [ref=e125]:
+                  - generic [ref=e126]: On The Road
+                  - generic [ref=e127]: Docuseries
+              - button "NEW The World Reality" [ref=e128] [cursor=pointer]:
+                - generic [ref=e129]:
+                  - generic [ref=e132]: NEW
+                  - generic [ref=e133]:
+                    - generic [ref=e134]: The World
+                    - generic [ref=e135]: Reality
+              - button "EXCLUSIVE Unfiltered Exclusive" [ref=e136] [cursor=pointer]:
+                - generic [ref=e137]:
+                  - generic [ref=e140]: EXCLUSIVE
+                  - generic [ref=e141]:
+                    - generic [ref=e142]: Unfiltered
+                    - generic [ref=e143]: Exclusive
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - heading "Continue Watching" [level=2] [ref=e146]
+              - button "View All ›" [ref=e147] [cursor=pointer]
+            - generic [ref=e148]:
+              - button "The Come Up S1 E3 · 24m left" [ref=e149] [cursor=pointer]:
+                - generic [ref=e153]:
+                  - generic [ref=e154]: The Come Up
+                  - generic [ref=e155]: S1 E3 · 24m left
+              - button "Late Night Gaming S2 E5 · 18m left" [ref=e158] [cursor=pointer]:
+                - generic [ref=e162]:
+                  - generic [ref=e163]: Late Night Gaming
+                  - generic [ref=e164]: S2 E5 · 18m left
+              - 'button "On The Road: ATL S1 E4 · 32m left" [ref=e167] [cursor=pointer]':
+                - generic [ref=e171]:
+                  - generic [ref=e172]: "On The Road: ATL"
+                  - generic [ref=e173]: S1 E4 · 32m left
+              - button "Studio Sessions S3 E2 · 15m left" [ref=e176] [cursor=pointer]:
+                - generic [ref=e180]:
+                  - generic [ref=e181]: Studio Sessions
+                  - generic [ref=e182]: S3 E2 · 15m left
+          - generic [ref=e185]:
+            - generic [ref=e186]:
+              - heading "New Episodes" [level=2] [ref=e187]
+              - button "View All ›" [ref=e188] [cursor=pointer]
+            - generic [ref=e189]:
+              - button "NEW S3 E1 The Come Up" [ref=e190] [cursor=pointer]:
+                - generic [ref=e191]:
+                  - generic [ref=e194]: NEW
+                  - generic [ref=e195]:
+                    - generic [ref=e196]: S3 E1
+                    - generic [ref=e197]: The Come Up
+              - button "NEW S2 E7 Trizzy Takeover" [ref=e198] [cursor=pointer]:
+                - generic [ref=e199]:
+                  - generic [ref=e202]: NEW
+                  - generic [ref=e203]:
+                    - generic [ref=e204]: S2 E7
+                    - generic [ref=e205]: Trizzy Takeover
+              - button "NEW S1 E6 After Hours" [ref=e206] [cursor=pointer]:
+                - generic [ref=e207]:
+                  - generic [ref=e210]: NEW
+                  - generic [ref=e211]:
+                    - generic [ref=e212]: S1 E6
+                    - generic [ref=e213]: After Hours
+              - button "NEW S4 E2 On The Road" [ref=e214] [cursor=pointer]:
+                - generic [ref=e215]:
+                  - generic [ref=e218]: NEW
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: S4 E2
+                    - generic [ref=e221]: On The Road
+          - generic [ref=e222]:
+            - generic [ref=e223]:
+              - heading "Creator Channels" [level=2] [ref=e224]
+              - button "View All ›" [ref=e225] [cursor=pointer]
+            - generic [ref=e226]:
+              - button "T Trey Trizzy" [ref=e227] [cursor=pointer]:
+                - generic [ref=e230]: T
+                - generic [ref=e231]: Trey Trizzy
+              - button "K Kai Cenat" [ref=e232] [cursor=pointer]:
+                - generic [ref=e235]: K
+                - generic [ref=e236]: Kai Cenat
+              - button "F Fanum" [ref=e237] [cursor=pointer]:
+                - generic [ref=e240]: F
+                - generic [ref=e241]: Fanum
+              - button "D Duke Dennis" [ref=e242] [cursor=pointer]:
+                - generic [ref=e245]: D
+                - generic [ref=e246]: Duke Dennis
+              - button "A Agent 00" [ref=e247] [cursor=pointer]:
+                - generic [ref=e250]: A
+                - generic [ref=e251]: Agent 00
+              - button "K KiGotGame" [ref=e252] [cursor=pointer]:
+                - generic [ref=e255]: K
+                - generic [ref=e256]: KiGotGame
+          - generic [ref=e257]:
+            - generic [ref=e258]:
+              - heading "Music Videos" [level=2] [ref=e259]
+              - button "View All ›" [ref=e260] [cursor=pointer]
+            - generic [ref=e261]:
+              - button "New Bag Trey Trizzy" [ref=e262] [cursor=pointer]:
+                - generic [ref=e266]:
+                  - generic [ref=e267]: New Bag
+                  - generic [ref=e268]: Trey Trizzy
+              - button "No Love Trey Trizzy" [ref=e269] [cursor=pointer]:
+                - generic [ref=e273]:
+                  - generic [ref=e274]: No Love
+                  - generic [ref=e275]: Trey Trizzy
+              - button "Out The Way Trey Trizzy" [ref=e276] [cursor=pointer]:
+                - generic [ref=e280]:
+                  - generic [ref=e281]: Out The Way
+                  - generic [ref=e282]: Trey Trizzy
+              - button "Real Ones Trey Trizzy" [ref=e283] [cursor=pointer]:
+                - generic [ref=e287]:
+                  - generic [ref=e288]: Real Ones
+                  - generic [ref=e289]: Trey Trizzy
+          - generic [ref=e290]:
+            - generic [ref=e291]:
+              - heading "Trending Games" [level=2] [ref=e292]
+              - button "View All ›" [ref=e293] [cursor=pointer]
+            - generic [ref=e294]:
+              - button "Truno Card Game 👤 2-6" [ref=e295] [cursor=pointer]:
+                - generic [ref=e299]:
+                  - generic [ref=e300]: Truno
+                  - generic [ref=e301]:
+                    - generic [ref=e302]: Card Game
+                    - generic [ref=e303]: 👤 2-6
+              - button "Spades Card Game 👤 2-4" [ref=e304] [cursor=pointer]:
+                - generic [ref=e308]:
+                  - generic [ref=e309]: Spades
+                  - generic [ref=e310]:
+                    - generic [ref=e311]: Card Game
+                    - generic [ref=e312]: 👤 2-4
+              - button "Blackjack Casino 👤 1-4" [ref=e313] [cursor=pointer]:
+                - generic [ref=e317]:
+                  - generic [ref=e318]: Blackjack
+                  - generic [ref=e319]:
+                    - generic [ref=e320]: Casino
+                    - generic [ref=e321]: 👤 1-4
+              - button "Bullshit / Cheat Party Game 👤 3-6" [ref=e322] [cursor=pointer]:
+                - generic [ref=e326]:
+                  - generic [ref=e327]: Bullshit / Cheat
+                  - generic [ref=e328]:
+                    - generic [ref=e329]: Party Game
+                    - generic [ref=e330]: 👤 3-6
+              - button "Liar's Poker Card Game 👤 4-6" [ref=e331] [cursor=pointer]:
+                - generic [ref=e335]:
+                  - generic [ref=e336]: Liar's Poker
+                  - generic [ref=e337]:
+                    - generic [ref=e338]: Card Game
+                    - generic [ref=e339]: 👤 4-6
+              - button "King's Court Strategy 👤 2-4" [ref=e340] [cursor=pointer]:
+                - generic [ref=e344]:
+                  - generic [ref=e345]: King's Court
+                  - generic [ref=e346]:
+                    - generic [ref=e347]: Strategy
+                    - generic [ref=e348]: 👤 2-4
+    - generic [ref=e349]:
+      - button "Home" [ref=e350] [cursor=pointer]
+      - button "Activate" [ref=e351] [cursor=pointer]
+      - button "Guide" [ref=e352] [cursor=pointer]
+      - button "Detail" [ref=e353] [cursor=pointer]
+      - button "Player" [ref=e354] [cursor=pointer]
+      - button "Games" [ref=e355] [cursor=pointer]
+      - button "Spades" [ref=e356] [cursor=pointer]
+      - button "Stories" [ref=e357] [cursor=pointer]
+      - button "Creator" [ref=e358] [cursor=pointer]
+      - button "Profile" [ref=e359] [cursor=pointer]
+      - button "Settings" [ref=e360] [cursor=pointer]

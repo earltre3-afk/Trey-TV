@@ -8,6 +8,7 @@ interface Props {
  branch: Branch;
  onBack: () => void;
  onSubmit: (choice: Choice | { label?: string; text: string; tone?: Tone }) => void;
+ selectedChoiceIndex?: number;
 }
 
 // Icon + accent color per relationship impact dimension
@@ -29,7 +30,7 @@ const buildAffectedLabel = (chars: typeof CHARACTERS): string => {
  return `Affects ${chars[0].firstName}, ${chars[1].firstName} +${chars.length - 2}`;
 };
 
-export const StopPointScreen: React.FC<Props> = ({ branch, onBack, onSubmit }) => {
+export const StopPointScreen: React.FC<Props> = ({ branch, onBack, onSubmit, selectedChoiceIndex = -1 }) => {
  const stop = branch.pendingStopPoint;
  const [custom, setCustom] = useState('');
  const lastChapter = branch.chapters[branch.chapters.length - 1];
@@ -106,7 +107,7 @@ export const StopPointScreen: React.FC<Props> = ({ branch, onBack, onSubmit }) =
  })()}
 
  <div className="mt-6 space-y-3">
- {stop.choices.map((c: Choice) => {
+ {stop.choices.map((c: Choice, index: number) => {
  const tone = TONE_COLORS[c.tone] || TONE_COLORS.Bold;
  const affected = inferAffectedCharacters(c, stop.prompt).slice(0, 3);
  const impact = c.relationshipImpactType;
@@ -118,7 +119,7 @@ export const StopPointScreen: React.FC<Props> = ({ branch, onBack, onSubmit }) =
  <button
  key={c.label}
  onClick={() => onSubmit(c)}
- className={`group relative w-full overflow-hidden rounded-2xl border-2 ${tone.border} bg-black/60 p-4 text-left backdrop-blur-md transition-all hover:shadow-xl hover:${tone.glow} active:scale-[0.98]`}
+ className={`group relative w-full overflow-hidden rounded-2xl border-2 ${tone.border} bg-black/60 p-4 text-left backdrop-blur-md transition-all hover:shadow-xl hover:${tone.glow} active:scale-[0.98] ${selectedChoiceIndex === index ? 'ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''}`}
  >
  <div className="flex items-start gap-3">
  <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${tone.bg} font-display text-lg font-black ${tone.text}`}>

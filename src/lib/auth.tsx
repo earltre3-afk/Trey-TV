@@ -33,6 +33,14 @@ export type SessionUser = {
   profileVisibility?: "public" | "members_only" | "private";
   showLocation?: boolean;
   showBirthday?: boolean;
+  gifOfDayId?: string | null;
+  gifOfDayUrl?: string | null;
+  gifOfDayPosterUrl?: string | null;
+  gifOfDayProvider?: string | null;
+  gifOfDayCaption?: string | null;
+  gifOfDaySetAt?: string | null;
+  showFwdGifsOnProfile?: boolean;
+  onboarding_completed?: boolean;
 };
 
 type AuthCtx = {
@@ -95,6 +103,14 @@ const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "gues
     profileVisibility: profile?.profile_visibility ?? "public",
     showLocation: profile?.show_location ?? true,
     showBirthday: profile?.show_birthday ?? false,
+    gifOfDayId: profile?.gif_of_day_id ?? null,
+    gifOfDayUrl: profile?.gif_of_day_url ?? null,
+    gifOfDayPosterUrl: profile?.gif_of_day_poster_url ?? null,
+    gifOfDayProvider: profile?.gif_of_day_provider ?? null,
+    gifOfDayCaption: profile?.gif_of_day_caption ?? null,
+    gifOfDaySetAt: profile?.gif_of_day_set_at ?? null,
+    showFwdGifsOnProfile: !!profile?.show_fwd_gifs_on_profile,
+    onboarding_completed: !!profile?.onboarding_completed,
     rewards: { points: 0, tier: "WHITE" },
   };
 };
@@ -128,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const supabase = createBrowserClient();
         const { data, error } = await (supabase as any)
           .from("profiles")
-          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday")
+          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed")
           .eq("id", supaUser.id)
           .maybeSingle();
 
@@ -212,6 +228,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (patch.profileVisibility !== undefined) profilePatch.profile_visibility = patch.profileVisibility;
           if (patch.showLocation !== undefined) profilePatch.show_location = patch.showLocation;
           if (patch.showBirthday !== undefined) profilePatch.show_birthday = patch.showBirthday;
+          if (patch.gifOfDayId !== undefined) profilePatch.gif_of_day_id = patch.gifOfDayId;
+          if (patch.gifOfDayUrl !== undefined) profilePatch.gif_of_day_url = patch.gifOfDayUrl;
+          if (patch.gifOfDayPosterUrl !== undefined) profilePatch.gif_of_day_poster_url = patch.gifOfDayPosterUrl;
+          if (patch.gifOfDayProvider !== undefined) profilePatch.gif_of_day_provider = patch.gifOfDayProvider;
+          if (patch.gifOfDayCaption !== undefined) profilePatch.gif_of_day_caption = patch.gifOfDayCaption;
+          if (patch.gifOfDaySetAt !== undefined) profilePatch.gif_of_day_set_at = patch.gifOfDaySetAt;
+          if (patch.showFwdGifsOnProfile !== undefined) profilePatch.show_fwd_gifs_on_profile = patch.showFwdGifsOnProfile;
           if (Object.keys(profilePatch).length === 0) return;
 
           const { error } = await (supabase as any)

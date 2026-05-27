@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local-only Pluto integration cache (slate-channel dedup, pre-warm state)
+.cache/
+
 # Local env secrets — never commit
 .env
 .env.*
@@ -46,3 +49,23 @@ _donor/
 /*.png
 
 .vercel
+.env*.local
+
+# ── Android / Trey TV TV app ──────────────────────────────────────────────
+# Build outputs + Gradle caches
+apps/trey-tv-tv/build/
+apps/trey-tv-tv/app/build/
+apps/trey-tv-tv/.gradle/
+apps/trey-tv-tv/local.properties
+
+# Generated WebView assets — produced by scripts/build-tv-skin.{ps1,sh}
+apps/trey-tv-tv/app/src/main/assets/trey-tv-web/
+
+# Release signing — NEVER commit
+keystore.properties
+*.jks
+*.keystore
+
+# Vite TV shell build artifacts
+apps/trey-tv-web/dist/
+apps/trey-tv-web/node_modules/

@@ -29,7 +29,7 @@ async function resolvePostAuthDestination(
   if (voiceProfile?.display_name && voiceProfile?.username) {
     try {
       await saveOnboardingProfile({ data: { accessToken, fields: voiceProfile } });
-      const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken } });
+      const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken, method: "voice" } });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       nav({ to: `/u/${publicProfileUid}` as any });
       return;

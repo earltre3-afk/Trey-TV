@@ -1,4 +1,4 @@
-﻿import { Branch, Meters, ChapterRecord, Choice, Ending, StateDelta, Tone } from './storyTypes';
+import { Branch, Meters, ChapterRecord, Choice, Ending, StateDelta, Tone } from './storyTypes';
 import { CHAPTER_1, INITIAL_METERS, CHAPTER_1_CHOICES, IMAGES } from './storyData';
 import { resolveInstalledStoryChoice } from './treyStoryPackage';
 import { supabase } from './supabase';
@@ -205,4 +205,45 @@ export function pickChapterImage(toneTag?: Tone, index: number = 0, sceneText: s
   if (toneTag === 'Funny') return IMAGES.lockerRoom;
   return pool[index % pool.length];
 }
+
+export function createCustomStoryBranch(prompt: string, tone: Tone): Branch {
+  const chapter1: ChapterRecord = {
+    number: 1,
+    title: 'Chapter 1 — The Custom Spark',
+    prose: `Your custom adventure begins here. Driven by a singular premise: "${prompt}". You step forward into this new reality, knowing that every single choice will determine how this path unfolds.`,
+    image: IMAGES.twinsCover,
+    sceneId: 'custom_scene_1',
+    summary: `Started custom story with premise: "${prompt}"`,
+    toneTag: tone,
+  };
+  const branch: Branch = {
+    id: `branch_custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    storyId: 'switch_kicks',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    chapters: [chapter1],
+    meters: { ...INITIAL_METERS },
+    flags: {
+      custom_story: true,
+      custom_premise: prompt,
+      custom_tone: tone,
+    },
+    secrets: {},
+    toneHistory: [tone],
+    isComplete: false,
+    pendingStopPoint: {
+      prompt: 'How do you want to kick off this adventure?',
+      choices: [
+        { id: 'c1', label: 'A', text: 'Step up with confidence and set a bold new standard.', tone: 'Bold', nextSceneId: 'custom_scene_2' },
+        { id: 'c2', label: 'B', text: 'Observe carefully and look for hidden risks first.', tone: 'Risky', nextSceneId: 'custom_scene_2' },
+        { id: 'c3', label: 'C', text: 'Break the ice with a clever, lighthearted approach.', tone: 'Funny', nextSceneId: 'custom_scene_2' },
+      ],
+    },
+  };
+  const all = loadBranches();
+  all.unshift(branch);
+  saveBranches(all);
+  return branch;
+}
+
 

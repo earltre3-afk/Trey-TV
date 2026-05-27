@@ -1,0 +1,48 @@
+{
+  "name": "antigravity-codex",
+  "version": "0.1.0",
+  "description": "Provides starter guidance and extension points for using Codex from Antigravity workflows.",
+  "author": {
+    "name": "[TODO: Author or team name]",
+    "email": "[TODO: author@example.com]",
+    "url": "[TODO: https://github.com/author]"
+  },
+  "homepage": "[TODO: Antigravity Codex documentation URL]",
+  "repository": "[TODO: Antigravity Codex repository URL]",
+  "license": "[TODO: MIT]",
+  "keywords": [
+    "antigravity",
+    "codex",
+    "agent"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json",
+  "interface": {
+    "displayName": "Antigravity Codex",
+    "shortDescription": "Use Codex from Antigravity-oriented agent workflows.",
+    "longDescription": "Starter plugin for connecting Antigravity workflows to Codex. It includes a skill entry point and placeholders for future MCP or app integration surfaces.",
+    "developerName": "[TODO: Developer name]",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "[TODO: Plugin website URL]",
+    "privacyPolicyURL": "[TODO: Privacy policy URL]",
+    "termsOfServiceURL": "[TODO: Terms of service URL]",
+    "defaultPrompt": [
+      "Use Codex to inspect this Antigravity workspace.",
+      "Draft a Codex task from my Antigravity context.",
+      "Help wire Codex into this Antigravity workflow."
+    ],
+    "brandColor": "#111827",
+    "composerIcon": "[TODO: ./assets/icon.png]",
+    "logo": "[TODO: ./assets/logo.png]",
+    "screenshots": [
+      "[TODO: ./assets/screenshot1.png]",
+      "[TODO: ./assets/screenshot2.png]",
+      "[TODO: ./assets/screenshot3.png]"
+    ]
+  }
+}

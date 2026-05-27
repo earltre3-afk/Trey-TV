@@ -1011,6 +1011,73 @@ function VoiceOnboardingInner() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    const loadProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+          .from("user_onboarding")
+          .select("current_step, selected_path, answers")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (data && !data.completed && (data.selected_path === "voice" || data.selected_path === "trey_i")) {
+          const answers = data.answers as any;
+          if (answers) {
+            if (answers.stage) setStage(answers.stage);
+            if (answers.fields) setFields(answers.fields);
+            if (answers.pending) setPending(answers.pending);
+            if (answers.assistantMessage) setAssistantMessage(answers.assistantMessage);
+          }
+          toast.success("Resumed Trey-I voice onboarding from where you left off.");
+        } else {
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "voice",
+            current_step: 0,
+            answers: {},
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to load onboarding progress:", err);
+      }
+    };
+    
+    loadProgress();
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken || stage === "complete") return;
+
+    const saveProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const stepCount = SETUP_STEPS.filter((s) => stepDone(fields, s.key)).length;
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "voice",
+            current_step: stepCount,
+            answers: { stage, fields, pending, assistantMessage },
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to save voice onboarding progress:", err);
+      }
+    };
+
+    const timer = setTimeout(saveProgress, 1000);
+    return () => clearTimeout(timer);
+  }, [accessToken, stage, fields, pending, assistantMessage]);
+
   useEffect(() => { voiceStatusRef.current = voiceStatus; }, [voiceStatus]);
 
   const clearWatchdog = useCallback(() => {
@@ -1069,7 +1136,7 @@ function VoiceOnboardingInner() {
       if (token) {
         try {
           await saveOnboardingProfile({ data: { accessToken: token, fields: finalFields } });
-          const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken: token } });
+          const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken: token, method: "voice" } });
           window.location.href = `/u/${publicProfileUid}?tour=1`;
           return;
         } catch (err) {

@@ -136,64 +136,78 @@ ALTER TABLE public.truno_clubs            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.truno_player_stats     ENABLE ROW LEVEL SECURITY;
 
 -- Public rooms: readable by anyone
-CREATE POLICY IF NOT EXISTS "truno_rooms_public_read"
+DROP POLICY IF EXISTS "truno_rooms_public_read" ON public.truno_rooms;
+CREATE POLICY "truno_rooms_public_read"
   ON public.truno_rooms FOR SELECT
   USING (visibility = 'public' OR host_user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "truno_rooms_insert"
+DROP POLICY IF EXISTS "truno_rooms_insert" ON public.truno_rooms;
+CREATE POLICY "truno_rooms_insert"
   ON public.truno_rooms FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL AND host_user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "truno_rooms_update_host"
+DROP POLICY IF EXISTS "truno_rooms_update_host" ON public.truno_rooms;
+CREATE POLICY "truno_rooms_update_host"
   ON public.truno_rooms FOR UPDATE
   USING (host_user_id = auth.uid());
 
 -- Room players
-CREATE POLICY IF NOT EXISTS "truno_room_players_read"
+DROP POLICY IF EXISTS "truno_room_players_read" ON public.truno_room_players;
+CREATE POLICY "truno_room_players_read"
   ON public.truno_room_players FOR SELECT
   USING (true);
 
-CREATE POLICY IF NOT EXISTS "truno_room_players_insert"
+DROP POLICY IF EXISTS "truno_room_players_insert" ON public.truno_room_players;
+CREATE POLICY "truno_room_players_insert"
   ON public.truno_room_players FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
 
-CREATE POLICY IF NOT EXISTS "truno_room_players_update_own"
+DROP POLICY IF EXISTS "truno_room_players_update_own" ON public.truno_room_players;
+CREATE POLICY "truno_room_players_update_own"
   ON public.truno_room_players FOR UPDATE
   USING (user_id = auth.uid());
 
 -- Sessions: readable by room participants
-CREATE POLICY IF NOT EXISTS "truno_sessions_read"
+DROP POLICY IF EXISTS "truno_sessions_read" ON public.truno_sessions;
+CREATE POLICY "truno_sessions_read"
   ON public.truno_sessions FOR SELECT
   USING (true);
 
 -- Tournaments: public read
-CREATE POLICY IF NOT EXISTS "truno_tournaments_read"
+DROP POLICY IF EXISTS "truno_tournaments_read" ON public.truno_tournaments;
+CREATE POLICY "truno_tournaments_read"
   ON public.truno_tournaments FOR SELECT
   USING (true);
 
 -- Tournament entries: users can read own and insert own
-CREATE POLICY IF NOT EXISTS "truno_tournament_entries_read_own"
+DROP POLICY IF EXISTS "truno_tournament_entries_read_own" ON public.truno_tournament_entries;
+CREATE POLICY "truno_tournament_entries_read_own"
   ON public.truno_tournament_entries FOR SELECT
   USING (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "truno_tournament_entries_insert"
+DROP POLICY IF EXISTS "truno_tournament_entries_insert" ON public.truno_tournament_entries;
+CREATE POLICY "truno_tournament_entries_insert"
   ON public.truno_tournament_entries FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
 -- Clubs: public read
-CREATE POLICY IF NOT EXISTS "truno_clubs_read"
+DROP POLICY IF EXISTS "truno_clubs_read" ON public.truno_clubs;
+CREATE POLICY "truno_clubs_read"
   ON public.truno_clubs FOR SELECT
   USING (visibility = 'public');
 
 -- Player stats: own profile writable, all readable
-CREATE POLICY IF NOT EXISTS "truno_player_stats_read"
+DROP POLICY IF EXISTS "truno_player_stats_read" ON public.truno_player_stats;
+CREATE POLICY "truno_player_stats_read"
   ON public.truno_player_stats FOR SELECT
   USING (true);
 
-CREATE POLICY IF NOT EXISTS "truno_player_stats_upsert"
+DROP POLICY IF EXISTS "truno_player_stats_upsert" ON public.truno_player_stats;
+CREATE POLICY "truno_player_stats_upsert"
   ON public.truno_player_stats FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY IF NOT EXISTS "truno_player_stats_update"
+DROP POLICY IF EXISTS "truno_player_stats_update" ON public.truno_player_stats;
+CREATE POLICY "truno_player_stats_update"
   ON public.truno_player_stats FOR UPDATE
   USING (user_id = auth.uid());

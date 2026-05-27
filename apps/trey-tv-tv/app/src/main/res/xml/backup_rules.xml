@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Auto-backup rules (Android 6.0 – 11). Android 12+ uses
+  data_extraction_rules.xml in this same folder.
+
+  Exclude the Trey TV session prefs so the auth access token never lands in a
+  cloud backup. The session is regenerated via the TV device-login flow on a
+  fresh install. Both the encrypted store and the plain-text fallback are
+  covered.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="treytv_tv_session.xml" />
+    <exclude domain="sharedpref" path="treytv_tv_session_fallback.xml" />
+</full-backup-content>

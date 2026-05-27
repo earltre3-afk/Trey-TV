@@ -3,11 +3,13 @@
 // Uses Trey TV's `useAuth()` from `@/lib/auth` instead of standalone auth context.
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { Sparkles, X, Wand2, RotateCcw } from 'lucide-react';
 import { Branch, Choice, Ending, Tone, StateDelta } from '../lib/storyTypes';
 import {
   loadBranches,
   loadEndings,
   createNewBranch,
+  createCustomStoryBranch,
   updateBranch,
   deleteBranch,
   applyDelta,
@@ -44,6 +46,7 @@ import { SettingsScreen } from './screens/SettingsScreen';
 import { EndingScreen } from './screens/EndingScreen';
 import { ChapterArchiveScreen } from './screens/ChapterArchiveScreen';
 import { PlaythroughsScreen, SharedEndingScreen } from './screens/PlaythroughsScreen';
+import { useTvRemoteInput } from '@/lib/tv/useTvRemoteInput';
 
 type View =
   | 'welcome'
@@ -95,6 +98,10 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   const [showEndings, setShowEndings] = useState(false);
   const [shareSlug, setShareSlug] = useState<string | null>(null);
   const [installedStories, setInstalledStories] = useState<TreyStoryPackage[]>([]);
+  const [remoteChoiceIndex, setRemoteChoiceIndex] = useState(0);
+  const [showCraftingModal, setShowCraftingModal] = useState(false);
+  const [craftPremise, setCraftPremise] = useState('');
+  const [craftTone, setCraftTone] = useState<Tone>('Bold');
 
   // Wire into Trey TV's auth system
   const { user, isGuest, isAdmin } = useAuth();
@@ -209,6 +216,25 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     setActiveBranchId(b.id);
     setView('reading');
   };
+
+  const handleLaunchCraftedStory = () => {
+    if (!craftPremise.trim()) {
+      alert('Please enter a premise for your story.');
+      return;
+    }
+    if (branches.filter((b) => !b.isComplete).length >= 5) {
+      alert('You have 5 active branches. Finish or delete one to start a new path.');
+      return;
+    }
+    const b = createCustomStoryBranch(craftPremise.trim(), craftTone);
+    syncMetaFromBranch(b, userUid);
+    refresh();
+    setActiveBranchId(b.id);
+    setShowCraftingModal(false);
+    setCraftPremise('');
+    setView('reading');
+  };
+
 
   const handleContinueBranch = (b: Branch) => {
     setActiveBranchId(b.id);
@@ -375,6 +401,36 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     else window.history.back();
   };
 
+  useTvRemoteInput((action) => {
+    if (action === 'BACK') {
+      if (view === 'stop') setView('reading');
+      else if (view === 'reading') setView('landing');
+      else handleGoBack();
+      return;
+    }
+    if (action === 'MENU') {
+      setStatusOpen(true);
+      return;
+    }
+    if (view === 'reading' && action === 'SELECT') {
+      handleReadingContinue();
+      return;
+    }
+    const choices = activeBranch?.pendingStopPoint?.choices ?? [];
+    if (view !== 'stop' || choices.length === 0) return;
+    if (action === 'UP' || action === 'LEFT') {
+      setRemoteChoiceIndex((index) => (index - 1 + choices.length) % choices.length);
+      return;
+    }
+    if (action === 'DOWN' || action === 'RIGHT') {
+      setRemoteChoiceIndex((index) => (index + 1) % choices.length);
+      return;
+    }
+    if (action === 'SELECT') {
+      handleChoice(choices[remoteChoiceIndex % choices.length]);
+    }
+  });
+
   // === Render branches ===
 
   if (view === 'shared' && shareSlug) {
@@ -450,6 +506,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           branch={activeBranch}
           onBack={() => setView('reading')}
           onSubmit={handleChoice}
+          selectedChoiceIndex={remoteChoiceIndex}
         />
         <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
       </>
@@ -506,6 +563,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           installedStories={installedStories}
           onInstallStoryFile={isAdmin ? handleInstallStoryFile : undefined}
           onStartInstalledStory={handleStartInstalledStory}
+          onCraftStory={() => setShowCraftingModal(true)}
         />
       )}
       {tab === 'story' && (
@@ -562,6 +620,92 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
             ← Back
           </button>
           <EndingsScreen endings={endings} />
+        </div>
+      )}
+
+      {showCraftingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-cyan-500/30 bg-[linear-gradient(135deg,rgba(9,9,11,0.95),rgba(15,23,42,0.95))] p-6 shadow-[0_0_50px_rgba(34,211,238,0.2)] animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowCraftingModal(false);
+                setCraftPremise('');
+              }}
+              className="absolute right-5 top-5 rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            {/* Title Block */}
+            <div className="flex items-center gap-3 text-cyan-400">
+              <Sparkles className="h-5 w-5 text-cyan-300 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">AI Story Studio</span>
+            </div>
+            <h2 className="mt-2 font-display text-3xl font-black text-white leading-none">Craft Your Story</h2>
+            <p className="mt-2 text-xs text-white/55">
+              Input your custom premise, pick a starting tone, and launch a fully customized AI interactive story journey.
+            </p>
+
+            <div className="mt-6 space-y-4">
+              {/* Premise Input */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">Define Your Premise</label>
+                  <button
+                    onClick={() => {
+                      const pool = [
+                        "Two undercover detectives switching places during a high-stakes hip-hop concert.",
+                        "A legendary streetball wager where the stakes are clearing a sibling's major debt.",
+                        "A dancer trying to keep their twin out of trouble by performing in their place for the finals.",
+                        "An ambitious sneaker designer who discovers a secret high-society wager ring.",
+                        "A star athlete who gets swap-recruited into a mysterious underground sports guild."
+                      ];
+                      const picked = pool[Math.floor(Math.random() * pool.length)];
+                      setCraftPremise(picked);
+                    }}
+                    className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300"
+                  >
+                    <Wand2 className="h-3 w-3" /> Roll Preset
+                  </button>
+                </div>
+                <textarea
+                  value={craftPremise}
+                  onChange={(e) => setCraftPremise(e.target.value)}
+                  placeholder="e.g. An ambitious sneaker designer who discovers a secret high-society wager ring..."
+                  className="mt-1.5 w-full h-24 rounded-2xl border border-white/15 bg-black/40 p-4 text-sm text-white placeholder:text-white/30 focus:border-cyan-500 focus:outline-none resize-none font-serif leading-relaxed"
+                />
+              </div>
+
+              {/* Tone Selection */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">Starting Vibe / Tone</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(['Bold', 'Risky', 'Funny', 'Romantic', 'Safe'] as Tone[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setCraftTone(t)}
+                      className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors border ${
+                        craftTone === t
+                          ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.15)]'
+                          : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Launch Button */}
+            <button
+              onClick={handleLaunchCraftedStory}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 via-violet-600 to-fuchsia-600 px-6 py-4 font-display text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition-transform"
+            >
+              <Sparkles className="h-4 w-4" /> Launch Story Adventure
+            </button>
+          </div>
         </div>
       )}
     </>

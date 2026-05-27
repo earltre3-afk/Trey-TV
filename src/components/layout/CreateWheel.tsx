@@ -62,6 +62,10 @@ export function CreateWheel() {
     }
     if (didOpen.current) {
       didOpen.current = false;
+      if (hovered !== null) {
+        navigate({ to: ITEMS[hovered].to });
+        close();
+      }
     } else {
       // short tap → default create
       navigate({ to: "/create" });

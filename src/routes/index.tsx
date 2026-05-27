@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import {
   Play, Plus, Info, ChevronRight, Sparkles, Tv, Radio, Heart, Bookmark,
   Share2, MessageCircle, Lock, Crown, Flame, Compass, Gem, Bot, ArrowRight,
-  CheckCircle2,
+  CheckCircle2, Download,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDailyZodiacReading } from "@/lib/zodiac.server";
 import { zodiacSymbol } from "@/lib/zodiac";
 import { ReadingOfTheDay } from "@/components/zodiac";
+
+const TREY_TV_BOX_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
 
 export const Route = createFileRoute("/")({
   component: WatchNow,
@@ -85,14 +87,15 @@ function GuestWatchNow() {
           <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto">
             Trey TV is a premium streaming network built around creators. Original shows, live channels, AI-curated picks — all in one cinematic home.
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold glow-gold hover-scale">
+          <div className="mt-8 mx-auto flex max-w-xs flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center">
+            <Link to="/signup" className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold glow-gold hover-scale sm:w-auto">
               <Play className="size-4 fill-current" /> Start Watching
             </Link>
-            <Link to="/login" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl liquid-glass border border-white/15 font-semibold">
+            <Link to="/login" className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-3 rounded-xl liquid-glass border border-white/15 font-semibold sm:w-auto">
               <Info className="size-4" /> I have an account
             </Link>
           </div>
+          <TvAppDownloadCta />
           <div className="mt-12 inline-flex flex-col items-center text-muted-foreground text-xs tracking-widest">
             <span>SCROLL TO EXPLORE</span>
             <span className="mt-2 size-6 rounded-full border border-white/20 grid place-items-center animate-bounce">
@@ -247,15 +250,36 @@ function GuestWatchNow() {
           <div className="relative">
             <h2 className="font-display text-3xl sm:text-5xl font-black">Welcome home to Trey TV.</h2>
             <p className="mt-3 text-muted-foreground max-w-xl mx-auto">Your free account unlocks every channel, the full Guide, Prescribe Me, and Rewards.</p>
-            <div className="mt-6 flex items-center justify-center gap-3">
-              <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold glow-gold hover-scale">
+            <div className="mt-6 mx-auto flex max-w-xs flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center">
+              <Link to="/signup" className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold glow-gold hover-scale sm:w-auto">
                 <Play className="size-4 fill-current" /> Create free account
               </Link>
-              <Link to="/login" className="inline-flex items-center gap-2 px-5 py-3 rounded-xl liquid-glass border border-white/15 font-semibold">Log in</Link>
+              <Link to="/login" className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-3 rounded-xl liquid-glass border border-white/15 font-semibold sm:w-auto">Log in</Link>
             </div>
+            <TvAppDownloadCta />
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function TvAppDownloadCta() {
+  return (
+    <div className="mt-4 mx-auto flex max-w-xs flex-col items-stretch gap-2 sm:max-w-lg sm:items-center">
+      <a
+        href={TREY_TV_BOX_APK_URL}
+        download
+        className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap px-5 py-3 rounded-xl liquid-glass border border-primary/45 text-primary font-bold sm:w-auto"
+      >
+        <Download className="size-4" /> Download TV App
+      </a>
+      <p className="px-1 text-center text-xs font-semibold text-primary/90">
+        Android TV / Google TV test build
+      </p>
+      <p className="px-1 text-center text-xs text-muted-foreground">
+        This is a test build for Android TV / Google TV devices. You may need to allow installs from unknown sources on your device.
+      </p>
     </div>
   );
 }

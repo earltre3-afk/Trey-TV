@@ -17,6 +17,7 @@ import {
   TrunoMove,
   TrunoMoveEvent,
 } from '../lib/trunoEngine';
+import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
 
 interface Props {
   onNavigate: (view: string, params?: any) => void;
@@ -34,12 +35,12 @@ const MAX_VISIBLE_BOT_STEPS = 16;
 const CARD_DOUBLE_TAP_MS = 320;
 const CARD_PLAY_GUARD_MS = 700;
 
-type ActionLogItem = {
+interface ActionLogItem {
   id: string;
   text: string;
-  tone: 'play' | 'draw' | 'effect' | 'system';
+  tone: 'play' | 'draw' | 'effect' | 'system' | 'keep';
   label: string;
-};
+}
 
 type TableEffect = {
   id: string;
@@ -72,6 +73,9 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const [drawPulse, setDrawPulse] = useState(0);
   const [pulsePlayerId, setPulsePlayerId] = useState<string | null>(null);
   const [invalidCardId, setInvalidCardId] = useState<string | null>(null);
+  const [remoteTarget, setRemoteTarget] = useState<'hand' | 'draw' | 'actions'>('hand');
+  const [pendingWildCardId, setPendingWildCardId] = useState<string | null>(null);
+  const tvRemoteMode = useTvRemoteMode();
   const tapRef = useRef<{ cardId: string | null; at: number }>({ cardId: null, at: 0 });
   const playGuardRef = useRef<{ cardId: string | null; at: number }>({ cardId: null, at: 0 });
 
@@ -90,6 +94,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       return applyPlayerMove(state, { type: 'play', playerId: player.id, cardId: move.payload?.cardId, wildColor: move.payload?.wildColor });
     }
     if (move.type === 'draw') return applyPlayerMove(state, { type: 'draw', playerId: player.id });
+    if (move.type === 'keep') return applyPlayerMove(state, { type: 'keep', playerId: player.id });
     if (move.type === 'call-truno') return applyPlayerMove(state, { type: 'call-truno', playerId: player.id });
     return state;
   }, []);
@@ -124,7 +129,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   const showMoveEvent = useCallback((event: TrunoMoveEvent, moveId?: string) => {
     if (moveId) observedMoveRef.current = moveId;
-    const tone: ActionLogItem['tone'] = event.effect ? 'effect' : event.kind === 'draw' ? 'draw' : event.kind === 'play' ? 'play' : 'system';
+    const tone: ActionLogItem['tone'] = event.effect ? 'effect' : event.kind === 'draw' ? 'draw' : event.kind === 'keep' ? 'keep' : event.kind === 'play' ? 'play' : 'system';
     const label = logLabelFromEvent(event);
     setTurnNotice(event.message);
     setActionLog((prev) => [
@@ -263,6 +268,17 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const waitingLabel = myTurn ? 'YOUR TURN' : botIsThinking && activePlayer ? `${activePlayer.name} THINKING` : `${activePlayer?.name ?? 'Table'} TURN`;
   const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) ?? null : null;
   const handSpread = Math.max(29, Math.min(44, 330 / Math.max(me.hand.length, 1)));
+  const isPendingDrawPlayMe = !!(state.pendingDrawPlayCardId && myTurn && me.hand.some(c => c.id === state.pendingDrawPlayCardId));
+
+  // Auto-select drawn playable card
+  useEffect(() => {
+    if (state?.pendingDrawPlayCardId && myTurn) {
+      const hasCard = me.hand.some((c) => c.id === state.pendingDrawPlayCardId);
+      if (hasCard) {
+        setSelected(state.pendingDrawPlayCardId);
+      }
+    }
+  }, [state?.pendingDrawPlayCardId, myTurn, me.hand]);
 
   const commitMove = async (move: TrunoMove) => {
     setNotice(null);
@@ -296,11 +312,21 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     timeoutsRef.current.push(timer);
   };
 
+  const handleSelectWildColor = (color: TrunoGameState['currentColor']) => {
+    if (!pendingWildCardId) return;
+    void commitMove({ type: 'play', playerId: me.id, cardId: pendingWildCardId, wildColor: color });
+    setPendingWildCardId(null);
+  };
+
   const attemptPlayCard = (cardId: string) => {
     const card = me.hand.find((c) => c.id === cardId);
     if (!card) return;
     if (!myTurn) {
       setNotice(`Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      return;
+    }
+    if (state.pendingDrawPlayCardId && state.pendingDrawPlayCardId !== cardId) {
+      setNotice("You must play the drawn card or keep it.");
       return;
     }
     if (!isPlayableCard(card, state)) {
@@ -311,10 +337,20 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     const now = Date.now();
     if (playGuardRef.current.cardId === cardId && now - playGuardRef.current.at < CARD_PLAY_GUARD_MS) return;
     playGuardRef.current = { cardId, at: now };
+
+    if (card.color === 'black') {
+      setPendingWildCardId(cardId);
+      return;
+    }
+
     void commitMove({ type: 'play', playerId: me.id, cardId, wildColor: mostCommonColor(me.hand) });
   };
 
   const handleCardTap = (cardId: string) => {
+    if (state.pendingDrawPlayCardId && state.pendingDrawPlayCardId !== cardId) {
+      setNotice("You must play the drawn card or keep it.");
+      return;
+    }
     const now = Date.now();
     const isDoubleTap = tapRef.current.cardId === cardId && now - tapRef.current.at < CARD_DOUBLE_TAP_MS;
     tapRef.current = { cardId, at: now };
@@ -341,6 +377,14 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     if (!selectedCard) return;
     if (!canPlaySelected) {
       setNotice('Select a playable card first.');
+      return;
+    }
+    if (state.pendingDrawPlayCardId && state.pendingDrawPlayCardId !== selectedCard.id) {
+      setNotice("You must play the drawn card or keep it.");
+      return;
+    }
+    if (selectedCard.color === 'black') {
+      setPendingWildCardId(selectedCard.id);
       return;
     }
     commitMove({ type: 'play', playerId: me.id, cardId: selectedCard.id, wildColor: mostCommonColor(me.hand) });
@@ -405,6 +449,68 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     }
     setLocalState(next);
   };
+
+  useTvRemoteInput((action) => {
+    if (action === 'BACK') {
+      handleLeaveMatch();
+      return;
+    }
+    if (action === 'MENU') {
+      setNotice('Table menu is coming soon.');
+      return;
+    }
+    if (state.phase === 'ended') {
+      if (action === 'SELECT') void handlePlayAgain();
+      return;
+    }
+
+    if (isPendingDrawPlayMe) {
+      if (action === 'LEFT' || action === 'RIGHT' || action === 'UP' || action === 'DOWN') {
+        setRemoteTarget((prev) => (prev === 'hand' ? 'actions' : 'hand'));
+        setNotice(remoteTarget === 'hand' ? 'Place Down action selected. Press Select to play.' : 'Keep Card & Pass action selected. Press Select to pass.');
+        return;
+      }
+      if (action === 'SELECT') {
+        if (remoteTarget === 'hand') {
+          attemptPlayCard(state.pendingDrawPlayCardId!);
+        } else {
+          commitMove({ type: 'keep', playerId: me.id });
+        }
+        return;
+      }
+    }
+
+    if (action === 'UP') {
+      setRemoteTarget('draw');
+      setNotice('Draw pile selected. Press Select to draw.');
+      return;
+    }
+    if (action === 'DOWN') {
+      setRemoteTarget('hand');
+      if (!selected && me.hand.length) setSelected(me.hand[0].id);
+      return;
+    }
+    if (action === 'LEFT' || action === 'RIGHT') {
+      setRemoteTarget('hand');
+      if (!me.hand.length) return;
+      const currentIndex = Math.max(0, me.hand.findIndex((card) => card.id === selected));
+      const delta = action === 'LEFT' ? -1 : 1;
+      const nextIndex = (currentIndex + delta + me.hand.length) % me.hand.length;
+      setSelected(me.hand[nextIndex].id);
+      return;
+    }
+    if (action === 'SELECT') {
+      if (remoteTarget === 'draw') {
+        handleDraw();
+        return;
+      }
+      if (selected) {
+        attemptPlayCard(selected);
+        return;
+      }
+      setNotice(myTurn ? 'Select a card with Left or Right first.' : `Waiting on ${activePlayer?.name ?? 'the table'}.`);
+    }
+  });
 
   return (
     <div className="px-3 pb-24">
@@ -495,6 +601,46 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           <RotateCw size={12} className={`text-cyan-300 ${state.direction === -1 ? '-scale-x-100' : ''}`} />
           <span className="text-[10px] text-zinc-300">{state.direction === 1 ? 'Clockwise' : 'Counter'}</span>
         </div>
+
+        {/* Premium Wild Card Color Picker Modal Overlay */}
+        {pendingWildCardId && (
+          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-full bg-zinc-950/90 backdrop-blur-md border border-purple-500/30 p-6 text-center animate-[truno-pop_0.3s_ease-out]">
+            <div className="text-amber-300 text-xs font-black tracking-[0.24em] mb-1">WILD CARD</div>
+            <div className="text-white text-lg font-black mb-4">CHOOSE PILE COLOR</div>
+            <div className="grid grid-cols-2 gap-3 w-48">
+              <button
+                onClick={() => handleSelectWildColor('red')}
+                className="min-h-12 rounded-2xl border border-red-500/50 bg-red-500/20 text-red-200 font-bold hover:bg-red-500/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(239,68,68,0.25)] flex items-center justify-center"
+              >
+                Red
+              </button>
+              <button
+                onClick={() => handleSelectWildColor('blue')}
+                className="min-h-12 rounded-2xl border border-cyan-400/50 bg-cyan-400/20 text-cyan-200 font-bold hover:bg-cyan-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.25)] flex items-center justify-center"
+              >
+                Blue
+              </button>
+              <button
+                onClick={() => handleSelectWildColor('green')}
+                className="min-h-12 rounded-2xl border border-emerald-400/50 bg-emerald-400/20 text-emerald-200 font-bold hover:bg-emerald-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(52,211,153,0.25)] flex items-center justify-center"
+              >
+                Green
+              </button>
+              <button
+                onClick={() => handleSelectWildColor('yellow')}
+                className="min-h-12 rounded-2xl border border-amber-300/50 bg-amber-300/20 text-amber-200 font-bold hover:bg-amber-300/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(251,191,36,0.25)] flex items-center justify-center"
+              >
+                Yellow
+              </button>
+            </div>
+            <button
+              onClick={() => setPendingWildCardId(null)}
+              className="mt-4 text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition"
+            >
+              Cancel Play
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-2 flex items-center justify-center gap-2 text-xs">
@@ -559,6 +705,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           const offset = i - mid;
           const isSel = selected === c.id;
           const playable = myTurn && isPlayableCard(c, state);
+          const remoteFocused = tvRemoteMode && remoteTarget === 'hand' && isSel;
           const invalid = invalidCardId === c.id;
           return (
             <div
@@ -570,8 +717,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
               }}
             >
               {isSel && (
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border border-cyan-300/50 bg-cyan-400/15 px-2 py-0.5 text-[9px] font-black tracking-wider text-cyan-100 whitespace-nowrap">
-                  SELECTED
+                <div className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider whitespace-nowrap ${remoteFocused ? 'border-amber-300/70 bg-amber-400/20 text-amber-100' : 'border-cyan-300/50 bg-cyan-400/15 text-cyan-100'}`}>
+                  {remoteFocused ? 'TV FOCUS' : 'SELECTED'}
                 </div>
               )}
               <TrunoCard
@@ -580,33 +727,52 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
                 playable={playable}
                 onClick={() => handleCardTap(c.id)}
                 selected={isSel}
-                className={`${playable ? 'ring-2 ring-cyan-300/25' : ''} ${invalid ? 'ring-4 ring-pink-400/70' : ''}`}
+                className={`${playable ? 'ring-2 ring-cyan-300/25' : ''} ${remoteFocused ? 'ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''} ${invalid ? 'ring-4 ring-pink-400/70' : ''}`}
               />
             </div>
           );
         })}
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
-        <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
-          <Plus size={16} /> Draw
-        </button>
-        <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
-          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
-          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
-          <div className="relative">
-            <div className="text-white text-base leading-none">CALL TRUNO</div>
-            <div className="text-[9px] text-fuchsia-100 mt-0.5">If you have 1 card left</div>
-          </div>
-        </button>
-        <button
-          onClick={handlePlay}
-          disabled={!canPlaySelected || state.phase === 'ended'}
-          className={`min-h-14 rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/80 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.15)]' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
-        >
-          <Play size={15} /> Play Card
-        </button>
-      </div>
+      {isPendingDrawPlayMe ? (
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl border border-emerald-500/35 bg-emerald-950/15 p-3 backdrop-blur-sm shadow-[0_0_25px_rgba(52,211,153,0.1)] animate-[truno-pop_0.35s_ease-out]">
+          <button
+            onClick={() => commitMove({ type: 'keep', playerId: me.id })}
+            disabled={state.phase === 'ended'}
+            className="min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 transition"
+          >
+            Keep Card & Pass
+          </button>
+          <button
+            onClick={() => attemptPlayCard(state.pendingDrawPlayCardId!)}
+            disabled={state.phase === 'ended'}
+            className="min-h-14 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-teal-600 transition shadow-[0_0_20px_rgba(52,211,153,0.3)] animate-pulse"
+          >
+            <Play size={15} /> Place Down
+          </button>
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
+          <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className={`min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === 'draw' ? 'ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''}`}>
+            <Plus size={16} /> Draw
+          </button>
+          <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
+            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
+            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
+            <div className="relative">
+              <div className="text-white text-base leading-none">CALL TRUNO</div>
+              <div className="text-[9px] text-fuchsia-100 mt-0.5">If you have 1 card left</div>
+            </div>
+          </button>
+          <button
+            onClick={handlePlay}
+            disabled={!canPlaySelected || state.phase === 'ended'}
+            className={`min-h-14 rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/80 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.15)]' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
+          >
+            <Play size={15} /> Play Card
+          </button>
+        </div>
+      )}
 
       <div className="mt-3 flex items-center justify-between">
         <button onClick={() => setVoice(!voice)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800">
@@ -671,7 +837,7 @@ const TablePlayer: React.FC<{
 }> = ({ player, relativeIndex, playerCount, active, thinking, pulsing, isYou, avatar }) => {
   const position = seatPosition(relativeIndex, playerCount);
   return (
-      <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
+    <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
       <div className={`flex items-center gap-1 mb-1 transition ${pulsing ? 'animate-[truno-pop_0.45s_ease-out]' : ''}`}>
         {Array.from({ length: Math.min(5, player.hand.length) }).map((_, i) => (
           <div key={i} className="w-3 h-8 rounded-sm border border-purple-500/40" style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: 'rgba(157,78,221,0.1)' }} />
@@ -735,6 +901,7 @@ function logLabelFromEvent(event: TrunoMoveEvent) {
   if (event.effect === 'wild') return 'WILD';
   if (event.effect === 'win') return 'WIN';
   if (event.kind === 'draw') return 'DRAW';
+  if (event.kind === 'keep') return 'KEEP';
   if (event.kind === 'call-truno') return 'TRUNO';
   return 'PLAY';
 }
@@ -750,6 +917,7 @@ function effectClass(tone: NonNullable<TableEffect>['tone']) {
 function logClass(tone: ActionLogItem['tone']) {
   if (tone === 'effect') return 'border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-100';
   if (tone === 'draw') return 'border-purple-500/25 bg-purple-500/10 text-purple-100';
+  if (tone === 'keep') return 'border-purple-500/25 bg-purple-500/10 text-purple-100';
   if (tone === 'play') return 'border-cyan-500/25 bg-cyan-500/10 text-cyan-100';
   return 'border-zinc-800 bg-zinc-900/50 text-zinc-300';
 }

@@ -28,15 +28,15 @@ export function useFwdConnectionStatus() {
   });
 }
 
-export function useFwdGifLibrary(tab: FwdGifLibraryTab, limit = 48, offset = 0) {
+export function useFwdGifLibrary(tab: FwdGifLibraryTab, limit = 48, offset = 0, query = "") {
   const { session } = useSupabaseSession();
   const accessToken = session?.access_token ?? null;
 
   return useQuery({
-    queryKey: ["fwd-gif-library", tab, limit, offset, accessToken],
+    queryKey: ["fwd-gif-library", tab, limit, offset, query, accessToken],
     queryFn: async () => {
       if (!accessToken) return { ok: false as const, error: "Not signed in." };
-      return getFwdGifLibrary({ data: { accessToken, tab, limit, offset } });
+      return getFwdGifLibrary({ data: { accessToken, tab, limit, offset, query } });
     },
     enabled: !!accessToken,
     staleTime: 30_000,

@@ -45,6 +45,7 @@ import { isPublicProfileUid } from "@/lib/profile-links";
 import bannerFallback from "@/assets/edit-profile-banner-cosmic.jpg";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
+import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
 
 export const Route = createFileRoute("/edit-profile")({
   component: EditProfile,
@@ -128,8 +129,19 @@ function EditProfile() {
   const [avatarUpload, setAvatarUpload] = useState<File | null>(null);
   const [bannerUpload, setBannerUpload] = useState<File | null>(null);
   const [topThreeOpen, setTopThreeOpen] = useState(false);
-  const [gifOfDay, setGifOfDay] = useState<FwdGifPayload | null>(null);
-  const [gifOfDayCaption, setGifOfDayCaption] = useState("");
+  const markUsed = useMarkFwdGifUsed();
+  const [gifOfDay, setGifOfDay] = useState<FwdGifPayload | null>(() => {
+    if (base.gifOfDayUrl) {
+      return {
+        gif_id: base.gifOfDayId || "",
+        url: base.gifOfDayUrl,
+        preview_url: base.gifOfDayPosterUrl ?? undefined,
+        title: undefined,
+      };
+    }
+    return null;
+  });
+  const [gifOfDayCaption, setGifOfDayCaption] = useState(() => base.gifOfDayCaption ?? "");
   const [showGifOfDayPicker, setShowGifOfDayPicker] = useState(false);
   const avatarFile = useRef<HTMLInputElement | null>(null);
   const bannerFile = useRef<HTMLInputElement | null>(null);
@@ -137,7 +149,16 @@ function EditProfile() {
 
   useEffect(() => {
     if (base.uid) setProfileUid(base.uid);
-  }, [base.uid]);
+    if (base.gifOfDayUrl) {
+      setGifOfDay({
+        gif_id: base.gifOfDayId || "",
+        url: base.gifOfDayUrl,
+        preview_url: base.gifOfDayPosterUrl ?? undefined,
+        title: undefined,
+      });
+      setGifOfDayCaption(base.gifOfDayCaption ?? "");
+    }
+  }, [base.uid, base.gifOfDayUrl, base.gifOfDayId, base.gifOfDayPosterUrl, base.gifOfDayCaption]);
 
   useEffect(() => {
     if (isValidHexColor(draft.accent)) applyAccentColor(draft.accent);
@@ -242,14 +263,12 @@ function EditProfile() {
           banner_url: persistedBanner,
           profile_accent_color: draft.accent,
           updated_at: new Date().toISOString(),
-          ...(gifOfDay ? {
-            gif_of_day_id: gifOfDay.gif_id ?? null,
-            gif_of_day_url: gifOfDay.url,
-            gif_of_day_poster_url: gifOfDay.preview_url ?? null,
-            gif_of_day_provider: "fwd",
-            gif_of_day_caption: gifOfDayCaption.trim() || null,
-            gif_of_day_set_at: new Date().toISOString(),
-          } : {}),
+          gif_of_day_id: gifOfDay ? (gifOfDay.gif_id ?? null) : null,
+          gif_of_day_url: gifOfDay ? gifOfDay.url : null,
+          gif_of_day_poster_url: gifOfDay ? (gifOfDay.preview_url ?? null) : null,
+          gif_of_day_provider: gifOfDay ? "fwd" : null,
+          gif_of_day_caption: gifOfDay ? (gifOfDayCaption.trim() || null) : null,
+          gif_of_day_set_at: gifOfDay ? new Date().toISOString() : null,
         };
 
         if (isPublicProfileUid(existingPublicUid)) {
@@ -307,8 +326,17 @@ function EditProfile() {
         uid: savedPublicProfileUid,
         avatar: persistedAvatar,
         banner: persistedBanner,
-        accent: draft.accent,
+        gifOfDayId: gifOfDay ? (gifOfDay.gif_id ?? null) : null,
+        gifOfDayUrl: gifOfDay ? gifOfDay.url : null,
+        gifOfDayPosterUrl: gifOfDay ? (gifOfDay.preview_url ?? null) : null,
+        gifOfDayProvider: gifOfDay ? "fwd" : null,
+        gifOfDayCaption: gifOfDay ? (gifOfDayCaption.trim() || null) : null,
+        gifOfDaySetAt: gifOfDay ? new Date().toISOString() : null,
       });
+
+      if (gifOfDay) {
+        markUsed.mutate({ id: gifOfDay.gif_id, gif_url: gifOfDay.url });
+      }
 
       recordUserTrace({ userUid: savedPublicProfileUid, action: "profile.update", targetType: "profile", targetId: savedPublicProfileUid, details: { handle: draft.handle, visibility: draft.profileVisibility } });
       toast.success("Profile published");
@@ -513,7 +541,8 @@ function EditProfile() {
             {gifOfDay ? (
               <div className="flex items-start gap-3">
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10">
-                  <img src={gifOfDay.preview_url ?? gifOfDay.url} alt="GIF of the Day" className="h-full w-full object-cover" />
+                  {gifOfDay.preview_url && <img src={gifOfDay.preview_url} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm" />}
+                  <img src={gifOfDay.url} alt="GIF of the Day" className="relative h-full w-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setGifOfDay(null)}

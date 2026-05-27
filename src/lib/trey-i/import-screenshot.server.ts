@@ -317,7 +317,7 @@ export const publishImportProfile = createServerFn({ method: "POST" })
       },
       {
         complete: true,
-        method: "manual",
+        method: "import_screenshot",
         requireBasics: true,
       },
     );

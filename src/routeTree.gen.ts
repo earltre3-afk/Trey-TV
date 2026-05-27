@@ -28,6 +28,7 @@ import { Route as ForYouRouteImport } from './routes/for-you'
 import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as EditProfileRouteImport } from './routes/edit-profile'
+import { Route as DownloadTvAppRouteImport } from './routes/download-tv-app'
 import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as CreatorStudioRouteImport } from './routes/creator-studio'
 import { Route as CreatorHubRouteImport } from './routes/creator-hub'
@@ -45,7 +46,9 @@ import { Route as LegalIndexRouteImport } from './routes/legal.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
 import { Route as WatchIdRouteImport } from './routes/watch.$id'
+import { Route as WatchPartyIdRouteImport } from './routes/watch-party.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
+import { Route as TvActivateRouteImport } from './routes/tv.activate'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as SettingsConnectedAppsRouteImport } from './routes/settings.connected-apps'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
@@ -57,6 +60,7 @@ import { Route as OauthRevokeRouteImport } from './routes/oauth.revoke'
 import { Route as OauthConsentRouteImport } from './routes/oauth.consent'
 import { Route as OauthAuthorizeRouteImport } from './routes/oauth.authorize'
 import { Route as MusicReviewQueueRouteImport } from './routes/music-review.queue'
+import { Route as LiveIdRouteImport } from './routes/live.$id'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as GamesTrunoRouteImport } from './routes/games.truno'
@@ -209,6 +213,11 @@ const EditProfileRoute = EditProfileRouteImport.update({
   path: '/edit-profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DownloadTvAppRoute = DownloadTvAppRouteImport.update({
+  id: '/download-tv-app',
+  path: '/download-tv-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DevelopersRoute = DevelopersRouteImport.update({
   id: '/developers',
   path: '/developers',
@@ -294,9 +303,19 @@ const WatchIdRoute = WatchIdRouteImport.update({
   path: '/watch/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WatchPartyIdRoute = WatchPartyIdRouteImport.update({
+  id: '/watch-party/$id',
+  path: '/watch-party/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UUidRoute = UUidRouteImport.update({
   id: '/u/$uid',
   path: '/u/$uid',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TvActivateRoute = TvActivateRouteImport.update({
+  id: '/tv/activate',
+  path: '/tv/activate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsVerificationRoute = SettingsVerificationRouteImport.update({
@@ -354,6 +373,11 @@ const MusicReviewQueueRoute = MusicReviewQueueRouteImport.update({
   id: '/queue',
   path: '/queue',
   getParentRoute: () => MusicReviewRoute,
+} as any)
+const LiveIdRoute = LiveIdRouteImport.update({
+  id: '/live/$id',
+  path: '/live/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LegalDataDeletionRoute = LegalDataDeletionRouteImport.update({
   id: '/legal/data-deletion',
@@ -659,6 +683,7 @@ export interface FileRoutesByFullPath {
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/developers': typeof DevelopersRouteWithChildren
+  '/download-tv-app': typeof DownloadTvAppRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -723,6 +748,7 @@ export interface FileRoutesByFullPath {
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/live/$id': typeof LiveIdRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
@@ -734,7 +760,9 @@ export interface FileRoutesByFullPath {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
+  '/watch-party/$id': typeof WatchPartyIdRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
@@ -764,6 +792,7 @@ export interface FileRoutesByTo {
   '/create': typeof CreateRoute
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/developers': typeof DevelopersRouteWithChildren
+  '/download-tv-app': typeof DownloadTvAppRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -826,6 +855,7 @@ export interface FileRoutesByTo {
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/live/$id': typeof LiveIdRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
@@ -837,7 +867,9 @@ export interface FileRoutesByTo {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
+  '/watch-party/$id': typeof WatchPartyIdRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio': typeof CreatorStudioIndexRoute
   '/games': typeof GamesIndexRoute
@@ -869,6 +901,7 @@ export interface FileRoutesById {
   '/creator-hub': typeof CreatorHubRouteWithChildren
   '/creator-studio': typeof CreatorStudioRouteWithChildren
   '/developers': typeof DevelopersRouteWithChildren
+  '/download-tv-app': typeof DownloadTvAppRoute
   '/edit-profile': typeof EditProfileRoute
   '/explore': typeof ExploreRoute
   '/following': typeof FollowingRoute
@@ -933,6 +966,7 @@ export interface FileRoutesById {
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
+  '/live/$id': typeof LiveIdRoute
   '/music-review/queue': typeof MusicReviewQueueRoute
   '/oauth/authorize': typeof OauthAuthorizeRoute
   '/oauth/consent': typeof OauthConsentRoute
@@ -944,7 +978,9 @@ export interface FileRoutesById {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
+  '/watch-party/$id': typeof WatchPartyIdRoute
   '/watch/$id': typeof WatchIdRoute
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
@@ -977,6 +1013,7 @@ export interface FileRouteTypes {
     | '/creator-hub'
     | '/creator-studio'
     | '/developers'
+    | '/download-tv-app'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -1041,6 +1078,7 @@ export interface FileRouteTypes {
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
+    | '/live/$id'
     | '/music-review/queue'
     | '/oauth/authorize'
     | '/oauth/consent'
@@ -1052,7 +1090,9 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tv/activate'
     | '/u/$uid'
+    | '/watch-party/$id'
     | '/watch/$id'
     | '/creator-studio/'
     | '/games/'
@@ -1082,6 +1122,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/creator-hub'
     | '/developers'
+    | '/download-tv-app'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -1144,6 +1185,7 @@ export interface FileRouteTypes {
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
+    | '/live/$id'
     | '/music-review/queue'
     | '/oauth/authorize'
     | '/oauth/consent'
@@ -1155,7 +1197,9 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tv/activate'
     | '/u/$uid'
+    | '/watch-party/$id'
     | '/watch/$id'
     | '/creator-studio'
     | '/games'
@@ -1186,6 +1230,7 @@ export interface FileRouteTypes {
     | '/creator-hub'
     | '/creator-studio'
     | '/developers'
+    | '/download-tv-app'
     | '/edit-profile'
     | '/explore'
     | '/following'
@@ -1250,6 +1295,7 @@ export interface FileRouteTypes {
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
+    | '/live/$id'
     | '/music-review/queue'
     | '/oauth/authorize'
     | '/oauth/consent'
@@ -1261,7 +1307,9 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tv/activate'
     | '/u/$uid'
+    | '/watch-party/$id'
     | '/watch/$id'
     | '/creator-studio/'
     | '/games/'
@@ -1293,6 +1341,7 @@ export interface RootRouteChildren {
   CreatorHubRoute: typeof CreatorHubRouteWithChildren
   CreatorStudioRoute: typeof CreatorStudioRouteWithChildren
   DevelopersRoute: typeof DevelopersRouteWithChildren
+  DownloadTvAppRoute: typeof DownloadTvAppRoute
   EditProfileRoute: typeof EditProfileRoute
   ExploreRoute: typeof ExploreRoute
   FollowingRoute: typeof FollowingRoute
@@ -1317,12 +1366,15 @@ export interface RootRouteChildren {
   ChannelHandleRoute: typeof ChannelHandleRoute
   LegalSlugRoute: typeof LegalSlugRoute
   LegalDataDeletionRoute: typeof LegalDataDeletionRoute
+  LiveIdRoute: typeof LiveIdRoute
   OauthAuthorizeRoute: typeof OauthAuthorizeRoute
   OauthConsentRoute: typeof OauthConsentRoute
   OauthRevokeRoute: typeof OauthRevokeRoute
   OauthTokenRoute: typeof OauthTokenRoute
   OauthUserinfoRoute: typeof OauthUserinfoRoute
+  TvActivateRoute: typeof TvActivateRoute
   UUidRoute: typeof UUidRouteWithChildren
+  WatchPartyIdRoute: typeof WatchPartyIdRoute
   WatchIdRoute: typeof WatchIdRoute
   LegalIndexRoute: typeof LegalIndexRoute
   OauthJwksJsonRoute: typeof OauthJwksJsonRoute
@@ -1464,6 +1516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/download-tv-app': {
+      id: '/download-tv-app'
+      path: '/download-tv-app'
+      fullPath: '/download-tv-app'
+      preLoaderRoute: typeof DownloadTvAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/developers': {
       id: '/developers'
       path: '/developers'
@@ -1583,11 +1642,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/watch-party/$id': {
+      id: '/watch-party/$id'
+      path: '/watch-party/$id'
+      fullPath: '/watch-party/$id'
+      preLoaderRoute: typeof WatchPartyIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/u/$uid': {
       id: '/u/$uid'
       path: '/u/$uid'
       fullPath: '/u/$uid'
       preLoaderRoute: typeof UUidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv/activate': {
+      id: '/tv/activate'
+      path: '/tv/activate'
+      fullPath: '/tv/activate'
+      preLoaderRoute: typeof TvActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/verification': {
@@ -1666,6 +1739,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/music-review/queue'
       preLoaderRoute: typeof MusicReviewQueueRouteImport
       parentRoute: typeof MusicReviewRoute
+    }
+    '/live/$id': {
+      id: '/live/$id'
+      path: '/live/$id'
+      fullPath: '/live/$id'
+      preLoaderRoute: typeof LiveIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/legal/data-deletion': {
       id: '/legal/data-deletion'
@@ -2321,6 +2401,7 @@ const rootRouteChildren: RootRouteChildren = {
   CreatorHubRoute: CreatorHubRouteWithChildren,
   CreatorStudioRoute: CreatorStudioRouteWithChildren,
   DevelopersRoute: DevelopersRouteWithChildren,
+  DownloadTvAppRoute: DownloadTvAppRoute,
   EditProfileRoute: EditProfileRoute,
   ExploreRoute: ExploreRoute,
   FollowingRoute: FollowingRoute,
@@ -2345,12 +2426,15 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelHandleRoute: ChannelHandleRoute,
   LegalSlugRoute: LegalSlugRoute,
   LegalDataDeletionRoute: LegalDataDeletionRoute,
+  LiveIdRoute: LiveIdRoute,
   OauthAuthorizeRoute: OauthAuthorizeRoute,
   OauthConsentRoute: OauthConsentRoute,
   OauthRevokeRoute: OauthRevokeRoute,
   OauthTokenRoute: OauthTokenRoute,
   OauthUserinfoRoute: OauthUserinfoRoute,
+  TvActivateRoute: TvActivateRoute,
   UUidRoute: UUidRouteWithChildren,
+  WatchPartyIdRoute: WatchPartyIdRoute,
   WatchIdRoute: WatchIdRoute,
   LegalIndexRoute: LegalIndexRoute,
   OauthJwksJsonRoute: OauthJwksJsonRoute,

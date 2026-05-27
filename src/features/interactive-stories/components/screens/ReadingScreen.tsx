@@ -1,6 +1,6 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
- ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Activity, Layers, SkipForward, Play,
+ ArrowLeft, ChevronRight, ChevronDown, ChevronUp, Activity, Layers, SkipForward, Play, Mic2, Radio, Volume2, ListMusic, Square, Sparkles,
 } from 'lucide-react';
 import { Branch } from '../../lib/storyTypes';
 import { MeterBar } from '../MeterBar';
@@ -8,6 +8,17 @@ import { VoicePlayer, VoiceSettingsToolbar } from '../VoicePlayer';
 import { CHARACTERS, CHARACTER_PHOTO_MAP, getImageMeta } from '../../lib/storyData';
 import { VoiceCharacterId, toVoiceId, stopVoice, loadVoiceSettings, resolveStoryVoiceForLine } from '../../lib/voiceLines';
 import type { StoryBeatVoiceLine, StoryVoiceConfig } from '../../lib/storyVoiceTypes';
+import {
+ connectInteractiveStoryNarrator,
+ getLiveKitNarratorConfig,
+ type InteractiveStoryLiveKitSession,
+ type NarrationStatusUpdate,
+ type StoryDirectionUpdate,
+} from '@/lib/livekitClientTools';
+import {
+ getInteractiveStoryMetadata,
+ setCurrentInteractiveStoryNarrationContext,
+} from '@/lib/interactiveStoryLiveKitAdapter';
 
 
 interface Props {
@@ -55,6 +66,26 @@ function beatsFromStructuredLines(lines: StoryBeatVoiceLine[] | undefined, chapt
  voice: resolved.voice,
  };
  });
+}
+
+function getFriendlyNarratorError(error: unknown): string {
+ const message = error instanceof Error ? error.message : String(error || '');
+ const lower = message.toLowerCase();
+
+ if (lower.includes('invalid token') || lower.includes('no valid credentials') || lower.includes('authentication failed')) {
+  return 'LiveKit rejected the narrator token. Check the API key and secret for this LiveKit URL.';
+ }
+ if (lower.includes('not configured') || lower.includes('livekit url') || lower.includes('missing')) {
+  return 'LiveKit env missing. Add the LiveKit URL and server token credentials.';
+ }
+ if (lower.includes('token') && (lower.includes('failed') || lower.includes('unavailable'))) {
+  return 'LiveKit token route failed.';
+ }
+ if (lower.includes('signal') || lower.includes('connection') || lower.includes('websocket')) {
+  return 'Room connection failed.';
+ }
+
+ return 'Live narration could not connect yet. Check the LiveKit project credentials and try again.';
 }
 
 /** Parse a chapter's prose into beats (narration + character dialogue). */
@@ -136,6 +167,14 @@ export const ReadingScreen: React.FC<Props> = ({
 }) => {
  const chapter = branch.chapters[branch.chapters.length - 1];
  const [railOpen, setRailOpen] = useState(false);
+ const [autoNarrate, setAutoNarrate] = useState(false);
+ const [narratorStatus, setNarratorStatus] = useState<NarrationStatusUpdate>({ message: 'Not connected' });
+ const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
+ const [spokenDirection, setSpokenDirection] = useState<StoryDirectionUpdate | null>(null);
+ const [narratorMessage, setNarratorMessage] = useState('Live narrator unavailable until connected.');
+ const sessionRef = React.useRef<InteractiveStoryLiveKitSession | null>(null);
+ const narratorConfig = getLiveKitNarratorConfig();
+ const storyMeta = useMemo(() => getInteractiveStoryMetadata(branch), [branch]);
 
  const beats = useMemo(() => {
  const structured = beatsFromStructuredLines(chapter.voiceLines, chapter);
@@ -146,12 +185,35 @@ export const ReadingScreen: React.FC<Props> = ({
  const isComplete = revealCount >= beats.length;
  const currentBeat = beats[revealCount - 1];
 
+ useEffect(() => {
+ setCurrentInteractiveStoryNarrationContext({
+ branch,
+ story: storyMeta,
+ chapter,
+ beat: chapter,
+ currentBeatIndex: Math.max(0, chapter.number - 1),
+ });
+ return () => setCurrentInteractiveStoryNarrationContext(null);
+ }, [branch, chapter, storyMeta]);
+
  // Reset on chapter change
  useEffect(() => {
  setRevealCount(1);
  stopVoice();
  return () => stopVoice();
  }, [chapter.number]);
+
+ useEffect(() => {
+ if (!autoNarrate || !sessionRef.current || connectionStatus !== 'connected') return;
+ sessionRef.current.sendCue('beat-changed').catch(() => {
+ setNarratorMessage('The narrator could not receive the new beat cue.');
+ });
+ }, [autoNarrate, chapter.sceneId, chapter.number, connectionStatus]);
+
+ useEffect(() => () => {
+ sessionRef.current?.disconnect();
+ sessionRef.current = null;
+ }, []);
 
  const settings = loadVoiceSettings();
  const playbackSceneId = chapter.sceneId || `chapter_${chapter.number}`;
@@ -175,6 +237,85 @@ export const ReadingScreen: React.FC<Props> = ({
  const imageFit = chapter.imageFit || imgMeta.fit;
  const imagePosition = chapter.imagePosition || imgMeta.position;
  const heroFitClass = imageFit === 'contain' ? 'object-contain bg-zinc-950' : 'object-cover';
+
+ const startNarrator = async () => {
+ if (sessionRef.current) return;
+ setConnectionStatus('connecting');
+ setNarratorMessage('token requested');
+ try {
+ const session = await connectInteractiveStoryNarrator({
+ storyId: branch.storyId,
+ beatId: chapter.sceneId || `chapter-${chapter.number}`,
+ agentName: narratorConfig.agentName,
+ onNarrationStatus: (status) => {
+ setNarratorStatus(status);
+ setNarratorMessage(status.message || `Narration ${status.status || 'updated'}.`);
+ },
+ onSpokenDirection: setSpokenDirection,
+ onStatusMessage: (message) => {
+ setNarratorMessage(message);
+ const lower = message.toLowerCase();
+ if (lower === 'connected' || lower.includes('reachable')) {
+ setConnectionStatus('connected');
+ }
+ if (lower.includes('did not join') || lower.includes('failed')) {
+ setConnectionStatus('error');
+ }
+ if (lower.includes('disconnected')) {
+ setConnectionStatus('idle');
+ sessionRef.current = null;
+ }
+ },
+ });
+ sessionRef.current = session;
+ setConnectionStatus('connected');
+ setNarratorStatus({ status: 'started', message: 'connected', timestamp: new Date().toISOString() });
+ } catch (error) {
+ setConnectionStatus('error');
+ setNarratorMessage(`failed: ${getFriendlyNarratorError(error)}`);
+ sessionRef.current?.disconnect();
+ sessionRef.current = null;
+ }
+ };
+
+ const testCurrentPageRpc = () => {
+ if (!sessionRef.current) {
+ setNarratorMessage('RPC tool not registered');
+ return;
+ }
+ try {
+ const result = sessionRef.current.testCurrentPageRpc();
+ console.info('[LiveKit] local narrator tool check', {
+ pageAvailable: Boolean((result.page as { available?: boolean })?.available),
+ charactersAvailable: Boolean((result.characters as { available?: boolean })?.available),
+ narrationScriptAvailable: Boolean((result.narrationScript as { available?: boolean })?.available),
+ });
+ setNarratorMessage('RPC tools registered');
+ } catch {
+ setNarratorMessage('failed: RPC tool not registered');
+ }
+ };
+
+ const stopNarrator = () => {
+ sessionRef.current?.disconnect();
+ sessionRef.current = null;
+ setConnectionStatus('idle');
+ setNarratorStatus({ status: 'paused', message: 'Narrator stopped.', timestamp: new Date().toISOString() });
+ setNarratorMessage('disconnected');
+ };
+
+ const sendNarratorCue = (cue: 'read-current-beat' | 'read-choices') => {
+ if (!sessionRef.current || connectionStatus !== 'connected') {
+ setNarratorMessage('disconnected');
+ return;
+ }
+ setNarratorMessage(cue === 'read-current-beat' ? 'reading current beat/page' : 'reading choices');
+ sessionRef.current.sendCue(cue).then(() => {
+ setNarratorMessage(cue === 'read-current-beat' ? 'reading current beat/page' : 'reading choices');
+ }).catch(() => {
+ setNarratorMessage('failed: narrator cue could not be sent.');
+ });
+ };
 
  return (
  <div className="min-h-screen pb-32">
@@ -210,6 +351,114 @@ export const ReadingScreen: React.FC<Props> = ({
  </div>
  </div>
  )}
+
+ <section className="mx-5 mt-4 overflow-hidden rounded-[1.35rem] border border-cyan-300/20 bg-zinc-950/60 shadow-[0_0_34px_rgba(34,211,238,0.12)] backdrop-blur-xl">
+ <div className="border-b border-white/10 bg-[linear-gradient(135deg,rgba(8,47,73,0.62),rgba(88,28,135,0.28),rgba(0,0,0,0.2))] p-4">
+ <div className="flex flex-wrap items-center justify-between gap-3">
+ <div>
+ <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.28em] text-cyan-200/80">
+ <Mic2 className="h-4 w-4 text-cyan-300" />
+ LiveKit Narrator
+ </div>
+ <h2 className="mt-1 font-display text-lg font-black text-white">Agent: {narratorConfig.agentName}</h2>
+ </div>
+ <div className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${
+ connectionStatus === 'connected'
+ ? 'border-emerald-300/40 bg-emerald-400/15 text-emerald-200 shadow-[0_0_18px_rgba(52,211,153,0.22)]'
+ : connectionStatus === 'connecting'
+ ? 'border-cyan-300/40 bg-cyan-400/15 text-cyan-100'
+ : connectionStatus === 'error'
+ ? 'border-red-300/40 bg-red-400/15 text-red-100'
+ : 'border-white/15 bg-white/5 text-white/50'
+ }`}>
+ {connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting' : connectionStatus === 'error' ? 'Failed' : 'Disconnected'}
+ </div>
+ </div>
+
+ <div className="mt-3 grid gap-2 text-xs text-white/65 sm:grid-cols-3">
+ <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+ <div className="text-[9px] uppercase tracking-widest text-white/35">Story</div>
+ <div className="truncate font-semibold text-white">{storyMeta.title}</div>
+ </div>
+ <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+ <div className="text-[9px] uppercase tracking-widest text-white/35">Chapter / Beat</div>
+ <div className="truncate font-semibold text-white">{chapter.title}</div>
+ </div>
+ <div className="rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+ <div className="text-[9px] uppercase tracking-widest text-white/35">Narration Status</div>
+ <div className="truncate font-semibold text-white">{narratorStatus.status || 'idle'}</div>
+ </div>
+ </div>
+ </div>
+
+ <div className="grid gap-2 p-4 sm:grid-cols-2">
+ <button
+ type="button"
+ onClick={startNarrator}
+ disabled={connectionStatus === 'connecting' || connectionStatus === 'connected'}
+ className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-3 py-2 text-xs font-bold uppercase tracking-widest text-cyan-100 transition hover:bg-cyan-400/15 disabled:opacity-45"
+ >
+ <Radio className="h-4 w-4" /> Start Narrator
+ </button>
+ <button
+ type="button"
+ onClick={stopNarrator}
+ disabled={!sessionRef.current}
+ className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-widest text-white/80 transition hover:bg-white/10 disabled:opacity-45"
+ >
+ <Square className="h-4 w-4" /> Stop Narrator
+ </button>
+ <button
+ type="button"
+ onClick={() => sendNarratorCue('read-current-beat')}
+ className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-violet-300/30 bg-violet-500/10 px-3 py-2 text-xs font-bold uppercase tracking-widest text-violet-100 transition hover:bg-violet-500/15"
+ >
+ <Volume2 className="h-4 w-4" /> Read Current Beat
+ </button>
+ <button
+ type="button"
+ onClick={() => sendNarratorCue('read-choices')}
+ className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-fuchsia-300/30 bg-fuchsia-500/10 px-3 py-2 text-xs font-bold uppercase tracking-widest text-fuchsia-100 transition hover:bg-fuchsia-500/15"
+ >
+ <ListMusic className="h-4 w-4" /> Read Choices
+ </button>
+ <button
+ type="button"
+ onClick={testCurrentPageRpc}
+ className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-300/30 bg-amber-500/10 px-3 py-2 text-xs font-bold uppercase tracking-widest text-amber-100 transition hover:bg-amber-500/15"
+ >
+ <Activity className="h-4 w-4" /> Test Current Page RPC
+ </button>
+ </div>
+
+ <div className="flex flex-col gap-3 border-t border-white/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+ <label className="flex items-center gap-3 text-sm text-white/75">
+ <input
+ type="checkbox"
+ checked={autoNarrate}
+ onChange={(event) => setAutoNarrate(event.target.checked)}
+ className="h-4 w-4 accent-cyan-300"
+ />
+ Auto-Narrate Beats
+ </label>
+ <div className="flex items-center gap-2 text-xs text-white/50">
+ <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+ {narratorMessage}
+ </div>
+ </div>
+
+ {spokenDirection && (
+ <div className="border-t border-white/10 bg-black/25 px-4 py-3 text-xs text-white/70">
+ <div className="font-bold uppercase tracking-widest text-cyan-200/80">Spoken Direction</div>
+ <div className="mt-1">{spokenDirection.transcript}</div>
+ {spokenDirection.matchedChoiceText && (
+ <div className="mt-2 rounded-xl border border-emerald-300/20 bg-emerald-400/10 px-3 py-2 text-emerald-100">
+ Closest choice: {spokenDirection.matchedChoiceLabel}. {spokenDirection.matchedChoiceText}
+ </div>
+ )}
+ </div>
+ )}
+ </section>
 
 
  {/* Cinematic playback toolbar */}
@@ -277,11 +526,11 @@ export const ReadingScreen: React.FC<Props> = ({
  speakerName={b.speakerName}
  voice={b.voice}
  compact
- autoplayKey={settings.autoplay ? `${branch.id}-${playbackSceneId}-${i}` : undefined}
+ autoplayKey={`${branch.id}-${playbackSceneId}-${i}`}
  playbackToken={playbackToken}
  sceneId={playbackSceneId}
  lineIndex={i}
- onEnded={() => settings.autoplay && advance()}
+ onEnded={() => advance()}
  />
  </div>
  )}
@@ -322,11 +571,11 @@ export const ReadingScreen: React.FC<Props> = ({
  speakerName={b.speakerName}
  avatarUrl={b.avatar}
  compact
- autoplayKey={settings.autoplay ? `${branch.id}-${playbackSceneId}-${i}` : undefined}
+ autoplayKey={`${branch.id}-${playbackSceneId}-${i}`}
  playbackToken={playbackToken}
  sceneId={playbackSceneId}
  lineIndex={i}
- onEnded={() => settings.autoplay && advance()}
+ onEnded={() => advance()}
  />
  </div>
  )}

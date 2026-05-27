@@ -23,6 +23,7 @@ import { useFollowState, useSubscribeState } from "@/lib/profile-identity";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import { useFwdGifLibrary } from "@/lib/fwd-gif-api";
+import { buildFwdGifDetailUrl, getAnimatedFwdGifUrl, getFwdPosterUrl } from "@/lib/fwd/picker";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import staticBanner from "@/assets/lovable-hero-bg.jpg";
 import staticPortrait from "@/assets/lovable-profile-portrait.jpg";
@@ -489,13 +490,14 @@ export function ProfilePageNew({
                   <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground">FWD</span>
                 </div>
                 <div className="relative overflow-hidden rounded-xl border border-white/10 max-h-52">
+                  {profile.gifOfDayPosterUrl && (
+                    <img src={profile.gifOfDayPosterUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm" loading="lazy" />
+                  )}
                   <img
-                    src={profile.gifOfDayPosterUrl ?? profile.gifOfDayUrl}
+                    src={profile.gifOfDayUrl}
                     alt="GIF of the Day"
-                    className="w-full object-cover"
+                    className="relative w-full object-cover"
                     loading="lazy"
-                    onMouseEnter={(e) => { if (profile.gifOfDayUrl && profile.gifOfDayUrl !== profile.gifOfDayPosterUrl) (e.currentTarget as HTMLImageElement).src = profile.gifOfDayUrl; }}
-                    onMouseLeave={(e) => { if (profile.gifOfDayPosterUrl) (e.currentTarget as HTMLImageElement).src = profile.gifOfDayPosterUrl; }}
                   />
                 </div>
                 {profile.gifOfDayCaption && (
@@ -525,10 +527,12 @@ export function ProfilePageNew({
                 {showFwdGifs && fwdGifs.length > 0 ? (
                   <div className="grid grid-cols-3 gap-2">
                     {fwdGifs.map((gif) => {
-                      const src = gif.poster_url || gif.preview_url || gif.gif_url || gif.media_url || gif.source_url || "";
+                      const poster = getFwdPosterUrl(gif);
+                      const src = getAnimatedFwdGifUrl(gif) || poster || "";
                       return (
-                        <a key={gif.id} href={`https://fwd.treytv.com/gif/${gif.id}`} className="group aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]" target="_blank" rel="noreferrer">
-                          <img src={src} alt={gif.title || "FWD GIF"} loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-110" />
+                        <a key={gif.id} href={buildFwdGifDetailUrl(gif.gif_id ?? gif.id)} className="group relative aspect-square overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]" target="_blank" rel="noreferrer">
+                          {poster && <img src={poster} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm" loading="lazy" />}
+                          <img src={src} alt={gif.title || "FWD GIF"} loading="lazy" className="relative h-full w-full object-cover transition duration-500 group-hover:scale-110" />
                         </a>
                       );
                     })}

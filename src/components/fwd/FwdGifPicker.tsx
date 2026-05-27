@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { X, ExternalLink, Loader2, ImageOff } from "lucide-react";
+import { X, ExternalLink, Loader2, ImageOff, Search, RefreshCw } from "lucide-react";
 import { useFwdGifLibrary, useMarkFwdGifUsed, useCaptureFwdGif, type FwdGifItem, type FwdGifLibraryTab } from "@/lib/fwd-gif-api";
-import { buildFwdPickerUrl, parseFwdPickerMessage, sendDraftUpdate } from "@/lib/fwd/picker";
+import { buildFwdGifDetailUrl, buildFwdPickerUrl, getAnimatedFwdGifUrl, getFwdPosterUrl, parseFwdPickerMessage, sendDraftUpdate } from "@/lib/fwd/picker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 const FWD_BASE_URL = "https://fwd.treytv.com";
@@ -25,8 +25,15 @@ const TABS: { key: FwdGifLibraryTab | "discover"; label: string }[] = [
 
 export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "message", draft }: FwdGifPickerProps) {
   const [tab, setTab] = useState<FwdGifLibraryTab | "discover">("saved");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const markUsed = useMarkFwdGifUsed();
   const capture = useCaptureFwdGif();
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedSearch(search.trim()), 280);
+    return () => window.clearTimeout(id);
+  }, [search]);
 
   // Called when a GIF is selected from the Discover (iframe) tab — capture it in FWD library
   const handleSelect = useCallback((gif: FwdGifPayload) => {
@@ -43,16 +50,17 @@ export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "me
   }, [capture, onSelect, onClose]);
 
   const handleLibrarySelect = useCallback((item: FwdGifItem) => {
-    const url = item.gif_url || item.media_url || item.source_url || "";
+    const url = getAnimatedFwdGifUrl(item);
     if (!url) return;
     markUsed.mutate({ id: item.id });
     const payload: FwdGifPayload = {
-      gif_id: item.id,
+      gif_id: item.gif_id ?? item.id,
       url,
       title: item.title ?? undefined,
       width: item.width ?? undefined,
       height: item.height ?? undefined,
-      preview_url: item.poster_url ?? item.preview_url ?? undefined,
+      preview_url: getFwdPosterUrl(item),
+      detail_url: buildFwdGifDetailUrl(item.gif_id ?? item.id),
     };
     onSelect(payload);
     onClose();
@@ -113,6 +121,23 @@ export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "me
           ))}
         </div>
 
+        <div className="shrink-0 border-b border-white/10 px-4 py-3">
+          <label className="flex min-h-11 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.055] px-3 text-sm focus-within:border-primary/50 focus-within:shadow-[0_0_18px_-8px_oklch(0.82_0.16_85_/_0.55)]">
+            <Search className="size-4 shrink-0 text-primary" />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search your FWD GIFs"
+              className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+            />
+            {search && (
+              <button type="button" onClick={() => setSearch("")} className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground" aria-label="Clear GIF search">
+                <X className="size-3.5" />
+              </button>
+            )}
+          </label>
+        </div>
+
         {/* Content */}
         <div className="min-h-0 flex-1 overflow-hidden">
           {tab === "discover" ? (
@@ -124,7 +149,7 @@ export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "me
             />
           ) : (
             <div className="h-full overflow-y-auto">
-              <LibraryGrid tab={tab} onSelect={handleLibrarySelect} />
+              <LibraryGrid tab={tab} query={debouncedSearch} onSelect={handleLibrarySelect} />
             </div>
           )}
         </div>
@@ -182,6 +207,7 @@ function DiscoverTab({ context, onSelect, treyTvUid, draft }: DiscoverTabProps) 
 
 type LibraryGridProps = {
   tab: FwdGifLibraryTab;
+  query: string;
   onSelect: (item: FwdGifItem) => void;
 };
 
@@ -206,7 +232,7 @@ function ConnectFwdCta() {
       <div>
         <p className="font-semibold text-foreground">Connect FWD</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Connect FWD to use your GIF library in Trey TV messages.
+          Connect FWD to use GIFs in messages and comments.
         </p>
       </div>
       <a
@@ -215,15 +241,15 @@ function ConnectFwdCta() {
         rel="noreferrer"
         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground transition-opacity hover:opacity-80"
       >
-        Connect FWD
+        Open FWD
         <ExternalLink className="size-3" />
       </a>
     </div>
   );
 }
 
-function LibraryGrid({ tab, onSelect }: LibraryGridProps) {
-  const { data, isLoading, isError } = useFwdGifLibrary(tab);
+function LibraryGrid({ tab, query, onSelect }: LibraryGridProps) {
+  const { data, isLoading, isError, refetch, isFetching } = useFwdGifLibrary(tab, 48, 0, query);
 
   if (isLoading) {
     return (
@@ -245,21 +271,39 @@ function LibraryGrid({ tab, onSelect }: LibraryGridProps) {
         <p className="text-sm text-muted-foreground">
           {errorMsg ?? "Could not load your GIF library."}
         </p>
+        <button
+          type="button"
+          onClick={() => void refetch()}
+          className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-bold text-foreground hover:border-primary/40"
+        >
+          <RefreshCw className="size-3" /> Retry
+        </button>
       </div>
     );
   }
 
-  const gifs: FwdGifItem[] = (data as { ok: true; data: { gifs: FwdGifItem[] } }).data?.gifs ?? [];
+  const rawGifs: FwdGifItem[] = (data as { ok: true; data: { gifs: FwdGifItem[] } }).data?.gifs ?? [];
+  const q = query.toLowerCase();
+  const gifs = q
+    ? rawGifs.filter((gif) => [gif.title, gif.caption, gif.provider, gif.mood, ...(gif.tags ?? [])].some((value) => String(value ?? "").toLowerCase().includes(q)))
+    : rawGifs;
 
   if (gifs.length === 0) {
-    return <EmptyState tab={tab} />;
+    return <EmptyState tab={tab} query={query} />;
   }
 
   return (
-    <div className="grid grid-cols-3 gap-1 p-2 sm:grid-cols-4">
-      {gifs.map((gif) => (
-        <GifTile key={gif.id} gif={gif} onSelect={onSelect} />
-      ))}
+    <div className="relative">
+      {isFetching && (
+        <div className="sticky top-0 z-10 flex items-center justify-center gap-2 border-b border-white/10 bg-background/80 py-2 text-xs text-muted-foreground backdrop-blur">
+          <Loader2 className="size-3.5 animate-spin" /> Refreshing GIFs
+        </div>
+      )}
+      <div className="grid grid-cols-3 gap-1 p-2 sm:grid-cols-4">
+        {gifs.map((gif) => (
+          <GifTile key={gif.id} gif={gif} onSelect={onSelect} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -274,9 +318,9 @@ type GifTileProps = {
 };
 
 function GifTile({ gif, onSelect }: GifTileProps) {
-  const imgRef = useRef<HTMLImageElement>(null);
-  const poster = gif.poster_url || gif.preview_url;
-  const animated = gif.gif_url || gif.media_url || gif.source_url;
+  const poster = getFwdPosterUrl(gif);
+  const animated = getAnimatedFwdGifUrl(gif);
+  const primary = animated || poster;
 
   return (
     <button
@@ -286,23 +330,20 @@ function GifTile({ gif, onSelect }: GifTileProps) {
     >
       {poster ? (
         <img
-          ref={imgRef}
           src={poster}
-          alt={gif.title ?? "GIF"}
+          alt=""
+          aria-hidden
           loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover transition-opacity group-hover:opacity-0"
+          className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       ) : null}
-      {animated ? (
+      {primary ? (
         <img
-          src={animated}
+          src={primary}
           alt={gif.title ?? "GIF"}
           loading="lazy"
-          className={[
-            "absolute inset-0 h-full w-full object-cover",
-            poster ? "opacity-0 transition-opacity group-hover:opacity-100" : "",
-          ].join(" ")}
+          className="absolute inset-0 h-full w-full object-cover"
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
         />
       ) : (
@@ -326,14 +367,14 @@ const EMPTY_STATE_COPY: Record<FwdGifLibraryTab, { heading: string; body: string
   favorite: { heading: "No favorites yet",       body: "Mark GIFs as favorites on FWD and they will sync here.", cta: "Open FWD" },
 };
 
-function EmptyState({ tab }: { tab: FwdGifLibraryTab }) {
+function EmptyState({ tab, query }: { tab: FwdGifLibraryTab; query?: string }) {
   const copy = EMPTY_STATE_COPY[tab];
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center gap-4 px-8 text-center">
       <div className="text-4xl select-none">🎞️</div>
       <div>
-        <p className="font-semibold text-foreground">{copy.heading}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{copy.body}</p>
+        <p className="font-semibold text-foreground">{query ? "No matching GIFs" : copy.heading}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{query ? "Try a different FWD search, or open FWD to make something new." : copy.body}</p>
       </div>
       <a
         href={FWD_BASE_URL}

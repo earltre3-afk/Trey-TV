@@ -14,8 +14,11 @@ import { useComments, type Comment } from "@/lib/comments-store";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 import { isPublicProfileUid } from "@/lib/profile-links";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
-import type { FwdGifPayload } from "@/lib/fwd/picker";
-import { useFwdConnectionStatus } from "@/lib/fwd-gif-api";
+import { buildFwdGifDetailUrl, type FwdGifPayload } from "@/lib/fwd/picker";
+import { useFwdConnectionStatus, useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
+import { getMutualFollows } from "@/lib/social-relationships";
+import { useMessages } from "@/lib/messages-store";
+import { creators } from "@/lib/mock-data";
 
 type Post = (typeof Posts)[number] & Partial<UserPost>;
 
@@ -29,6 +32,7 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { isSignedIn, user } = useAuth();
   const currentProfile = useCurrentUser();
   const fwdStatus = useFwdConnectionStatus();
+  const markUsed = useMarkFwdGifUsed();
   const isGuest = !isSignedIn;
   const nav = useNavigate();
 
@@ -51,8 +55,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const [fwdPickerOpen, setFwdPickerOpen] = useState(false);
   const [fwdCaption, setFwdCaption] = useState("");
   const [selectedFwdGif, setSelectedFwdGif] = useState<FwdGifPayload | null>(null);
-  const [busyAction, setBusyAction] = useState<"edit" | "delete" | "fwd" | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [mutuals, setMutuals] = useState<any[]>([]);
+  const [loadingMutuals, setLoadingMutuals] = useState(false);
   const { byPost, loaded: commentsLoaded, add, toggleLike, edit, remove, isMine } = useComments();
+  const { openThread, send: sendMessage } = useMessages();
   const treyTvUid = currentProfile.uid || (user as any)?.id || null;
   const allComments = byPost(post.id);
   const commentCount = commentsLoaded(post.id) ? allComments.length : Math.max(post.comments, allComments.length);
@@ -214,11 +221,103 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
 
   const current = reaction ? REACTIONS.find((r) => r.key === reaction) : null;
 
+  const loadMutuals = async () => {
+    setLoadingMutuals(true);
+    try {
+      const dbMutuals = await getMutualFollows();
+      const mockMutuals = creators.slice(0, 2).map((c) => ({
+        id: c.id,
+        public_profile_uid: null,
+        username: c.handle,
+        display_name: c.name,
+        avatar_url: c.avatar,
+        verification_type: c.verified,
+      }));
+      
+      const combined = [...dbMutuals];
+      mockMutuals.forEach(m => {
+        if (!combined.some(c => c.username === m.username)) combined.push(m);
+      });
+      
+      setMutuals(combined);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMutuals(false);
+    }
+  };
+
+  const handleShareInternally = (peer: any) => {
+    if (!mutuals.some(m => m.id === peer.id)) {
+      toast.error("You can only share with mutual friends!");
+      return;
+    }
+    const threadId = openThread({
+      id: peer.id,
+      publicProfileUid: peer.public_profile_uid,
+      name: peer.display_name,
+      handle: peer.username,
+      avatar: peer.avatar_url,
+      verified: peer.verification_type,
+    });
+
+    const shareText = `[TTV_SHARE:post:${encodeURIComponent(post.id)}:${encodeURIComponent(post.text)}:${encodeURIComponent(post.media || "")}]`;
+    sendMessage(threadId, shareText);
+    toast.success(`Shared post with @${peer.username}!`);
+    setShareDialogOpen(false);
+  };
+
   return (
     <article
       className="mobile-edge-card group relative rounded-none sm:rounded-3xl liquid-glass neon-border shadow-[0_10px_40px_-15px_rgba(0,0,0,0.7)] liquid-hover"
       style={{ animationDelay: `${index * 80}ms` }}
     >
+      {/* Share Dialog */}
+      {shareDialogOpen && (
+        <ModalShell title="Share Internally" eyebrow="Send to Friends" onClose={() => setShareDialogOpen(false)}>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              You can only share posts with mutual follows (friends). If you don't see someone, add/follow them first!
+            </p>
+            {loadingMutuals ? (
+              <div className="flex h-32 items-center justify-center">
+                <Loader2 className="size-6 animate-spin text-primary" />
+              </div>
+            ) : mutuals.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-32 text-center text-sm text-muted-foreground space-y-2">
+                <p>No mutual friends found.</p>
+                <button
+                  type="button"
+                  onClick={() => { setShareDialogOpen(false); nav({ to: "/explore" }); }}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  Explore and follow creators to build connections!
+                </button>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {mutuals.map((peer) => (
+                  <button
+                    key={peer.id}
+                    type="button"
+                    onClick={() => handleShareInternally(peer)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-3 py-2 text-left hover:bg-white/[0.08] transition"
+                  >
+                    <img src={peer.avatar_url} alt="" className="size-9 rounded-full object-cover ring-1 ring-white/10" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate">{peer.display_name}</div>
+                      <div className="text-xs text-muted-foreground truncate">@{peer.username}</div>
+                    </div>
+                    <span className="text-xs font-bold text-primary px-3 py-1 rounded-full bg-primary/15 border border-primary/20">
+                      Send
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </ModalShell>
+      )}
       <div className="flex items-center gap-3 p-4">
         <ProfilePictureLink
           publicProfileUid={creatorPublicProfileUid}
@@ -350,12 +449,17 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         </button>
         <button
           type="button"
-          onClick={async (e) => {
+          onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            if (isGuest) {
+              toast("Sign up to share posts internally");
+              nav({ to: "/signup" });
+              return;
+            }
             logShare(post.id, meta);
-            try { await navigator.share?.({ title: post.creator.name, text: post.text }); }
-            catch { await navigator.clipboard?.writeText(`${post.creator.name}: ${post.text}`); toast("Link copied"); }
+            setShareDialogOpen(true);
+            void loadMutuals();
           }}
           className="text-muted-foreground hover:text-foreground tilt-press"
           aria-label="share"
@@ -412,6 +516,9 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
                   if (!ok) {
                     toast("Comment couldn't post. Try again.");
                     return;
+                  }
+                  if (commentGif) {
+                    markUsed.mutate({ id: commentGif.gif_id, gif_url: commentGif.url });
                   }
                   setNewComment("");
                   setReplyTo(null);
@@ -760,14 +867,17 @@ function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c
             <div className="mt-0.5">
               {c.text && <p className="text-sm break-words whitespace-pre-wrap">{c.text}</p>}
               {c.gifUrl && (
-                <img
-                  src={c.gifPosterUrl ?? c.gifUrl}
-                  alt="GIF"
-                  className="mt-1 max-w-[200px] rounded-xl object-cover border border-white/10"
-                  loading="lazy"
-                  onMouseEnter={(e) => { if (c.gifUrl && c.gifUrl !== c.gifPosterUrl) (e.currentTarget as HTMLImageElement).src = c.gifUrl; }}
-                  onMouseLeave={(e) => { if (c.gifPosterUrl) (e.currentTarget as HTMLImageElement).src = c.gifPosterUrl; }}
-                />
+                <a href={buildFwdGifDetailUrl(c.gifFwdId)} target="_blank" rel="noreferrer" className="relative mt-1 block max-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] transition hover:border-primary/40" aria-label="Open FWD GIF">
+                  {c.gifPosterUrl && <img src={c.gifPosterUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm" />}
+                  <img
+                    src={c.gifUrl}
+                    alt="FWD GIF"
+                    className="relative max-h-[200px] w-full object-cover"
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                  <span className="absolute bottom-1 left-1 rounded-full border border-white/20 bg-black/55 px-1.5 py-0.5 text-[9px] font-black tracking-[0.18em] text-primary">FWD</span>
+                </a>
               )}
             </div>
           )}

@@ -1,0 +1,82 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e531]:
+    - generic [ref=e532]:
+      - generic [ref=e533]:
+        - heading "TRUNO™" [level=1] [ref=e535]:
+          - text: TRUNO
+          - superscript [ref=e536]: ™
+        - paragraph [ref=e537]: Match colors. Play action. Own the table.
+      - generic [ref=e539]:
+        - button "+4 +4" [ref=e541] [cursor=pointer]:
+          - generic [ref=e542]: "+4"
+          - generic [ref=e543]: "+4"
+          - img [ref=e545]
+        - button "7 7" [ref=e549] [cursor=pointer]:
+          - generic [ref=e550]: "7"
+          - generic [ref=e551]: "7"
+          - img [ref=e553]
+        - button [ref=e556] [cursor=pointer]:
+          - img [ref=e558]
+          - img [ref=e562]
+        - button "2 2" [ref=e566] [cursor=pointer]:
+          - generic [ref=e567]: "2"
+          - generic [ref=e568]: "2"
+          - img [ref=e570]
+        - button [ref=e573] [cursor=pointer]:
+          - img [ref=e575]
+          - img [ref=e579]
+    - generic [ref=e582]:
+      - button "Quick Play Jump in now" [ref=e583]:
+        - img [ref=e584]
+        - generic [ref=e586]: Quick Play
+        - generic [ref=e587]: Jump in now
+      - button "Play Friends Invite & play" [ref=e588]:
+        - img [ref=e589]
+        - generic [ref=e594]: Play Friends
+        - generic [ref=e595]: Invite & play
+      - button "AI Match Play vs AI" [ref=e596]:
+        - img [ref=e597]
+        - generic [ref=e600]: AI Match
+        - generic [ref=e601]: Play vs AI
+      - button "Tournament Compete & win" [ref=e602]:
+        - img [ref=e603]
+        - generic [ref=e609]: Tournament
+        - generic [ref=e610]: Compete & win
+    - generic [ref=e611]:
+      - generic [ref=e612]:
+        - generic [ref=e613]:
+          - heading "TONIGHT'S TABLES" [level=2] [ref=e614]
+          - generic [ref=e615]: Live Now
+        - button "See all" [ref=e617]:
+          - text: See all
+          - img [ref=e618]
+      - generic [ref=e620]:
+        - paragraph [ref=e621]: No open tables right now.
+        - button "Host a Table" [ref=e622]
+    - generic [ref=e623]:
+      - generic [ref=e624]:
+        - heading "FRIENDS" [level=3] [ref=e625]
+        - paragraph [ref=e626]: Use Play Friends to create a real private table and invite your Trey TV crew.
+        - button "Open Private Room" [ref=e627]
+      - generic [ref=e629]:
+        - generic [ref=e630]:
+          - heading "DAILY STREAK 🔥" [level=3] [ref=e631]
+          - generic [ref=e632]:
+            - img [ref=e633]
+            - generic [ref=e635]: Coming Soon
+          - paragraph [ref=e636]: Streak rewards are not live yet.
+        - generic [ref=e637]:
+          - generic [ref=e638]: 🎁
+          - generic [ref=e639]: Soon
+    - button "TRUNO PASS SEASON 1 Unlock exclusive cards, themes, and epic rewards. View Pass" [ref=e640]:
+      - generic [ref=e641]:
+        - img [ref=e642]
+        - generic [ref=e644]:
+          - generic [ref=e645]:
+            - generic [ref=e646]: TRUNO PASS
+            - generic [ref=e647]: SEASON 1
+          - paragraph [ref=e648]:
+            - text: Unlock exclusive cards, themes,
+            - text: and epic rewards.
+      - generic [ref=e649]: View Pass
+  - region "Notifications alt+T"

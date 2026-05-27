@@ -126,6 +126,49 @@ function ManualOnboarding() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    const loadProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+          .from("user_onboarding")
+          .select("current_step, selected_path, answers")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (data && !data.completed && data.selected_path === "manual") {
+          if (data.current_step >= 0 && data.current_step < STEPS.length) {
+            setStep(STEPS[data.current_step]);
+          }
+          if (data.answers) {
+            setForm((prev) => ({
+              ...prev,
+              ...data.answers,
+            }));
+          }
+          toast.success("Resumed manual onboarding from where you left off.");
+        } else {
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "manual",
+            current_step: 0,
+            answers: {},
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to load onboarding progress:", err);
+      }
+    };
+    
+    loadProgress();
+  }, [accessToken]);
+
   const set = useCallback(<K extends keyof FormData>(key: K, val: FormData[K]) => {
     setForm((prev) => ({ ...prev, [key]: val }));
   }, []);
@@ -165,10 +208,50 @@ function ManualOnboarding() {
     birthTimezone: form.birth_timezone,
   }), [form.date_of_birth, form.birth_location_label, form.location, form.birth_time_precision, form.birth_time_local, form.birth_timezone]);
 
-  const goNext = () => { if (stepIdx < STEPS.length - 1) setStep(STEPS[stepIdx + 1]); };
-  const goBack = () => {
-    if (!isFirst) setStep(STEPS[stepIdx - 1]);
-    else nav({ to: "/onboarding" });
+  const goNext = async () => {
+    if (stepIdx < STEPS.length - 1) {
+      const nextStep = STEPS[stepIdx + 1];
+      setStep(nextStep);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "manual",
+            current_step: stepIdx + 1,
+            answers: form,
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to save progress:", err);
+      }
+    }
+  };
+
+  const goBack = async () => {
+    if (!isFirst) {
+      const prevStep = STEPS[stepIdx - 1];
+      setStep(prevStep);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "manual",
+            current_step: stepIdx - 1,
+            answers: form,
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to save progress:", err);
+      }
+    } else {
+      nav({ to: "/onboarding" });
+    }
   };
 
   const canAdvanceIdentity = form.display_name.trim().length >= 2 && usernameHint === "available";
@@ -216,7 +299,7 @@ function ManualOnboarding() {
           },
         });
       }
-      const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken } });
+      const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken, method: "manual" } });
       window.location.href = `/u/${publicProfileUid}?tour=1`;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save your profile. Please try again.");

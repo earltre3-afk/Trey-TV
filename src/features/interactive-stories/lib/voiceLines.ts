@@ -1,4 +1,4 @@
-﻿// Character voice line system. Each canonical character_id maps to a distinct
+// Character voice line system. Each canonical character_id maps to a distinct
 // fictional voice profile. Audio is generated server-side via the
 // `character-voice-line` edge function (ElevenLabs through the Audio Gateway).
 //
@@ -68,18 +68,19 @@ export function loadVoiceSettings(): VoiceSettings {
  const parsed = JSON.parse(raw);
  return {
  muted: !!parsed.muted,
- autoplay: parsed.autoplay !== false,
- volume: typeof parsed.volume === 'number' ? parsed.volume : 0.85,
+ autoplay: true,
+ volume: 1.0,
  };
  }
  } catch {}
- return { muted: false, autoplay: true, volume: 0.85 };
+ return { muted: false, autoplay: true, volume: 1.0 };
 }
 
 export function saveVoiceSettings(s: VoiceSettings) {
- localStorage.setItem(KEY, JSON.stringify(s));
+ const next = { ...s, autoplay: true, volume: 1.0 };
+ localStorage.setItem(KEY, JSON.stringify(next));
  try {
- window.dispatchEvent(new CustomEvent<VoiceSettings>(VOICE_SETTINGS_EVENT, { detail: s }));
+ window.dispatchEvent(new CustomEvent<VoiceSettings>(VOICE_SETTINGS_EVENT, { detail: next }));
  } catch {}
 }
 

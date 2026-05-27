@@ -19,6 +19,7 @@ test('applyBotMove resolves one visible bot action at a time', () => {
   state.discardPile = [{ id: 'top-red-5', color: 'red', symbol: 'number', value: 5, label: '5' }];
   state.players[1].hand = [
     { id: 'maya-red-7', color: 'red', symbol: 'number', value: 7, label: '7' },
+    { id: 'maya-blue-8', color: 'blue', symbol: 'number', value: 8, label: '8' },
   ];
   state.players[2].hand = [
     { id: 'zay-red-8', color: 'red', symbol: 'number', value: 8, label: '8' },
@@ -29,7 +30,7 @@ test('applyBotMove resolves one visible bot action at a time', () => {
   assert.ok(result);
   assert.equal(result.event.playerName, 'Maya');
   assert.equal(result.state.discardPile.at(-1)?.id, 'maya-red-7');
-  assert.equal(result.state.players[1].hand.length, 0);
+  assert.equal(result.state.players[1].hand.length, 1);
   assert.equal(currentPlayer(result.state)?.id, 'bot-2');
   assert.equal(result.state.players[2].hand.length, 1);
 });

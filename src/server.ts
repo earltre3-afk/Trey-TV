@@ -11,7 +11,11 @@ import { handleAuthLogout, handleAuthMe, handleAuthSession } from "./lib/auth-ht
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
+import { handleLiveKitToken, handleLiveKitDiagnostics } from "./lib/livekit-token.server";
 import { handlePluginApiRequest } from "./lib/plugins/registry";
+import { handlePlutoApiRequest } from "./lib/pluto/pluto-api.server";
+import { handleTrafficRequest } from "./lib/traffic-fake.server";
+import { handleTvApiRequest } from "./lib/tv/tv-api.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -35,8 +39,11 @@ function brandedErrorResponse(): Response {
   });
 }
 
-async function handleOAuthApiRequest(request: Request): Promise<Response | null> {
+async function handleOAuthApiRequest(request: Request, env: unknown): Promise<Response | null> {
   const url = new URL(request.url);
+
+  const trafficResponse = handleTrafficRequest(request);
+  if (trafficResponse) return trafficResponse;
 
   const fwdOAuthResponse = handleFwdOAuthRequest(request);
   if (fwdOAuthResponse) return fwdOAuthResponse;
@@ -44,9 +51,21 @@ async function handleOAuthApiRequest(request: Request): Promise<Response | null>
   const pluginResponse = await handlePluginApiRequest(request);
   if (pluginResponse) return pluginResponse;
 
+  const tvResponse = await handleTvApiRequest(request);
+  if (tvResponse) return tvResponse;
+
+  const plutoResponse = await handlePlutoApiRequest(request);
+  if (plutoResponse) return plutoResponse;
+
   if (url.pathname === "/api/auth/session") return handleAuthSession(request);
   if (url.pathname === "/api/auth/me") return handleAuthMe(request);
   if (url.pathname === "/api/auth/logout") return handleAuthLogout(request);
+  if (url.pathname === "/api/livekit/token" || url.pathname === "/livekit-token") {
+    return handleLiveKitToken(request, env);
+  }
+  if (url.pathname === "/api/livekit/diagnostics") {
+    return handleLiveKitDiagnostics(request, env);
+  }
 
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);
   if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
@@ -101,7 +120,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      const oauthResponse = await handleOAuthApiRequest(request);
+      const oauthResponse = await handleOAuthApiRequest(request, env);
       if (oauthResponse) return oauthResponse;
 
       const handler = await getServerEntry();

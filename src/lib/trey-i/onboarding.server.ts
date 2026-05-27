@@ -45,6 +45,20 @@ const validateAuthInput = (input: AuthInput): AuthInput => ({
   accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
 });
 
+type FinalizeInput = AuthInput & {
+  method?: "voice" | "manual" | "import_screenshot";
+};
+
+const validateFinalizeInput = (input: any): FinalizeInput => {
+  const method = ["voice", "manual", "import_screenshot"].includes(input?.method)
+    ? input.method
+    : undefined;
+  return {
+    accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
+    method,
+  };
+};
+
 const validateChooseOnboardingMethodInput = (input: ChooseOnboardingMethodInput): ChooseOnboardingMethodInput => {
   const method = input?.method === "voice" || input?.method === "manual" ? input.method : "manual";
   return {
@@ -408,7 +422,7 @@ async function assertUsernameAvailable(supabase: ReturnType<typeof createClient>
 export async function saveProfileFieldsForUser(
   accessToken: string,
   fields: Record<string, unknown>,
-  options: { complete?: boolean; method?: "voice" | "manual"; requireBasics?: boolean } = {},
+  options: { complete?: boolean; method?: "voice" | "manual" | "import_screenshot"; requireBasics?: boolean } = {},
 ) {
   const { supabase, user } = await verifyTreyIUser(accessToken);
   const updates = sanitizeSafeProfileFields(fields, { requireBasics: options.requireBasics });
@@ -508,9 +522,9 @@ export const saveOnboardingProfile = createServerFn({ method: "POST" })
   });
 
 export const finalizeOnboarding = createServerFn({ method: "POST" })
-  .inputValidator(validateAuthInput)
+  .inputValidator(validateFinalizeInput)
   .handler(async ({ data }): Promise<{ publicProfileUid: string }> => {
-    const { publicProfileUid } = await saveProfileFieldsForUser(data.accessToken, {}, { complete: true, method: "manual" });
+    const { publicProfileUid } = await saveProfileFieldsForUser(data.accessToken, {}, { complete: true, method: data.method ?? "manual" });
     if (!publicProfileUid) {
       throw new Error("Your public profile link is not ready yet. Please try finishing setup again.");
     }

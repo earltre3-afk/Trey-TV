@@ -160,10 +160,14 @@ function StaticWatchPage({ ep }: { ep: NonNullable<ReturnType<typeof episodeById
         <div>
           <div className="rounded-3xl overflow-hidden glass neon-border">
             <div className="relative aspect-video bg-black">
-              <VideoPlayer
-                poster={ep.thumb}
-                fallbackImg={ep.thumb}
-                className="size-full object-cover"
+              {/* Local-dev only: iframe sourced from /api/pluto/player.
+                  Requires PLUTO_ENABLED=1 in .env.local. See src/lib/pluto/pluto-api.server.ts. */}
+              <iframe
+                src={`/api/pluto/player?episode=${encodeURIComponent(ep.id)}`}
+                title={ep.title}
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 size-full border-0"
               />
               {progress && progress.progress > 0 && (
                 <div className="absolute bottom-0 inset-x-0 h-1.5 bg-white/15">

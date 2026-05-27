@@ -7,12 +7,16 @@ export type FwdGifItem = {
   id: string;
   gif_id: string | null;
   source_url: string | null;
+  playback_url?: string | null;
+  animated_url?: string | null;
   title: string | null;
   caption: string | null;
   tags: string[] | null;
   mood: string | null;
   provider: string | null;
   preview_url: string | null;
+  thumbnail_url?: string | null;
+  still_url?: string | null;
   media_url: string | null;
   mp4_url: string | null;
   webm_url: string | null;
@@ -90,6 +94,7 @@ async function fwdFetch<T>(
 
 type StatusInput = { accessToken: string };
 type LibraryInput = { accessToken: string; tab: FwdGifLibraryTab; limit?: number; offset?: number };
+type SearchInput = LibraryInput & { query?: string | null };
 type CaptureInput = {
   accessToken: string;
   gif_url: string;
@@ -122,7 +127,7 @@ export const checkFwdStatus = createServerFn({ method: "GET" })
 // getFwdGifLibrary
 // ─────────────────────────────────────────────────────────────────────────────
 export const getFwdGifLibrary = createServerFn({ method: "GET" })
-  .inputValidator((input: LibraryInput) => input)
+  .inputValidator((input: SearchInput) => input)
   .handler(async ({ data: input }) => {
     const { user } = await verifyTreyIUser(input.accessToken);
     const treyTvUid = await getTreyTvUid(user.id);
@@ -137,6 +142,7 @@ export const getFwdGifLibrary = createServerFn({ method: "GET" })
         tab: input.tab,
         limit: String(input.limit ?? 48),
         offset: String(input.offset ?? 0),
+        ...(input.query?.trim() ? { q: input.query.trim().slice(0, 80) } : {}),
       },
     );
   });

@@ -8,6 +8,7 @@ import { PostCard } from "@/components/feed/PostCard";
 import { posts, creators, prescribed } from "@/lib/mock-data";
 import { useFeed } from "@/lib/feed-store";
 import { toast } from "sonner";
+import { useFollow } from "@/lib/follow-store";
 
 export const Route = createFileRoute("/for-you")({
   component: Home,
@@ -22,11 +23,22 @@ export const Route = createFileRoute("/for-you")({
 function Home() {
   const [tab, setTab] = useState("for-you");
   const { posts: userPosts } = useFeed();
+  const { isFollowing } = useFollow();
 
   const merged = [...userPosts, ...posts];
   const filtered =
     tab === "following"
-      ? merged.slice(0, 2 + userPosts.length)
+      ? merged.filter((p) => {
+          const isOwnPost = !p.creator || p.creator.handle === "trey";
+          const isDbFollow = p.creator && isFollowing(p.creator.handle);
+          const isDemoMode = typeof window !== "undefined" && (
+            window.location.search.includes("demo=1") ||
+            localStorage.getItem("treytv_demo") === "true" ||
+            process.env.NODE_ENV === "development"
+          );
+          const isMockFollow = isDemoMode && p.creator && (p.creator.handle === "chrishorizon" || p.creator.handle === "treyipicks");
+          return isOwnPost || isDbFollow || isMockFollow;
+        })
       : tab === "latest"
         ? [...userPosts, ...[...posts].reverse()]
         : merged;

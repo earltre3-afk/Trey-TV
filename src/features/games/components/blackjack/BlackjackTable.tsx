@@ -19,6 +19,7 @@ import { PlayerIdentity } from "@/features/games/lib/services/identity";
 import { useChat } from "@/features/games/hooks/useChat";
 import { GameChatDrawer, ChatHeaderButton } from "../shared/GameChatDrawer";
 import { PixiBlackjackTableLazy } from "../pixi/PixiGameTables";
+import { useTvRemoteInput, useTvRemoteMode } from "@/lib/tv/useTvRemoteInput";
 
 interface Props {
   onBack: () => void;
@@ -167,6 +168,8 @@ const BJView: React.FC<ViewProps> = ({
   chatDrawer,
 }) => {
   const [pendingBet, setPendingBet] = useState(50);
+  const [remoteActionIndex, setRemoteActionIndex] = useState(0);
+  const tvRemoteMode = useTvRemoteMode();
   const playerVal = state.player.length ? handValue(state.player).total : 0;
   const dealerShownVal = state.dealer.length
     ? state.phase === "player"
@@ -183,6 +186,43 @@ const BJView: React.FC<ViewProps> = ({
     state.player.length === 2 &&
     state.balance >= state.bet;
   const pixiEventKey = `${state.phase}:${state.player.join("|")}:${state.dealer.join("|")}:${state.result ?? "none"}:${state.bet}`;
+  const playerActions = [
+    { label: "HIT", run: onHit, disabled: false },
+    { label: "STAND", run: onStand, disabled: false },
+    { label: "DOUBLE", run: onDouble, disabled: !canDouble },
+  ];
+
+  useTvRemoteInput((action) => {
+    if (action === "BACK") {
+      onBack();
+      return;
+    }
+    if (action === "MENU") {
+      onLegend();
+      return;
+    }
+    if (state.phase === "betting") {
+      const currentChipIndex = Math.max(0, CHIPS.indexOf(pendingBet));
+      if (action === "LEFT" || action === "RIGHT") {
+        const delta = action === "LEFT" ? -1 : 1;
+        setPendingBet(CHIPS[(currentChipIndex + delta + CHIPS.length) % CHIPS.length]);
+        return;
+      }
+      if (action === "SELECT" && pendingBet <= state.balance) onBet(pendingBet);
+      return;
+    }
+    if (state.phase === "player") {
+      const enabled = playerActions.filter((item) => !item.disabled);
+      if (action === "LEFT" || action === "RIGHT") {
+        const delta = action === "LEFT" ? -1 : 1;
+        setRemoteActionIndex((index) => (index + delta + enabled.length) % enabled.length);
+        return;
+      }
+      if (action === "SELECT") enabled[remoteActionIndex % enabled.length]?.run();
+      return;
+    }
+    if (state.phase === "settled" && action === "SELECT") onNext();
+  });
 
   return (
     <div
@@ -457,7 +497,7 @@ const BJView: React.FC<ViewProps> = ({
                 <button
                   key={c}
                   onClick={() => setPendingBet(c)}
-                  className="h-10 rounded-full font-black text-[11px] transition-all active:scale-95 trey-gold-chip"
+                  className={`h-10 rounded-full font-black text-[11px] transition-all active:scale-95 trey-gold-chip ${tvRemoteMode && pendingBet === c ? "ring-4 ring-amber-300/70" : ""}`}
                   style={{
                     border:
                       "1px solid " +
@@ -490,12 +530,13 @@ const BJView: React.FC<ViewProps> = ({
         )}
         {state.phase === "player" && (
           <div className="grid grid-cols-4 gap-2">
-            <ActionBtn label="HIT" onClick={onHit} />
-            <ActionBtn label="STAND" onClick={onStand} primary />
+            <ActionBtn label="HIT" onClick={onHit} remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 0} />
+            <ActionBtn label="STAND" onClick={onStand} primary remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 1} />
             <ActionBtn
               label="DOUBLE"
               onClick={onDouble}
               disabled={!canDouble}
+              remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 2}
             />
             <ActionBtn label="SPLIT" onClick={() => {}} disabled />
           </div>
@@ -570,11 +611,12 @@ const ActionBtn: React.FC<{
   onClick: () => void;
   primary?: boolean;
   disabled?: boolean;
-}> = ({ label, onClick, primary, disabled }) => (
+  remoteFocused?: boolean;
+}> = ({ label, onClick, primary, disabled, remoteFocused }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] transition-all active:scale-95 trey-glass-button ${disabled ? 'trey-premium-disabled' : ''}`}
+    className={`py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] transition-all active:scale-95 trey-glass-button ${disabled ? 'trey-premium-disabled' : ''} ${remoteFocused ? 'ring-4 ring-amber-300/70 shadow-[0_0_24px_rgba(251,191,36,0.45)]' : ''}`}
     style={{
       background: primary
         ? "linear-gradient(90deg,#FFC857,#FFB000)"

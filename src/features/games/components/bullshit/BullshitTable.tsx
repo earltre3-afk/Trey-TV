@@ -12,6 +12,7 @@ import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
 import { PixiBullshitTableLazy } from '../pixi/PixiGameTables';
+import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
 
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
@@ -164,6 +165,10 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
   const isYourTurn = state.phase === 'playing' && state.currentSeat === mySeat;
   const canCall = state.phase === 'awaiting-challenge' && state.lastClaim && state.lastClaim.seat !== mySeat;
   const opponents = state.players.filter((_, i) => i !== mySeat).slice(0, 3);
+  const [remoteZone, setRemoteZone] = useState<'hand' | 'actions'>('hand');
+  const [remoteCardIndex, setRemoteCardIndex] = useState(0);
+  const [remoteActionIndex, setRemoteActionIndex] = useState(0);
+  const tvRemoteMode = useTvRemoteMode();
 
   const isCaughtBluff = state.reveal?.liar;
   const pixiEventKey = `${state.phase}:${state.lastClaim?.cardIds.join('|') ?? 'none'}:${state.pile.length}:${state.reveal?.cards.join('|') ?? 'none'}:${state.reveal?.liar ?? 'none'}`;
@@ -177,6 +182,47 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
     if (!isYourTurn) return;
     setSelected(s => s.includes(cardId) ? s.filter(x => x !== cardId) : (s.length < 4 ? [...s, cardId] : s));
   }, [isYourTurn, setSelected]);
+
+  useTvRemoteInput((action) => {
+    if (action === 'BACK') {
+      onBack();
+      return;
+    }
+    if (action === 'MENU') {
+      onLegend();
+      return;
+    }
+    if (state.phase === 'game-over') {
+      if (action === 'SELECT') onRestart();
+      return;
+    }
+    if (action === 'UP' || action === 'DOWN') {
+      setRemoteZone((zone) => zone === 'hand' ? 'actions' : 'hand');
+      return;
+    }
+    if (remoteZone === 'hand') {
+      if (action === 'LEFT' || action === 'RIGHT') {
+        const delta = action === 'LEFT' ? -1 : 1;
+        setRemoteCardIndex((index) => (index + delta + Math.max(you.hand.length, 1)) % Math.max(you.hand.length, 1));
+        return;
+      }
+      if (action === 'SELECT') {
+        const card = you.hand[remoteCardIndex % Math.max(you.hand.length, 1)];
+        if (card) toggleSelectedCard(card);
+      }
+      return;
+    }
+    const actions = canCall
+      ? [onCall, onPass]
+      : isYourTurn
+        ? [onClaim]
+        : [];
+    if (action === 'LEFT' || action === 'RIGHT') {
+      setRemoteActionIndex((index) => actions.length ? (index + (action === 'LEFT' ? -1 : 1) + actions.length) % actions.length : index);
+      return;
+    }
+    if (action === 'SELECT') actions[remoteActionIndex % Math.max(actions.length, 1)]?.();
+  });
 
   return (
     <div
@@ -373,6 +419,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
               return you.hand.map((cardId, i) => {
                 const offset = i - center;
                 const isSelected = selected.includes(cardId);
+                const remoteFocused = tvRemoteMode && remoteZone === 'hand' && remoteCardIndex % Math.max(you.hand.length, 1) === i;
                 return (
                   <button
                     type="button"
@@ -384,14 +431,16 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
                       width: 60,
                       height: 86,
                       marginLeft: -30,
-                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -40 : Math.abs(offset) * 1.5}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.16 : 1})`,
+                      transform: `translateX(${offset * spreadX}px) translateY(${isSelected || remoteFocused ? -40 : Math.abs(offset) * 1.5}px) rotate(${isSelected || remoteFocused ? 0 : offset * arc}deg) scale(${isSelected || remoteFocused ? 1.16 : 1})`,
                       zIndex: isSelected ? 100 + i : i + 1,
                       pointerEvents: isYourTurn ? 'auto' : 'none',
+                      filter: remoteFocused ? 'drop-shadow(0 0 18px rgba(251,191,36,0.7))' : undefined,
                     }}
                     aria-label={cardId}
                     aria-pressed={isSelected}
                   >
                     <TreyCard cardId={cardId} selected={isSelected} isLegal={isYourTurn} />
+                    {remoteFocused && <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-400/20 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-100">TV FOCUS</span>}
                   </button>
                 );
               });
@@ -408,7 +457,7 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             {isYourTurn && (
               <>
               <button onClick={onClaim} disabled={selected.length === 0}
-                className="min-h-9 px-5 py-2 rounded-full font-black text-[11px] tracking-[0.15em] uppercase disabled:opacity-40 active:scale-95 transition"
+                className={`min-h-9 px-5 py-2 rounded-full font-black text-[11px] tracking-[0.15em] uppercase disabled:opacity-40 active:scale-95 transition ${tvRemoteMode && remoteZone === 'actions' ? 'ring-4 ring-amber-300/70' : ''}`}
                 style={{
                   background: selected.length > 0 ? 'linear-gradient(90deg,#A855F7,#00B7FF)' : 'rgba(255,255,255,0.06)',
                   color: '#fff',
@@ -428,12 +477,12 @@ const BSView: React.FC<ViewProps> = ({ state, mySeat, selected, setSelected, onC
             {canCall && (
               <>
                 <button onClick={onCall}
-                  className="px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase active:scale-95 transition"
+                  className={`px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase active:scale-95 transition ${tvRemoteMode && remoteZone === 'actions' && remoteActionIndex % 2 === 0 ? 'ring-4 ring-amber-300/70' : ''}`}
                   style={{ background: 'linear-gradient(90deg,#EF4444,#FFB000)', color: '#fff', boxShadow: '0 0 22px rgba(239,68,68,0.5)' }}>
                   Call BS
                 </button>
                 <button onClick={onPass}
-                  className="px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase border active:scale-95 transition"
+                  className={`px-5 py-1.5 rounded-full font-black text-[11px] tracking-[0.15em] uppercase border active:scale-95 transition ${tvRemoteMode && remoteZone === 'actions' && remoteActionIndex % 2 === 1 ? 'ring-4 ring-amber-300/70' : ''}`}
                   style={{ borderColor: 'rgba(255,255,255,0.2)', color: '#94A3B8' }}>
                   Pass
                 </button>

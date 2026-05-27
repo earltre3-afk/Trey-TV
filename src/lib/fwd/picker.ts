@@ -13,7 +13,53 @@ export type FwdGifPayload = {
   width?: number | null;
   height?: number | null;
   preview_url?: string | null;
+  detail_url?: string | null;
 };
+
+type FwdGifUrlLike = {
+  gif_url?: string | null;
+  media_url?: string | null;
+  source_url?: string | null;
+  playback_url?: string | null;
+  animated_url?: string | null;
+  url?: string | null;
+  poster_url?: string | null;
+  preview_url?: string | null;
+  thumbnail_url?: string | null;
+  still_url?: string | null;
+};
+
+function cleanUrl(value?: string | null): string | null {
+  const url = typeof value === "string" ? value.trim() : "";
+  return url || null;
+}
+
+export function getAnimatedFwdGifUrl(item: FwdGifUrlLike): string | null {
+  return (
+    cleanUrl(item.gif_url) ||
+    cleanUrl(item.media_url) ||
+    cleanUrl(item.source_url) ||
+    cleanUrl(item.playback_url) ||
+    cleanUrl(item.animated_url) ||
+    cleanUrl(item.url)
+  );
+}
+
+export function getFwdPosterUrl(item: FwdGifUrlLike): string | null {
+  return (
+    cleanUrl(item.poster_url) ||
+    cleanUrl(item.preview_url) ||
+    cleanUrl(item.thumbnail_url) ||
+    cleanUrl(item.still_url)
+  );
+}
+
+export function buildFwdGifDetailUrl(gifId?: string | null, detailUrl?: string | null): string {
+  if (detailUrl && /^https:\/\/fwd\.treytv\.com\//i.test(detailUrl)) return detailUrl;
+  const id = String(gifId || "").trim();
+  if (!id) return "https://fwd.treytv.com";
+  return `https://fwd.treytv.com/gif/${encodeURIComponent(id)}`;
+}
 
 // FWD's production origin + common dev ports for both apps
 const DEFAULT_FWD_ORIGINS = [
@@ -84,14 +130,16 @@ export function parseFwdPickerMessage(event: MessageEvent): FwdGifPayload | null
   if (type === "fwd:gif:selected") {
     const gif = (data as any).gif;
     if (!gif || typeof gif !== "object") return null;
-    if (typeof gif.gif_id !== "string" || typeof gif.url !== "string") return null;
-    if (!/^https:\/\//i.test(gif.url)) return null;
+    const url = getAnimatedFwdGifUrl(gif);
+    if (typeof gif.gif_id !== "string" || !url) return null;
+    if (!/^https:\/\//i.test(url)) return null;
     return {
       gif_id: gif.gif_id.slice(0, 160),
       height: typeof gif.height === "number" ? gif.height : null,
-      preview_url: typeof gif.preview_url === "string" ? gif.preview_url : null,
+      preview_url: getFwdPosterUrl(gif),
+      detail_url: typeof gif.detail_url === "string" ? gif.detail_url : null,
       title: typeof gif.title === "string" ? gif.title.slice(0, 160) : null,
-      url: gif.url,
+      url,
       width: typeof gif.width === "number" ? gif.width : null,
     };
   }
@@ -100,12 +148,25 @@ export function parseFwdPickerMessage(event: MessageEvent): FwdGifPayload | null
   if (type === "FWD_GIF_SELECTED") {
     const gif = (data as any).gif;
     if (!gif || typeof gif !== "object") return null;
-    const url = gif.mediaUrl || gif.gifUrl || gif.url;
+    const url = getAnimatedFwdGifUrl({
+      gif_url: typeof gif.gifUrl === "string" ? gif.gifUrl : null,
+      media_url: typeof gif.mediaUrl === "string" ? gif.mediaUrl : null,
+      source_url: typeof gif.sourceUrl === "string" ? gif.sourceUrl : null,
+      playback_url: typeof gif.playbackUrl === "string" ? gif.playbackUrl : null,
+      animated_url: typeof gif.animatedUrl === "string" ? gif.animatedUrl : null,
+      url: typeof gif.url === "string" ? gif.url : null,
+    });
     if (typeof url !== "string" || !/^https:\/\//i.test(url)) return null;
     return {
       gif_id: typeof gif.id === "string" ? gif.id.slice(0, 160) : url,
       height: typeof gif.height === "number" ? gif.height : null,
-      preview_url: typeof gif.previewUrl === "string" ? gif.previewUrl : null,
+      preview_url: getFwdPosterUrl({
+        poster_url: typeof gif.posterUrl === "string" ? gif.posterUrl : null,
+        preview_url: typeof gif.previewUrl === "string" ? gif.previewUrl : null,
+        thumbnail_url: typeof gif.thumbnailUrl === "string" ? gif.thumbnailUrl : null,
+        still_url: typeof gif.stillUrl === "string" ? gif.stillUrl : null,
+      }),
+      detail_url: typeof gif.detailUrl === "string" ? gif.detailUrl : null,
       title: typeof gif.title === "string" ? gif.title.slice(0, 160) : null,
       url,
       width: typeof gif.width === "number" ? gif.width : null,

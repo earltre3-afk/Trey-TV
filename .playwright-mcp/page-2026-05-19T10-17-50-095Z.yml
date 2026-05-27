@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e650]:
+    - generic [ref=e651]:
+      - generic [ref=e652]:
+        - button [ref=e653]:
+          - img [ref=e654]
+        - generic [ref=e656]:
+          - generic [ref=e657]:
+            - img [ref=e658]
+            - generic [ref=e664]: Room ID
+          - text: AI MATCH
+      - generic [ref=e665]:
+        - button "Leave Match" [ref=e666]
+        - button [ref=e667]:
+          - img [ref=e668]
+    - generic [ref=e672]:
+      - generic [ref=e673]: AI PRACTICE TABLE
+      - generic [ref=e674]: "|"
+      - generic [ref=e675]: Your turn.
+    - generic [ref=e676]:
+      - generic [ref=e688]:
+        - generic [ref=e689]:
+          - img "Trey TV Member" [ref=e692]
+          - generic [ref=e693]: "7"
+        - generic [ref=e695]: You
+        - generic [ref=e696]: ACTIVE
+      - generic [ref=e704]:
+        - generic [ref=e705]:
+          - img "Aaliyah" [ref=e707]
+          - generic [ref=e708]: "7"
+        - generic [ref=e710]: Aaliyah
+        - generic [ref=e711]: BOT
+      - generic [ref=e719]:
+        - generic [ref=e720]:
+          - img "Marcus" [ref=e722]
+          - generic [ref=e723]: "7"
+        - generic [ref=e725]: Marcus
+        - generic [ref=e726]: BOT
+      - generic [ref=e727]:
+        - img [ref=e731] [cursor=pointer]
+        - button "6 6" [ref=e735] [cursor=pointer]:
+          - generic [ref=e736]: "6"
+          - generic [ref=e737]: "6"
+          - img [ref=e739]
+      - generic [ref=e742]:
+        - generic [ref=e743]: Current Color
+        - generic [ref=e745]: "|"
+        - img [ref=e746]
+        - generic [ref=e749]: Clockwise
+    - generic [ref=e750]:
+      - button "YOUR TURN" [ref=e751]:
+        - img [ref=e752]
+        - text: YOUR TURN
+      - generic [ref=e754]:
+        - img [ref=e755]
+        - text: Turn 1
+    - generic [ref=e758]:
+      - button "5 5" [ref=e760] [cursor=pointer]:
+        - generic [ref=e761]: "5"
+        - generic [ref=e762]: "5"
+        - img [ref=e764]
+      - button "8 8" [ref=e768] [cursor=pointer]:
+        - generic [ref=e769]: "8"
+        - generic [ref=e770]: "8"
+        - img [ref=e772]
+      - button "5 5" [ref=e776] [cursor=pointer]:
+        - generic [ref=e777]: "5"
+        - generic [ref=e778]: "5"
+        - img [ref=e780]
+      - button "4 4" [ref=e784] [cursor=pointer]:
+        - generic [ref=e785]: "4"
+        - generic [ref=e786]: "4"
+        - img [ref=e788]
+      - button "1 1" [ref=e791] [cursor=pointer]:
+        - generic [ref=e792]: "1"
+        - generic [ref=e793]: "1"
+        - img [ref=e795]
+      - button "3 3" [ref=e799] [cursor=pointer]:
+        - generic [ref=e800]: "3"
+        - generic [ref=e801]: "3"
+        - img [ref=e803]
+      - button "7 7" [ref=e806] [cursor=pointer]:
+        - generic [ref=e807]: "7"
+        - generic [ref=e808]: "7"
+        - img [ref=e810]
+    - generic [ref=e812]:
+      - button "Draw" [ref=e813]:
+        - img [ref=e814]
+        - text: Draw
+      - button "CALL TRUNO If you have 1 card left" [ref=e815]:
+        - generic [ref=e818]:
+          - generic [ref=e819]: CALL TRUNO
+          - generic [ref=e820]: If you have 1 card left
+      - button "Play Card" [disabled] [ref=e821]:
+        - img [ref=e822]
+        - text: Play Card
+    - generic [ref=e824]:
+      - 'button "Voice: Off" [ref=e825]':
+        - img [ref=e827]
+        - generic [ref=e830]: "Voice: Off"
+      - 'button "Chat: Off" [ref=e831]':
+        - img [ref=e833]
+        - generic [ref=e835]: "Chat: Off"
+  - region "Notifications alt+T"

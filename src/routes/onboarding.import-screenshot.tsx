@@ -110,6 +110,73 @@ function ImportScreenshot() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!accessToken) return;
+    
+    const loadProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+          .from("user_onboarding")
+          .select("current_step, selected_path, answers")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (data && !data.completed && data.selected_path === "import_screenshot") {
+          const answers = data.answers as any;
+          if (answers) {
+            if (answers.step) setStep(answers.step);
+            if (answers.draft) setDraft(answers.draft);
+            if (answers.jobId) setJobId(answers.jobId);
+            if (answers.consentChecked) setConsentChecked(answers.consentChecked);
+          }
+          toast.success("Resumed screenshot onboarding from where you left off.");
+        } else {
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "import_screenshot",
+            current_step: 0,
+            answers: {},
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to load onboarding progress:", err);
+      }
+    };
+    
+    loadProgress();
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (!accessToken || step === "publishing") return;
+
+    const saveProgress = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const stepNum = step === "upload" ? 0 : step === "review" ? 1 : 2;
+          await supabase.from("user_onboarding").upsert({
+            user_id: user.id,
+            selected_path: "import_screenshot",
+            current_step: stepNum,
+            answers: { step, draft, jobId, consentChecked },
+            completed: false,
+            updated_at: new Date().toISOString()
+          }, { onConflict: "user_id" });
+        }
+      } catch (err) {
+        console.error("Failed to save screenshot onboarding progress:", err);
+      }
+    };
+
+    const timer = setTimeout(saveProgress, 1000);
+    return () => clearTimeout(timer);
+  }, [accessToken, step, draft, jobId, consentChecked]);
+
   const set = useCallback(<K extends keyof DraftForm>(key: K, val: DraftForm[K]) => {
     setDraft((prev) => ({ ...prev, [key]: val }));
   }, []);

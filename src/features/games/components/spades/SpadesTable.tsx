@@ -16,6 +16,7 @@ import { PlayerIdentity } from '@/features/games/lib/services/identity';
 import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
 import treyTvLogo from '@/assets/trey-tv-logo.png';
+import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
 
 interface Props {
   onBack: () => void;
@@ -297,6 +298,8 @@ const SpadesView: React.FC<ViewProps> = ({
   const yourLegal = useMemo(() => state.phase === 'playing' && isMyTurn ? legalCards(state, mySeat) : [], [state, mySeat, isMyTurn]);
   const legalSet = useMemo(() => new Set(yourLegal), [yourLegal]);
   const lastCardTap = useRef<{ cardId: string; at: number } | null>(null);
+  const [remoteBid, setRemoteBid] = useState(1);
+  const tvRemoteMode = useTvRemoteMode();
 
   useEffect(() => {
     if (selected && !legalSet.has(selected)) setSelected(null);
@@ -355,6 +358,48 @@ const SpadesView: React.FC<ViewProps> = ({
     setSelected(cardId);
     lastCardTap.current = { cardId, at: now };
   }, [isMyTurn, legalSet, onPlayCard, selected, setSelected]);
+
+  useTvRemoteInput((action) => {
+    if (action === 'BACK') {
+      onBack();
+      return;
+    }
+    if (action === 'MENU') {
+      onLegend();
+      return;
+    }
+    if (state.phase === 'bidding' && isMyTurn) {
+      if (action === 'LEFT' || action === 'RIGHT') {
+        setRemoteBid((bid) => (bid + (action === 'LEFT' ? -1 : 1) + 14) % 14);
+        return;
+      }
+      if (action === 'SELECT') {
+        onBid(remoteBid);
+      }
+      return;
+    }
+    if (state.phase === 'round-end' && action === 'SELECT') {
+      onNextRound();
+      return;
+    }
+    if (state.phase === 'game-over' && action === 'SELECT') {
+      onPlayAgain();
+      return;
+    }
+    if (state.phase !== 'playing') return;
+    if (action === 'LEFT' || action === 'RIGHT') {
+      const cards = yourLegal.length ? yourLegal : you.hand;
+      if (!cards.length) return;
+      const currentIndex = Math.max(0, cards.indexOf(selected ?? cards[0]));
+      const delta = action === 'LEFT' ? -1 : 1;
+      setSelected(cards[(currentIndex + delta + cards.length) % cards.length]);
+      return;
+    }
+    if (action === 'SELECT') {
+      if (selected && legalSet.has(selected) && isMyTurn) onPlayCard(selected);
+      else if (yourLegal[0]) setSelected(yourLegal[0]);
+    }
+  });
 
   return (
     <div
@@ -586,6 +631,7 @@ const SpadesView: React.FC<ViewProps> = ({
               return myHand.map((cardId, i) => {
                 const offset = i - center;
                 const isSelected = cardId === selected;
+                const remoteFocused = tvRemoteMode && isSelected;
                 const isLegal = state.phase !== 'playing' || legalSet.has(cardId);
                 return (
                   <button
@@ -604,11 +650,13 @@ const SpadesView: React.FC<ViewProps> = ({
                       transform: `translateX(${offset * spreadX}px) translateY(${isSelected ? -42 : Math.abs(offset) * 1.6}px) rotate(${isSelected ? 0 : offset * arc}deg) scale(${isSelected ? 1.18 : 1})`,
                       zIndex: isSelected ? 100 : i + 1,
                       pointerEvents: state.phase === 'playing' && isMyTurn && isLegal ? 'auto' : 'none',
+                      filter: remoteFocused ? 'drop-shadow(0 0 18px rgba(251,191,36,0.7))' : undefined,
                     }}
                     aria-label={cardId}
                     aria-pressed={isSelected}
                   >
                     <TreyCard cardId={cardId} selected={isSelected} isLegal={isLegal} />
+                    {remoteFocused && <span className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-amber-300/70 bg-amber-400/20 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-100">TV FOCUS</span>}
                   </button>
                 );
               });
@@ -632,7 +680,7 @@ const SpadesView: React.FC<ViewProps> = ({
               <div className="text-[9px] tracking-[0.3em] font-bold" style={{ color: '#FFC857' }}>YOUR TURN</div>
               <div className="text-xs font-bold text-slate-200">How many tricks will you take?</div>
             </div>
-            <button onClick={() => onBid(0)} className="min-h-9 px-3 py-2 rounded-full font-black text-[10px] tracking-[0.18em] shrink-0 active:scale-95 transition relative overflow-hidden"
+            <button onClick={() => onBid(0)} className={`min-h-9 px-3 py-2 rounded-full font-black text-[10px] tracking-[0.18em] shrink-0 active:scale-95 transition relative overflow-hidden ${tvRemoteMode && remoteBid === 0 ? 'ring-4 ring-amber-300/70' : ''}`}
               style={{
                 background: 'linear-gradient(180deg, rgba(244,63,94,0.28), rgba(244,63,94,0.10))',
                 border: '1px solid rgba(244,63,94,0.6)',
@@ -647,7 +695,7 @@ const SpadesView: React.FC<ViewProps> = ({
               const bid = n + 1;
               return (
                 <button key={bid} onClick={() => onBid(bid)}
-                  className="h-9 rounded-lg font-black text-sm transition-all active:scale-90 relative overflow-hidden"
+                  className={`h-9 rounded-lg font-black text-sm transition-all active:scale-90 relative overflow-hidden ${tvRemoteMode && remoteBid === bid ? 'ring-4 ring-amber-300/70' : ''}`}
                   style={{
                     background: 'linear-gradient(180deg, rgba(0,183,255,0.22), rgba(0,183,255,0.05))',
                     border: '1px solid rgba(0,183,255,0.5)',
