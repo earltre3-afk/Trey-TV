@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { currentUser as defaultUser } from "@/lib/mock-data";
 import { useSupabaseSession } from "@/lib/supabase-session";
 import { recordUserTrace } from "@/lib/user-trace";
@@ -58,7 +58,24 @@ type AuthCtx = {
   updateUser: (patch: Partial<SessionUser>) => void;
 };
 
-const Ctx = createContext<AuthCtx | null>(null);
+export type AuthorizationStatus =
+  | "checking"
+  | "logged_out"
+  | "needs_onboarding"
+  | "authorized"
+  | "unauthorized"
+  | "error";
+
+type FullAuthCtx = AuthCtx & {
+  // readiness and diagnostics
+  authReady: boolean;
+  profileReady: boolean;
+  authorizationStatus: AuthorizationStatus;
+  authError: string | null;
+  retryHydrate: () => void;
+};
+
+const Ctx = createContext<FullAuthCtx | null>(null);
 const KEY = "treytv_session_v1";
 
 const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
@@ -71,6 +88,7 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   role,
   creatorStatus: role === "creator" || role === "admin" ? "approved" : "not_applied",
   rewards: { points: 12480, tier: "GOLD" },
+  onboarding_completed: true,
 });
 
 const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "guest"> = "user"): SessionUser => {
@@ -119,7 +137,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { isRealAdmin, isOwner, user: supaUser } = useSupabaseSession();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [role, setRoleState] = useState<Role>("guest");
-
+  const [authReady, setAuthReady] = useState(false);
+  const [profileReady, setProfileReady] = useState(false);
+  const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>("checking");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const hydrateAbortRef = { current: false } as { current: boolean };
+  // Tracks which (supaUser, owner/admin) we've already hydrated for, so the
+  // hydration effect doesn't loop when it updates its own user/role outputs.
+  const hydratedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
@@ -131,59 +156,159 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
-  // When a real Supabase user logs in, hydrate the app session from the
-  // UID-backed profile row so preferences, rewards, inbox, and feed state
-  // all point at the same identity mark.
   useEffect(() => {
-    if (!supaUser) return;
-    let cancelled = false;
+    const debug = Boolean(import.meta.env.DEV) || Boolean((globalThis as any).__TREYTV_AUTH_DEBUG);
+
+    // If there's no Supabase session, honor any local tester/mock auth session
+    if (!supaUser) {
+      hydratedKeyRef.current = null;
+      if (user && role !== "guest") {
+        if (debug) console.debug("auth: local session restored", role, user.uid);
+        setProfileReady(true);
+        setAuthReady(true);
+        setAuthError(null);
+        setAuthorizationStatus(user.onboarding_completed ? "authorized" : "needs_onboarding");
+        return;
+      }
+
+      if (debug) console.debug("auth: no session found");
+      setProfileReady(true);
+      setAuthReady(true);
+      setAuthorizationStatus("logged_out");
+      setAuthError(null);
+      return;
+    }
+
+    // Skip redundant re-hydration. This effect lists user/role in its deps (for
+    // the mock-session branch above) but also writes user/role below — so a
+    // completed hydrate would otherwise retrigger the effect endlessly, pinning
+    // authorizationStatus on "checking". Only (re)hydrate when the session or
+    // owner/admin flags actually change.
+    const hydrationKey = `${supaUser.id}:${isOwner ? 1 : 0}:${isRealAdmin ? 1 : 0}`;
+    if (hydratedKeyRef.current === hydrationKey) return;
+    hydratedKeyRef.current = hydrationKey;
+
+    // Begin profile hydration
+    hydrateAbortRef.current = false;
+    setProfileReady(false);
+    setAuthReady(false);
+    setAuthorizationStatus("checking");
+    setAuthError(null);
 
     const hydrateProfile = async () => {
+      if (debug) console.debug("auth: profile fetch started for", supaUser.id);
       const fallbackRole: Exclude<Role, "guest"> = isOwner ? "admin" : isRealAdmin ? "creator" : "user";
+      const supabase = createBrowserClient();
+
+      // timeout fail-safe
+      let timedOut = false;
+      const timeoutMs = 8000;
+      const to = setTimeout(() => {
+        timedOut = true;
+        hydrateAbortRef.current = true;
+        setAuthError("Timed out while loading profile");
+        setAuthorizationStatus("error");
+        setProfileReady(true);
+        setAuthReady(true);
+      }, timeoutMs);
+
       try {
-        const supabase = createBrowserClient();
         const { data, error } = await (supabase as any)
           .from("profiles")
           .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed")
           .eq("id", supaUser.id)
           .maybeSingle();
 
-        if (cancelled) return;
-        if (error || !data) {
+        clearTimeout(to);
+        if (hydrateAbortRef.current) return;
+
+        if (error) {
+          setAuthError(String(error.message ?? error));
+          setAuthorizationStatus("error");
+          // fallback but mark ready so guards stop blocking
           const u = buildUser(fallbackRole);
           setUser(u);
           setRoleState(fallbackRole);
+          setProfileReady(true);
+          setAuthReady(true);
           return;
         }
 
-        const mapped = mapProfileToSessionUser(data, fallbackRole);
+        const mapped = mapProfileToSessionUser(data ?? null, fallbackRole);
+        if (debug) console.debug("auth: profile fetch resolved", mapped.uid, mapped.onboarding_completed);
         const effectiveRole: Role = isOwner ? "admin" : isRealAdmin ? "creator" : mapped.role;
-        setUser({ ...mapped, role: effectiveRole });
+        const finalUser = { ...mapped, role: effectiveRole };
+        setUser(finalUser);
         setRoleState(effectiveRole);
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Failed to hydrate UID profile:", error);
-          const u = buildUser(fallbackRole);
-          setUser(u);
-          setRoleState(fallbackRole);
+
+        // derive authorization status
+        if (!finalUser.onboarding_completed) {
+          setAuthorizationStatus("needs_onboarding");
+          if (debug) console.debug("auth: authorization resolved -> needs_onboarding");
+        } else {
+          setAuthorizationStatus("authorized");
+          if (debug) console.debug("auth: authorization resolved -> authorized");
         }
+
+        setProfileReady(true);
+        setAuthReady(true);
+      } catch (err: any) {
+        clearTimeout(to);
+        if (timedOut || hydrateAbortRef.current) return;
+        console.error("Failed to hydrate UID profile:", err);
+        if (debug) console.debug("auth: profile fetch failed", err);
+        setAuthError(String(err?.message ?? err));
+        setAuthorizationStatus("error");
+        const u = buildUser(fallbackRole);
+        setUser(u);
+        setRoleState(fallbackRole);
+        setProfileReady(true);
+        setAuthReady(true);
       }
     };
 
     hydrateProfile();
     return () => {
-      cancelled = true;
+      hydrateAbortRef.current = true;
     };
-  }, [supaUser?.id, isRealAdmin, isOwner]);
-
+  }, [supaUser?.id, isRealAdmin, isOwner, user, role]);
   useEffect(() => {
     try { localStorage.setItem(KEY, JSON.stringify({ role, user })); } catch {}
   }, [role, user]);
+
+  const retryHydrate = () => {
+    setAuthError(null);
+    hydratedKeyRef.current = null;
+    setAuthorizationStatus("checking");
+    setProfileReady(false);
+    setAuthReady(false);
+    // Trigger re-hydration by checking session; SupabaseSessionProvider will trigger listeners
+    void (async () => {
+      try {
+        const supabase = createBrowserClient();
+        const { data } = await supabase.auth.getSession();
+        if (data.session?.user) {
+          setProfileReady(false);
+          setAuthReady(false);
+          setAuthorizationStatus("checking");
+        }
+      } catch (e) {
+        setAuthError(String((e as any)?.message ?? e));
+        setAuthorizationStatus("error");
+        setProfileReady(true);
+        setAuthReady(true);
+      }
+    })();
+  };
 
   const signIn = (r: Exclude<Role, "guest"> = "creator") => {
     const u = buildUser(r);
     setUser(u);
     setRoleState(r);
+    setAuthError(null);
+    setProfileReady(true);
+    setAuthReady(true);
+    setAuthorizationStatus(u.onboarding_completed ? "authorized" : "needs_onboarding");
     recordUserTrace({ userUid: u.uid, action: "auth.sign_in", targetType: "session", details: { role: r } });
   };
   const signOut = () => {
@@ -253,6 +378,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const effectiveIsAdmin = role === "admin" || isRealAdmin;
   const effectiveIsCreator = effectiveIsAdmin || role === "creator";
 
+  // expose debug state in dev for troubleshooting hydration issues
+  useEffect(() => {
+    try {
+      if (import.meta.env.DEV || (globalThis as any).__TREYTV_AUTH_DEBUG) {
+        (globalThis as any).__TREYTV_AUTH_STATE = {
+          authReady,
+          profileReady,
+          authorizationStatus,
+          authError,
+          role,
+          user: user ? { uid: user.uid, onboarding_completed: user.onboarding_completed } : null,
+          supabaseUserId: supaUser?.id ?? null,
+        };
+      }
+    } catch {}
+  }, [authReady, profileReady, authorizationStatus, authError, role, user, supaUser?.id]);
+
   return (
     <Ctx.Provider value={{
       role,
@@ -264,6 +406,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isApprovedCreator: (user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied")) === "approved" && effectiveIsCreator,
       setCreatorStatus: (s) => setUser((prev) => prev ? { ...prev, creatorStatus: s } : prev),
       signIn, signOut, setRole, updateUser,
+      // new fields
+      authReady,
+      profileReady,
+      authorizationStatus,
+      authError,
+      retryHydrate,
     }}>
       {children}
     </Ctx.Provider>

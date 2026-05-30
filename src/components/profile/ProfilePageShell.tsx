@@ -308,6 +308,12 @@ export function ProfilePageShell({
 
   const profileType: ProfileType = profile.profileType;
 
+  const isDefaultBanner = !profile.bannerUrl ||
+                          profile.bannerUrl === "/profile-banner" ||
+                          profile.bannerUrl.includes("profile-banner");
+
+  const bannerSrc = isDefaultBanner ? heroFallback : profile.bannerUrl;
+
   const followingThis = Boolean(liveRelationship?.is_following);
 
   const liveProfile = useMemo<ProfileData>(() => {
@@ -486,7 +492,7 @@ export function ProfilePageShell({
 
         <section className="relative w-full pixel-reveal">
           <div className="relative h-[220px] w-full overflow-hidden sm:h-[260px] md:h-[300px]">
-            <img src={profile.bannerUrl || heroFallback} alt="" className="absolute inset-0 size-full object-cover" />
+            <img src={bannerSrc} alt="" className="absolute inset-0 size-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/45 to-[#05070D]/10" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(168,85,247,0.25),transparent_62%)]" />
 
@@ -502,7 +508,7 @@ export function ProfilePageShell({
               </button>
             </div>
 
-            <div className="pointer-events-none absolute left-1/2 top-2 z-20 w-[160px] -translate-x-1/2 sm:w-[200px] md:w-[240px]">
+            <div className={`pointer-events-none absolute left-1/2 z-20 w-[160px] -translate-x-1/2 sm:w-[200px] md:w-[240px] transition-all duration-300 ${isDefaultBanner ? "top-1/2 -translate-y-1/2" : "top-2"}`}>
               <div className="relative animate-float-slow">
                 <div aria-hidden className="absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,200,87,0.42),transparent_68%)] blur-2xl" />
                 <img src={treyTvLogo} alt="Trey TV" className="relative h-auto w-full object-contain drop-shadow-[0_0_18px_rgba(255,200,87,0.55)]" />
@@ -892,4 +898,3 @@ export function ProfilePageShell({
   );
 
 }
-

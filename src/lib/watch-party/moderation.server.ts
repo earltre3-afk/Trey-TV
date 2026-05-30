@@ -1,11 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Trey-I chat moderation
 //
-// Uses the existing `@google/genai` plumbing from vertex.server.ts but calls
-// the API directly here so we can use a strict JSON-only response with low
-// temperature + short max tokens for fast, deterministic verdicts.
+// Refactored to utilize the centralized aiProvider.server.ts module.
 // ─────────────────────────────────────────────────────────────────────────────
-import { GoogleGenAI } from "@google/genai";
+import { aiGenerateJson } from "../trey-i/aiProvider.server";
 
 export type ModerationVerdict = "clean" | "nudge" | "block" | "timeout";
 export type ModerationSeverity = "none" | "low" | "medium" | "high";
@@ -29,37 +27,12 @@ const SYSTEM_PROMPT =
   "Be conservative — when in doubt, prefer nudge over block. Trey TV embraces creator energy; " +
   "do not censor harmless trash-talk.";
 
-const MODEL_VERTEX = "gemini-2.5-flash";
-const MODEL_GEMINI = "gemini-2.0-flash";
-const TIMEOUT_MS = 1500;
-
-function buildClient(): { genai: GoogleGenAI; model: string } | null {
-  const project =
-    process.env.VERTEX_PROJECT?.trim() ||
-    process.env.GOOGLE_CLOUD_PROJECT?.trim();
-  const location =
-    process.env.VERTEX_LOCATION?.trim() ||
-    process.env.GOOGLE_CLOUD_LOCATION?.trim() ||
-    "us-central1";
-
-  if (project) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return { genai: new GoogleGenAI({ vertexai: true, project, location } as any), model: MODEL_VERTEX };
-  }
-  const apiKey =
-    process.env.GOOGLE_GENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim();
-  if (!apiKey) return null;
-  return { genai: new GoogleGenAI({ apiKey }), model: MODEL_GEMINI };
-}
-
 function safeDefault(reason: string): ModerationResult {
   return { verdict: "clean", severity: "none", reason };
 }
 
 function parseVerdict(raw: string): ModerationResult | null {
-  // Strip code fences if Gemini wrapped the JSON despite instructions.
+  // Strip code fences if API wrapped the JSON despite instructions.
   const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
   try {
     const obj = JSON.parse(cleaned) as Partial<ModerationResult>;
@@ -81,45 +54,22 @@ export async function moderateChatMessage(body: string): Promise<ModerationResul
   // Guard against empty / huge inputs (DB already caps at 500 chars).
   if (!body || body.length > 600) return safeDefault("invalid_length");
 
-  const client = buildClient();
-  if (!client) {
-    // No AI configured — fail open so chat still works in dev without Gemini keys.
-    return safeDefault("no_ai_configured");
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
   try {
-    const result = await client.genai.models.generateContent({
-      model: client.model,
-      contents: [{ role: "user", parts: [{ text: body }] }],
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        temperature: 0,
-        maxOutputTokens: 100,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        abortSignal: controller.signal,
-      } as Record<string, unknown>,
+    const parsed = await aiGenerateJson<any>({
+      prompt: body,
+      systemInstruction: SYSTEM_PROMPT,
+      temperature: 0,
+      maxTokens: 100,
     });
 
-    const text =
-      (result as unknown as { text?: string }).text ??
-      (result as unknown as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })
-        .candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ??
-      "";
-
-    const parsed = parseVerdict(text);
-    if (!parsed) {
-      console.warn("[moderate_chat] could not parse verdict from:", text.slice(0, 120));
+    const parsedVerdict = parseVerdict(JSON.stringify(parsed));
+    if (!parsedVerdict) {
+      console.warn("[moderate_chat] could not parse verdict from:", parsed);
       return safeDefault("unparseable_response");
     }
-    return parsed;
+    return parsedVerdict;
   } catch (err) {
-    if ((err as { name?: string })?.name === "AbortError") return safeDefault("timeout");
     console.warn("[moderate_chat] API error:", err);
     return safeDefault("api_error");
-  } finally {
-    clearTimeout(timer);
   }
 }

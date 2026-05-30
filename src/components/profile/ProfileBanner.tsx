@@ -120,6 +120,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
                       className="hidden"
                       onChange={async (event) => {
                         const file = event.target.files?.[0];
+                        event.target.value = "";
                         if (!file) return;
                         const preview = URL.createObjectURL(file);
                         updateUser({ banner: preview });

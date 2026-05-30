@@ -4,6 +4,7 @@ import { GlassPanel, FocusButton } from '../components/Primitives';
 import { ContentRow } from '../components/Rows';
 import { profile, badges, stats, quickActions, continueWatching, musicVideos, IMG } from '../mockData';
 import { Crown, User, Lock, Bell, Pencil, Upload, Radio, Film, BarChart3, MessageSquare, DollarSign, Settings as SetIcon, Star, Award, Shield, Trophy } from 'lucide-react';
+import { TV_ARTWORK } from '../artwork';
 
 const qaIcons = [Upload, Radio, Film, BarChart3, MessageSquare, DollarSign, SetIcon];
 
@@ -13,7 +14,7 @@ export const ProfileScreen: React.FC = () => {
     <TVFrame activeRail="Home">
       {/* Hero */}
       <GlassPanel className="relative overflow-hidden p-6 mb-5">
-        <img src={IMG(7)} className="absolute inset-0 w-full h-full object-cover opacity-25" />
+        <img src={TV_ARTWORK.profileCreatorLifestyle} className="absolute inset-0 w-full h-full object-cover opacity-35" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-black/80" />
         <div className="relative grid grid-cols-[260px_1fr_360px] gap-8 items-center">
           {/* Avatar */}
@@ -189,7 +190,7 @@ export const ProfileScreen: React.FC = () => {
               ))}
             </div>
           </div>
-          <img src={IMG(0)} className="absolute right-0 bottom-0 w-32 h-32 object-cover opacity-40 rounded-tl-3xl" />
+          <img src={TV_ARTWORK.profileCreatorLifestyle} className="absolute right-0 bottom-0 w-44 h-32 object-cover opacity-45 rounded-tl-3xl" />
         </GlassPanel>
       </div>
 

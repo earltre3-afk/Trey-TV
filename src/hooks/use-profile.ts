@@ -49,6 +49,7 @@ export function useProfile(publicUid: string) {
   const [profile, setProfile] = useState<SupabaseProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [refetchTick, setRefetchTick] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -105,9 +106,13 @@ export function useProfile(publicUid: string) {
     return () => {
       mounted = false;
     };
-  }, [publicUid]);
+  }, [publicUid, refetchTick]);
 
-  return { profile, loading, error };
+  const refetch = () => {
+    setRefetchTick((prev) => prev + 1);
+  };
+
+  return { profile, loading, error, refetch };
 }
 
 export function useRelationshipStatus(targetUserId: string) {

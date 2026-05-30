@@ -46,37 +46,58 @@ function isVisible(el: HTMLElement) {
   if (el.getAttribute('aria-hidden') === 'true') return false;
   const rect = el.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return false;
-  // Off-screen (allow slight bleed for horizontally-scrollable rows)
-  if (rect.bottom < -200 || rect.top > window.innerHeight + 200) return false;
-  const style = getComputedStyle(el);
-  if (style.visibility === 'hidden' || style.display === 'none') return false;
+  // NOTE: do NOT filter by vertical viewport position — rows below the fold must
+  // stay navigable so Down can reach the bottom (each row scrolls into view as
+  // it's focused). Also intentionally NOT calling getComputedStyle here: it
+  // forces a per-element style recalc on every keypress (the main D-pad lag on
+  // low-power TV hardware). display:none already yields a 0x0 rect, handled above.
   return true;
 }
 
 type FocusItem = { el: HTMLElement; rect: DOMRect };
-type Grid = { rows: FocusItem[][]; flat: FocusItem[] };
+type Grid = { rows: FocusItem[][]; rail: FocusItem[]; flat: FocusItem[] };
+
+// Center-X (in the 1920-wide logical viewport) at/under this is treated as the
+// left navigation rail: a vertical column navigated on its own, NOT clustered
+// into the horizontal content rows. Without this split the rail's stacked
+// buttons got merged into content rows by Y, scrambling D-pad direction
+// (Down from content jumped into the rail; Right from the rail leapt across to
+// far-right content).
+const RAIL_MAX_CENTER_X = 130;
+
+const centerY = (it: FocusItem) => it.rect.top + it.rect.height / 2;
 
 function buildGrid(): Grid {
   const nodes = Array.from(
     document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
   ).filter(isVisible);
 
-  const items: FocusItem[] = nodes.map((el) => ({ el, rect: el.getBoundingClientRect() }));
-  // Sort by Y, then X
-  items.sort((a, b) => {
-    const cy = a.rect.top + a.rect.height / 2 - (b.rect.top + b.rect.height / 2);
+  const all: FocusItem[] = nodes.map((el) => ({ el, rect: el.getBoundingClientRect() }));
+
+  // Partition: left rail (vertical nav column) vs. main content.
+  const rail: FocusItem[] = [];
+  const content: FocusItem[] = [];
+  for (const it of all) {
+    const cx = it.rect.left + it.rect.width / 2;
+    if (cx <= RAIL_MAX_CENTER_X) rail.push(it);
+    else content.push(it);
+  }
+  rail.sort((a, b) => a.rect.top - b.rect.top);
+
+  // Sort content by Y, then X
+  content.sort((a, b) => {
+    const cy = centerY(a) - centerY(b);
     if (Math.abs(cy) > ROW_TOLERANCE) return cy;
     return a.rect.left - b.rect.left;
   });
 
-  // Cluster into rows
+  // Cluster content into rows
   const rows: FocusItem[][] = [];
-  for (const it of items) {
-    const cy = it.rect.top + it.rect.height / 2;
+  for (const it of content) {
+    const cy = centerY(it);
     const row = rows[rows.length - 1];
     if (row) {
-      const rowCy =
-        row.reduce((s, r) => s + r.rect.top + r.rect.height / 2, 0) / row.length;
+      const rowCy = row.reduce((s, r) => s + centerY(r), 0) / row.length;
       if (Math.abs(cy - rowCy) <= ROW_TOLERANCE) {
         row.push(it);
         continue;
@@ -84,10 +105,32 @@ function buildGrid(): Grid {
     }
     rows.push([it]);
   }
-  // Sort each row by X
   rows.forEach((r) => r.sort((a, b) => a.rect.left - b.rect.left));
 
-  return { rows, flat: items };
+  return { rows, rail, flat: all };
+}
+
+/** Nearest rail item (by vertical center) to a screen Y. */
+function nearestRailToY(grid: Grid, y: number): HTMLElement | null {
+  let best: FocusItem | null = null;
+  let bestD = Infinity;
+  for (const it of grid.rail) {
+    const d = Math.abs(centerY(it) - y);
+    if (d < bestD) { bestD = d; best = it; }
+  }
+  return best?.el ?? null;
+}
+
+/** Left-most item of the content row whose center Y is closest to `y`. */
+function nearestContentToY(grid: Grid, y: number): HTMLElement | null {
+  let bestRow: FocusItem[] | null = null;
+  let bestD = Infinity;
+  for (const row of grid.rows) {
+    const ry = row.reduce((s, r) => s + centerY(r), 0) / row.length;
+    const d = Math.abs(ry - y);
+    if (d < bestD) { bestD = d; bestRow = row; }
+  }
+  return bestRow?.[0]?.el ?? null;
 }
 
 function findIndex(grid: Grid, el: HTMLElement | null): { r: number; c: number } | null {
@@ -118,17 +161,70 @@ type Memory = {
   // Last column INDEX visited in each row, keyed by row index.
   // We re-key on each rebuild via center-x of the previously focused element.
   anchorX: number;
+  anchorY: number; // last focused element's center Y (for focus-loss recovery)
   rowAnchors: Map<number, number>; // rowIndex -> column index
 };
 
-function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): HTMLElement | null {
-  if (grid.rows.length === 0) return null;
+/** Find the focusable whose center is closest to a screen point. */
+function closestItemTo(grid: Grid, x: number, y: number): HTMLElement | null {
+  let best: HTMLElement | null = null;
+  let bestD = Infinity;
+  for (const it of grid.flat) {
+    const cx = it.rect.left + it.rect.width / 2;
+    const cy = it.rect.top + it.rect.height / 2;
+    const d = (cx - x) * (cx - x) + (cy - y) * (cy - y);
+    if (d < bestD) {
+      bestD = d;
+      best = it.el;
+    }
+  }
+  return best;
+}
 
-  // No current focus? Grab the first thing.
+function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): HTMLElement | null {
+  // ---- Left rail (vertical nav column) ----
+  const railIdx = current ? grid.rail.findIndex((it) => it.el === current) : -1;
+  if (railIdx !== -1) {
+    const railEl = grid.rail[railIdx];
+    if (dir === 'up') {
+      const t = grid.rail[Math.max(0, railIdx - 1)];
+      mem.anchorY = centerY(t);
+      return t.el;
+    }
+    if (dir === 'down') {
+      const t = grid.rail[Math.min(grid.rail.length - 1, railIdx + 1)];
+      mem.anchorY = centerY(t);
+      return t.el;
+    }
+    if (dir === 'right') {
+      // Cross into the content at roughly the same height.
+      const t = nearestContentToY(grid, centerY(railEl));
+      if (t) {
+        const r = t.getBoundingClientRect();
+        mem.anchorX = r.left + r.width / 2;
+        mem.anchorY = r.top + r.height / 2;
+        return t;
+      }
+    }
+    return railEl.el; // left / no-target: stay on the rail
+  }
+
+  if (grid.rows.length === 0) {
+    // No content rows (e.g. a rail-only or empty state) — fall back to the rail.
+    return grid.rail.length
+      ? nearestRailToY(grid, mem.anchorY || window.innerHeight / 2)
+      : null;
+  }
+
+  // No current focus in the grid? Focused node was unmounted on a re-render or
+  // scrolled out and filtered. DON'T jump to the top-left element — that's what
+  // snapped the page to the top. Re-acquire the focusable nearest to where the
+  // user last was.
   const cur = findIndex(grid, current);
   if (!cur) {
-    const row = grid.rows[0];
-    return row[0]?.el ?? null;
+    const ax = mem.anchorX || window.innerWidth / 2;
+    const ay = mem.anchorY || window.innerHeight / 2;
+    return closestItemTo(grid, ax, ay) ?? grid.rows[0]?.[0]?.el ?? null;
   }
 
   const { r, c } = cur;
@@ -136,22 +232,35 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
   if (dir === 'left' || dir === 'right') {
     const row = grid.rows[r];
     let next = c + (dir === 'right' ? 1 : -1);
-    if (next < 0) next = row.length - 1; // wrap
-    if (next >= row.length) next = 0; // wrap
+    if (dir === 'left' && next < 0) {
+      // At the left edge of content → hop to the rail (nearest by height).
+      const cy = centerY(row[c]);
+      const railEl = nearestRailToY(grid, cy);
+      if (railEl) {
+        mem.anchorY = cy;
+        return railEl;
+      }
+      next = 0; // no rail — stay put
+    }
+    if (dir === 'right' && next >= row.length) {
+      next = row.length - 1; // stop at the row end (don't wrap)
+    }
     const target = row[next];
     if (target) {
       mem.anchorX = target.rect.left + target.rect.width / 2;
+      mem.anchorY = target.rect.top + target.rect.height / 2;
       mem.rowAnchors.set(r, next);
       return target.el;
     }
     return null;
   }
 
-  // up / down
+  // ---- up / down between content rows (clamp at edges; no wrap) ----
   const step = dir === 'down' ? 1 : -1;
   let nextRow = r + step;
-  if (nextRow < 0) nextRow = grid.rows.length - 1;
-  if (nextRow >= grid.rows.length) nextRow = 0;
+  if (nextRow < 0 || nextRow >= grid.rows.length) {
+    return grid.rows[r][c].el; // already at the top/bottom content row
+  }
 
   const targetRow = grid.rows[nextRow];
   if (!targetRow || targetRow.length === 0) return null;
@@ -164,13 +273,14 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
   const target = targetRow[col];
   if (!target) return null;
   mem.rowAnchors.set(nextRow, col);
-  // Don't overwrite anchorX on vertical moves — that's the whole point of row memory.
+  // Keep anchorX (column memory); track Y for focus-loss recovery.
+  mem.anchorY = target.rect.top + target.rect.height / 2;
   return target.el;
 }
 
 function scrollIntoViewSoft(el: HTMLElement) {
   try {
-    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
   } catch {
     el.scrollIntoView();
   }
@@ -185,7 +295,7 @@ export type FocusManagerOptions = {
 
 export function useFocusGrid(opts: FocusManagerOptions = {}) {
   const { onBack, onMenu, enabled = true } = opts;
-  const memRef = useRef<Memory>({ anchorX: 0, rowAnchors: new Map() });
+  const memRef = useRef<Memory>({ anchorX: 0, anchorY: 0, rowAnchors: new Map() });
   const repeatRef = useRef<{
     dir: Dir | null;
     timer: ReturnType<typeof setInterval> | null;
@@ -221,14 +331,24 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
         if (active) {
           const r = active.getBoundingClientRect();
           memRef.current.anchorX = r.left + r.width / 2;
+          memRef.current.anchorY = r.top + r.height / 2;
         } else {
           memRef.current.anchorX = window.innerWidth / 2;
+          memRef.current.anchorY = window.innerHeight / 2;
         }
       }
       const next = move(grid, active, dir, memRef.current);
       if (next) {
         next.focus({ preventScroll: true });
-        scrollIntoViewSoft(next);
+        // If focus lands near the very top of the page, snap the window fully to
+        // the top so the header/logo isn't left cut off. scrollIntoView('nearest')
+        // alone stops short on the way back up and clips the top.
+        const absTop = next.getBoundingClientRect().top + window.scrollY;
+        if (absTop < 240) {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        } else {
+          scrollIntoViewSoft(next);
+        }
       }
     };
 
@@ -346,7 +466,11 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
           stickDir: dir,
         };
       }
-      raf = requestAnimationFrame(pollGamepads);
+      // Only keep the per-frame loop alive while a gamepad is actually
+      // connected. A TV remote delivers key events (handled above), not gamepad
+      // state, so without this the rAF poll ran forever and burned CPU on the
+      // streaming box — a major source of navigation lag.
+      raf = pads.some((p) => p) ? requestAnimationFrame(pollGamepads) : 0;
     };
 
     const onGamepadConnected = () => {
@@ -360,8 +484,10 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('gamepadconnected', onGamepadConnected);
     window.addEventListener('gamepaddisconnected', onGamepadDisconnected);
-    // Kick off polling immediately (already-connected pads).
-    if (!raf) raf = requestAnimationFrame(pollGamepads);
+    // Only start the gamepad loop if a pad is already connected; otherwise wait
+    // for the gamepadconnected event. (A TV remote needs no polling.)
+    const padsAtStart = (navigator.getGamepads?.() ?? []) as (Gamepad | null)[];
+    if (padsAtStart.some((p) => p) && !raf) raf = requestAnimationFrame(pollGamepads);
 
     // Auto-seed focus to first focusable element if nothing is focused yet.
     const seedTimer = setTimeout(() => {

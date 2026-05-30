@@ -3,6 +3,7 @@ import { Download, ShieldAlert, Tv } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
 const TV_APP_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
+const TV_APP_APK_VERSIONED_URL = `${TV_APP_APK_URL}?v=727C3BC9`;
 
 export const Route = createFileRoute("/download-tv-app")({
   component: DownloadTvApp,
@@ -44,6 +45,9 @@ function DownloadTvApp() {
         >
           <Download className="size-4" /> Download TV App
         </a>
+        <p className="mt-3 max-w-xl text-xs text-muted-foreground">
+          If download does not start, long-press or click and choose Open Link.
+        </p>
 
         <div className="mt-5 w-full rounded-2xl liquid-glass neon-border p-5 text-left">
           <div className="flex items-start gap-3">
@@ -68,11 +72,23 @@ function DownloadTvApp() {
           </div>
           <div>
             <dt className="text-xs uppercase tracking-widest text-muted-foreground">Build date</dt>
-            <dd className="mt-1">May 24, 2026</dd>
+            <dd className="mt-1">May 28, 2026</dd>
           </div>
           <div>
             <dt className="text-xs uppercase tracking-widest text-muted-foreground">Size</dt>
-            <dd className="mt-1">16.93 MB</dd>
+            <dd className="mt-1">31,678,061 bytes</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-widest text-muted-foreground">SHA256</dt>
+            <dd className="mt-1 font-mono text-xs">727C3BC9...</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase tracking-widest text-muted-foreground">Cache-bust link</dt>
+            <dd className="mt-1 break-all font-mono text-xs">
+              <a href={TV_APP_APK_VERSIONED_URL} download className="text-primary underline">
+                {TV_APP_APK_VERSIONED_URL}
+              </a>
+            </dd>
           </div>
         </dl>
       </section>

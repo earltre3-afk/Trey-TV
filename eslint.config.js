@@ -21,6 +21,8 @@ export default tseslint.config(
       "*.jpg",
       "*.jpeg",
       "*.webp",
+      ".vercel-pass4h5-backup-*",
+      ".claude",
     ],
   },
   {

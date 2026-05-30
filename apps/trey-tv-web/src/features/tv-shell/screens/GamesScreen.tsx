@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { TVFrame } from '../components/TVFrame';
 import { FocusButton } from '../components/Primitives';
 import { GameRow, ContentRow } from '../components/Rows';
-import { trendingGames, interactiveStories, IMG } from '../mockData';
+import { trendingGames, interactiveStories, type Game } from '../mockData';
 import { Gamepad2, Zap, Trophy, Users, Crown, Flame, Spade, Dice5 } from 'lucide-react';
 import { useTV } from '../TVContext';
+import { TV_ARTWORK } from '../artwork';
 
 const chips = [
   { label: 'All Games', Icon: Gamepad2 },
@@ -19,12 +20,25 @@ const chips = [
 
 export const GamesScreen: React.FC = () => {
   const [active, setActive] = useState('All Games');
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const { navigate } = useTV();
+  const openGame = (game: Game) => {
+    setSelectedGame(game);
+    if (game.id === 'spades') {
+      navigate('spades');
+      return;
+    }
+    if (game.id === 'interactive-stories') {
+      navigate('stories');
+      return;
+    }
+  };
+
   return (
     <TVFrame activeRail="Games">
       {/* Hero */}
       <section className="relative h-[400px] w-full overflow-hidden rounded-3xl border border-fuchsia-500/20 mb-6 shadow-[0_0_60px_rgba(168,85,247,0.15)]">
-        <img src={IMG(5)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={TV_ARTWORK.lateNightGamingGuide} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
         <div className="relative px-12 py-10 max-w-2xl">
           <div className="text-fuchsia-300 font-bold tracking-[0.3em] text-sm">TREY TV</div>
@@ -63,7 +77,17 @@ export const GamesScreen: React.FC = () => {
         })}
       </div>
 
-      <GameRow title="Featured Games" items={trendingGames} onSelect={(g) => g.title === 'Spades' ? navigate('spades') : null} />
+      <GameRow title="Featured Games" items={trendingGames} onSelect={openGame} />
+
+      {selectedGame && selectedGame.id !== 'spades' && selectedGame.id !== 'interactive-stories' && (
+        <section className="mb-8 rounded-2xl border border-amber-400/25 bg-amber-400/10 p-5">
+          <div className="text-xs font-black tracking-[0.28em] text-amber-300">{selectedGame.status}</div>
+          <div className="mt-1 text-2xl font-black">{selectedGame.title}</div>
+          <p className="mt-1 text-sm text-white/70">
+            This game tile is wired for remote selection. The full game flow is not enabled in this debug build yet.
+          </p>
+        </section>
+      )}
 
       <section className="mb-8">
         <h2 className="text-2xl font-bold mb-3">Multiplayer Lounge</h2>
@@ -86,7 +110,7 @@ export const GamesScreen: React.FC = () => {
       </section>
 
       <ContentRow title="Interactive Stories" items={interactiveStories} size="md" onSelect={() => navigate('stories')} />
-      <GameRow title="Card Games" items={trendingGames.slice(0, 4)} onSelect={(g) => g.title === 'Spades' ? navigate('spades') : null} />
+      <GameRow title="Card Games" items={trendingGames.slice(0, 4)} onSelect={openGame} />
     </TVFrame>
   );
 };

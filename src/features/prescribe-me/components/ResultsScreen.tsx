@@ -19,6 +19,7 @@ interface Props {
   onOpenHistory: () => void;
   onGoWatch: () => void;
   isSaved: boolean;
+  explanation?: string;
 }
 
 type ResultPage = 'top' | 'recommended' | 'more' | 'actions';
@@ -26,6 +27,7 @@ type ResultPage = 'top' | 'recommended' | 'more' | 'actions';
 const ResultsScreen: React.FC<Props> = ({
   answers, scored, prescriptionTitle,
   onTryAgain, onAdjustMood, onSave, onShare, onOpenHistory, onGoWatch, isSaved,
+  explanation,
 }) => {
   const [feedback, setFeedback] = useState<Record<string, string>>({});
   const [page, setPage] = useState(0);
@@ -70,7 +72,7 @@ const ResultsScreen: React.FC<Props> = ({
 
       <div className="flex-1 min-h-0 flex flex-col justify-center">
         {activePage === 'top' && top && (
-          <TopPickCard top={top} feedback={feedback[top.id]} setFeedback={(v) => setFb(top.id, v)} />
+          <TopPickCard top={top} feedback={feedback[top.id]} setFeedback={(v) => setFb(top.id, v)} explanation={explanation} />
         )}
 
         {activePage === 'recommended' && (
@@ -132,7 +134,8 @@ const TopPickCard: React.FC<{
   top: ScoredItem;
   feedback?: string;
   setFeedback: (value: string) => void;
-}> = ({ top, feedback, setFeedback }) => (
+  explanation?: string;
+}> = ({ top, feedback, setFeedback, explanation }) => (
   <LiquidGlassCard accent="multi">
     <div className="p-3.5">
       <div className="flex gap-3">
@@ -170,7 +173,17 @@ const TopPickCard: React.FC<{
         <MatchBar icon={<Zap className="w-3.5 h-3.5 text-purple-400" />} label="Energy Match" value={top.energyMatch} color="from-purple-500 to-fuchsia-500" />
       </div>
 
-      <p className="text-white/60 text-[11px] mt-3 italic line-clamp-2">{top.reason}</p>
+      {explanation ? (
+        <div className="mt-3.5 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-300/20 text-amber-300 text-[11px] leading-relaxed">
+          <div className="flex items-center gap-1.5 font-bold mb-1 tracking-wider text-[9px] uppercase">
+            <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+            Trey-I AI Reading
+          </div>
+          <p className="text-white/95 font-medium italic">"{explanation}"</p>
+        </div>
+      ) : (
+        <p className="text-white/60 text-[11px] mt-3 italic line-clamp-2">{top.reason}</p>
+      )}
 
       <div className="mt-3 grid grid-cols-4 gap-1.5">
         <FbButton active={feedback === 'perfect'} onClick={() => setFeedback('perfect')} icon={<ThumbsUp className="w-3.5 h-3.5" />} label="Perfect" />

@@ -62,3 +62,4 @@ export default defineConfig({
     },
   },
 });
+// Trigger server restart

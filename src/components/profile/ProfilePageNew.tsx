@@ -5,7 +5,8 @@
  * wired to real ProfileData.
  */
 
-import { useId, useState, useMemo } from "react";
+import { useId, useState, useMemo, useEffect } from "react";
+import { fetchSignalRecord } from "@/lib/tests/naturalAbilityStorage";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import {
@@ -44,61 +45,7 @@ const RED = "#EF4444";
 
 const FALL_POSTS = [fallPost1, fallPost2, fallPost3, fallPost4, fallPost5];
 
-/* ---------- GoldCheck SVG badge ---------- */
-function GoldCheck({ size = 24, className = "" }: { size?: number; className?: string }) {
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={className}
-      style={{ filter: "drop-shadow(0 0 6px rgba(255,200,87,0.85)) drop-shadow(0 0 16px rgba(255,200,87,0.55)) drop-shadow(0 1px 1px rgba(0,0,0,0.55))" }}
-    >
-      <defs>
-        <radialGradient id={`gc-face-${uid}`} cx="35%" cy="28%" r="80%">
-          <stop offset="0%" stopColor="#FFF6CF" />
-          <stop offset="35%" stopColor="#FFD668" />
-          <stop offset="70%" stopColor="#E9A917" />
-          <stop offset="100%" stopColor="#8A5A00" />
-        </radialGradient>
-        <linearGradient id={`gc-rim-${uid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#FFF1B0" />
-          <stop offset="50%" stopColor="#7A4E00" />
-          <stop offset="100%" stopColor="#FFEFA8" />
-        </linearGradient>
-        <linearGradient id={`gc-sheen-${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
-          <stop offset="55%" stopColor="#FFFFFF" stopOpacity="0.05" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id={`gc-spark-${uid}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="49%" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.95" />
-          <stop offset="51%" stopColor="#FFFFFF" stopOpacity="0" />
-          <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-        </linearGradient>
-        <clipPath id={`gc-clip-${uid}`}><circle cx="12" cy="12" r="11" /></clipPath>
-      </defs>
-      <g style={{ transformOrigin: "12px 12px" }}>
-        <circle cx="12" cy="12" r="11.5" fill={`url(#gc-rim-${uid})`}>
-          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="9s" repeatCount="indefinite" />
-        </circle>
-      </g>
-      <circle cx="12" cy="12" r="10.6" fill={`url(#gc-face-${uid})`} />
-      <ellipse cx="12" cy="7.5" rx="7.5" ry="3.6" fill={`url(#gc-sheen-${uid})`} opacity="0.9" />
-      <path d="M6.5 12.4 L10.4 16.2 L17.6 7.8" fill="none" stroke="#0a0a0a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ filter: "drop-shadow(0 1px 0 rgba(255,235,160,0.55))" }} />
-      <g clipPath={`url(#gc-clip-${uid})`} style={{ mixBlendMode: "screen" }}>
-        <rect x="-24" y="0" width="24" height="24" fill={`url(#gc-spark-${uid})`}>
-          <animate attributeName="x" from="-24" to="24" dur="3.2s" begin="0s" repeatCount="indefinite" />
-        </rect>
-      </g>
-      <circle cx="12" cy="12" r="10.6" fill="none" stroke="#FFF6CF" strokeOpacity="0.5" strokeWidth="0.5" />
-      <circle cx="12" cy="12" r="11.5" fill="none" stroke="#0a0a0a" strokeOpacity="0.5" strokeWidth="0.6" />
-    </svg>
-  );
-}
+import { GoldCheck } from "@/components/brand/Badge";
 
 /* ---------- Helpers ---------- */
 function Spark({ color, data }: { color: string; data: number[] }) {
@@ -184,6 +131,26 @@ export function ProfilePageNew({
   });
   const fwdLibrary = useFwdGifLibrary("created", 12, 0);
 
+  const [naturalAbility, setNaturalAbility] = useState<any>(null);
+  const [hasLoadedAbility, setHasLoadedAbility] = useState(false);
+  const [showTourCard, setShowTourCard] = useState(true);
+
+  const isTourActive = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get("tour") === "1";
+  }, []);
+
+  useEffect(() => {
+    if (!profile.profileUserId) {
+      setHasLoadedAbility(true);
+      return;
+    }
+    fetchSignalRecord(profile.profileUserId).then((row) => {
+      setNaturalAbility(row);
+      setHasLoadedAbility(true);
+    });
+  }, [profile.profileUserId]);
+
   const isPublic = variant === "public";
   const showOwnerBadge = variant === "owner";
   const showAdminBadge = false; // never show admin badge per user request
@@ -195,7 +162,11 @@ export function ProfilePageNew({
   const showCreatorControls = variant === "creator"; // edit profile for creators
   const fwdGifs = showOwnerControls && fwdLibrary.data?.ok ? fwdLibrary.data.data.gifs : [];
 
-  const bannerSrc = profile.bannerUrl || staticBanner;
+  const isDefaultBanner = !profile.bannerUrl ||
+                          profile.bannerUrl === "/profile-banner" ||
+                          profile.bannerUrl.includes("profile-banner");
+
+  const bannerSrc = isDefaultBanner ? staticBanner : profile.bannerUrl;
   const avatarSrc = profile.avatarUrl || staticPortrait;
 
   const fmt = (n: number | string) => {
@@ -262,9 +233,9 @@ export function ProfilePageNew({
             </button>
           </div>
 
-          {/* Trey TV Logo top-center */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-            <div className="relative logo-anim w-[160px] sm:w-[200px] md:w-[240px]">
+          {/* Trey TV Logo */}
+          <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300 ${isDefaultBanner ? "top-1/2 -translate-y-1/2" : "top-2"}`}>
+            <div className={`relative logo-anim transition-all duration-300 ${isDefaultBanner ? "w-[240px] sm:w-[300px] md:w-[360px]" : "w-[160px] sm:w-[200px] md:w-[240px]"}`}>
               <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[70%] rounded-[50%] blur-3xl opacity-60 logo-halo-pulse" style={{ background: `radial-gradient(ellipse at center,${NEON_PURPLE}55 0%,${NEON_BLUE}33 45%,transparent 70%)` }} />
               <img src={treyTvLogo} alt="Trey TV" className="relative w-full h-auto object-contain" style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 10px rgba(168,85,247,0.35))" }} />
               <div aria-hidden className="absolute inset-0 mix-blend-screen opacity-70" style={{ WebkitMaskImage: `url(${treyTvLogo})`, maskImage: `url(${treyTvLogo})`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center", background: "linear-gradient(to bottom,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.18) 38%,rgba(255,255,255,0) 55%)" }} />
@@ -438,6 +409,48 @@ export function ProfilePageNew({
           </div>
         </div>
 
+        {/* Onboarding Optional Signal Test Banner */}
+        {isTourActive && showTourCard && !naturalAbility && variant === "owner" && (
+          <div className="max-w-2xl mx-auto mb-5 reveal">
+            <div className="relative rounded-[24px] p-[1.5px] bg-gradient-to-r from-fuchsia-500/50 via-violet-500/30 to-cyan-500/40 shadow-[0_0_30px_-5px_rgba(168,85,247,0.35)]">
+              <div className="rounded-[22px] bg-[#0a0518]/90 backdrop-blur-xl px-5 py-5 relative overflow-hidden">
+                <button
+                  onClick={() => setShowTourCard(false)}
+                  className="absolute top-3 right-3 text-slate-400 hover:text-white transition"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-violet-500/20 border border-violet-400/40 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-6 h-6 text-violet-300" />
+                  </div>
+                  <div className="flex-1 pr-6">
+                    <h3 className="text-base font-bold text-white">Unlock Your Natural Ability</h3>
+                    <p className="text-[12px] text-slate-300 mt-1 leading-relaxed">
+                      Your profile setup is complete! Take the optional **Signal Test** to discover your core personality archetype, unlock an exclusive neon badge on your profile, and light up your feed display name. You can skip it and take it anytime.
+                    </p>
+                    <div className="mt-3.5 flex items-center gap-3">
+                      <Link
+                        to="/tests/natural-ability"
+                        className="rounded-xl px-4 py-2 text-[11px] font-bold text-white bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500 hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                      >
+                        Take The Test
+                      </Link>
+                      <button
+                        onClick={() => setShowTourCard(false)}
+                        className="text-[11px] font-semibold text-slate-400 hover:text-slate-200 transition"
+                      >
+                        Maybe Later
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── TWO-COLUMN LAYOUT ──────────────────────────── */}
         <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:items-start space-y-3 lg:space-y-0">
 
@@ -480,6 +493,102 @@ export function ProfilePageNew({
                 </button>
               ))}
             </div>
+
+            {/* My Signal Badge Panel */}
+            {naturalAbility && (variant === "owner" || naturalAbility.show_on_profile) && (
+              <div className="panel neon-border p-4 reveal relative" style={{
+                animationDelay: ".085s",
+                boxShadow: `0 0 20px -5px ${naturalAbility.badge_glow || '#fbbf24'}44, inset 0 0 12px ${naturalAbility.badge_glow || '#fbbf24'}11`
+              }}>
+                <div className="absolute inset-0 rounded-3xl opacity-[0.03] pointer-events-none" style={{
+                  background: `radial-gradient(circle at center, ${naturalAbility.badge_glow || '#fbbf24'}, transparent 70%)`
+                }} />
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-12 h-12 rounded-full border-2 flex items-center justify-center text-2xl shrink-0"
+                    style={{
+                      borderColor: naturalAbility.badge_glow,
+                      color: naturalAbility.badge_glow,
+                      background: `${naturalAbility.badge_glow}15`,
+                      boxShadow: `0 0 15px ${naturalAbility.badge_glow}44`
+                    }}
+                  >
+                    {naturalAbility.badge_symbol}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] tracking-[0.25em] text-amber-300 font-bold uppercase">NATURAL ABILITY</p>
+                    <h4 className="text-base font-extrabold truncate" style={{ color: naturalAbility.badge_glow }}>
+                      {naturalAbility.primary_ability}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 truncate leading-snug">{naturalAbility.badge_label}</p>
+                  </div>
+                </div>
+                {variant === "owner" && (
+                  <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{
+                        backgroundColor: naturalAbility.privacy_mode === 'public' ? '#22c55e' : naturalAbility.privacy_mode === 'profile' ? '#3b82f6' : '#94a3b8'
+                      }} />
+                      Visibility: {naturalAbility.privacy_mode.toUpperCase()}
+                    </span>
+                    <Link to="/settings" className="text-amber-300/80 hover:text-amber-300 transition">
+                      Manage Visibility
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Locked Signal Badge — active CTA before the test is taken (Owner Only) */}
+            {hasLoadedAbility && !naturalAbility && variant === "owner" && (
+              <div className="panel border border-dashed border-white/10 p-4 reveal" style={{ animationDelay: ".085s" }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full border border-white/15 bg-white/[0.02] flex items-center justify-center text-xl text-slate-500 shrink-0">
+                    ?
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xs font-bold text-slate-300">Natural Ability Badge: Locked</h4>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                      Discover your Natural Ability and unlock a permanent profile badge & feed name effect.
+                    </p>
+                    <Link
+                      to="/tests/natural-ability"
+                      className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:text-white transition"
+                    >
+                      Take The Signal Test <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Signal Test already taken — the option is permanently greyed out & unclickable (Owner Only) */}
+            {hasLoadedAbility && naturalAbility && variant === "owner" && (
+              <div
+                className="panel border border-dashed border-white/10 p-4 reveal opacity-50 select-none"
+                style={{ animationDelay: ".085s" }}
+                aria-disabled="true"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-full border border-white/15 bg-white/[0.02] flex items-center justify-center text-slate-400 shrink-0">
+                    <BadgeCheck className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-xs font-bold text-slate-300">Signal Test: Completed</h4>
+                    <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                      Your Natural Ability badge is locked to your profile. The Signal Test can only be taken once.
+                    </p>
+                    <span
+                      className="mt-2.5 inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 cursor-not-allowed pointer-events-none"
+                      aria-disabled="true"
+                      title="The Signal Test has already been completed"
+                    >
+                      Take The Signal Test <ChevronRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* GIF of the Day */}
             {profile.gifOfDayUrl && (

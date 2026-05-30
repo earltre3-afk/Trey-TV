@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Sparkles, Play, Lock, Trophy, Upload, FileJson, PlusCircle } from 'lucide-react';
+import { Sparkles, Play, Lock, Trophy, Upload, FileJson, PlusCircle, ArrowLeft } from 'lucide-react';
 import { IMAGES } from '../../lib/storyData';
 import { TreyTVLogo } from '../TreyTVLogo';
 import { TreyStoryPackage } from '../../lib/treyStoryPackage';
@@ -13,6 +13,7 @@ interface Props {
  onInstallStoryFile?: (file: File) => void;
  onStartInstalledStory?: (storyId: string) => void;
  onCraftStory: () => void;
+ onBack?: () => void;
 }
 
 export const LibraryScreen: React.FC<Props> = ({
@@ -24,6 +25,7 @@ export const LibraryScreen: React.FC<Props> = ({
  onInstallStoryFile,
  onStartInstalledStory,
  onCraftStory,
+ onBack,
 }) => {
  const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,6 +33,14 @@ export const LibraryScreen: React.FC<Props> = ({
  <div className="min-h-screen pb-24">
  {/* Header */}
  <header className="px-5 pt-10 pb-6">
+   {onBack && (
+     <button
+       onClick={onBack}
+       className="mb-4 flex items-center gap-1.5 text-xs font-semibold text-white/60 hover:text-white transition-colors"
+     >
+       <ArrowLeft className="h-4 w-4" /> Back to games
+     </button>
+   )}
  <div className="flex items-center justify-between">
  <div>
  <div className="flex items-center">
@@ -155,7 +165,7 @@ export const LibraryScreen: React.FC<Props> = ({
  <input
  ref={inputRef}
  type="file"
- accept=".ttstory,application/json"
+ accept=".ttstory,application/json,text/plain,*/*"
  className="hidden"
  onChange={(e) => {
  const file = e.target.files?.[0];
@@ -198,4 +208,3 @@ export const LibraryScreen: React.FC<Props> = ({
  </div>
  );
 };
-

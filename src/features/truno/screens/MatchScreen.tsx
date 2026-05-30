@@ -452,7 +452,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   useTvRemoteInput((action) => {
     if (action === 'BACK') {
-      handleLeaveMatch();
+      clearSequencer();
+      onNavigate('exit');
       return;
     }
     if (action === 'MENU') {
@@ -524,7 +525,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={handleLeaveMatch} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+          <button onClick={() => { clearSequencer(); onNavigate('exit'); }} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center" aria-label="Back to Trey TV Games">
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
           </button>
           <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">

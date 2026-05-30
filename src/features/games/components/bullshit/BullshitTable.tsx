@@ -13,6 +13,7 @@ import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
 import { PixiBullshitTableLazy } from '../pixi/PixiGameTables';
 import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
+import { getGameBullshitDecision } from '@/lib/trey-i/vertex.server';
 
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
@@ -35,6 +36,39 @@ function bsExtract(s: BSState) {
   return { currentSeat: s.currentSeat, phase: s.phase, ended: s.phase === 'game-over' };
 }
 
+async function getBSDecisionWithFallback(state: BSState, seat: number, isClaim: boolean): Promise<{ cardIds?: string[]; rank?: string; callBullshit?: boolean }> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<{ cardIds?: string[]; rank?: string; callBullshit?: boolean }>((resolve) => {
+    timeoutId = setTimeout(() => {
+      console.warn("Bullshit AI decision timed out. Falling back to local engine.");
+      if (isClaim) {
+        const fallback = botClaim(state, seat);
+        resolve({ cardIds: fallback.cardIds, rank: fallback.rank });
+      } else {
+        resolve({ callBullshit: botShouldCall(state, seat) });
+      }
+    }, 1800);
+  });
+
+  const apiPromise = getGameBullshitDecision({ state, seat, isClaim })
+    .then((res) => {
+      clearTimeout(timeoutId);
+      return res;
+    })
+    .catch((err) => {
+      console.error("Bullshit AI decision failed:", err);
+      clearTimeout(timeoutId);
+      if (isClaim) {
+        const fallback = botClaim(state, seat);
+        return { cardIds: fallback.cardIds, rank: fallback.rank };
+      } else {
+        return { callBullshit: botShouldCall(state, seat) };
+      }
+    });
+
+  return Promise.race([apiPromise, timeoutPromise]);
+}
+
 export const BullshitTable: React.FC<Props> = (props) => {
   if (props.roomId && props.identity) return <ServerBS {...props} roomId={props.roomId!} identity={props.identity!} />;
   return <LocalBS {...props} />;
@@ -47,19 +81,41 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
   useEffect(() => {
     if (state.phase === 'playing') {
       const seat = state.currentSeat;
-      const t = setTimeout(() => {
-        const { cardIds, rank } = botClaim(state, seat);
-        setState(s => makeClaim(s, seat, cardIds, rank));
-      }, state.players[seat].isBot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
+      const isBot = state.players[seat].isBot;
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getBSDecisionWithFallback(state, seat, true);
+          setState(s => {
+            if (s.phase === 'playing' && s.currentSeat === seat) {
+              return makeClaim(s, seat, decision.cardIds ?? botClaim(s, seat).cardIds, decision.rank ?? s.expectedRank);
+            }
+            return s;
+          });
+        } else {
+          const { cardIds, rank } = botClaim(state, seat);
+          setState(s => makeClaim(s, seat, cardIds, rank));
+        }
+      }, isBot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
     if (state.phase === 'awaiting-challenge') {
       const callerSeats = state.players.filter(p => p.isBot && p.seat !== state.lastClaim?.seat).map(p => p.seat);
       const hasHumanCaller = state.players.some(p => !p.isBot && p.seat !== state.lastClaim?.seat);
-      const t = setTimeout(() => {
-        const caller = callerSeats.find(s => botShouldCall(state, s));
-        if (caller !== undefined) setState(s => callBullshit(s, caller));
-        else setState(passChallenge);
+      const t = setTimeout(async () => {
+        const decisions = await Promise.all(
+          callerSeats.map(async (seatIndex) => {
+            const decision = await getBSDecisionWithFallback(state, seatIndex, false);
+            return { seatIndex, callBullshit: decision.callBullshit };
+          })
+        );
+        const caller = decisions.find(d => d.callBullshit)?.seatIndex;
+        setState(s => {
+          if (s.phase === 'awaiting-challenge') {
+            if (caller !== undefined) return callBullshit(s, caller);
+            return passChallenge(s);
+          }
+          return s;
+        });
       }, hasHumanCaller ? HUMAN_TURN_TIMEOUT_MS : BOT_CHALLENGE_DELAY_MS);
       return () => clearTimeout(t);
     }
@@ -99,17 +155,29 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
     if (activeState.phase === 'playing') {
       const seatPlayer = room.players.find(p => p.seat_index === activeState.currentSeat);
       const seat = activeState.currentSeat;
-      const t = setTimeout(() => {
-        const { cardIds, rank } = botClaim(activeState, seat);
-        room.setHostState(makeClaim(activeState, seat, cardIds, rank));
-      }, seatPlayer?.is_bot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
+      const isBot = seatPlayer?.is_bot;
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getBSDecisionWithFallback(activeState, seat, true);
+          room.setHostState(makeClaim(activeState, seat, decision.cardIds ?? botClaim(activeState, seat).cardIds, decision.rank ?? activeState.expectedRank));
+        } else {
+          const { cardIds, rank } = botClaim(activeState, seat);
+          room.setHostState(makeClaim(activeState, seat, cardIds, rank));
+        }
+      }, isBot ? BOT_CLAIM_DELAY_MS : HUMAN_TURN_TIMEOUT_MS);
       return () => clearTimeout(t);
     }
     if (activeState.phase === 'awaiting-challenge') {
       const botCallers = room.players.filter(p => p.is_bot && p.seat_index !== activeState.lastClaim?.seat).map(p => p.seat_index);
       const hasHumanCaller = room.players.some(p => !p.is_bot && p.seat_index !== activeState.lastClaim?.seat);
-      const t = setTimeout(() => {
-        const caller = botCallers.find(s => botShouldCall(activeState, s));
+      const t = setTimeout(async () => {
+        const decisions = await Promise.all(
+          botCallers.map(async (seatIndex) => {
+            const decision = await getBSDecisionWithFallback(activeState, seatIndex, false);
+            return { seatIndex, callBullshit: decision.callBullshit };
+          })
+        );
+        const caller = decisions.find(d => d.callBullshit)?.seatIndex;
         if (caller !== undefined) room.setHostState(callBullshit(activeState, caller));
         else room.setHostState(passChallenge(activeState));
       }, hasHumanCaller ? HUMAN_TURN_TIMEOUT_MS : BOT_CHALLENGE_DELAY_MS);

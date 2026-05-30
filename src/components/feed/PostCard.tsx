@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { fetchSignalRecord } from "@/lib/tests/naturalAbilityStorage";
 import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check, Image as ImageIcon, Loader2, ExternalLink, Forward } from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
@@ -28,6 +29,20 @@ function fmt(n: number) {
 
 export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
+
+  const [authorSignal, setAuthorSignal] = useState<{ symbol: string; ability: string } | null>(null);
+
+  useEffect(() => {
+    if (!post.ownerId) return;
+    fetchSignalRecord(post.ownerId).then((row) => {
+      if (row && row.show_in_feed) {
+        setAuthorSignal({
+          symbol: row.badge_symbol || "✦",
+          ability: row.primary_ability,
+        });
+      }
+    });
+  }, [post.ownerId]);
   const { addPost, updatePost, removePost } = useFeed();
   const { isSignedIn, user } = useAuth();
   const currentProfile = useCurrentUser();
@@ -329,12 +344,24 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             {creatorPublicProfileUid ? (
-              <Link to="/u/$uid" params={{ uid: creatorPublicProfileUid }} className="font-semibold hover:underline">
-                {post.creator.name}
+              <Link to="/u/$uid" params={{ uid: creatorPublicProfileUid }} className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap">
+                <span>{post.creator.name}</span>
+                {authorSignal && (
+                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-300 font-normal opacity-90">
+                    <span>{authorSignal.symbol}</span>
+                    <span className="tracking-wide text-[10px] uppercase font-bold">{authorSignal.ability}</span>
+                  </span>
+                )}
               </Link>
             ) : (
-              <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline">
-                {post.creator.name}
+              <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap">
+                <span>{post.creator.name}</span>
+                {authorSignal && (
+                  <span className="inline-flex items-center gap-0.5 text-xs text-amber-300 font-normal opacity-90">
+                    <span>{authorSignal.symbol}</span>
+                    <span className="tracking-wide text-[10px] uppercase font-bold">{authorSignal.ability}</span>
+                  </span>
+                )}
               </Link>
             )}
             <VerifiedBadge kind={post.creator.verified} />

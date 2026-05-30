@@ -4,7 +4,7 @@ import { TreyLogo } from './Logo';
 import { profile } from '../mockData';
 import {
   Home, Radio, Gamepad2, Clapperboard, Music2, Star, Search, Crown,
-  ChevronDown,
+  ChevronDown, Users, FolderKanban,
 } from 'lucide-react';
 
 const topNav: { id: Screen; label: string }[] = [
@@ -19,11 +19,13 @@ const rail = [
   { id: 'home', label: 'Home', Icon: Home },
   { id: 'guide', label: 'Live TV', Icon: Radio },
   { id: 'games', label: 'Games', Icon: Gamepad2 },
-  { id: 'home', label: 'Browse', Icon: Clapperboard },
-  { id: 'home', label: 'Music', Icon: Music2 },
-  { id: 'home', label: 'My List', Icon: Star },
-  { id: 'home', label: 'Search', Icon: Search },
-] as const;
+  { id: 'browse', label: 'Browse', Icon: Clapperboard },
+  { id: 'music', label: 'Music', Icon: Music2 },
+  { id: 'my-list', label: 'My List', Icon: Star },
+  { id: 'search', label: 'Search', Icon: Search },
+  { id: 'watch-parties', label: 'Parties', Icon: Users },
+  { id: 'source-hub', label: 'Sources', Icon: FolderKanban },
+] satisfies { id: Screen; label: string; Icon: React.ComponentType<{ className?: string }> }[];
 
 export const TVFrame: React.FC<{
   children: React.ReactNode;
@@ -45,7 +47,7 @@ export const TVFrame: React.FC<{
       {/* Top bar */}
       <header className="relative z-20 flex items-center justify-between px-10 pt-6 pb-4">
         <div className="flex items-center gap-10">
-          <TreyLogo size="md" />
+          <TreyLogo size="lg" className="!h-28" />
         </div>
 
         {showTopNav && (
@@ -71,6 +73,17 @@ export const TVFrame: React.FC<{
           </nav>
         )}
 
+        <div className="flex items-center gap-3">
+        {/* Native device sign-in: only shown inside the TV app (bridge present) */}
+        {typeof window !== 'undefined' &&
+          (window as unknown as { TreyTvNative?: { signIn?: () => void } }).TreyTvNative?.signIn && (
+          <button
+            onClick={() => navigate('activate')}
+            className="px-6 py-3 rounded-full text-lg font-semibold text-white border border-fuchsia-400/60 bg-gradient-to-br from-fuchsia-600/30 to-purple-700/30 shadow-[0_0_20px_rgba(255,43,214,0.35)] outline-none transition-all focus:scale-[1.05] focus:ring-2 focus:ring-fuchsia-400"
+          >
+            Sign In
+          </button>
+        )}
         {/* User badge */}
         <button
           onClick={() => navigate('profile')}
@@ -88,19 +101,20 @@ export const TVFrame: React.FC<{
           </div>
           <ChevronDown className="w-5 h-5 text-white/60" />
         </button>
+        </div>
       </header>
 
       {/* Body with left rail */}
       <div className="relative z-10 flex">
         {showRail && (
-          <aside className="w-24 shrink-0 pl-4 pr-2 pt-2">
+          <aside className="w-28 shrink-0 pl-10 pr-2 pt-2">
             <nav className="flex flex-col items-stretch gap-1">
               {rail.map((r) => {
                 const active = activeRail === r.label;
                 return (
                   <button
                     key={r.label}
-                    onClick={() => navigate(r.id as Screen)}
+                    onClick={() => navigate(r.id)}
                     className={
                       'flex flex-col items-center justify-center gap-1 py-3 rounded-2xl outline-none transition-all ' +
                       'focus:scale-[1.07] focus:ring-2 focus:ring-fuchsia-400 ' +
@@ -115,7 +129,11 @@ export const TVFrame: React.FC<{
                 );
               })}
               {/* Premium */}
-              <button className="mt-3 flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-amber-400/60 bg-gradient-to-br from-amber-400/15 to-yellow-700/10 shadow-[0_0_20px_rgba(248,200,75,0.35)] outline-none focus:scale-[1.07] focus:shadow-[0_0_32px_rgba(248,200,75,0.7)]">
+              <button
+                aria-label="Premium"
+                onClick={() => navigate('premium')}
+                className="mt-3 flex flex-col items-center justify-center gap-1 py-4 rounded-2xl border border-amber-400/60 bg-gradient-to-br from-amber-400/15 to-yellow-700/10 shadow-[0_0_20px_rgba(248,200,75,0.35)] outline-none focus:scale-[1.07] focus:shadow-[0_0_32px_rgba(248,200,75,0.7)]"
+              >
                 <Crown className="w-6 h-6 text-amber-300" />
                 <span className="text-[11px] font-bold tracking-wider text-amber-300">PREMIUM</span>
               </button>

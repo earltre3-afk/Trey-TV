@@ -564,6 +564,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           onInstallStoryFile={isAdmin ? handleInstallStoryFile : undefined}
           onStartInstalledStory={handleStartInstalledStory}
           onCraftStory={() => setShowCraftingModal(true)}
+          onBack={handleGoBack}
         />
       )}
       {tab === 'story' && (

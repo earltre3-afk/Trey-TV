@@ -14,6 +14,7 @@ NATIVE_APP="$REPO_ROOT/apps/trey-tv-tv"
 ASSETS_DIR="$NATIVE_APP/app/src/main/assets/trey-tv-web"
 APK_SRC="$NATIVE_APP/app/build/outputs/apk/debug/app-debug.apk"
 APK_DST="$REPO_ROOT/public/downloads/trey-tv-box-debug.apk"
+STREAMING_APK_DST="$REPO_ROOT/public/downloads/trey-tv-streamingbox-debug.apk"
 
 say() { printf "\033[36m[build-tv-skin]\033[0m %s\n" "$*"; }
 
@@ -58,8 +59,10 @@ popd >/dev/null
 [[ -f "$APK_SRC" ]] || { echo "Expected APK at $APK_SRC, missing." >&2; exit 1; }
 mkdir -p "$(dirname "$APK_DST")"
 cp -f "$APK_SRC" "$APK_DST"
+cp -f "$APK_SRC" "$STREAMING_APK_DST"
 
 size_bytes=$(stat -c%s "$APK_DST" 2>/dev/null || stat -f%z "$APK_DST")
 size_mb=$(awk "BEGIN {printf \"%.2f\", $size_bytes / 1048576}")
 say "Done. APK ready at $APK_DST (${size_mb} MB)."
+say "StreamingBox download refreshed at $STREAMING_APK_DST."
 say "Sideload: adb install -r \"$APK_DST\""

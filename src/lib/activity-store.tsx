@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
-import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { recordUserTrace } from "@/lib/user-trace";
 
@@ -41,7 +41,7 @@ const KEY = "treytv_activity_v1";
 
 export function ActivityProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { user: supabaseUser } = useSupabaseAuth();
+  const { user: supaUser } = useSupabaseSession();
   const [reactions, setReactions] = useState<Record<string, ReactionKey | null>>({});
   const [saves, setSaves] = useState<Record<string, boolean>>({});
   const [activity, setActivity] = useState<ActivityItem[]>([]);
@@ -68,7 +68,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   }, [reactions, saves, activity, storageKey]);
 
   useEffect(() => {
-    if (!supabaseUser) return;
+    if (!supaUser) return;
     let cancelled = false;
 
     const loadActivity = async () => {
@@ -78,13 +78,13 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
           (supabase as any)
             .from("user_feed_activity")
             .select("id, activity_type, target_id, reaction, metadata, created_at")
-            .eq("user_id", supabaseUser.id)
+            .eq("user_id", supaUser.id)
             .order("created_at", { ascending: false })
             .limit(80),
           (supabase as any)
             .from("user_saved_items")
             .select("target_id, metadata, created_at")
-            .eq("user_id", supabaseUser.id)
+            .eq("user_id", supaUser.id)
             .eq("target_type", "post"),
         ]);
 
@@ -123,19 +123,19 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [supabaseUser?.id, user?.uid]);
+  }, [supaUser?.id, user?.uid]);
 
   const traceUid = user?.uid ?? "guest";
   const push = (a: Omit<ActivityItem, "userUid"> & { userUid?: string }) => {
     const item = { ...a, userUid: a.userUid ?? traceUid };
     setActivity((prev) => [item, ...prev].slice(0, 80));
 
-    if (supabaseUser) {
+    if (supaUser) {
       void (async () => {
         try {
           const supabase = createBrowserClient();
           await (supabase as any).from("user_feed_activity").insert({
-            user_id: supabaseUser.id,
+            user_id: supaUser.id,
             public_profile_uid: traceUid,
             activity_type: item.type,
             target_type: "post",
@@ -168,13 +168,13 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
         push({ id: crypto.randomUUID(), ts: Date.now(), type: "save", postId, ...meta });
         recordUserTrace({ userUid: traceUid, action: "feed.save", targetType: "post", targetId: postId, details: { title: meta.title } });
       }
-      if (supabaseUser) {
+      if (supaUser) {
         void (async () => {
           try {
             const supabase = createBrowserClient();
             if (next) {
               await (supabase as any).from("user_saved_items").upsert({
-                user_id: supabaseUser.id,
+                user_id: supaUser.id,
                 target_type: "post",
                 target_id: postId,
                 metadata: meta,
@@ -183,7 +183,7 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
               await (supabase as any)
                 .from("user_saved_items")
                 .delete()
-                .eq("user_id", supabaseUser.id)
+                .eq("user_id", supaUser.id)
                 .eq("target_type", "post")
                 .eq("target_id", postId);
             }
@@ -198,12 +198,12 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const logShare: Ctx["logShare"] = (postId, meta) => {
     push({ id: crypto.randomUUID(), ts: Date.now(), type: "share", postId, ...meta });
     recordUserTrace({ userUid: traceUid, action: "feed.share", targetType: "post", targetId: postId, details: { title: meta.title } });
-    if (supabaseUser) {
+    if (supaUser) {
       void (async () => {
         try {
           const supabase = createBrowserClient();
           await (supabase as any).from("user_shares").insert({
-            user_id: supabaseUser.id,
+            user_id: supaUser.id,
             target_type: "post",
             target_id: postId,
             destination: "native_share",

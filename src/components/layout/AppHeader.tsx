@@ -16,6 +16,7 @@ const tabs = [
   { id: "prescribe", label: "Prescribe Me" },
   { id: "rewards", label: "Rewards" },
   { id: "games", label: "Games" },
+  { id: "tradio", label: "Tradio" },
 ] as const;
 
 export function AppHeader({
@@ -42,6 +43,7 @@ export function AppHeader({
     : location.pathname.startsWith("/prescribe-me") ? "prescribe"
     : location.pathname.startsWith("/rewards") ? "rewards"
     : location.pathname.startsWith("/games") ? "games"
+    : location.pathname.startsWith("/tradio") ? "tradio"
     : activeTab;
 
   return (
@@ -92,7 +94,7 @@ export function AppHeader({
             </Link>
           ) : (
             <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring shrink-0" aria-label="Profile">
-              <img src={profileAvatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
+              <img src={profileAvatar || undefined} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
             </Link>
           )}
         </div>
@@ -115,6 +117,7 @@ export function AppHeader({
             if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
             if (t.id === "rewards") navigate({ to: "/rewards" });
             if (t.id === "games") navigate({ to: "/games" });
+            if (t.id === "tradio") navigate({ to: "/tradio" });
             onTabChange?.(t.id);
           };
           return (

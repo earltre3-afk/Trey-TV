@@ -125,7 +125,7 @@ function ProfileItem({ active, uid, avatar }: { active: boolean; uid: string; av
             : "0 0 0 1px oklch(1 0 0 / 15%)",
         }}
       >
-        <img src={avatar} alt="" className="size-full rounded-full object-cover" />
+        <img src={avatar || undefined} alt="" className="size-full rounded-full object-cover" />
       </div>
       <span
         className="text-[10px] leading-none"

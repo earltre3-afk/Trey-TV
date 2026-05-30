@@ -359,6 +359,7 @@ export interface SavedPrescription {
   createdAt: number;
   isSaved: boolean;
   isFavorite: boolean;
+  explanation?: string;
 }
 
 export function loadPrescriptions(): SavedPrescription[] {

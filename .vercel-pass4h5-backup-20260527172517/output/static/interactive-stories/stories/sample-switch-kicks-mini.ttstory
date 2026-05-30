@@ -1,0 +1,87 @@
+{
+  "fileType": "trey-tv-interactive-story",
+  "formatVersion": "1.0",
+  "story": {
+    "id": "sample_switch_kicks_test",
+    "title": "Switch Kicks: Test Branch",
+    "slug": "switch-kicks-test-branch",
+    "genre": "Comedy-Drama",
+    "description": "A tiny installable story package used to test Trey TV Interactive Story imports.",
+    "coverImage": "/story-assets/scenes/twins_cover.png",
+    "initialSceneId": "opening_request",
+    "initialMeters": {
+      "trust_ari": 50,
+      "trust_dante": 50,
+      "trust_malik_to_micah": 80,
+      "trust_micah_to_malik": 80,
+      "suspicion_mom": 10,
+      "suspicion_coach": 10,
+      "suspicion_valentina": 10,
+      "risk_level": 20
+    }
+  },
+  "characters": [
+    { "character_id": "malik_carter", "display_name": "Malik Carter", "role": "Football Star", "portrait": "/story-assets/characters/malik_carter.png", "voice_key": "malik_voice" },
+    { "character_id": "micah_carter", "display_name": "Micah Carter", "role": "Ballet Dancer", "portrait": "/story-assets/characters/micah_carter.png", "voice_key": "micah_voice" },
+    { "character_id": "denise_carter", "display_name": "Denise Carter", "role": "Mother", "portrait": "/story-assets/characters/denise_carter.png", "voice_key": "denise_voice" }
+  ],
+  "scenes": [
+    {
+      "id": "opening_request",
+      "title": "The Request",
+      "narration": "Malik hit the glass outside Studio B like consequences had finally learned his schedule. Micah looked at him through the door and already knew the morning was ruined.\n\n\"I need you to listen before you judge,\" Malik said.\n\n\"That is how every dumb story starts,\" Micah said.",
+      "image": "/story-assets/scenes/studio_b_request.png",
+      "imageFit": "cover",
+      "imagePosition": "center 35%",
+      "activeCharacterIds": ["malik_carter", "micah_carter"],
+      "choices": [
+        {
+          "id": "help_switch",
+          "label": "A",
+          "text": "Help Malik switch, but make him owe Micah forever.",
+          "tone": "Risky",
+          "nextSceneId": "switch_locked",
+          "stateDelta": { "trust_malik_to_micah": 10, "risk_level": 20, "suspicion_mom": 5 },
+          "affectedCharacterIds": ["malik_carter", "micah_carter"],
+          "relationshipImpactType": "Loyalty"
+        },
+        {
+          "id": "tell_mom",
+          "label": "B",
+          "text": "Tell Denise before the lie grows legs.",
+          "tone": "Safe",
+          "nextSceneId": "mom_knows",
+          "stateDelta": { "trust_micah_to_malik": -8, "suspicion_mom": 30, "risk_level": -5 },
+          "affectedCharacterIds": ["denise_carter", "malik_carter", "micah_carter"],
+          "relationshipImpactType": "Pressure"
+        }
+      ]
+    },
+    {
+      "id": "switch_locked",
+      "title": "The Switch Is Locked",
+      "narration": "The twins traded jackets, voices, posture, and a whole lot of common sense in the back hallway. Malik tried to walk like Micah. Micah tried not to look like he was committing a crime.\n\nBy the vending machines, the story split for real.",
+      "image": "/story-assets/scenes/hallway_switch.png",
+      "imageFit": "cover",
+      "imagePosition": "center 35%",
+      "activeCharacterIds": ["malik_carter", "micah_carter"],
+      "isEnding": true,
+      "endingTitle": "The Switch Begins",
+      "endingTagline": "The lie worked for five minutes. That was the problem.",
+      "endingSummary": "You chose loyalty over safety. The twins are closer, but the school risk just got real."
+    },
+    {
+      "id": "mom_knows",
+      "title": "Mom Knew Already",
+      "narration": "Denise Carter did not yell. That was worse. She looked from one son to the other like she had been waiting for their wisdom to clock in.\n\n\"Love is not a disguise,\" she said.\n\nAnd somehow, that ended the whole crime before first period.",
+      "image": "/story-assets/characters/denise_carter.png",
+      "imageFit": "cover",
+      "imagePosition": "center 35%",
+      "activeCharacterIds": ["denise_carter", "malik_carter", "micah_carter"],
+      "isEnding": true,
+      "endingTitle": "Mom Knew Already",
+      "endingTagline": "Denise shut the chaos down before it became a felony with choreography.",
+      "endingSummary": "You chose honesty. The day is less chaotic, but Malik has to face what he was running from."
+    }
+  ]
+}

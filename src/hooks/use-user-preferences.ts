@@ -52,7 +52,11 @@ export function useUserPreferences() {
     setIsLoading(true);
     try {
       const supabase = createBrowserClient();
-      await (supabase as any).rpc("ensure_user_preferences", { _user_id: supabaseUser.id });
+      try {
+        await (supabase as any).rpc("ensure_user_preferences", { _user_id: supabaseUser.id });
+      } catch (rpcError: any) {
+        console.warn("RPC ensure_user_preferences failed, proceeding with direct query:", rpcError?.message || rpcError);
+      }
       const { data, error } = await (supabase as any)
         .from("user_preferences")
         .select("profile_preferences, feed_preferences, inbox_preferences, rewards_preferences, prescribe_preferences, app_settings")
@@ -61,8 +65,8 @@ export function useUserPreferences() {
 
       if (error) throw error;
       setPreferences({ ...emptyPreferences, ...(data ?? {}) });
-    } catch (error) {
-      console.error("Failed to load UID preferences:", error);
+    } catch (error: any) {
+      console.error("Failed to load UID preferences:", error?.message || error);
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +98,8 @@ export function useUserPreferences() {
           }, { onConflict: "user_id" });
 
         if (error) throw error;
-      } catch (error) {
-        console.error("Failed to save UID preferences:", error);
+      } catch (error: any) {
+        console.error("Failed to save UID preferences:", error?.message || error);
       }
     },
     [currentUser.uid, preferences, supabaseUser?.id]

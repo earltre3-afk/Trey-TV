@@ -10,6 +10,12 @@ import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { useAuth } from "@/hooks/use-auth";
+import { fetchSignalRecord, saveNaturalAbilityVisibility, StoredSignalRow } from "@/lib/tests/naturalAbilityStorage";
+import { PrivacyMode } from "@/types/naturalAbility";
+import { ABILITY_RESULTS } from "@/lib/tests/naturalAbilityResults";
+import SignalPrivacyControls from "@/components/tests/SignalPrivacyControls";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
@@ -26,6 +32,7 @@ const sections = [
   { id: "appearance", label: "Appearance", icon: Palette, color: "oklch(0.7 0.25 340)" },
   { id: "notifications", label: "Notifications", icon: Bell, color: "oklch(0.82 0.15 215)" },
   { id: "privacy", label: "Privacy & Safety", icon: Shield, color: "oklch(0.65 0.22 300)" },
+  { id: "identity", label: "Identity & Visibility", icon: Sparkles, color: "oklch(0.7 0.25 340)" },
   { id: "billing", label: "Billing", icon: CreditCard, color: "oklch(0.78 0.18 150)" },
   { id: "language", label: "Language & Region", icon: Globe, color: "oklch(0.82 0.15 215)" },
   { id: "legal", label: "Legal & Safety", icon: FileText, color: "oklch(0.82 0.16 85)" },
@@ -45,7 +52,43 @@ type Toggle = { id: string; label: string; desc: string; icon: typeof Bell; on: 
 
 function SettingsPage() {
   const currentUser = useCurrentUser();
+  const { user } = useAuth();
   const { preferences, updateSection } = useUserPreferences();
+
+  const [naturalAbility, setNaturalAbility] = useState<StoredSignalRow | null>(null);
+  const [loadingAbility, setLoadingAbility] = useState(true);
+  const [visibility, setVisibility] = useState<PrivacyMode>("public");
+  const [savingVisibility, setSavingVisibility] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setLoadingAbility(false);
+      return;
+    }
+    fetchSignalRecord(user.id).then((row) => {
+      if (row) {
+        setNaturalAbility(row);
+        setVisibility(row.privacy_mode as PrivacyMode);
+      }
+      setLoadingAbility(false);
+    });
+  }, [user]);
+
+  const handleSaveVisibility = async () => {
+    if (!user || !naturalAbility) return;
+    setSavingVisibility(true);
+    const res = await saveNaturalAbilityVisibility({
+      userId: user.id,
+      privacyMode: visibility,
+    });
+    setSavingVisibility(false);
+    if (res.ok) {
+      setNaturalAbility(res.row);
+      toast.success("Visibility settings updated successfully!");
+    } else {
+      toast.error(res.error || "Failed to update visibility.");
+    }
+  };
   const [active, setActive] = useState<string>("account");
   const [theme, setTheme] = useState<"midnight" | "aurora" | "gold">("midnight");
   const [accent, setAccent] = useState<"gold" | "magenta" | "cyan" | "purple">("gold");
@@ -213,6 +256,105 @@ function SettingsPage() {
                 <Row icon={Lock} title="Block list" desc="0 accounts blocked" action={<ChevronRight className="size-4 text-muted-foreground" />} />
                 <Row icon={User} title="Who can DM you" desc="Followers only" action={<ChevronRight className="size-4 text-muted-foreground" />} last />
               </Panel>
+            )}
+
+            {active === "identity" && (
+              <div className="space-y-4 animate-fade-in">
+                {loadingAbility ? (
+                  <Panel>
+                    <div className="flex items-center justify-center py-8 gap-3">
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      <span className="text-sm text-muted-foreground">Loading identity details…</span>
+                    </div>
+                  </Panel>
+                ) : naturalAbility ? (
+                  <>
+                    <Panel>
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="w-14 h-14 rounded-full border-2 flex items-center justify-center text-3xl shrink-0"
+                          style={{
+                            borderColor: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24',
+                            color: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24',
+                            background: `${ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24'}15`,
+                            boxShadow: `0 0 15px ${ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24'}44`
+                          }}
+                        >
+                          {naturalAbility.badge_symbol}
+                        </div>
+                        <div>
+                          <p className="text-[10px] tracking-[0.25em] text-primary font-bold">NATURAL ABILITY Archetype</p>
+                          <h2 className="text-xl font-extrabold" style={{ color: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24' }}>
+                            {naturalAbility.primary_ability}
+                          </h2>
+                          <p className="text-xs text-muted-foreground mt-0.5">{naturalAbility.badge_label}</p>
+                        </div>
+                      </div>
+                    </Panel>
+
+                    <Panel>
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold">Badge Visibility</h3>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Control where your Natural Ability badge and feed display name effect are shown.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <SignalPrivacyControls value={visibility} onChange={setVisibility} />
+                        
+                        <div className="pt-3 border-t border-white/5 flex justify-end">
+                          <button
+                            onClick={handleSaveVisibility}
+                            disabled={savingVisibility}
+                            className="px-5 py-2.5 rounded-xl text-sm font-bold text-black bg-primary glow-gold hover-lift active:scale-95 disabled:opacity-50 transition"
+                          >
+                            {savingVisibility ? (
+                              <span className="flex items-center gap-1">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Saving…
+                              </span>
+                            ) : (
+                              "Save Visibility Changes"
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </Panel>
+
+                    <Panel>
+                      <div className="flex items-start gap-3">
+                        <Lock className="w-5 h-5 text-amber-300 shrink-0 mt-0.5" />
+                        <div>
+                          <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">Archetype Locked for Life</h4>
+                          <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                            To ensure authenticity of identities in Trey TV, Natural Ability classifications are final once calculated. You can completely hide your result by selecting **Keep Private**, but the result itself cannot be retaken or changed.
+                          </p>
+                        </div>
+                      </div>
+                    </Panel>
+                  </>
+                ) : (
+                  <Panel>
+                    <div className="text-center py-6">
+                      <Sparkles className="w-10 h-10 text-primary mx-auto mb-3 animate-pulse" />
+                      <h3 className="text-base font-bold">Natural Ability: Locked</h3>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
+                        Take the optional Signal Test to discover your core personality archetype, unlock an exclusive neon badge on your profile, and light up your feed display name.
+                      </p>
+                      <div className="mt-5">
+                        <Link
+                          to="/tests/natural-ability"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-black bg-primary glow-gold rounded-xl hover-lift active:scale-95 transition"
+                        >
+                          Take The Signal Test
+                          <ChevronRight className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </Panel>
+                )}
+              </div>
             )}
 
             {active === "billing" && (

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
 const TrunoModule = lazy(() => import("@/features/truno/TrunoModule"));
@@ -18,6 +18,7 @@ export const Route = createFileRoute("/games/truno")({
 });
 
 function TrunoPage() {
+  const navigate = useNavigate();
   return (
     <Suspense
       fallback={
@@ -33,7 +34,7 @@ function TrunoPage() {
     >
       <TrunoModule
         initialView="home"
-        onExitToGames={() => window.history.back()}
+        onExitToGames={() => navigate({ to: "/games" })}
       />
     </Suspense>
   );

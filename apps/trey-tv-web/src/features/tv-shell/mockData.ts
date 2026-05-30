@@ -2,11 +2,12 @@
 // Replace these with real API calls to:
 //   /api/tv/profile, /api/tv/content/home, /api/tv/games,
 //   /api/tv/watch-progress, /api/tv/device/start, /api/tv/device/status
-import { isUnsafeHeroArtwork } from './artwork';
+import { TV_ARTWORK, isUnsafeHeroArtwork } from './artwork';
 
-// Official Trey TV logo (silver + gold). Use this URL as the platform mark.
-export const TREY_TV_LOGO =
-  'https://d64gsuwffb70l.cloudfront.net/6a0c4710cb09dea5eb381c61_1779633004108_7aeb4dc0.png';
+// Official Trey TV logo (silver + gold), bundled locally so it always renders
+// in the offline/file:// TV app. (The previous CloudFront URL pointed at a
+// profile-page screenshot, not the logo.)
+export const TREY_TV_LOGO = '/trey-tv-logo.png';
 
 // Cinematic creator imagery (mock content thumbnails)
 const IMGS = [
@@ -20,7 +21,6 @@ const IMGS = [
   'https://d64gsuwffb70l.cloudfront.net/6a0c4710cb09dea5eb381c61_1779633016331_aa400794.png',
 ];
 const SAFE_TILE_PLACEHOLDER = '/placeholder.svg';
-const RAW_UI_CONCEPT_IMAGE = IMGS[0];
 
 export const IMG = (i: number) => {
   const url = IMGS[i % IMGS.length];
@@ -38,15 +38,16 @@ export const heroFeature: VideoTile = {
   title: 'Kingmaker: The Change',
   meta: 'Trey TV Original',
   badge: 'FEATURED',
-  image: RAW_UI_CONCEPT_IMAGE,
+  image: TV_ARTWORK.kingmakerHero,
+  backdropUrl: TV_ARTWORK.kingmakerHero,
   description:
     'A cinematic story of power, pressure, and legacy. Every move changes the crown.',
 };
 
 export const featured: VideoTile[] = [
-  { id: 'f1', title: 'Life of a Creator', meta: 'Documentary Series', badge: 'NEW', image: IMG(0) },
+  { id: 'f1', title: 'Life of a Creator', meta: 'Documentary Series', badge: 'NEW', image: TV_ARTWORK.lifeOfCreatorCard },
   { id: 'f2', title: 'Trizzy Takeover', meta: 'Epic Series', badge: 'EPIC', image: IMG(1) },
-  { id: 'f3', title: 'After Hours', meta: 'Late Night', badge: 'NEW EPISODES', image: IMG(2) },
+  { id: 'f3', title: 'After Hours', meta: 'Late Night', badge: 'NEW EPISODES', image: TV_ARTWORK.afterHoursCard },
   { id: 'f4', title: 'On The Road', meta: 'Docuseries', image: IMG(3) },
   { id: 'f5', title: 'The World', meta: 'Reality', badge: 'NEW', image: IMG(4) },
   { id: 'f6', title: 'Unfiltered', meta: 'Exclusive', badge: 'EXCLUSIVE', image: IMG(5) },
@@ -54,7 +55,7 @@ export const featured: VideoTile[] = [
 
 export const continueWatching: VideoTile[] = [
   { id: 'c1', title: 'The Come Up', meta: 'S1 E3 · 24m left', progress: 0.42, image: IMG(0) },
-  { id: 'c2', title: 'Late Night Gaming', meta: 'S2 E5 · 18m left', progress: 0.61, image: IMG(2) },
+  { id: 'c2', title: 'Late Night Gaming', meta: 'S2 E5 · 18m left', progress: 0.61, image: TV_ARTWORK.lateNightGamingGuide },
   { id: 'c3', title: 'On The Road: ATL', meta: 'S1 E4 · 32m left', progress: 0.35, image: IMG(3) },
   { id: 'c4', title: 'Studio Sessions', meta: 'S3 E2 · 15m left', progress: 0.74, image: IMG(1) },
 ];
@@ -83,14 +84,13 @@ export const musicVideos: VideoTile[] = [
   { id: 'm4', title: 'Real Ones', meta: 'Trey Trizzy', image: IMG(3) },
 ];
 
-export type Game = { id: string; title: string; meta: string; players?: string; image: string; progress?: number };
+export type Game = { id: string; title: string; meta: string; players?: string; image: string; progress?: number; status?: 'Ready' | 'Coming Soon' | 'In Development' };
 export const trendingGames: Game[] = [
-  { id: 'g1', title: 'Truno', meta: 'Card Game', players: '2-6', image: IMG(4) },
-  { id: 'g2', title: 'Spades', meta: 'Card Game', players: '2-4', image: IMG(5) },
-  { id: 'g3', title: 'Blackjack', meta: 'Casino', players: '1-4', image: IMG(6) },
-  { id: 'g4', title: 'Bullshit / Cheat', meta: 'Party Game', players: '3-6', image: IMG(7) },
-  { id: 'g5', title: "Liar's Poker", meta: 'Card Game', players: '4-6', image: IMG(0) },
-  { id: 'g6', title: "King's Court", meta: 'Strategy', players: '2-4', image: IMG(1) },
+  { id: 'spades', title: 'Spades', meta: 'Card Game', players: '2-4', image: TV_ARTWORK.spadesGameCard, status: 'Ready' },
+  { id: 'blackjack', title: 'Blackjack', meta: 'Casino', players: '1-4', image: IMG(6), status: 'Coming Soon' },
+  { id: 'bullshit', title: 'Bullshit', meta: 'Party Game', players: '3-6', image: IMG(7), status: 'Coming Soon' },
+  { id: 'truno', title: 'TRUNO', meta: 'Card Game', players: '2-6', image: IMG(4), status: 'In Development' },
+  { id: 'interactive-stories', title: 'Interactive Stories', meta: 'Story Mode', players: '1', image: IMG(2), status: 'Ready' },
 ];
 
 export const interactiveStories: VideoTile[] = [
@@ -105,7 +105,7 @@ export const guideCategories = [
   'All Channels','Creators','Gaming','Music','Interviews','Originals','Late Night','Docuseries'
 ];
 
-export type GuideChannel = { id: string; num: string; name: string; programs: { title: string; time: string; live?: boolean }[] };
+export type GuideChannel = { id: string; num: string; name: string; programs: { title: string; time: string; live?: boolean; imageUrl?: string; description?: string; genres?: string[] }[] };
 export const guideChannels: GuideChannel[] = [
   { id: 'ch101', num: '101', name: 'TRIZZY LIVE', programs: [
     { title: 'TRIZZY LIVE', time: '8:00 - 9:00 PM', live: true },
@@ -114,7 +114,7 @@ export const guideChannels: GuideChannel[] = [
   ]},
   { id: 'ch102', num: '102', name: 'GLITCH GAMING', programs: [
     { title: 'Ranked Grind', time: '8:00 - 9:00 PM', live: true },
-    { title: 'Late Night Gaming', time: '9:00 - 10:00 PM', live: true },
+    { title: 'Late Night Gaming', time: '9:00 - 10:00 PM', live: true, imageUrl: TV_ARTWORK.lateNightGamingGuide },
     { title: 'Indie Heat', time: '10:00 - 11:00 PM' },
   ]},
   { id: 'ch103', num: '103', name: 'ON THE ROAD', programs: [

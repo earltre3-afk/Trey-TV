@@ -14,6 +14,7 @@ import {
   Ghost,
   Image as ImageIcon,
   Inbox as InboxIcon,
+  Loader2,
   MessageCirclePlus,
   MessageCircle,
   Mic,
@@ -55,6 +56,7 @@ import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import { buildFwdGifDetailUrl, type FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
 import { getMutualFollows } from "@/lib/social-relationships";
+import { generateSmartReplies, summarizeInboxThread } from "@/lib/trey-i/vertex.server";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -512,7 +514,47 @@ function Inbox() {
   }, [openId, sendMedia]);
 
   const quickActions = [
-    { label: "AI Summary", icon: Bot, onClick: () => toast("Trey-I is summarizing this inbox") },
+    {
+      label: "AI Summary",
+      icon: Bot,
+      onClick: () => {
+        if (!open) {
+          toast.error("Select a conversation to summarize");
+          return;
+        }
+        const threadMsgs = messagesOf(open.id);
+        if (threadMsgs.length === 0) {
+          toast("No messages to summarize yet.");
+          return;
+        }
+        toast.promise(
+          (async () => {
+            const payload = threadMsgs.map(m => ({
+              from: m.from === "me" ? "Me" : open.peer.name,
+              text: m.text || ""
+            }));
+            const res = await summarizeInboxThread({ messages: payload, peerName: open.peer.name });
+            if (res.summary) {
+              return res.summary;
+            }
+            throw new Error("Could not generate summary");
+          })(),
+          {
+            loading: "Trey-I is reading the vibe...",
+            success: (summary) => (
+              <div className="flex flex-col gap-1 p-1">
+                <div className="flex items-center gap-2 text-xs font-black tracking-widest text-[oklch(0.82_0.15_215)]">
+                  <Bot className="size-4 animate-pulse" />
+                  TREY-I THREAD SUMMARY
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed italic">"{summary}"</p>
+              </div>
+            ),
+            error: "Failed to generate thread summary.",
+          }
+        );
+      }
+    },
     { label: "Schedule Reply", icon: CalendarClock, onClick: () => toast("Reply scheduler ready") },
     { label: "Create Collab", icon: UserPlus, onClick: () => toast.success("Collab room draft created") },
     { label: "Voice Note", icon: Mic, onClick: startRecording },
@@ -680,6 +722,8 @@ function Inbox() {
 
                 {shouldShowAi && (
                   <AiReplyPanel
+                    messages={thread}
+                    peerName={open.peer.name}
                     onClose={() => setAiDismissed((s) => ({ ...s, [open.id]: true }))}
                     onSend={(text) => setDraft(text)}
                   />
@@ -769,7 +813,7 @@ function InboxTopRail({ unread, online, profileUid, profileAvatar, onSearch }: {
           {unread > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-[oklch(0.7_0.25_340)] shadow-[0_0_12px_oklch(0.7_0.25_340)]" />}
         </button>
         <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring" aria-label="Profile">
-          <img src={profileAvatar} className="size-full rounded-full object-cover" alt="" />
+          <img src={profileAvatar || undefined} className="size-full rounded-full object-cover" alt="" />
         </Link>
       </div>
     </div>
@@ -1185,13 +1229,54 @@ function GifMessageCard({ gifUrl, posterUrl, title, fwdGifId }: { gifUrl: string
   );
 }
 
-function AiReplyPanel({ onClose, onSend }: { onClose: () => void; onSend: (text: string) => void }) {
-  const chips = ["Send the cut", "I am in", "Let's lock a time"];
+function AiReplyPanel({
+  messages,
+  peerName,
+  onClose,
+  onSend,
+}: {
+  messages: any[];
+  peerName: string;
+  onClose: () => void;
+  onSend: (text: string) => void;
+}) {
+  const [chips, setChips] = useState<string[]>(["Send the cut", "I am in", "Let's lock a time"]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    setLoading(true);
+    const payload = messages.map(m => ({
+      from: m.from === "me" ? "Me" : peerName,
+      text: m.text || ""
+    }));
+
+    generateSmartReplies({ messages: payload, peerName })
+      .then((res) => {
+        if (res?.replies && res.replies.length > 0) {
+          setChips(res.replies);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to generate smart replies:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [messages?.length, peerName]);
+
   return (
     <div className="border-t border-white/10 px-3 py-2">
       <div className="rounded-2xl border border-[oklch(0.82_0.15_215_/_0.35)] bg-[linear-gradient(135deg,oklch(0.82_0.15_215_/_0.12),oklch(0.7_0.25_340_/_0.10))] p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[oklch(0.82_0.15_215)]"><Bot className="size-3.5" /> AI Suggested Reply</div>
+          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[oklch(0.82_0.15_215)]">
+            {loading ? (
+              <Loader2 className="size-3.5 animate-spin text-[oklch(0.82_0.15_215)]" />
+            ) : (
+              <Bot className="size-3.5" />
+            )}
+            AI Suggested Reply
+          </div>
           <button onClick={onClose} className="size-7 grid place-items-center rounded-full hover:bg-white/10" aria-label="Close AI panel"><X className="size-3.5" /></button>
         </div>
         <div className="flex gap-2 overflow-x-auto no-scrollbar">

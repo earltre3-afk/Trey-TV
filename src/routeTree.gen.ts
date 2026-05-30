@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91indexChar93RouteImport } from './routes/[index]'
+import { Route as TradioRouteImport } from './routes/tradio'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RewardsRouteImport } from './routes/rewards'
@@ -49,6 +50,7 @@ import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as WatchPartyIdRouteImport } from './routes/watch-party.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as TvActivateRouteImport } from './routes/tv.activate'
+import { Route as TestsNaturalAbilityRouteImport } from './routes/tests.natural-ability'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as SettingsConnectedAppsRouteImport } from './routes/settings.connected-apps'
 import { Route as OnboardingVoiceRouteImport } from './routes/onboarding.voice'
@@ -121,6 +123,11 @@ import { Route as ApiFwdOauthAuthorizeRouteImport } from './routes/api.fwd.oauth
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
   path: '/index',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradioRoute = TradioRouteImport.update({
+  id: '/tradio',
+  path: '/tradio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -316,6 +323,11 @@ const UUidRoute = UUidRouteImport.update({
 const TvActivateRoute = TvActivateRouteImport.update({
   id: '/tv/activate',
   path: '/tv/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestsNaturalAbilityRoute = TestsNaturalAbilityRouteImport.update({
+  id: '/tests/natural-ability',
+  path: '/tests/natural-ability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsVerificationRoute = SettingsVerificationRouteImport.update({
@@ -703,6 +715,7 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/tradio': typeof TradioRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -760,6 +773,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tests/natural-ability': typeof TestsNaturalAbilityRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -811,6 +825,7 @@ export interface FileRoutesByTo {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/tradio': typeof TradioRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -867,6 +882,7 @@ export interface FileRoutesByTo {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tests/natural-ability': typeof TestsNaturalAbilityRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -921,6 +937,7 @@ export interface FileRoutesById {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
+  '/tradio': typeof TradioRoute
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -978,6 +995,7 @@ export interface FileRoutesById {
   '/onboarding/voice': typeof OnboardingVoiceRoute
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
+  '/tests/natural-ability': typeof TestsNaturalAbilityRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -1033,6 +1051,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/tradio'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1090,6 +1109,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tests/natural-ability'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1141,6 +1161,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/tradio'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1197,6 +1218,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tests/natural-ability'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1250,6 +1272,7 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
+    | '/tradio'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1307,6 +1330,7 @@ export interface FileRouteTypes {
     | '/onboarding/voice'
     | '/settings/connected-apps'
     | '/settings/verification'
+    | '/tests/natural-ability'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1361,6 +1385,7 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
+  TradioRoute: typeof TradioRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
@@ -1372,6 +1397,7 @@ export interface RootRouteChildren {
   OauthRevokeRoute: typeof OauthRevokeRoute
   OauthTokenRoute: typeof OauthTokenRoute
   OauthUserinfoRoute: typeof OauthUserinfoRoute
+  TestsNaturalAbilityRoute: typeof TestsNaturalAbilityRoute
   TvActivateRoute: typeof TvActivateRoute
   UUidRoute: typeof UUidRouteWithChildren
   WatchPartyIdRoute: typeof WatchPartyIdRoute
@@ -1388,6 +1414,13 @@ declare module '@tanstack/react-router' {
       path: '/index'
       fullPath: '/index'
       preLoaderRoute: typeof Char91indexChar93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tradio': {
+      id: '/tradio'
+      path: '/tradio'
+      fullPath: '/tradio'
+      preLoaderRoute: typeof TradioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -1661,6 +1694,13 @@ declare module '@tanstack/react-router' {
       path: '/tv/activate'
       fullPath: '/tv/activate'
       preLoaderRoute: typeof TvActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tests/natural-ability': {
+      id: '/tests/natural-ability'
+      path: '/tests/natural-ability'
+      fullPath: '/tests/natural-ability'
+      preLoaderRoute: typeof TestsNaturalAbilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/verification': {
@@ -2421,6 +2461,7 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
+  TradioRoute: TradioRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CategorySlugRoute: CategorySlugRoute,
   ChannelHandleRoute: ChannelHandleRoute,
@@ -2432,6 +2473,7 @@ const rootRouteChildren: RootRouteChildren = {
   OauthRevokeRoute: OauthRevokeRoute,
   OauthTokenRoute: OauthTokenRoute,
   OauthUserinfoRoute: OauthUserinfoRoute,
+  TestsNaturalAbilityRoute: TestsNaturalAbilityRoute,
   TvActivateRoute: TvActivateRoute,
   UUidRoute: UUidRouteWithChildren,
   WatchPartyIdRoute: WatchPartyIdRoute,

@@ -14,7 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TreyIWidget } from "@/components/ai/TreyIWidget";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AuthProvider, useAuth } from "@/lib/auth";
-import { SupabaseSessionProvider } from "@/lib/supabase-session";
+import { SupabaseSessionProvider, useSupabaseSession } from "@/lib/supabase-session";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { useEffect, useState } from "react";
 import { ActivityProvider } from "@/lib/activity-store";
@@ -29,6 +29,7 @@ import { GiftBurstHost } from "@/components/gifts/GiftBurst";
 import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
 import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
+import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
 
 import appCss from "../styles.css?url";
 
@@ -165,7 +166,46 @@ function RootComponent() {
   const isImmersivePrescribeMe = pathname.startsWith("/prescribe-me");
   const isImmersiveGameRoom = pathname.startsWith("/games");
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
-  const hideGlobalMobileChrome = isImmersivePrescribeMe || isImmersiveGameRoom || isFocusedAuthSurface;
+  
+  const [foldMode, setFoldMode] = useState<string>("standard");
+
+  useEffect(() => {
+    const checkFold = () => {
+      const saved = sessionStorage.getItem("treytv_fold_mode");
+      if (saved) {
+        setFoldMode(saved);
+        return;
+      }
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const ratio = w / h;
+      if (w >= 600 && w < 1024 && ratio >= 0.8 && ratio <= 1.4) {
+        setFoldMode("unfolded");
+      } else if (w <= 420 && h <= 450 && ratio >= 0.8 && ratio <= 1.2) {
+        setFoldMode("cover");
+      } else {
+        setFoldMode("standard");
+      }
+    };
+    window.addEventListener("resize", checkFold);
+    
+    // Sync active fold mode state updates from the emulator
+    const interval = setInterval(checkFold, 500);
+
+    checkFold();
+    return () => {
+      window.removeEventListener("resize", checkFold);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const hideGlobalMobileChrome = 
+    isImmersivePrescribeMe || 
+    isImmersiveGameRoom || 
+    isFocusedAuthSurface || 
+    foldMode === "cover" || 
+    foldMode === "unfolded" || 
+    foldMode === "flex";
 
   // Apply user's profile accent color globally
   useAccentColor();
@@ -185,7 +225,9 @@ function RootComponent() {
                         <MusicReviewProvider>
                           {showWelcomeSplash && <WelcomeSplash onDone={() => undefined} />}
                           <AuthGuard>
-                            <Outlet />
+                            <FoldableLayoutManager>
+                              <Outlet />
+                            </FoldableLayoutManager>
                           </AuthGuard>
                           {!hideGlobalMobileChrome && <BottomNav />}
                           {!hideGlobalMobileChrome && <TreyIWidget />}
@@ -206,106 +248,134 @@ function RootComponent() {
 }
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isGuest } = useAuth();
+  const { user, isGuest, authorizationStatus, authReady, authError, retryHydrate } = useAuth();
+  const { loading: sessionLoading, user: supaUser } = useSupabaseSession();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
+  const [showRetry, setShowRetry] = useState(false);
+
+  // 1. Define public routes
+  const publicRoutes = [
+    "/login",
+    "/signup",
+    "/auth/callback",
+    "/confirm-email",
+    "/onboarding",
+    "/download-tv-app",
+    "/apk",
+    "/legal",
+    "/developers",
+    "/api",
+    "/.well-known"
+  ];
+
+  const isPublicRoute = publicRoutes.some((route) =>
+    location.pathname === route || location.pathname.startsWith(route + "/")
+  );
+
+  const guestAllowed = ["/", "/explore", "/guide", "/explore/"];
+  const isAllowedGuestPage = guestAllowed.some((route) =>
+    location.pathname === route || (route !== "/" && location.pathname.startsWith(route))
+  );
+
+  const onboardingRoutes = [
+    "/onboarding",
+    "/auth/callback",
+    "/login",
+    "/signup",
+    "/legal",
+    "/confirm-email"
+  ];
+  const isOnboardingRoute = onboardingRoutes.some((route) =>
+    location.pathname === route || location.pathname.startsWith(route + "/")
+  );
+
+  // Synchronous route protection checks to prevent layout flash/flicker
+  const isBlockedUser = user && !user.onboarding_completed && !isOnboardingRoute;
+  const isBlockedGuest = isGuest && !isPublicRoute && !isAllowedGuestPage;
+  const isAuthLoading = sessionLoading || authorizationStatus === "checking" || !authReady;
 
   useEffect(() => {
     let cancelled = false;
+    let to: any = null;
+
+    // fail-safe: if auth stays loading too long, show retry UI
+    if (isAuthLoading) {
+      setShowRetry(false);
+      to = setTimeout(() => setShowRetry(true), 8000);
+    } else {
+      setShowRetry(false);
+    }
 
     const checkOnboarding = async () => {
-      // 1. Define public routes
-      const publicRoutes = [
-        "/login",
-        "/signup",
-        "/auth/callback",
-        "/confirm-email",
-        "/onboarding",
-        "/legal",
-        "/developers",
-        "/api",
-        "/.well-known"
-      ];
+      // While we are checking authorization, do not redirect
+      if (authorizationStatus === "checking" || sessionLoading || !authReady) {
+        if (!cancelled) setLoading(true);
+        return;
+      }
 
-      const isPublicRoute = publicRoutes.some((route) =>
-        location.pathname === route || location.pathname.startsWith(route + "/")
-      );
-
-      // 2. Guest handling
-      if (isGuest) {
-        const guestAllowed = ["/", "/explore", "/guide", "/explore/"];
-        const isAllowedGuestPage = guestAllowed.some((route) =>
-          location.pathname === route || (route !== "/" && location.pathname.startsWith(route))
-        );
-
+      // Guest handling
+      if (authorizationStatus === "logged_out" || isGuest) {
         if (!isPublicRoute && !isAllowedGuestPage) {
-          sessionStorage.setItem("treytv_post_auth_redirect", location.pathname + location.search);
+          const authRedirectSearch =
+            typeof location.search === "string"
+              ? location.search
+              : location.search?.toString?.() ?? "";
+          sessionStorage.setItem(
+            "treytv_post_auth_redirect",
+            location.pathname + authRedirectSearch
+          );
           navigate({ to: "/login" });
         }
         if (!cancelled) setLoading(false);
         return;
       }
 
-      // 3. Signed in user handling
-      if (user) {
-        const supabase = createBrowserClient();
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("id", user.uid)
-          .maybeSingle();
-
-        if (cancelled) return;
-
-        const isOnboardingCompleted = profile?.onboarding_completed ?? user.onboarding_completed ?? false;
-
-        if (!isOnboardingCompleted) {
-          const onboardingRoutes = [
-            "/onboarding",
-            "/auth/callback",
-            "/login",
-            "/signup",
-            "/legal",
-            "/confirm-email"
-          ];
-          const isOnboardingRoute = onboardingRoutes.some((route) =>
-            location.pathname === route || location.pathname.startsWith(route + "/")
+      // Signed in user handling
+      if (authorizationStatus === "needs_onboarding" && user) {
+        if (!isOnboardingRoute) {
+          const onboardingRedirectSearch =
+            typeof location.search === "string"
+              ? location.search
+              : location.search?.toString?.() ?? "";
+          sessionStorage.setItem(
+            "treytv_post_onboarding_redirect",
+            location.pathname + onboardingRedirectSearch
           );
-
-          if (!isOnboardingRoute) {
-            sessionStorage.setItem("treytv_post_onboarding_redirect", location.pathname + location.search);
-            
+          try {
+            const supabase = createBrowserClient();
             const { data: onboarding } = await supabase
               .from("user_onboarding")
-              .select("selected_path, current_step")
+              .select("selected_path, current_step, completed")
               .eq("user_id", user.uid)
               .maybeSingle();
 
             if (onboarding && !onboarding.completed && onboarding.selected_path) {
               let targetPath = "/onboarding";
-              if (onboarding.selected_path === "manual") {
-                targetPath = "/onboarding/manual";
-              } else if (onboarding.selected_path === "voice" || onboarding.selected_path === "trey_i") {
-                targetPath = "/onboarding/voice";
-              } else if (onboarding.selected_path === "import_screenshot") {
-                targetPath = "/onboarding/import-screenshot";
-              }
+              if (onboarding.selected_path === "manual") targetPath = "/onboarding/manual";
+              else if (onboarding.selected_path === "voice" || onboarding.selected_path === "trey_i") targetPath = "/onboarding/voice";
+              else if (onboarding.selected_path === "import_screenshot") targetPath = "/onboarding/import-screenshot";
               navigate({ to: targetPath as any });
             } else {
               navigate({ to: "/onboarding" });
             }
+          } catch (e) {
+            console.error("Failed to fetch onboarding state:", e);
+            navigate({ to: "/onboarding" });
           }
+        }
+        if (!cancelled) setLoading(false);
+        return;
+      }
+
+      if (authorizationStatus === "authorized" && location.pathname.startsWith("/onboarding")) {
+        const redirect = sessionStorage.getItem("treytv_post_onboarding_redirect");
+        if (redirect) {
+          sessionStorage.removeItem("treytv_post_onboarding_redirect");
+          window.location.href = redirect;
         } else {
-          if (location.pathname.startsWith("/onboarding")) {
-            const redirect = sessionStorage.getItem("treytv_post_onboarding_redirect");
-            if (redirect) {
-              sessionStorage.removeItem("treytv_post_onboarding_redirect");
-              window.location.href = redirect;
-            } else {
-              navigate({ to: "/" });
-            }
-          }
+          navigate({ to: "/" });
         }
       }
 
@@ -316,10 +386,38 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
     return () => {
       cancelled = true;
+      if (to) clearTimeout(to);
     };
-  }, [user, isGuest, location.pathname, navigate]);
+  }, [authorizationStatus, user, isGuest, location.pathname, navigate, isPublicRoute, isAllowedGuestPage, isOnboardingRoute, sessionLoading, authReady]);
 
-  if (loading) {
+  if (authError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
+        <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
+          <p className="text-sm text-muted-foreground">We had trouble loading your account. Try again.</p>
+          <div className="mt-4">
+            <button onClick={() => retryHydrate()} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Retry</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading || isAuthLoading || isBlockedUser || isBlockedGuest) {
+    // show retry UI if auth is stuck or an authError exists
+    if (authError || showRetry) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
+          <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
+            <p className="text-sm text-muted-foreground">We had trouble loading your account. Try again.</p>
+            <div className="mt-4">
+              <button onClick={() => retryHydrate()} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Retry</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
         <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">

@@ -3,6 +3,7 @@ import { CHAPTER_1, INITIAL_METERS, CHAPTER_1_CHOICES, IMAGES } from './storyDat
 import { resolveInstalledStoryChoice } from './treyStoryPackage';
 import { supabase } from './supabase';
 import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter } from './storyVoiceTypes';
+import { generateStoryChapterWithGemini } from '@/lib/trey-i/vertex.server';
 
 const STORAGE_KEY = 'switchkicks_branches_v1';
 const ENDINGS_KEY = 'switchkicks_endings_v1';
@@ -167,10 +168,15 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
     summaries,
   };
 
-  const { data, error } = await supabase.functions.invoke('switch-kicks-story', {
-    body: { choice, context },
+  const premise = (branch.flags as any).custom_premise || "Two twins (Micah, a ballet dancer, and Malik, a football star) swap roles for a day to cover up a mistake, trying not to get caught by their mom, coach, and friends.";
+  const tone = choice.tone || 'Bold';
+
+  const data = await generateStoryChapterWithGemini({
+    context,
+    choice,
+    premise,
+    tone,
   });
-  if (error) throw error;
   return data as AIResult;
 }
 
