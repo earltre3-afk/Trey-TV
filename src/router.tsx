@@ -2,6 +2,33 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+if (typeof window !== "undefined" && window.parent !== window) {
+  let cachedFetch: typeof fetch | undefined;
+  const originalFetch = window.fetch;
+
+  window.fetch = function(...args) {
+    if (cachedFetch) {
+      return cachedFetch(...args);
+    }
+    if (document.body) {
+      try {
+        const iframe = document.createElement("iframe");
+        iframe.style.display = "none";
+        document.body.appendChild(iframe);
+        const nativeFetch = iframe.contentWindow?.fetch;
+        document.body.removeChild(iframe);
+        if (nativeFetch) {
+          cachedFetch = nativeFetch.bind(window);
+          return cachedFetch(...args);
+        }
+      } catch (e) {
+        console.warn("Failed to load iframe fetch, falling back:", e);
+      }
+    }
+    return originalFetch(...args);
+  } as any;
+}
+
 export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -25,6 +52,23 @@ export const getRouter = () => {
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
   });
+
+  const originalGetMatch = router.getMatch;
+  router.getMatch = (matchId: any) => {
+    const match = originalGetMatch(matchId);
+    if (!match) {
+      return {
+        _nonReactive: {},
+        status: "pending",
+        invalid: false,
+        isFetching: false,
+        preload: false,
+        error: undefined,
+        abortController: new AbortController(),
+      } as any;
+    }
+    return match;
+  };
 
   return router;
 };
