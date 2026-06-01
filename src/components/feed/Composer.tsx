@@ -44,6 +44,7 @@ export function Composer() {
   const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["id"]>("Everyone");
   const [audOpen, setAudOpen] = useState(false);
   const [media, setMedia] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const [focused, setFocused] = useState(false);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -60,7 +61,7 @@ export function Composer() {
   }, [text]);
 
   const reset = () => {
-    setText(""); setMedia(null); setSelected([]); setFocused(false);
+    setText(""); setMedia(null); setMediaType(null); setSelected([]); setFocused(false);
   };
 
   const handlePost = () => {
@@ -81,10 +82,24 @@ export function Composer() {
 
   const onFile = (f: File | null) => {
     if (!f) return;
-    if (!f.type.startsWith("image/")) { toast.error("Image files only"); return; }
-    if (f.size > 8 * 1024 * 1024) { toast.error("Image must be under 8MB"); return; }
+    const isImage = f.type.startsWith("image/");
+    const isVideo = f.type.startsWith("video/");
+    if (!isImage && !isVideo) {
+      toast.error("Images, videos, or GIFs only");
+      return;
+    }
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 8 * 1024 * 1024;
+    if (f.size > maxSize) {
+      toast.error(`${isImage ? "Image" : "Video"} must be under ${isVideo ? "50MB" : "8MB"}`);
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = () => setMedia(typeof reader.result === "string" ? reader.result : null);
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setMedia(reader.result);
+        setMediaType(isImage ? "image" : "video");
+      }
+    };
     reader.readAsDataURL(f);
   };
 
@@ -119,11 +134,15 @@ export function Composer() {
           />
           {media && (
             <div className="relative mt-2 rounded-xl overflow-hidden border border-white/10">
-              <img src={media} alt="" className="w-full max-h-64 object-cover" />
+              {mediaType === "video" ? (
+                <video src={media} controls className="w-full max-h-64 object-cover" />
+              ) : (
+                <img src={media} alt="" className="w-full max-h-64 object-cover" />
+              )}
               <button
-                onClick={() => setMedia(null)}
+                onClick={() => { setMedia(null); setMediaType(null); }}
                 className="absolute top-2 right-2 size-7 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
-                aria-label="Remove image"
+                aria-label="Remove media"
               >
                 <X className="size-3.5" />
               </button>
@@ -136,7 +155,7 @@ export function Composer() {
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/*,video/*"
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0] ?? null)}
         />
@@ -196,7 +215,7 @@ export function Composer() {
               </button>
             );
           })}
-          <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5">
+          <button onClick={() => fileRef.current?.click()} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5" title="Add pics, vids, or GIFs">
             <Plus className="size-3.5" />
           </button>
         </div>
