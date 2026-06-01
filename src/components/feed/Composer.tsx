@@ -6,6 +6,8 @@ import { z } from "zod";
 import { currentUser } from "@/lib/mock-data";
 import { useFeed } from "@/lib/feed-store";
 import { useAuth } from "@/lib/auth";
+import { PlusMenu } from "@/components/inbox/PlusMenu";
+import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 
 const tags = [
   { label: "Music", color: "cyan" },
@@ -46,6 +48,8 @@ export function Composer() {
   const [media, setMedia] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const [focused, setFocused] = useState(false);
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
+  const [showFwdPicker, setShowFwdPicker] = useState(false);
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -215,11 +219,30 @@ export function Composer() {
               </button>
             );
           })}
-          <button onClick={() => fileRef.current?.click()} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5" title="Add pics, vids, or GIFs">
+          <button onClick={() => setShowPlusMenu(true)} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5" title="Add pics, vids, or GIFs">
             <Plus className="size-3.5" />
           </button>
         </div>
       </div>
+
+      {showPlusMenu && (
+        <PlusMenu
+          excludeGhost
+          onPhoto={() => { setShowPlusMenu(false); fileRef.current?.click(); }}
+          onFwd={() => { setShowPlusMenu(false); setShowFwdPicker(true); }}
+          onClose={() => setShowPlusMenu(false)}
+        />
+      )}
+
+      <FwdGifPicker
+        open={showFwdPicker}
+        onClose={() => setShowFwdPicker(false)}
+        onSelect={(gif) => {
+          setShowFwdPicker(false);
+          setMedia(gif.url);
+          setMediaType("image");
+        }}
+      />
     </div>
   );
 }
