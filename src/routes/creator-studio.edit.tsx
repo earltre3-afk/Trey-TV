@@ -7,6 +7,7 @@ import {
   Scissors, Music2, Type, Sparkles, Layers, Captions, SlidersHorizontal, Wand2,
   Crown, Lock, X, Trash2, Gauge, Shuffle, ScissorsLineDashed, Image as ImageIcon,
   Hash, Lightbulb, MicVocal, Tag, FileText, Film, Clapperboard, Calendar,
+  Loader2, CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { posts } from "@/lib/mock-data";
@@ -18,6 +19,10 @@ import { useCloudflareUpload } from "@/hooks/use-cloudflare-upload";
 import { useEditorRecipe } from "@/lib/creator-studio/useEditorRecipe";
 import { previewFromRecipe, filterToCss } from "@/lib/creator-studio/preview";
 import { createRecipe, recipeDuration, clipLength, findClip, type Clip, type TrackKind } from "@/lib/creator-studio/editRecipe";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import { submitRender, getRenderStatus } from "@/lib/creator-studio/render.server";
+
+type RenderPhase = "idle" | "submitting" | "rendering" | "done" | "error";
 
 export const Route = createFileRoute("/creator-studio/edit")({
   component: CreatorStudioEdit,
@@ -115,6 +120,7 @@ function Studio() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const editor = useEditorRecipe(null);
   const recipe = editor.recipe;
+  const { session } = useSupabaseSession();
 
   const [projectName, setProjectName] = useState("Untitled Episode");
   const [showProjects, setShowProjects] = useState(false);
@@ -225,6 +231,10 @@ function Studio() {
 
   const [showAI, setShowAI] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showRender, setShowRender] = useState(false);
+  const [renderPhase, setRenderPhase] = useState<RenderPhase>("idle");
+  const [renderUrl, setRenderUrl] = useState<string | null>(null);
+  const [renderError, setRenderError] = useState<string | null>(null);
   const [aiOutput, setAiOutput] = useState("");
   const [aiOutputLabel, setAiOutputLabel] = useState("");
   const [aiOutputBusy, setAiOutputBusy] = useState(false);
@@ -253,6 +263,33 @@ function Studio() {
       toast.error("Trey-I couldn't generate that right now");
     } finally {
       setAiOutputBusy(false);
+    }
+  };
+
+  const handleRender = async () => {
+    if (!recipe) { toast("Upload media to render"); return; }
+    const token = session?.access_token;
+    if (!token) { toast.error("Sign in to render"); return; }
+    setShowRender(true);
+    setRenderPhase("submitting");
+    setRenderUrl(null);
+    setRenderError(null);
+    try {
+      const sub = await submitRender({ data: { accessToken: token, recipe } });
+      if (!sub.ok) { setRenderPhase("error"); setRenderError(sub.error); return; }
+      setRenderPhase("rendering");
+      for (let i = 0; i < 60; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const st = await getRenderStatus({ data: { accessToken: token, renderId: sub.renderId } });
+        if (!st.ok) { setRenderPhase("error"); setRenderError(st.error); return; }
+        if (st.status === "done") { setRenderPhase("done"); setRenderUrl(st.url); return; }
+        if (st.status === "failed") { setRenderPhase("error"); setRenderError("Render failed"); return; }
+      }
+      setRenderPhase("error");
+      setRenderError("Render timed out");
+    } catch (e) {
+      setRenderPhase("error");
+      setRenderError((e as Error).message || "Render error");
     }
   };
 
@@ -369,6 +406,13 @@ function Studio() {
                 </div>
               )}
             </div>
+            <button
+              onClick={handleRender}
+              disabled={!recipe}
+              className="px-3 md:px-4 py-2 rounded-xl text-sm font-bold glass border border-primary/40 text-primary hover:bg-primary/10 tilt-press flex items-center gap-1.5 whitespace-nowrap disabled:opacity-40"
+            >
+              <Wand2 className="size-4" /> <span className="hidden sm:inline">Render</span>
+            </button>
             <button
               onClick={() => navigate({ to: "/creator-studio/submit", search: { id: draftId ?? undefined } as any })}
               className="px-3 md:px-5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold tilt-press hover-lift flex items-center gap-1.5 whitespace-nowrap"
@@ -721,6 +765,50 @@ function Studio() {
       </Sheet>
 
       {/* Export panel */}
+      <Dialog open={showRender} onOpenChange={setShowRender}>
+        <DialogContent className="glass-strong border-white/10 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-gradient-gold">
+              <Wand2 className="size-5 text-primary" /> Cloud Render
+            </DialogTitle>
+            <DialogDescription>Your edit recipe is rendered in the cloud, then ready to publish.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            {(renderPhase === "submitting" || renderPhase === "rendering") && (
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <Loader2 className="size-5 text-primary animate-spin" />
+                {renderPhase === "submitting" ? "Submitting render…" : "Rendering your video…"}
+              </div>
+            )}
+            {renderPhase === "done" && renderUrl && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm text-emerald-400">
+                  <CheckCircle2 className="size-5" /> Render complete
+                </div>
+                <video src={renderUrl} controls playsInline className="w-full rounded-xl border border-white/10" />
+                <a
+                  href={renderUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-center px-4 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold"
+                >
+                  Open rendered video
+                </a>
+              </div>
+            )}
+            {renderPhase === "error" && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <div className="font-semibold text-destructive">Render failed</div>
+                <div className="text-xs text-muted-foreground mt-1 break-words">{renderError}</div>
+                <button onClick={handleRender} className="mt-3 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground">
+                  Retry
+                </button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showExport} onOpenChange={setShowExport}>
         <DialogContent className="glass-strong border-white/10 max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>

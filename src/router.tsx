@@ -53,22 +53,5 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
   });
 
-  const originalGetMatch = router.getMatch;
-  router.getMatch = (matchId: any) => {
-    const match = originalGetMatch(matchId);
-    if (!match) {
-      return {
-        _nonReactive: {},
-        status: "pending",
-        invalid: false,
-        isFetching: false,
-        preload: false,
-        error: undefined,
-        abortController: new AbortController(),
-      } as any;
-    }
-    return match;
-  };
-
   return router;
 };
