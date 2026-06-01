@@ -111,7 +111,7 @@ export function Composer() {
   const aud = AUDIENCES.find((a) => a.id === audience)!;
 
   return (
-    <div className="mobile-edge-card rounded-none sm:rounded-3xl p-3 sm:p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift">
+    <div className={`mobile-edge-card rounded-none sm:rounded-3xl p-3 sm:p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift ${showPlusMenu || showFwdPicker ? "z-[100]" : ""}`}>
       <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_80%_-20%,oklch(0.7_0.25_340_/_0.4),transparent_60%)]" />
 
       <div className="relative flex items-start gap-3">
