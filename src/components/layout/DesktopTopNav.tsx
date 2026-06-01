@@ -20,7 +20,7 @@ const guestLinks: readonly NavLink[] = [
   { to: "/explore", icon: Compass, label: "Discover" },
   { to: "/guide", icon: CalendarDays, label: "Guide" },
   { to: "/games", label: "Games" },
-  { to: "/tradio", icon: Music, label: "Tradio" },
+  // Tradio requires a signed-in Trey TV account — hidden for guests.
 ];
 
 const signedInLinks: readonly NavLink[] = [

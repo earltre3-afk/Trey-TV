@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth";
 import "@/tradio/tradio.css";
 
 /**
@@ -30,10 +31,23 @@ export const Route = createFileRoute("/tradio")({
 
 function TradioRoute() {
   const [mounted, setMounted] = useState(false);
+  const { isGuest, authReady } = useAuth();
+  const navigate = useNavigate();
   useEffect(() => setMounted(true), []);
 
-  // Server + first paint: render an empty Tradio shell wrapper (no graph eval).
-  if (!mounted) {
+  // Tradio is gated behind Trey TV auth. Once the auth check settles, a
+  // signed-out visitor who lands here directly is sent to the Trey TV sign-in.
+  // Signed-in users carry the same Supabase session into Tradio (shared client),
+  // so Tradio auto-signs-in with no extra step.
+  useEffect(() => {
+    if (mounted && authReady && isGuest) {
+      navigate({ to: "/login" });
+    }
+  }, [mounted, authReady, isGuest, navigate]);
+
+  // Server + first paint, while auth is resolving, or while redirecting a guest:
+  // render an empty Tradio shell wrapper (the heavy shell never mounts for guests).
+  if (!mounted || !authReady || isGuest) {
     return <div className="tradio-root min-h-screen w-full bg-[#0A0A0F]" />;
   }
 

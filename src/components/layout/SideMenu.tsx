@@ -46,6 +46,8 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
     nav({ to: "/login" });
   };
   const visibleCreatorItems = isCreator ? creatorItems : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
+  // Tradio requires a signed-in Trey TV account — hide it from guests.
+  const visibleItems = isGuest ? items.filter((i) => i.to !== "/tradio") : items;
 
   return (
     <>
@@ -75,7 +77,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           </div>
 
           <div className="px-3 space-y-1">
-            {items.map((i, idx) => (
+            {visibleItems.map((i, idx) => (
               <Link
                 key={i.label}
                 to={i.to}

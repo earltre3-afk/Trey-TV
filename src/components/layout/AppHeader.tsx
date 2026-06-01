@@ -35,6 +35,8 @@ export function AppHeader({
   const { isGuest, user } = useAuth();
   const profileUid = user?.uid ?? currentUser.uid;
   const profileAvatar = user?.avatar ?? currentUser.avatar;
+  // Tradio requires a signed-in Trey TV account — hide its tab for guests.
+  const visibleTabs = isGuest ? tabs.filter((t) => t.id !== "tradio") : tabs;
   const computed =
     location.pathname === "/" ? "watch-now"
     : location.pathname.startsWith("/for-you") ? "for-you"
@@ -107,7 +109,7 @@ export function AppHeader({
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {tabs.map((t) => {
+        {visibleTabs.map((t) => {
           const active = computed === t.id;
           const handleClick = () => {
             if (t.id === "watch-now") navigate({ to: "/" });
