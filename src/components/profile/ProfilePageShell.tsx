@@ -98,6 +98,7 @@ import { PublicProfileControls } from "./PublicProfileControls";
 import { ProfileTopThree } from "./ProfileTopThree";
 
 import type { ProfileData, ViewerRole, ProfileType, RelationshipStatus, TopThreeEntry } from "./ProfileTypes";
+import { GoldCheck } from "@/components/brand/Badge";
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
 import { ProfilePage as LovableProfilePage } from "./lovable/LovableProfilePage";
 import { toggleFollow } from "@/lib/social-relationships";
@@ -527,9 +528,9 @@ export function ProfilePageShell({
                 <AvatarWithFallback src={profile.avatarUrl} alt={profile.displayName} name={profile.displayName} uid={profile.uid} size="2xl" className="size-full" />
               </div>
 
-              {canShowOwnerBadges && (
+              {profile.isVerified && (
                 <div className="absolute -bottom-1 -right-1">
-                  <GoldProfileCheck size={42} />
+                  <GoldCheck size={42} />
                 </div>
               )}
 
@@ -550,8 +551,7 @@ export function ProfilePageShell({
           <section className="text-center pixel-reveal">
             <div className="flex items-center justify-center gap-1.5">
               <h1 className="text-2xl font-extrabold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:text-3xl">{profile.displayName}</h1>
-              {canShowOwnerBadges && <GoldProfileCheck size={22} />}
-              {!canShowOwnerBadges && canShowCreatorBadge && <BadgeCheck className="size-5 fill-[#A855F7] text-black drop-shadow-[0_0_10px_rgba(168,85,247,0.75)]" />}
+              {profile.isVerified && <GoldCheck size={22} />}
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground">@{profile.handle}</div>
 

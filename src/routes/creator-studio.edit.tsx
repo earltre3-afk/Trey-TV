@@ -15,6 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useCloudflareUpload } from "@/hooks/use-cloudflare-upload";
+import { useEditorRecipe } from "@/lib/creator-studio/useEditorRecipe";
+import { previewFromRecipe, filterToCss } from "@/lib/creator-studio/preview";
+import { createRecipe, recipeDuration, clipLength, findClip, type Clip, type TrackKind } from "@/lib/creator-studio/editRecipe";
 
 export const Route = createFileRoute("/creator-studio/edit")({
   component: CreatorStudioEdit,
@@ -109,6 +112,9 @@ function Studio() {
   const fileRef = useRef<HTMLInputElement>(null);
   const goBack = useGoBack("/creator-hub");
   const { requestUpload, uploadFile } = useCloudflareUpload();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const editor = useEditorRecipe(null);
+  const recipe = editor.recipe;
 
   const [projectName, setProjectName] = useState("Untitled Episode");
   const [showProjects, setShowProjects] = useState(false);
@@ -123,12 +129,99 @@ function Studio() {
 
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
-  const duration = 45;
+  const duration = recipe ? recipeDuration(recipe) : 0;
 
-  const [selectedClip, setSelectedClip] = useState<string | null>("v1");
+  const [selectedClip, setSelectedClip] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<string>("edit");
   const [snap, setSnap] = useState(true);
   const [zoom, setZoom] = useState(1);
+
+  // Derived, recipe-backed preview state.
+  const preview = recipe ? previewFromRecipe(recipe, time) : null;
+  const activeFilterCss = preview?.video ? filterToCss(preview.video.clip.filter) : "none";
+
+  // Keep the real <video> playback rate in sync with the clip under the playhead.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v && preview?.video) v.playbackRate = preview.video.clip.speed;
+  }, [preview?.video?.clip.id, preview?.video?.clip.speed]);
+
+  const seekTo = (t: number) => {
+    const clamped = Math.max(0, duration ? Math.min(duration, t) : t);
+    const v = videoRef.current;
+    if (v) v.currentTime = clamped;
+    setTime(clamped);
+  };
+
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) { setPlaying((p) => !p); return; }
+    if (v.paused) { void v.play(); setPlaying(true); }
+    else { v.pause(); setPlaying(false); }
+  };
+
+  // Timeline tracks, rendered in a fixed order but driven by the recipe.
+  const trackOrder: { kind: TrackKind; label: string; icon: typeof Type; tone?: "purple" | "gold" | "cyan" | "magenta" }[] = [
+    { kind: "video", label: "Video", icon: Clapperboard },
+    { kind: "overlay", label: "Overlay", icon: Layers, tone: "purple" },
+    { kind: "text", label: "Text", icon: Type, tone: "gold" },
+    { kind: "audio", label: "Audio", icon: Music2, tone: "cyan" },
+    { kind: "caption", label: "Captions", icon: Captions, tone: "magenta" },
+  ];
+
+  const clipLabel = (clip: Clip): string => {
+    if (clip.kind === "video") return `${clipLength(clip).toFixed(1)}s`;
+    if (clip.kind === "text" || clip.kind === "caption") return clip.text;
+    if (clip.kind === "overlay") return "Overlay";
+    return "Audio";
+  };
+
+  const addLayer = (kind: TrackKind) => {
+    if (!recipe) { toast("Upload media to start a timeline"); return; }
+    if (kind === "text") editor.addText({ text: "Trey TV", start: time, length: 3 });
+    else if (kind === "overlay") editor.addOverlay({ src: posts[0].media, start: time, length: 3 });
+    else if (kind === "audio") editor.addAudio({ src: posts[0].media, start: 0, length: Math.min(10, duration || 10) });
+    else if (kind === "caption") editor.addCaption({ text: "New caption", start: time, length: 3 });
+  };
+
+  const runClipAction = (action: string) => {
+    if (!selectedClip || !recipe) return;
+    const found = findClip(recipe, selectedClip);
+    if (!found) { setSelectedClip(null); return; }
+    const { clip } = found;
+    const id = selectedClip;
+    switch (action) {
+      case "split":
+        editor.split(id, time);
+        break;
+      case "trim":
+        if (clip.kind === "video") {
+          const srcAtPlayhead = clip.trimIn + Math.max(0.1, time - clip.start) * clip.speed;
+          editor.trim(id, { trimOut: srcAtPlayhead });
+          toast("Trimmed to playhead");
+        }
+        break;
+      case "speed":
+        if (clip.kind === "video") {
+          const order = [1, 1.5, 2, 0.5];
+          const next = order[(order.indexOf(clip.speed) + 1) % order.length] ?? 1;
+          editor.setSpeed(id, next);
+          toast(`Speed ${next}x`);
+        }
+        break;
+      case "trans":
+        editor.setTransition(id, "in", "fade");
+        toast("Fade transition added");
+        break;
+      case "effects":
+        editor.toggleEffect(id, "zoomIn");
+        break;
+      case "delete":
+        editor.remove(id);
+        setSelectedClip(null);
+        break;
+    }
+  };
 
   const [showAI, setShowAI] = useState(false);
   const [showExport, setShowExport] = useState(false);
@@ -337,9 +430,53 @@ function Studio() {
             {uploadState === "ready" && (
               <>
                 {mediaUrl?.startsWith("blob:") ? (
-                  <video src={mediaUrl} className="absolute inset-0 size-full object-cover" muted={!playing} loop playsInline autoPlay={playing} />
+                  <video
+                    ref={videoRef}
+                    src={mediaUrl}
+                    className="absolute inset-0 size-full object-cover"
+                    style={{ filter: activeFilterCss }}
+                    playsInline
+                    onLoadedMetadata={(e) => {
+                      if (!recipe) {
+                        editor.init(createRecipe({
+                          streamUid,
+                          srcUrl: mediaUrl,
+                          width: e.currentTarget.videoWidth || 1920,
+                          height: e.currentTarget.videoHeight || 1080,
+                          fps: 30,
+                          duration: e.currentTarget.duration || 10,
+                        }));
+                      }
+                    }}
+                    onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+                    onEnded={() => setPlaying(false)}
+                  />
                 ) : (
-                  <img src={mediaUrl ?? posts[0].media} className="absolute inset-0 size-full object-cover" alt="" />
+                  <img src={mediaUrl ?? posts[0].media} className="absolute inset-0 size-full object-cover" alt="" style={{ filter: activeFilterCss }} />
+                )}
+                {/* Live preview overlays (approximate; the render is authoritative) */}
+                {preview?.overlays.map((o) => (
+                  <img
+                    key={o.id}
+                    src={o.src}
+                    alt=""
+                    className="absolute pointer-events-none"
+                    style={{ left: `${o.x * 100}%`, top: `${o.y * 100}%`, transform: `translate(-50%,-50%) scale(${o.scale})`, opacity: o.opacity, maxWidth: "60%" }}
+                  />
+                ))}
+                {preview?.texts.map((tx) => (
+                  <div
+                    key={tx.id}
+                    className="absolute pointer-events-none font-black drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]"
+                    style={{ left: `${tx.x * 100}%`, top: `${tx.y * 100}%`, transform: "translate(-50%,-50%)", color: tx.color, opacity: tx.opacity, fontSize: `clamp(14px, ${tx.size / 12}px, ${tx.size}px)`, background: tx.background ?? "transparent", padding: tx.background ? "2px 10px" : 0, borderRadius: tx.background ? 8 : 0 }}
+                  >
+                    {tx.text}
+                  </div>
+                ))}
+                {preview && preview.captions.length > 0 && (
+                  <div className="absolute bottom-12 left-1/2 -translate-x-1/2 px-3 py-1 rounded-md bg-black/60 text-white text-sm font-semibold text-center max-w-[80%] pointer-events-none">
+                    {preview.captions.map((c) => c.text).join(" ")}
+                  </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
                 <div className="absolute top-3 left-3 flex items-center gap-1.5">
@@ -358,23 +495,23 @@ function Studio() {
         {/* Playback controls */}
         <section className="flex items-center justify-between gap-2 rounded-2xl glass border border-white/10 p-2">
           <div className="flex items-center gap-1.5">
-            <CtrlBtn icon={Maximize2} onClick={() => toast("Fullscreen")} />
+            <CtrlBtn icon={Maximize2} onClick={() => { void videoRef.current?.requestFullscreen?.().catch(() => toast("Fullscreen unavailable")); }} />
             <CtrlBtn icon={Camera} onClick={() => toast("Snapshot saved")} />
           </div>
           <div className="flex items-center gap-1.5">
-            <CtrlBtn icon={SkipBack} onClick={() => setTime((t) => Math.max(0, t - 1))} />
+            <CtrlBtn icon={SkipBack} onClick={() => seekTo((videoRef.current?.currentTime ?? time) - 1)} />
             <button
-              onClick={() => setPlaying((p) => !p)}
+              onClick={togglePlay}
               className="size-11 grid place-items-center rounded-full bg-primary text-primary-foreground glow-gold tilt-press"
               aria-label={playing ? "Pause" : "Play"}
             >
               {playing ? <Pause className="size-5 fill-current" /> : <Play className="size-5 fill-current ml-0.5" />}
             </button>
-            <CtrlBtn icon={SkipForward} onClick={() => setTime((t) => Math.min(duration, t + 1))} />
+            <CtrlBtn icon={SkipForward} onClick={() => seekTo((videoRef.current?.currentTime ?? time) + 1)} />
           </div>
           <div className="flex items-center gap-1.5">
-            <CtrlBtn icon={Undo2} onClick={() => toast("Undo")} />
-            <CtrlBtn icon={Redo2} onClick={() => toast("Redo")} />
+            <CtrlBtn icon={Undo2} onClick={editor.undo} />
+            <CtrlBtn icon={Redo2} onClick={editor.redo} />
             <CtrlBtn icon={MoreHorizontal} onClick={() => toast("More options")} />
           </div>
         </section>
@@ -409,67 +546,57 @@ function Studio() {
                 </div>
               </div>
 
-              {/* Playhead */}
-              <div className="absolute top-5 bottom-0 left-[40%] w-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)] z-10 pointer-events-none">
+              {/* Playhead (real time) */}
+              <div
+                className="absolute top-5 bottom-0 w-px bg-white shadow-[0_0_10px_rgba(255,255,255,0.9)] z-10 pointer-events-none"
+                style={{ left: `${duration ? Math.min(100, (time / duration) * 100) : 0}%` }}
+              >
                 <span className="absolute -top-1 -left-[3px] size-2 rounded-full bg-primary glow-gold" />
               </div>
 
-              {/* Tracks */}
-              <Track label="Video" icon={Clapperboard} onAdd={() => toast("Add clip")}>
-                {[posts[0].media, posts[1].media, posts[2].media, posts[0].media].map((m, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedClip(`v${i}`)}
-                    className={`relative h-full w-24 shrink-0 rounded-md overflow-hidden ring-1 transition ${
-                      selectedClip === `v${i}` ? "ring-primary glow-gold scale-[1.02]" : "ring-white/10"
-                    }`}
+              {/* Tracks (recipe-driven) */}
+              {trackOrder.map(({ kind, label, icon, tone }) => {
+                const track = recipe?.tracks.find((t) => t.kind === kind);
+                return (
+                  <Track
+                    key={kind}
+                    label={label}
+                    icon={icon}
+                    tone={tone}
+                    onAdd={kind === "video" ? onPickFile : () => addLayer(kind)}
                   >
-                    <img src={m} className="absolute inset-0 size-full object-cover" alt="" />
-                    {selectedClip === `v${i}` && (
-                      <span className="absolute bottom-0.5 left-1 text-[9px] font-bold text-primary">8.6s</span>
-                    )}
-                  </button>
-                ))}
-              </Track>
-
-              <Track label="Overlay" icon={Layers} tone="purple">
-                <div className="h-full flex-1 rounded-md bg-gradient-to-r from-[oklch(0.65_0.22_300_/_0.4)] to-[oklch(0.7_0.25_340_/_0.4)] ring-1 ring-[oklch(0.65_0.22_300_/_0.5)] flex items-center px-3 text-[11px] font-semibold gap-1.5">
-                  <Sparkles className="size-3" /> Neon Glow
-                </div>
-              </Track>
-
-              <Track label="Text" icon={Type} tone="gold">
-                <div className="h-full flex-1 rounded-md bg-primary/10 ring-1 ring-primary/40 flex items-center px-3 text-[11px] font-semibold text-primary gap-1.5">
-                  <Type className="size-3" /> Trey TV
-                </div>
-              </Track>
-
-              <Track label="Audio" icon={Music2} tone="cyan">
-                <div className="h-full flex-1 rounded-md bg-[oklch(0.82_0.15_215_/_0.12)] ring-1 ring-[oklch(0.82_0.15_215_/_0.4)] flex items-center px-2 gap-px overflow-hidden">
-                  {Array.from({ length: 80 }).map((_, i) => (
-                    <span
-                      key={i}
-                      className="flex-1 bg-[oklch(0.82_0.15_215)] rounded-full opacity-80"
-                      style={{ height: `${20 + Math.sin(i * 0.5) * 25 + Math.random() * 25}%` }}
-                    />
-                  ))}
-                </div>
-              </Track>
-
-              <Track label="Captions" icon={Captions} tone="magenta">
-                <div className="h-full flex items-center gap-1">
-                  {["CC", "CC", "CC"].map((c, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded bg-[oklch(0.7_0.25_340_/_0.2)] border border-[oklch(0.7_0.25_340_/_0.5)] text-[10px] font-bold text-[oklch(0.7_0.25_340)]">
-                      {c}
-                    </span>
-                  ))}
-                </div>
-              </Track>
+                    {track?.clips.map((clip) => {
+                      const w = duration ? Math.max(40, (clipLength(clip) / duration) * 600 * zoom) : 96;
+                      const isSel = selectedClip === clip.id;
+                      const toneClass =
+                        kind === "overlay" ? "bg-gradient-to-r from-[oklch(0.65_0.22_300_/_0.4)] to-[oklch(0.7_0.25_340_/_0.4)] text-purple-100" :
+                        kind === "text" ? "bg-primary/10 text-primary" :
+                        kind === "audio" ? "bg-[oklch(0.82_0.15_215_/_0.14)] text-[oklch(0.82_0.15_215)]" :
+                        kind === "caption" ? "bg-[oklch(0.7_0.25_340_/_0.2)] text-[oklch(0.7_0.25_340)]" : "";
+                      return (
+                        <button
+                          key={clip.id}
+                          onClick={() => setSelectedClip(clip.id)}
+                          style={{ width: `${w}px` }}
+                          className={`relative h-full shrink-0 rounded-md overflow-hidden ring-1 transition flex items-center justify-center px-1 text-[10px] font-semibold ${toneClass} ${
+                            isSel ? "ring-primary glow-gold scale-[1.02]" : "ring-white/15"
+                          }`}
+                        >
+                          {clip.kind === "video" && mediaUrl && (
+                            <img src={mediaUrl} className="absolute inset-0 size-full object-cover opacity-90" alt="" />
+                          )}
+                          <span className="relative truncate max-w-full">{clipLabel(clip)}</span>
+                        </button>
+                      );
+                    })}
+                  </Track>
+                );
+              })}
             </div>
           </div>
 
           <button
-            onClick={() => toast("Add new layer")}
+            onClick={() => toast.info("Tap the '+' button on any track to add that layer type")}
             className="mt-3 w-full py-2 rounded-xl border border-dashed border-white/15 text-xs text-muted-foreground hover:bg-white/5 hover:text-foreground transition flex items-center justify-center gap-1"
           >
             <Plus className="size-3.5" /> Add layer
@@ -490,10 +617,7 @@ function Studio() {
               ].map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => {
-                    if (a.id === "delete") setSelectedClip(null);
-                    toast(a.label);
-                  }}
+                  onClick={() => runClipAction(a.id)}
                   className={`px-3 py-2 rounded-xl flex flex-col items-center gap-0.5 min-w-[64px] tilt-press hover:bg-white/5 ${
                     a.danger ? "hover:bg-destructive/10" : ""
                   }`}

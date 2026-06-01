@@ -123,6 +123,7 @@ export function ProfilePageNew({
   const [localSubscribers, setLocalSubscribers] = useState(Number(profile.stats.subscribers) || 0);
   const [showFwdGifs, setShowFwdGifs] = useState(!!profile.showFwdGifsOnProfile);
   const [showFwdPicker, setShowFwdPicker] = useState(false);
+  const [activeTab, setActiveTab] = useState("Posts");
   const followState = useFollowState(profile.profileUserId, false, (next) => {
     setLocalFollowers((count) => Math.max(0, count + (next ? 1 : -1)));
   });
@@ -155,7 +156,7 @@ export function ProfilePageNew({
   const showOwnerBadge = variant === "owner";
   const showAdminBadge = false; // never show admin badge per user request
   const showCreatorBadge = (variant === "owner" || variant === "creator" || isPublic) && profile.isCreator;
-  const showVerifiedBadge = profile.isVerified && variant !== "user";
+  const showVerifiedBadge = !!profile.isVerified;
   const showChannelCTA = profile.isCreator && variant !== "user";
   const showGiftButton = profile.isCreator && variant !== "user";
   const showOwnerControls = variant === "owner";
@@ -723,43 +724,143 @@ export function ProfilePageNew({
 
             {/* Tabs */}
             <div className="panel neon-border grid grid-cols-4 reveal" style={{ animationDelay: ".15s" }}>
-              {["Posts", "Likes", "Saved", "About"].map((t, i) => (
-                <button key={t} className={`relative py-3 text-[12px] font-semibold transition active:scale-95 ${i === 0 ? "text-white" : "text-muted-foreground hover:text-white"}`}>
+              {["Posts", "Likes", "Saved", "About"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveTab(t)}
+                  className={`relative py-3 text-[12px] font-semibold transition active:scale-95 ${activeTab === t ? "text-white" : "text-muted-foreground hover:text-white"}`}
+                >
                   {t}
-                  {i === 0 && <span className="absolute bottom-0 left-1/3 right-1/3 h-[2px] rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />}
+                  {activeTab === t && <span className="absolute bottom-0 left-1/3 right-1/3 h-[2px] rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />}
                 </button>
               ))}
             </div>
 
             {/* Posts grid */}
-            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
-                  <h3 className="font-semibold text-xs">Recent Posts</h3>
-                </div>
-                <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
-                  View all <ChevronRight className="w-2.5 h-2.5" />
-                </a>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-                {FALL_POSTS.map((img, i) => (
-                  <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
-                    <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-                    {i === 0 && (
-                      <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: GOLD }}>
-                        <Pin className="w-2 h-2 text-black" />
-                      </div>
-                    )}
-                    <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
-                      <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["34.2K","52.6K","12.1K","18.7K","24.3K"][i]}</span>
-                      <span className="text-white/70">{["1:24","2:08","0:58","1:45","2:12"][i]}</span>
-                    </div>
+            {activeTab === "Posts" && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
+                    <h3 className="font-semibold text-xs">Recent Posts</h3>
                   </div>
-                ))}
+                  <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
+                    View all <ChevronRight className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {FALL_POSTS.map((img, i) => (
+                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
+                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                      {i === 0 && (
+                        <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: GOLD }}>
+                          <Pin className="w-2 h-2 text-black" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
+                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["34.2K","52.6K","12.1K","18.7K","24.3K"][i]}</span>
+                        <span className="text-white/70">{["1:24","2:08","0:58","1:45","2:12"][i]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Likes grid */}
+            {activeTab === "Likes" && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
+                    <h3 className="font-semibold text-xs">Liked Posts</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {[fallPost3, fallPost4, fallPost5, fallPost1, fallPost2].map((img, i) => (
+                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
+                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
+                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["12.4K","18.1K","9.5K","4.2K","21.0K"][i]}</span>
+                        <span className="text-white/70">{["1:02","1:55","0:45","2:10","1:32"][i]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Saved grid */}
+            {activeTab === "Saved" && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
+                    <h3 className="font-semibold text-xs">Saved Posts</h3>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                  {[fallPost5, fallPost2, fallPost1, fallPost3, fallPost4].map((img, i) => (
+                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
+                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
+                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["44.1K","19.2K","32.0K","8.7K","14.5K"][i]}</span>
+                        <span className="text-white/70">{["2:12","1:48","0:35","1:15","2:05"][i]}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* About panel */}
+            {activeTab === "About" && (
+              <div className="panel neon-border p-4 reveal space-y-4" style={{ animationDelay: ".2s" }}>
+                <div className="flex items-center gap-1.5 border-b border-white/5 pb-2">
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
+                  <h3 className="font-semibold text-xs">About @{profile.handle}</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  {profile.joinedDate && (
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Joined</span>
+                      <span className="text-white font-medium">{profile.joinedDate}</span>
+                    </div>
+                  )}
+                  {profile.location && (
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Location</span>
+                      <span className="text-white font-medium">{profile.location}</span>
+                    </div>
+                  )}
+                  {profile.websiteLink && (
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Website</span>
+                      <a href={profile.websiteLink} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline font-medium block truncate">
+                        {profile.websiteLink.replace(/^https?:\/\//, "")}
+                      </a>
+                    </div>
+                  )}
+                  {profile.pronouns && (
+                    <div>
+                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Pronouns</span>
+                      <span className="text-white font-medium">{profile.pronouns}</span>
+                    </div>
+                  )}
+                </div>
+
+                {profile.bio && (
+                  <div className="pt-2 border-t border-white/5">
+                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-1">Biography</span>
+                    <p className="text-white/90 leading-relaxed text-[11px] whitespace-pre-wrap">{profile.bio}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Top 3 Friends */}
             <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>

@@ -51,47 +51,78 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Set up listener FIRST
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      if (s?.user) {
-        // defer admin lookup to avoid deadlocking the listener
-        setTimeout(() => loadAdmin(s.user.id, s.user.email), 0);
-      } else {
-        setAdminRole(null);
-      }
-    });
+    let sub: any = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+        if (s?.user) {
+          // defer admin lookup to avoid deadlocking the listener
+          setTimeout(() => loadAdmin(s.user.id, s.user.email), 0);
+        } else {
+          setAdminRole(null);
+        }
+      });
+      sub = data;
+    } catch (err) {
+      console.error("Error setting up auth state change listener:", err);
+    }
+
     // Then check existing session
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session?.user) {
-        setSession(data.session);
-        loadAdmin(data.session.user.id, data.session.user.email);
-        setLoading(false);
-        return;
-      }
+    try {
+      supabase.auth.getSession().then(async ({ data }) => {
+        if (data.session?.user) {
+          setSession(data.session);
+          loadAdmin(data.session.user.id, data.session.user.email);
+          setLoading(false);
+          return;
+        }
 
-      // No session: tester builds sign in as the CaliforniaTrey admin.
-      if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
-        const { error } = await signInAsTesterAdmin();
-        if (error) console.error("Tester admin auto-login failed:", error.message);
-        setLoading(false);
-        return;
-      }
+        // No session: tester builds sign in as the CaliforniaTrey admin.
+        if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
+          const { error } = await signInAsTesterAdmin();
+          if (error) console.error("Tester admin auto-login failed:", error.message);
+          setLoading(false);
+          return;
+        }
 
+        setSession(null);
+        setLoading(false);
+      }).catch((err) => {
+        console.error("Failed to get Supabase session on init:", err);
+        setSession(null);
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error("Critical error in getSession setup:", err);
       setSession(null);
       setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
+    }
+
+    return () => {
+      if (sub?.subscription) {
+        try {
+          sub.subscription.unsubscribe();
+        } catch (err) {
+          console.error("Error unsubscribing from auth state listener:", err);
+        }
+      }
+    };
   }, []);
 
   async function loadAdmin(uid: string, email?: string | null) {
-    const { data } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
-    if (data?.role === "owner") {
-      setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
-      return;
-    }
-    if (data?.role) {
-      setAdminRole(data.role as AdminRole);
-      return;
+    try {
+      const { data, error } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
+      if (error) throw error;
+      if (data?.role === "owner") {
+        setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
+        return;
+      }
+      if (data?.role) {
+        setAdminRole(data.role as AdminRole);
+        return;
+      }
+    } catch (err) {
+      console.error("Failed to load admin role:", err);
     }
     // Owner email fallback grants owner access even before the DB row is created.
     setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);

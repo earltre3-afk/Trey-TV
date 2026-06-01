@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
+import { GoldCheck } from "@/components/brand/Badge";
 
 import heroBg from "@/assets/lovable-hero-bg.jpg";
 import portrait from "@/assets/lovable-profile-portrait.jpg";
@@ -347,7 +348,7 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
                       <span className="text-[13px] font-medium truncate" style={{ color: PURPLE }}>
                         @{profile.handle}
                       </span>
-                      {profile.isVerified && <BadgeCheck className="w-4 h-4 fill-[#A855F7] text-black shrink-0" />}
+                      {profile.isVerified && <GoldCheck size={18} className="shrink-0" />}
                     </div>
 
                     <p className="mt-3 text-[13px] md:text-sm text-white/85 leading-relaxed">{profile.bio || "Creator channel is being built."}</p>

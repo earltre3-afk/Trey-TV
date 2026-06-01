@@ -278,7 +278,5 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
 export function useFeed() {
   const ctx = useContext(C);
-  if (!ctx && typeof window === "undefined") return SERVER_FALLBACK_CTX;
-  if (!ctx) throw new Error("useFeed must be inside <FeedProvider>");
-  return ctx;
+  return ctx || SERVER_FALLBACK_CTX;
 }

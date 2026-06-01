@@ -157,6 +157,7 @@ export function useRealtimeRoom(
 function pickFreshestState(prev: RealtimeRoomState, dbSession: SessionRow | null) {
   if (!dbSession) return prev.state ?? null;
   if (!prev.session || !prev.state) return dbSession.state_json ?? null;
+  if (dbSession.id !== prev.session.id) return dbSession.state_json ?? null;
   const prevUpdated = new Date(prev.session.updated_at).getTime();
   const dbUpdated = new Date(dbSession.updated_at).getTime();
   return dbUpdated >= prevUpdated ? (dbSession.state_json ?? prev.state) : prev.state;

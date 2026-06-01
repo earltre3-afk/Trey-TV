@@ -21,7 +21,7 @@ export function AnimatedBanner({
   alt?: string;
   forceVideo?: boolean;
 }) {
-  const url = src && src.length > 0 ? src : fallback;
+  const url = src && src.length > 0 && src !== "/profile-banner" ? src : fallback;
 
   const isVideo = useMemo(() => {
     if (forceVideo) return true;

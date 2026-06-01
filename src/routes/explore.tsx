@@ -161,7 +161,15 @@ function Explore() {
             {filters.map((f) => (
               <button
                 key={f}
-                onClick={() => setActive(f)}
+                onClick={() => {
+                  if (f === "Music") {
+                    nav({ to: "/tradio" });
+                  } else if (f === "Gaming") {
+                    nav({ to: "/games" });
+                  } else {
+                    setActive(f);
+                  }
+                }}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-xs lg:text-sm font-semibold transition ${
                   active === f
                     ? "bg-primary text-primary-foreground glow-gold"
@@ -301,19 +309,21 @@ function Explore() {
             <section>
               <h2 className="text-sm lg:text-base font-semibold mb-3 flex items-center gap-2"><TrendingUp className="size-4 text-primary" /> Trending categories</h2>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
-                {categoryChips.map((c) => (
-                  <Link
-                    key={c.label}
-                    to="/category/$slug"
-                    params={{ slug: c.slug }}
-                    className="group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift"
-                  >
-                    <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
-                      <c.icon className="size-5 lg:size-6" />
-                    </div>
-                    <span className="text-xs lg:text-sm font-medium">{c.label}</span>
-                  </Link>
-                ))}
+                {categoryChips.map((c) => {
+                  const toHref = c.slug === "music" ? "/tradio" : c.slug === "gaming" ? "/games" : `/category/${c.slug}`;
+                  return (
+                    <Link
+                      key={c.label}
+                      to={toHref as any}
+                      className="group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift"
+                    >
+                      <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
+                        <c.icon className="size-5 lg:size-6" />
+                      </div>
+                      <span className="text-xs lg:text-sm font-medium">{c.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
 

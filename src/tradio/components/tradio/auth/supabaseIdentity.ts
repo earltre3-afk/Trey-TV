@@ -88,8 +88,8 @@ export const fetchTreyProfileBridge = async (client: SupabaseClient, userId: str
   const result = await safeSingle<DbRow>(
     client
       .from('profiles')
-      .select('id,user_id,public_profile_uid,display_name,username,avatar_url,banner_url')
-      .or(`id.eq.${userId},user_id.eq.${userId}`)
+      .select('id,display_name,username,avatar_url')
+      .eq('id', userId)
       .maybeSingle()
   );
 
@@ -98,13 +98,13 @@ export const fetchTreyProfileBridge = async (client: SupabaseClient, userId: str
 
   return {
     data: {
-      user_id: asString(row.user_id) || userId,
+      user_id: userId,
       profile_id: asString(row.id) || null,
-      public_profile_uid: asString(row.public_profile_uid) || null,
+      public_profile_uid: asString(row.id) || null,
       display_name: asString(row.display_name),
       username: asString(row.username),
       avatar_url: asString(row.avatar_url),
-      banner_url: asString(row.banner_url),
+      banner_url: undefined,
     },
     warning: null,
   };

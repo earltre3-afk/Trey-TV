@@ -6,6 +6,38 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 let warnedMissingConfig = false;
+let cachedFetch: typeof fetch | undefined;
+
+function getSafeFetch(): typeof fetch {
+  if (typeof window === 'undefined') {
+    return fetch;
+  }
+
+  if (cachedFetch) {
+    return cachedFetch;
+  }
+
+  if (!document.body) {
+    return window.fetch;
+  }
+
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    const nativeFetch = iframe.contentWindow?.fetch;
+    document.body.removeChild(iframe);
+    if (nativeFetch) {
+      cachedFetch = nativeFetch.bind(window);
+      return cachedFetch;
+    }
+  } catch (e) {
+    console.warn('[Supabase] Failed to retrieve native fetch from iframe, falling back to window.fetch:', e);
+  }
+
+  cachedFetch = window.fetch;
+  return cachedFetch;
+}
 
 export const getSupabaseClient = (): SupabaseClient | null => {
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -22,6 +54,9 @@ export const getSupabaseClient = (): SupabaseClient | null => {
       autoRefreshToken: true,
       detectSessionInUrl: true,
     },
+    global: {
+      fetch: (...args) => getSafeFetch()(...args),
+    }
   });
 };
 

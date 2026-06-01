@@ -14,6 +14,9 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { toast } from 'sonner';
+import { hasAnyRole } from './auth/roleUtils';
 import BottomNav, { TabKey } from './BottomNav';
 import MiniPlayer from './MiniPlayer';
 import HomeScreen from './screens/Home';
@@ -133,7 +136,7 @@ const FEATURE_SHORTCUTS: { key: ScreenKey; label: string; sub: string; Icon: Rea
 ];
 
 export const TradioShellContent: React.FC = () => {
-  const { currentMode, currentRoleLabel } = useTradioIdentity();
+  const { identity, currentMode, currentRoleLabel } = useTradioIdentity();
   const messengerBridge = useMessengerBridge();
   const [tab, setTab] = useState<TabKey>('home');
   const [view, setView] = useState<View>({ kind: 'tab', tab: 'home' });
@@ -229,6 +232,11 @@ export const TradioShellContent: React.FC = () => {
   };
 
   const handleTab = (t: TabKey) => {
+    const hasProfileAccess = hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner']);
+    if (t === 'profile' && !hasProfileAccess) {
+      toast.error('Only approved artists, DJs, and producers have access to a Tradio profile page.');
+      return;
+    }
     setTab(t);
     if (t === 'stations') setView({ kind: 'tab', tab: 'stations' });
     else setView({ kind: 'tab', tab: t });
@@ -451,8 +459,9 @@ export const TradioShellContent: React.FC = () => {
       case 'profile':
         return (
           <ProfileScreen
-            role="artist"
-            name="Trey Trizzy"
+            role={identity.active_mode === 'producer' ? 'producer' : identity.active_mode === 'dj' || identity.active_mode === 'admin' ? 'host' : 'artist'}
+            name={identity.display_name}
+            avatar={identity.avatar_url}
             onBack={() => {
               setTab('home');
               setView({ kind: 'tab', tab: 'home' });
@@ -487,8 +496,18 @@ export const TradioShellContent: React.FC = () => {
             </div>
           </div>
 
+          <div className="mb-6 px-1">
+            <Link
+              to="/"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.04] py-3 text-xs font-black uppercase tracking-wider text-white/80 transition-all duration-300 hover:border-purple-500/25 hover:bg-gradient-to-r hover:from-purple-500/10 hover:to-transparent hover:text-white active:scale-[0.98] shadow-sm"
+            >
+              <Home className="h-4 w-4 text-fuchsia-400" />
+              Back to Trey TV
+            </Link>
+          </div>
+
           <nav className="space-y-3">
-            {PRIMARY_NAV.map(({ key, label, hint, Icon }) => {
+            {PRIMARY_NAV.filter(nav => nav.key !== 'profile' || hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner'])).map(({ key, label, hint, Icon }) => {
               const isActive = tab === key;
               return (
                 <button
@@ -653,6 +672,15 @@ export const TradioShellContent: React.FC = () => {
                   <button onClick={() => setNavOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-gradient-to-br from-white/8 to-white/2 hover:border-white/20 transition-all duration-300">
                     <X className="h-4 w-4 text-white" />
                   </button>
+                </div>
+                <div className="mb-4">
+                  <Link
+                    to="/"
+                    onClick={() => setNavOpen(false)}
+                    className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold text-white/90 active:scale-95 transition-all"
+                  >
+                    <Home className="h-4 w-4 text-fuchsia-400" /> Back to Trey TV
+                  </Link>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {SCREEN_LABELS.map((s) => (

@@ -43,10 +43,17 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const rows = await listActiveRooms();
-      if (!cancelled) {
-        setTables(rows.filter((room) => room.game_type === 'truno' && !room.is_private).slice(0, 12));
-        setLoadingTables(false);
+      try {
+        const rows = await listActiveRooms();
+        if (!cancelled) {
+          setTables((rows || []).filter((room) => room && room.game_type === 'truno' && !room.is_private).slice(0, 12));
+        }
+      } catch (err) {
+        console.error("Failed to load active Truno tables:", err);
+      } finally {
+        if (!cancelled) {
+          setLoadingTables(false);
+        }
       }
     };
     load();

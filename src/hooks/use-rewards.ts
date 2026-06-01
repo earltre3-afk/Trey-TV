@@ -177,7 +177,7 @@ export function useRewards(): UseRewardsReturn {
     async function loadRewards() {
       if (authLoading) return;
 
-      if (!user) {
+      if (!user || !user.id) {
         setRewards(fallbackRewards);
         setLoading(false);
         return;
@@ -244,7 +244,7 @@ export function useRewards(): UseRewardsReturn {
   const refresh = () => setRefreshNonce((n) => n + 1);
 
   const spend: UseRewardsReturn["spend"] = async (input) => {
-    if (!user) return { ok: false, error: "signed-out" };
+    if (!user || !user.id) return { ok: false, error: "signed-out" };
     try {
       const supabase = createBrowserClient();
       const { error } = await (supabase as any).rpc("spend_community_credit", {

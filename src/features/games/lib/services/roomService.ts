@@ -382,14 +382,19 @@ export async function replaceDisconnectedPlayersWithBots(roomId: string, staleMs
 }
 
 export async function listActiveRooms(): Promise<RoomRow[]> {
-  const { data, error } = await supabase
-    .from('game_rooms')
-    .select('*')
-    .in('status', ['waiting', 'active', 'abandoned'])
-    .order('created_at', { ascending: false })
-    .limit(100);
-  if (error) throw error;
-  return (data || []) as RoomRow[];
+  try {
+    const { data, error } = await supabase
+      .from('game_rooms')
+      .select('*')
+      .in('status', ['waiting', 'active', 'abandoned'])
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    return (data || []) as RoomRow[];
+  } catch (error) {
+    console.error("Error in listActiveRooms:", error);
+    return [];
+  }
 }
 
 export async function closeRoom(roomId: string) {

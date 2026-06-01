@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useTradioIdentity } from '../auth/useTradioIdentity';
+import { hasAnyRole } from '../auth/roleUtils';
 import { 
   ChevronLeft, 
   Sparkles, 
@@ -29,39 +31,46 @@ import type { Track } from '@/tradio/contexts/PlayerContext';
 import { usePlayer } from '@/tradio/contexts/PlayerContext';
 
 interface ProfileProps {
-  role?: 'artist' | 'producer' | 'host';
+  role?: 'artist' | 'producer' | 'host' | 'fan' | 'listener' | 'admin' | 'dj';
   name?: string;
+  avatar?: string;
   onBack: () => void;
 }
 
-export const ProfileScreen: React.FC<ProfileProps> = ({ 
-  role = 'artist', 
-  name = 'Trey Trizzy', 
-  onBack 
+export const ProfileScreen: React.FC<ProfileProps> = ({
+  role = 'artist',
+  name,
+  avatar,
+  onBack
 }) => {
   const { play, playQueue, isPlaying } = usePlayer();
   const [activeTab, setActiveTab] = useState<'overview' | 'catalog' | 'dna' | 'community'>('overview');
   const [isFollowing, setIsFollowing] = useState(false);
 
+  const { identity } = useTradioIdentity();
+  const isApprovedCreator = hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner']);
+  const displayName = name || identity?.display_name || 'Trey Trizzy';
+  const userAvatar = avatar || identity?.avatar_url || IMG.treyTrizzy;
+
   // Profile-specific details depending on name/role
-  const isArtist = role === 'artist';
+  const isArtist = role === 'artist' || role === 'listener' || role === 'fan';
   const isProducer = role === 'producer';
-  const isHost = role === 'host';
+  const isHost = role === 'host' || role === 'dj';
 
   // Profile Data Configuration
   const getProfileData = () => {
-    if (name === 'Trey Trizzy' || isArtist) {
+    if (displayName === 'Trey Trizzy' || (identity && displayName === identity.display_name) || isArtist) {
       return {
-        name: 'Trey Trizzy',
-        avatar: IMG.treyTrizzy,
+        name: displayName,
+        avatar: userAvatar,
         coverUrl: IMG.midnightDrive,
         tagline: 'Superstar Artist & Host | King of Late Night Soul',
         monthlyListeners: '1,482,900',
         listeners: '1,482,900',
         followers: '342,000',
         rank: '#1 Platform Artist',
-        bio: 'Forging a fresh pathway through Southern Hip-Hop and modern R&B, Trey Trizzy fuses raw trap drumlines with liquid soul vocals. As an original Tradio Pioneer, Trey hosts the late-night Velvet Session while curating one of the app\'s most followed custom station chains.',
-        autograph: 'Trey Trizzy',
+        bio: `Forging a fresh pathway through Southern Hip-Hop and modern R&B, ${displayName} fuses raw trap drumlines with liquid soul vocals. As an original Tradio Pioneer, ${displayName} hosts the late-night Velvet Session while curating one of the app's most followed custom station chains.`,
+        autograph: displayName,
         spotlight: TRACKS.midnightVelvet,
         stationName: 'Velvet Horizon Radio',
         recentReleases: [TRACKS.midnightVelvet, TRACKS.sixAmThoughts, TRACKS.afterHours],
@@ -153,12 +162,14 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
         </button>
 
         {/* Top-Right Quick Share */}
-        <button 
-          className="absolute top-6 right-4 sm:right-6 lg:right-10 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 backdrop-blur-xl text-white hover:bg-black/60 transition-all active:scale-90 shadow-premium"
-          aria-label="Share"
-        >
-          <Share2 className="h-4.5 w-4.5" />
-        </button>
+        {isApprovedCreator && (
+          <button
+            className="absolute top-6 right-4 sm:right-6 lg:right-10 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40 backdrop-blur-xl text-white hover:bg-black/60 transition-all active:scale-90 shadow-premium"
+            aria-label="Share"
+          >
+            <Share2 className="h-4.5 w-4.5" />
+          </button>
+        )}
       </div>
 
       {/* 2. Floating Header Profile Card */}

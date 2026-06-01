@@ -14,6 +14,8 @@ import {
   User
 } from 'lucide-react';
 import { usePlayer } from '@/tradio/contexts/PlayerContext';
+import { useTradioIdentity } from './auth/useTradioIdentity';
+import { hasAnyRole } from './auth/roleUtils';
 import { TRACKS, IMG } from './data';
 import aiBallCutout from '@/tradio/assets/ai-ball.png';
 import { PrescriptionRadioPopover } from './prescribeMe/PrescriptionRadioPopover';
@@ -56,6 +58,7 @@ export const BottomNav: React.FC<{
   currentRoleLabel = 'Listener',
 }) => {
   const { playStation, currentTrack, isPlaying } = usePlayer();
+  const { identity } = useTradioIdentity();
 
   // Luxurious Popout state
   const [showPopout, setShowPopout] = useState(false);
@@ -154,8 +157,9 @@ export const BottomNav: React.FC<{
     }
   };
 
+  const hasProfileAccess = hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner']);
   const leftTabs = TABS.slice(0, 3);
-  const rightTabs = TABS.slice(3);
+  const rightTabs = TABS.slice(3).filter((t) => t.key !== 'profile' || hasProfileAccess);
 
   const renderTabButton = ({ key, label, Icon }: typeof TABS[number]) => {
     const isActive = active === key;

@@ -412,7 +412,7 @@ function EditProfile() {
                 aria-hidden
               />
               <div className="relative rounded-full p-[2px] bg-[var(--edit-gradient-accent-ring)]">
-                <img src={draft.avatar} alt="Avatar" className="size-28 rounded-full border-4 border-background object-cover" />
+                <img src={draft.avatar || undefined} alt="Avatar" className="size-28 rounded-full border-4 border-background object-cover" />
               </div>
               <button
                 type="button"
@@ -714,7 +714,7 @@ function ProfilePreviewModal({
 
           <div className="relative px-5 pb-6 sm:px-7">
             <div className="-mt-14 flex flex-wrap items-end gap-4">
-              <img src={draft.avatar} alt="Profile avatar preview" className="size-28 rounded-full border-4 border-background object-cover ring-2 ring-white/15" />
+              <img src={draft.avatar || undefined} alt="Profile avatar preview" className="size-28 rounded-full border-4 border-background object-cover ring-2 ring-white/15" />
               <div className="min-w-0 flex-1 pb-2">
                 <h3 className="truncate text-3xl font-black">{draft.name || "Your name"}</h3>
                 <p className="truncate text-sm text-muted-foreground">@{draft.handle || "username"}</p>

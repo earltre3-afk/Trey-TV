@@ -8,6 +8,7 @@ export type Role = "guest" | "user" | "creator" | "admin";
 export type CreatorStatus = "not_applied" | "pending" | "approved" | "rejected";
 
 export type SessionUser = {
+  id?: string;
   creatorStatus?: CreatorStatus;
   name: string;
   handle: string;
@@ -98,6 +99,7 @@ const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "gues
 
   return {
     ...defaultUser,
+    id: profile?.id,
     name: profile?.display_name || profile?.username || "Trey TV Member",
     handle,
     uid: publicUid,

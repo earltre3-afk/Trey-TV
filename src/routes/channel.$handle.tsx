@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { useSubmissions, type Submission } from "@/lib/submissions-store";
 import { useGoBack } from "@/hooks/use-go-back";
 import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
+import { GoldCheck } from "@/components/brand/Badge";
 import { ChannelChatPanel } from "@/components/chat/ChannelChatPanel";
 import { useSupabaseSession } from "@/lib/supabase-session";
 import { createWatchParty } from "@/lib/watch-party/party.server";
@@ -377,7 +378,7 @@ function ChannelPage() {
                       <span className="text-[13px] font-medium" style={{ color: PURPLE }}>
                         @{handle}
                       </span>
-                      <BadgeCheck className="w-4 h-4 fill-[#A855F7] text-black" />
+                      <GoldCheck size={18} />
                     </div>
 
                     <p className="mt-3 text-[13px] md:text-sm text-white/85 leading-relaxed">

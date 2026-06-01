@@ -37,7 +37,8 @@ const postSchema = z.object({
 export function Composer() {
   const navigate = useNavigate();
   const { addPost } = useFeed();
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
+  const avatarUrl = user?.avatar || currentUser.avatar;
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState("");
   const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["id"]>("Everyone");
@@ -96,7 +97,7 @@ export function Composer() {
 
       <div className="relative flex items-start gap-3">
         <div className="relative size-11 rounded-full conic-ring shrink-0">
-          <img src={currentUser.avatar} alt="" className="size-11 rounded-full object-cover" />
+          <img src={avatarUrl} alt="" className="size-11 rounded-full object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <textarea

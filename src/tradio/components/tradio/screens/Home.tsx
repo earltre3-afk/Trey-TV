@@ -60,13 +60,6 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
             </div>
             <p className="mt-1 text-sm text-white/60">Music that understands you.</p>
           </div>
-
-          <Link
-            to="/"
-            className="self-start sm:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/15 text-xs font-bold text-white/80 hover:text-white transition-all duration-300 active:scale-95 shadow-sm"
-          >
-            <Home className="size-4 text-fuchsia-400" /> Back to Trey TV
-          </Link>
         </div>
 
         <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">

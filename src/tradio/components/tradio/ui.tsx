@@ -3,6 +3,7 @@ import { Sparkles, Bell, ChevronRight, Play, Pause, MoreHorizontal, Check, Trend
 import { IMG } from './data';
 import { TradioImage } from './NoCoverVisualizer';
 import aiBallCutout from '@/tradio/assets/ai-ball.png';
+import { VerifiedBadge as GlobalVerifiedBadge } from "@/components/brand/Badge";
 
 // ─── TRADIO LOGO ─────────────────────────────────────────
 export const TradioLogo: React.FC<{ size?: 'sm' | 'md' }> = ({ size = 'md' }) => (
@@ -203,10 +204,7 @@ export const SectionHeader: React.FC<{ title: string; onSeeAll?: () => void }> =
 
 // ─── VERIFIED BADGE ──────────────────────────────────────
 export const VerifiedBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
-  <svg viewBox="0 0 24 24" className={`h-4 w-4 text-purple-400 ${className}`} fill="currentColor">
-    <path d="M12 2l2.39 2.39 3.39-.39.61 3.39L21 9l-1.61 3 1.61 3-2.61 1.61-.61 3.39-3.39-.39L12 22l-2.39-2.39-3.39.39-.61-3.39L3 15l1.61-3L3 9l2.61-1.61.61-3.39 3.39.39L12 2z" />
-    <path d="M9.5 12l2 2 3.5-4" stroke="#0A0A0F" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
+  <GlobalVerifiedBadge className={className} />
 );
 
 // ─── PLAY BUTTON CIRCLE ─────────────────────────────────
