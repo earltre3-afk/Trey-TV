@@ -249,7 +249,7 @@ export function ProfilePageNew({
         </div>
 
         {/* Avatar overlapping banner */}
-        <div className="absolute left-1/2 -translate-x-1/2 -bottom-14 z-30">
+        <div className="absolute left-1/2 -translate-x-1/2 -bottom-[60px] md:-bottom-[75px] z-30">
           <div className="relative w-[120px] h-[120px] md:w-[150px] md:h-[150px]">
             <div className="absolute -inset-10 rounded-full opacity-25 blur-3xl" style={{ background: NEON_PURPLE }} />
             <div className="absolute -inset-[5px] rounded-full ring-gradient animate-spin-slow opacity-80" style={{ filter: "blur(0.5px)" }} />
@@ -272,7 +272,7 @@ export function ProfilePageNew({
       </section>
 
       {/* ── CONTENT ───────────────────────────────────────── */}
-      <div className="max-w-[1280px] mx-auto px-3 md:px-6 pt-[72px] md:pt-20">
+      <div className="max-w-[1280px] mx-auto px-3 md:px-6 pt-[80px] md:pt-24">
 
         {/* IDENTITY */}
         <div className="max-w-2xl mx-auto mb-5 md:mb-7">
@@ -458,41 +458,44 @@ export function ProfilePageNew({
           {/* LEFT COLUMN */}
           <div className="space-y-3 lg:sticky lg:top-4">
 
-            {/* Certification strip */}
-            <div className="panel neon-border p-2.5 reveal" style={{ animationDelay: ".05s" }}>
-              <div className="grid grid-cols-3 gap-1.5 text-center">
+            {/* Unified Stats & Verification Card */}
+            <div className="panel neon-border reveal overflow-hidden flex flex-col" style={{ animationDelay: ".05s" }}>
+              {/* Stat bar */}
+              <div className="grid grid-cols-4 divide-x divide-white/5 border-b border-white/5 bg-white/[0.01]">
                 {[
-                  { I: ShieldCheck, l: "Identity", s: "Confirmed", c: GOLD },
-                  { I: Fingerprint, l: "Original", s: "Account", c: NEON_BLUE },
-                  { I: KeyRound, l: profile.isCreator ? "Creator" : "Member", s: "Verified", c: NEON_PURPLE },
-                ].map(({ I, l, s, c }) => (
-                  <div key={l} className="flex flex-col items-center gap-0.5 py-1 transition hover:-translate-y-0.5">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${c}1A`, border: `1px solid ${c}66`, boxShadow: `0 0 12px ${c}55,inset 0 0 8px ${c}22` }}>
-                      <I className="w-3.5 h-3.5" style={{ color: c }} />
+                  { I: FileText, c: NEON_BLUE, v: fmt(profile.stats.posts || 0), l: "Posts" },
+                  { I: Users, c: NEON_PURPLE, v: fmt(localFollowers || 0), l: "Followers" },
+                  { I: UserPlus, c: PINK, v: fmt(profile.stats.following || 0), l: "Following" },
+                  { I: Sparkles, c: GOLD, v: fmt(localSubscribers || 0), l: "Subs" },
+                ].map(({ I, c, v, l }) => (
+                  <button key={l} type="button" className="flex flex-col sm:flex-row items-center justify-center gap-1.5 px-1 py-3 transition hover:bg-white/[0.03] active:scale-[0.98]">
+                    <I className="w-3.5 h-3.5 shrink-0" style={{ color: c, filter: `drop-shadow(0 0 6px ${c})` }} />
+                    <div className="text-center sm:text-left">
+                      <div className="text-sm font-bold leading-none tabular-nums">{v}</div>
+                      <div className="text-[9px] text-muted-foreground mt-1 font-semibold uppercase tracking-wider">{l}</div>
                     </div>
-                    <div className="text-[10px] font-bold leading-none mt-0.5" style={{ color: c }}>{l}</div>
-                    <div className="text-[9px] text-muted-foreground leading-none">{s}</div>
-                  </div>
+                  </button>
                 ))}
               </div>
-            </div>
 
-            {/* Stat bar */}
-            <div className="panel neon-border grid grid-cols-4 divide-x divide-white/5 reveal" style={{ animationDelay: ".08s" }}>
-              {[
-                { I: FileText, c: NEON_BLUE, v: fmt(profile.stats.posts || 0), l: "Posts" },
-                { I: Users, c: NEON_PURPLE, v: fmt(localFollowers || 0), l: "Followers" },
-                { I: UserPlus, c: PINK, v: fmt(profile.stats.following || 0), l: "Following" },
-                { I: Sparkles, c: GOLD, v: fmt(localSubscribers || 0), l: "Subs" },
-              ].map(({ I, c, v, l }) => (
-                <button key={l} className="flex items-center justify-center gap-1.5 px-1 py-2.5 transition hover:bg-white/[0.03] active:scale-[0.98]">
-                  <I className="w-3.5 h-3.5" style={{ color: c, filter: `drop-shadow(0 0 6px ${c})` }} />
-                  <div className="text-left">
-                    <div className="text-sm font-bold leading-none tabular-nums">{v}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">{l}</div>
-                  </div>
-                </button>
-              ))}
+              {/* Certification strip */}
+              <div className="p-3 bg-white/[0.005]">
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  {[
+                    { I: ShieldCheck, l: "Identity", s: "Confirmed", c: GOLD },
+                    { I: Fingerprint, l: "Original", s: "Account", c: NEON_BLUE },
+                    { I: KeyRound, l: profile.isCreator ? "Creator" : "Member", s: "Verified", c: NEON_PURPLE },
+                  ].map(({ I, l, s, c }) => (
+                    <div key={l} className="flex flex-col items-center gap-0.5 py-0.5 transition hover:-translate-y-0.5">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: `${c}1A`, border: `1px solid ${c}55`, boxShadow: `0 0 10px ${c}33,inset 0 0 6px ${c}11` }}>
+                        <I className="w-3.5 h-3.5" style={{ color: c }} />
+                      </div>
+                      <div className="text-[10px] font-bold leading-none mt-1" style={{ color: c }}>{l}</div>
+                      <div className="text-[9px] text-muted-foreground leading-none mt-0.5">{s}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* My Signal Badge Panel */}
@@ -594,9 +597,9 @@ export function ProfilePageNew({
             {/* GIF of the Day */}
             {profile.gifOfDayUrl && (
               <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".09s" }}>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
-                  <h3 className="font-semibold text-xs">GIF of the Day</h3>
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">GIF of the Day</h3>
                   <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.2em] px-1.5 py-0.5 rounded-full bg-white/[0.06] text-muted-foreground">FWD</span>
                 </div>
                 <div className="relative overflow-hidden rounded-xl border border-white/10 max-h-52">
@@ -618,9 +621,9 @@ export function ProfilePageNew({
 
             {(showOwnerControls || showFwdGifs) && (
               <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".095s" }}>
-                <div className="mb-2 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
-                  <h3 className="text-xs font-semibold">FWD GIF Library</h3>
+                <div className="mb-2.5 flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">FWD GIF Library</h3>
                   <span className="ml-auto rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">FWD</span>
                 </div>
                 {showOwnerControls && (
@@ -664,8 +667,8 @@ export function ProfilePageNew({
             <div className="panel neon-border p-3 reveal relative" style={{ animationDelay: ".1s" }}>
               <div className="mb-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
-                  <h3 className="font-semibold text-xs">About {profile.displayName.split(" ")[0]}</h3>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">About {profile.displayName.split(" ")[0]}</h3>
                 </div>
                 <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">
                   {profile.bio || "Member of Trey TV. Building something great."}
@@ -675,46 +678,41 @@ export function ProfilePageNew({
                 </button>
               </div>
 
-              {/* Facts + Zodiac */}
-              <div className="grid grid-cols-[auto_1fr_auto] gap-x-2 md:gap-x-6 gap-y-1.5 items-center text-[10px] md:text-[11px] w-full">
-                <ul className="space-y-1.5 justify-self-start">
-                  {[
-                    { I: Globe, l: "Member since" },
-                    { I: Sparkle, l: "Creator" },
-                    { I: User, l: "Prescribe Me" },
-                    { I: BadgeCheck, l: "Response rate" },
-                    { I: Clock, l: "Avg. response" },
-                  ].map(({ I, l }) => (
-                    <li key={l} className="flex items-center gap-2 text-left">
-                      <I className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="text-muted-foreground">{l}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Zodiac center badge */}
-                <div className="flex justify-center self-center">
-                  <div className="relative w-[96px] h-[112px] md:w-[120px] md:h-[140px] flex items-center justify-center">
+              {/* Facts + Zodiac with alignment-safe grid row mapping */}
+              <div className="grid grid-cols-[1fr_auto_1fr] gap-x-2 sm:gap-x-4 md:gap-x-6 gap-y-2 items-center text-[10px] md:text-[11px] w-full relative">
+                {/* Center Zodiac badge spans 5 rows */}
+                <div className="col-start-2 col-end-3 row-start-1 row-end-6 flex justify-center items-center h-full">
+                  <div className="relative w-[88px] h-[100px] md:w-[120px] md:h-[135px] flex items-center justify-center">
                     <div className="absolute inset-0 rounded-full blur-2xl opacity-60" style={{ background: `radial-gradient(circle,${GOLD}66,transparent 70%)` }} />
                     <div className="absolute inset-1 rounded-full animate-spin-slow" style={{ background: `conic-gradient(${GOLD},transparent 30%,${NEON_PURPLE},transparent 60%,${GOLD})`, WebkitMask: "radial-gradient(circle,transparent 60%,#000 62%,#000 66%,transparent 68%)", mask: "radial-gradient(circle,transparent 60%,#000 62%,#000 66%,transparent 68%)", filter: `drop-shadow(0 0 8px ${GOLD})` }} />
-                    <img src={taurusBull} alt="zodiac" className="relative w-[64px] md:w-[80px] animate-float" style={{ filter: `drop-shadow(0 0 12px ${GOLD}) drop-shadow(0 0 22px ${NEON_PURPLE}88)` }} />
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold tracking-[0.22em] px-1.5 py-0.5 rounded-full border whitespace-nowrap" style={{ color: GOLD, borderColor: `${GOLD}88`, background: "rgba(0,0,0,0.7)", boxShadow: `0 0 10px ${GOLD}55` }}>
+                    <img src={taurusBull} alt="zodiac" className="relative w-[56px] md:w-[75px] animate-float" style={{ filter: `drop-shadow(0 0 10px ${GOLD}) drop-shadow(0 0 18px ${NEON_PURPLE}88)` }} />
+                    <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] font-black tracking-[0.22em] px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color: GOLD, borderColor: `${GOLD}88`, background: "rgba(5,7,13,0.9)", boxShadow: `0 0 10px ${GOLD}55` }}>
                       {profile.zodiacSunSign ? `♉ ${profile.zodiacSunSign.toUpperCase()}` : "♉ TAURUS"}
                     </span>
                   </div>
                 </div>
 
-                <ul className="space-y-1.5 justify-self-end text-right">
-                  {[
-                    { v: profile.joinedDate || "Jan 2023", c: "#fff" },
-                    { v: profile.isCreator ? "Music • Film" : "Member", c: "#fff" },
-                    { v: "Open", c: GREEN },
-                    { v: "98%", c: NEON_BLUE },
-                    { v: "2h", c: "#fff" },
-                  ].map(({ v, c }, i) => (
-                    <li key={i} className="font-medium" style={{ color: c }}>{v}</li>
-                  ))}
-                </ul>
+                {/* Left side labels and Right side values in exact row alignment pairs */}
+                {[
+                  { I: Globe, l: "Member since", v: profile.joinedDate || "Jan 2023", c: "#fff" },
+                  { I: Sparkle, l: "Creator", v: profile.isCreator ? "Music • Film" : "Member", c: "#fff" },
+                  { I: User, l: "Prescribe Me", v: "Open", c: GREEN },
+                  { I: BadgeCheck, l: "Response rate", v: "98%", c: NEON_BLUE },
+                  { I: Clock, l: "Avg. response", v: "2h", c: "#fff" },
+                ].map(({ I, l, v, c }) => (
+                  <div className="contents" key={l}>
+                    {/* Left cell (Label) */}
+                    <div className="col-start-1 col-end-2 flex items-center gap-1.5 text-left truncate">
+                      <I className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground font-medium truncate">{l}</span>
+                    </div>
+
+                    {/* Right cell (Value) */}
+                    <div className="col-start-3 col-end-4 text-right truncate">
+                      <span className="font-semibold" style={{ color: c }}>{v}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -722,152 +720,158 @@ export function ProfilePageNew({
           {/* RIGHT COLUMN */}
           <div className="space-y-3">
 
-            {/* Tabs */}
-            <div className="panel neon-border grid grid-cols-4 reveal" style={{ animationDelay: ".15s" }}>
-              {["Posts", "Likes", "Saved", "About"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
-                  className={`relative py-3 text-[12px] font-semibold transition active:scale-95 ${activeTab === t ? "text-white" : "text-muted-foreground hover:text-white"}`}
-                >
-                  {t}
-                  {activeTab === t && <span className="absolute bottom-0 left-1/3 right-1/3 h-[2px] rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />}
-                </button>
-              ))}
-            </div>
-
-            {/* Posts grid */}
-            {activeTab === "Posts" && (
-              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
-                    <h3 className="font-semibold text-xs">Recent Posts</h3>
-                  </div>
-                  <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
-                    View all <ChevronRight className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {FALL_POSTS.map((img, i) => (
-                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
-                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-                      {i === 0 && (
-                        <div className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: GOLD }}>
-                          <Pin className="w-2 h-2 text-black" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
-                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["34.2K","52.6K","12.1K","18.7K","24.3K"][i]}</span>
-                        <span className="text-white/70">{["1:24","2:08","0:58","1:45","2:12"][i]}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* Unified Content Panel (Tabs + Content) */}
+            <div className="panel neon-border reveal flex flex-col overflow-hidden" style={{ animationDelay: ".15s" }}>
+              {/* Integrated Header Tabs */}
+              <div className="grid grid-cols-4 border-b border-white/5 bg-white/[0.01]">
+                {["Posts", "Likes", "Saved", "About"].map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setActiveTab(t)}
+                    className={`relative py-3.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-[0.08em] transition active:scale-95 ${activeTab === t ? "text-white bg-white/[0.02]" : "text-muted-foreground hover:text-white hover:bg-white/[0.01]"}`}
+                  >
+                    {t}
+                    {activeTab === t && <span className="absolute bottom-0 inset-x-0 h-[2px]" style={{ background: `linear-gradient(90deg,transparent,${GOLD},transparent)`, boxShadow: `0 0 10px ${GOLD}` }} />}
+                  </button>
+                ))}
               </div>
-            )}
 
-            {/* Likes grid */}
-            {activeTab === "Likes" && (
-              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
-                    <h3 className="font-semibold text-xs">Liked Posts</h3>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {[fallPost3, fallPost4, fallPost5, fallPost1, fallPost2].map((img, i) => (
-                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
-                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
-                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["12.4K","18.1K","9.5K","4.2K","21.0K"][i]}</span>
-                        <span className="text-white/70">{["1:02","1:55","0:45","2:10","1:32"][i]}</span>
+              {/* Tab Content Area */}
+              <div className="p-4 bg-white/[0.005]">
+                {/* Posts grid */}
+                {activeTab === "Posts" && (
+                  <div className="reveal">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }} />
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Recent Posts</h3>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Saved grid */}
-            {activeTab === "Saved" && (
-              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
-                    <h3 className="font-semibold text-xs">Saved Posts</h3>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-                  {[fallPost5, fallPost2, fallPost1, fallPost3, fallPost4].map((img, i) => (
-                    <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition">
-                      <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
-                        <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["44.1K","19.2K","32.0K","8.7K","14.5K"][i]}</span>
-                        <span className="text-white/70">{["2:12","1:48","0:35","1:15","2:05"][i]}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* About panel */}
-            {activeTab === "About" && (
-              <div className="panel neon-border p-4 reveal space-y-4" style={{ animationDelay: ".2s" }}>
-                <div className="flex items-center gap-1.5 border-b border-white/5 pb-2">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
-                  <h3 className="font-semibold text-xs">About @{profile.handle}</h3>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  {profile.joinedDate && (
-                    <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Joined</span>
-                      <span className="text-white font-medium">{profile.joinedDate}</span>
-                    </div>
-                  )}
-                  {profile.location && (
-                    <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Location</span>
-                      <span className="text-white font-medium">{profile.location}</span>
-                    </div>
-                  )}
-                  {profile.websiteLink && (
-                    <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Website</span>
-                      <a href={profile.websiteLink} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline font-medium block truncate">
-                        {profile.websiteLink.replace(/^https?:\/\//, "")}
+                      <a className="text-[10px] font-medium text-slate-400 inline-flex items-center gap-0.5 hover:text-white transition" href="#">
+                        View all <ChevronRight className="w-2.5 h-2.5" />
                       </a>
                     </div>
-                  )}
-                  {profile.pronouns && (
-                    <div>
-                      <span className="text-muted-foreground block text-[10px] uppercase tracking-wider">Pronouns</span>
-                      <span className="text-white font-medium">{profile.pronouns}</span>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                      {FALL_POSTS.map((img, i) => (
+                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                          <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          {i === 0 && (
+                            <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full flex items-center justify-center shadow-lg" style={{ background: GOLD }}>
+                              <Pin className="w-2.5 h-2.5 text-black" />
+                            </div>
+                          )}
+                          <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[8px] font-bold tracking-wide text-white">
+                            <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["34.2K","52.6K","12.1K","18.7K","24.3K"][i]}</span>
+                            <span className="text-white/70">{["1:24","2:08","0:58","1:45","2:12"][i]}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
-                {profile.bio && (
-                  <div className="pt-2 border-t border-white/5">
-                    <span className="text-muted-foreground block text-[10px] uppercase tracking-wider mb-1">Biography</span>
-                    <p className="text-white/90 leading-relaxed text-[11px] whitespace-pre-wrap">{profile.bio}</p>
+                {/* Likes grid */}
+                {activeTab === "Likes" && (
+                  <div className="reveal">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Liked Posts</h3>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                      {[fallPost3, fallPost4, fallPost5, fallPost1, fallPost2].map((img, i) => (
+                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                          <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[8px] font-bold tracking-wide text-white">
+                            <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["12.4K","18.1K","9.5K","4.2K","21.0K"][i]}</span>
+                            <span className="text-white/70">{["1:02","1:55","0:45","2:10","1:32"][i]}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Saved grid */}
+                {activeTab === "Saved" && (
+                  <div className="reveal">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }} />
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Saved Posts</h3>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                      {[fallPost5, fallPost2, fallPost1, fallPost3, fallPost4].map((img, i) => (
+                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                          <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                          <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[8px] font-bold tracking-wide text-white">
+                            <span className="inline-flex items-center gap-0.5"><Play className="w-2 h-2 fill-current" /> {["44.1K","19.2K","32.0K","8.7K","14.5K"][i]}</span>
+                            <span className="text-white/70">{["2:12","1:48","0:35","1:15","2:05"][i]}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* About panel */}
+                {activeTab === "About" && (
+                  <div className="reveal space-y-4">
+                    <div className="flex items-center gap-1.5 border-b border-white/5 pb-2">
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
+                      <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">About @{profile.handle}</h3>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      {profile.joinedDate && (
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-bold">Joined</span>
+                          <span className="text-white font-medium">{profile.joinedDate}</span>
+                        </div>
+                      )}
+                      {profile.location && (
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-bold">Location</span>
+                          <span className="text-white font-medium">{profile.location}</span>
+                        </div>
+                      )}
+                      {profile.websiteLink && (
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-bold">Website</span>
+                          <a href={profile.websiteLink} target="_blank" rel="noopener noreferrer" className="text-amber-300 hover:underline font-medium block truncate">
+                            {profile.websiteLink.replace(/^https?:\/\//, "")}
+                          </a>
+                        </div>
+                      )}
+                      {profile.pronouns && (
+                        <div>
+                          <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-bold">Pronouns</span>
+                          <span className="text-white font-medium">{profile.pronouns}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {profile.bio && (
+                      <div className="pt-3 border-t border-white/5">
+                        <span className="text-slate-400 block text-[9px] uppercase tracking-wider font-bold mb-1.5">Biography</span>
+                        <p className="text-white/95 leading-relaxed text-[11px] whitespace-pre-wrap">{profile.bio}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
             {/* Top 3 Friends */}
             <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>
               <div className="flex items-center justify-between mb-2.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
-                  <h3 className="font-semibold text-xs">Top 3 Friends</h3>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Top 3 Friends</h3>
                   <span className="text-[9px] text-muted-foreground">· inner circle</span>
                 </div>
                 <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
@@ -907,8 +911,8 @@ export function ProfilePageNew({
             {/* Connect links */}
             <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".25s" }}>
               <div className="flex items-center gap-1.5 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
-                <h3 className="font-semibold text-xs">Connect</h3>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Connect</h3>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
                 <LinkRow icon={Instagram} color="#EC4899" accent="#A855F7" title="Instagram" sub={`@${profile.handle}`} />
@@ -926,8 +930,8 @@ export function ProfilePageNew({
             <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".3s" }}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
-                  <h3 className="font-semibold text-xs">Badges</h3>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Badges</h3>
                 </div>
                 <span className="text-[9px] text-muted-foreground">12 earned</span>
               </div>
@@ -949,7 +953,7 @@ export function ProfilePageNew({
               <div className="relative flex items-center gap-3">
                 <img src={prescribeLock} alt="" className="h-16 w-auto animate-float shrink-0" style={{ filter: "drop-shadow(0 0 20px rgba(255,80,200,0.7))" }} />
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-xs mb-0.5">Prescribe Me</h3>
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200 mb-1">Prescribe Me</h3>
                   <p className="text-[10px] text-foreground/80 mb-2 leading-snug">Unlock exclusive content & deeper access.</p>
                   <button className="rounded-full px-3 py-1.5 text-[10px] font-bold transition hover:scale-[1.02]" style={{ background: GOLD, color: "#000", boxShadow: `0 0 16px ${GOLD}66` }}>
                     Prescribe Now
