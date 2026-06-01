@@ -220,9 +220,36 @@ export const generateAdminReviewDraft = createServerFn({ method: "POST" })
     }
   });
 
+// The 14 canonical Natural Abilities + 4 signal strengths. The model MUST land
+// on one of these exact values for the badge UI (keyed by ABILITY_RESULTS) to
+// render; anything else is coerced or rejected below.
+const SIGNAL_ABILITIES: NaturalAbility[] = [
+  "Diviner", "Reaper", "Empath", "Charmer", "Alchemist", "Herbalist", "Seer",
+  "Shapeshifter", "Healer", "Dreamer", "Prophet", "Manifestor", "Creative", "Ungifted",
+];
+const SIGNAL_STRENGTHS: SignalStrength[] = ["Strong", "Mixed", "Emerging", "Unreadable"];
+
+/** Coerce a model-returned ability to a canonical one (case-insensitive, tolerates a leading "The "). Returns null if unrecognizable. */
+function coerceAbility(raw: unknown): NaturalAbility | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.trim().replace(/^the\s+/i, "").toLowerCase();
+  return SIGNAL_ABILITIES.find((a) => a.toLowerCase() === cleaned) ?? null;
+}
+
+/** Coerce a model-returned signal strength to a canonical one. Returns null if unrecognizable. */
+function coerceStrength(raw: unknown): SignalStrength | null {
+  if (typeof raw !== "string") return null;
+  const cleaned = raw.trim().toLowerCase();
+  return SIGNAL_STRENGTHS.find((s) => s.toLowerCase() === cleaned) ?? null;
+}
+
 export const judgeSignalTest = createServerFn({ method: "POST" })
   .inputValidator((input: { answers: UserAnswer[]; scenarios: Scenario[] }) => input)
   .handler(async ({ data }): Promise<SignalResult & { interpretation: string }> => {
+    // Compute the deterministic result up front — it supplies valid fallbacks
+    // for scores / secondary / strength if the model omits or mangles them, and
+    // is the full fallback if the AI call fails.
+    const local = calculateResult(data.answers, data.scenarios);
     try {
       const prompt = `Below is the list of 20 scenarios from Trey TV's Natural Ability Test and the user's responses (either a multiple-choice ID or a custom text response):
 ${JSON.stringify(data.answers)}
@@ -259,27 +286,53 @@ Return ONLY valid JSON.`;
         prompt,
         temperature: 0.7,
         maxTokens: 512,
+        // Force the model to return only canonical values (Gemini structured output).
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            primaryAbility: { type: "STRING", enum: SIGNAL_ABILITIES },
+            secondaryAbility: { type: "STRING", enum: SIGNAL_ABILITIES },
+            signalStrength: { type: "STRING", enum: SIGNAL_STRENGTHS },
+            interpretation: { type: "STRING" },
+          },
+          required: ["primaryAbility", "secondaryAbility", "signalStrength", "interpretation"],
+          propertyOrdering: ["primaryAbility", "secondaryAbility", "signalStrength", "interpretation"],
+        },
       });
 
-      const primary = String(parsed.primaryAbility) as NaturalAbility;
-      const secondary = String(parsed.secondaryAbility) as NaturalAbility;
-      const signalStrength = String(parsed.signalStrength) as SignalStrength;
-      const signalBlend = getSignalBlend(primary, secondary);
+      // Validate the model output against the canonical sets. If the primary
+      // ability isn't recognized, bail to the deterministic result rather than
+      // assign (and persist) a badge the UI can't render.
+      const primary = coerceAbility(parsed.primaryAbility);
+      if (!primary) {
+        throw new Error(`AI returned unrecognized primaryAbility: ${JSON.stringify(parsed.primaryAbility)}`);
+      }
+
+      let secondary = coerceAbility(parsed.secondaryAbility);
+      if (!secondary || secondary === primary) {
+        secondary = local.secondaryAbility !== primary
+          ? local.secondaryAbility
+          : (SIGNAL_ABILITIES.find((a) => a !== primary) as NaturalAbility);
+      }
+
+      const signalStrength = coerceStrength(parsed.signalStrength) ?? local.signalStrength;
+      const interpretation = typeof parsed.interpretation === "string" && parsed.interpretation.trim()
+        ? parsed.interpretation.trim()
+        : `Based on your test inputs, you show a primary connection to the path of the ${primary}.`;
 
       return {
         primaryAbility: primary,
         secondaryAbility: secondary,
-        signalBlend,
+        signalBlend: getSignalBlend(primary, secondary),
         signalStrength,
-        scores: {} as Record<NaturalAbility, number>,
-        interpretation: String(parsed.interpretation || "Your signal is clear and unique."),
+        scores: local.scores,
+        interpretation,
       };
     } catch (err) {
       console.error("[judgeSignalTest] fallback to local scoring:", err);
-      const localResult = calculateResult(data.answers, data.scenarios);
       return {
-        ...localResult,
-        interpretation: `Based on your test inputs, you show a primary connection to the path of the ${localResult.primaryAbility}.`,
+        ...local,
+        interpretation: `Based on your test inputs, you show a primary connection to the path of the ${local.primaryAbility}.`,
       };
     }
   });
@@ -571,9 +624,10 @@ Format output as a clean prose paragraph. No headers or bullet points.`;
 export const curatePrescriptionWithAI = createServerFn({ method: "POST" })
   .inputValidator((input: { answers: PrescriptionAnswers }) => input)
   .handler(async ({ data }): Promise<{ title: string; explanation: string; rankedIds: string[] }> => {
+    // Destructured outside the try so the catch-block fallback can reference it
+    // (previously the fallback threw a ReferenceError on any AI failure).
+    const { answers } = data;
     try {
-      const { answers } = data;
-
       const prompt = `You are Trey-I, the recommendation engine for Trey TV.
 The user took the Vibe quiz. Here are their selections:
 - Moods: ${answers.moods.join(", ")}

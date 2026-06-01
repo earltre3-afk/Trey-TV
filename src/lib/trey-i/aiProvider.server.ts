@@ -92,6 +92,13 @@ export interface GenerateOptions {
   systemInstruction?: string;
   temperature?: number;
   maxTokens?: number;
+  /**
+   * Optional JSON response schema (Gemini structured output). When provided,
+   * the model is constrained to this shape — e.g. `enum` fields force the value
+   * to be one of a fixed set. Only honored by the Gemini provider; other
+   * providers rely on prompt instructions + caller-side validation.
+   */
+  responseSchema?: Record<string, unknown>;
 }
 
 export interface GenerateVisionOptions extends GenerateOptions {
@@ -305,6 +312,7 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
       temperature,
       maxOutputTokens: maxTokens,
       responseMimeType: "application/json",
+      ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
     } as any,
   });
 
