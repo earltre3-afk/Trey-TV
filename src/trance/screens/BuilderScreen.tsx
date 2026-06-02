@@ -25,7 +25,14 @@ import { TranceShell, TranceTopBar, TranceLogo } from "../components/shell";
 import { TranceGlassCard, GradientButton, cn } from "../components/primitives";
 import { BuilderStepper, builderSteps } from "../components/BuilderStepper";
 import { routines, IMG } from "../data/devFixtures";
-import { tranceVideoUploadService, tranceRoutineService, shouldUseFixtures } from "../services";
+import {
+  tranceVideoUploadService,
+  tranceRoutineService,
+  tranceVideoAnalyzerService,
+  shouldUseFixtures,
+} from "../services";
+import { toast } from "sonner";
+import type { ChoreographyAnalysis } from "../types";
 import { TRANCE_ROUTES } from "../routes/manifest";
 import { TranceAccountButton } from "../auth/TranceAccountButton";
 import { useTranceIdentity } from "../hooks/useTranceIdentity";
@@ -69,6 +76,32 @@ const BuilderScreen: React.FC = () => {
   });
   const [publishing, setPublishing] = React.useState(false);
 
+  // AI choreographer analysis (suggested, not final).
+  const [aiAnalysis, setAiAnalysis] = React.useState<ChoreographyAnalysis | null>(null);
+  const [analyzing, setAnalyzing] = React.useState(false);
+  const [analyzeProgress, setAnalyzeProgress] = React.useState(0);
+  const videoInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAnalyzeFile = async (file: File) => {
+    setAnalyzing(true);
+    setAnalyzeProgress(0);
+    setAiAnalysis(null);
+    try {
+      const analysis = await tranceVideoAnalyzerService.analyzeChoreographyVideo({
+        file,
+        onProgress: (p) => setAnalyzeProgress(Math.round(p * 100)),
+      });
+      setAiAnalysis(analysis);
+      toast.success(
+        `AI suggested ${analysis.suggestedCountSections.length} sections, ${analysis.suggestedDirectionCues.length} cues, ${analysis.suggestedMoveHints.length} hints — review before publishing.`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "AI analysis failed.");
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const hints = [
     { t: "00:00", label: "Groove In", d: "Relax into the beat. Feel the bounce." },
     { t: "00:16", label: "Chest Hit", d: "Hit chest forward on 5, clean & sharp." },
@@ -101,6 +134,11 @@ const BuilderScreen: React.FC = () => {
         bpm: 108,
         durationSec: 167,
       });
+
+      // Apply AI-suggested choreography (sections/cues/hints) to the draft for review.
+      if (aiAnalysis) {
+        await tranceVideoAnalyzerService.applyAnalysisToDraft(draft.id, aiAnalysis);
+      }
 
       // Update visibility/moderation if it's set to Public
       if (vis === "Public") {
@@ -260,13 +298,27 @@ const BuilderScreen: React.FC = () => {
             title="Mark 8-Counts"
             sub="Tap the timeline to mark each 8-count phrase"
             right={
-              <GradientButton
-                variant="outline"
-                className="text-[10px] px-3 py-2 flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3" />
-                Auto Detect (AI)
-              </GradientButton>
+              <>
+                <input
+                  ref={videoInputRef}
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleAnalyzeFile(f);
+                    e.target.value = "";
+                  }}
+                />
+                <GradientButton
+                  variant="outline"
+                  onClick={() => videoInputRef.current?.click()}
+                  className="text-[10px] px-3 py-2 flex items-center gap-1"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {analyzing ? `Analyzing ${analyzeProgress}%` : "Auto Detect (AI)"}
+                </GradientButton>
+              </>
             }
           >
             <div className="flex items-center gap-2">
@@ -288,6 +340,37 @@ const BuilderScreen: React.FC = () => {
               </div>
             </div>
             <div className="text-[10px] text-white/40 mt-2">00:00 / 02:47</div>
+
+            {aiAnalysis && (
+              <div className="mt-3 rounded-xl border border-cyan-400/30 bg-cyan-500/5 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-cyan-300 uppercase tracking-wider">
+                    AI Suggestions · Review before publishing
+                  </span>
+                  <span className="text-[9px] text-white/40">
+                    {aiAnalysis.sampledFrameCount} frames analyzed
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {(
+                    [
+                      ["Sections", aiAnalysis.suggestedCountSections.length],
+                      ["Direction cues", aiAnalysis.suggestedDirectionCues.length],
+                      ["Move hints", aiAnalysis.suggestedMoveHints.length],
+                    ] as [string, number][]
+                  ).map(([l, v]) => (
+                    <div key={l} className="rounded-lg border border-white/10 bg-white/[0.03] p-2">
+                      <div className="text-lg font-black text-white">{v}</div>
+                      <div className="text-[8px] text-white/50 uppercase">{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-white/50 mt-2">
+                  Suggested by AI from your video — applied to your draft when you publish so you can
+                  review and edit first. Not final.
+                </p>
+              </div>
+            )}
           </StepCard>
 
           <StepCard
