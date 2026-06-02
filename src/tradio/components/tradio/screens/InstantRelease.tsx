@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useState } from 'react';
 import { Upload, Music, Calendar, Zap, Image as ImageIcon, Radio, Globe, Send, Lock, Heart, Share2, Music2, ListMusic, Check, Sparkles } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, Toggle, PlayCircle, Waveform } from '../ui';
 import { IMG } from '../data';
