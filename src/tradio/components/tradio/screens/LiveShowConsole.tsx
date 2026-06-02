@@ -6,7 +6,6 @@ import {
   Phone,
   Volume2,
   Activity,
-  Sliders,
   Zap,
   Radio,
   Users,
@@ -37,13 +36,6 @@ export const LiveShowConsole: React.FC<{
     { id: 'c-3', name: 'Mila Rain', text: 'Line 3 • Pitching new vocal stem', status: 'queued', avatar: IMG.milaRain },
   ]);
   const [activeCaller, setActiveCaller] = useState<any>(null);
-  const [activeCallerVolume, setActiveCallerVolume] = useState(70);
-  const [callerFilter, setCallerFilter] = useState<'none' | 'radio' | 'autotune'>('none');
-
-  // Auto-Pitch / Vocal Correct (keeps host on key)
-  const [autoPitch, setAutoPitch] = useState(true);
-  const [vocalKey, setVocalKey] = useState('C# Minor');
-  const [vocalStrength, setVocalStrength] = useState(85);
 
   // Active segments Timeline
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(0);
@@ -355,22 +347,10 @@ export const LiveShowConsole: React.FC<{
                       <span className="rounded bg-emerald-500/15 text-[8px] font-mono text-emerald-300 px-1 py-0.5 font-bold uppercase tracking-wider">ON AIR SIGNAL</span>
                     </div>
                     <p className="text-xs text-emerald-200 mt-1">{activeCaller.text}</p>
-                    <div className="mt-1.5 flex items-center gap-1 text-[9px] font-mono text-emerald-300 font-bold uppercase">
-                      <Sliders className="h-3 w-3" /> Voice Filter: <span className="underline">{callerFilter.toUpperCase()}</span>
-                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                  {/* Filter selector */}
-                  <div className="flex gap-1 bg-black/40 border border-white/5 p-1 rounded-xl text-[9px] font-mono font-bold">
-                    {['none', 'radio', 'autotune'].map((f) => (
-                      <button key={f} onClick={() => setCallerFilter(f as any)} className={`px-2 py-1 rounded-lg ${callerFilter === f ? 'bg-emerald-500/20 text-emerald-300' : 'text-white/40'}`}>
-                        {f.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-
                   <button
                     onClick={handleDisconnectCaller}
                     className="rounded-xl bg-red-500/15 border border-red-500/20 text-red-300 hover:bg-red-500/25 px-4 py-2 text-xs font-bold uppercase shrink-0"
@@ -408,72 +388,8 @@ export const LiveShowConsole: React.FC<{
           </GlassCard>
         </div>
 
-        {/* RIGHT COLUMN: AUTO-PITCH Correction, SOUNDBOARD, FAN REACTIONS */}
+        {/* RIGHT COLUMN: SOUNDBOARD, FAN REACTIONS */}
         <div className="space-y-6">
-          {/* AUTO-PITCH CORRECTION & KEY ASSISTANT */}
-          <GlassCard glow className="p-5 border border-cyan-400/20 bg-gradient-to-br from-[#0c1a2d]/30 to-transparent space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 border border-cyan-400/20">
-                  <Activity className="h-5 w-5 text-cyan-300 animate-pulse" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-white flex items-center gap-1.5">Host Auto-Pitch Correction</h4>
-                  <p className="text-[10px] text-white/45">Keep vocal commentary locked to the musical scale</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setAutoPitch(!autoPitch)}
-                className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition ${
-                  autoPitch ? 'bg-cyan-500 text-black shadow-[0_0_12px_rgba(34,211,238,0.4)]' : 'border border-white/10 text-white/40'
-                }`}
-              >
-                {autoPitch ? 'Correcting' : 'Bypassed'}
-              </button>
-            </div>
-
-            {autoPitch && (
-              <div className="space-y-3 pt-3 border-t border-white/5 animate-scale-in">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-white/40 block mb-1">Lock To Scale</label>
-                    <select
-                      value={vocalKey}
-                      onChange={(e) => setVocalKey(e.target.value)}
-                      className="w-full text-xs font-bold text-white bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 outline-none"
-                    >
-                      {['C# Minor', 'F# Major', 'A Major', 'G# Minor', 'D Minor', 'Pentatonic Blues'].map((k) => (
-                        <option key={k} value={k}>{k.toUpperCase()}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[9px] font-black uppercase tracking-wider text-white/40 block mb-1">correction Strength</label>
-                    <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-xl px-2.5 py-1.5">
-                      <Sliders className="h-4 w-4 text-cyan-400" />
-                      <span className="text-xs font-mono font-bold text-white">{vocalStrength}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-[9px] font-black uppercase tracking-wider text-white/40 mb-1">
-                    <span>Correction mix curve</span>
-                    <span>Razor Edge</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
-                    value={vocalStrength}
-                    onChange={(e) => setVocalStrength(Number(e.target.value))}
-                    className="h-1.5 w-full cursor-pointer bg-white/10 rounded-full accent-cyan-400"
-                  />
-                </div>
-              </div>
-            )}
-          </GlassCard>
-
           {/* SOUND FX FXBOARD */}
           <GlassCard className="p-5 border-white/5">
             <div className="mb-3 flex items-center gap-2">
