@@ -53,7 +53,7 @@ import { LegalCenter } from './legal/LegalCenter';
 import LegalAdminDashboard from './legal/LegalAdminDashboard';
 import { LegalFooterLinks } from './legal/LegalPrimitives';
 import { PlayerProvider } from '@/tradio/contexts/PlayerContext';
-import { GlassCard, TradioLogo, Waveform } from './ui';
+import { GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from './ui';
 import { ModeSwitcher } from './auth/components';
 import { TradioIdentityProvider, useTradioIdentity } from './auth/useTradioIdentity';
 import { AccessRequestsProvider } from './auth/AccessRequestsContext';
@@ -79,6 +79,8 @@ const SCREEN_ICONS: Record<ScreenKey, React.ComponentType<{ className?: string }
   search: Search,
   library: Library,
   studio: BarChart3,
+  community: Users,
+  schedule: CalendarDays,
   artistHub: Users,
   producerHub: Sliders,
   djStudio: Disc,
