@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PrimaryButton, SecondaryButton, GlassCard } from '../ui';
+import { PrimaryButton, SecondaryButton, GlassCard } from './ui';
 import { coPilotReadRoom, coPilotSuggestLine, coPilotSuggestSongs } from '@/lib/trey-i/vertex.server';
 
 type CoPilotPanelProps = {
