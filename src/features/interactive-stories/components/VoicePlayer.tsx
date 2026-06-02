@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Volume2, VolumeX, Play, RotateCcw, Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from "react";
+import { Volume2, VolumeX, Play, RotateCcw, Loader2 } from "lucide-react";
 import {
   VOICE_PROFILES,
   VoiceCharacterId,
@@ -8,8 +8,8 @@ import {
   saveVoiceSettings,
   playVoiceLine,
   stopVoice,
-} from '../lib/voiceLines';
-import type { StoryVoiceConfig } from '../lib/storyVoiceTypes';
+} from "../lib/voiceLines";
+import type { StoryVoiceConfig } from "../lib/storyVoiceTypes";
 
 interface Props {
   /** Canonical character_id, or 'narrator'. */
@@ -112,15 +112,23 @@ export const VoicePlayer: React.FC<Props> = ({
           aria-label="Replay voice"
           className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white/90 hover:bg-white/20"
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3 w-3 fill-current" />}
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Play className="h-3 w-3 fill-current" />
+          )}
         </button>
         <button
           type="button"
           onClick={(event) => handleButton(event, toggleMute)}
-          aria-label={settings.muted ? 'Turn voices on' : 'Turn voices off'}
+          aria-label={settings.muted ? "Turn voices on" : "Turn voices off"}
           className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-white/70 hover:bg-white/15"
         >
-          {settings.muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+          {settings.muted ? (
+            <VolumeX className="h-3.5 w-3.5" />
+          ) : (
+            <Volume2 className="h-3.5 w-3.5" />
+          )}
         </button>
       </div>
     );
@@ -156,7 +164,7 @@ export const VoicePlayer: React.FC<Props> = ({
       <button
         type="button"
         onClick={(event) => handleButton(event, toggleMute)}
-        aria-label={settings.muted ? 'Turn voices on' : 'Turn voices off'}
+        aria-label={settings.muted ? "Turn voices on" : "Turn voices off"}
         className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/80 hover:bg-white/15"
       >
         {settings.muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -195,14 +203,13 @@ export const VoiceSettingsToolbar: React.FC = () => {
         }}
         className={`flex items-center gap-2 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-[0.15em] transition-colors border ${
           settings.muted
-            ? 'border-red-500/30 bg-red-500/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-            : 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.15)]'
+            ? "border-red-500/30 bg-red-500/10 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+            : "border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.15)]"
         }`}
       >
         {settings.muted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-        {settings.muted ? 'Muted' : 'Listening'}
+        {settings.muted ? "Muted" : "Listening"}
       </button>
     </div>
   );
 };
-

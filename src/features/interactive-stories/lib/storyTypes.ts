@@ -1,17 +1,21 @@
-import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter } from './storyVoiceTypes';
+import type {
+  StoryBeatVoiceLine,
+  StoryCharacterVoices,
+  StoryVoiceCharacter,
+} from "./storyVoiceTypes";
 
-export type Tone = 'Risky' | 'Safe' | 'Romantic' | 'Funny' | 'Bold';
+export type Tone = "Risky" | "Safe" | "Romantic" | "Funny" | "Bold";
 
 /** What kind of relationship pressure does this choice create? */
 export type RelationshipImpactType =
-  | 'Trust'
-  | 'Tension'
-  | 'Loyalty'
-  | 'Respect'
-  | 'Pressure'
-  | 'Distance'
-  | 'Bond'
-  | 'Rivalry';
+  | "Trust"
+  | "Tension"
+  | "Loyalty"
+  | "Respect"
+  | "Pressure"
+  | "Distance"
+  | "Bond"
+  | "Rivalry";
 
 export interface Choice {
   label: string;
@@ -46,7 +50,7 @@ export interface ChapterRecord {
   prose: string;
   image?: string;
   /** Optional per-package image framing. Installed .ttstory scenes can provide these. */
-  imageFit?: 'cover' | 'contain';
+  imageFit?: "cover" | "contain";
   imagePosition?: string;
   /** Locked scene id used to pull image metadata and resume playthroughs. */
   sceneId?: string;

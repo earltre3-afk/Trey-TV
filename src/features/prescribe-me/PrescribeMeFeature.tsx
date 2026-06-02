@@ -1,6 +1,6 @@
-import React from 'react';
-import PrescribeMeApp from './PrescribeMeApp';
-import { AppProvider } from './AppContext';
+import React from "react";
+import PrescribeMeApp from "./PrescribeMeApp";
+import { AppProvider } from "./AppContext";
 
 const PrescribeMeFeature: React.FC = () => {
   return (

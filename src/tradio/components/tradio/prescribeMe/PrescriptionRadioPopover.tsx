@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  X, 
-  Activity, 
-  Info, 
+import React, { useState, useEffect } from "react";
+import {
+  Sparkles,
+  X,
+  Activity,
+  Info,
   Radio,
   Sliders,
   ChevronRight,
   RefreshCw,
   Compass,
-  Play
-} from 'lucide-react';
-import type { TradioMode, Prescription, UserAnswers, DailyUsageState } from './prescribeMeTypes';
-import { 
-  getDailyUsageState, 
-  executeNewPrescription, 
-  refineCurrentPrescription, 
-  debugResetDailyLimit 
-} from './prescribeMeService';
-import { PrescribeMeQuestionFlow } from './PrescribeMeQuestionFlow';
-import { PrescriptionResultCard } from './PrescriptionResultCard';
-import { usePlayer } from '@/tradio/contexts/PlayerContext';
-import { IMG } from '../data';
-import { PolicyLinkInline } from '../legal/LegalPrimitives';
+  Play,
+} from "lucide-react";
+import type { TradioMode, Prescription, UserAnswers, DailyUsageState } from "./prescribeMeTypes";
+import {
+  getDailyUsageState,
+  executeNewPrescription,
+  refineCurrentPrescription,
+  debugResetDailyLimit,
+} from "./prescribeMeService";
+import { PrescribeMeQuestionFlow } from "./PrescribeMeQuestionFlow";
+import { PrescriptionResultCard } from "./PrescriptionResultCard";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
+import { IMG } from "../data";
+import { PolicyLinkInline } from "../legal/LegalPrimitives";
 
 interface PrescriptionRadioPopoverProps {
   onClose: () => void;
@@ -34,23 +34,25 @@ interface PrescriptionRadioPopoverProps {
 
 export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> = ({
   onClose,
-  currentMode = 'fan',
-  currentRoleLabel = 'Listener',
+  currentMode = "fan",
+  currentRoleLabel = "Listener",
   onOpenForge,
   onSetScreen,
 }) => {
   const { playStation } = usePlayer();
-  const userId = 'local-tradio-user-id'; // standard local session key
+  const userId = "local-tradio-user-id"; // standard local session key
 
   // Core popout States
   const [dailyUsage, setDailyUsage] = useState<DailyUsageState>(() => getDailyUsageState(userId));
   const [activePrescription, setActivePrescription] = useState<Prescription | null>(null);
-  
-  const [flowState, setFlowState] = useState<'welcome' | 'questions' | 'synthesizing' | 'result'>('welcome');
+
+  const [flowState, setFlowState] = useState<"welcome" | "questions" | "synthesizing" | "result">(
+    "welcome",
+  );
   const [activeAnswers, setActiveAnswers] = useState<UserAnswers | null>(null);
-  
+
   // Synthesizing Loading state
-  const [synthStep, setSynthStep] = useState('');
+  const [synthStep, setSynthStep] = useState("");
 
   // Parent/Child conceptual signals state
   const [sources, setSources] = useState({
@@ -65,19 +67,19 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
   const handleStartFlow = () => {
     if (dailyUsage.prescriptionsLeftToday <= 0) return;
-    setFlowState('questions');
+    setFlowState("questions");
   };
 
   const handleQuestionComplete = (answers: UserAnswers) => {
     setActiveAnswers(answers);
-    setFlowState('synthesizing');
+    setFlowState("synthesizing");
 
     const steps = [
-      'Decoding behavioral intent answers...',
-      'Tuning psychological energy signals...',
-      'Deconstructing molecular sound frequencies...',
-      'Syncing with active Tradio mode permissions...',
-      'Formulating custom Rx music prescription!'
+      "Decoding behavioral intent answers...",
+      "Tuning psychological energy signals...",
+      "Deconstructing molecular sound frequencies...",
+      "Syncing with active Tradio mode permissions...",
+      "Formulating custom Rx music prescription!",
     ];
 
     let currentStep = 0;
@@ -87,14 +89,14 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         currentStep++;
       } else {
         clearInterval(interval);
-        
+
         // Execute prescription deduction and generation
         const res = executeNewPrescription(userId, currentMode, answers);
         if (res.success && res.prescription) {
           setActivePrescription(res.prescription);
-          setFlowState('result');
+          setFlowState("result");
         } else {
-          setFlowState('welcome');
+          setFlowState("welcome");
         }
       }
     }, 700);
@@ -103,7 +105,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
   const handleViewLastPrescription = () => {
     if (dailyUsage.lastPrescription) {
       setActivePrescription(dailyUsage.lastPrescription);
-      setFlowState('result');
+      setFlowState("result");
     }
   };
 
@@ -116,14 +118,14 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
   const handleCtaRouteAction = () => {
     if (!activePrescription) return;
 
-    if (activePrescription.ctaType === 'start_radio') {
+    if (activePrescription.ctaType === "start_radio") {
       // Symmetrical launch sequence for Prescription Radio
       playStation({
-        id: 'ai-radio-for-you-live-signal',
-        type: 'station',
-        label: 'Prescription Radio',
+        id: "ai-radio-for-you-live-signal",
+        type: "station",
+        label: "Prescription Radio",
         title: activePrescription.title,
-        subtitle: 'Synthesized Live Formula',
+        subtitle: "Synthesized Live Formula",
         image: IMG.aiSphere,
         isLive: true,
         listenerCount: 18400,
@@ -133,12 +135,12 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
       // Route to destination screen keys
       if (onSetScreen) {
         const dest = activePrescription.destination;
-        if (dest === 'artistHub' || dest === 'release') {
-          onSetScreen('artistHub');
-        } else if (dest === 'producerHub' || dest === 'build') {
-          onSetScreen('producerHub');
-        } else if (dest === 'djStudio' || dest === 'showBuilder') {
-          onSetScreen('djStudio');
+        if (dest === "artistHub" || dest === "release") {
+          onSetScreen("artistHub");
+        } else if (dest === "producerHub" || dest === "build") {
+          onSetScreen("producerHub");
+        } else if (dest === "djStudio" || dest === "showBuilder") {
+          onSetScreen("djStudio");
         } else {
           onSetScreen(dest);
         }
@@ -151,7 +153,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
     const fresh = debugResetDailyLimit(userId);
     setDailyUsage(fresh);
     setActivePrescription(null);
-    setFlowState('welcome');
+    setFlowState("welcome");
   };
 
   return (
@@ -179,14 +181,16 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         {/* POP-OUT STAGES */}
 
         {/* 1. SYNTHESIZING GENERATOR LOADER */}
-        {flowState === 'synthesizing' && (
+        {flowState === "synthesizing" && (
           <div className="py-12 flex flex-col items-center justify-center text-center">
             <div className="relative h-20 w-20 mb-6 flex items-center justify-center">
               <span className="absolute inset-0 rounded-full border-2 border-t-cyan-400 border-r-purple-500 border-b-fuchsia-500 border-l-transparent animate-spin-fast" />
               <span className="absolute inset-[15%] rounded-full border border-b-cyan-400 border-l-purple-500 animate-spin-reverse" />
               <Activity className="h-6 w-6 text-cyan-300 animate-pulse" />
             </div>
-            <h3 className="text-sm font-mono font-black tracking-[0.25em] text-white uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">Formulating Route</h3>
+            <h3 className="text-sm font-mono font-black tracking-[0.25em] text-white uppercase drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+              Formulating Route
+            </h3>
             <div className="mt-3.5 text-[10px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded-full px-5 py-2 animate-pulse min-h-[32px] flex items-center justify-center">
               {synthStep}
             </div>
@@ -198,15 +202,15 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         )}
 
         {/* 2. LIVE QUESTION FLOW GRID */}
-        {flowState === 'questions' && (
-          <PrescribeMeQuestionFlow 
+        {flowState === "questions" && (
+          <PrescribeMeQuestionFlow
             onComplete={handleQuestionComplete}
-            onCancel={() => setFlowState('welcome')}
+            onCancel={() => setFlowState("welcome")}
           />
         )}
 
         {/* 3. FINAL PRESCRIPTION ROUTE RESULTS */}
-        {flowState === 'result' && activePrescription && (
+        {flowState === "result" && activePrescription && (
           <>
             {/* Result Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -216,11 +220,15 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   <Radio className="h-4 w-4 text-purple-300 animate-pulse-orb" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-mono font-black uppercase tracking-[0.2em] text-white">Prescribe Me</h2>
-                  <span className="text-[8px] font-mono text-white/40 block mt-0.5">{currentRoleLabel} Mode active</span>
+                  <h2 className="text-xs font-mono font-black uppercase tracking-[0.2em] text-white">
+                    Prescribe Me
+                  </h2>
+                  <span className="text-[8px] font-mono text-white/40 block mt-0.5">
+                    {currentRoleLabel} Mode active
+                  </span>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
@@ -228,20 +236,20 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
               </button>
             </div>
 
-            <PrescriptionResultCard 
+            <PrescriptionResultCard
               prescription={activePrescription}
               mode={currentMode}
               onRefine={handleRefine}
               onCtaClick={handleCtaRouteAction}
               onOpenForge={onOpenForge}
-              onRestart={() => setFlowState('questions')}
+              onRestart={() => setFlowState("questions")}
               dailyCount={dailyUsage.prescriptionsLeftToday}
             />
           </>
         )}
 
         {/* 4. WELCOME / EXCEEDED DAILY LIMIT LANDING */}
-        {flowState === 'welcome' && (
+        {flowState === "welcome" && (
           <>
             {/* Header Block */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -251,7 +259,9 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   <Radio className="h-4 w-4 text-purple-300 animate-pulse-orb" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-mono font-black uppercase tracking-[0.2em] text-white">Prescribe Me</h2>
+                  <h2 className="text-xs font-mono font-black uppercase tracking-[0.2em] text-white">
+                    Prescribe Me
+                  </h2>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-[8px] font-mono font-extrabold uppercase bg-purple-500/15 border border-purple-500/30 text-purple-300 px-1.5 py-0.5 rounded-md">
                       {currentRoleLabel} Mode
@@ -259,7 +269,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   </div>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
@@ -274,40 +284,63 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   <Info className="h-3 w-3 text-purple-300" />
                 </div>
                 <div className="text-[9.5px] sm:text-[10px] leading-snug sm:leading-relaxed text-purple-200/70">
-                  <strong className="text-purple-100 font-bold font-mono">Universe Route Me Bridge:</strong> <br />
-                  <span className="text-white/45">Trey TV Prescribe Me</span> routes the whole creative universe. <br />
-                  <span className="text-purple-300 font-semibold">Tradio Prescribe Me</span> routes the music/sound side.
+                  <strong className="text-purple-100 font-bold font-mono">
+                    Universe Route Me Bridge:
+                  </strong>{" "}
+                  <br />
+                  <span className="text-white/45">Trey TV Prescribe Me</span> routes the whole
+                  creative universe. <br />
+                  <span className="text-purple-300 font-semibold">Tradio Prescribe Me</span> routes
+                  the music/sound side.
                 </div>
               </div>
 
               {/* Conceptual Toggles */}
               <div className="border-t border-white/5 pt-2 sm:pt-2.5 space-y-1 sm:space-y-1.5">
                 <button
-                  onClick={() => setSources(prev => ({ ...prev, useTradioSignals: !prev.useTradioSignals }))}
+                  onClick={() =>
+                    setSources((prev) => ({ ...prev, useTradioSignals: !prev.useTradioSignals }))
+                  }
                   className="w-full flex items-center justify-between text-left text-[9px] font-mono font-medium text-white/60 hover:text-white transition-colors"
                 >
                   <span>Use Tradio music signals</span>
-                  <div className={`w-7 h-4 rounded-full border transition-all flex items-center px-0.5 ${
-                    sources.useTradioSignals ? 'bg-purple-500/25 border-purple-500/50 justify-end' : 'bg-black/40 border-white/10 justify-start'
-                  }`}>
-                    <span className={`w-2.5 h-2.5 rounded-full transition-all ${sources.useTradioSignals ? 'bg-purple-300 shadow-[0_0_6px_#c084fc]' : 'bg-white/30'}`} />
+                  <div
+                    className={`w-7 h-4 rounded-full border transition-all flex items-center px-0.5 ${
+                      sources.useTradioSignals
+                        ? "bg-purple-500/25 border-purple-500/50 justify-end"
+                        : "bg-black/40 border-white/10 justify-start"
+                    }`}
+                  >
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${sources.useTradioSignals ? "bg-purple-300 shadow-[0_0_6px_#c084fc]" : "bg-white/30"}`}
+                    />
                   </div>
                 </button>
 
                 <button
-                  onClick={() => setSources(prev => ({ ...prev, useTreyTVSignals: !prev.useTreyTVSignals }))}
+                  onClick={() =>
+                    setSources((prev) => ({ ...prev, useTreyTVSignals: !prev.useTreyTVSignals }))
+                  }
                   className="w-full flex items-center justify-between text-left text-[9px] font-mono font-medium text-white/60 hover:text-white transition-colors"
                 >
                   <span>Use Trey TV universe signals (Conceptual)</span>
-                  <div className={`w-7 h-4 rounded-full border transition-all flex items-center px-0.5 ${
-                    sources.useTreyTVSignals ? 'bg-cyan-500/25 border-cyan-500/50 justify-end' : 'bg-black/40 border-white/10 justify-start'
-                  }`}>
-                    <span className={`w-2.5 h-2.5 rounded-full transition-all ${sources.useTreyTVSignals ? 'bg-cyan-300 shadow-[0_0_6px_#22d3ee]' : 'bg-white/30'}`} />
+                  <div
+                    className={`w-7 h-4 rounded-full border transition-all flex items-center px-0.5 ${
+                      sources.useTreyTVSignals
+                        ? "bg-cyan-500/25 border-cyan-500/50 justify-end"
+                        : "bg-black/40 border-white/10 justify-start"
+                    }`}
+                  >
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full transition-all ${sources.useTreyTVSignals ? "bg-cyan-300 shadow-[0_0_6px_#22d3ee]" : "bg-white/30"}`}
+                    />
                   </div>
                 </button>
               </div>
               <div className="flex flex-wrap gap-1 sm:gap-1.5 border-t border-white/5 pt-2 sm:pt-2.5">
-                <PolicyLinkInline target="prescribe-me">AI / Prescribe Me Explanation</PolicyLinkInline>
+                <PolicyLinkInline target="prescribe-me">
+                  AI / Prescribe Me Explanation
+                </PolicyLinkInline>
                 <PolicyLinkInline target="privacy-choices">Privacy Choices</PolicyLinkInline>
               </div>
             </div>
@@ -319,11 +352,14 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span className="text-[11px] sm:text-xs font-bold text-white font-mono">
-                      {dailyUsage.prescriptionsLeftToday} {dailyUsage.prescriptionsLeftToday === 1 ? 'prescription' : 'prescriptions'} left today
+                      {dailyUsage.prescriptionsLeftToday}{" "}
+                      {dailyUsage.prescriptionsLeftToday === 1 ? "prescription" : "prescriptions"}{" "}
+                      left today
                     </span>
                   </div>
                   <p className="text-[10.5px] sm:text-[11px] text-white/50 leading-normal sm:leading-relaxed max-w-sm mx-auto">
-                    Start a guided, question-based AI diagnosis flow to map your psychological need, emotional energy, and desired shift to the perfect content route.
+                    Start a guided, question-based AI diagnosis flow to map your psychological need,
+                    emotional energy, and desired shift to the perfect content route.
                   </p>
 
                   <button
@@ -342,7 +378,8 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                     </span>
                   </div>
                   <p className="text-[10.5px] sm:text-[11px] text-white/50 leading-normal sm:leading-relaxed max-w-sm mx-auto">
-                    You've used both of today's sound prescriptions. Come back tomorrow for a new diagnosis! Your limit ensures prescriptions remain highly valuable and focused.
+                    You've used both of today's sound prescriptions. Come back tomorrow for a new
+                    diagnosis! Your limit ensures prescriptions remain highly valuable and focused.
                   </p>
 
                   <div className="pt-1.5 sm:pt-2">
@@ -371,7 +408,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
             {/* Debug reset (Bottom mini bar) */}
             <div className="flex justify-between items-center text-[8px] font-mono text-white/20 pl-1">
               <span>TRADIO CLIENT Rx ENGINE</span>
-              <button 
+              <button
                 onClick={handleDebugReset}
                 className="hover:text-purple-400/80 underline uppercase tracking-wider"
               >

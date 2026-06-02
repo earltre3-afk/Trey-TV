@@ -1,18 +1,41 @@
-import React from 'react';
-import { Heart, Download, ListMusic, Users, Clock, ChevronRight, Shuffle, Sparkles, MoreHorizontal, Pin } from 'lucide-react';
-import { TopBar, GlassCard, PrimaryButton, PlayCircle, SectionHeader, Waveform } from '../ui';
-import { IMG, COLLECTIONS, TRACKS } from '../data';
-import { usePlayer } from '@/tradio/contexts/PlayerContext';
-import { TradioImage } from '../NoCoverVisualizer';
-import { PrescriptionRail } from '../auth/components';
+import React from "react";
+import {
+  Heart,
+  Download,
+  ListMusic,
+  Users,
+  Clock,
+  ChevronRight,
+  Shuffle,
+  Sparkles,
+  MoreHorizontal,
+  Pin,
+} from "lucide-react";
+import { TopBar, GlassCard, PrimaryButton, PlayCircle, SectionHeader, Waveform } from "../ui";
+import { IMG, COLLECTIONS, TRACKS } from "../data";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
+import { TradioImage } from "../NoCoverVisualizer";
+import { PrescriptionRail } from "../auth/components";
 
 const TILES = [
-  { icon: <Heart className="h-6 w-6 text-purple-300" />, title: 'Saved Stations', sub: '24 stations' },
-  { icon: <Heart className="h-6 w-6 text-pink-400" />, title: 'Liked Songs', sub: '312 songs' },
-  { icon: <Download className="h-6 w-6 text-purple-300" />, title: 'Downloads', sub: '89 songs' },
-  { icon: <ListMusic className="h-6 w-6 text-purple-300" />, title: 'Playlists', sub: '18 playlists' },
-  { icon: <Users className="h-6 w-6 text-cyan-300" />, title: 'Artists', sub: '128 followed' },
-  { icon: <Clock className="h-6 w-6 text-purple-300" />, title: 'Recently Played', sub: '50 tracks' },
+  {
+    icon: <Heart className="h-6 w-6 text-purple-300" />,
+    title: "Saved Stations",
+    sub: "24 stations",
+  },
+  { icon: <Heart className="h-6 w-6 text-pink-400" />, title: "Liked Songs", sub: "312 songs" },
+  { icon: <Download className="h-6 w-6 text-purple-300" />, title: "Downloads", sub: "89 songs" },
+  {
+    icon: <ListMusic className="h-6 w-6 text-purple-300" />,
+    title: "Playlists",
+    sub: "18 playlists",
+  },
+  { icon: <Users className="h-6 w-6 text-cyan-300" />, title: "Artists", sub: "128 followed" },
+  {
+    icon: <Clock className="h-6 w-6 text-purple-300" />,
+    title: "Recently Played",
+    sub: "50 tracks",
+  },
 ];
 
 export const LibraryScreen: React.FC = () => {
@@ -47,7 +70,7 @@ export const LibraryScreen: React.FC = () => {
       {/* Tiles */}
       <div className="grid grid-cols-2 gap-3 px-4 sm:px-6 lg:px-10">
         {TILES.map((t) => {
-          const isLiked = t.title === 'Liked Songs';
+          const isLiked = t.title === "Liked Songs";
           const sub = isLiked ? `${312 + liked.size} songs` : t.sub;
           return (
             <GlassCard key={t.title} className="flex items-center gap-3 p-3.5">
@@ -136,7 +159,9 @@ export const LibraryScreen: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-white">Let AI organize your library</div>
-            <div className="text-[11px] text-white/55">Smart albums, mood sets, and more. All personalized for you.</div>
+            <div className="text-[11px] text-white/55">
+              Smart albums, mood sets, and more. All personalized for you.
+            </div>
           </div>
           <PrimaryButton className="px-3 py-2 text-xs">
             <Sparkles className="h-3.5 w-3.5" /> Try AI

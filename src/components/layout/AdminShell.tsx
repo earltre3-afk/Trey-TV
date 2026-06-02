@@ -3,8 +3,24 @@ import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { AppShell } from "./AppShell";
 import {
-  ShieldCheck, LayoutDashboard, FileCheck2, Crown, Users, Flag, Film, BarChart3, Sparkles, Settings,
-  BadgeCheck, Gift, Palette, FileText, History, Eye, ScrollText, Route as RouteIcon,
+  ShieldCheck,
+  LayoutDashboard,
+  FileCheck2,
+  Crown,
+  Users,
+  Flag,
+  Film,
+  BarChart3,
+  Sparkles,
+  Settings,
+  BadgeCheck,
+  Gift,
+  Palette,
+  FileText,
+  History,
+  Eye,
+  ScrollText,
+  Route as RouteIcon,
 } from "lucide-react";
 
 const NAV = [
@@ -38,7 +54,15 @@ const APP_ACCESS = [
   { to: "/creator-studio/submit", label: "Submit Content" },
 ] as const;
 
-export function AdminShell({ children, title, subtitle }: { children: ReactNode; title?: string; subtitle?: string }) {
+export function AdminShell({
+  children,
+  title,
+  subtitle,
+}: {
+  children: ReactNode;
+  title?: string;
+  subtitle?: string;
+}) {
   const { isAdmin } = useAuth();
   const path = useRouterState({ select: (r) => r.location.pathname });
   if (!isAdmin) return <Navigate to="/login" />;
@@ -49,9 +73,19 @@ export function AdminShell({ children, title, subtitle }: { children: ReactNode;
         {/* Top admin banner — animated aurora */}
         <div className="relative rounded-3xl overflow-hidden border border-[oklch(0.7_0.25_340_/_0.4)] glow-purple">
           <div aria-hidden className="absolute inset-0 admin-aurora" />
-          <div aria-hidden className="absolute -top-24 -right-16 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.35)] blur-3xl animate-float" />
-          <div aria-hidden className="absolute -bottom-24 -left-16 size-72 rounded-full bg-[oklch(0.82_0.16_85_/_0.3)] blur-3xl animate-float" style={{ animationDelay: "1.4s" }} />
-          <div aria-hidden className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(oklch(1_0_0)_1px,transparent_1px),linear-gradient(90deg,oklch(1_0_0)_1px,transparent_1px)] bg-[size:22px_22px]" />
+          <div
+            aria-hidden
+            className="absolute -top-24 -right-16 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.35)] blur-3xl animate-float"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-24 -left-16 size-72 rounded-full bg-[oklch(0.82_0.16_85_/_0.3)] blur-3xl animate-float"
+            style={{ animationDelay: "1.4s" }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(oklch(1_0_0)_1px,transparent_1px),linear-gradient(90deg,oklch(1_0_0)_1px,transparent_1px)] bg-[size:22px_22px]"
+          />
           <div aria-hidden className="absolute inset-0 shimmer-sweep pointer-events-none" />
 
           <div className="relative p-4 md:p-5 flex items-center gap-3 backdrop-blur-md">
@@ -59,8 +93,12 @@ export function AdminShell({ children, title, subtitle }: { children: ReactNode;
               <ShieldCheck className="size-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] tracking-[0.35em] text-[oklch(0.85_0.2_340)] font-semibold">OWNER · ADMIN CONSOLE</div>
-              <h1 className="text-xl md:text-2xl font-bold truncate text-gradient-prescribe">{title ?? "Site Management"}</h1>
+              <div className="text-[10px] tracking-[0.35em] text-[oklch(0.85_0.2_340)] font-semibold">
+                OWNER · ADMIN CONSOLE
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold truncate text-gradient-prescribe">
+                {title ?? "Site Management"}
+              </h1>
               {subtitle && <div className="text-xs text-muted-foreground">{subtitle}</div>}
             </div>
             <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full glass border border-white/10 text-[10px] tracking-[0.2em] font-semibold">
@@ -85,10 +123,15 @@ export function AdminShell({ children, title, subtitle }: { children: ReactNode;
                 }`}
                 style={{ animation: `counter-up 0.4s ${i * 35}ms both` }}
               >
-                <n.icon className={`size-3.5 transition-transform duration-300 ${active ? "" : "group-hover:rotate-12"}`} />
+                <n.icon
+                  className={`size-3.5 transition-transform duration-300 ${active ? "" : "group-hover:rotate-12"}`}
+                />
                 {n.label}
                 {active && (
-                  <span aria-hidden className="absolute inset-x-2 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-2 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent"
+                  />
                 )}
               </Link>
             );

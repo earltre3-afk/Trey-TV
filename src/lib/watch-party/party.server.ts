@@ -15,7 +15,11 @@ type RpcSuccess<T> = { ok: true } & T;
 type RpcError = { ok: false; error: string; reason?: string; timeoutMinutes?: number };
 type Rpc<T> = RpcSuccess<T> | RpcError;
 
-const err = (error: string, extra?: Partial<RpcError>): RpcError => ({ ok: false, error, ...extra });
+const err = (error: string, extra?: Partial<RpcError>): RpcError => ({
+  ok: false,
+  error,
+  ...extra,
+});
 
 // ── 1. create_watch_party ───────────────────────────────────────────────────
 export const createWatchParty = createServerFn({ method: "POST" })
@@ -90,13 +94,24 @@ export const changePartyChannel = createServerFn({ method: "POST" })
 
 // ── 4. set_member_flag (host action: kick / mute_chat / mute_mic) ───────────
 export const setMemberFlag = createServerFn({ method: "POST" })
-  .inputValidator((input: { accessToken: string; partyId: string; targetUserId: string; field: "kicked" | "muted_chat" | "muted_mic"; value: boolean }) => ({
-    accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
-    partyId: typeof input?.partyId === "string" ? input.partyId.slice(0, 64) : "",
-    targetUserId: typeof input?.targetUserId === "string" ? input.targetUserId.slice(0, 64) : "",
-    field: input?.field === "kicked" || input?.field === "muted_chat" || input?.field === "muted_mic" ? input.field : "muted_chat",
-    value: Boolean(input?.value),
-  }))
+  .inputValidator(
+    (input: {
+      accessToken: string;
+      partyId: string;
+      targetUserId: string;
+      field: "kicked" | "muted_chat" | "muted_mic";
+      value: boolean;
+    }) => ({
+      accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
+      partyId: typeof input?.partyId === "string" ? input.partyId.slice(0, 64) : "",
+      targetUserId: typeof input?.targetUserId === "string" ? input.targetUserId.slice(0, 64) : "",
+      field:
+        input?.field === "kicked" || input?.field === "muted_chat" || input?.field === "muted_mic"
+          ? input.field
+          : "muted_chat",
+      value: Boolean(input?.value),
+    }),
+  )
   .handler(async ({ data }): Promise<Rpc<{}>> => {
     if (!data.partyId || !data.targetUserId) return err("missing_args");
     const { supabase, user } = await verifyTreyIUser(data.accessToken);
@@ -297,6 +312,6 @@ export const postChatMessage = createServerFn({ method: "POST" })
     return {
       ok: true,
       messageId: row.id as string,
-      nudge: verdict.verdict === "nudge" ? (verdict.reason || "keep it civil") : null,
+      nudge: verdict.verdict === "nudge" ? verdict.reason || "keep it civil" : null,
     };
   });

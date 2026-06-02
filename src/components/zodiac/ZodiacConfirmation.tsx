@@ -37,18 +37,25 @@ export function ZodiacConfirmation({
         <div
           className="absolute left-1/2 top-1/2 size-96 -translate-x-1/2 -translate-y-1/2 rounded-full"
           style={{
-            background: "conic-gradient(from 0deg, oklch(0.82 0.16 85 / 0.3), transparent 25%, transparent 75%, oklch(0.65 0.22 300 / 0.3))",
+            background:
+              "conic-gradient(from 0deg, oklch(0.82 0.16 85 / 0.3), transparent 25%, transparent 75%, oklch(0.65 0.22 300 / 0.3))",
             filter: "blur(60px)",
             animation: "conic-spin 8s linear infinite",
           }}
         />
         <div
           className="absolute right-20 top-20 size-72 rounded-full"
-          style={{ background: "radial-gradient(circle, oklch(0.7 0.25 340 / 0.25), transparent 70%)", filter: "blur(80px)" }}
+          style={{
+            background: "radial-gradient(circle, oklch(0.7 0.25 340 / 0.25), transparent 70%)",
+            filter: "blur(80px)",
+          }}
         />
         <div
           className="absolute bottom-20 left-20 size-72 rounded-full"
-          style={{ background: "radial-gradient(circle, oklch(0.82 0.15 215 / 0.2), transparent 70%)", filter: "blur(80px)" }}
+          style={{
+            background: "radial-gradient(circle, oklch(0.82 0.15 215 / 0.2), transparent 70%)",
+            filter: "blur(80px)",
+          }}
         />
       </div>
 
@@ -57,7 +64,8 @@ export function ZodiacConfirmation({
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: "conic-gradient(from 0deg, oklch(0.82 0.16 85), oklch(0.7 0.25 340), oklch(0.65 0.22 300), oklch(0.82 0.15 215), oklch(0.82 0.16 85))",
+              background:
+                "conic-gradient(from 0deg, oklch(0.82 0.16 85), oklch(0.7 0.25 340), oklch(0.65 0.22 300), oklch(0.82 0.15 215), oklch(0.82 0.16 85))",
               padding: "2px",
               animation: "conic-spin 6s linear infinite",
             }}
@@ -68,7 +76,10 @@ export function ZodiacConfirmation({
           </div>
           <div
             className="absolute inset-0 rounded-full"
-            style={{ background: "radial-gradient(circle, oklch(0.82 0.16 85 / 0.4), transparent 70%)", filter: "blur(20px)" }}
+            style={{
+              background: "radial-gradient(circle, oklch(0.82 0.16 85 / 0.4), transparent 70%)",
+              filter: "blur(20px)",
+            }}
           />
         </div>
 
@@ -87,11 +98,14 @@ export function ZodiacConfirmation({
             {isCusp ? (
               <>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Two Energies</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Two Energies
+                  </p>
                   <p className="text-sm font-medium">The Between Worlds Badge</p>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  {cuspNote ?? "Your birth falls on the threshold between two signs. You embody dual cosmic energies, granting access to both zodiac groups and rare cusp-only experiences."}
+                  {cuspNote ??
+                    "Your birth falls on the threshold between two signs. You embody dual cosmic energies, granting access to both zodiac groups and rare cusp-only experiences."}
                 </p>
               </>
             ) : (
@@ -101,7 +115,8 @@ export function ZodiacConfirmation({
                   <p className="text-sm font-medium">Connected to Your Sign's Energy</p>
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  You're now linked to your cosmic community. Receive daily personalized readings and join groups matched by Trey TV.
+                  You're now linked to your cosmic community. Receive daily personalized readings
+                  and join groups matched by Trey TV.
                 </p>
               </>
             )}
@@ -125,7 +140,10 @@ export function ZodiacConfirmation({
               onTouchEnd={resetIfLocked}
               className="glass-strong group relative h-14 cursor-grab overflow-hidden rounded-full active:cursor-grabbing"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-[#ffc857] via-[#a855f7] to-[#06b6d4] opacity-30 transition-all" style={{ width: `${unlockProgress * 100}%` }} />
+              <div
+                className="absolute inset-0 bg-gradient-to-r from-[#ffc857] via-[#a855f7] to-[#06b6d4] opacity-30 transition-all"
+                style={{ width: `${unlockProgress * 100}%` }}
+              />
               <div
                 className="absolute top-1/2 flex size-12 -translate-y-1/2 items-center justify-center rounded-full bg-gradient-to-br from-[#ffc857] to-[#a855f7] shadow-lg transition-all"
                 style={{ left: `${unlockProgress * (100 - 12)}%` }}
@@ -150,11 +168,17 @@ export function ZodiacConfirmation({
               Identity Confirmed
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={onShare} className="glass flex items-center justify-center gap-2 rounded-xl px-4 py-3 transition-colors hover:bg-[oklch(1_0_0_/_0.08)]">
+              <button
+                onClick={onShare}
+                className="glass flex items-center justify-center gap-2 rounded-xl px-4 py-3 transition-colors hover:bg-[oklch(1_0_0_/_0.08)]"
+              >
                 <Share2 className="size-4" />
                 Share
               </button>
-              <button onClick={onConfirm} className="rounded-xl border border-[oklch(1_0_0_/_0.15)] px-4 py-3 font-medium transition-colors hover:bg-[oklch(1_0_0_/_0.05)]">
+              <button
+                onClick={onConfirm}
+                className="rounded-xl border border-[oklch(1_0_0_/_0.15)] px-4 py-3 font-medium transition-colors hover:bg-[oklch(1_0_0_/_0.05)]"
+              >
                 Continue
               </button>
             </div>

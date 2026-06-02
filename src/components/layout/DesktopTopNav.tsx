@@ -2,8 +2,25 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import {
-  Home, Compass, CalendarDays, Inbox, Sparkles, Heart, Gem, Bell, Search,
-  Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn, LogOut, Award,
+  Home,
+  Compass,
+  CalendarDays,
+  Inbox,
+  Sparkles,
+  Heart,
+  Gem,
+  Bell,
+  Search,
+  Crown,
+  BarChart3,
+  Settings,
+  Bookmark,
+  Radio,
+  Users,
+  ChevronDown,
+  LogIn,
+  LogOut,
+  Award,
   Music,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
@@ -110,7 +127,11 @@ export function DesktopTopNav() {
                     <span className="relative size-2.5 rounded-full bg-cyan-400 [filter:drop-shadow(0_0_4px_rgba(34,211,238,0.8))]" />
                   </span>
                 ) : (
-                  l.icon && (() => { const Icon = l.icon; return <Icon className="size-4" />; })()
+                  l.icon &&
+                  (() => {
+                    const Icon = l.icon;
+                    return <Icon className="size-4" />;
+                  })()
                 )}
                 {l.to === "/tradio" ? (
                   <span className="bg-gradient-to-r from-fuchsia-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_6px_rgba(168,85,247,0.25)] font-bold">
@@ -145,7 +166,8 @@ export function DesktopTopNav() {
                 aria-haspopup="menu"
                 aria-expanded={moreOpen}
               >
-                More <ChevronDown className={`size-3.5 transition ${moreOpen ? "rotate-180" : ""}`} />
+                More{" "}
+                <ChevronDown className={`size-3.5 transition ${moreOpen ? "rotate-180" : ""}`} />
               </button>
               {moreOpen && (
                 <>
@@ -228,7 +250,12 @@ export function DesktopTopNav() {
                 className="relative size-10 rounded-full conic-ring shrink-0"
                 aria-label="Profile"
               >
-                <img src={profileAvatar || undefined} alt="" className="size-full rounded-full object-cover" loading="lazy" />
+                <img
+                  src={profileAvatar || undefined}
+                  alt=""
+                  className="size-full rounded-full object-cover"
+                  loading="lazy"
+                />
               </Link>
               <button
                 onClick={() => void handleSignOut()}

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { shouldAdvance, pacingState, type PacingStatus } from '@/lib/tradio/showRundown';
-import type { ShowSegment } from './data';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { shouldAdvance, pacingState, type PacingStatus } from "@/lib/tradio/showRundown";
+import type { ShowSegment } from "./data";
 
 export interface ShowRundownState {
   currentIndex: number;
@@ -61,7 +61,9 @@ export function useShowRundown(opts: {
   // Auto-advance when the (possibly extended) segment runs out.
   useEffect(() => {
     if (!active || !autoPilot) return;
-    const effective = segments.map((s, i) => (i === currentIndex ? { duration: s.duration + extra } : { duration: s.duration }));
+    const effective = segments.map((s, i) =>
+      i === currentIndex ? { duration: s.duration + extra } : { duration: s.duration },
+    );
     if (shouldAdvance({ segments: effective, currentIndex, elapsedInSegment })) {
       enterSegment(currentIndex + 1);
     }

@@ -9,12 +9,14 @@
 ## Task 1 — Define internal types and pure helper functions
 
 **Files involved:**
+
 - `src/hooks/use-creator-submit.ts` (new file)
 
 **What to do:**
 Create `src/hooks/use-creator-submit.ts` with only types and pure helper functions — no React, no Supabase calls yet.
 
 Include:
+
 1. `EditProjectInsert` internal type (unexported)
 2. `UseCreatorSubmitReturn` type (exported)
 3. `isNewRow(contentId: string): boolean` — pure function (see design.md §4)
@@ -23,6 +25,7 @@ Include:
 Import `Submission` type-only from `@/lib/submissions-store`.
 
 **Acceptance criteria:**
+
 - File compiles with zero TypeScript errors.
 - No React imports, no Supabase imports.
 - `pnpm tsc --noEmit` passes.
@@ -32,6 +35,7 @@ Import `Submission` type-only from `@/lib/submissions-store`.
 **Rollback risk:** None.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -41,6 +45,7 @@ pnpm tsc --noEmit
 ## Task 2 — Implement `useCreatorSubmit()` hook
 
 **Files involved:**
+
 - `src/hooks/use-creator-submit.ts`
 - `src/lib/supabase-browser.ts` (read-only reference)
 
@@ -63,6 +68,7 @@ Add the `useCreatorSubmit()` hook:
 5. Export `useCreatorSubmit` as named export.
 
 **Acceptance criteria:**
+
 - Hook compiles with zero TypeScript errors.
 - Signed-out path returns `null` / `false` without querying Supabase.
 - `pnpm tsc --noEmit` passes.
@@ -73,6 +79,7 @@ Add the `useCreatorSubmit()` hook:
 **Rollback risk:** Low. New file, nothing imports it yet.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -83,6 +90,7 @@ pnpm build
 ## Task 3 — Wire `useCreatorSubmit()` into `creator-studio.submit.tsx`
 
 **Files involved:**
+
 - `src/routes/creator-studio.submit.tsx`
 - `src/hooks/use-creator-submit.ts` (read-only)
 
@@ -90,16 +98,19 @@ pnpm build
 Make four targeted additions to `creator-studio.submit.tsx`:
 
 1. Add import:
+
    ```ts
-   import { useCreatorSubmit } from '@/hooks/use-creator-submit';
+   import { useCreatorSubmit } from "@/hooks/use-creator-submit";
    ```
 
 2. Inside the `Form` component, add:
+
    ```ts
    const { saveDraft, submitForReview } = useCreatorSubmit();
    ```
 
 3. Update `saveSilent`:
+
    ```ts
    const saveSilent = () => {
      store.updateDraft(d.content_id, d);
@@ -110,9 +121,13 @@ Make four targeted additions to `creator-studio.submit.tsx`:
 4. Update `onSubmit` to be `async` and call `submitForReview`:
    ```ts
    const onSubmit = async () => {
-     if (!canSubmit) { toast.error("Complete the checklist to submit."); return; }
+     if (!canSubmit) {
+       toast.error("Complete the checklist to submit.");
+       return;
+     }
      if (seriesMode === "new" && newShow.title) {
-       d.show_title = newShow.title; d.show_id = newShow.title.toLowerCase().replace(/\s+/g, "-");
+       d.show_title = newShow.title;
+       d.show_id = newShow.title.toLowerCase().replace(/\s+/g, "-");
      }
      store.updateDraft(d.content_id, d);
      store.submit(d.content_id);
@@ -124,6 +139,7 @@ Make four targeted additions to `creator-studio.submit.tsx`:
 Do not change any JSX, form sections, checklist logic, or other function bodies.
 
 **Acceptance criteria:**
+
 - "Save Draft" button calls `saveDraft()` in addition to the local store update.
 - "Submit for Admin Approval" button calls `submitForReview()` and navigates on completion.
 - Signed-out / non-creator: hook is a no-op, navigation still proceeds via local store.
@@ -136,6 +152,7 @@ Do not change any JSX, form sections, checklist logic, or other function bodies.
 **Rollback risk:** Medium. Rollback: remove the import, the hook call, and revert `saveSilent` and `onSubmit` to their original one-liners.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -146,10 +163,12 @@ pnpm build
 ## Task 4 — Final cleanup and verification
 
 **Files involved:**
+
 - `src/hooks/use-creator-submit.ts`
 - `src/routes/creator-studio.submit.tsx`
 
 **What to do:**
+
 1. Remove any unused imports from both files.
 2. Confirm `submissions-store.tsx` is byte-for-byte unchanged.
 3. Confirm `creator-studio.edit.tsx` is byte-for-byte unchanged.
@@ -158,6 +177,7 @@ pnpm build
 6. Run full type check and build.
 
 **Acceptance criteria:**
+
 - Zero TypeScript errors: `pnpm tsc --noEmit`.
 - Clean production build: `pnpm build`.
 - No unused imports.
@@ -170,6 +190,7 @@ pnpm build
 **Rollback risk:** None. Cleanup only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -179,12 +200,12 @@ pnpm build
 
 ## Summary Table
 
-| # | Task | Files | Risk | Validation |
-|---|---|---|---|---|
-| 1 | Types and pure helpers | use-creator-submit.ts (new) | None | tsc |
-| 2 | Implement useCreatorSubmit() hook | use-creator-submit.ts | Low | tsc + build |
-| 3 | Wire hook into creator-studio.submit.tsx | creator-studio.submit.tsx | Medium | tsc + build |
-| 4 | Final cleanup and verification | both | None | tsc + build |
+| #   | Task                                     | Files                       | Risk   | Validation  |
+| --- | ---------------------------------------- | --------------------------- | ------ | ----------- |
+| 1   | Types and pure helpers                   | use-creator-submit.ts (new) | None   | tsc         |
+| 2   | Implement useCreatorSubmit() hook        | use-creator-submit.ts       | Low    | tsc + build |
+| 3   | Wire hook into creator-studio.submit.tsx | creator-studio.submit.tsx   | Medium | tsc + build |
+| 4   | Final cleanup and verification           | both                        | None   | tsc + build |
 
 All tasks are sequential. Do not start a task until the previous task's validation passes.
 

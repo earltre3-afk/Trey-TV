@@ -1,43 +1,55 @@
-import React from 'react';
-import StepShell from './StepShell';
-import { LiquidGlassCard, NeonGlassButton } from './LiquidGlass';
-import { Cloud, Zap, Heart, ChevronRight } from 'lucide-react';
-import type { Energy } from './data';
+import React from "react";
+import StepShell from "./StepShell";
+import { LiquidGlassCard, NeonGlassButton } from "./LiquidGlass";
+import { Cloud, Zap, Heart, ChevronRight } from "lucide-react";
+import type { Energy } from "./data";
 
 interface Opt {
   value: Energy;
   title: string;
   desc: string;
   color: string;
-  accent: 'purple' | 'gold' | 'cyan' | 'pink';
+  accent: "purple" | "gold" | "cyan" | "pink";
   icon: React.ReactNode;
 }
 
 // PDF: exactly 3 options (Soft, Balanced, High Energy) in a single row.
 const OPTS: Opt[] = [
   {
-    value: 'Soft', title: 'Soft',
-    desc: 'Calm and easy.',
-    color: '#c084fc', accent: 'purple',
+    value: "Soft",
+    title: "Soft",
+    desc: "Calm and easy.",
+    color: "#c084fc",
+    accent: "purple",
     icon: <Cloud className="w-8 h-8" />,
   },
   {
-    value: 'Balanced', title: 'Balanced',
-    desc: 'Focused and clear.',
-    color: '#fbbf24', accent: 'gold',
+    value: "Balanced",
+    title: "Balanced",
+    desc: "Focused and clear.",
+    color: "#fbbf24",
+    accent: "gold",
     icon: <YinYang />,
   },
   {
-    value: 'High Energy', title: 'High Energy',
-    desc: 'Up and active.',
-    color: '#67e8f9', accent: 'cyan',
+    value: "High Energy",
+    title: "High Energy",
+    desc: "Up and active.",
+    color: "#67e8f9",
+    accent: "cyan",
     icon: <Zap className="w-8 h-8" />,
   },
 ];
 
 function YinYang() {
   return (
-    <svg viewBox="0 0 24 24" className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      viewBox="0 0 24 24"
+      className="w-8 h-8"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="12" cy="12" r="9" />
       <path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9" />
       <circle cx="12" cy="7.5" r="1" fill="currentColor" />
@@ -80,8 +92,8 @@ const Waveform: React.FC = () => (
             fill="url(#wfg)"
             style={{
               animation: `wfBar 1.6s ease-in-out ${i * 0.04}s infinite alternate`,
-              transformOrigin: 'center',
-              filter: 'drop-shadow(0 0 5px rgba(236,72,153,0.6))',
+              transformOrigin: "center",
+              filter: "drop-shadow(0 0 5px rgba(236,72,153,0.6))",
             }}
           />
         );
@@ -96,7 +108,13 @@ const EnergySelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step
     <StepShell
       step={step}
       totalSteps={total}
-      title={<>What energy are<br />you looking for?</>}
+      title={
+        <>
+          What energy are
+          <br />
+          you looking for?
+        </>
+      }
       onBack={onBack}
       footer={
         <NeonGlassButton onClick={onNext} disabled={!value} className="w-full">
@@ -125,8 +143,10 @@ const EnergySelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step
                 <div
                   className="w-12 h-12 rounded-full bg-black/50 border flex items-center justify-center mt-1"
                   style={{
-                    borderColor: selected ? o.color : 'rgba(255,255,255,0.15)',
-                    boxShadow: selected ? `0 0 24px ${o.color}cc, inset 0 0 14px ${o.color}66` : 'none',
+                    borderColor: selected ? o.color : "rgba(255,255,255,0.15)",
+                    boxShadow: selected
+                      ? `0 0 24px ${o.color}cc, inset 0 0 14px ${o.color}66`
+                      : "none",
                     color: o.color,
                   }}
                 >
@@ -141,7 +161,11 @@ const EnergySelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step
                 {selected && (
                   <Heart
                     className="w-3 h-3"
-                    style={{ color: o.color, fill: o.color, filter: `drop-shadow(0 0 6px ${o.color})` }}
+                    style={{
+                      color: o.color,
+                      fill: o.color,
+                      filter: `drop-shadow(0 0 6px ${o.color})`,
+                    }}
                   />
                 )}
                 <p className="text-[9.5px] text-white/70 leading-snug px-0.5">{o.desc}</p>

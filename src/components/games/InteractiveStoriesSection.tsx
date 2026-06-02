@@ -9,12 +9,16 @@ export function InteractiveStoriesSection() {
 
   return (
     <section className="relative px-4 sm:px-6 lg:px-2 py-10 lg:py-14 max-w-7xl mx-auto overflow-hidden">
-
       {/* ── Ambient atmosphere ── */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[40px]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-[40px]"
+      >
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[80%] rounded-full blur-3xl opacity-[0.06]"
-          style={{ background: "radial-gradient(ellipse, #A855F7 0%, #7C3AED 30%, transparent 70%)" }}
+          style={{
+            background: "radial-gradient(ellipse, #A855F7 0%, #7C3AED 30%, transparent 70%)",
+          }}
         />
         <div
           className="absolute -right-24 top-1/3 w-80 h-80 rounded-full blur-3xl opacity-[0.07]"
@@ -35,7 +39,10 @@ export function InteractiveStoriesSection() {
               }}
             >
               <BookOpen className="size-3.5" style={{ color: "#A855F7" }} />
-              <span className="text-[10px] font-black tracking-[0.22em]" style={{ color: "#A855F7" }}>
+              <span
+                className="text-[10px] font-black tracking-[0.22em]"
+                style={{ color: "#A855F7" }}
+              >
                 STORY MODE · CHOICES · ENDINGS
               </span>
             </div>
@@ -77,7 +84,12 @@ export function InteractiveStoriesSection() {
       {/* ── Featured Story Card: Switch Kicks ── */}
       <div className="relative">
         <button
-          onClick={() => navigate({ to: "/games/interactive-stories/$storySlug", params: { storySlug: "switch-kicks" } })}
+          onClick={() =>
+            navigate({
+              to: "/games/interactive-stories/$storySlug",
+              params: { storySlug: "switch-kicks" },
+            })
+          }
           className="group relative block w-full overflow-hidden rounded-[28px] text-left transition-transform duration-300 ease-out hover:-translate-y-1 active:scale-[0.99]"
           style={{
             background: "linear-gradient(160deg, #0A1628 0%, #0D0B1F 60%, #060D18 100%)",
@@ -89,14 +101,18 @@ export function InteractiveStoriesSection() {
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-[28px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-            style={{ boxShadow: "inset 0 0 40px rgba(168,85,247,0.12), 0 0 0 1px rgba(168,85,247,0.4)" }}
+            style={{
+              boxShadow: "inset 0 0 40px rgba(168,85,247,0.12), 0 0 0 1px rgba(168,85,247,0.4)",
+            }}
           />
 
           {/* Top accent line */}
           <div
             aria-hidden
             className="absolute top-0 left-6 right-6 h-px"
-            style={{ background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.6), transparent)" }}
+            style={{
+              background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.6), transparent)",
+            }}
           />
 
           <div className="flex flex-col sm:flex-row gap-0">
@@ -115,7 +131,8 @@ export function InteractiveStoriesSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0D0B1F] to-transparent sm:hidden" />
 
               {/* Featured badge */}
-              <div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] font-black tracking-[0.2em] shadow-lg"
+              <div
+                className="absolute top-4 left-4 flex items-center gap-1.5 rounded-full px-3 py-1 text-[9px] font-black tracking-[0.2em] shadow-lg"
                 style={{
                   background: "rgba(168,85,247,0.85)",
                   boxShadow: "0 0 20px rgba(168,85,247,0.5)",
@@ -132,25 +149,27 @@ export function InteractiveStoriesSection() {
                 Switch Kicks
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-[#94A3B8] max-w-md">
-                Twin brothers. One school day. One switch that turns football, ballet, romance,
-                and consequences into a full-blown mess.
+                Twin brothers. One school day. One switch that turns football, ballet, romance, and
+                consequences into a full-blown mess.
               </p>
 
               {/* Feature chips */}
               <div className="mt-4 flex flex-wrap gap-2">
-                {["Choice-Based", "Voice Cast", "Saved Playthroughs", "Shareable Endings"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide"
-                    style={{
-                      background: "rgba(168,85,247,0.1)",
-                      border: "1px solid rgba(168,85,247,0.25)",
-                      color: "#C084FC",
-                    }}
-                  >
-                    {chip}
-                  </span>
-                ))}
+                {["Choice-Based", "Voice Cast", "Saved Playthroughs", "Shareable Endings"].map(
+                  (chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide"
+                      style={{
+                        background: "rgba(168,85,247,0.1)",
+                        border: "1px solid rgba(168,85,247,0.25)",
+                        color: "#C084FC",
+                      }}
+                    >
+                      {chip}
+                    </span>
+                  ),
+                )}
               </div>
 
               {/* Action buttons */}
@@ -158,7 +177,10 @@ export function InteractiveStoriesSection() {
                 <span
                   onClick={(event) => {
                     event.stopPropagation();
-                    navigate({ to: "/games/interactive-stories/$storySlug/play", params: { storySlug: "switch-kicks" } });
+                    navigate({
+                      to: "/games/interactive-stories/$storySlug/play",
+                      params: { storySlug: "switch-kicks" },
+                    });
                   }}
                   className="inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold transition-transform group-hover:scale-105"
                   style={{
@@ -173,7 +195,10 @@ export function InteractiveStoriesSection() {
                 <span
                   onClick={(event) => {
                     event.stopPropagation();
-                    navigate({ to: "/games/interactive-stories/$storySlug/playthroughs", params: { storySlug: "switch-kicks" } });
+                    navigate({
+                      to: "/games/interactive-stories/$storySlug/playthroughs",
+                      params: { storySlug: "switch-kicks" },
+                    });
                   }}
                   className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-bold"
                   style={{
@@ -193,7 +218,12 @@ export function InteractiveStoriesSection() {
       {/* ── Secondary Story Card: The God Ram ── */}
       <div className="relative mt-4">
         <button
-          onClick={() => navigate({ to: "/games/interactive-stories/$storySlug", params: { storySlug: "the-god-ram" } })}
+          onClick={() =>
+            navigate({
+              to: "/games/interactive-stories/$storySlug",
+              params: { storySlug: "the-god-ram" },
+            })
+          }
           className="group relative w-full overflow-hidden rounded-[28px] text-left transition-transform duration-300 ease-out hover:-translate-y-1"
           style={{
             background: "linear-gradient(135deg, #0A1220 0%, #080E18 100%)",
@@ -205,7 +235,8 @@ export function InteractiveStoriesSection() {
             <div
               className="shrink-0 size-[60px] rounded-2xl grid place-items-center text-[28px] leading-none select-none"
               style={{
-                background: "radial-gradient(circle at 35% 30%, rgba(255,200,87,0.2), rgba(255,200,87,0.04) 70%)",
+                background:
+                  "radial-gradient(circle at 35% 30%, rgba(255,200,87,0.2), rgba(255,200,87,0.04) 70%)",
                 border: "1px solid rgba(255,200,87,0.3)",
                 boxShadow: "0 0 24px rgba(255,200,87,0.2)",
                 color: "#FFC857",
@@ -232,19 +263,21 @@ export function InteractiveStoriesSection() {
                 and a throne built on erasure.
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {["Mythic Choices", "Voice Cast", "Divine Stats", "Multiple Endings"].map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide"
-                    style={{
-                      background: "rgba(255,200,87,0.06)",
-                      border: "1px solid rgba(255,200,87,0.18)",
-                      color: "rgba(255,200,87,0.7)",
-                    }}
-                  >
-                    {chip}
-                  </span>
-                ))}
+                {["Mythic Choices", "Voice Cast", "Divine Stats", "Multiple Endings"].map(
+                  (chip) => (
+                    <span
+                      key={chip}
+                      className="rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide"
+                      style={{
+                        background: "rgba(255,200,87,0.06)",
+                        border: "1px solid rgba(255,200,87,0.18)",
+                        color: "rgba(255,200,87,0.7)",
+                      }}
+                    >
+                      {chip}
+                    </span>
+                  ),
+                )}
               </div>
             </div>
 
@@ -252,7 +285,10 @@ export function InteractiveStoriesSection() {
               <span
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate({ to: "/games/interactive-stories/$storySlug/play", params: { storySlug: "the-god-ram" } });
+                  navigate({
+                    to: "/games/interactive-stories/$storySlug/play",
+                    params: { storySlug: "the-god-ram" },
+                  });
                 }}
                 className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold"
                 style={{
@@ -267,7 +303,10 @@ export function InteractiveStoriesSection() {
               <span
                 onClick={(event) => {
                   event.stopPropagation();
-                  navigate({ to: "/games/interactive-stories/$storySlug", params: { storySlug: "the-god-ram" } });
+                  navigate({
+                    to: "/games/interactive-stories/$storySlug",
+                    params: { storySlug: "the-god-ram" },
+                  });
                 }}
                 className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-bold"
                 style={{

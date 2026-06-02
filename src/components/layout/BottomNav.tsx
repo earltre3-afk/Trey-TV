@@ -46,16 +46,25 @@ export function BottomNav() {
           <div className="grid grid-cols-5 items-center px-2 pt-2 pb-1 relative overflow-visible">
             <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
             <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
-            <div className="flex justify-center"><CreateWheel /></div>
+            <div className="flex justify-center">
+              <CreateWheel />
+            </div>
             <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
-            <NavItem to="/signup" icon={LogIn} label="Sign up" active={isActive("/login") || isActive("/signup")} />
+            <NavItem
+              to="/signup"
+              icon={LogIn}
+              label="Sign up"
+              active={isActive("/login") || isActive("/signup")}
+            />
           </div>
         ) : (
           <div className="grid grid-cols-7 items-center px-2 pt-2 pb-1 relative overflow-visible">
             <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
             <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
             <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
-            <div className="flex justify-center"><CreateWheel /></div>
+            <div className="flex justify-center">
+              <CreateWheel />
+            </div>
             <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
             <NavItem to="/inbox" icon={Inbox} label="Inbox" active={isActive("/inbox")} badge={8} />
             <ProfileItem active={onProfile} uid={profileUid} avatar={profileAvatar} />

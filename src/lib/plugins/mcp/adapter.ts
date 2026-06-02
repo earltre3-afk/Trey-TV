@@ -7,6 +7,7 @@ export function resolveTreyTvMcpEndpoint(name: string): TreyTvMcpEndpoint | unde
 
 export function validateReadOnlyTool(name: string): boolean {
   const tool = getTreyTvMcpTool(name);
-  return Boolean(tool && tool.method === "GET" && tool.readOnly === true && tool.sensitiveData === false);
+  return Boolean(
+    tool && tool.method === "GET" && tool.readOnly === true && tool.sensitiveData === false,
+  );
 }
-

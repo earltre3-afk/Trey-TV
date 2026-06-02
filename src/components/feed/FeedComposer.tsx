@@ -33,7 +33,11 @@ const AUDIENCES = [
 const MAX = 500;
 
 const postSchema = z.object({
-  text: z.string().trim().min(1, "Write something first").max(MAX, `Keep it under ${MAX} characters`),
+  text: z
+    .string()
+    .trim()
+    .min(1, "Write something first")
+    .max(MAX, `Keep it under ${MAX} characters`),
 });
 
 export function FeedComposer() {
@@ -65,7 +69,11 @@ export function FeedComposer() {
   }, [text]);
 
   const reset = () => {
-    setText(""); setMedia(null); setMediaType(null); setSelected([]); setFocused(false);
+    setText("");
+    setMedia(null);
+    setMediaType(null);
+    setSelected([]);
+    setFocused(false);
   };
 
   const handlePost = () => {
@@ -111,7 +119,9 @@ export function FeedComposer() {
   const aud = AUDIENCES.find((a) => a.id === audience)!;
 
   return (
-    <div className={`mobile-edge-card rounded-none sm:rounded-3xl p-3 sm:p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift ${showPlusMenu || showFwdPicker ? "z-[100]" : ""}`}>
+    <div
+      className={`mobile-edge-card rounded-none sm:rounded-3xl p-3 sm:p-4 glass neon-border shadow-[0_0_30px_-10px_oklch(0.82_0.16_85_/_0.4)] relative overflow-hidden hover-lift ${showPlusMenu || showFwdPicker ? "z-[100]" : ""}`}
+    >
       <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(circle_at_80%_-20%,oklch(0.7_0.25_340_/_0.4),transparent_60%)]" />
 
       <div className="relative flex items-start gap-3">
@@ -144,7 +154,10 @@ export function FeedComposer() {
                 <img src={media} alt="" className="w-full max-h-64 object-cover" />
               )}
               <button
-                onClick={() => { setMedia(null); setMediaType(null); }}
+                onClick={() => {
+                  setMedia(null);
+                  setMediaType(null);
+                }}
                 className="absolute top-2 right-2 size-7 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
                 aria-label="Remove media"
               >
@@ -163,22 +176,35 @@ export function FeedComposer() {
           className="hidden"
           onChange={(e) => onFile(e.target.files?.[0] ?? null)}
         />
-        <button onClick={() => fileRef.current?.click()} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+        <button
+          onClick={() => fileRef.current?.click()}
+          className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5"
+        >
           <ImageIcon className="size-4" /> Image/Video
         </button>
-        <button onClick={() => navigate({ to: "/creator-studio/edit" })} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
+        <button
+          onClick={() => navigate({ to: "/creator-studio/edit" })}
+          className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5"
+        >
           <Wand2 className="size-4 text-primary" /> Trey-I Tools
         </button>
         <div className="relative">
-          <button onClick={() => setAudOpen((s) => !s)} className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5">
-            <aud.icon className="size-4" /> {aud.label} <ChevronDown className={`size-3 transition-transform ${audOpen ? "rotate-180" : ""}`} />
+          <button
+            onClick={() => setAudOpen((s) => !s)}
+            className="px-3 py-2 rounded-xl glass text-xs flex items-center gap-1.5 hover:bg-white/5"
+          >
+            <aud.icon className="size-4" /> {aud.label}{" "}
+            <ChevronDown className={`size-3 transition-transform ${audOpen ? "rotate-180" : ""}`} />
           </button>
           {audOpen && (
             <div className="absolute left-0 top-full mt-2 w-44 rounded-xl glass-strong border border-white/10 shadow-2xl p-1 z-30 animate-scale-in">
               {AUDIENCES.map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => { setAudience(a.id); setAudOpen(false); }}
+                  onClick={() => {
+                    setAudience(a.id);
+                    setAudOpen(false);
+                  }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/5 flex items-center gap-2 ${audience === a.id ? "text-primary font-semibold" : ""}`}
                 >
                   <a.icon className="size-4" /> {a.label}
@@ -190,7 +216,9 @@ export function FeedComposer() {
 
         <div className="ml-auto flex items-center gap-2">
           {(focused || text.length > 0) && (
-            <span className={`text-[11px] tabular-nums ${remaining < 40 ? "text-[oklch(0.78_0.24_15)]" : "text-muted-foreground"}`}>
+            <span
+              className={`text-[11px] tabular-nums ${remaining < 40 ? "text-[oklch(0.78_0.24_15)]" : "text-muted-foreground"}`}
+            >
               {remaining}
             </span>
           )}
@@ -205,7 +233,9 @@ export function FeedComposer() {
       </div>
 
       <div className="relative mt-4">
-        <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-2">RECOMMENDATION TAGS</div>
+        <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-2">
+          RECOMMENDATION TAGS
+        </div>
         <div className="flex flex-wrap gap-2">
           {tags.map((t) => {
             const isSel = selected.includes(t.label);
@@ -219,7 +249,11 @@ export function FeedComposer() {
               </button>
             );
           })}
-          <button onClick={() => setShowPlusMenu(true)} className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5" title="Add pics, vids, or GIFs">
+          <button
+            onClick={() => setShowPlusMenu(true)}
+            className="size-7 grid place-items-center rounded-full border border-white/15 text-muted-foreground hover:bg-white/5"
+            title="Add pics, vids, or GIFs"
+          >
             <Plus className="size-3.5" />
           </button>
         </div>
@@ -228,8 +262,14 @@ export function FeedComposer() {
       {showPlusMenu && (
         <PlusMenu
           excludeGhost
-          onPhoto={() => { setShowPlusMenu(false); fileRef.current?.click(); }}
-          onFwd={() => { setShowPlusMenu(false); setShowFwdPicker(true); }}
+          onPhoto={() => {
+            setShowPlusMenu(false);
+            fileRef.current?.click();
+          }}
+          onFwd={() => {
+            setShowPlusMenu(false);
+            setShowFwdPicker(true);
+          }}
           onClose={() => setShowPlusMenu(false)}
         />
       )}

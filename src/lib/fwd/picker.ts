@@ -69,7 +69,9 @@ const DEFAULT_FWD_ORIGINS = [
 ];
 
 export function getFwdPickerConfig() {
-  const baseUrl = String(import.meta.env.VITE_FWD_PICKER_BASE_URL ?? "https://fwd.treytv.com").replace(/\/+$/, "");
+  const baseUrl = String(
+    import.meta.env.VITE_FWD_PICKER_BASE_URL ?? "https://fwd.treytv.com",
+  ).replace(/\/+$/, "");
   const publicKey = String(import.meta.env.VITE_FWD_PICKER_PUBLIC_KEY ?? "").trim();
   const allowedOrigins = String(import.meta.env.VITE_FWD_PICKER_ALLOWED_ORIGINS ?? "")
     .split(",")
@@ -77,7 +79,9 @@ export function getFwdPickerConfig() {
     .filter(Boolean);
 
   return {
-    allowedOrigins: Array.from(new Set([new URL(baseUrl).origin, ...allowedOrigins, ...DEFAULT_FWD_ORIGINS])),
+    allowedOrigins: Array.from(
+      new Set([new URL(baseUrl).origin, ...allowedOrigins, ...DEFAULT_FWD_ORIGINS]),
+    ),
     baseUrl,
     publicKey,
   };
@@ -112,7 +116,10 @@ export function sendDraftUpdate(iframeWindow: Window | null | undefined, text: s
   const { baseUrl } = getFwdPickerConfig();
   try {
     const targetOrigin = new URL(baseUrl).origin;
-    iframeWindow.postMessage({ type: "fwd:draft:update", text: String(text).slice(0, 500) }, targetOrigin);
+    iframeWindow.postMessage(
+      { type: "fwd:draft:update", text: String(text).slice(0, 500) },
+      targetOrigin,
+    );
   } catch {
     // Ignore cross-origin errors during local dev
   }

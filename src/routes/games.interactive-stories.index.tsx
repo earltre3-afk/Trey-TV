@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
 const InteractiveStoriesPlayer = lazy(
-  () => import("@/features/interactive-stories/components/InteractiveStoriesPlayer")
+  () => import("@/features/interactive-stories/components/InteractiveStoriesPlayer"),
 );
 
 export const Route = createFileRoute("/games/interactive-stories/")({

@@ -1,10 +1,10 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import {
   canSubmitRoleRequest,
   getCurrentUserAccessStateMock,
   getRoleAccessRequestsMock,
   reviewRoleAccessRequestMock,
-} from './accessRequests';
+} from "./accessRequests";
 import {
   cancelMyAccessRequest,
   grantRoleFromRequestAdmin,
@@ -12,10 +12,10 @@ import {
   submitAccessRequest,
   updateMyAccessRequestDraft,
   type AccessServiceSource,
-} from './accessRequestService';
-import { RoleRequestFlow } from './RoleRequestFlow';
-import { can } from './roleUtils';
-import { useTradioIdentity } from './useTradioIdentity';
+} from "./accessRequestService";
+import { RoleRequestFlow } from "./RoleRequestFlow";
+import { can } from "./roleUtils";
+import { useTradioIdentity } from "./useTradioIdentity";
 import type {
   AccessRequestEvent,
   CreatorSetupState,
@@ -23,10 +23,13 @@ import type {
   RoleApplicationAnswer,
   RoleRequestStatus,
   RoleRequestType,
-} from './types';
+} from "./types";
 
 /** Statuses an admin review (not an approval) may set. Approval has its own path. */
-export type AdminReviewStatus = Extract<RoleRequestStatus, 'pending' | 'rejected' | 'restricted' | 'needs_more_info' | 'cancelled'>;
+export type AdminReviewStatus = Extract<
+  RoleRequestStatus,
+  "pending" | "rejected" | "restricted" | "needs_more_info" | "cancelled"
+>;
 
 interface AccessRequestsContextValue {
   requests: RoleAccessRequest[];
@@ -42,7 +45,11 @@ interface AccessRequestsContextValue {
   getRequestFor: (type: RoleRequestType) => RoleAccessRequest | undefined;
   canRequest: (type: RoleRequestType) => boolean;
   getEvents: (requestId: string) => AccessRequestEvent[];
-  updateDraft: (requestId: string, answers: RoleApplicationAnswer[], resubmit?: boolean) => Promise<void>;
+  updateDraft: (
+    requestId: string,
+    answers: RoleApplicationAnswer[],
+    resubmit?: boolean,
+  ) => Promise<void>;
   cancelRequest: (requestId: string) => Promise<void>;
   // Admin / reviewer (gated by isAdmin in the UI; backend RPC re-checks on the server).
   reviewRequest: (requestId: string, status: AdminReviewStatus, note?: string) => Promise<void>;
@@ -55,7 +62,7 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
   const { identity, applyMockGrant } = useTradioIdentity();
   const [requests, setRequests] = useState<RoleAccessRequest[]>(() => getRoleAccessRequestsMock());
   const [activeFlow, setActiveFlow] = useState<RoleRequestType | null>(null);
-  const [dataSource, setDataSource] = useState<AccessServiceSource>('mock');
+  const [dataSource, setDataSource] = useState<AccessServiceSource>("mock");
   const [isLoading, setIsLoading] = useState(false);
 
   // Load requests through the service (Supabase when configured + tables exist,
@@ -63,17 +70,23 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
   useEffect(() => {
     let active = true;
     setIsLoading(true);
-    import('./accessRequestService')
+    import("./accessRequestService")
       .then(({ getMyAccessRequests }) => getMyAccessRequests())
       .then((result) => {
         if (!active) return;
         setDataSource(result.source);
         // Only replace the seed when Supabase actually returned rows.
-        if (result.source === 'supabase' && result.data) setRequests(result.data);
+        if (result.source === "supabase" && result.data) setRequests(result.data);
       })
-      .catch(() => { /* keep mock fallback */ })
-      .finally(() => { if (active) setIsLoading(false); });
-    return () => { active = false; };
+      .catch(() => {
+        /* keep mock fallback */
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const openFlow = useCallback((type: RoleRequestType) => setActiveFlow(type), []);
@@ -82,51 +95,83 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
   const handleSubmit = useCallback((type: RoleRequestType, answers: RoleApplicationAnswer[]) => {
     // Optimistically reflect the request, then reconcile with the service result.
     submitAccessRequest(type, answers).then((result) => {
-      if (result.source) setDataSource((current) => (result.source === 'supabase' ? 'supabase' : current));
+      if (result.source)
+        setDataSource((current) => (result.source === "supabase" ? "supabase" : current));
       const request = result.data;
       if (!request) return;
-      setRequests((current) => [request, ...current.filter((existing) => existing.request_type !== type || existing.status === 'approved')]);
+      setRequests((current) => [
+        request,
+        ...current.filter(
+          (existing) => existing.request_type !== type || existing.status === "approved",
+        ),
+      ]);
     });
   }, []);
 
-  const updateDraft = useCallback(async (requestId: string, answers: RoleApplicationAnswer[], resubmit = false) => {
-    const result = await updateMyAccessRequestDraft(requestId, answers, resubmit);
-    setRequests((current) => current.map((request) => {
-      if (request.id !== requestId) return request;
-      if (result.source === 'supabase' && result.data) return result.data;
-      return resubmit ? reviewRoleAccessRequestMock({ ...request, answers }, 'pending', undefined, 'user') : { ...request, answers };
-    }));
-  }, []);
+  const updateDraft = useCallback(
+    async (requestId: string, answers: RoleApplicationAnswer[], resubmit = false) => {
+      const result = await updateMyAccessRequestDraft(requestId, answers, resubmit);
+      setRequests((current) =>
+        current.map((request) => {
+          if (request.id !== requestId) return request;
+          if (result.source === "supabase" && result.data) return result.data;
+          return resubmit
+            ? reviewRoleAccessRequestMock({ ...request, answers }, "pending", undefined, "user")
+            : { ...request, answers };
+        }),
+      );
+    },
+    [],
+  );
 
   const cancelRequest = useCallback(async (requestId: string) => {
     const result = await cancelMyAccessRequest(requestId);
-    setRequests((current) => current.map((request) => {
-      if (request.id !== requestId) return request;
-      if (result.source === 'supabase' && result.data) return result.data;
-      return reviewRoleAccessRequestMock(request, 'cancelled', undefined, 'user');
-    }));
+    setRequests((current) =>
+      current.map((request) => {
+        if (request.id !== requestId) return request;
+        if (result.source === "supabase" && result.data) return result.data;
+        return reviewRoleAccessRequestMock(request, "cancelled", undefined, "user");
+      }),
+    );
   }, []);
 
-  const reviewRequest = useCallback(async (requestId: string, status: AdminReviewStatus, note?: string) => {
-    if (status !== 'cancelled') await reviewAccessRequestAdmin(requestId, status as Exclude<AdminReviewStatus, 'cancelled'>, note);
-    setRequests((current) => current.map((request) => (
-      request.id === requestId ? reviewRoleAccessRequestMock(request, status, note) : request
-    )));
-  }, []);
+  const reviewRequest = useCallback(
+    async (requestId: string, status: AdminReviewStatus, note?: string) => {
+      if (status !== "cancelled")
+        await reviewAccessRequestAdmin(
+          requestId,
+          status as Exclude<AdminReviewStatus, "cancelled">,
+          note,
+        );
+      setRequests((current) =>
+        current.map((request) =>
+          request.id === requestId ? reviewRoleAccessRequestMock(request, status, note) : request,
+        ),
+      );
+    },
+    [],
+  );
 
-  const approveRequest = useCallback(async (requestId: string, note?: string) => {
-    await grantRoleFromRequestAdmin(requestId, note);
-    const target = requests.find((request) => request.id === requestId);
-    setRequests((current) => current.map((request) => (
-      request.id === requestId ? reviewRoleAccessRequestMock(request, 'approved', note) : request
-    )));
-    // Simulate the grant locally so the UI reflects unlocked tools (mock review).
-    if (target) {
-      if (target.request_type === 'verification') applyMockGrant({ verification: 'verified' });
-      else if (target.request_type === 'broadcast') applyMockGrant({ broadcast: 'cleared' });
-      else if (target.requested_role) applyMockGrant({ role: target.requested_role });
-    }
-  }, [requests, applyMockGrant]);
+  const approveRequest = useCallback(
+    async (requestId: string, note?: string) => {
+      await grantRoleFromRequestAdmin(requestId, note);
+      const target = requests.find((request) => request.id === requestId);
+      setRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? reviewRoleAccessRequestMock(request, "approved", note)
+            : request,
+        ),
+      );
+      // Simulate the grant locally so the UI reflects unlocked tools (mock review).
+      if (target) {
+        if (target.request_type === "verification") applyMockGrant({ verification: "verified" });
+        else if (target.request_type === "broadcast") applyMockGrant({ broadcast: "cleared" });
+        else if (target.requested_role) applyMockGrant({ role: target.requested_role });
+      }
+    },
+    [requests, applyMockGrant],
+  );
 
   const getRequestFor = useCallback(
     (type: RoleRequestType) => requests.find((request) => request.request_type === type),
@@ -143,7 +188,7 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
     [requests],
   );
 
-  const isAdmin = can(identity, 'admin-platform');
+  const isAdmin = can(identity, "admin-platform");
 
   const accessState = useMemo(
     () => getCurrentUserAccessStateMock(identity, requests),
@@ -152,11 +197,39 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
 
   const value = useMemo<AccessRequestsContextValue>(
     () => ({
-      requests, accessState, activeFlow, dataSource, isLoading, isAdmin,
-      openFlow, closeFlow, getRequestFor, canRequest, getEvents,
-      updateDraft, cancelRequest, reviewRequest, approveRequest,
+      requests,
+      accessState,
+      activeFlow,
+      dataSource,
+      isLoading,
+      isAdmin,
+      openFlow,
+      closeFlow,
+      getRequestFor,
+      canRequest,
+      getEvents,
+      updateDraft,
+      cancelRequest,
+      reviewRequest,
+      approveRequest,
     }),
-    [requests, accessState, activeFlow, dataSource, isLoading, isAdmin, openFlow, closeFlow, getRequestFor, canRequest, getEvents, updateDraft, cancelRequest, reviewRequest, approveRequest],
+    [
+      requests,
+      accessState,
+      activeFlow,
+      dataSource,
+      isLoading,
+      isAdmin,
+      openFlow,
+      closeFlow,
+      getRequestFor,
+      canRequest,
+      getEvents,
+      updateDraft,
+      cancelRequest,
+      reviewRequest,
+      approveRequest,
+    ],
   );
 
   return (
@@ -170,4 +243,5 @@ export const AccessRequestsProvider: React.FC<{ children: React.ReactNode }> = (
 };
 
 /** Safe accessor — returns null if used outside the provider so gates never crash. */
-export const useAccessRequests = (): AccessRequestsContextValue | null => useContext(AccessRequestsContext);
+export const useAccessRequests = (): AccessRequestsContextValue | null =>
+  useContext(AccessRequestsContext);

@@ -42,7 +42,9 @@ export function ChatOnboarding() {
   }, []);
 
   const close = () => {
-    try { localStorage.setItem(KEY, "1"); } catch {}
+    try {
+      localStorage.setItem(KEY, "1");
+    } catch {}
     haptic("success");
     setOpen(false);
   };
@@ -64,7 +66,10 @@ export function ChatOnboarding() {
         <div aria-hidden className="pointer-events-none absolute inset-0 opacity-80">
           <div
             className="absolute -top-24 -left-12 size-64 rounded-full blur-3xl"
-            style={{ background: `radial-gradient(circle, ${s.accent}, transparent 70%)`, opacity: 0.45 }}
+            style={{
+              background: `radial-gradient(circle, ${s.accent}, transparent 70%)`,
+              opacity: 0.45,
+            }}
           />
           <div className="absolute -bottom-24 -right-12 size-64 rounded-full bg-[radial-gradient(circle,oklch(0.7_0.25_340_/_0.35),transparent_70%)] blur-3xl" />
         </div>
@@ -90,8 +95,12 @@ export function ChatOnboarding() {
           </div>
 
           <div className="space-y-1.5">
-            <div className="text-[10px] tracking-[0.3em] text-primary">STEP {step + 1} / {STEPS.length}</div>
-            <h2 className="text-xl font-bold"><span className="text-gradient-gold">{s.title}</span></h2>
+            <div className="text-[10px] tracking-[0.3em] text-primary">
+              STEP {step + 1} / {STEPS.length}
+            </div>
+            <h2 className="text-xl font-bold">
+              <span className="text-gradient-gold">{s.title}</span>
+            </h2>
             <p className="text-sm text-muted-foreground leading-relaxed px-2">{s.body}</p>
           </div>
 
@@ -111,7 +120,10 @@ export function ChatOnboarding() {
 
           <div className="flex items-center gap-2 pt-2">
             <button
-              onClick={() => { haptic("light"); close(); }}
+              onClick={() => {
+                haptic("light");
+                close();
+              }}
               className="flex-1 py-2.5 rounded-xl text-sm glass border border-white/10 tilt-press"
             >
               Skip

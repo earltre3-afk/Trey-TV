@@ -1,9 +1,22 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
-  ArrowLeft, ArrowRight, Upload, ImageIcon, Check, X,
-  Sparkles, AlertCircle, Camera, User, MapPin, Link2,
-  Heart, Eye, CheckCircle, Edit3,
+  ArrowLeft,
+  ArrowRight,
+  Upload,
+  ImageIcon,
+  Check,
+  X,
+  Sparkles,
+  AlertCircle,
+  Camera,
+  User,
+  MapPin,
+  Link2,
+  Heart,
+  Eye,
+  CheckCircle,
+  Edit3,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +34,11 @@ export const Route = createFileRoute("/onboarding/import-screenshot")({
   head: () => ({
     meta: [
       { title: "Import From Screenshot — Trey TV" },
-      { name: "description", content: "Upload a screenshot of your public profile and Trey TV will turn it into a draft you can edit before it goes live." },
+      {
+        name: "description",
+        content:
+          "Upload a screenshot of your public profile and Trey TV will turn it into a draft you can edit before it goes live.",
+      },
     ],
   }),
 });
@@ -35,11 +52,26 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const CATEGORY_OPTIONS = [
-  "Music", "Shows", "Behind the scenes", "Comedy", "Motivation",
-  "Creator content", "Exclusive drops", "Sports", "Fashion", "Gaming",
+  "Music",
+  "Shows",
+  "Behind the scenes",
+  "Comedy",
+  "Motivation",
+  "Creator content",
+  "Exclusive drops",
+  "Sports",
+  "Fashion",
+  "Gaming",
 ];
 
-const SECTION_LABELS = ["Screenshot", "Profile Images", "Identity", "Bio & Links", "Required Info", "Final Review"];
+const SECTION_LABELS = [
+  "Screenshot",
+  "Profile Images",
+  "Identity",
+  "Bio & Links",
+  "Required Info",
+  "Final Review",
+];
 
 type Step = "upload" | "extracting" | "review" | "publishing";
 
@@ -78,7 +110,9 @@ function ImportScreenshot() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [extractionFallback, setExtractionFallback] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [usernameHint, setUsernameHint] = useState<"" | "checking" | "available" | "taken" | "invalid">("");
+  const [usernameHint, setUsernameHint] = useState<
+    "" | "checking" | "available" | "taken" | "invalid"
+  >("");
   const [usernameChecked, setUsernameChecked] = useState("");
   const [activeSection, setActiveSection] = useState(0);
 
@@ -103,19 +137,24 @@ function ImportScreenshot() {
 
   // Auth guard
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) nav({ to: "/login" });
-      else setAccessToken(data.session.access_token);
-    }).catch(() => nav({ to: "/login" }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!data.session) nav({ to: "/login" });
+        else setAccessToken(data.session.access_token);
+      })
+      .catch(() => nav({ to: "/login" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (!accessToken) return;
-    
+
     const loadProgress = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         const { data } = await (supabase as any)
@@ -134,20 +173,23 @@ function ImportScreenshot() {
           }
           toast.success("Resumed screenshot onboarding from where you left off.");
         } else {
-          await (supabase as any).from("user_onboarding").upsert({
-            user_id: user.id,
-            selected_path: "import_screenshot",
-            current_step: 0,
-            answers: {},
-            completed: false,
-            updated_at: new Date().toISOString()
-          }, { onConflict: "user_id" });
+          await (supabase as any).from("user_onboarding").upsert(
+            {
+              user_id: user.id,
+              selected_path: "import_screenshot",
+              current_step: 0,
+              answers: {},
+              completed: false,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          );
         }
       } catch (err) {
         console.error("Failed to load onboarding progress:", err);
       }
     };
-    
+
     loadProgress();
   }, [accessToken]);
 
@@ -156,17 +198,22 @@ function ImportScreenshot() {
 
     const saveProgress = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (user) {
           const stepNum = step === "upload" ? 0 : step === "review" ? 1 : 2;
-          await (supabase as any).from("user_onboarding").upsert({
-            user_id: user.id,
-            selected_path: "import_screenshot",
-            current_step: stepNum,
-            answers: { step, draft, jobId, consentChecked },
-            completed: false,
-            updated_at: new Date().toISOString()
-          }, { onConflict: "user_id" });
+          await (supabase as any).from("user_onboarding").upsert(
+            {
+              user_id: user.id,
+              selected_path: "import_screenshot",
+              current_step: stepNum,
+              answers: { step, draft, jobId, consentChecked },
+              completed: false,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          );
         }
       } catch (err) {
         console.error("Failed to save screenshot onboarding progress:", err);
@@ -245,22 +292,23 @@ function ImportScreenshot() {
 
   // ─── Username check ───────────────────────────────────────────────────────────
 
-  const checkUsername = useCallback(async (raw: string) => {
-    if (!raw || raw === usernameChecked) return;
-    setUsernameHint("checking");
-    try {
-      const result = await treyICheckUsername({ data: { username: raw } });
-      setUsernameChecked(raw);
-      setUsernameHint(
-        result.available ? "available"
-        : result.reason === "invalid" ? "invalid"
-        : "taken",
-      );
-    } catch {
-      setUsernameChecked(raw);
-      setUsernameHint("available");
-    }
-  }, [usernameChecked]);
+  const checkUsername = useCallback(
+    async (raw: string) => {
+      if (!raw || raw === usernameChecked) return;
+      setUsernameHint("checking");
+      try {
+        const result = await treyICheckUsername({ data: { username: raw } });
+        setUsernameChecked(raw);
+        setUsernameHint(
+          result.available ? "available" : result.reason === "invalid" ? "invalid" : "taken",
+        );
+      } catch {
+        setUsernameChecked(raw);
+        setUsernameHint("available");
+      }
+    },
+    [usernameChecked],
+  );
 
   // ─── Start import: record consent + create job ────────────────────────────────
 
@@ -298,7 +346,12 @@ function ImportScreenshot() {
       setDraft((prev) => ({
         ...prev,
         display_name: extracted.display_name ?? "",
-        username: (extracted.username ?? "").toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 30),
+        username: (extracted.username ?? "")
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_|_$/g, "")
+          .slice(0, 30),
         bio: extracted.bio ?? "",
         location: extracted.location ?? "",
         instagram: extracted.instagram ?? "",
@@ -309,14 +362,19 @@ function ImportScreenshot() {
       }));
 
       if (fallback) {
-        toast("We couldn't read this screenshot automatically, but you can still build your profile from it manually.", { duration: 6000 });
+        toast(
+          "We couldn't read this screenshot automatically, but you can still build your profile from it manually.",
+          { duration: 6000 },
+        );
       }
 
       setStep("review");
     } catch (err) {
       console.error(err);
       setExtractionFallback(true);
-      toast("We couldn't read this screenshot automatically, but your upload is still saved. You can finish the profile manually from here.");
+      toast(
+        "We couldn't read this screenshot automatically, but your upload is still saved. You can finish the profile manually from here.",
+      );
       setStep("review");
     } finally {
       setSaving(false);
@@ -372,7 +430,9 @@ function ImportScreenshot() {
             tiktok: draft.tiktok || undefined,
             youtube: draft.youtube || undefined,
             x_handle: draft.x_handle || undefined,
-            favorite_categories: draft.favorite_categories.length ? draft.favorite_categories : undefined,
+            favorite_categories: draft.favorite_categories.length
+              ? draft.favorite_categories
+              : undefined,
             show_location: draft.show_location,
             profile_visibility: draft.profile_visibility,
             _jobId: jobId,
@@ -381,7 +441,11 @@ function ImportScreenshot() {
       });
       window.location.href = `/u/${publicProfileUid}?tour=1`;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not publish profile. Please check your info and try again.");
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Could not publish profile. Please check your info and try again.",
+      );
       setSaving(false);
       setStep("review");
     }
@@ -447,10 +511,13 @@ function ImportScreenshot() {
           {/* Card */}
           <div className="mt-6 rounded-3xl liquid-glass neon-border p-6 sm:p-8 space-y-6 animate-rise">
             <div>
-              <p className="text-[10px] tracking-[0.35em] text-primary uppercase">Import · Step 1 of 2</p>
+              <p className="text-[10px] tracking-[0.35em] text-primary uppercase">
+                Import · Step 1 of 2
+              </p>
               <h2 className="mt-1 text-2xl font-bold">Import From Screenshot</h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Upload a screenshot of your public profile. Trey TV will turn it into a draft you can edit before it goes live.
+                Upload a screenshot of your public profile. Trey TV will turn it into a draft you
+                can edit before it goes live.
               </p>
             </div>
 
@@ -488,7 +555,11 @@ function ImportScreenshot() {
                     </span>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setScreenshotFile(null); setScreenshotPreview(null); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setScreenshotFile(null);
+                        setScreenshotPreview(null);
+                      }}
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <X className="size-4" />
@@ -501,8 +572,12 @@ function ImportScreenshot() {
                     <Upload className="size-6 text-muted-foreground group-hover:text-primary transition" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Drop your screenshot here, or click to browse</p>
-                    <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, JPEG, WEBP · Max 10MB</p>
+                    <p className="text-sm font-medium">
+                      Drop your screenshot here, or click to browse
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      PNG, JPG, JPEG, WEBP · Max 10MB
+                    </p>
                   </div>
                 </div>
               )}
@@ -513,7 +588,10 @@ function ImportScreenshot() {
               <p className="font-semibold text-foreground/80 flex items-center gap-1.5">
                 <Sparkles className="size-3.5 text-primary" /> Best results
               </p>
-              <p>Upload a clear screenshot that shows your profile photo, banner if available, display name, username, bio, and public links.</p>
+              <p>
+                Upload a clear screenshot that shows your profile photo, banner if available,
+                display name, username, bio, and public links.
+              </p>
             </div>
 
             {/* Consent */}
@@ -533,7 +611,9 @@ function ImportScreenshot() {
                 >
                   {consentChecked && <Check className="size-3" />}
                 </div>
-                <span className="text-xs text-muted-foreground leading-relaxed">{CONSENT_TEXT}</span>
+                <span className="text-xs text-muted-foreground leading-relaxed">
+                  {CONSENT_TEXT}
+                </span>
               </label>
             </div>
 
@@ -614,7 +694,9 @@ function ImportScreenshot() {
             </div>
           )}
           <h2 className="text-2xl sm:text-3xl font-bold">Review Your Imported Profile</h2>
-          <p className="text-sm text-muted-foreground">Edit any field. Nothing goes live until you click Publish.</p>
+          <p className="text-sm text-muted-foreground">
+            Edit any field. Nothing goes live until you click Publish.
+          </p>
         </div>
 
         {/* Section nav pills */}
@@ -659,16 +741,34 @@ function ImportScreenshot() {
           {/* Section 1: Profile Images */}
           {activeSection === 1 && (
             <SectionCard icon={ImageIcon} title="Profile Images">
-              <input ref={avatarInputRef} type="file" accept="image/*" className="sr-only" onChange={handleAvatarChange} />
-              <input ref={bannerInputRef} type="file" accept="image/*" className="sr-only" onChange={handleBannerChange} />
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleAvatarChange}
+              />
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleBannerChange}
+              />
 
               {/* Avatar */}
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profile Photo</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Profile Photo
+                </p>
                 <div className="flex items-center gap-4">
                   <div className="size-20 rounded-full overflow-hidden border-2 border-white/15 bg-white/5 flex items-center justify-center shrink-0">
                     {draft.avatarDataUrl ? (
-                      <img src={draft.avatarDataUrl} alt="Avatar" className="size-full object-cover" />
+                      <img
+                        src={draft.avatarDataUrl}
+                        alt="Avatar"
+                        className="size-full object-cover"
+                      />
                     ) : (
                       <User className="size-8 text-muted-foreground/50" />
                     )}
@@ -685,14 +785,19 @@ function ImportScreenshot() {
                     {draft.avatarDataUrl && (
                       <button
                         type="button"
-                        onClick={() => { set("avatarDataUrl", null); set("avatarApproved", false); }}
+                        onClick={() => {
+                          set("avatarDataUrl", null);
+                          set("avatarApproved", false);
+                        }}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 text-xs text-muted-foreground hover:text-foreground"
                       >
                         <X className="size-3" /> Remove
                       </button>
                     )}
                     {!draft.avatarDataUrl && (
-                      <p className="text-xs text-muted-foreground">You can add a photo later from your profile settings.</p>
+                      <p className="text-xs text-muted-foreground">
+                        You can add a photo later from your profile settings.
+                      </p>
                     )}
                   </div>
                 </div>
@@ -700,10 +805,16 @@ function ImportScreenshot() {
 
               {/* Banner */}
               <div className="space-y-2 pt-2 border-t border-white/10">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Banner Image</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Banner Image
+                </p>
                 <div className="rounded-2xl overflow-hidden border border-white/10 bg-white/5 h-28 flex items-center justify-center relative">
                   {draft.bannerDataUrl ? (
-                    <img src={draft.bannerDataUrl} alt="Banner" className="w-full h-full object-cover" />
+                    <img
+                      src={draft.bannerDataUrl}
+                      alt="Banner"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="text-muted-foreground/50 text-sm">No banner</div>
                   )}
@@ -720,7 +831,10 @@ function ImportScreenshot() {
                   {draft.bannerDataUrl && (
                     <button
                       type="button"
-                      onClick={() => { set("bannerDataUrl", null); set("bannerApproved", false); }}
+                      onClick={() => {
+                        set("bannerDataUrl", null);
+                        set("bannerApproved", false);
+                      }}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <X className="size-3" /> Remove
@@ -747,7 +861,9 @@ function ImportScreenshot() {
 
               <Field label="Username *">
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">@</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                    @
+                  </span>
                   <input
                     type="text"
                     value={draft.username}
@@ -784,16 +900,36 @@ function ImportScreenshot() {
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <Field label="Instagram">
-                  <SocialInput icon="@" value={draft.instagram} onChange={(v) => set("instagram", v)} placeholder="username" />
+                  <SocialInput
+                    icon="@"
+                    value={draft.instagram}
+                    onChange={(v) => set("instagram", v)}
+                    placeholder="username"
+                  />
                 </Field>
                 <Field label="TikTok">
-                  <SocialInput icon="@" value={draft.tiktok} onChange={(v) => set("tiktok", v)} placeholder="username" />
+                  <SocialInput
+                    icon="@"
+                    value={draft.tiktok}
+                    onChange={(v) => set("tiktok", v)}
+                    placeholder="username"
+                  />
                 </Field>
                 <Field label="YouTube">
-                  <SocialInput icon="" value={draft.youtube} onChange={(v) => set("youtube", v)} placeholder="channel / URL" />
+                  <SocialInput
+                    icon=""
+                    value={draft.youtube}
+                    onChange={(v) => set("youtube", v)}
+                    placeholder="channel / URL"
+                  />
                 </Field>
                 <Field label="X / Twitter">
-                  <SocialInput icon="@" value={draft.x_handle} onChange={(v) => set("x_handle", v)} placeholder="handle" />
+                  <SocialInput
+                    icon="@"
+                    value={draft.x_handle}
+                    onChange={(v) => set("x_handle", v)}
+                    placeholder="handle"
+                  />
                 </Field>
               </div>
             </SectionCard>
@@ -806,7 +942,10 @@ function ImportScreenshot() {
                 <p className="text-foreground/80 font-semibold flex items-center gap-1.5">
                   <AlertCircle className="size-3.5 text-primary" /> These fields are required
                 </p>
-                <p>Date of birth and location are never imported automatically — you must enter them yourself for privacy.</p>
+                <p>
+                  Date of birth and location are never imported automatically — you must enter them
+                  yourself for privacy.
+                </p>
               </div>
 
               <Field label="Date of Birth *">
@@ -814,10 +953,16 @@ function ImportScreenshot() {
                   type="date"
                   value={draft.date_of_birth}
                   onChange={(e) => set("date_of_birth", e.target.value)}
-                  max={new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                  max={
+                    new Date(Date.now() - 13 * 365 * 24 * 60 * 60 * 1000)
+                      .toISOString()
+                      .split("T")[0]
+                  }
                   className="w-full h-11 rounded-xl bg-white/5 border border-white/15 px-4 text-sm focus:outline-none focus:border-primary/60 transition"
                 />
-                <p className="text-xs text-muted-foreground">Used to verify age. Stored privately.</p>
+                <p className="text-xs text-muted-foreground">
+                  Used to verify age. Stored privately.
+                </p>
               </Field>
 
               <Field label="Broad Location *">
@@ -829,7 +974,9 @@ function ImportScreenshot() {
                   maxLength={50}
                   className="w-full h-11 rounded-xl bg-white/5 border border-white/15 px-4 text-sm focus:outline-none focus:border-primary/60 transition"
                 />
-                <p className="text-xs text-muted-foreground">City, region, or country only. No street addresses.</p>
+                <p className="text-xs text-muted-foreground">
+                  City, region, or country only. No street addresses.
+                </p>
               </Field>
 
               <Field label="Content Interests * (pick at least one)">
@@ -858,7 +1005,9 @@ function ImportScreenshot() {
                   onClick={() => set("show_location", !draft.show_location)}
                   className={`relative w-10 h-6 rounded-full transition ${draft.show_location ? "bg-primary" : "bg-white/10"}`}
                 >
-                  <span className={`absolute top-1 size-4 rounded-full bg-white transition-all ${draft.show_location ? "left-5" : "left-1"}`} />
+                  <span
+                    className={`absolute top-1 size-4 rounded-full bg-white transition-all ${draft.show_location ? "left-5" : "left-1"}`}
+                  />
                 </button>
               </div>
             </SectionCard>
@@ -868,27 +1017,63 @@ function ImportScreenshot() {
           {activeSection === 5 && (
             <SectionCard icon={CheckCircle} title="Final Review">
               <div className="space-y-3 text-sm">
-                <ReviewRow label="Display Name" value={draft.display_name || "—"} missing={!draft.display_name} />
-                <ReviewRow label="Username" value={draft.username ? `@${draft.username}` : "—"} missing={!draft.username} />
+                <ReviewRow
+                  label="Display Name"
+                  value={draft.display_name || "—"}
+                  missing={!draft.display_name}
+                />
+                <ReviewRow
+                  label="Username"
+                  value={draft.username ? `@${draft.username}` : "—"}
+                  missing={!draft.username}
+                />
                 <ReviewRow label="Bio" value={draft.bio || "Not set"} />
-                <ReviewRow label="Location" value={draft.location || "—"} missing={!draft.location} />
-                <ReviewRow label="Date of Birth" value={draft.date_of_birth || "—"} missing={!draft.date_of_birth} />
-                <ReviewRow label="Interests" value={draft.favorite_categories.length ? draft.favorite_categories.join(", ") : "—"} missing={!draft.favorite_categories.length} />
+                <ReviewRow
+                  label="Location"
+                  value={draft.location || "—"}
+                  missing={!draft.location}
+                />
+                <ReviewRow
+                  label="Date of Birth"
+                  value={draft.date_of_birth || "—"}
+                  missing={!draft.date_of_birth}
+                />
+                <ReviewRow
+                  label="Interests"
+                  value={
+                    draft.favorite_categories.length ? draft.favorite_categories.join(", ") : "—"
+                  }
+                  missing={!draft.favorite_categories.length}
+                />
                 <ReviewRow label="Instagram" value={draft.instagram || "Not set"} />
                 <ReviewRow label="TikTok" value={draft.tiktok || "Not set"} />
-                <ReviewRow label="Avatar" value={draft.avatarDataUrl ? "Uploaded" : "None (can add later)"} />
-                <ReviewRow label="Banner" value={draft.bannerDataUrl ? "Uploaded" : "None (can add later)"} />
+                <ReviewRow
+                  label="Avatar"
+                  value={draft.avatarDataUrl ? "Uploaded" : "None (can add later)"}
+                />
+                <ReviewRow
+                  label="Banner"
+                  value={draft.bannerDataUrl ? "Uploaded" : "None (can add later)"}
+                />
               </div>
 
               {!canPublish && (
                 <div className="rounded-2xl bg-yellow-500/10 border border-yellow-500/20 p-4 text-xs text-yellow-400 space-y-1">
-                  <p className="font-semibold flex items-center gap-1.5"><AlertCircle className="size-3.5" /> Missing required fields</p>
+                  <p className="font-semibold flex items-center gap-1.5">
+                    <AlertCircle className="size-3.5" /> Missing required fields
+                  </p>
                   <ul className="list-disc list-inside space-y-0.5 text-yellow-400/80">
                     {draft.display_name.trim().length < 2 && <li>Display name (section 3)</li>}
-                    {(draft.username.trim().length < 3 || usernameHint === "taken") && <li>Valid username (section 3)</li>}
-                    {!/^\d{4}-\d{2}-\d{2}$/.test(draft.date_of_birth) && <li>Date of birth (section 5)</li>}
+                    {(draft.username.trim().length < 3 || usernameHint === "taken") && (
+                      <li>Valid username (section 3)</li>
+                    )}
+                    {!/^\d{4}-\d{2}-\d{2}$/.test(draft.date_of_birth) && (
+                      <li>Date of birth (section 5)</li>
+                    )}
                     {!draft.location.trim() && <li>Location (section 5)</li>}
-                    {draft.favorite_categories.length === 0 && <li>At least one content interest (section 5)</li>}
+                    {draft.favorite_categories.length === 0 && (
+                      <li>At least one content interest (section 5)</li>
+                    )}
                   </ul>
                 </div>
               )}
@@ -962,7 +1147,9 @@ function ProgressBar({ current, total, label }: { current: number; total: number
     <div className="mt-6">
       <div className="flex items-center justify-between mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
         <span>{label}</span>
-        <span>{current + 1} / {total}</span>
+        <span>
+          {current + 1} / {total}
+        </span>
       </div>
       <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
         <div
@@ -985,7 +1172,11 @@ function ExtractingScreen({ screenshotPreview }: { screenshotPreview: string | n
         <div className="rounded-3xl liquid-glass neon-border p-8 space-y-5">
           {screenshotPreview && (
             <div className="relative mx-auto w-36 h-36 rounded-2xl overflow-hidden border border-primary/30">
-              <img src={screenshotPreview} alt="" className="w-full h-full object-cover opacity-60" />
+              <img
+                src={screenshotPreview}
+                alt=""
+                className="w-full h-full object-cover opacity-60"
+              />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="size-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
               </div>
@@ -1007,7 +1198,15 @@ function ExtractingScreen({ screenshotPreview }: { screenshotPreview: string | n
   );
 }
 
-function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
+function SectionCard({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-3xl liquid-glass neon-border p-6 sm:p-8 space-y-5 animate-rise">
       <div className="flex items-center gap-3">
@@ -1024,16 +1223,32 @@ function SectionCard({ icon: Icon, title, children }: { icon: React.ElementType;
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        {label}
+      </label>
       {children}
     </div>
   );
 }
 
-function SocialInput({ icon, value, onChange, placeholder }: { icon: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+function SocialInput({
+  icon,
+  value,
+  onChange,
+  placeholder,
+}: {
+  icon: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
   return (
     <div className="relative">
-      {icon && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{icon}</span>}
+      {icon && (
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+          {icon}
+        </span>
+      )}
       <input
         type="text"
         value={value}
@@ -1048,12 +1263,30 @@ function SocialInput({ icon, value, onChange, placeholder }: { icon: string; val
 function UsernameHint({ hint }: { hint: string }) {
   if (!hint || hint === "checking") {
     return hint === "checking" ? (
-      <p className="text-xs text-muted-foreground flex items-center gap-1"><span className="size-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> Checking…</p>
+      <p className="text-xs text-muted-foreground flex items-center gap-1">
+        <span className="size-3 border border-current border-t-transparent rounded-full animate-spin inline-block" />{" "}
+        Checking…
+      </p>
     ) : null;
   }
-  if (hint === "available") return <p className="text-xs text-green-400 flex items-center gap-1"><Check className="size-3" /> Available</p>;
-  if (hint === "taken") return <p className="text-xs text-red-400 flex items-center gap-1"><X className="size-3" /> Already taken</p>;
-  if (hint === "invalid") return <p className="text-xs text-yellow-400 flex items-center gap-1"><AlertCircle className="size-3" /> Use 3–30 lowercase letters, numbers, or underscores</p>;
+  if (hint === "available")
+    return (
+      <p className="text-xs text-green-400 flex items-center gap-1">
+        <Check className="size-3" /> Available
+      </p>
+    );
+  if (hint === "taken")
+    return (
+      <p className="text-xs text-red-400 flex items-center gap-1">
+        <X className="size-3" /> Already taken
+      </p>
+    );
+  if (hint === "invalid")
+    return (
+      <p className="text-xs text-yellow-400 flex items-center gap-1">
+        <AlertCircle className="size-3" /> Use 3–30 lowercase letters, numbers, or underscores
+      </p>
+    );
   return null;
 }
 
@@ -1061,7 +1294,9 @@ function ReviewRow({ label, value, missing }: { label: string; value: string; mi
   return (
     <div className="flex items-start justify-between gap-4 py-2 border-b border-white/5 last:border-0">
       <span className="text-muted-foreground text-xs shrink-0 w-28">{label}</span>
-      <span className={`text-right text-xs ${missing ? "text-yellow-400" : "text-foreground/90"}`}>{value}</span>
+      <span className={`text-right text-xs ${missing ? "text-yellow-400" : "text-foreground/90"}`}>
+        {value}
+      </span>
     </div>
   );
 }

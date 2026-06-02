@@ -1,8 +1,13 @@
-import React from 'react';
-import { ArrowUpRight, Sparkles } from 'lucide-react';
-import { GlassCard, PrimaryButton, SecondaryButton } from '../tradio/ui';
-import { NaturalAbilityBadge } from './RoleBadge';
-import { SIGNAL_TEST_COPY, canTakeSignalTest, describeAbility, type SignalTestState } from '@/tradio/lib/universe/signalTest';
+import React from "react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
+import { GlassCard, PrimaryButton, SecondaryButton } from "../tradio/ui";
+import { NaturalAbilityBadge } from "./RoleBadge";
+import {
+  SIGNAL_TEST_COPY,
+  canTakeSignalTest,
+  describeAbility,
+  type SignalTestState,
+} from "@/tradio/lib/universe/signalTest";
 
 /**
  * TREY TV UNIVERSE — Signal Test discoverability card.
@@ -20,16 +25,18 @@ export const SignalTestEntryCard: React.FC<{
   onViewResult?: () => void;
   compact?: boolean;
 }> = ({ state, onStart, onViewResult, compact = false }) => {
-  const completed = state.status === 'completed' && state.result;
+  const completed = state.status === "completed" && state.result;
 
   return (
-    <GlassCard glow className={compact ? 'p-4' : 'p-5'}>
+    <GlassCard glow className={compact ? "p-4" : "p-5"}>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-300">
             <Sparkles className="h-3.5 w-3.5" /> {SIGNAL_TEST_COPY.title}
           </div>
-          <h3 className="mt-1 text-xl font-black tracking-tight text-white">{SIGNAL_TEST_COPY.subtitle}</h3>
+          <h3 className="mt-1 text-xl font-black tracking-tight text-white">
+            {SIGNAL_TEST_COPY.subtitle}
+          </h3>
           {completed ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <NaturalAbilityBadge ability={state.result!} />
@@ -37,7 +44,8 @@ export const SignalTestEntryCard: React.FC<{
             </div>
           ) : (
             <p className="mt-1.5 max-w-md text-sm leading-relaxed text-white/60">
-              {SIGNAL_TEST_COPY.optional} <span className="text-white/45">{SIGNAL_TEST_COPY.permanent}</span>
+              {SIGNAL_TEST_COPY.optional}{" "}
+              <span className="text-white/45">{SIGNAL_TEST_COPY.permanent}</span>
             </p>
           )}
         </div>

@@ -1,9 +1,24 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from "react";
 
 export type Screen =
-  | 'home' | 'activate' | 'guide' | 'detail' | 'player'
-  | 'games' | 'spades' | 'stories' | 'creator' | 'profile' | 'settings'
-  | 'search' | 'browse' | 'my-list' | 'music' | 'premium' | 'watch-parties' | 'source-hub';
+  | "home"
+  | "activate"
+  | "guide"
+  | "detail"
+  | "player"
+  | "games"
+  | "spades"
+  | "stories"
+  | "creator"
+  | "profile"
+  | "settings"
+  | "search"
+  | "browse"
+  | "my-list"
+  | "music"
+  | "premium"
+  | "watch-parties"
+  | "source-hub";
 
 type TVCtx = {
   screen: Screen;
@@ -15,7 +30,7 @@ type TVCtx = {
 const Ctx = createContext<TVCtx | null>(null);
 
 export const TVProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [history, setHistory] = useState<Screen[]>(['home']);
+  const [history, setHistory] = useState<Screen[]>(["home"]);
   const screen = history[history.length - 1];
 
   const navigate = useCallback((s: Screen) => {
@@ -31,6 +46,6 @@ export const TVProvider: React.FC<{ children: React.ReactNode }> = ({ children }
 
 export const useTV = () => {
   const c = useContext(Ctx);
-  if (!c) throw new Error('useTV must be used inside TVProvider');
+  if (!c) throw new Error("useTV must be used inside TVProvider");
   return c;
 };

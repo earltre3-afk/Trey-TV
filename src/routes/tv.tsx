@@ -6,7 +6,10 @@ export const Route = createFileRoute("/tv")({
   head: () => ({
     meta: [
       { title: "Trey TV - TV Cinematic Shell" },
-      { name: "description", content: "Watch Trey TV on the big screen. A TV-first, 10-foot remote-friendly interface." },
+      {
+        name: "description",
+        content: "Watch Trey TV on the big screen. A TV-first, 10-foot remote-friendly interface.",
+      },
     ],
   }),
 });

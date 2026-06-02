@@ -13,7 +13,8 @@ export function GoldCheck({ size = 24, className = "" }: { size?: number; classN
       height={size}
       className={`inline-block shrink-0 overflow-visible ${className}`}
       style={{
-        filter: "drop-shadow(0 0 6px rgba(255,200,87,0.85)) drop-shadow(0 0 16px rgba(255,200,87,0.55)) drop-shadow(0 1px 1px rgba(0,0,0,0.55))"
+        filter:
+          "drop-shadow(0 0 6px rgba(255,200,87,0.85)) drop-shadow(0 0 16px rgba(255,200,87,0.55)) drop-shadow(0 1px 1px rgba(0,0,0,0.55))",
       }}
     >
       <defs>
@@ -49,7 +50,14 @@ export function GoldCheck({ size = 24, className = "" }: { size?: number; classN
           d="M10.5213 2.62368C11.3147 1.75255 12.6853 1.75255 13.4787 2.62368L14.4989 3.74391C14.8998 4.18418 15.4761 4.42288 16.071 4.39508L17.5845 4.32435C18.7614 4.26934 19.7307 5.23857 19.6757 6.41554L19.6049 7.92905C19.5771 8.52388 19.8158 9.10016 20.2561 9.50111L21.3763 10.5213C22.2475 11.3147 22.2475 12.6853 21.3763 13.4787L20.2561 14.4989C19.8158 14.8998 19.5771 15.4761 19.6049 16.071L19.6757 17.5845C19.7307 18.7614 18.7614 19.7307 17.5845 19.6757L16.071 19.6049C15.4761 19.5771 14.8998 19.8158 14.4989 20.2561L13.4787 21.3763C12.6853 22.2475 11.3147 22.2475 10.5213 21.3763L9.50111 20.2561C9.10016 19.8158 8.52388 19.5771 7.92905 19.6049L6.41553 19.6757C5.23857 19.7307 4.26934 18.7614 4.32435 17.5845L4.39508 16.071C4.42288 15.4761 4.18418 14.8998 3.74391 14.4989L2.62368 13.4787C1.75255 12.6853 1.75255 11.3147 2.62368 10.5213L3.74391 9.50111C4.18418 9.10016 4.42288 8.52388 4.39508 7.92905L4.32435 6.41553C4.26934 5.23857 5.23857 4.26934 6.41554 4.32435L7.92905 4.39508C8.52388 4.42288 9.10016 4.18418 9.50111 3.74391L10.5213 2.62368Z"
           fill={`url(#gc-rim-${uid})`}
         >
-          <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="9s" repeatCount="indefinite" />
+          <animateTransform
+            attributeName="transform"
+            type="rotate"
+            from="0 12 12"
+            to="360 12 12"
+            dur="9s"
+            repeatCount="indefinite"
+          />
         </path>
       </g>
       <path
@@ -72,7 +80,14 @@ export function GoldCheck({ size = 24, className = "" }: { size?: number; classN
       />
       <g clipPath={`url(#gc-clip-${uid})`} style={{ mixBlendMode: "screen" }}>
         <rect x="-24" y="0" width="24" height="24" fill={`url(#gc-spark-${uid})`}>
-          <animate attributeName="x" from="-24" to="24" dur="3.2s" begin="0s" repeatCount="indefinite" />
+          <animate
+            attributeName="x"
+            from="-24"
+            to="24"
+            dur="3.2s"
+            begin="0s"
+            repeatCount="indefinite"
+          />
         </rect>
       </g>
       <path
@@ -93,9 +108,21 @@ export function GoldCheck({ size = 24, className = "" }: { size?: number; classN
   );
 }
 
-export function VerifiedBadge({ kind = "user", className = "", size }: { kind?: Kind; className?: string; size?: number }) {
+export function VerifiedBadge({
+  kind = "user",
+  className = "",
+  size,
+}: {
+  kind?: Kind;
+  className?: string;
+  size?: number;
+}) {
   if (kind === "admin") {
-    return <Crown className={`size-4 text-[oklch(0.7_0.18_305)] drop-shadow-[0_0_6px_oklch(0.7_0.18_305_/_0.8)] ${className}`} />;
+    return (
+      <Crown
+        className={`size-4 text-[oklch(0.7_0.18_305)] drop-shadow-[0_0_6px_oklch(0.7_0.18_305_/_0.8)] ${className}`}
+      />
+    );
   }
   return <GoldCheck size={size} className={className} />;
 }

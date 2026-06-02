@@ -1,5 +1,10 @@
 import type { TreyTvMcpConfig } from "./config.js";
-import { findManifestTool, listSafeManifestTools, type TreyTvMcpManifest, type TreyTvMcpToolDescriptor } from "./tools.js";
+import {
+  findManifestTool,
+  listSafeManifestTools,
+  type TreyTvMcpManifest,
+  type TreyTvMcpToolDescriptor,
+} from "./tools.js";
 
 const MANIFEST_ENDPOINT = "/api/plugins/mcp-manifest";
 
@@ -51,7 +56,9 @@ export class TreyTvPluginBridgeClient {
     }
 
     if (!response.ok) {
-      throw new Error(`Trey TV Plugin Bridge request failed with HTTP ${response.status}: ${safeErrorSummary(body)}`);
+      throw new Error(
+        `Trey TV Plugin Bridge request failed with HTTP ${response.status}: ${safeErrorSummary(body)}`,
+      );
     }
 
     return body;
@@ -61,11 +68,11 @@ export class TreyTvPluginBridgeClient {
 function isManifest(value: unknown): value is TreyTvMcpManifest {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      "mcpReady" in value &&
-      "execution" in value &&
-      "tools" in value &&
-      Array.isArray((value as { tools: unknown }).tools),
+    typeof value === "object" &&
+    "mcpReady" in value &&
+    "execution" in value &&
+    "tools" in value &&
+    Array.isArray((value as { tools: unknown }).tools),
   );
 }
 
@@ -75,4 +82,3 @@ function safeErrorSummary(body: unknown): string {
   }
   return "request denied or unavailable";
 }
-

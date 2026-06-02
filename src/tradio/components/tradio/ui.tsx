@@ -1,13 +1,25 @@
-import React from 'react';
-import { Sparkles, Bell, ChevronRight, Play, Pause, MoreHorizontal, Check, TrendingUp, TrendingDown, Clock, Menu } from 'lucide-react';
-import { IMG } from './data';
-import { TradioImage } from './NoCoverVisualizer';
-import aiBallCutout from '@/tradio/assets/ai-ball.png';
+import React from "react";
+import {
+  Sparkles,
+  Bell,
+  ChevronRight,
+  Play,
+  Pause,
+  MoreHorizontal,
+  Check,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Menu,
+} from "lucide-react";
+import { IMG } from "./data";
+import { TradioImage } from "./NoCoverVisualizer";
+import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import { VerifiedBadge as GlobalVerifiedBadge } from "@/components/brand/Badge";
 
 // ─── TRADIO LOGO ─────────────────────────────────────────
-export const TradioLogo: React.FC<{ size?: 'sm' | 'md' }> = ({ size = 'md' }) => (
-  <div className={`font-black tracking-[0.22em] ${size === 'sm' ? 'text-lg' : 'text-2xl'}`}>
+export const TradioLogo: React.FC<{ size?: "sm" | "md" }> = ({ size = "md" }) => (
+  <div className={`font-black tracking-[0.22em] ${size === "sm" ? "text-lg" : "text-2xl"}`}>
     <span className="bg-gradient-to-r from-fuchsia-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(168,85,247,0.25)]">
       TRA
     </span>
@@ -22,14 +34,16 @@ export const TradioLogo: React.FC<{ size?: 'sm' | 'md' }> = ({ size = 'md' }) =>
 
 // ─── GLASS CARD ──────────────────────────────────────────
 export const GlassCard: React.FC<React.HTMLAttributes<HTMLDivElement> & { glow?: boolean }> = ({
-  className = '',
+  className = "",
   glow = false,
   children,
   ...rest
 }) => (
   <div
     className={`relative group rounded-3xl border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] via-white/[0.015] to-[#04050d]/85 backdrop-blur-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1.5px_2px_rgba(255,255,255,0.15),inset_0_-1px_1px_rgba(255,255,255,0.02)] transition-all duration-500 hover:border-white/20 hover:bg-gradient-to-b hover:from-white/[0.09] hover:via-white/[0.025] hover:to-[#04050d]/90 hover:-translate-y-[2px] hover:shadow-[0_35px_70px_-10px_rgba(0,0,0,0.9),inset_0_1.5px_2.5px_rgba(255,255,255,0.22)] ${
-      glow ? 'shadow-[0_0_40px_rgba(168,85,247,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.22)] hover:shadow-[0_0_50px_rgba(168,85,247,0.28),inset_0_1.5px_3px_rgba(255,255,255,0.35),0_30px_70px_-10px_rgba(0,0,0,0.9)] hover:border-purple-500/35' : ''
+      glow
+        ? "shadow-[0_0_40px_rgba(168,85,247,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.22)] hover:shadow-[0_0_50px_rgba(168,85,247,0.28),inset_0_1.5px_3px_rgba(255,255,255,0.35),0_30px_70px_-10px_rgba(0,0,0,0.9)] hover:border-purple-500/35"
+        : ""
     } ${className}`}
     {...rest}
   >
@@ -42,7 +56,7 @@ export const GlassCard: React.FC<React.HTMLAttributes<HTMLDivElement> & { glow?:
 
 // ─── BUTTONS ─────────────────────────────────────────────
 export const PrimaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({
-  className = '',
+  className = "",
   children,
   ...rest
 }) => (
@@ -52,13 +66,18 @@ export const PrimaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElemen
   >
     {/* High-fidelity sweeping gloss sheen */}
     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-    <span className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), transparent)'}} />
+    <span
+      className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      style={{
+        background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), transparent)",
+      }}
+    />
     <span className="relative flex items-center justify-center gap-2">{children}</span>
   </button>
 );
 
 export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({
-  className = '',
+  className = "",
   children,
   ...rest
 }) => (
@@ -72,12 +91,12 @@ export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElem
 
 export const IconButton: React.FC<
   React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }
-> = ({ className = '', active, children, ...rest }) => (
+> = ({ className = "", active, children, ...rest }) => (
   <button
     className={`inline-flex h-12 w-12 items-center justify-center rounded-full border transition-all duration-500 backdrop-blur-lg ${
       active
-        ? 'border-purple-400/40 bg-gradient-to-br from-purple-500/25 to-purple-500/5 text-purple-100 shadow-[0_0_25px_rgba(176,38,255,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.25)]'
-        : 'border-white/10 bg-white/[0.04] text-white/80 hover:border-white/18 hover:bg-white/[0.08] hover:scale-105 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]'
+        ? "border-purple-400/40 bg-gradient-to-br from-purple-500/25 to-purple-500/5 text-purple-100 shadow-[0_0_25px_rgba(176,38,255,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.25)]"
+        : "border-white/10 bg-white/[0.04] text-white/80 hover:border-white/18 hover:bg-white/[0.08] hover:scale-105 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]"
     } active:scale-95 ${className}`}
     {...rest}
   >
@@ -86,7 +105,10 @@ export const IconButton: React.FC<
 );
 
 // ─── AI PILL ─────────────────────────────────────────────
-export const AIPill: React.FC<{ label?: string; onClick?: () => void }> = ({ label = 'AI', onClick }) => (
+export const AIPill: React.FC<{ label?: string; onClick?: () => void }> = ({
+  label = "AI",
+  onClick,
+}) => (
   <button
     onClick={onClick}
     className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center select-none active:scale-95 transition-all duration-300"
@@ -116,8 +138,8 @@ export const Chip: React.FC<{
     onClick={onClick}
     className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border-[0.5px] px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
       selected
-        ? 'border-purple-400 bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-cyan-500/10 text-white shadow-[0_0_25px_rgba(168,85,247,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]'
-        : 'border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.01] text-white/75 hover:border-white/20 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
+        ? "border-purple-400 bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-cyan-500/10 text-white shadow-[0_0_25px_rgba(168,85,247,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+        : "border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.01] text-white/75 hover:border-white/20 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
     }`}
   >
     {icon}
@@ -126,13 +148,13 @@ export const Chip: React.FC<{
 );
 
 // ─── HEADER ──────────────────────────────────────────────
-export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerLogo?: boolean; title?: string; onProfileClick?: () => void }> = ({
-  showBack,
-  onBack,
-  centerLogo,
-  title,
-  onProfileClick,
-}) => (
+export const TopBar: React.FC<{
+  showBack?: boolean;
+  onBack?: () => void;
+  centerLogo?: boolean;
+  title?: string;
+  onProfileClick?: () => void;
+}> = ({ showBack, onBack, centerLogo, title, onProfileClick }) => (
   <div className="flex items-center justify-between px-4 pt-[max(2rem,env(safe-area-inset-top))] lg:pt-6 pb-3 lg:pb-0 animate-fade-in sm:px-6 lg:px-10">
     {showBack ? (
       <button
@@ -140,7 +162,13 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
         className="flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-gradient-to-br from-white/10 to-white/3 text-white backdrop-blur-lg hover:border-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
         aria-label="Back"
       >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
+        <svg
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
           <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
@@ -149,8 +177,8 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
         {/* Mobile Hamburger Menu Button */}
         <button
           onClick={() => {
-            window.dispatchEvent(new CustomEvent('open-tradio-nav'));
-            document.dispatchEvent(new CustomEvent('open-tradio-nav'));
+            window.dispatchEvent(new CustomEvent("open-tradio-nav"));
+            document.dispatchEvent(new CustomEvent("open-tradio-nav"));
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/85 backdrop-blur-md active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
           title="All Screens"
@@ -167,15 +195,17 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
     {centerLogo && <TradioLogo size="sm" />}
     {title && !centerLogo && (
       <div className="min-w-0 flex-1 px-4 text-center lg:text-left">
-        <div className="truncate text-base font-black tracking-[0.18em] bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] sm:text-lg">{title}</div>
+        <div className="truncate text-base font-black tracking-[0.18em] bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] sm:text-lg">
+          {title}
+        </div>
       </div>
     )}
     <div className="flex items-center gap-2.5 sm:gap-3">
       {/* Mobile Messenger Bell Button */}
       <button
         onClick={() => {
-          window.dispatchEvent(new CustomEvent('open-tradio-messenger'));
-          document.dispatchEvent(new CustomEvent('open-tradio-messenger'));
+          window.dispatchEvent(new CustomEvent("open-tradio-messenger"));
+          document.dispatchEvent(new CustomEvent("open-tradio-messenger"));
         }}
         className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/80 active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
         title="Trey TV Messenger"
@@ -190,7 +220,9 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
         src={IMG.jordan}
         alt="profile"
         className={`h-11 w-11 rounded-full border border-white/30 object-cover ring-2 ring-purple-500/40 shadow-[0_0_20px_-5px_rgba(176,38,255,0.3)] ${
-          onProfileClick ? 'cursor-pointer transition-transform active:scale-95 hover:scale-105' : ''
+          onProfileClick
+            ? "cursor-pointer transition-transform active:scale-95 hover:scale-105"
+            : ""
         }`}
       />
     </div>
@@ -198,12 +230,12 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
 );
 
 // ─── WAVEFORM ────────────────────────────────────────────
-export const Waveform: React.FC<{ className?: string; bars?: number; color?: string; animate?: boolean }> = ({
-  className = '',
-  bars = 28,
-  color = 'from-fuchsia-400 to-purple-500',
-  animate = true,
-}) => (
+export const Waveform: React.FC<{
+  className?: string;
+  bars?: number;
+  color?: string;
+  animate?: boolean;
+}> = ({ className = "", bars = 28, color = "from-fuchsia-400 to-purple-500", animate = true }) => (
   <div className={`flex items-end gap-[2.5px] ${className}`}>
     {Array.from({ length: bars }).map((_, i) => {
       const h = 25 + Math.abs(Math.sin(i * 0.75)) * 75;
@@ -213,7 +245,7 @@ export const Waveform: React.FC<{ className?: string; bars?: number; color?: str
         <div
           key={i}
           className={`w-[2px] rounded-full bg-gradient-to-t ${color} origin-bottom ${
-            animate ? 'animate-[wave-bar_1s_ease-in-out_infinite]' : ''
+            animate ? "animate-[wave-bar_1s_ease-in-out_infinite]" : ""
           }`}
           style={{
             height: `${h}%`,
@@ -235,7 +267,10 @@ export const SectionHeader: React.FC<{ title: string; onSeeAll?: () => void }> =
   <div className="mb-4 flex items-center justify-between px-4 sm:px-6 lg:px-10">
     <h3 className="text-lg font-semibold tracking-tight text-white">{title}</h3>
     {onSeeAll && (
-      <button onClick={onSeeAll} className="flex items-center gap-1 text-sm text-purple-300 hover:text-purple-200">
+      <button
+        onClick={onSeeAll}
+        className="flex items-center gap-1 text-sm text-purple-300 hover:text-purple-200"
+      >
         See All <ChevronRight className="h-4 w-4" />
       </button>
     )}
@@ -243,23 +278,23 @@ export const SectionHeader: React.FC<{ title: string; onSeeAll?: () => void }> =
 );
 
 // ─── VERIFIED BADGE ──────────────────────────────────────
-export const VerifiedBadge: React.FC<{ className?: string }> = ({ className = '' }) => (
+export const VerifiedBadge: React.FC<{ className?: string }> = ({ className = "" }) => (
   <GlobalVerifiedBadge className={className} />
 );
 
 // ─── PLAY BUTTON CIRCLE ─────────────────────────────────
-export const PlayCircle: React.FC<{ size?: number; onClick?: (event?: React.MouseEvent | React.KeyboardEvent) => void; gradient?: boolean }> = ({
-  size = 48,
-  onClick,
-  gradient,
-}) => (
+export const PlayCircle: React.FC<{
+  size?: number;
+  onClick?: (event?: React.MouseEvent | React.KeyboardEvent) => void;
+  gradient?: boolean;
+}> = ({ size = 48, onClick, gradient }) => (
   <span
-    role={onClick ? 'button' : undefined}
+    role={onClick ? "button" : undefined}
     tabIndex={onClick ? 0 : undefined}
     onClick={(event) => onClick?.(event)}
     onKeyDown={(event) => {
       if (!onClick) return;
-      if (event.key === 'Enter' || event.key === ' ') {
+      if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         onClick(event);
       }
@@ -267,8 +302,8 @@ export const PlayCircle: React.FC<{ size?: number; onClick?: (event?: React.Mous
     style={{ width: size, height: size }}
     className={`flex items-center justify-center rounded-full transition-all duration-500 ${
       gradient
-        ? 'bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:shadow-[0_0_40px_rgba(168,85,247,0.7)]'
-        : 'border border-white/20 bg-white/[0.07] backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:border-white/35 hover:bg-white/[0.12] hover:shadow-[0_10px_25px_rgba(0,0,0,0.3)]'
+        ? "bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:shadow-[0_0_40px_rgba(168,85,247,0.7)]"
+        : "border border-white/20 bg-white/[0.07] backdrop-blur-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] hover:border-white/35 hover:bg-white/[0.12] hover:shadow-[0_10px_25px_rgba(0,0,0,0.3)]"
     } text-white hover:scale-110 active:scale-95 group`}
   >
     <Play className="h-1/2 w-1/2 fill-white translate-x-[1px]" />
@@ -276,38 +311,44 @@ export const PlayCircle: React.FC<{ size?: number; onClick?: (event?: React.Mous
 );
 
 // ─── TOGGLE ──────────────────────────────────────────────
-export const Toggle: React.FC<{ on: boolean; onChange: (v: boolean) => void }> = ({ on, onChange }) => (
+export const Toggle: React.FC<{ on: boolean; onChange: (v: boolean) => void }> = ({
+  on,
+  onChange,
+}) => (
   <button
     onClick={() => onChange(!on)}
     className={`relative h-7 w-12 rounded-full transition ${
-      on ? 'bg-gradient-to-r from-fuchsia-500 to-purple-500' : 'bg-white/10'
+      on ? "bg-gradient-to-r from-fuchsia-500 to-purple-500" : "bg-white/10"
     }`}
   >
     <span
       className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-md transition ${
-        on ? 'left-[22px]' : 'left-0.5'
+        on ? "left-[22px]" : "left-0.5"
       }`}
     />
   </button>
 );
 
 // ─── EQ ICON ─────────────────────────────────────────────
-export const EqIcon: React.FC<{ className?: string; isPlaying?: boolean }> = ({ className = '', isPlaying = false }) => (
+export const EqIcon: React.FC<{ className?: string; isPlaying?: boolean }> = ({
+  className = "",
+  isPlaying = false,
+}) => (
   <div className={`flex items-end gap-[2px] ${className}`}>
     {[40, 80, 50, 90, 30, 70].map((h, i) => {
-      const dur = 0.5 + (i * 0.12) % 0.6;
+      const dur = 0.5 + ((i * 0.12) % 0.6);
       const delay = (i * 0.08) % 0.4;
       return (
         <span
           key={i}
           className={`w-[2px] rounded-full bg-purple-400 transform-gpu transition-all duration-300 ${
-            isPlaying ? 'animate-eq-bounce' : ''
+            isPlaying ? "animate-eq-bounce" : ""
           }`}
           style={{
             height: `${h}%`,
             animationDuration: isPlaying ? `${dur}s` : undefined,
             animationDelay: isPlaying ? `${delay}s` : undefined,
-            transformOrigin: 'bottom',
+            transformOrigin: "bottom",
           }}
         />
       );
@@ -338,8 +379,12 @@ export const StationCard: React.FC<{
         imgClassName="h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-      <span className="absolute bottom-2 right-2"><PlayCircle size={36} /></span>
-      {isPlaying && <Waveform className="absolute bottom-2 left-2 h-3 w-12 opacity-100" bars={10} />}
+      <span className="absolute bottom-2 right-2">
+        <PlayCircle size={36} />
+      </span>
+      {isPlaying && (
+        <Waveform className="absolute bottom-2 left-2 h-3 w-12 opacity-100" bars={10} />
+      )}
     </div>
     <div className="mt-2 truncate text-sm font-semibold text-white">{title}</div>
     <div className="truncate text-[11px] text-white/55">{genre}</div>
@@ -354,15 +399,28 @@ export const ArtistCard: React.FC<{
   subtitle?: string;
   onClick?: () => void;
 }> = ({ name, avatar, verified, subtitle, onClick }) => (
-  <GlassCard onClick={onClick} className="flex items-center gap-3 p-2.5 pr-3 transition-all duration-300 hover:border-white/20 cursor-pointer">
-    <img src={avatar} alt={name} className="h-12 w-12 rounded-full border border-purple-400/40 object-cover" />
+  <GlassCard
+    onClick={onClick}
+    className="flex items-center gap-3 p-2.5 pr-3 transition-all duration-300 hover:border-white/20 cursor-pointer"
+  >
+    <img
+      src={avatar}
+      alt={name}
+      className="h-12 w-12 rounded-full border border-purple-400/40 object-cover"
+    />
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-1 truncate text-left text-sm font-semibold text-white">
         {name} {verified && <VerifiedBadge />}
       </div>
-      <div className="text-[11px] text-white/55">{subtitle || 'Artist'}</div>
+      <div className="text-[11px] text-white/55">{subtitle || "Artist"}</div>
     </div>
-    <PlayCircle size={32} onClick={(e) => { e?.stopPropagation(); onClick?.(); }} />
+    <PlayCircle
+      size={32}
+      onClick={(e) => {
+        e?.stopPropagation();
+        onClick?.();
+      }}
+    />
   </GlassCard>
 );
 
@@ -420,8 +478,14 @@ export const StatCard: React.FC<{
     </div>
     <div className="text-2xl font-black text-white">{value}</div>
     {trend && (
-      <div className={`text-xs font-semibold flex items-center gap-1 ${trend.isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-        {trend.isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      <div
+        className={`text-xs font-semibold flex items-center gap-1 ${trend.isPositive ? "text-emerald-400" : "text-red-400"}`}
+      >
+        {trend.isPositive ? (
+          <TrendingUp className="h-3 w-3" />
+        ) : (
+          <TrendingDown className="h-3 w-3" />
+        )}
         {trend.value}%
       </div>
     )}
@@ -448,10 +512,16 @@ export const EmptyState: React.FC<{
 );
 
 // ─── LOADING SKELETON ─────────────────────────────────────
-export const LoadingSkeleton: React.FC<{ count?: number; variant?: 'card' | 'row' }> = ({ count = 4, variant = 'card' }) => (
-  <div className={`space-y-3 ${variant === 'card' ? 'grid gap-3 grid-cols-2 sm:grid-cols-3' : ''}`}>
+export const LoadingSkeleton: React.FC<{ count?: number; variant?: "card" | "row" }> = ({
+  count = 4,
+  variant = "card",
+}) => (
+  <div className={`space-y-3 ${variant === "card" ? "grid gap-3 grid-cols-2 sm:grid-cols-3" : ""}`}>
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className={`rounded-xl border border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent animate-pulse ${variant === 'card' ? 'aspect-square' : 'h-14'}`} />
+      <div
+        key={i}
+        className={`rounded-xl border border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent animate-pulse ${variant === "card" ? "aspect-square" : "h-14"}`}
+      />
     ))}
   </div>
 );
@@ -467,8 +537,8 @@ export const MoodChip: React.FC<{
     onClick={onClick}
     className={`inline-flex items-center gap-1.5 shrink-0 rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
       selected
-        ? 'border-purple-400/50 bg-gradient-to-r from-purple-500/25 to-purple-500/10 text-white shadow-[0_0_30px_-8px_rgba(176,38,255,0.5)]'
-        : 'border-white/10 bg-gradient-to-br from-white/8 to-white/2 text-white/75 hover:border-white/15 hover:bg-gradient-to-br hover:from-white/12 hover:to-white/5'
+        ? "border-purple-400/50 bg-gradient-to-r from-purple-500/25 to-purple-500/10 text-white shadow-[0_0_30px_-8px_rgba(176,38,255,0.5)]"
+        : "border-white/10 bg-gradient-to-br from-white/8 to-white/2 text-white/75 hover:border-white/15 hover:bg-gradient-to-br hover:from-white/12 hover:to-white/5"
     }`}
   >
     {emoji && <span>{emoji}</span>}
@@ -491,13 +561,15 @@ export const SegmentedTabs: React.FC<{
         onClick={() => (onChange ?? onTabChange)?.(tab.id)}
         className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-300 ${
           (active ?? activeTab) === tab.id
-            ? 'bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 text-white shadow-[0_4px_15px_rgba(168,85,247,0.35)]'
-            : 'text-white/60 hover:text-white/90'
+            ? "bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 text-white shadow-[0_4px_15px_rgba(168,85,247,0.35)]"
+            : "text-white/60 hover:text-white/90"
         }`}
       >
         {tab.label}
-        {typeof tab.count === 'number' && (
-          <span className="ml-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/70">{tab.count}</span>
+        {typeof tab.count === "number" && (
+          <span className="ml-2 rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-white/70">
+            {tab.count}
+          </span>
         )}
       </button>
     ))}
@@ -575,7 +647,11 @@ export const VoiceDropCard: React.FC<{
 }> = ({ artist, avatar, text, duration, isPlaying, onPlay }) => (
   <GlassCard className="space-y-3 p-4">
     <div className="flex items-center gap-3">
-      <img src={avatar} alt={artist} className="h-10 w-10 rounded-full border border-purple-400/40 object-cover" />
+      <img
+        src={avatar}
+        alt={artist}
+        className="h-10 w-10 rounded-full border border-purple-400/40 object-cover"
+      />
       <div className="min-w-0 flex-1">
         <div className="font-semibold text-white truncate">{artist}</div>
         <div className="text-[11px] text-white/55">Voice Message</div>
@@ -587,11 +663,15 @@ export const VoiceDropCard: React.FC<{
         onClick={onPlay}
         className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
           isPlaying
-            ? 'bg-gradient-to-br from-fuchsia-500 to-purple-500 text-white shadow-lg'
-            : 'border border-white/15 bg-white/5 text-white/70 hover:border-white/25'
+            ? "bg-gradient-to-br from-fuchsia-500 to-purple-500 text-white shadow-lg"
+            : "border border-white/15 bg-white/5 text-white/70 hover:border-white/25"
         }`}
       >
-        {isPlaying ? <Pause className="h-4 w-4 fill-white" /> : <Play className="h-4 w-4 fill-white" />}
+        {isPlaying ? (
+          <Pause className="h-4 w-4 fill-white" />
+        ) : (
+          <Play className="h-4 w-4 fill-white" />
+        )}
       </button>
       <div className="flex-1">
         <div className="h-1 rounded-full bg-white/10">
@@ -607,7 +687,15 @@ export const VoiceDropCard: React.FC<{
 export const ScheduleItem: React.FC<{
   title: string;
   artist?: string;
-  type: 'premiere' | 'dj-show' | 'producer-spotlight' | 'fan-request' | 'replay' | 'sponsored' | 'live' | 'block';
+  type:
+    | "premiere"
+    | "dj-show"
+    | "producer-spotlight"
+    | "fan-request"
+    | "replay"
+    | "sponsored"
+    | "live"
+    | "block";
   startTime: string;
   endTime?: string;
   image?: string;
@@ -615,34 +703,44 @@ export const ScheduleItem: React.FC<{
   onSave?: () => void;
 }> = ({ title, artist, type, startTime, endTime, image, description, onSave }) => {
   const typeColors = {
-    premiere: 'from-cyan-500/15 to-cyan-500/5 border-cyan-400/30',
-    'dj-show': 'from-fuchsia-500/15 to-fuchsia-500/5 border-fuchsia-400/30',
-    'producer-spotlight': 'from-amber-500/15 to-amber-500/5 border-amber-400/30',
-    'fan-request': 'from-purple-500/15 to-purple-500/5 border-purple-400/30',
-    replay: 'from-blue-500/15 to-blue-500/5 border-blue-400/30',
-    sponsored: 'from-emerald-500/15 to-emerald-500/5 border-emerald-400/30',
-    live: 'from-red-500/15 to-red-500/5 border-red-400/30',
-    block: 'from-purple-500/15 to-purple-500/5 border-purple-400/30',
+    premiere: "from-cyan-500/15 to-cyan-500/5 border-cyan-400/30",
+    "dj-show": "from-fuchsia-500/15 to-fuchsia-500/5 border-fuchsia-400/30",
+    "producer-spotlight": "from-amber-500/15 to-amber-500/5 border-amber-400/30",
+    "fan-request": "from-purple-500/15 to-purple-500/5 border-purple-400/30",
+    replay: "from-blue-500/15 to-blue-500/5 border-blue-400/30",
+    sponsored: "from-emerald-500/15 to-emerald-500/5 border-emerald-400/30",
+    live: "from-red-500/15 to-red-500/5 border-red-400/30",
+    block: "from-purple-500/15 to-purple-500/5 border-purple-400/30",
   };
   const typeBadgeColors = {
-    premiere: 'text-cyan-300 bg-cyan-400/15',
-    'dj-show': 'text-fuchsia-300 bg-fuchsia-400/15',
-    'producer-spotlight': 'text-amber-300 bg-amber-400/15',
-    'fan-request': 'text-purple-300 bg-purple-400/15',
-    replay: 'text-blue-300 bg-blue-400/15',
-    sponsored: 'text-emerald-300 bg-emerald-400/15',
-    live: 'text-red-300 bg-red-400/15',
-    block: 'text-purple-300 bg-purple-400/15',
+    premiere: "text-cyan-300 bg-cyan-400/15",
+    "dj-show": "text-fuchsia-300 bg-fuchsia-400/15",
+    "producer-spotlight": "text-amber-300 bg-amber-400/15",
+    "fan-request": "text-purple-300 bg-purple-400/15",
+    replay: "text-blue-300 bg-blue-400/15",
+    sponsored: "text-emerald-300 bg-emerald-400/15",
+    live: "text-red-300 bg-red-400/15",
+    block: "text-purple-300 bg-purple-400/15",
   };
 
   return (
-    <GlassCard className={`bg-gradient-to-br ${typeColors[type]} border border-white/10 space-y-3 p-4`}>
+    <GlassCard
+      className={`bg-gradient-to-br ${typeColors[type]} border border-white/10 space-y-3 p-4`}
+    >
       <div className="flex items-start gap-3">
-        {image && <img src={image} alt={title} className="h-12 w-12 rounded-lg object-cover flex-shrink-0" />}
+        {image && (
+          <img
+            src={image}
+            alt={title}
+            className="h-12 w-12 rounded-lg object-cover flex-shrink-0"
+          />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 gap-y-1 flex-wrap">
             <h4 className="font-semibold text-white">{title}</h4>
-            <span className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded ${typeBadgeColors[type]}`}>
+            <span
+              className={`text-[11px] font-bold uppercase tracking-wide px-2 py-0.5 rounded ${typeBadgeColors[type]}`}
+            >
               {type}
             </span>
           </div>
@@ -671,7 +769,10 @@ export const ReleaseCard: React.FC<{
   streams?: number;
   onClick?: () => void;
 }> = ({ title, artist, artwork, releasedAt, streams, onClick }) => (
-  <GlassCard onClick={onClick} className="flex items-center gap-3 p-2.5 transition-all duration-300 hover:border-white/20 cursor-pointer">
+  <GlassCard
+    onClick={onClick}
+    className="flex items-center gap-3 p-2.5 transition-all duration-300 hover:border-white/20 cursor-pointer"
+  >
     <TradioImage
       src={artwork}
       title={title}
@@ -699,18 +800,23 @@ export const ReleaseCard: React.FC<{
 );
 
 // ─── ROLE INDICATOR ────────────────────────────────────────
-export const RoleIndicator: React.FC<{ role: string; size?: 'sm' | 'md' }> = ({ role, size = 'md' }) => {
+export const RoleIndicator: React.FC<{ role: string; size?: "sm" | "md" }> = ({
+  role,
+  size = "md",
+}) => {
   const roleColors: Record<string, string> = {
-    fan: 'from-cyan-400/20 to-cyan-400/5 text-cyan-200 border-cyan-400/30',
-    artist: 'from-fuchsia-400/20 to-fuchsia-400/5 text-fuchsia-200 border-fuchsia-400/30',
-    producer: 'from-purple-400/20 to-purple-400/5 text-purple-200 border-purple-400/30',
-    dj: 'from-amber-400/20 to-amber-400/5 text-amber-200 border-amber-400/30',
+    fan: "from-cyan-400/20 to-cyan-400/5 text-cyan-200 border-cyan-400/30",
+    artist: "from-fuchsia-400/20 to-fuchsia-400/5 text-fuchsia-200 border-fuchsia-400/30",
+    producer: "from-purple-400/20 to-purple-400/5 text-purple-200 border-purple-400/30",
+    dj: "from-amber-400/20 to-amber-400/5 text-amber-200 border-amber-400/30",
   };
   const color = roleColors[role] || roleColors.fan;
-  const sizeClass = size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs';
+  const sizeClass = size === "sm" ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5 text-xs";
 
   return (
-    <span className={`inline-flex items-center rounded-full border bg-gradient-to-r font-semibold ${sizeClass} ${color}`}>
+    <span
+      className={`inline-flex items-center rounded-full border bg-gradient-to-r font-semibold ${sizeClass} ${color}`}
+    >
       {role.charAt(0).toUpperCase() + role.slice(1)} Mode
     </span>
   );
@@ -728,7 +834,10 @@ export const BeatCard: React.FC<{
   plays: number;
   onClick?: () => void;
 }> = ({ title, producerName, producerAvatar, artwork, bpm, musicalKey, mood, plays, onClick }) => (
-  <GlassCard onClick={onClick} className="flex flex-col gap-3 p-3 transition-all duration-300 hover:border-white/20 cursor-pointer group">
+  <GlassCard
+    onClick={onClick}
+    className="flex flex-col gap-3 p-3 transition-all duration-300 hover:border-white/20 cursor-pointer group"
+  >
     <div className="relative overflow-hidden rounded-lg">
       <TradioImage
         src={artwork}
@@ -741,8 +850,12 @@ export const BeatCard: React.FC<{
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
       <div className="absolute bottom-2 left-2 flex gap-1.5">
-        <span className="rounded bg-purple-500/80 px-2 py-1 text-[10px] font-bold text-white">{bpm} BPM</span>
-        <span className="rounded bg-cyan-500/80 px-2 py-1 text-[10px] font-bold text-white">{musicalKey}</span>
+        <span className="rounded bg-purple-500/80 px-2 py-1 text-[10px] font-bold text-white">
+          {bpm} BPM
+        </span>
+        <span className="rounded bg-cyan-500/80 px-2 py-1 text-[10px] font-bold text-white">
+          {musicalKey}
+        </span>
       </div>
       <button className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-500 text-white shadow-lg hover:scale-110 transition-transform">
         <Play className="h-4 w-4 fill-white" />
@@ -751,7 +864,11 @@ export const BeatCard: React.FC<{
     <div>
       <div className="text-sm font-semibold text-white">{title}</div>
       <div className="mt-1 flex items-center gap-1.5">
-        <img src={producerAvatar} alt={producerName} className="h-5 w-5 rounded-full border border-white/20" />
+        <img
+          src={producerAvatar}
+          alt={producerName}
+          className="h-5 w-5 rounded-full border border-white/20"
+        />
         <span className="text-[11px] text-white/70">{producerName}</span>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1">
@@ -776,17 +893,17 @@ export const SegmentCard: React.FC<{
   aiGenerated?: boolean;
 }> = ({ type, title, duration, description, hostNotes, aiGenerated }) => {
   const typeColors: Record<string, string> = {
-    intro: 'from-blue-500/15 to-blue-500/5 border-blue-400/30',
-    'music-block': 'from-purple-500/15 to-purple-500/5 border-purple-400/30',
-    'host-talk': 'from-pink-500/15 to-pink-500/5 border-pink-400/30',
-    'fan-request': 'from-cyan-500/15 to-cyan-500/5 border-cyan-400/30',
-    'producer-spotlight': 'from-amber-500/15 to-amber-500/5 border-amber-400/30',
-    'artist-premiere': 'from-fuchsia-500/15 to-fuchsia-500/5 border-fuchsia-400/30',
-    commercial: 'from-green-500/15 to-green-500/5 border-green-400/30',
-    poll: 'from-orange-500/15 to-orange-500/5 border-orange-400/30',
-    closing: 'from-indigo-500/15 to-indigo-500/5 border-indigo-400/30',
+    intro: "from-blue-500/15 to-blue-500/5 border-blue-400/30",
+    "music-block": "from-purple-500/15 to-purple-500/5 border-purple-400/30",
+    "host-talk": "from-pink-500/15 to-pink-500/5 border-pink-400/30",
+    "fan-request": "from-cyan-500/15 to-cyan-500/5 border-cyan-400/30",
+    "producer-spotlight": "from-amber-500/15 to-amber-500/5 border-amber-400/30",
+    "artist-premiere": "from-fuchsia-500/15 to-fuchsia-500/5 border-fuchsia-400/30",
+    commercial: "from-green-500/15 to-green-500/5 border-green-400/30",
+    poll: "from-orange-500/15 to-orange-500/5 border-orange-400/30",
+    closing: "from-indigo-500/15 to-indigo-500/5 border-indigo-400/30",
   };
-  const color = typeColors[type] || typeColors['music-block'];
+  const color = typeColors[type] || typeColors["music-block"];
 
   return (
     <GlassCard className={`bg-gradient-to-br ${color} border border-white/10 space-y-2 p-4`}>
@@ -812,7 +929,15 @@ export const SegmentCard: React.FC<{
 
 // ─── SHOW TIMELINE PREVIEW ────────────────────────────────
 export const ShowTimelinePreview: React.FC<{
-  segments: { id: string; type: string; title: string; duration: number; description?: string; hostNotes?: string; aiGenerated?: boolean }[];
+  segments: {
+    id: string;
+    type: string;
+    title: string;
+    duration: number;
+    description?: string;
+    hostNotes?: string;
+    aiGenerated?: boolean;
+  }[];
   totalDuration: number;
 }> = ({ segments, totalDuration }) => (
   <GlassCard className="space-y-3 p-5">
@@ -829,7 +954,9 @@ export const ShowTimelinePreview: React.FC<{
               style={{ width: `${(seg.duration / totalDuration) * 100}%` }}
             />
           </div>
-          <span className="text-xs font-semibold text-white/70">{(seg.duration / 60).toFixed(0)}m</span>
+          <span className="text-xs font-semibold text-white/70">
+            {(seg.duration / 60).toFixed(0)}m
+          </span>
         </div>
       ))}
     </div>
@@ -846,10 +973,17 @@ export const DJCard: React.FC<{
   isLive?: boolean;
   onClick?: () => void;
 }> = ({ name, avatar, bio, followers, showCount, isLive, onClick }) => (
-  <GlassCard onClick={onClick} className="flex flex-col gap-3 p-4 transition-all duration-300 hover:border-white/20 cursor-pointer">
+  <GlassCard
+    onClick={onClick}
+    className="flex flex-col gap-3 p-4 transition-all duration-300 hover:border-white/20 cursor-pointer"
+  >
     <div className="flex items-start gap-3">
       <div className="relative">
-        <img src={avatar} alt={name} className="h-16 w-16 rounded-lg border border-purple-400/40 object-cover" />
+        <img
+          src={avatar}
+          alt={name}
+          className="h-16 w-16 rounded-lg border border-purple-400/40 object-cover"
+        />
         {isLive && (
           <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-red-500 border-2 border-black/80 shadow-lg animate-pulse" />
         )}
@@ -882,9 +1016,16 @@ export const ProducerCard: React.FC<{
   specialties: string[];
   onClick?: () => void;
 }> = ({ name, avatar, bio, beatCount, followers, specialties, onClick }) => (
-  <GlassCard onClick={onClick} className="flex flex-col gap-3 p-4 transition-all duration-300 hover:border-white/20 cursor-pointer">
+  <GlassCard
+    onClick={onClick}
+    className="flex flex-col gap-3 p-4 transition-all duration-300 hover:border-white/20 cursor-pointer"
+  >
     <div className="flex items-start gap-3">
-      <img src={avatar} alt={name} className="h-14 w-14 rounded-full border border-purple-400/40 object-cover flex-shrink-0" />
+      <img
+        src={avatar}
+        alt={name}
+        className="h-14 w-14 rounded-full border border-purple-400/40 object-cover flex-shrink-0"
+      />
       <div className="min-w-0 flex-1">
         <h4 className="font-semibold text-white">{name}</h4>
         <p className="mt-1 text-xs text-white/60 line-clamp-2">{bio}</p>

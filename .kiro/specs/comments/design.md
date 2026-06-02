@@ -17,12 +17,13 @@ deleted_at         timestamptz null
 ```
 
 ### RLS
-| Operation | Policy | Condition |
-|-----------|--------|-----------|
-| SELECT | public | `using (true)` |
-| INSERT | authenticated | `with check (creator_id = auth.uid())` |
-| UPDATE | authenticated | `using/check (creator_id = auth.uid())` |
-| DELETE | authenticated | `using (creator_id = auth.uid())` |
+
+| Operation | Policy        | Condition                               |
+| --------- | ------------- | --------------------------------------- |
+| SELECT    | public        | `using (true)`                          |
+| INSERT    | authenticated | `with check (creator_id = auth.uid())`  |
+| UPDATE    | authenticated | `using/check (creator_id = auth.uid())` |
+| DELETE    | authenticated | `using (creator_id = auth.uid())`       |
 
 ---
 
@@ -30,35 +31,36 @@ deleted_at         timestamptz null
 
 ```ts
 type Comment = {
-  id: string
-  postId: string
-  parentId?: string
-  author: { name: string; handle: string; avatar: string }
-  text: string
-  likes: number
-  likedByMe: boolean
-  createdAt: number   // ms timestamp
-  editedAt?: number
-}
+  id: string;
+  postId: string;
+  parentId?: string;
+  author: { name: string; handle: string; avatar: string };
+  text: string;
+  likes: number;
+  likedByMe: boolean;
+  createdAt: number; // ms timestamp
+  editedAt?: number;
+};
 ```
 
 ## DB → `Comment` Mapping
 
-| Comment field | DB column / join | Notes |
-|---------------|-----------------|-------|
-| `id` | `id` | |
-| `postId` | `post_id` | |
-| `parentId` | `parent_comment_id` | null → undefined |
-| `author.name` | `profiles.display_name` | joined via `creator_id` |
-| `author.handle` | `profiles.username` | |
-| `author.avatar` | `profiles.avatar_url` | fallback to pravatar |
-| `text` | `body` | |
-| `likes` | `0` | local-only, no DB table |
-| `likedByMe` | `false` | local-only |
-| `createdAt` | `new Date(created_at).getTime()` | |
-| `editedAt` | `undefined` | edit stays local |
+| Comment field   | DB column / join                 | Notes                   |
+| --------------- | -------------------------------- | ----------------------- |
+| `id`            | `id`                             |                         |
+| `postId`        | `post_id`                        |                         |
+| `parentId`      | `parent_comment_id`              | null → undefined        |
+| `author.name`   | `profiles.display_name`          | joined via `creator_id` |
+| `author.handle` | `profiles.username`              |                         |
+| `author.avatar` | `profiles.avatar_url`            | fallback to pravatar    |
+| `text`          | `body`                           |                         |
+| `likes`         | `0`                              | local-only, no DB table |
+| `likedByMe`     | `false`                          | local-only              |
+| `createdAt`     | `new Date(created_at).getTime()` |                         |
+| `editedAt`      | `undefined`                      | edit stays local        |
 
 Select query:
+
 ```sql
 select
   id, post_id, parent_comment_id, body, created_at,
@@ -95,6 +97,7 @@ so `useComments()` returns real data — without changing `PostCard` at all.
 ### Strategy
 
 Replace `src/lib/comments-store.tsx` with a version that:
+
 1. Keeps the identical `Comment` type and `Ctx` interface
 2. Keeps `useComments()` export
 3. Replaces the localStorage store with a Supabase-backed store
@@ -115,12 +118,14 @@ const [localItems, setLocalItems] = useState<Comment[]>(SEED);
 ```
 
 ### `byPost(postId)` logic
+
 ```
 if UUID → fetch from DB if not yet fetched, return dbComments[postId] ?? []
 if not UUID → return localItems filtered by postId
 ```
 
 ### `add(postId, text, parentId)` logic
+
 ```
 if UUID and signed-in:
   optimistically add to dbComments[postId]
@@ -133,6 +138,7 @@ if not UUID:
 ```
 
 ### `remove(id)` logic
+
 ```
 if UUID comment and signed-in:
   optimistically remove from dbComments
@@ -143,20 +149,22 @@ if not UUID comment:
 ```
 
 ### `isMine(c)` logic
+
 ```
 if signed-in: c.author.handle === supabaseUser's username
 if signed-out: c.author.handle === currentUser.handle (existing behavior)
 ```
 
 ### `toggleLike` and `edit`
+
 Remain local-only. No DB calls. Operate on whichever store the comment lives in.
 
 ---
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
+| File                         | Change                                            |
+| ---------------------------- | ------------------------------------------------- |
 | `src/lib/comments-store.tsx` | **Replace internals** — keep identical public API |
 
 **No other files change.** `PostCard.tsx` is untouched.

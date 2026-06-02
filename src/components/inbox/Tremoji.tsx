@@ -32,8 +32,7 @@ export function Tremoji({
   static: isStatic = false,
   className = "",
 }: TremojiProps) {
-  const neon =
-    typeof variant === "number" ? NEON[variant % NEON.length] : pickNeon(emoji);
+  const neon = typeof variant === "number" ? NEON[variant % NEON.length] : pickNeon(emoji);
   const glyphSize = Math.round(size * 0.62);
 
   const style: CSSProperties = {

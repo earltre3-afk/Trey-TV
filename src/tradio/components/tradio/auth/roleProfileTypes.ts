@@ -1,24 +1,29 @@
-import type { TradioIdentity, TradioRole, TradioRoleStatus, TradioVerificationState } from './types';
+import type {
+  TradioIdentity,
+  TradioRole,
+  TradioRoleStatus,
+  TradioVerificationState,
+} from "./types";
 
 /**
  * Comprehensive profile activation state for any role profile (artist, producer, dj).
  * Determines what UI, sections, and actions should appear on the profile page.
  */
 export type RoleProfileActivationState =
-  | 'locked' // No role; request available
-  | 'request_available' // Same as locked
-  | 'pending_review' // Request submitted, awaiting approval
-  | 'needs_more_info' // Request rejected or needs update
-  | 'rejected' // Final rejection
-  | 'restricted' // Role active but restricted
-  | 'approved_incomplete' // Role approved but profile incomplete
-  | 'active_public' // Fully approved and complete, ready for public
-  | 'active_private' // Active but private/not ready
-  | 'suspended'; // Role suspended
+  | "locked" // No role; request available
+  | "request_available" // Same as locked
+  | "pending_review" // Request submitted, awaiting approval
+  | "needs_more_info" // Request rejected or needs update
+  | "rejected" // Final rejection
+  | "restricted" // Role active but restricted
+  | "approved_incomplete" // Role approved but profile incomplete
+  | "active_public" // Fully approved and complete, ready for public
+  | "active_private" // Active but private/not ready
+  | "suspended"; // Role suspended
 
-export type RoleProfileType = 'artist' | 'producer' | 'dj';
+export type RoleProfileType = "artist" | "producer" | "dj";
 
-export type RoleProfileVisibility = 'private' | 'unlisted' | 'public';
+export type RoleProfileVisibility = "private" | "unlisted" | "public";
 
 /**
  * Profile completion item — checklist entries for onboarding.
@@ -118,31 +123,29 @@ export const getRoleProfileActivationState = (
   identity: TradioIdentity | null | undefined,
   role: RoleProfileType,
 ): RoleProfileActivationState => {
-  if (!identity) return 'locked';
+  if (!identity) return "locked";
 
-  const roleGrant = identity.roles.find(
-    (g) => g.role === (role === 'dj' ? 'dj' : role),
-  );
+  const roleGrant = identity.roles.find((g) => g.role === (role === "dj" ? "dj" : role));
 
   if (!roleGrant) {
-    return 'locked';
+    return "locked";
   }
 
-  if (roleGrant.role_status === 'restricted') {
-    return 'restricted';
+  if (roleGrant.role_status === "restricted") {
+    return "restricted";
   }
 
-  if (roleGrant.role_status === 'requested') {
-    return 'pending_review';
+  if (roleGrant.role_status === "requested") {
+    return "pending_review";
   }
 
-  if (roleGrant.role_status === 'active' || roleGrant.role_status === 'approved') {
+  if (roleGrant.role_status === "active" || roleGrant.role_status === "approved") {
     // Check if profile is complete (mock for now; real check comes from data)
     // For now, assume active = active_public; later this checks actual profile data
-    return 'active_public';
+    return "active_public";
   }
 
-  return 'locked';
+  return "locked";
 };
 
 /**
@@ -158,7 +161,7 @@ export const canViewRoleProfile = (
   if (!isOwner) return true;
 
   // Owner can only view their own profile if they have the role
-  const hasRole = identity?.roles.some((g) => g.role === (role === 'dj' ? 'dj' : role));
+  const hasRole = identity?.roles.some((g) => g.role === (role === "dj" ? "dj" : role));
   return Boolean(hasRole);
 };
 
@@ -173,13 +176,11 @@ export const canEditRoleProfile = (
 ): boolean => {
   if (!isOwner) return false;
 
-  const roleGrant = identity?.roles.find(
-    (g) => g.role === (role === 'dj' ? 'dj' : role),
-  );
+  const roleGrant = identity?.roles.find((g) => g.role === (role === "dj" ? "dj" : role));
 
   if (!roleGrant) return false;
 
-  return roleGrant.role_status === 'active' || roleGrant.role_status === 'approved';
+  return roleGrant.role_status === "active" || roleGrant.role_status === "approved";
 };
 
 /**
@@ -195,13 +196,11 @@ export const canPublishRoleProfile = (
   if (!isOwner) return false;
   if (!isComplete) return false;
 
-  const roleGrant = identity?.roles.find(
-    (g) => g.role === (role === 'dj' ? 'dj' : role),
-  );
+  const roleGrant = identity?.roles.find((g) => g.role === (role === "dj" ? "dj" : role));
 
   if (!roleGrant) return false;
 
-  return roleGrant.role_status === 'active' || roleGrant.role_status === 'approved';
+  return roleGrant.role_status === "active" || roleGrant.role_status === "approved";
 };
 
 /**
@@ -211,9 +210,9 @@ export const getRoleProfileOwnerLabel = (
   identity: TradioIdentity | null | undefined,
   role: RoleProfileType,
 ): string => {
-  if (!identity) return 'Creator';
+  if (!identity) return "Creator";
 
-  const roleLabel = role === 'artist' ? 'Artist' : role === 'producer' ? 'Producer' : 'Radio Host';
+  const roleLabel = role === "artist" ? "Artist" : role === "producer" ? "Producer" : "Radio Host";
 
   return `${identity.display_name} — ${roleLabel}`;
 };
@@ -239,39 +238,165 @@ export const getRoleProfilePublicUrl = (
 export const getDefaultRoleProfileCompletion = (
   role: RoleProfileType,
 ): RoleProfileCompletionItem[] => {
-  if (role === 'artist') {
+  if (role === "artist") {
     return [
-      { id: 'name', label: 'Artist Name', description: 'Set your artist display name', completed: false, required: true },
-      { id: 'avatar', label: 'Avatar', description: 'Upload a profile picture', completed: false, required: true },
-      { id: 'banner', label: 'Banner', description: 'Upload a profile banner', completed: false, required: false },
-      { id: 'bio', label: 'Bio', description: 'Write your artist bio (optional)', completed: false, required: false },
-      { id: 'genres', label: 'Genres', description: 'Select your primary genres', completed: false, required: true },
-      { id: 'station', label: 'Artist Station', description: 'Create your artist station', completed: false, required: true },
-      { id: 'release', label: 'First Release', description: 'Upload or feature a track', completed: false, required: true },
+      {
+        id: "name",
+        label: "Artist Name",
+        description: "Set your artist display name",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "avatar",
+        label: "Avatar",
+        description: "Upload a profile picture",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "banner",
+        label: "Banner",
+        description: "Upload a profile banner",
+        completed: false,
+        required: false,
+      },
+      {
+        id: "bio",
+        label: "Bio",
+        description: "Write your artist bio (optional)",
+        completed: false,
+        required: false,
+      },
+      {
+        id: "genres",
+        label: "Genres",
+        description: "Select your primary genres",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "station",
+        label: "Artist Station",
+        description: "Create your artist station",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "release",
+        label: "First Release",
+        description: "Upload or feature a track",
+        completed: false,
+        required: true,
+      },
     ];
   }
 
-  if (role === 'producer') {
+  if (role === "producer") {
     return [
-      { id: 'name', label: 'Producer Name', description: 'Set your producer display name', completed: false, required: true },
-      { id: 'avatar', label: 'Avatar', description: 'Upload a profile picture', completed: false, required: true },
-      { id: 'banner', label: 'Banner', description: 'Upload a profile banner', completed: false, required: false },
-      { id: 'bio', label: 'Bio', description: 'Write your producer bio', completed: false, required: false },
-      { id: 'genres', label: 'Beat Genres', description: 'Select your primary beat genres', completed: false, required: true },
-      { id: 'beat', label: 'First Beat', description: 'Upload your first beat', completed: false, required: true },
-      { id: 'catalog', label: 'Beat Catalog Setup', description: 'Organize beats into packs', completed: false, required: false },
+      {
+        id: "name",
+        label: "Producer Name",
+        description: "Set your producer display name",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "avatar",
+        label: "Avatar",
+        description: "Upload a profile picture",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "banner",
+        label: "Banner",
+        description: "Upload a profile banner",
+        completed: false,
+        required: false,
+      },
+      {
+        id: "bio",
+        label: "Bio",
+        description: "Write your producer bio",
+        completed: false,
+        required: false,
+      },
+      {
+        id: "genres",
+        label: "Beat Genres",
+        description: "Select your primary beat genres",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "beat",
+        label: "First Beat",
+        description: "Upload your first beat",
+        completed: false,
+        required: true,
+      },
+      {
+        id: "catalog",
+        label: "Beat Catalog Setup",
+        description: "Organize beats into packs",
+        completed: false,
+        required: false,
+      },
     ];
   }
 
   // DJ/Host
   return [
-    { id: 'name', label: 'Host/DJ Name', description: 'Set your host display name', completed: false, required: true },
-    { id: 'avatar', label: 'Avatar', description: 'Upload a profile picture', completed: false, required: true },
-    { id: 'banner', label: 'Banner', description: 'Upload a profile banner', completed: false, required: false },
-    { id: 'bio', label: 'Bio', description: 'Write your host bio', completed: false, required: false },
-    { id: 'genres', label: 'Show Genres', description: 'Select your primary show genres', completed: false, required: true },
-    { id: 'show', label: 'First Show', description: 'Create or schedule a show', completed: false, required: true },
-    { id: 'broadcast', label: 'Broadcast Access', description: 'Request or activate broadcast access', completed: false, required: false },
+    {
+      id: "name",
+      label: "Host/DJ Name",
+      description: "Set your host display name",
+      completed: false,
+      required: true,
+    },
+    {
+      id: "avatar",
+      label: "Avatar",
+      description: "Upload a profile picture",
+      completed: false,
+      required: true,
+    },
+    {
+      id: "banner",
+      label: "Banner",
+      description: "Upload a profile banner",
+      completed: false,
+      required: false,
+    },
+    {
+      id: "bio",
+      label: "Bio",
+      description: "Write your host bio",
+      completed: false,
+      required: false,
+    },
+    {
+      id: "genres",
+      label: "Show Genres",
+      description: "Select your primary show genres",
+      completed: false,
+      required: true,
+    },
+    {
+      id: "show",
+      label: "First Show",
+      description: "Create or schedule a show",
+      completed: false,
+      required: true,
+    },
+    {
+      id: "broadcast",
+      label: "Broadcast Access",
+      description: "Request or activate broadcast access",
+      completed: false,
+      required: false,
+    },
   ];
 };
 

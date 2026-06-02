@@ -26,7 +26,7 @@ export function AnimatedBanner({
   const isVideo = useMemo(() => {
     if (forceVideo) return true;
     const u = url.toLowerCase().split("?")[0];
-    return /\.(mp4|webm|mov)$/.test(u) || u.startsWith("blob:") && /video/.test(src ?? "");
+    return /\.(mp4|webm|mov)$/.test(u) || (u.startsWith("blob:") && /video/.test(src ?? ""));
   }, [forceVideo, url, src]);
 
   if (isVideo) {

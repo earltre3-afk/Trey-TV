@@ -84,12 +84,7 @@ export interface SpadesCallerProjection {
   private: SpadesPrivateHandProjection;
 }
 
-export type SpadesActionType =
-  | "bid"
-  | "play_card"
-  | "next_round"
-  | "leave_room"
-  | "heartbeat";
+export type SpadesActionType = "bid" | "play_card" | "next_round" | "leave_room" | "heartbeat";
 
 export type SpadesActionPayload =
   | { type: "bid"; bid: number }

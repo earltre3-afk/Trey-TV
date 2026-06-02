@@ -20,8 +20,18 @@ export function AppShell({
   const navigate = useNavigate();
   const location = useLocation();
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const swipeRoutes = ["/", "/for-you", "/explore", "/guide", "/prescribe-me", "/rewards", "/games"];
-  const currentSwipeIndex = swipeRoutes.findIndex((route) => route === "/" ? location.pathname === "/" : location.pathname.startsWith(route));
+  const swipeRoutes = [
+    "/",
+    "/for-you",
+    "/explore",
+    "/guide",
+    "/prescribe-me",
+    "/rewards",
+    "/games",
+  ];
+  const currentSwipeIndex = swipeRoutes.findIndex((route) =>
+    route === "/" ? location.pathname === "/" : location.pathname.startsWith(route),
+  );
   const onTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
     const start = touchStart.current;
     touchStart.current = null;
@@ -56,7 +66,11 @@ export function AppShell({
       >
         {/* Mobile-only header */}
         <div className="lg:hidden">
-          <AppHeader activeTab={activeTab} onTabChange={onTabChange} onMenuClick={() => setMenuOpen(true)} />
+          <AppHeader
+            activeTab={activeTab}
+            onTabChange={onTabChange}
+            onMenuClick={() => setMenuOpen(true)}
+          />
         </div>
         <main
           className="relative z-10 px-0 sm:px-3 lg:px-8 xl:px-10 2xl:px-12 pt-1 sm:pt-3 lg:pt-8 xl:pt-10 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:!pb-16"

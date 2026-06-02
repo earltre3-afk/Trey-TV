@@ -54,16 +54,20 @@ export function GatewaySplash({ active, onDone }: Props) {
             <svg className="gtw-frame-svg" viewBox="0 0 460 220" aria-hidden="true">
               <defs>
                 <linearGradient id="gtwFg" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stopColor="#c8860a" stopOpacity={0.9} />
-                  <stop offset="35%"  stopColor="#fce97a" stopOpacity={1} />
-                  <stop offset="65%"  stopColor="#c8780a" stopOpacity={0.5} />
+                  <stop offset="0%" stopColor="#c8860a" stopOpacity={0.9} />
+                  <stop offset="35%" stopColor="#fce97a" stopOpacity={1} />
+                  <stop offset="65%" stopColor="#c8780a" stopOpacity={0.5} />
                   <stop offset="100%" stopColor="#f0c040" stopOpacity={0.9} />
                 </linearGradient>
               </defs>
               <rect
                 className="gtw-frame-path"
-                x="20" y="16" width="420" height="188"
-                rx="18" ry="18"
+                x="20"
+                y="16"
+                width="420"
+                height="188"
+                rx="18"
+                ry="18"
                 transform="skewX(-6)"
               />
             </svg>
@@ -89,10 +93,7 @@ export function GatewaySplash({ active, onDone }: Props) {
               <span className="gtw-play-icon" aria-hidden="true" />
               Watch Now
             </button>
-            <button
-              className="gtw-btn-signin"
-              onClick={() => dismiss(() => nav({ to: "/login" }))}
-            >
+            <button className="gtw-btn-signin" onClick={() => dismiss(() => nav({ to: "/login" }))}>
               Sign In &nbsp;/&nbsp; Create Account
             </button>
           </div>

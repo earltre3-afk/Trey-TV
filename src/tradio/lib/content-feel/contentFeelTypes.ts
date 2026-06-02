@@ -13,80 +13,157 @@
 // ─── Identity ────────────────────────────────────────────────────────────────
 
 export type ContentType =
-  | 'video'
-  | 'short_video'
-  | 'episode'
-  | 'series'
-  | 'music_track'
-  | 'album'
-  | 'playlist'
-  | 'producer_beat'
-  | 'beat_pack'
-  | 'dj_mix'
-  | 'live_broadcast'
-  | 'radio_show'
-  | 'song_war_battle'
-  | 'song_war_round'
-  | 'story'
-  | 'story_scene'
-  | 'game'
-  | 'gif'
-  | 'reaction'
-  | 'dance_video'
-  | 'profile_trailer'
-  | 'creator_channel_item';
+  | "video"
+  | "short_video"
+  | "episode"
+  | "series"
+  | "music_track"
+  | "album"
+  | "playlist"
+  | "producer_beat"
+  | "beat_pack"
+  | "dj_mix"
+  | "live_broadcast"
+  | "radio_show"
+  | "song_war_battle"
+  | "song_war_round"
+  | "story"
+  | "story_scene"
+  | "game"
+  | "gif"
+  | "reaction"
+  | "dance_video"
+  | "profile_trailer"
+  | "creator_channel_item";
 
 export type SourcePlatform =
-  | 'trey_tv'
-  | 'tradio'
-  | 'fwd'
-  | 'storybook'
-  | 'games'
-  | 'trance'
-  | 'shared_universe';
+  | "trey_tv"
+  | "tradio"
+  | "fwd"
+  | "storybook"
+  | "games"
+  | "trance"
+  | "shared_universe";
 
-export type ContentVisibility = 'public' | 'private' | 'unlisted' | 'followers' | 'draft';
+export type ContentVisibility = "public" | "private" | "unlisted" | "followers" | "draft";
 
 export type ContentUploadStatus =
-  | 'pending'
-  | 'uploading'
-  | 'processing'
-  | 'analyzing'
-  | 'ready'
-  | 'published'
-  | 'failed'
-  | 'removed';
+  | "pending"
+  | "uploading"
+  | "processing"
+  | "analyzing"
+  | "ready"
+  | "published"
+  | "failed"
+  | "removed";
 
 // ─── Feel tag vocabularies ─────────────────────────────────────────────────────
 
 export type MoodTag =
-  | 'understood' | 'comforted' | 'hype' | 'calm' | 'focus' | 'healing' | 'reflective'
-  | 'romantic' | 'heartbreak' | 'confident' | 'rebellious' | 'funny' | 'chaotic'
-  | 'mysterious' | 'dark' | 'bright' | 'spiritual' | 'nostalgic' | 'lonely' | 'social'
-  | 'inspirational' | 'cinematic' | 'sensual' | 'aggressive' | 'playful' | 'serious'
-  | 'vulnerable' | 'triumphant';
+  | "understood"
+  | "comforted"
+  | "hype"
+  | "calm"
+  | "focus"
+  | "healing"
+  | "reflective"
+  | "romantic"
+  | "heartbreak"
+  | "confident"
+  | "rebellious"
+  | "funny"
+  | "chaotic"
+  | "mysterious"
+  | "dark"
+  | "bright"
+  | "spiritual"
+  | "nostalgic"
+  | "lonely"
+  | "social"
+  | "inspirational"
+  | "cinematic"
+  | "sensual"
+  | "aggressive"
+  | "playful"
+  | "serious"
+  | "vulnerable"
+  | "triumphant";
 
 export type EnergyTag =
-  | 'low' | 'medium' | 'high' | 'explosive' | 'smooth' | 'slow_burn' | 'fast'
-  | 'bouncy' | 'tense' | 'relaxed' | 'dreamy' | 'urgent' | 'intimate' | 'spacious';
+  | "low"
+  | "medium"
+  | "high"
+  | "explosive"
+  | "smooth"
+  | "slow_burn"
+  | "fast"
+  | "bouncy"
+  | "tense"
+  | "relaxed"
+  | "dreamy"
+  | "urgent"
+  | "intimate"
+  | "spacious";
 
 export type BehavioralNeedTag =
-  | 'escape' | 'process_emotion' | 'feel_seen' | 'turn_up' | 'calm_down' | 'focus'
-  | 'discover' | 'create' | 'learn' | 'laugh' | 'connect' | 'compete' | 'participate'
-  | 'reflect' | 'get_motivated' | 'find_community' | 'background_energy'
-  | 'emotional_release' | 'decision_support';
+  | "escape"
+  | "process_emotion"
+  | "feel_seen"
+  | "turn_up"
+  | "calm_down"
+  | "focus"
+  | "discover"
+  | "create"
+  | "learn"
+  | "laugh"
+  | "connect"
+  | "compete"
+  | "participate"
+  | "reflect"
+  | "get_motivated"
+  | "find_community"
+  | "background_energy"
+  | "emotional_release"
+  | "decision_support";
 
 export type MoodDirection =
-  | 'match_mood' | 'shift_mood' | 'intensify_mood' | 'soften_mood'
-  | 'challenge_user' | 'comfort_user' | 'energize_user' | 'ground_user';
+  | "match_mood"
+  | "shift_mood"
+  | "intensify_mood"
+  | "soften_mood"
+  | "challenge_user"
+  | "comfort_user"
+  | "energize_user"
+  | "ground_user";
 
 export type AudienceIntent =
-  | 'watch' | 'listen' | 'join' | 'vote' | 'comment' | 'react' | 'share'
-  | 'create_with' | 'remix' | 'battle' | 'follow' | 'save' | 'request' | 'broadcast' | 'play';
+  | "watch"
+  | "listen"
+  | "join"
+  | "vote"
+  | "comment"
+  | "react"
+  | "share"
+  | "create_with"
+  | "remix"
+  | "battle"
+  | "follow"
+  | "save"
+  | "request"
+  | "broadcast"
+  | "play";
 
 export type ContentIntensity =
-  | 'gentle' | 'balanced' | 'intense' | 'explicit' | 'mature' | 'sensitive'
-  | 'high_conflict' | 'high_energy' | 'safe_for_general' | 'needs_context';
+  | "gentle"
+  | "balanced"
+  | "intense"
+  | "explicit"
+  | "mature"
+  | "sensitive"
+  | "high_conflict"
+  | "high_energy"
+  | "safe_for_general"
+  | "needs_context";
 
 // ─── Lane-specific attribute blocks ────────────────────────────────────────────
 
@@ -160,7 +237,7 @@ export interface TranceFeelAttributes {
   dance_energy?: EnergyTag | string;
   difficulty?: number;
   trend_potential?: number;
-  solo_or_group?: 'solo' | 'group' | 'either';
+  solo_or_group?: "solo" | "group" | "either";
   performance_style?: string;
   tutorial_fit?: number;
   challenge_fit?: number;
@@ -187,7 +264,7 @@ export interface PrescribeMeMeta {
   recommended_route_type: string;
 }
 
-export type EngagementBucket = 'low' | 'medium' | 'high' | 'viral_potential' | 'unknown';
+export type EngagementBucket = "low" | "medium" | "high" | "viral_potential" | "unknown";
 
 export interface QuietAlgorithmMeta {
   feed_boost_contexts: string[];
@@ -201,7 +278,7 @@ export interface QuietAlgorithmMeta {
   rights_review_needed: boolean;
 }
 
-export type ConfidenceLabel = 'low' | 'medium' | 'high' | 'very_high';
+export type ConfidenceLabel = "low" | "medium" | "high" | "very_high";
 
 export interface AiConfidence {
   confidence_score: number;
@@ -299,8 +376,14 @@ export interface ContentFeelScanResult {
 
 // ─── Pipeline records (mirror future Supabase tables) ──────────────────────────
 
-export type AnalysisJobStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'needs_review';
-export type AnalysisType = 'initial' | 'reanalysis' | 'manual_override' | 'safety_recheck';
+export type AnalysisJobStatus =
+  | "pending"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "needs_review";
+export type AnalysisType = "initial" | "reanalysis" | "manual_override" | "safety_recheck";
 
 export interface ContentAnalysisJob {
   id: string;
@@ -368,9 +451,9 @@ export interface QuietRecommendationIndexEntry {
 
 /** Reasons that can re-trigger analysis. */
 export type ReanalysisTrigger =
-  | 'title_or_description_changed'
-  | 'transcript_added'
-  | 'creator_category_changed'
-  | 'performance_mismatch'
-  | 'moderation_status_changed'
-  | 'user_feedback_wrong';
+  | "title_or_description_changed"
+  | "transcript_added"
+  | "creator_category_changed"
+  | "performance_mismatch"
+  | "moderation_status_changed"
+  | "user_feedback_wrong";

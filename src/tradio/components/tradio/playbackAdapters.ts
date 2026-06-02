@@ -1,20 +1,14 @@
-import type {
-  Beat,
-  DJMix,
-  Release,
-  ScheduleItem,
-  Station,
-} from './data';
-import type { SongWarBattle } from './songwars/types';
-import type { PlaybackItem, PlaybackSource, Track } from '@/tradio/contexts/PlayerContext';
+import type { Beat, DJMix, Release, ScheduleItem, Station } from "./data";
+import type { SongWarBattle } from "./songwars/types";
+import type { PlaybackItem, PlaybackSource, Track } from "@/tradio/contexts/PlayerContext";
 
 export const trackToPlaybackItem = (
   track: Track,
-  source?: Partial<PlaybackSource>
+  source?: Partial<PlaybackSource>,
 ): PlaybackItem => ({
   ...track,
-  sourceType: source?.type || track.sourceType || 'song',
-  sourceLabel: source?.label || track.sourceLabel || 'Song',
+  sourceType: source?.type || track.sourceType || "song",
+  sourceLabel: source?.label || track.sourceLabel || "Song",
 });
 
 export const releaseToPlaybackItem = (release: Release): PlaybackItem => ({
@@ -24,8 +18,8 @@ export const releaseToPlaybackItem = (release: Release): PlaybackItem => ({
   art: release.artwork,
   coverUrl: release.artwork,
   duration: 205,
-  sourceType: 'instant_release',
-  sourceLabel: 'Release',
+  sourceType: "instant_release",
+  sourceLabel: "Release",
 });
 
 export const beatToPlaybackItem = (beat: Beat): PlaybackItem => ({
@@ -36,8 +30,8 @@ export const beatToPlaybackItem = (beat: Beat): PlaybackItem => ({
   coverUrl: beat.artwork,
   src: beat.previewUrl,
   duration: beat.duration,
-  sourceType: 'producer_beat',
-  sourceLabel: 'Beat',
+  sourceType: "producer_beat",
+  sourceLabel: "Beat",
   bpm: beat.bpm,
   musicalKey: beat.key,
   mood: beat.mood,
@@ -50,7 +44,7 @@ export const beatToPlaybackItem = (beat: Beat): PlaybackItem => ({
       musicalKey: beat.key,
       mood: beat.mood,
       genre: beat.genre,
-      licenseLabel: beat.price ? `${beat.price} credits` : 'Available for pitch',
+      licenseLabel: beat.price ? `${beat.price} credits` : "Available for pitch",
     },
   },
 });
@@ -62,15 +56,15 @@ export const djMixToPlaybackItem = (mix: DJMix): PlaybackItem => ({
   art: mix.artwork,
   coverUrl: mix.artwork,
   duration: mix.duration,
-  sourceType: 'dj_mix',
-  sourceLabel: 'DJ Mix',
+  sourceType: "dj_mix",
+  sourceLabel: "DJ Mix",
   genre: mix.genre,
 });
 
 export const stationToPlaybackSource = (station: Station): PlaybackSource => ({
   id: station.id,
-  type: station.owner ? 'artist_station' : 'station',
-  label: station.owner ? 'Artist Station' : 'Station',
+  type: station.owner ? "artist_station" : "station",
+  label: station.owner ? "Artist Station" : "Station",
   title: station.title,
   subtitle: station.owner?.name || station.genre,
   image: station.image,
@@ -80,26 +74,27 @@ export const stationToPlaybackSource = (station: Station): PlaybackSource => ({
 
 export const scheduleToPlaybackSource = (item: ScheduleItem): PlaybackSource => ({
   id: item.id,
-  type: item.type === 'dj-show' ? 'live_show' : item.type === 'replay' ? 'replay' : 'station',
-  label: item.type === 'dj-show' ? 'Live Show' : item.type === 'replay' ? 'Replay' : 'Live Radio',
+  type: item.type === "dj-show" ? "live_show" : item.type === "replay" ? "replay" : "station",
+  label: item.type === "dj-show" ? "Live Show" : item.type === "replay" ? "Replay" : "Live Radio",
   title: item.title,
   subtitle: item.artist || item.station,
   image: item.image,
-  isLive: item.status === 'live',
+  isLive: item.status === "live",
   listenerCount: item.listeners,
 });
 
 export const scheduleToPlaybackItem = (item: ScheduleItem): PlaybackItem => ({
   id: item.id,
   title: item.title,
-  artist: item.artist || item.station || 'Tradio Network',
+  artist: item.artist || item.station || "Tradio Network",
   art: item.image,
   coverUrl: item.image,
-  duration: item.status === 'live' ? 0 : 1800,
+  duration: item.status === "live" ? 0 : 1800,
   station: item.station,
-  sourceType: item.type === 'replay' ? 'replay' : item.type === 'dj-show' ? 'live_show' : 'station',
-  sourceLabel: item.type === 'replay' ? 'Replay' : item.type === 'dj-show' ? 'Live Show' : 'Live Radio',
-  isLive: item.status === 'live',
+  sourceType: item.type === "replay" ? "replay" : item.type === "dj-show" ? "live_show" : "station",
+  sourceLabel:
+    item.type === "replay" ? "Replay" : item.type === "dj-show" ? "Live Show" : "Live Radio",
+  isLive: item.status === "live",
   context: {
     liveShow: {
       showId: item.id,
@@ -113,21 +108,21 @@ export const scheduleToPlaybackItem = (item: ScheduleItem): PlaybackItem => ({
 
 export const songWarRoundToPlaybackItem = (
   battle: SongWarBattle,
-  corner: 'A' | 'B',
-  roundIndex = battle.currentRoundIndex || 0
+  corner: "A" | "B",
+  roundIndex = battle.currentRoundIndex || 0,
 ): PlaybackItem => {
   const round = battle.rounds[roundIndex] || battle.rounds[0];
-  const track = corner === 'A' ? round.trackA : round.trackB;
-  const artist = corner === 'A' ? battle.artistA : battle.artistB;
-  const votingStatus = round.status === 'pending' ? 'playing' : round.status;
+  const track = corner === "A" ? round.trackA : round.trackB;
+  const artist = corner === "A" ? battle.artistA : battle.artistB;
+  const votingStatus = round.status === "pending" ? "playing" : round.status;
 
   return {
     ...track,
     artist: artist.name,
     duration: round.duration,
     station: artist.station,
-    sourceType: 'song_war_round',
-    sourceLabel: 'Song War',
+    sourceType: "song_war_round",
+    sourceLabel: "Song War",
     context: {
       songWars: {
         battleId: battle.id,

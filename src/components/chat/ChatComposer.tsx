@@ -34,7 +34,13 @@ export function ChatComposer({ kind, scopeId, disabledReason, onPending }: Props
       if (!session?.access_token) {
         onPending((prev) => [
           ...prev,
-          { tempId: newTempId(), body, status: "blocked", reason: "Sign in to chat", createdAt: Date.now() },
+          {
+            tempId: newTempId(),
+            body,
+            status: "blocked",
+            reason: "Sign in to chat",
+            createdAt: Date.now(),
+          },
         ]);
         setText("");
         return;
@@ -57,7 +63,8 @@ export function ChatComposer({ kind, scopeId, disabledReason, onPending }: Props
                 ? {
                     ...p,
                     status: "blocked",
-                    reason: result.error === "blocked" ? result.reason ?? "blocked" : result.error,
+                    reason:
+                      result.error === "blocked" ? (result.reason ?? "blocked") : result.error,
                     timeoutMinutes: result.timeoutMinutes ?? null,
                   }
                 : p,
@@ -65,7 +72,9 @@ export function ChatComposer({ kind, scopeId, disabledReason, onPending }: Props
           );
         } else if (result.nudge) {
           onPending((prev) =>
-            prev.map((p) => (p.tempId === tempId ? { ...p, status: "nudge", reason: result.nudge ?? null } : p)),
+            prev.map((p) =>
+              p.tempId === tempId ? { ...p, status: "nudge", reason: result.nudge ?? null } : p,
+            ),
           );
           // Drop the nudge banner after a few seconds.
           setTimeout(() => {
@@ -75,7 +84,9 @@ export function ChatComposer({ kind, scopeId, disabledReason, onPending }: Props
           // Server confirmed; the Realtime INSERT will render the canonical row.
           // Drop the optimistic row shortly so we don't show duplicates if
           // Realtime is slow (it'll dedupe by id once it arrives).
-          onPending((prev) => prev.map((p) => (p.tempId === tempId ? { ...p, status: "sent" } : p)));
+          onPending((prev) =>
+            prev.map((p) => (p.tempId === tempId ? { ...p, status: "sent" } : p)),
+          );
           setTimeout(() => {
             onPending((prev) => prev.filter((p) => p.tempId !== tempId));
           }, 2_000);
@@ -117,9 +128,7 @@ export function ChatComposer({ kind, scopeId, disabledReason, onPending }: Props
           <Send className="size-4" />
         </button>
       </div>
-      {disabledReason && (
-        <div className="mt-1 text-[10px] text-white/40">{disabledReason}</div>
-      )}
+      {disabledReason && <div className="mt-1 text-[10px] text-white/40">{disabledReason}</div>}
     </form>
   );
 }

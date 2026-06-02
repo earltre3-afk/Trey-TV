@@ -6,7 +6,8 @@
 
 This document gives you (a) the working context + conventions, (b) everything already built (#1–#4),
 and (c) a full breakdown of the two remaining sub-projects (#5 AI live co-pilot, #6 music-in-broadcast
-+ replays) so you can pick up immediately.
+
+- replays) so you can pick up immediately.
 
 ---
 
@@ -15,6 +16,7 @@ and (c) a full breakdown of the two remaining sub-projects (#5 AI live co-pilot,
 **Workflow per sub-project:** `superpowers:brainstorming` → write spec to
 `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` (commit) → `superpowers:writing-plans` → write
 plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as a **hybrid**:
+
 - **DB migration tasks: run inline yourself** (dry-run then apply to prod), because they touch the
   live database.
 - **Coupled code tasks: delegate to one implementer subagent** (give it the committed plan path +
@@ -22,6 +24,7 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 - **Verification: inline.**
 
 **Repo conventions (critical):**
+
 - Unit tests use Node's built-in runner but must run via **`npx tsx --test <file>`** (NOT `node --test`;
   `.ts` needs tsx). There is no `npm test` script. Pattern: `import test from 'node:test'; import assert from 'node:assert/strict'`.
 - Typecheck touched files: `npx tsc --noEmit -p tsconfig.json 2>&1 | grep "<fragment>" || echo clean`.
@@ -40,6 +43,7 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 - **UI rule:** don't restyle/restructure app UI beyond what the approved spec needs.
 
 **Env caveats (features ship without these, but degrade gracefully):**
+
 - Gemini key (`GEMINI_API_KEY` / `GOOGLE_GENAI_API_KEY`) — empty locally; AI falls back / shows
   "unavailable". Needed for real generation + TTS.
 - LiveKit (`LIVEKIT_URL`/`LIVEKIT_API_KEY`/`LIVEKIT_API_SECRET`) — needed to actually broadcast.
@@ -52,6 +56,7 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 **Specs/plans** live in `docs/superpowers/specs|plans/2026-06-01-tradio-*`. Read them for detail.
 
 ### #1 Show foundation + AI builder (DONE)
+
 - Table `tradio_radio_shows` (owner-scoped RLS + `is_template` public read). Columns incl.
   `segments jsonb`, `settings jsonb`, `status('draft'|'template'|'scheduled'|'live'|'archived')`.
 - `src/lib/trey-i/vertex.server.ts` → `generateRadioShow` (Gemini `aiGenerateJson` with a
@@ -63,6 +68,7 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 - `ShowSegment` (in `data.ts`) has a `script?: string` field (AI host lines for talk segments).
 
 ### #2 Live broadcast core (DONE)
+
 - Table `tradio_live_sessions` (`host_user_id`, `room_name`, `status('live'|'ended')`, `peak_listeners`,
   public read of live rows). Helper fn `public.tradio_is_session_host(p_session_id)` (SECURITY DEFINER).
 - Token server `src/lib/livekit-token.server.ts` — room kind **`tradio-show`** (host publishes,
@@ -79,6 +85,7 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
   `useTradioLiveRoom` instance) live in that component.
 
 ### #3 In-show interaction (DONE)
+
 - Tables `tradio_live_chat`, `tradio_live_requests`, `tradio_live_polls`, `tradio_live_poll_votes`
   (public read; inserts by `auth.uid()`; host-only request-status + poll writes via
   `tradio_is_session_host`).
@@ -86,10 +93,11 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 - `src/tradio/components/tradio/tradioLiveInteractionService.ts` — chat/request/poll data ops.
 - `src/tradio/components/tradio/useTradioLiveInteraction.ts` — **Supabase Realtime hook** (one channel
   `tradio-live:<sessionId>` over the 4 tables); exposes `chat[]`, `requests[]`, `activePoll`, `tallies`
-  + action fns. **This is your live chat/requests feed for #5.**
+  - action fns. **This is your live chat/requests feed for #5.**
 - `src/tradio/components/tradio/LiveRoomModal.tsx` (listener) + host panel in DJStudio Broadcast tab.
 
 ### #4 AI voice host (DONE)
+
 - `src/tradio/components/tradio/aiVoiceHost.ts` — pure `talkSegmentsWithScript(show)`.
 - `useTradioLiveRoom.aiSpeak(text, label?)` — calls `treyITts` (Gemini `gemini-2.5-flash-preview-tts`,
   `src/lib/trey-i/tts.server.ts`, returns WAV base64), decodes via Web Audio, plays through the shared
@@ -98,8 +106,9 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 - DJStudio Broadcast "AI Voice Host" panel: show picker + per-segment "▶ AI read".
 
 ### Cross-cutting patterns to copy
+
 - **Supabase Realtime:** `supabase.channel(name).on('postgres_changes',{event,schema,table,filter},cb).subscribe()`
-  + `supabase.removeChannel(ch)`. Canonical example: `src/features/music-review/components/public/{LiveRoom,ChatPanel}.tsx`.
+  - `supabase.removeChannel(ch)`. Canonical example: `src/features/music-review/components/public/{LiveRoom,ChatPanel}.tsx`.
 - **AI JSON with enum validation:** `aiGenerateJson({ prompt, responseSchema })` in
   `src/lib/trey-i/aiProvider.server.ts` + coerce/validate the result server-side, fall back on failure
   (see `judgeSignalTest`/`generateRadioShow` in `vertex.server.ts`). **Always validate AI output.**
@@ -116,10 +125,12 @@ plan to `docs/superpowers/plans/YYYY-MM-DD-<feature>.md` (commit) → execute as
 script prompts ("what to say next"), song suggestions, and chat-sentiment reads ("read the room").
 
 **Why it's well-positioned now:** #3 gives you the live `chat[]`/`requests[]` feed; #1 gives the show
-+ segment scripts; #4 gives `aiSpeak` (so a suggested line can be spoken by the AI voice in one tap);
-Gemini text is available via `aiGenerateText`/`aiGenerateJson`.
+
+- segment scripts; #4 gives `aiSpeak` (so a suggested line can be spoken by the AI voice in one tap);
+  Gemini text is available via `aiGenerateText`/`aiGenerateJson`.
 
 **Proposed scope (confirm with the user in brainstorming):**
+
 1. **Read the room** — summarize the live chat's mood/energy + surface highlights/question to address.
 2. **Suggest a line** — given the show context + current segment + recent chat, produce a short host
    line the host can read aloud or one-tap send to `aiSpeak` (#4).
@@ -130,6 +141,7 @@ Gemini text is available via `aiGenerateText`/`aiGenerateJson`.
 `copilot_log` table unless the user wants history.
 
 **Server fns to add** (in `src/lib/trey-i/vertex.server.ts`, all Gemini, validate output):
+
 - `coPilotReadRoom({ messages })` → `aiGenerateJson` with `responseSchema`
   `{ energy: 'low'|'building'|'hot', mood: string, highlights: string[], suggestedTopic: string }`.
 - `coPilotSuggestLine({ showTitle, segmentTitle, hostTone, recentChat })` → `aiGenerateText` → one
@@ -138,6 +150,7 @@ Gemini text is available via `aiGenerateText`/`aiGenerateJson`.
   (placeholder catalog for now; wire to a real catalog in #6).
 
 **Client:**
+
 - A pure helper module + tests if any logic is non-trivial (e.g. shaping recent chat → prompt input);
   most is server-side.
 - A **co-pilot panel** in DJStudio's Broadcast tab (host-only, when `liveSessionId`). Inputs come from
@@ -147,6 +160,7 @@ Gemini text is available via `aiGenerateText`/`aiGenerateJson`.
   every chat message — Gemini calls are not free and chat is high-volume.
 
 **Open questions to clarify with the user (do this in brainstorming):**
+
 - On-demand only, or auto-refresh the room read every N seconds?
 - Should "Suggest a line" auto-speak via the AI voice host (#4) or only display for the human to read?
 - Song suggestions now (no real catalog → free-text/placeholder) or defer entirely to #6?
@@ -165,10 +179,12 @@ to ~20 messages); validate/coerce all JSON output (enum the `energy` field).
 as its own mini-initiative and decompose it.** Two distinct halves:
 
 ### 6A. Music in the broadcast (playing tracks into the live stream)
+
 **The hard prerequisite:** there is **no real music catalog** — everything in
 `src/tradio/components/tradio/data.ts` (tracks, stations, DJ_MIXES, releases) is **mock with no real
 audio files**, and Trey TV has **no licensed-music catalog or audio storage** yet. Real
 music-in-broadcast needs:
+
 - A catalog of playable tracks with **audio file URLs** (a `tradio_tracks` table + a Storage bucket for
   audio, or an external licensed source) — **and licensing/rights clearance** (loop in the existing
   Tradio **legal-acceptance** flow; this is a legal, not just technical, gate).
@@ -178,6 +194,7 @@ music-in-broadcast needs:
   only.
 
 **Technical approach once audio URLs exist (reuses #4's audio graph — this is the elegant part):**
+
 - Extend `useTradioLiveRoom` with `playTrack(url)`, `stopTrack()`, `setMusicGain(level)` that route an
   `<audio>`/`AudioBufferSource` through the **same shared `MediaStreamAudioDestinationNode`** the AI
   voice already publishes. Result: music + host mic + AI voice are mixed into the one published track
@@ -187,7 +204,9 @@ music-in-broadcast needs:
 - Host UI: a now-playing/queue control in the DJStudio Broadcast tab.
 
 ### 6B. Replays (record live shows for on-demand playback)
+
 **Approach — LiveKit Egress (server-side recording):**
+
 - `livekit-server-sdk` includes `EgressClient`. On `goLive`, start an **audio/room-composite egress**
   to file output (S3-compatible storage / Supabase Storage bucket); on `endLive`, stop egress and
   record the output URL + duration.
@@ -204,8 +223,9 @@ music-in-broadcast needs:
   `'replay'`). The `tradio_radio_shows.status='archived'` value already exists for this.
 
 **Decomposition of #6 (recommend separate specs/plans):**
+
 1. **6-pre: Music catalog foundation** (only if doing music) — `tradio_tracks` + audio Storage bucket +
-   upload/ingest; or pick an existing content source. *Has a legal/licensing gate.*
+   upload/ingest; or pick an existing content source. _Has a legal/licensing gate._
 2. **6A: Music-in-broadcast playback** — extend the `useTradioLiveRoom` audio graph + ducking + host
    queue UI + wire #3 "Played" → playback.
 3. **6B: Replay recording** — egress (or MediaRecorder) on go/end-live + `tradio_replays` + webhook/poll.

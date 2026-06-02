@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import type { AuthError, Session, User } from '@supabase/supabase-js';
-import { isSupabaseConfigured, supabase } from '@/tradio/lib/supabaseClient';
+import { useEffect, useState } from "react";
+import type { AuthError, Session, User } from "@supabase/supabase-js";
+import { isSupabaseConfigured, supabase } from "@/tradio/lib/supabaseClient";
 
 interface SupabaseSessionState {
   session: Session | null;

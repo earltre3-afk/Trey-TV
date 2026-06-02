@@ -14,9 +14,22 @@ export type Resolution = "720p" | "1080p" | "4K" | "AI UHD";
 export type TrackKind = "video" | "overlay" | "text" | "audio" | "caption";
 
 export type TransitionType =
-  | "none" | "fade" | "slideLeft" | "slideRight" | "wipeLeft" | "wipeRight" | "zoom" | "carouselLeft";
+  | "none"
+  | "fade"
+  | "slideLeft"
+  | "slideRight"
+  | "wipeLeft"
+  | "wipeRight"
+  | "zoom"
+  | "carouselLeft";
 export type FilterType =
-  | "none" | "boost" | "contrast" | "muted" | "darken" | "lighten" | "greyscale";
+  | "none"
+  | "boost"
+  | "contrast"
+  | "muted"
+  | "darken"
+  | "lighten"
+  | "greyscale";
 export type EffectType = "zoomIn" | "zoomOut" | "slideUp" | "slideDown" | "shake";
 export type TextAnimation = "none" | "fadeIn" | "slideUp" | "pop";
 
@@ -49,15 +62,21 @@ export interface OverlayClip extends ClipBase {
   length: number;
   fit: "cover" | "contain" | "none";
   /** Normalized position (0..1) and scale multiplier. */
-  x: number; y: number; scale: number;
+  x: number;
+  y: number;
+  scale: number;
 }
 
 export interface TextClip extends ClipBase {
   kind: "text";
   text: string;
   length: number;
-  font: string; size: number; color: string; background: string | null;
-  x: number; y: number;
+  font: string;
+  size: number;
+  color: string;
+  background: string | null;
+  x: number;
+  y: number;
   animation: TextAnimation;
 }
 
@@ -68,7 +87,8 @@ export interface AudioClip extends ClipBase {
   length: number;
   /** 0..1 */
   volume: number;
-  fadeIn: number; fadeOut: number;
+  fadeIn: number;
+  fadeOut: number;
 }
 
 export interface CaptionClip extends ClipBase {
@@ -110,7 +130,7 @@ export interface EditRecipe {
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 export const uid = (): string =>
-  (globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}_${Date.now()}`);
+  globalThis.crypto?.randomUUID?.() ?? `id_${Math.random().toString(36).slice(2)}_${Date.now()}`;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 const round = (v: number) => Math.round(v * 1000) / 1000;
@@ -277,7 +297,10 @@ export function setFilter(recipe: EditRecipe, clipId: string, filter: FilterType
 export function toggleEffect(recipe: EditRecipe, clipId: string, effect: EffectType): EditRecipe {
   return mapClip(recipe, clipId, (clip) => {
     const has = clip.effects.includes(effect);
-    return { ...clip, effects: has ? clip.effects.filter((e) => e !== effect) : [...clip.effects, effect] };
+    return {
+      ...clip,
+      effects: has ? clip.effects.filter((e) => e !== effect) : [...clip.effects, effect],
+    };
   });
 }
 
@@ -307,12 +330,17 @@ export function addTextClip(
     y: init.y ?? 0.85,
     animation: init.animation ?? "fadeIn",
   };
-  return { ...r, tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)) };
+  return {
+    ...r,
+    tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)),
+  };
 }
 
 export function addOverlayClip(
   recipe: EditRecipe,
-  init: { src: string; start?: number; length?: number } & Partial<Omit<OverlayClip, "kind" | "id">>,
+  init: { src: string; start?: number; length?: number } & Partial<
+    Omit<OverlayClip, "kind" | "id">
+  >,
 ): EditRecipe {
   const { recipe: r, track } = ensureTrack(recipe, "overlay");
   const clip: OverlayClip = {
@@ -327,7 +355,10 @@ export function addOverlayClip(
     y: init.y ?? 0.5,
     scale: init.scale ?? 1,
   };
-  return { ...r, tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)) };
+  return {
+    ...r,
+    tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)),
+  };
 }
 
 export function addAudioClip(
@@ -347,7 +378,10 @@ export function addAudioClip(
     fadeIn: init.fadeIn ?? 0,
     fadeOut: init.fadeOut ?? 0,
   };
-  return { ...r, tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)) };
+  return {
+    ...r,
+    tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)),
+  };
 }
 
 export function addCaptionClip(
@@ -363,7 +397,10 @@ export function addCaptionClip(
     length: init.length ?? 3,
     text: init.text,
   };
-  return { ...r, tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)) };
+  return {
+    ...r,
+    tracks: r.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, clip] } : t)),
+  };
 }
 
 // ── List operations ─────────────────────────────────────────────────────────

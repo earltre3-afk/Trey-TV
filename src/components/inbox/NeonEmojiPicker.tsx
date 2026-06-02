@@ -15,8 +15,8 @@ export function NeonEmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
 
   const query = search.trim().toLowerCase();
   const filtered = query
-    ? TREMOJI_CATEGORIES.flatMap((c) => c.emojis).filter((item) =>
-        item.emoji.includes(query) || item.label.toLowerCase().includes(query),
+    ? TREMOJI_CATEGORIES.flatMap((c) => c.emojis).filter(
+        (item) => item.emoji.includes(query) || item.label.toLowerCase().includes(query),
       )
     : TREMOJI_CATEGORIES[activeCategory].emojis;
 
@@ -25,8 +25,13 @@ export function NeonEmojiPicker({ onSelect, onClose }: EmojiPickerProps) {
       <div className="neon-emoji-scanline" />
 
       <div className="flex items-center justify-between px-3 pt-3 pb-2 border-b border-white/8">
-        <div className="text-xs font-bold tracking-[0.2em] text-gradient-gold uppercase">Tremojis</div>
-        <button onClick={onClose} className="size-6 grid place-items-center rounded-full hover:bg-white/10">
+        <div className="text-xs font-bold tracking-[0.2em] text-gradient-gold uppercase">
+          Tremojis
+        </div>
+        <button
+          onClick={onClose}
+          className="size-6 grid place-items-center rounded-full hover:bg-white/10"
+        >
           <X className="size-3.5 text-muted-foreground" />
         </button>
       </div>

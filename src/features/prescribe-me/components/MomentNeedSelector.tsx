@@ -1,24 +1,24 @@
-import React from 'react';
-import StepShell from './StepShell';
-import { LiquidGlassCard, NeonGlassButton } from './LiquidGlass';
-import { User, Users, Zap, Popcorn, Smile, Leaf, Check, ChevronRight } from 'lucide-react';
-import type { MomentNeed } from './data';
+import React from "react";
+import StepShell from "./StepShell";
+import { LiquidGlassCard, NeonGlassButton } from "./LiquidGlass";
+import { User, Users, Zap, Popcorn, Smile, Leaf, Check, ChevronRight } from "lucide-react";
+import type { MomentNeed } from "./data";
 
 interface Opt {
   value: MomentNeed;
   color: string;
-  accent: 'gold' | 'cyan' | 'magenta' | 'purple' | 'pink' | 'orange';
+  accent: "gold" | "cyan" | "magenta" | "purple" | "pink" | "orange";
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 // PDF: exact 6-item 2x3 grid.
 const OPTS: Opt[] = [
-  { value: 'Just me',                  color: '#c084fc', accent: 'purple',  icon: User },
-  { value: 'Watching with friends',    color: '#fb923c', accent: 'orange',  icon: Users },
-  { value: 'Need a quick watch',       color: '#ec4899', accent: 'magenta', icon: Zap },
-  { value: 'Give me a deep binge',     color: '#22d3ee', accent: 'cyan',    icon: Popcorn },
-  { value: 'Make me laugh',            color: '#fbbf24', accent: 'gold',    icon: Smile },
-  { value: 'I need something healing', color: '#a78bfa', accent: 'purple',  icon: Leaf },
+  { value: "Just me", color: "#c084fc", accent: "purple", icon: User },
+  { value: "Watching with friends", color: "#fb923c", accent: "orange", icon: Users },
+  { value: "Need a quick watch", color: "#ec4899", accent: "magenta", icon: Zap },
+  { value: "Give me a deep binge", color: "#22d3ee", accent: "cyan", icon: Popcorn },
+  { value: "Make me laugh", color: "#fbbf24", accent: "gold", icon: Smile },
+  { value: "I need something healing", color: "#a78bfa", accent: "purple", icon: Leaf },
 ];
 
 interface Props {
@@ -39,7 +39,13 @@ const MomentNeedSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, 
     <StepShell
       step={step}
       totalSteps={total}
-      title={<>What does<br />this moment need?</>}
+      title={
+        <>
+          What does
+          <br />
+          this moment need?
+        </>
+      }
       subtitle="One more detail for a better match."
       onBack={onBack}
       footer={
@@ -80,7 +86,7 @@ const MomentNeedSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, 
                 />
                 <span
                   className="text-[11px] sm:text-xs font-medium leading-tight"
-                  style={{ color: selected ? o.color : 'rgba(255,255,255,0.9)' }}
+                  style={{ color: selected ? o.color : "rgba(255,255,255,0.9)" }}
                 >
                   {o.value}
                 </span>

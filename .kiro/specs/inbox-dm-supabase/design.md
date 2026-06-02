@@ -85,25 +85,25 @@ The `ensureFromHandle(handle)` function will look up the profile by username via
 
 ### Supabase row → Lovable `Message`
 
-| Supabase field | Lovable field | Notes |
-|---|---|---|
-| `id` | `id` | |
-| peer UUID | `threadId` | peer's `profiles.id` |
-| `sender_id === user.id` | `from: 'me'` | else `'them'` |
-| `body` | `text` | |
-| `created_at` (ms) | `ts` | `new Date(created_at).getTime()` |
-| `read_at` (if mine) | `status` | `read_at != null` → `'read'`, else `'delivered'` |
+| Supabase field          | Lovable field | Notes                                            |
+| ----------------------- | ------------- | ------------------------------------------------ |
+| `id`                    | `id`          |                                                  |
+| peer UUID               | `threadId`    | peer's `profiles.id`                             |
+| `sender_id === user.id` | `from: 'me'`  | else `'them'`                                    |
+| `body`                  | `text`        |                                                  |
+| `created_at` (ms)       | `ts`          | `new Date(created_at).getTime()`                 |
+| `read_at` (if mine)     | `status`      | `read_at != null` → `'read'`, else `'delivered'` |
 
 ### Supabase profile join → Lovable `Peer`
 
-| Supabase field | Lovable field | Notes |
-|---|---|---|
-| `id` | `id` | UUID |
-| `display_name` | `name` | fallback: `username` |
-| `username` | `handle` | |
-| `avatar_url` | `avatar` | fallback: `/placeholder-user.jpg` |
-| `verification_type` | `verified` | `'gold'` → `'creator'`, `'green'` → `'user'`, else `undefined` |
-| — | `online` | always `false` (realtime out of scope) |
+| Supabase field      | Lovable field | Notes                                                          |
+| ------------------- | ------------- | -------------------------------------------------------------- |
+| `id`                | `id`          | UUID                                                           |
+| `display_name`      | `name`        | fallback: `username`                                           |
+| `username`          | `handle`      |                                                                |
+| `avatar_url`        | `avatar`      | fallback: `/placeholder-user.jpg`                              |
+| `verification_type` | `verified`    | `'gold'` → `'creator'`, `'green'` → `'user'`, else `undefined` |
+| —                   | `online`      | always `false` (realtime out of scope)                         |
 
 ---
 
@@ -126,6 +126,7 @@ type Ctx = {
 ```
 
 Internal state changes:
+
 - Remove: `localStorage` persistence (Supabase is the source of truth)
 - Remove: mock seed data and simulated replies
 - Add: Supabase fetch on mount
@@ -137,22 +138,22 @@ Internal state changes:
 
 ## 6. Error Handling
 
-| Scenario | Behavior |
-|---|---|
-| User not signed in | Empty state, all operations are no-ops |
-| Supabase fetch fails | `threads = []`, no crash, no alert |
-| Send fails | Optimistic message removed, `toast.error('Message failed to send')` |
-| markRead fails | Silent fail (non-critical) |
-| Profile join returns null | Peer rendered with fallback name/avatar |
+| Scenario                  | Behavior                                                            |
+| ------------------------- | ------------------------------------------------------------------- |
+| User not signed in        | Empty state, all operations are no-ops                              |
+| Supabase fetch fails      | `threads = []`, no crash, no alert                                  |
+| Send fails                | Optimistic message removed, `toast.error('Message failed to send')` |
+| markRead fails            | Silent fail (non-critical)                                          |
+| Profile join returns null | Peer rendered with fallback name/avatar                             |
 
 ---
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/lib/messages-store.tsx` | Rewrite internals; keep exported interface identical |
-| `src/routes/inbox.tsx` | No change (unless import path shifts, then 1-line update) |
+| File                         | Change                                                    |
+| ---------------------------- | --------------------------------------------------------- |
+| `src/lib/messages-store.tsx` | Rewrite internals; keep exported interface identical      |
+| `src/routes/inbox.tsx`       | No change (unless import path shifts, then 1-line update) |
 
 No new files are required. No new dependencies.
 

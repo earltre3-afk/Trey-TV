@@ -1,5 +1,5 @@
-import React from 'react';
-import { avatarFor } from '../lib/avatars';
+import React from "react";
+import { avatarFor } from "../lib/avatars";
 
 interface Props {
   name?: string;
@@ -20,18 +20,18 @@ const TrunoAvatar: React.FC<Props> = ({
   name,
   src,
   size = 40,
-  ring = 'ring-fuchsia-500/50',
+  ring = "ring-fuchsia-500/50",
   ringWidth = 2,
-  glow = '',
+  glow = "",
   online,
   showName,
-  nameColor = 'text-white',
+  nameColor = "text-white",
   badge,
-  className = '',
+  className = "",
   onClick,
 }) => {
   const url = src || avatarFor(name);
-  const ringW = ringWidth === 4 ? 'ring-4' : ringWidth === 2 ? 'ring-2' : 'ring-1';
+  const ringW = ringWidth === 4 ? "ring-4" : ringWidth === 2 ? "ring-2" : "ring-1";
 
   return (
     <div className={`inline-flex flex-col items-center ${className}`}>
@@ -42,20 +42,21 @@ const TrunoAvatar: React.FC<Props> = ({
       >
         <img
           src={url}
-          alt={name || 'avatar'}
+          alt={name || "avatar"}
           className="w-full h-full object-cover"
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={(e) => {
             const t = e.currentTarget;
-            t.style.display = 'none';
+            t.style.display = "none";
             const parent = t.parentElement;
-            if (parent && !parent.querySelector('.avatar-fallback')) {
-              const fb = document.createElement('div');
-              fb.className = 'avatar-fallback absolute inset-0 flex items-center justify-center font-black text-white';
-              fb.style.background = 'linear-gradient(135deg,#FF0080,#9D4EDD,#00D9FF)';
+            if (parent && !parent.querySelector(".avatar-fallback")) {
+              const fb = document.createElement("div");
+              fb.className =
+                "avatar-fallback absolute inset-0 flex items-center justify-center font-black text-white";
+              fb.style.background = "linear-gradient(135deg,#FF0080,#9D4EDD,#00D9FF)";
               fb.style.fontSize = `${size / 2.4}px`;
-              fb.textContent = (name || '?').slice(0, 1).toUpperCase();
+              fb.textContent = (name || "?").slice(0, 1).toUpperCase();
               parent.appendChild(fb);
             }
           }}
@@ -66,9 +67,7 @@ const TrunoAvatar: React.FC<Props> = ({
             style={{ width: Math.max(8, size * 0.18), height: Math.max(8, size * 0.18) }}
           />
         )}
-        {badge && (
-          <div className="absolute -top-1 -right-1">{badge}</div>
-        )}
+        {badge && <div className="absolute -top-1 -right-1">{badge}</div>}
       </div>
       {showName && name && (
         <span className={`mt-1 text-[11px] font-bold ${nameColor}`}>{name}</span>

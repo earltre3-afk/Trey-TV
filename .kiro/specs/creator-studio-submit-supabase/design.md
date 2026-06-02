@@ -127,7 +127,7 @@ function isNewRow(contentId: string): boolean {
   // seed IDs from submissions-store start with 'seed-'
   // real Supabase UUIDs match the UUID v4 pattern
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return contentId.startsWith('seed-') || !uuidPattern.test(contentId);
+  return contentId.startsWith("seed-") || !uuidPattern.test(contentId);
 }
 ```
 
@@ -163,7 +163,7 @@ const saveSilent = () => store.updateDraft(d.content_id, d);
 // after:
 const saveSilent = () => {
   store.updateDraft(d.content_id, d);
-  saveDraft(d);  // fire-and-forget; errors handled inside hook
+  saveDraft(d); // fire-and-forget; errors handled inside hook
 };
 ```
 
@@ -193,11 +193,13 @@ const onSubmit = async () => {
 Note: navigation happens regardless of Supabase success — the local store is the source of truth for the UI. Supabase write is best-effort for this phase.
 
 Add imports at top:
+
 ```ts
-import { useCreatorSubmit } from '@/hooks/use-creator-submit';
+import { useCreatorSubmit } from "@/hooks/use-creator-submit";
 ```
 
 Add inside `Form` component:
+
 ```ts
 const { saveDraft, submitForReview } = useCreatorSubmit();
 ```
@@ -206,9 +208,9 @@ const { saveDraft, submitForReview } = useCreatorSubmit();
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/hooks/use-creator-submit.ts` | New file |
+| File                                   | Change                                             |
+| -------------------------------------- | -------------------------------------------------- |
+| `src/hooks/use-creator-submit.ts`      | New file                                           |
 | `src/routes/creator-studio.submit.tsx` | 1 import + 1 hook call + 2 function body additions |
 
 No other files touched. `submissions-store.tsx`, `creator-studio.edit.tsx`, `use-creator-studio.ts` are untouched.

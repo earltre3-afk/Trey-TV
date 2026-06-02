@@ -52,7 +52,9 @@ export function ZodiacGroupCard({
           }}
         />
         <div className="relative z-10 flex items-start gap-4">
-          <div className="glass flex size-14 shrink-0 items-center justify-center rounded-xl text-2xl">{icon}</div>
+          <div className="glass flex size-14 shrink-0 items-center justify-center rounded-xl text-2xl">
+            {icon}
+          </div>
           <div className="min-w-0 flex-1 space-y-2">
             <h3 className="truncate text-lg font-bold">{groupName}</h3>
             <p className="line-clamp-2 text-sm text-muted-foreground">{matchReason}</p>
@@ -65,7 +67,9 @@ export function ZodiacGroupCard({
       </div>
 
       <div className="space-y-3 border-b border-[oklch(1_0_0_/_0.08)] px-6 py-4">
-        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Members</p>
+        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          Members
+        </p>
         <div className="-space-x-2 flex items-center">
           {members.slice(0, 4).map((member, idx) => (
             <div
@@ -88,12 +92,18 @@ export function ZodiacGroupCard({
       <div className="space-y-3 border-b border-[oklch(1_0_0_/_0.08)] px-6 py-4">
         <div className="flex flex-wrap gap-2">
           {zodiacSigns.map((sign) => (
-            <span key={sign} className="glass inline-flex items-center gap-1 rounded-lg border border-[#a855f7]/40 px-2.5 py-1.5 text-xs font-medium">
+            <span
+              key={sign}
+              className="glass inline-flex items-center gap-1 rounded-lg border border-[#a855f7]/40 px-2.5 py-1.5 text-xs font-medium"
+            >
               {sign}
             </span>
           ))}
           {tags.map((tag) => (
-            <span key={tag} className="glass inline-flex items-center gap-1 rounded-lg border border-[oklch(1_0_0_/_0.15)] px-2.5 py-1.5 text-xs font-medium">
+            <span
+              key={tag}
+              className="glass inline-flex items-center gap-1 rounded-lg border border-[oklch(1_0_0_/_0.15)] px-2.5 py-1.5 text-xs font-medium"
+            >
               {tag}
             </span>
           ))}

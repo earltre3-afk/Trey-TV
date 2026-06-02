@@ -22,8 +22,14 @@ console.log("- GOOGLE_CLOUD_PROJECT:", process.env.GOOGLE_CLOUD_PROJECT || "(not
 console.log("- GOOGLE_CLOUD_LOCATION:", process.env.GOOGLE_CLOUD_LOCATION || "(not set)");
 console.log("- VERTEX_PROJECT:", process.env.VERTEX_PROJECT || "(not set)");
 console.log("- VERTEX_LOCATION:", process.env.VERTEX_LOCATION || "(not set)");
-console.log("- GEMINI_API_KEY length:", process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0);
-console.log("- GOOGLE_GENAI_API_KEY length:", process.env.GOOGLE_GENAI_API_KEY ? process.env.GOOGLE_GENAI_API_KEY.length : 0);
+console.log(
+  "- GEMINI_API_KEY length:",
+  process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+);
+console.log(
+  "- GOOGLE_GENAI_API_KEY length:",
+  process.env.GOOGLE_GENAI_API_KEY ? process.env.GOOGLE_GENAI_API_KEY.length : 0,
+);
 
 const credsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
 if (credsJson) {

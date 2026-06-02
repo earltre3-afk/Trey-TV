@@ -40,16 +40,25 @@ export function AppHeader({
   // Tradio and Trance require a signed-in Trey TV account — hide their tabs for guests.
   const visibleTabs = isGuest ? tabs.filter((t) => t.id !== "tradio" && t.id !== "trance") : tabs;
   const computed =
-    location.pathname === "/" ? "watch-now"
-    : location.pathname.startsWith("/for-you") ? "for-you"
-    : location.pathname.startsWith("/explore") ? "discover"
-    : location.pathname.startsWith("/guide") ? "guide"
-    : location.pathname.startsWith("/prescribe-me") ? "prescribe"
-    : location.pathname.startsWith("/rewards") ? "rewards"
-    : location.pathname.startsWith("/games") ? "games"
-    : location.pathname.startsWith("/tradio") ? "tradio"
-    : location.pathname.startsWith("/trance") ? "trance"
-    : activeTab;
+    location.pathname === "/"
+      ? "watch-now"
+      : location.pathname.startsWith("/for-you")
+        ? "for-you"
+        : location.pathname.startsWith("/explore")
+          ? "discover"
+          : location.pathname.startsWith("/guide")
+            ? "guide"
+            : location.pathname.startsWith("/prescribe-me")
+              ? "prescribe"
+              : location.pathname.startsWith("/rewards")
+                ? "rewards"
+                : location.pathname.startsWith("/games")
+                  ? "games"
+                  : location.pathname.startsWith("/tradio")
+                    ? "tradio"
+                    : location.pathname.startsWith("/trance")
+                      ? "trance"
+                      : activeTab;
 
   return (
     <header className="sticky top-0 z-30 w-full glass-strong border-b border-white/5">
@@ -62,11 +71,7 @@ export function AppHeader({
           <Menu className="size-5" />
         </button>
 
-        <Link
-          to="/"
-          className="shrink-0 relative group"
-          aria-label="Trey TV home"
-        >
+        <Link to="/" className="shrink-0 relative group" aria-label="Trey TV home">
           {/* Aurora glow halo */}
           <span
             aria-hidden
@@ -82,10 +87,19 @@ export function AppHeader({
 
         <div className="flex items-center gap-2">
           <CreatorGoldNavButton compact />
-          <button onClick={() => navigate({ to: "/explore" })} aria-label="Search" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+          <button
+            onClick={() => navigate({ to: "/explore" })}
+            aria-label="Search"
+            className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition"
+          >
             <Search className="size-5" />
           </button>
-          <button onClick={() => setNotifOpen((v) => !v)} aria-label="Notifications" aria-expanded={notifOpen} className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+          <button
+            onClick={() => setNotifOpen((v) => !v)}
+            aria-label="Notifications"
+            aria-expanded={notifOpen}
+            className="relative size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition"
+          >
             <Bell className="size-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-[oklch(0.65_0.22_300)] text-[10px] font-bold grid place-items-center text-white shadow-[0_0_10px_oklch(0.65_0.22_300_/_0.8)]">
@@ -94,12 +108,26 @@ export function AppHeader({
             )}
           </button>
           {isGuest ? (
-            <Link to="/login" aria-label="Sign in" className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition">
+            <Link
+              to="/login"
+              aria-label="Sign in"
+              className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition"
+            >
               <LogIn className="size-5" />
             </Link>
           ) : (
-            <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring shrink-0" aria-label="Profile">
-              <img src={profileAvatar || undefined} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
+            <Link
+              to="/u/$uid"
+              params={{ uid: profileUid }}
+              className="relative size-10 rounded-full conic-ring shrink-0"
+              aria-label="Profile"
+            >
+              <img
+                src={profileAvatar || undefined}
+                alt="profile"
+                className="size-full rounded-full object-cover"
+                loading="lazy"
+              />
             </Link>
           )}
         </div>
@@ -131,7 +159,9 @@ export function AppHeader({
               key={t.id}
               onClick={handleClick}
               className={`relative px-3 py-2 text-sm whitespace-nowrap transition inline-flex items-center gap-1.5 ${
-                active ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
+                active
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {t.id === "tradio" ? (

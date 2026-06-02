@@ -57,7 +57,8 @@ const guideStateType: Partial<Record<GuideKey, string>> = {
   premiumUnlocked: "premium_unlocked",
 };
 
-const arrayToggle = (arr: string[], id: string) => arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
+const arrayToggle = (arr: string[], id: string) =>
+  arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id];
 
 export function GuideProvider({ children }: { children: ReactNode }) {
   const { user: supabaseUser } = useAuth();
@@ -103,7 +104,9 @@ export function GuideProvider({ children }: { children: ReactNode }) {
             .eq("target_type", "episode"),
           (supabase as any)
             .from("user_video_progress")
-            .select("episode_id, progress_seconds, duration_seconds, progress_ratio, completed, updated_at, last_watched_at")
+            .select(
+              "episode_id, progress_seconds, duration_seconds, progress_ratio, completed, updated_at, last_watched_at",
+            )
             .eq("user_id", supabaseUser.id)
             .order("last_watched_at", { ascending: false }),
         ]);
@@ -134,7 +137,8 @@ export function GuideProvider({ children }: { children: ReactNode }) {
             completed: !!row.completed,
             updatedAt: new Date(row.last_watched_at ?? row.updated_at).getTime(),
           };
-          if (row.completed && !next.watched.includes(row.episode_id)) next.watched.push(row.episode_id);
+          if (row.completed && !next.watched.includes(row.episode_id))
+            next.watched.push(row.episode_id);
         });
 
         setState(next);
@@ -155,16 +159,35 @@ export function GuideProvider({ children }: { children: ReactNode }) {
 
     if (key === "watchLater") {
       const result = active
-        ? await (supabase as any).from("user_watch_later").upsert({ user_id: supabaseUser.id, episode_id: id }, { onConflict: "user_id,episode_id" })
-        : await (supabase as any).from("user_watch_later").delete().eq("user_id", supabaseUser.id).eq("episode_id", id);
+        ? await (supabase as any)
+            .from("user_watch_later")
+            .upsert(
+              { user_id: supabaseUser.id, episode_id: id },
+              { onConflict: "user_id,episode_id" },
+            )
+        : await (supabase as any)
+            .from("user_watch_later")
+            .delete()
+            .eq("user_id", supabaseUser.id)
+            .eq("episode_id", id);
       if (result.error) throw result.error;
       return;
     }
 
     if (key === "saved") {
       const savedResult = active
-        ? await (supabase as any).from("user_saved_items").upsert({ user_id: supabaseUser.id, target_type: "episode", target_id: id }, { onConflict: "user_id,target_type,target_id" })
-        : await (supabase as any).from("user_saved_items").delete().eq("user_id", supabaseUser.id).eq("target_type", "episode").eq("target_id", id);
+        ? await (supabase as any)
+            .from("user_saved_items")
+            .upsert(
+              { user_id: supabaseUser.id, target_type: "episode", target_id: id },
+              { onConflict: "user_id,target_type,target_id" },
+            )
+        : await (supabase as any)
+            .from("user_saved_items")
+            .delete()
+            .eq("user_id", supabaseUser.id)
+            .eq("target_type", "episode")
+            .eq("target_id", id);
       if (savedResult.error) throw savedResult.error;
     }
 
@@ -172,8 +195,18 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     if (!stateType) return;
 
     const guideResult = active
-      ? await (supabase as any).from("user_guide_items").upsert({ user_id: supabaseUser.id, episode_id: id, state_type: stateType }, { onConflict: "user_id,episode_id,state_type" })
-      : await (supabase as any).from("user_guide_items").delete().eq("user_id", supabaseUser.id).eq("episode_id", id).eq("state_type", stateType);
+      ? await (supabase as any)
+          .from("user_guide_items")
+          .upsert(
+            { user_id: supabaseUser.id, episode_id: id, state_type: stateType },
+            { onConflict: "user_id,episode_id,state_type" },
+          )
+      : await (supabase as any)
+          .from("user_guide_items")
+          .delete()
+          .eq("user_id", supabaseUser.id)
+          .eq("episode_id", id)
+          .eq("state_type", stateType);
     if (guideResult.error) throw guideResult.error;
   };
 
@@ -186,7 +219,9 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     const toggle: Ctx["toggle"] = (key, id) => {
       const active = !state[key].includes(id);
       setState((s) => ({ ...s, [key]: arrayToggle(s[key], id) }));
-      void persistToggle(key, id, active).catch((error) => console.error("Failed to persist guide item:", error));
+      void persistToggle(key, id, active).catch((error) =>
+        console.error("Failed to persist guide item:", error),
+      );
     };
 
     const recordProgress: Ctx["recordProgress"] = (input) => {
@@ -195,7 +230,10 @@ export function GuideProvider({ children }: { children: ReactNode }) {
       const item: ProgressItem = {
         episodeId: input.episodeId,
         progress: ratio,
-        progressSeconds: Math.max(0, Math.round(input.progressSeconds ?? ratio * (input.durationSeconds ?? 0))),
+        progressSeconds: Math.max(
+          0,
+          Math.round(input.progressSeconds ?? ratio * (input.durationSeconds ?? 0)),
+        ),
         durationSeconds: Math.max(0, Math.round(input.durationSeconds ?? 0)),
         completed,
         updatedAt: Date.now(),
@@ -203,7 +241,10 @@ export function GuideProvider({ children }: { children: ReactNode }) {
 
       setState((s) => ({
         ...s,
-        watched: completed && !s.watched.includes(input.episodeId) ? [...s.watched, input.episodeId] : s.watched,
+        watched:
+          completed && !s.watched.includes(input.episodeId)
+            ? [...s.watched, input.episodeId]
+            : s.watched,
         progress: { ...s.progress, [input.episodeId]: item },
       }));
 

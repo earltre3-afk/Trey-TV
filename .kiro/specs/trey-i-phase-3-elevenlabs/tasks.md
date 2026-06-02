@@ -2,11 +2,11 @@
 
 ## Task Overview
 
-| # | Task                                          | Files changed     | Risk   |
-|---|-----------------------------------------------|-------------------|--------|
-| 1 | Create `elevenlabs-session.server.ts`         | 1 new file        | Low    |
-| 2 | Validate integration contract (read-only)     | 0 files changed   | None   |
-| 3 | Commit Phase 3                                | 1 file staged     | Low    |
+| #   | Task                                      | Files changed   | Risk |
+| --- | ----------------------------------------- | --------------- | ---- |
+| 1   | Create `elevenlabs-session.server.ts`     | 1 new file      | Low  |
+| 2   | Validate integration contract (read-only) | 0 files changed | None |
+| 3   | Commit Phase 3                            | 1 file staged   | Low  |
 
 No existing files are modified in Phase 3.
 No new npm packages are added in Phase 3.
@@ -16,12 +16,15 @@ No new npm packages are added in Phase 3.
 ## Task 1 — Create `elevenlabs-session.server.ts`
 
 ### Files involved
+
 - `src/lib/trey-i/elevenlabs-session.server.ts` — **new file**
 
 ### What to implement
+
 See `design.md` for the full annotated implementation.
 
 Summary of what the file must contain:
+
 1. `ElevenLabsSessionInput` type (`{ accessToken: string }`)
 2. Exported `ElevenLabsSessionResult` union type (success | typed error)
 3. `FALLBACK_MESSAGE` and `SIGNED_URL_PATHS` constants
@@ -42,28 +45,32 @@ Summary of what the file must contain:
      - Outer catch → return `UNKNOWN_ELEVENLABS_ERROR`
 
 ### Acceptance criteria
+
 - [ ] File is at `src/lib/trey-i/elevenlabs-session.server.ts`
 - [ ] Exports `treyIElevenLabsSession` and `ElevenLabsSessionResult`
 - [ ] `createServerFn({ method: "POST" })` pattern matches `tts.server.ts`
 - [ ] Auth gate calls `verifyTreyIUser` before any ElevenLabs fetch
-- [ ] `ELEVENLABS_API_KEY` read from `process.env` only — not hardcoded, not a VITE_ var
+- [ ] `ELEVENLABS_API_KEY` read from `process.env` only — not hardcoded, not a VITE\_ var
 - [ ] Both signed URL path variants attempted (underscore-first)
 - [ ] All error paths return `{ ok: false }` — function never throws to browser
 - [ ] `pnpm tsc --noEmit` → zero errors
 - [ ] `pnpm build` → zero errors; file lands in server bundle, not client bundle
 
 ### Security boundary
+
 - `ELEVENLABS_API_KEY` appears only in `process.env.ELEVENLABS_API_KEY` inside the handler
 - It does not appear in any response payload or log statement without boolean masking
 - Upstream error body is read as text, key material redacted, and logged only in dev
 
 **Pre-implementation security grep (run before writing the file):**
+
 ```bash
 rg "VITE_ELEVENLABS|NEXT_PUBLIC_ELEVENLABS" src/
 # expected: 0 matches
 ```
 
 **Post-implementation security greps (run after writing):**
+
 ```bash
 # No client-facing ElevenLabs key exposure
 rg "VITE_ELEVENLABS|NEXT_PUBLIC_ELEVENLABS" src/
@@ -83,11 +90,13 @@ grep -r "ELEVENLABS_API_KEY" dist/client 2>/dev/null | wc -l
 ```
 
 ### Visual preservation rule
+
 This file contains zero UI code.
 `onboarding.voice.tsx` is not modified.
 The mic button remains visual-only after Task 1.
 
 ### Terminal validation (no browser)
+
 ```bash
 pnpm tsc --noEmit
 # expected: no output (zero errors)
@@ -99,6 +108,7 @@ pnpm build
 ```
 
 ### Rollback risk
+
 **Low.** This is a new file only. No existing file is modified.
 Rollback: `git rm src/lib/trey-i/elevenlabs-session.server.ts && git commit -m "Revert Phase 3"`.
 All Phase 1 and Phase 2 behavior continues unchanged.
@@ -108,10 +118,12 @@ All Phase 1 and Phase 2 behavior continues unchanged.
 ## Task 2 — Validate Integration Contract (Read-Only)
 
 ### Files involved
+
 - `src/routes/onboarding.voice.tsx` — **read-only**
 - `src/lib/trey-i/elevenlabs-session.server.ts` — **from Task 1**
 
 ### What to do
+
 1. Confirm the current mic button in `onboarding.voice.tsx` is visual-only:
    ```bash
    rg "ElevenLabs|useConversation|startSession|elevenlabs-session" src/routes/onboarding.voice.tsx
@@ -137,6 +149,7 @@ All Phase 1 and Phase 2 behavior continues unchanged.
    ```
 
 ### Acceptance criteria
+
 - [ ] `onboarding.voice.tsx` has zero ElevenLabs SDK references
 - [ ] `accessToken` state already exists in `onboarding.voice.tsx`
 - [ ] `@elevenlabs/react` is not yet in `package.json`
@@ -144,16 +157,19 @@ All Phase 1 and Phase 2 behavior continues unchanged.
 - [ ] `pnpm tsc --noEmit` passes with no errors (types compile correctly)
 
 ### Security boundary
+
 No new imports in Phase 3.
 `elevenlabs-session.server.ts` is not imported in any client file.
 The TanStack Start `.server.ts` module boundary ensures the handler never
 runs in the browser.
 
 ### Visual preservation rule
+
 `onboarding.voice.tsx` is not modified in Phase 3.
 The voice onboarding page looks and behaves identically to Phase 2.
 
 ### Terminal validation (no browser)
+
 ```bash
 pnpm tsc --noEmit
 # expected: zero errors
@@ -166,6 +182,7 @@ rg "treyIElevenLabsSession" src/routes/
 ```
 
 ### Rollback risk
+
 **None.** No files are changed in Task 2.
 
 ---
@@ -173,19 +190,23 @@ rg "treyIElevenLabsSession" src/routes/
 ## Task 3 — Commit Phase 3
 
 ### Files to stage (specific file only — no git add .)
+
 ```bash
 git add src/lib/trey-i/elevenlabs-session.server.ts
 ```
 
 ### Commit message
+
 ```bash
 git commit -m "Add Trey-I Phase 3 ElevenLabs session server function"
 ```
 
 ### Files involved
+
 - `src/lib/trey-i/elevenlabs-session.server.ts` — **staged and committed**
 
 ### Acceptance criteria
+
 - [ ] Only `elevenlabs-session.server.ts` staged — no other files
 - [ ] `.claude/` not staged, not committed
 - [ ] `package.json` not changed
@@ -193,7 +214,9 @@ git commit -m "Add Trey-I Phase 3 ElevenLabs session server function"
 - [ ] `git status --short` after commit: only `?? .claude/` untracked
 
 ### Security boundary: pre-commit greps
+
 Run all of these before staging:
+
 ```bash
 # No client-facing key var
 rg "VITE_ELEVENLABS|NEXT_PUBLIC_ELEVENLABS" src/
@@ -217,10 +240,12 @@ git diff HEAD -- src/routes/onboarding.voice.tsx src/lib/trey-i/intake.server.ts
 ```
 
 ### Visual preservation rule
+
 No UI files modified. No design files modified.
 Voice onboarding page is visually identical to Phase 2 after commit.
 
 ### Post-commit terminal validation
+
 ```bash
 pnpm tsc --noEmit
 # expected: zero errors
@@ -236,6 +261,7 @@ git log --oneline -5
 ```
 
 ### Rollback risk
+
 **Low.** Single additive file.
 Clean revert: `git revert HEAD` removes it with no side effects.
 Phase 1 and Phase 2 behavior is not affected.
@@ -249,12 +275,13 @@ Before starting Phase 4, confirm:
 - [ ] `ELEVENLABS_API_KEY` is set in the deployment environment
 - [ ] `ELEVENLABS_AGENT_ID` is set in the deployment environment
 - [ ] ElevenLabs agent is configured with the correct security settings
-  (domain allowlist or public mode — see ElevenLabs dashboard → Agent → Security)
+      (domain allowlist or public mode — see ElevenLabs dashboard → Agent → Security)
 - [ ] Phase 3 commit is confirmed clean (`pnpm tsc`, `pnpm build` green)
 - [ ] Phase 3 server function tested by calling it with a valid access token
-  and confirming it returns `{ ok: true, signedUrl: "wss://..." }`
+      and confirming it returns `{ ok: true, signedUrl: "wss://..." }`
 
 Phase 4 will then:
+
 1. `pnpm add @elevenlabs/react`
 2. Wire mic button in `onboarding.voice.tsx` to call `treyIElevenLabsSession`
 3. Pass `signedUrl` to `useConversation().startSession()`

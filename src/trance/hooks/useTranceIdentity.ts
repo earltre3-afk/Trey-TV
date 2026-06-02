@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../auth/AuthContext';
-import { tranceAuthBridge } from '../auth/tranceAuthBridge';
-import { TranceIdentity, DancerProfile } from '../types';
-import { shouldUseFixtures } from '../services/config';
+import { useState, useEffect } from "react";
+import { useAuth } from "../auth/AuthContext";
+import { tranceAuthBridge } from "../auth/tranceAuthBridge";
+import { TranceIdentity, DancerProfile } from "../types";
+import { shouldUseFixtures } from "../services/config";
 
 export const useTranceIdentity = () => {
   const { isAuthed, profile, loading } = useAuth();
@@ -26,7 +26,8 @@ export const useTranceIdentity = () => {
     }
 
     setIdentityLoading(true);
-    tranceAuthBridge.getCurrentIdentity()
+    tranceAuthBridge
+      .getCurrentIdentity()
       .then((ident) => {
         if (active) {
           setIdentity(ident || rowToDefaultIdentity(profile));
@@ -54,7 +55,7 @@ export const useTranceIdentity = () => {
 };
 
 function rowToDefaultIdentity(profile: DancerProfile | null): TranceIdentity {
-  const id = profile?.id || 'guest';
+  const id = profile?.id || "guest";
   const avatarUrl = profile?.avatar || null;
   const bannerUrl = profile?.cover || null;
   return {
@@ -63,17 +64,22 @@ function rowToDefaultIdentity(profile: DancerProfile | null): TranceIdentity {
     publicProfileUid: `pub-uid-${id}`,
     treyTvUid: `trey-tv-uid-${id}`,
     tranceSpecificProfileId: `trance-prof-${id}`,
-    displayName: profile?.displayName || 'Guest',
-    handle: profile?.handle || '@guest',
+    displayName: profile?.displayName || "Guest",
+    handle: profile?.handle || "@guest",
     avatarUrl,
     bannerUrl,
     treyTvRoles: [],
-    tranceRoles: ['dancer'],
-    activeMode: 'Learn',
-    permissions: ['browse_public_routines', 'practice_routines', 'view_own_scores', 'join_studio_rooms'],
-    
+    tranceRoles: ["dancer"],
+    activeMode: "Learn",
+    permissions: [
+      "browse_public_routines",
+      "practice_routines",
+      "view_own_scores",
+      "join_studio_rooms",
+    ],
+
     // Compatibility fields
     avatar: avatarUrl,
-    activeRoles: ['dancer'],
+    activeRoles: ["dancer"],
   };
 }

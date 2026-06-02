@@ -14,43 +14,50 @@ The WIP is already written and TypeScript/build pass. There is one required fix 
 ## Task 1 — Fix `is_creator` stale reference
 
 **Files involved:**
+
 - `src/hooks/use-profile.ts`
 - `src/routes/u.$uid.tsx`
 
 **What to do:**
 
 In `src/hooks/use-profile.ts`, remove `is_creator: boolean` from `SupabaseProfile`:
+
 ```ts
 // Remove this line:
 is_creator: boolean;
 ```
 
 In `src/routes/u.$uid.tsx`:
+
 1. Remove the JSDoc comment line `*   - If dbProfile.is_creator === true → "creator"` (line ~19).
 2. Replace the `isCreatorProfile` expression:
+
 ```ts
 // BEFORE:
 const isCreatorProfile =
-  dbProfile.is_creator ||
-  (isOwnProfile && (role === "creator" || role === "admin"));
+  dbProfile.is_creator || (isOwnProfile && (role === "creator" || role === "admin"));
 
 // AFTER:
 const isCreatorProfile = isOwnProfile && (role === "creator" || role === "admin");
 ```
 
 **Acceptance criteria:**
+
 - `is_creator` does not appear in `use-profile.ts`.
 - `dbProfile.is_creator` does not appear in `u.$uid.tsx`.
 - `pnpm tsc --noEmit` passes with zero errors.
 - No visual change — `dbProfile.is_creator` was always `undefined` at runtime (column not in SELECT).
 
 **Security boundary:**
+
 - `profiles.is_creator` column does not exist — removing the reference is a correctness fix, not a security change.
 
 **Visual preservation rule:**
+
 - No JSX changes. No layout changes. No styling changes.
 
 **Terminal validation only:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -62,15 +69,18 @@ pnpm tsc --noEmit
 ## Task 2 — Commit the spec
 
 **Files involved:**
+
 - `.kiro/specs/default-profile-layout-system/` (new directory)
 
 **What to do:**
+
 ```
 git add .kiro/specs/default-profile-layout-system
 git commit -m "Add default profile layout system spec"
 ```
 
 **Acceptance criteria:**
+
 - Spec directory committed with `requirements.md`, `design.md`, `tasks.md`.
 
 **Rollback risk:** None. Spec files only.
@@ -80,11 +90,13 @@ git commit -m "Add default profile layout system spec"
 ## Task 3 — Commit the implementation
 
 **Files involved:**
+
 - `src/hooks/use-profile.ts` (fix from Task 1)
 - `src/routes/u.$uid.tsx` (fix from Task 1 + ProfilePageShell wiring)
 - `src/components/profile/` (all 12 new files)
 
 **What to do:**
+
 ```
 git add src/hooks/use-profile.ts
 git add src/routes/u.$uid.tsx
@@ -93,6 +105,7 @@ git commit -m "Add reusable profile layout system for all user types"
 ```
 
 **Acceptance criteria:**
+
 - All 12 `src/components/profile/` files committed.
 - `src/routes/u.$uid.tsx` committed with `is_creator` fix applied.
 - `src/hooks/use-profile.ts` committed with `is_creator` removed from type.
@@ -100,14 +113,17 @@ git commit -m "Add reusable profile layout system for all user types"
 - `pnpm build` passes.
 
 **Security boundary:**
+
 - No Supabase queries added beyond what `useProfile` already does.
 - No service-role key. No `profiles.is_creator`. No `profiles.age`.
 
 **Visual preservation rule:**
+
 - Profile page layout, styling, and behavior are preserved from the existing Lovable design.
 - No Lovable components replaced.
 
 **Terminal validation only:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -121,6 +137,7 @@ git log --oneline -3
 ## Task 4 — Verify no impact on Creator/admin pipeline
 
 **What to do:**
+
 ```
 grep -rn "is_creator" src/routes/u.\$uid.tsx
 grep -rn "is_creator" src/hooks/use-profile.ts
@@ -130,12 +147,14 @@ grep -rn "is_creator" src/components/profile/
 All three greps must return no matches.
 
 **Acceptance criteria:**
+
 - `is_creator` absent from all profile system files.
 - `profiles.age` absent from all profile system files.
 - `date_of_birth` absent from all profile system files.
 - Creator Studio routes, admin routes, and Watch Now/Guide routes are unchanged.
 
 **Terminal validation only:**
+
 ```
 grep -rn "is_creator" src/routes/u.\$uid.tsx
 grep -rn "is_creator" src/hooks/use-profile.ts
@@ -159,10 +178,12 @@ git diff --name-only HEAD~1
 ## Files in the Commit
 
 ### Modified:
+
 - `src/hooks/use-profile.ts` — remove `is_creator: boolean` from `SupabaseProfile`
 - `src/routes/u.$uid.tsx` — remove `dbProfile.is_creator` reference, wire `ProfilePageShell`
 
 ### New (`src/components/profile/`):
+
 - `ProfileTypes.ts`
 - `ProfilePageShell.tsx`
 - `ProfileBanner.tsx`
@@ -180,16 +201,16 @@ git diff --name-only HEAD~1
 
 ## What Is Not Touched
 
-| File | Status |
-|---|---|
-| `src/hooks/use-creator-studio.ts` | Unchanged |
-| `src/hooks/use-creator-submit.ts` | Unchanged |
+| File                                  | Status    |
+| ------------------------------------- | --------- |
+| `src/hooks/use-creator-studio.ts`     | Unchanged |
+| `src/hooks/use-creator-submit.ts`     | Unchanged |
 | `src/hooks/use-creator-post-queue.ts` | Unchanged |
-| `src/hooks/use-admin-post-queue.ts` | Unchanged |
-| `src/lib/admin/post-queue.server.ts` | Unchanged |
-| All Creator Studio routes | Unchanged |
-| All admin routes | Unchanged |
-| Watch Now / Guide routes | Unchanged |
+| `src/hooks/use-admin-post-queue.ts`   | Unchanged |
+| `src/lib/admin/post-queue.server.ts`  | Unchanged |
+| All Creator Studio routes             | Unchanged |
+| All admin routes                      | Unchanged |
+| Watch Now / Guide routes              | Unchanged |
 
 ---
 

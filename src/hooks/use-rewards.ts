@@ -38,7 +38,13 @@ type UseRewardsReturn = {
   transactions: RewardTransaction[];
   loading: boolean;
   refresh: () => void;
-  spend: (input: { points: number; eventType: string; sourceType?: string; sourceId?: string; metadata?: Record<string, unknown> }) => Promise<{ ok: true } | { ok: false; error: unknown }>;
+  spend: (input: {
+    points: number;
+    eventType: string;
+    sourceType?: string;
+    sourceId?: string;
+    metadata?: Record<string, unknown>;
+  }) => Promise<{ ok: true } | { ok: false; error: unknown }>;
 };
 
 const fallbackTransactions: RewardTransaction[] = [
@@ -76,10 +82,34 @@ const tierLabels: Record<string, string> = {
 };
 
 export const REWARD_TIERS = [
-  { id: "WHITE", min: 0, label: "White", rank: "New member", perks: ["Starter profile badge", "Basic reward wallet"] },
-  { id: "GREEN", min: 5000, label: "Green", rank: "Growing", perks: ["Early community drops", "5% membership discount"] },
-  { id: "RED", min: 15000, label: "Red", rank: "Core member", perks: ["One music-review skip monthly", "Event presale access"] },
-  { id: "GOLD", min: 50000, label: "Gold", rank: "Top member", perks: ["Priority music-review skip", "15% membership discount", "VIP content/event perks"] },
+  {
+    id: "WHITE",
+    min: 0,
+    label: "White",
+    rank: "New member",
+    perks: ["Starter profile badge", "Basic reward wallet"],
+  },
+  {
+    id: "GREEN",
+    min: 5000,
+    label: "Green",
+    rank: "Growing",
+    perks: ["Early community drops", "5% membership discount"],
+  },
+  {
+    id: "RED",
+    min: 15000,
+    label: "Red",
+    rank: "Core member",
+    perks: ["One music-review skip monthly", "Event presale access"],
+  },
+  {
+    id: "GOLD",
+    min: 50000,
+    label: "Gold",
+    rank: "Top member",
+    perks: ["Priority music-review skip", "15% membership discount", "VIP content/event perks"],
+  },
 ] as const;
 
 export function pointsToRewardTier(points: number) {
@@ -129,7 +159,8 @@ const eventTitles: Record<string, string> = {
   perk_redeemed: "Redeemed perk",
 };
 
-const balanceColumns = "current_balance, lifetime_earned, lifetime_spent, engagement_level, current_streak_days";
+const balanceColumns =
+  "current_balance, lifetime_earned, lifetime_spent, engagement_level, current_streak_days";
 const eventColumns = "id, event_type, points, status, created_at";
 
 function creditBalancesTable(supabase: ReturnType<typeof createBrowserClient>) {
@@ -200,7 +231,9 @@ export function useRewards(): UseRewardsReturn {
         ]);
 
         const balanceRow = (balanceResult.data ?? null) as BalanceRow | null;
-        const eventRows = ((eventsResult.data ?? []) as EventRow[]).filter((event) => event.status === "approved");
+        const eventRows = ((eventsResult.data ?? []) as EventRow[]).filter(
+          (event) => event.status === "approved",
+        );
 
         if (!mounted) return;
 

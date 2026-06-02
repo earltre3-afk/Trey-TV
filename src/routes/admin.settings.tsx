@@ -26,9 +26,17 @@ function PlatformSettings() {
 
   const toggle = async (key: string, current: any) => {
     const next = !(current === true);
-    const { error } = await supabase.from("platform_settings").update({ value: next, updated_at: new Date().toISOString() }).eq("key", key);
+    const { error } = await supabase
+      .from("platform_settings")
+      .update({ value: next, updated_at: new Date().toISOString() })
+      .eq("key", key);
     if (error) return toast.error(error.message);
-    await logAdminAction({ action: "platform_setting_changed", target_type: "platform_settings", target_id: key, metadata: { from: current, to: next } });
+    await logAdminAction({
+      action: "platform_setting_changed",
+      target_type: "platform_settings",
+      target_id: key,
+      metadata: { from: current, to: next },
+    });
     toast.success("Updated");
     qc.invalidateQueries({ queryKey: ["admin", "platform-settings"] });
   };
@@ -43,10 +51,15 @@ function PlatformSettings() {
               <SettingsIcon className="size-4 text-muted-foreground" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold">{row.key}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{JSON.stringify(row.value)}</div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {JSON.stringify(row.value)}
+                </div>
               </div>
               {isBool && (
-                <button onClick={() => toggle(row.key, row.value)} className={`px-3 h-8 rounded-lg text-xs font-bold ${row.value ? "bg-primary text-primary-foreground glow-gold" : "glass border border-white/10 text-muted-foreground"}`}>
+                <button
+                  onClick={() => toggle(row.key, row.value)}
+                  className={`px-3 h-8 rounded-lg text-xs font-bold ${row.value ? "bg-primary text-primary-foreground glow-gold" : "glass border border-white/10 text-muted-foreground"}`}
+                >
                   {row.value ? "ON" : "OFF"}
                 </button>
               )}

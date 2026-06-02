@@ -21,29 +21,29 @@
  *    element with `tabIndex={0}` participates. To opt-out, add
  *    `data-focusable="false"` or `tabIndex={-1}`.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 const ROW_TOLERANCE = 36; // px — vertical clustering threshold for "same row"
 const REPEAT_INITIAL_MS = 380;
 const REPEAT_INTERVAL_MS = 90;
 const STICK_DEADZONE = 0.55;
 
-type Dir = 'up' | 'down' | 'left' | 'right';
+type Dir = "up" | "down" | "left" | "right";
 
 const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
+  "a[href]",
+  "button:not([disabled])",
   'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
+  "select:not([disabled])",
+  "textarea:not([disabled])",
   '[tabindex]:not([tabindex="-1"])',
   '[data-focusable="true"]',
-].join(',');
+].join(",");
 
 function isVisible(el: HTMLElement) {
-  if (el.hasAttribute('disabled')) return false;
-  if (el.getAttribute('data-focusable') === 'false') return false;
-  if (el.getAttribute('aria-hidden') === 'true') return false;
+  if (el.hasAttribute("disabled")) return false;
+  if (el.getAttribute("data-focusable") === "false") return false;
+  if (el.getAttribute("aria-hidden") === "true") return false;
   const rect = el.getBoundingClientRect();
   if (rect.width === 0 || rect.height === 0) return false;
   // NOTE: do NOT filter by vertical viewport position — rows below the fold must
@@ -68,9 +68,9 @@ const RAIL_MAX_CENTER_X = 130;
 const centerY = (it: FocusItem) => it.rect.top + it.rect.height / 2;
 
 function buildGrid(): Grid {
-  const nodes = Array.from(
-    document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
-  ).filter(isVisible);
+  const nodes = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    isVisible,
+  );
 
   const all: FocusItem[] = nodes.map((el) => ({ el, rect: el.getBoundingClientRect() }));
 
@@ -116,7 +116,10 @@ function nearestRailToY(grid: Grid, y: number): HTMLElement | null {
   let bestD = Infinity;
   for (const it of grid.rail) {
     const d = Math.abs(centerY(it) - y);
-    if (d < bestD) { bestD = d; best = it; }
+    if (d < bestD) {
+      bestD = d;
+      best = it;
+    }
   }
   return best?.el ?? null;
 }
@@ -128,7 +131,10 @@ function nearestContentToY(grid: Grid, y: number): HTMLElement | null {
   for (const row of grid.rows) {
     const ry = row.reduce((s, r) => s + centerY(r), 0) / row.length;
     const d = Math.abs(ry - y);
-    if (d < bestD) { bestD = d; bestRow = row; }
+    if (d < bestD) {
+      bestD = d;
+      bestRow = row;
+    }
   }
   return bestRow?.[0]?.el ?? null;
 }
@@ -186,17 +192,17 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
   const railIdx = current ? grid.rail.findIndex((it) => it.el === current) : -1;
   if (railIdx !== -1) {
     const railEl = grid.rail[railIdx];
-    if (dir === 'up') {
+    if (dir === "up") {
       const t = grid.rail[Math.max(0, railIdx - 1)];
       mem.anchorY = centerY(t);
       return t.el;
     }
-    if (dir === 'down') {
+    if (dir === "down") {
       const t = grid.rail[Math.min(grid.rail.length - 1, railIdx + 1)];
       mem.anchorY = centerY(t);
       return t.el;
     }
-    if (dir === 'right') {
+    if (dir === "right") {
       // Cross into the content at roughly the same height.
       const t = nearestContentToY(grid, centerY(railEl));
       if (t) {
@@ -211,9 +217,7 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
 
   if (grid.rows.length === 0) {
     // No content rows (e.g. a rail-only or empty state) — fall back to the rail.
-    return grid.rail.length
-      ? nearestRailToY(grid, mem.anchorY || window.innerHeight / 2)
-      : null;
+    return grid.rail.length ? nearestRailToY(grid, mem.anchorY || window.innerHeight / 2) : null;
   }
 
   // No current focus in the grid? Focused node was unmounted on a re-render or
@@ -229,10 +233,10 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
 
   const { r, c } = cur;
 
-  if (dir === 'left' || dir === 'right') {
+  if (dir === "left" || dir === "right") {
     const row = grid.rows[r];
-    let next = c + (dir === 'right' ? 1 : -1);
-    if (dir === 'left' && next < 0) {
+    let next = c + (dir === "right" ? 1 : -1);
+    if (dir === "left" && next < 0) {
       // At the left edge of content → hop to the rail (nearest by height).
       const cy = centerY(row[c]);
       const railEl = nearestRailToY(grid, cy);
@@ -242,7 +246,7 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
       }
       next = 0; // no rail — stay put
     }
-    if (dir === 'right' && next >= row.length) {
+    if (dir === "right" && next >= row.length) {
       next = row.length - 1; // stop at the row end (don't wrap)
     }
     const target = row[next];
@@ -256,7 +260,7 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
   }
 
   // ---- up / down between content rows (clamp at edges; no wrap) ----
-  const step = dir === 'down' ? 1 : -1;
+  const step = dir === "down" ? 1 : -1;
   let nextRow = r + step;
   if (nextRow < 0 || nextRow >= grid.rows.length) {
     return grid.rows[r][c].el; // already at the top/bottom content row
@@ -280,7 +284,7 @@ function move(grid: Grid, current: HTMLElement | null, dir: Dir, mem: Memory): H
 
 function scrollIntoViewSoft(el: HTMLElement) {
   try {
-    el.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'auto' });
+    el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
   } catch {
     el.scrollIntoView();
   }
@@ -318,7 +322,7 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
       const el = document.activeElement as HTMLElement | null;
       if (!el) return false;
       const tag = el.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return true;
+      if (tag === "INPUT" || tag === "TEXTAREA") return true;
       if (el.isContentEditable) return true;
       return false;
     };
@@ -345,7 +349,7 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
         // alone stops short on the way back up and clips the top.
         const absTop = next.getBoundingClientRect().top + window.scrollY;
         if (absTop < 240) {
-          window.scrollTo({ top: 0, behavior: 'auto' });
+          window.scrollTo({ top: 0, behavior: "auto" });
         } else {
           scrollIntoViewSoft(next);
         }
@@ -372,15 +376,15 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
     };
 
     const KEY_DIR: Record<string, Dir> = {
-      ArrowUp: 'up',
-      ArrowDown: 'down',
-      ArrowLeft: 'left',
-      ArrowRight: 'right',
+      ArrowUp: "up",
+      ArrowDown: "down",
+      ArrowLeft: "left",
+      ArrowRight: "right",
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
       // Don't hijack typing inside chat/search boxes.
-      if (isTextInputFocused() && e.key !== 'Escape') return;
+      if (isTextInputFocused() && e.key !== "Escape") return;
 
       const dir = KEY_DIR[e.key];
       if (dir) {
@@ -388,7 +392,7 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
         if (repeatRef.current.dir !== dir) startRepeat(dir);
         return;
       }
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === "Enter" || e.key === " ") {
         const el = document.activeElement as HTMLElement | null;
         if (el && el !== document.body) {
           e.preventDefault();
@@ -396,12 +400,12 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
         }
         return;
       }
-      if (e.key === 'Backspace' || e.key === 'Escape') {
+      if (e.key === "Backspace" || e.key === "Escape") {
         e.preventDefault();
         onBackRef.current?.();
         return;
       }
-      if (e.key === 'ContextMenu' || e.key === 'F10') {
+      if (e.key === "ContextMenu" || e.key === "F10") {
         e.preventDefault();
         onMenuRef.current?.();
       }
@@ -420,15 +424,15 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
     let raf = 0;
 
     const gpDir = (gp: Gamepad): Dir | null => {
-      if (gp.buttons[12]?.pressed) return 'up';
-      if (gp.buttons[13]?.pressed) return 'down';
-      if (gp.buttons[14]?.pressed) return 'left';
-      if (gp.buttons[15]?.pressed) return 'right';
+      if (gp.buttons[12]?.pressed) return "up";
+      if (gp.buttons[13]?.pressed) return "down";
+      if (gp.buttons[14]?.pressed) return "left";
+      if (gp.buttons[15]?.pressed) return "right";
       const x = gp.axes[0] ?? 0;
       const y = gp.axes[1] ?? 0;
       if (Math.abs(x) < STICK_DEADZONE && Math.abs(y) < STICK_DEADZONE) return null;
-      if (Math.abs(x) > Math.abs(y)) return x > 0 ? 'right' : 'left';
-      return y > 0 ? 'down' : 'up';
+      if (Math.abs(x) > Math.abs(y)) return x > 0 ? "right" : "left";
+      return y > 0 ? "down" : "up";
     };
 
     const pollGamepads = () => {
@@ -480,10 +484,10 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
       // Keep polling — other pads may still be connected.
     };
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('gamepadconnected', onGamepadConnected);
-    window.addEventListener('gamepaddisconnected', onGamepadDisconnected);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("gamepadconnected", onGamepadConnected);
+    window.addEventListener("gamepaddisconnected", onGamepadDisconnected);
     // Only start the gamepad loop if a pad is already connected; otherwise wait
     // for the gamepadconnected event. (A TV remote needs no polling.)
     const padsAtStart = (navigator.getGamepads?.() ?? []) as (Gamepad | null)[];
@@ -499,10 +503,10 @@ export function useFocusGrid(opts: FocusManagerOptions = {}) {
     }, 100);
 
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
-      window.removeEventListener('gamepadconnected', onGamepadConnected);
-      window.removeEventListener('gamepaddisconnected', onGamepadDisconnected);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("gamepadconnected", onGamepadConnected);
+      window.removeEventListener("gamepaddisconnected", onGamepadDisconnected);
       stopRepeat();
       cancelAnimationFrame(raf);
       clearTimeout(seedTimer);

@@ -1,27 +1,37 @@
-import { supabase } from '@/lib/supabase';
-import { Badge, BadgeAward } from '../types';
-import { badges as devBadges } from '../data/devFixtures';
-import { assertConfigured, shouldUseFixtures } from './config';
+import { supabase } from "@/lib/supabase";
+import { Badge, BadgeAward } from "../types";
+import { badges as devBadges } from "../data/devFixtures";
+import { assertConfigured, shouldUseFixtures } from "./config";
 
 async function ensureDefaultBadges() {
   try {
     const defaults = [
-      { id: 'first_session', name: 'First TRANCE Session', description: 'You took your first steps in the TRANCE universe.', tier: 'magenta', icon: 'Flame' },
-      { id: 'first_routine', name: 'First Routine Completed', description: 'Completed your first choreography routine.', tier: 'cyan', icon: 'Award' }
+      {
+        id: "first_session",
+        name: "First TRANCE Session",
+        description: "You took your first steps in the TRANCE universe.",
+        tier: "magenta",
+        icon: "Flame",
+      },
+      {
+        id: "first_routine",
+        name: "First Routine Completed",
+        description: "Completed your first choreography routine.",
+        tier: "cyan",
+        icon: "Award",
+      },
     ];
     for (const badge of defaults) {
-      await supabase
-        .from('trance_badges')
-        .upsert(badge);
+      await supabase.from("trance_badges").upsert(badge);
     }
   } catch (err) {
-    console.error('Failed to ensure default badges:', err);
+    console.error("Failed to ensure default badges:", err);
   }
 }
 
 export const tranceBadgeService = {
   getBadges: async (userId?: string): Promise<Badge[]> => {
-    assertConfigured('BadgeService');
+    assertConfigured("BadgeService");
     if (shouldUseFixtures()) {
       return devBadges;
     }
@@ -29,9 +39,7 @@ export const tranceBadgeService = {
     await ensureDefaultBadges();
 
     // Get all badges
-    const { data: allBadges, error: badgeErr } = await supabase
-      .from('trance_badges')
-      .select('*');
+    const { data: allBadges, error: badgeErr } = await supabase.from("trance_badges").select("*");
 
     if (badgeErr) throw badgeErr;
 
@@ -41,9 +49,9 @@ export const tranceBadgeService = {
 
     // If user is provided, query awards to mark "earned"
     const { data: awards, error: awardErr } = await supabase
-      .from('trance_badge_awards')
-      .select('badge_id')
-      .eq('user_id', userId);
+      .from("trance_badge_awards")
+      .select("badge_id")
+      .eq("user_id", userId);
 
     if (awardErr) throw awardErr;
 
@@ -62,7 +70,7 @@ export const tranceBadgeService = {
   },
 
   unlockBadge: async (userId: string, badgeId: string): Promise<BadgeAward | null> => {
-    assertConfigured('BadgeService');
+    assertConfigured("BadgeService");
     if (shouldUseFixtures()) {
       console.log(`[Dev Mode] Mock unlock badge ${badgeId} for user ${userId}`);
       return {
@@ -70,7 +78,7 @@ export const tranceBadgeService = {
         userId,
         badgeId,
         awardedAt: new Date().toISOString(),
-        txHash: '0xmockRewardsHash',
+        txHash: "0xmockRewardsHash",
       };
     }
 
@@ -78,10 +86,10 @@ export const tranceBadgeService = {
 
     // Check if already earned
     const { data: existing } = await supabase
-      .from('trance_badge_awards')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('badge_id', badgeId)
+      .from("trance_badge_awards")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("badge_id", badgeId)
       .maybeSingle();
 
     if (existing) {
@@ -97,13 +105,13 @@ export const tranceBadgeService = {
     const txHash = `trey-rewards-tx-${Date.now()}`;
 
     const { data, error } = await supabase
-      .from('trance_badge_awards')
+      .from("trance_badge_awards")
       .insert({
         user_id: userId,
         badge_id: badgeId,
         tx_hash: txHash,
       })
-      .select('*')
+      .select("*")
       .maybeSingle();
 
     if (error) throw error;

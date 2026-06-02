@@ -42,7 +42,9 @@ export interface SocialCounts {
 export async function followUser(targetUserId: string): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to follow users");
@@ -55,11 +57,13 @@ export async function followUser(targetUserId: string): Promise<boolean> {
     }
 
     // Check if blocked relationship exists
-    const { data: relationshipData, error: relationshipError } = await supabase
-      .rpc("get_relationship_status", {
+    const { data: relationshipData, error: relationshipError } = await supabase.rpc(
+      "get_relationship_status",
+      {
         _viewer_id: user.id,
         _target_id: targetUserId,
-      } as any);
+      } as any,
+    );
 
     if (relationshipError) {
       console.error("Error checking relationship status:", relationshipError);
@@ -69,17 +73,17 @@ export async function followUser(targetUserId: string): Promise<boolean> {
 
     const relationship = relationshipData as RelationshipStatus;
     if (!relationship.can_follow) {
-      toast.error(relationship.is_blocked ? "You have blocked this user" : "This user has blocked you");
+      toast.error(
+        relationship.is_blocked ? "You have blocked this user" : "This user has blocked you",
+      );
       return false;
     }
 
     // Insert follow relationship
-    const { error } = await supabase
-      .from("follows")
-      .insert({
-        follower_id: user.id,
-        following_id: targetUserId,
-      } as any);
+    const { error } = await supabase.from("follows").insert({
+      follower_id: user.id,
+      following_id: targetUserId,
+    } as any);
 
     if (error) {
       if (error.code === "23505") {
@@ -101,7 +105,9 @@ export async function followUser(targetUserId: string): Promise<boolean> {
 export async function unfollowUser(targetUserId: string): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to unfollow users");
@@ -128,7 +134,10 @@ export async function unfollowUser(targetUserId: string): Promise<boolean> {
   }
 }
 
-export async function toggleFollow(targetUserId: string, currentlyFollowing: boolean): Promise<boolean> {
+export async function toggleFollow(
+  targetUserId: string,
+  currentlyFollowing: boolean,
+): Promise<boolean> {
   if (currentlyFollowing) {
     return await unfollowUser(targetUserId);
   } else {
@@ -140,8 +149,14 @@ export async function getSocialCounts(targetUserId: string): Promise<SocialCount
   try {
     const supabase = createBrowserClient();
     const [followersResult, followingResult] = await Promise.all([
-      supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", targetUserId),
-      supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", targetUserId),
+      supabase
+        .from("follows")
+        .select("id", { count: "exact", head: true })
+        .eq("following_id", targetUserId),
+      supabase
+        .from("follows")
+        .select("id", { count: "exact", head: true })
+        .eq("follower_id", targetUserId),
     ]);
 
     return {
@@ -161,7 +176,9 @@ export async function getSocialCounts(targetUserId: string): Promise<SocialCount
 export async function blockUser(targetUserId: string): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to block users");
@@ -195,7 +212,9 @@ export async function blockUser(targetUserId: string): Promise<boolean> {
 export async function unblockUser(targetUserId: string): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to unblock users");
@@ -221,10 +240,14 @@ export async function unblockUser(targetUserId: string): Promise<boolean> {
   }
 }
 
-export async function getRelationshipStatus(targetUserId: string): Promise<RelationshipStatus | null> {
+export async function getRelationshipStatus(
+  targetUserId: string,
+): Promise<RelationshipStatus | null> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return null;
@@ -274,7 +297,9 @@ export async function getTopThree(profileUserId: string): Promise<TopThreeEntry[
 export async function addToTopThree(featuredUserId: string, position: number): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to manage your Top 3");
@@ -304,7 +329,9 @@ export async function addToTopThree(featuredUserId: string, position: number): P
 export async function removeFromTopThree(featuredUserId: string): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to manage your Top 3");
@@ -330,10 +357,15 @@ export async function removeFromTopThree(featuredUserId: string): Promise<boolea
   }
 }
 
-export async function reorderTopThree(featuredUserId: string, newPosition: number): Promise<boolean> {
+export async function reorderTopThree(
+  featuredUserId: string,
+  newPosition: number,
+): Promise<boolean> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       toast.error("Please sign in to manage your Top 3");
@@ -362,7 +394,9 @@ export async function reorderTopThree(featuredUserId: string, newPosition: numbe
 export async function getMyTopThree(): Promise<TopThreeEntry[]> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return [];
@@ -382,13 +416,17 @@ export async function getMyTopThree(): Promise<TopThreeEntry[]> {
 export async function searchUsersForTopThree(query: string, limit: number = 20): Promise<any[]> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       return [];
     }
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query.trim());
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      query.trim(),
+    );
 
     let dbQuery = supabase
       .from("profiles")
@@ -399,7 +437,7 @@ export async function searchUsersForTopThree(query: string, limit: number = 20):
       dbQuery = dbQuery.eq("id", query.trim());
     } else {
       dbQuery = dbQuery.or(
-        `username.ilike.%${query}%,display_name.ilike.%${query}%,public_profile_uid.ilike.%${query}%`
+        `username.ilike.%${query}%,display_name.ilike.%${query}%,public_profile_uid.ilike.%${query}%`,
       );
     }
 
@@ -429,7 +467,9 @@ export async function searchUsersForTopThree(query: string, limit: number = 20):
 export async function getMutualFollows(): Promise<any[]> {
   try {
     const supabase = createBrowserClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return [];
 
     // Query follows where follower_id is current user
@@ -444,7 +484,8 @@ export async function getMutualFollows(): Promise<any[]> {
     // Query follows where follower_id is in followingIds AND following_id is current user
     const { data: mutualData } = await supabase
       .from("follows")
-      .select(`
+      .select(
+        `
         follower_id,
         follower_profile:profiles!follows_follower_id_fkey (
           id,
@@ -454,7 +495,8 @@ export async function getMutualFollows(): Promise<any[]> {
           avatar_url,
           verification_type
         )
-      `)
+      `,
+      )
       .eq("following_id", user.id)
       .in("follower_id", followingIds);
 

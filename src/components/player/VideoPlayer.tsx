@@ -11,7 +11,15 @@ interface Props {
   onEnded?: () => void;
 }
 
-export function VideoPlayer({ src, poster, className, controls = true, fallbackImg, onProgress, onEnded }: Props) {
+export function VideoPlayer({
+  src,
+  poster,
+  className,
+  controls = true,
+  fallbackImg,
+  onProgress,
+  onEnded,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [buffering, setBuffering] = useState(!!src);
   const [dismissed, setDismissed] = useState(false);
@@ -23,9 +31,7 @@ export function VideoPlayer({ src, poster, className, controls = true, fallbackI
   }
 
   if (!src) {
-    return (
-      <img src={fallbackImg} className={className} alt="" />
-    );
+    return <img src={fallbackImg} className={className} alt="" />;
   }
 
   return (
@@ -36,7 +42,9 @@ export function VideoPlayer({ src, poster, className, controls = true, fallbackI
         poster={poster}
         className={className}
         controls={controls}
-        onWaiting={() => { if (dismissed) setBuffering(true); }}
+        onWaiting={() => {
+          if (dismissed) setBuffering(true);
+        }}
         onPlaying={() => setBuffering(false)}
         onTimeUpdate={(event) => {
           const video = event.currentTarget;

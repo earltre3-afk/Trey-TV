@@ -12,7 +12,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { verifyTreyIUser } from "@/lib/trey-i/onboarding.server";
 import { recipeToShotstack } from "@/lib/creator-studio/render/shotstackAdapter";
-import { submitShotstackRender, getShotstackStatus } from "@/lib/creator-studio/render/shotstack.server";
+import {
+  submitShotstackRender,
+  getShotstackStatus,
+} from "@/lib/creator-studio/render/shotstack.server";
 import type { EditRecipe } from "@/lib/creator-studio/editRecipe";
 
 type Rpc<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -23,7 +26,8 @@ export const submitRender = createServerFn({ method: "POST" })
     recipe: input?.recipe,
   }))
   .handler(async ({ data }): Promise<Rpc<{ renderId: string }>> => {
-    if (!data.recipe || !Array.isArray(data.recipe.tracks)) return { ok: false, error: "missing_recipe" };
+    if (!data.recipe || !Array.isArray(data.recipe.tracks))
+      return { ok: false, error: "missing_recipe" };
     try {
       await verifyTreyIUser(data.accessToken);
     } catch {

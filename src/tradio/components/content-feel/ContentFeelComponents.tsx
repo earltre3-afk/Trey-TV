@@ -1,30 +1,60 @@
-import React from 'react';
-import { AlertTriangle, Brain, Compass, Radar, ShieldQuestion, Sparkles, Tag, Waves, Loader2 } from 'lucide-react';
-import { GlassCard } from '../tradio/ui';
-import { PRESCRIBE_ME_QUESTION_MAP, getAnswerLabel, type PrescribeMeQuestionKey } from '@/tradio/lib/content-feel/contentFeelQuestions';
-import { PRESCRIBE_ME_PRIVACY_NOTICE, safeRecommendationReason } from '@/tradio/lib/content-feel/contentFeelPrivacyRules';
-import type { ContentFeelProfile } from '@/tradio/lib/content-feel/contentFeelTypes';
-import type { ContentFeelStatus } from './useContentFeelAnalysis';
+import React from "react";
+import {
+  AlertTriangle,
+  Brain,
+  Compass,
+  Radar,
+  ShieldQuestion,
+  Sparkles,
+  Tag,
+  Waves,
+  Loader2,
+} from "lucide-react";
+import { GlassCard } from "../tradio/ui";
+import {
+  PRESCRIBE_ME_QUESTION_MAP,
+  getAnswerLabel,
+  type PrescribeMeQuestionKey,
+} from "@/tradio/lib/content-feel/contentFeelQuestions";
+import {
+  PRESCRIBE_ME_PRIVACY_NOTICE,
+  safeRecommendationReason,
+} from "@/tradio/lib/content-feel/contentFeelPrivacyRules";
+import type { ContentFeelProfile } from "@/tradio/lib/content-feel/contentFeelTypes";
+import type { ContentFeelStatus } from "./useContentFeelAnalysis";
 
-const humanize = (value: string) => value.replace(/_/g, ' ');
+const humanize = (value: string) => value.replace(/_/g, " ");
 
 const TONE: Record<string, string> = {
-  mood: 'border-fuchsia-300/25 bg-fuchsia-500/10 text-fuchsia-200',
-  energy: 'border-cyan-300/25 bg-cyan-500/10 text-cyan-200',
-  need: 'border-purple-300/25 bg-purple-500/10 text-purple-200',
-  context: 'border-white/12 bg-white/[0.05] text-white/70',
+  mood: "border-fuchsia-300/25 bg-fuchsia-500/10 text-fuchsia-200",
+  energy: "border-cyan-300/25 bg-cyan-500/10 text-cyan-200",
+  need: "border-purple-300/25 bg-purple-500/10 text-purple-200",
+  context: "border-white/12 bg-white/[0.05] text-white/70",
 };
 
 // ─── Tag cloud ─────────────────────────────────────────────────────────────────
 
-export const ContentFeelTagCloud: React.FC<{ label: string; tags: string[]; tone?: keyof typeof TONE; icon?: React.ReactNode }> = ({ label, tags, tone = 'context', icon }) => {
+export const ContentFeelTagCloud: React.FC<{
+  label: string;
+  tags: string[];
+  tone?: keyof typeof TONE;
+  icon?: React.ReactNode;
+}> = ({ label, tags, tone = "context", icon }) => {
   if (!tags.length) return null;
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">{icon}{label}</div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+        {icon}
+        {label}
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {tags.map((tag) => (
-          <span key={tag} className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TONE[tone]}`}>{humanize(tag)}</span>
+          <span
+            key={tag}
+            className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${TONE[tone]}`}
+          >
+            {humanize(tag)}
+          </span>
         ))}
       </div>
     </div>
@@ -33,16 +63,22 @@ export const ContentFeelTagCloud: React.FC<{ label: string; tags: string[]; tone
 
 // ─── Confidence badge ───────────────────────────────────────────────────────────
 
-export const ContentFeelConfidenceBadge: React.FC<{ profile: ContentFeelProfile }> = ({ profile }) => {
+export const ContentFeelConfidenceBadge: React.FC<{ profile: ContentFeelProfile }> = ({
+  profile,
+}) => {
   const { confidence_label, confidence_score } = profile.ai;
-  const tone = confidence_label === 'high' || confidence_label === 'very_high'
-    ? 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200'
-    : confidence_label === 'medium'
-      ? 'border-amber-300/30 bg-amber-500/10 text-amber-200'
-      : 'border-white/12 bg-white/[0.05] text-white/60';
+  const tone =
+    confidence_label === "high" || confidence_label === "very_high"
+      ? "border-emerald-300/30 bg-emerald-500/10 text-emerald-200"
+      : confidence_label === "medium"
+        ? "border-amber-300/30 bg-amber-500/10 text-amber-200"
+        : "border-white/12 bg-white/[0.05] text-white/60";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${tone}`}>
-      <Brain className="h-3 w-3" /> {humanize(confidence_label)} confidence · {Math.round(confidence_score * 100)}%
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${tone}`}
+    >
+      <Brain className="h-3 w-3" /> {humanize(confidence_label)} confidence ·{" "}
+      {Math.round(confidence_score * 100)}%
     </span>
   );
 };
@@ -54,18 +90,29 @@ export const ContentFeelRouteHints: React.FC<{ profile: ContentFeelProfile }> = 
   if (!hints.length) return null;
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45"><Compass className="h-3 w-3" /> Prescribe Me route hints</div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+        <Compass className="h-3 w-3" /> Prescribe Me route hints
+      </div>
       <div className="space-y-1.5">
         {hints.map((hint, i) => {
           const question = PRESCRIBE_ME_QUESTION_MAP[hint.question_key as PrescribeMeQuestionKey];
-          const answerLabel = getAnswerLabel(hint.question_key as PrescribeMeQuestionKey, hint.answer_key);
+          const answerLabel = getAnswerLabel(
+            hint.question_key as PrescribeMeQuestionKey,
+            hint.answer_key,
+          );
           return (
-            <div key={`${hint.question_key}-${hint.answer_key}-${i}`} className="flex items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2">
+            <div
+              key={`${hint.question_key}-${hint.answer_key}-${i}`}
+              className="flex items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
+            >
               <span className="min-w-0 text-[11px] text-white/70">
-                May route well for users who choose <span className="font-bold text-white">“{answerLabel}”</span>
+                May route well for users who choose{" "}
+                <span className="font-bold text-white">“{answerLabel}”</span>
                 {question ? <span className="text-white/40"> · {question.prompt}</span> : null}
               </span>
-              <span className="shrink-0 rounded-full border border-cyan-300/20 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-200">{Math.round(hint.route_score * 100)}%</span>
+              <span className="shrink-0 rounded-full border border-cyan-300/20 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-200">
+                {Math.round(hint.route_score * 100)}%
+              </span>
             </div>
           );
         })}
@@ -77,14 +124,23 @@ export const ContentFeelRouteHints: React.FC<{ profile: ContentFeelProfile }> = 
 // ─── Quiet feed placement hints ───────────────────────────────────────────────
 
 export const ContentFeelQuietHints: React.FC<{ profile: ContentFeelProfile }> = ({ profile }) => {
-  const contexts = Array.from(new Set([...profile.quiet.feed_boost_contexts, ...profile.prescribe_me.prescription_contexts])).slice(0, 6);
+  const contexts = Array.from(
+    new Set([...profile.quiet.feed_boost_contexts, ...profile.prescribe_me.prescription_contexts]),
+  ).slice(0, 6);
   if (!contexts.length) return null;
   return (
     <div>
-      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45"><Radar className="h-3 w-3" /> Quiet feed placement hints</div>
+      <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/45">
+        <Radar className="h-3 w-3" /> Quiet feed placement hints
+      </div>
       <div className="flex flex-wrap gap-1.5">
         {contexts.map((ctx) => (
-          <span key={ctx} className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/65">{humanize(ctx)}</span>
+          <span
+            key={ctx}
+            className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/65"
+          >
+            {humanize(ctx)}
+          </span>
         ))}
       </div>
     </div>
@@ -114,31 +170,42 @@ export const ContentFeelReviewFlags: React.FC<{ profile: ContentFeelProfile }> =
 
 // ─── Creator summary ───────────────────────────────────────────────────────────
 
-export const ContentFeelCreatorSummary: React.FC<{ profile: ContentFeelProfile }> = ({ profile }) => (
+export const ContentFeelCreatorSummary: React.FC<{ profile: ContentFeelProfile }> = ({
+  profile,
+}) => (
   <div className="rounded-xl border border-white/8 bg-white/[0.02] p-3">
     <p className="text-sm leading-relaxed text-white/75">{profile.summary}</p>
-    <p className="mt-1.5 text-[11px] leading-relaxed text-cyan-200/70">{safeRecommendationReason(undefined, 'current_route')}</p>
+    <p className="mt-1.5 text-[11px] leading-relaxed text-cyan-200/70">
+      {safeRecommendationReason(undefined, "current_route")}
+    </p>
   </div>
 );
 
 // ─── Analysis (re)run button ─────────────────────────────────────────────────
 
-export const ContentFeelAnalysisButton: React.FC<{ status: ContentFeelStatus; onRun: () => void }> = ({ status, onRun }) => (
+export const ContentFeelAnalysisButton: React.FC<{
+  status: ContentFeelStatus;
+  onRun: () => void;
+}> = ({ status, onRun }) => (
   <button
     onClick={onRun}
-    disabled={status === 'analyzing'}
+    disabled={status === "analyzing"}
     className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-300/30 bg-fuchsia-500/10 px-3 py-1.5 text-[11px] font-bold text-fuchsia-100 transition hover:bg-fuchsia-500/20 disabled:opacity-50"
   >
-    {status === 'analyzing' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-    {status === 'analyzing' ? 'Analyzing…' : 'Re-run Content Feel'}
+    {status === "analyzing" ? (
+      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+    ) : (
+      <Sparkles className="h-3.5 w-3.5" />
+    )}
+    {status === "analyzing" ? "Analyzing…" : "Re-run Content Feel"}
   </button>
 );
 
 const STATUS_COPY: Record<ContentFeelStatus, string> = {
-  idle: 'Analysis pending',
-  analyzing: 'Analyzing content feel…',
-  complete: 'Content feel ready',
-  needs_review: 'Ready · review suggested',
+  idle: "Analysis pending",
+  analyzing: "Analyzing content feel…",
+  complete: "Content feel ready",
+  needs_review: "Ready · review suggested",
 };
 
 // ─── Full analysis panel ─────────────────────────────────────────────────────
@@ -154,30 +221,51 @@ export const ContentFeelAnalysisPanel: React.FC<{
       <div className="min-w-0">
         <div className="flex items-center gap-2 text-sm font-black text-white">
           <Sparkles className="h-4 w-4 text-fuchsia-300" /> Content Feel
-          <span className="rounded-full border border-cyan-300/25 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-cyan-200">AI preview · mock</span>
+          <span className="rounded-full border border-cyan-300/25 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-cyan-200">
+            AI preview · mock
+          </span>
         </div>
         <div className="mt-0.5 text-[11px] text-white/45">{STATUS_COPY[status]}</div>
       </div>
       {profile && <ContentFeelConfidenceBadge profile={profile} />}
     </div>
 
-    {status === 'analyzing' && !profile && (
-      <div className="mt-4 flex items-center gap-2 text-sm text-white/50"><Loader2 className="h-4 w-4 animate-spin" /> Reading the feel of your content…</div>
+    {status === "analyzing" && !profile && (
+      <div className="mt-4 flex items-center gap-2 text-sm text-white/50">
+        <Loader2 className="h-4 w-4 animate-spin" /> Reading the feel of your content…
+      </div>
     )}
 
     {profile && (
       <div className="mt-4 space-y-4">
         <ContentFeelCreatorSummary profile={profile} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <ContentFeelTagCloud label="Mood tags" tags={profile.mood_tags} tone="mood" icon={<Tag className="h-3 w-3" />} />
-          <ContentFeelTagCloud label="Energy tags" tags={profile.energy_tags} tone="energy" icon={<Waves className="h-3 w-3" />} />
+          <ContentFeelTagCloud
+            label="Mood tags"
+            tags={profile.mood_tags}
+            tone="mood"
+            icon={<Tag className="h-3 w-3" />}
+          />
+          <ContentFeelTagCloud
+            label="Energy tags"
+            tags={profile.energy_tags}
+            tone="energy"
+            icon={<Waves className="h-3 w-3" />}
+          />
         </div>
-        <ContentFeelTagCloud label="Behavioral need tags" tags={profile.behavioral_need_tags} tone="need" icon={<Brain className="h-3 w-3" />} />
+        <ContentFeelTagCloud
+          label="Behavioral need tags"
+          tags={profile.behavioral_need_tags}
+          tone="need"
+          icon={<Brain className="h-3 w-3" />}
+        />
         {!compact && <ContentFeelRouteHints profile={profile} />}
         {!compact && <ContentFeelQuietHints profile={profile} />}
         <ContentFeelReviewFlags profile={profile} />
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/8 pt-3">
-          <p className="max-w-md text-[10px] leading-relaxed text-white/35">{PRESCRIBE_ME_PRIVACY_NOTICE}</p>
+          <p className="max-w-md text-[10px] leading-relaxed text-white/35">
+            {PRESCRIBE_ME_PRIVACY_NOTICE}
+          </p>
           {onRun && <ContentFeelAnalysisButton status={status} onRun={onRun} />}
         </div>
       </div>
@@ -190,12 +278,19 @@ export const ContentFeelAnalysisPanel: React.FC<{
 export const ContentFeelMiniCard: React.FC<{ profile: ContentFeelProfile }> = ({ profile }) => (
   <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
     <div className="flex items-center justify-between gap-2">
-      <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-white/55"><Sparkles className="h-3 w-3 text-fuchsia-300" /> Content Feel</div>
+      <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-white/55">
+        <Sparkles className="h-3 w-3 text-fuchsia-300" /> Content Feel
+      </div>
       <ContentFeelConfidenceBadge profile={profile} />
     </div>
     <div className="mt-2 flex flex-wrap gap-1.5">
       {[...profile.mood_tags.slice(0, 3), ...profile.energy_tags.slice(0, 2)].map((tag) => (
-        <span key={tag} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/65">{humanize(tag)}</span>
+        <span
+          key={tag}
+          className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] text-white/65"
+        >
+          {humanize(tag)}
+        </span>
       ))}
     </div>
   </div>

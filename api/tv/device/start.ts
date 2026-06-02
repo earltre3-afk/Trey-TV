@@ -41,7 +41,10 @@ function origin(req: VercelRequest) {
     process.env.VITE_SITE_URL?.trim().replace(/\/+$/, "");
   if (env) return env;
   const proto = (req.headers["x-forwarded-proto"] as string) || "https";
-  const host = (req.headers["x-forwarded-host"] as string) || (req.headers.host as string) || "tv.treytrizzy.com";
+  const host =
+    (req.headers["x-forwarded-host"] as string) ||
+    (req.headers.host as string) ||
+    "tv.treytrizzy.com";
   return `${proto}://${host}`;
 }
 

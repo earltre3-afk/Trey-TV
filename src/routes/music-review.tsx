@@ -6,7 +6,10 @@ export const Route = createFileRoute("/music-review")({
   head: () => ({
     meta: [
       { title: "Live Music Review - Trey TV" },
-      { name: "description", content: "Submit, queue, skip the line, and join Trey TV live music review." },
+      {
+        name: "description",
+        content: "Submit, queue, skip the line, and join Trey TV live music review.",
+      },
     ],
   }),
 });

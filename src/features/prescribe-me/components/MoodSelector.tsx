@@ -1,12 +1,21 @@
-import React from 'react';
-import StepShell from './StepShell';
-import { NeonGlassButton } from './LiquidGlass';
-import MoodIcon, { MOOD_META } from './MoodIcon';
-import { Check, ChevronRight } from 'lucide-react';
-import type { Mood } from './data';
+import React from "react";
+import StepShell from "./StepShell";
+import { NeonGlassButton } from "./LiquidGlass";
+import MoodIcon, { MOOD_META } from "./MoodIcon";
+import { Check, ChevronRight } from "lucide-react";
+import type { Mood } from "./data";
 
 // PDF: exactly 8 moods in 2 rows of 4 columns.
-const MOODS: Mood[] = ['Happy', 'Chill', 'Romantic', 'Motivated', 'Reflective', 'Wild', 'Healing', 'Curious'];
+const MOODS: Mood[] = [
+  "Happy",
+  "Chill",
+  "Romantic",
+  "Motivated",
+  "Reflective",
+  "Wild",
+  "Healing",
+  "Curious",
+];
 
 interface Props {
   value: Mood[];
@@ -34,7 +43,13 @@ const MoodSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step, 
     <StepShell
       step={step}
       totalSteps={total}
-      title={<>How are you<br />feeling right now?</>}
+      title={
+        <>
+          How are you
+          <br />
+          feeling right now?
+        </>
+      }
       subtitle="Pick up to 3 vibes."
       onBack={onBack}
       footer={
@@ -57,7 +72,7 @@ const MoodSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step, 
               onClick={() => toggle(m)}
               role="checkbox"
               aria-checked={selected}
-              aria-label={`${m} mood${selected ? ', selected' : ''}`}
+              aria-label={`${m} mood${selected ? ", selected" : ""}`}
               className="group flex flex-col items-center gap-1.5 focus:outline-none"
             >
               <div className="relative">
@@ -74,12 +89,12 @@ const MoodSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step, 
                   style={{
                     background: selected
                       ? `radial-gradient(circle at 50% 45%, ${color}22, rgba(0,0,0,0.85) 70%)`
-                      : 'radial-gradient(circle at 50% 45%, rgba(255,255,255,0.06), rgba(0,0,0,0.7) 70%)',
-                    border: `1.5px solid ${selected ? color : 'rgba(255,255,255,0.14)'}`,
+                      : "radial-gradient(circle at 50% 45%, rgba(255,255,255,0.06), rgba(0,0,0,0.7) 70%)",
+                    border: `1.5px solid ${selected ? color : "rgba(255,255,255,0.14)"}`,
                     boxShadow: selected
                       ? `0 0 22px ${color}cc, inset 0 0 14px ${color}55`
                       : `inset 0 0 10px rgba(255,255,255,0.04)`,
-                    backdropFilter: 'blur(8px)',
+                    backdropFilter: "blur(8px)",
                   }}
                 >
                   <MoodIcon mood={m} size={25} />
@@ -88,8 +103,8 @@ const MoodSelector: React.FC<Props> = ({ value, onChange, onNext, onBack, step, 
               <span
                 className="text-[11px] sm:text-xs font-medium"
                 style={{
-                  color: selected ? color : 'rgba(255,255,255,0.78)',
-                  textShadow: selected ? `0 0 8px ${color}88` : 'none',
+                  color: selected ? color : "rgba(255,255,255,0.78)",
+                  textShadow: selected ? `0 0 8px ${color}88` : "none",
                 }}
               >
                 {m}

@@ -23,7 +23,9 @@ export function ChannelChatPanel({ handle, className }: Props) {
   const disabledReason = userId ? null : "Sign in to chat";
 
   return (
-    <section className={`rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur flex flex-col h-[420px] ${className ?? ""}`}>
+    <section
+      className={`rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur flex flex-col h-[420px] ${className ?? ""}`}
+    >
       <header className="flex items-center justify-between px-3 py-2 border-b border-white/10">
         <div className="flex items-center gap-2">
           <MessageCircle className="size-4 text-primary" />

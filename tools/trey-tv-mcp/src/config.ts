@@ -24,7 +24,9 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): TreyTvMcpConfi
   const localOnly = isLocalPluginBaseUrl(baseUrl);
 
   if (!localOnly && !adminBearerToken) {
-    throw new Error("Non-local Trey TV Plugin Bridge access requires TREY_TV_PLUGIN_ADMIN_BEARER_TOKEN.");
+    throw new Error(
+      "Non-local Trey TV Plugin Bridge access requires TREY_TV_PLUGIN_ADMIN_BEARER_TOKEN.",
+    );
   }
 
   return {
@@ -33,4 +35,3 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): TreyTvMcpConfi
     localOnly,
   };
 }
-

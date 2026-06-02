@@ -51,7 +51,8 @@ export function ZodiacOnboarding({ onSelect }: ZodiacOnboardingProps) {
               Discover Your Cosmic Identity
             </h1>
             <p className="text-muted-foreground">
-              Your zodiac sign unlocks personalized readings, matched souls, and exclusive group access.
+              Your zodiac sign unlocks personalized readings, matched souls, and exclusive group
+              access.
             </p>
           </div>
 
@@ -82,14 +83,18 @@ export function ZodiacOnboarding({ onSelect }: ZodiacOnboardingProps) {
         <>
           <div className="space-y-2 text-center">
             <h2 className="text-2xl font-bold">Confirm Your Birth Date</h2>
-            <p className="text-muted-foreground">This helps Trey TV calculate your zodiac identity.</p>
+            <p className="text-muted-foreground">
+              This helps Trey TV calculate your zodiac identity.
+            </p>
           </div>
 
           <div className="glass space-y-4 rounded-2xl p-6 text-center">
             <div className="text-5xl">{selectedSign ? zodiacSymbol(selectedSign) : null}</div>
             <div>
               <h3 className="text-xl font-bold">{selectedSign}</h3>
-              <p className="text-sm text-muted-foreground">{selectedSign ? SIGN_DATES[selectedSign] : ""}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedSign ? SIGN_DATES[selectedSign] : ""}
+              </p>
             </div>
           </div>
 
@@ -119,7 +124,9 @@ export function ZodiacOnboarding({ onSelect }: ZodiacOnboardingProps) {
                   />
                   <span className="text-sm font-medium">I'm born on a cusp</span>
                 </label>
-                <p className="text-xs text-muted-foreground">Unlock rare Cusp Soul status and dual-sign readings.</p>
+                <p className="text-xs text-muted-foreground">
+                  Unlock rare Cusp Soul status and dual-sign readings.
+                </p>
               </div>
             </div>
           </div>

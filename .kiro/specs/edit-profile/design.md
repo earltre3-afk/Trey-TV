@@ -18,6 +18,7 @@ updated_at           timestamptz       -- auto-set by trigger on update
 ```
 
 ### RLS
+
 ```
 "Public profiles are viewable" → SELECT using (true)
 "Users manage own profile"     → ALL using (auth.uid() = id) with check (auth.uid() = id)
@@ -31,7 +32,7 @@ The `for all` policy covers UPDATE. No separate UPDATE policy needed.
 
 ```ts
 const save = () => {
-  if (!user) signIn("creator");       // mock sign-in if no mock session
+  if (!user) signIn("creator"); // mock sign-in if no mock session
   updateUser({ name, handle, bio, location, link, avatar, banner, accent });
   toast.success("Profile published ✨");
   setTimeout(() => nav({ to: "/u/$uid", params: { uid: base.uid } }), 350);
@@ -51,13 +52,13 @@ update still applies.
 
 ### Fields written to DB
 
-| DB column | Draft field | Notes |
-|-----------|-------------|-------|
-| `display_name` | `draft.name` | |
-| `username` | `draft.handle` | UNIQUE — catch 23505 error |
-| `bio` | `draft.bio` | |
-| `location` | `draft.location` | |
-| `profile_accent_color` | `draft.accent` | |
+| DB column              | Draft field      | Notes                      |
+| ---------------------- | ---------------- | -------------------------- |
+| `display_name`         | `draft.name`     |                            |
+| `username`             | `draft.handle`   | UNIQUE — catch 23505 error |
+| `bio`                  | `draft.bio`      |                            |
+| `location`             | `draft.location` |                            |
+| `profile_accent_color` | `draft.accent`   |                            |
 
 Fields NOT written: `avatar_url`, `banner_url` (blob URLs), `website_url` (out of scope),
 `public_profile_uid`, `role`, `verification_type`, `is_verified`, `verified_creator`.
@@ -88,16 +89,16 @@ The DB write needs `user.id` from `useAuth()` from `@/hooks/use-auth` (Supabase)
 Both must be imported under different names:
 
 ```ts
-import { useAuth } from "@/lib/auth";                    // existing — mock
-import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";  // new — Supabase session
+import { useAuth } from "@/lib/auth"; // existing — mock
+import { useAuth as useSupabaseAuth } from "@/hooks/use-auth"; // new — Supabase session
 ```
 
 ---
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
+| File                          | Change                                                        |
+| ----------------------------- | ------------------------------------------------------------- |
 | `src/routes/edit-profile.tsx` | Add `useSupabaseAuth` import + make `save()` async + DB write |
 
 No other files change.

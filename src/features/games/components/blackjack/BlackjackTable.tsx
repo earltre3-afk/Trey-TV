@@ -1,4 +1,3 @@
- 
 import React, { useCallback, useState } from "react";
 import {
   newBlackjackGame,
@@ -30,10 +29,7 @@ interface Props {
 
 const CHIPS = [10, 25, 100, 250, 500, 1000];
 
-function bjApply(
-  state: BJState,
-  move: { type: string; seat: number; payload?: any },
-): BJState {
+function bjApply(state: BJState, move: { type: string; seat: number; payload?: any }): BJState {
   switch (move.type) {
     case "bet":
       return placeBet(state, move.payload.bet);
@@ -55,9 +51,7 @@ function bjExtract(s: BJState) {
 
 export const BlackjackTable: React.FC<Props> = (props) => {
   if (props.roomId && props.identity)
-    return (
-      <ServerBJ {...props} roomId={props.roomId!} identity={props.identity!} />
-    );
+    return <ServerBJ {...props} roomId={props.roomId!} identity={props.identity!} />;
   return <LocalBJ {...props} />;
 };
 
@@ -78,9 +72,12 @@ const LocalBJ: React.FC<Props> = ({ onBack, onLegend }) => {
   );
 };
 
-const ServerBJ: React.FC<
-  Props & { roomId: string; identity: PlayerIdentity }
-> = ({ roomId, identity, onBack, onLegend }) => {
+const ServerBJ: React.FC<Props & { roomId: string; identity: PlayerIdentity }> = ({
+  roomId,
+  identity,
+  onBack,
+  onLegend,
+}) => {
   const apply = useCallback(bjApply, []);
   const extract = useCallback(bjExtract, []);
   const room = useRealtimeRoom(roomId, identity, apply, extract);
@@ -98,8 +95,7 @@ const ServerBJ: React.FC<
         <Loader2 className="animate-spin mr-2" /> Syncing room…
       </div>
     );
-  const send = (type: string, payload?: any) =>
-    room.sendMove({ type, seat: 0, payload });
+  const send = (type: string, payload?: any) => room.sendMove({ type, seat: 0, payload });
   return (
     <BJView
       state={room.state as BJState}
@@ -114,11 +110,7 @@ const ServerBJ: React.FC<
       playerAvatarUrl={identity.avatarUrl}
       playerPublicProfileUid={identity.publicProfileUid}
       chatButton={
-        <ChatHeaderButton
-          unread={chat.unread}
-          accent="#FFC857"
-          onClick={() => setChatOpen(true)}
-        />
+        <ChatHeaderButton unread={chat.unread} accent="#FFC857" onClick={() => setChatOpen(true)} />
       }
       chatDrawer={
         <GameChatDrawer
@@ -182,9 +174,7 @@ const BJView: React.FC<ViewProps> = ({
   const isPush = state.result === "push";
   const accent = isBust ? "#EF4444" : isWin ? "#22C55E" : "#FFC857";
   const canDouble =
-    state.phase === "player" &&
-    state.player.length === 2 &&
-    state.balance >= state.bet;
+    state.phase === "player" && state.player.length === 2 && state.balance >= state.bet;
   const pixiEventKey = `${state.phase}:${state.player.join("|")}:${state.dealer.join("|")}:${state.result ?? "none"}:${state.bet}`;
   const playerActions = [
     { label: "HIT", run: onHit, disabled: false },
@@ -243,15 +233,13 @@ const BJView: React.FC<ViewProps> = ({
         <div
           className="absolute -top-24 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full blur-[150px] trey-ambient-glow"
           style={{
-            background:
-              "radial-gradient(circle, rgba(255,200,87,0.18) 0%, transparent 72%)",
+            background: "radial-gradient(circle, rgba(255,200,87,0.18) 0%, transparent 72%)",
           }}
         />
         <div
           className="absolute bottom-10 -right-28 w-[420px] h-[420px] rounded-full blur-[130px]"
           style={{
-            background:
-              "radial-gradient(circle, rgba(168,85,247,0.16) 0%, transparent 72%)",
+            background: "radial-gradient(circle, rgba(168,85,247,0.16) 0%, transparent 72%)",
           }}
         />
       </div>
@@ -302,26 +290,14 @@ const BJView: React.FC<ViewProps> = ({
         </div>
 
         <div className="px-3 pb-2 grid grid-cols-4 gap-1.5 text-center">
-          <Metric
-            label="BAL"
-            value={state.balance.toLocaleString()}
-            color="#FFC857"
-          />
-          <Metric
-            label="BET"
-            value={`${state.bet || pendingBet}`}
-            color="#00B7FF"
-          />
+          <Metric label="BAL" value={state.balance.toLocaleString()} color="#FFC857" />
+          <Metric label="BET" value={`${state.bet || pendingBet}`} color="#00B7FF" />
           <Metric
             label="DEALER"
             value={state.dealer.length ? `${dealerShownVal}` : "—"}
             color="#A855F7"
           />
-          <Metric
-            label="YOU"
-            value={state.player.length ? `${playerVal}` : "—"}
-            color={accent}
-          />
+          <Metric label="YOU" value={state.player.length ? `${playerVal}` : "—"} color={accent} />
         </div>
       </header>
 
@@ -331,29 +307,77 @@ const BJView: React.FC<ViewProps> = ({
           data-game-table
           className={`relative w-full h-full max-w-md mx-auto rounded-[32px] overflow-hidden ombre-border ${isBust ? "trey-bust-shake" : ""} ${isWin ? "trey-win-burst" : ""}`}
           style={{
-            background: 'radial-gradient(120% 90% at 50% 0%, oklch(0.26 0.09 82) 0%, oklch(0.17 0.06 78) 30%, oklch(0.11 0.04 72) 60%, oklch(0.07 0.02 68) 100%)',
+            background:
+              "radial-gradient(120% 90% at 50% 0%, oklch(0.26 0.09 82) 0%, oklch(0.17 0.06 78) 30%, oklch(0.11 0.04 72) 60%, oklch(0.07 0.02 68) 100%)",
             boxShadow: `0 0 70px oklch(0.84 0.14 82 / 0.20), 0 0 100px oklch(0.72 0.24 300 / 0.12)`,
           }}
         >
           {/* Top gloss */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2" style={{ background: 'linear-gradient(180deg, oklch(1 0 0 / 0.07) 0%, transparent 55%)', zIndex: 1 }} />
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+            style={{
+              background: "linear-gradient(180deg, oklch(1 0 0 / 0.07) 0%, transparent 55%)",
+              zIndex: 1,
+            }}
+          />
           {/* Color wash */}
-          <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-50 z-[1]" style={{ background: 'radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.22) 0%, transparent 60%), radial-gradient(70% 50% at 85% 5%, oklch(0.84 0.16 215 / 0.12) 0%, transparent 60%)' }} />
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-screen opacity-50 z-[1]"
+            style={{
+              background:
+                "radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.22) 0%, transparent 60%), radial-gradient(70% 50% at 85% 5%, oklch(0.84 0.16 215 / 0.12) 0%, transparent 60%)",
+            }}
+          />
           {/* Grain */}
-          <div className="pointer-events-none absolute inset-0 opacity-[0.05] z-[1]" style={{ backgroundImage: 'radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)', backgroundSize: '3px 3px' }} />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.05] z-[1]"
+            style={{
+              backgroundImage: "radial-gradient(oklch(1 0 0 / 0.4) 0.5px, transparent 0.6px)",
+              backgroundSize: "3px 3px",
+            }}
+          />
           {/* Gold filigree corners */}
           <span className="filigree-corner z-[2]" style={{ top: 6, left: 6 }} />
-          <span className="filigree-corner z-[2]" style={{ top: 6, right: 6, transform: 'scaleX(-1)' }} />
-          <span className="filigree-corner z-[2]" style={{ bottom: 6, left: 6, transform: 'scaleY(-1)' }} />
-          <span className="filigree-corner z-[2]" style={{ bottom: 6, right: 6, transform: 'scale(-1,-1)' }} />
+          <span
+            className="filigree-corner z-[2]"
+            style={{ top: 6, right: 6, transform: "scaleX(-1)" }}
+          />
+          <span
+            className="filigree-corner z-[2]"
+            style={{ bottom: 6, left: 6, transform: "scaleY(-1)" }}
+          />
+          <span
+            className="filigree-corner z-[2]"
+            style={{ bottom: 6, right: 6, transform: "scale(-1,-1)" }}
+          />
           {/* Center logo watermark */}
-          <img src="/assets/games/spades-elite/treytv-logo.png" alt="" className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-auto z-[1]" style={{ opacity: 0.10, filter: 'drop-shadow(0 0 10px oklch(0.84 0.14 82 / 0.25))' }} />
+          <img
+            src="/assets/games/spades-elite/treytv-logo.png"
+            alt=""
+            className="pointer-events-none select-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[110px] h-auto z-[1]"
+            style={{ opacity: 0.1, filter: "drop-shadow(0 0 10px oklch(0.84 0.14 82 / 0.25))" }}
+          />
           {/* Double gold ring */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full breathe z-[1]" style={{ border: '1px solid oklch(0.84 0.14 82 / 0.38)', boxShadow: '0 0 18px oklch(0.84 0.14 82 / 0.22)' }} />
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[150px] h-[150px] rounded-full breathe z-[1]"
+            style={{
+              border: "1px solid oklch(0.84 0.14 82 / 0.38)",
+              boxShadow: "0 0 18px oklch(0.84 0.14 82 / 0.22)",
+            }}
+          />
           {/* Sparkles */}
-          <span className="sparkle z-[2]" style={{ top: '15%', left: '20%', animationDelay: '0.3s' }} />
-          <span className="sparkle z-[2]" style={{ top: '25%', right: '16%', animationDelay: '1.8s' }} />
-          <span className="sparkle z-[2]" style={{ bottom: '30%', left: '28%', animationDelay: '0s' }} />
+          <span
+            className="sparkle z-[2]"
+            style={{ top: "15%", left: "20%", animationDelay: "0.3s" }}
+          />
+          <span
+            className="sparkle z-[2]"
+            style={{ top: "25%", right: "16%", animationDelay: "1.8s" }}
+          />
+          <span
+            className="sparkle z-[2]"
+            style={{ bottom: "30%", left: "28%", animationDelay: "0s" }}
+          />
 
           {/* Pixi renders the entire table scene: felt, rim, dealer cards, player cards, chips */}
           <PixiBlackjackTableLazy
@@ -370,23 +394,39 @@ const BJView: React.FC<ViewProps> = ({
           {/* Dealer cards render at Pixi y≈28%; avatar sits above at 8% */}
           {/* Player cards render at Pixi y≈68%; avatar sits below at 88% */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-            <div style={{ position: 'absolute', top: '8%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "8%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                pointerEvents: "none",
+              }}
+            >
               <GamePlayerSeat
                 displayName="Dealer"
                 isBot
-                isCurrentTurn={state.phase === 'dealer'}
+                isCurrentTurn={state.phase === "dealer"}
                 accentColor="#FFC857"
                 size="lg"
                 position="top"
               />
             </div>
-            <div style={{ position: 'absolute', top: '88%', left: '50%', transform: 'translate(-50%, -50%)', pointerEvents: 'none' }}>
+            <div
+              style={{
+                position: "absolute",
+                top: "88%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                pointerEvents: "none",
+              }}
+            >
               <GamePlayerSeat
                 displayName="You"
                 avatarUrl={playerAvatarUrl}
                 publicProfileUid={playerPublicProfileUid}
                 isBot={false}
-                isCurrentTurn={state.phase === 'player'}
+                isCurrentTurn={state.phase === "player"}
                 accentColor="#00B7FF"
                 size="md"
                 position="bottom"
@@ -396,29 +436,43 @@ const BJView: React.FC<ViewProps> = ({
 
           {/* Score labels — floating React overlay on top of Pixi canvas */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <TableLabel label="DEALER" value={state.dealer.length > 0 ? dealerShownVal : undefined} color="#FFC857" />
+            <TableLabel
+              label="DEALER"
+              value={state.dealer.length > 0 ? dealerShownVal : undefined}
+              color="#FFC857"
+            />
           </div>
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-            <TableLabel label="YOU" value={state.player.length > 0 ? playerVal : undefined} color="#00B7FF" />
+            <TableLabel
+              label="YOU"
+              value={state.player.length > 0 ? playerVal : undefined}
+              color="#00B7FF"
+            />
           </div>
           <div
             className="absolute left-1/2 top-[28%] -translate-x-1/2 -translate-y-1/2 rounded-[18px] pointer-events-none transition-opacity"
             style={{
-              width: 'min(72%, 300px)',
-              height: 'clamp(82px, 18vh, 132px)',
-              border: '1px solid rgba(255,200,87,0.45)',
-              boxShadow: state.phase === 'dealer' ? '0 0 28px rgba(255,200,87,0.30), inset 0 0 24px rgba(255,200,87,0.08)' : 'none',
-              opacity: state.phase === 'dealer' ? 1 : 0.18,
+              width: "min(72%, 300px)",
+              height: "clamp(82px, 18vh, 132px)",
+              border: "1px solid rgba(255,200,87,0.45)",
+              boxShadow:
+                state.phase === "dealer"
+                  ? "0 0 28px rgba(255,200,87,0.30), inset 0 0 24px rgba(255,200,87,0.08)"
+                  : "none",
+              opacity: state.phase === "dealer" ? 1 : 0.18,
             }}
           />
           <div
             className="absolute left-1/2 top-[68%] -translate-x-1/2 -translate-y-1/2 rounded-[18px] pointer-events-none transition-opacity"
             style={{
-              width: 'min(78%, 320px)',
-              height: 'clamp(92px, 20vh, 144px)',
-              border: '1px solid rgba(0,183,255,0.50)',
-              boxShadow: state.phase === 'player' ? '0 0 30px rgba(0,183,255,0.34), inset 0 0 24px rgba(0,183,255,0.08)' : 'none',
-              opacity: state.phase === 'player' ? 1 : 0.16,
+              width: "min(78%, 320px)",
+              height: "clamp(92px, 20vh, 144px)",
+              border: "1px solid rgba(0,183,255,0.50)",
+              boxShadow:
+                state.phase === "player"
+                  ? "0 0 30px rgba(0,183,255,0.34), inset 0 0 24px rgba(0,183,255,0.08)"
+                  : "none",
+              opacity: state.phase === "player" ? 1 : 0.16,
             }}
           />
 
@@ -443,7 +497,11 @@ const BJView: React.FC<ViewProps> = ({
               <div
                 className="mt-1 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black trey-score-pop"
                 style={{
-                  background: isWin ? "rgba(34,197,94,0.18)" : isPush ? "rgba(255,200,87,0.18)" : "rgba(239,68,68,0.18)",
+                  background: isWin
+                    ? "rgba(34,197,94,0.18)"
+                    : isPush
+                      ? "rgba(255,200,87,0.18)"
+                      : "rgba(239,68,68,0.18)",
                   color: accent,
                   border: `1px solid ${accent}90`,
                   boxShadow: `0 0 18px ${accent}35`,
@@ -452,8 +510,10 @@ const BJView: React.FC<ViewProps> = ({
                 {state.result.toUpperCase()} · {state.message}
               </div>
             )}
-            {state.player.length === 0 && state.phase === 'betting' && (
-              <div className="text-[10px] text-slate-500 font-bold tracking-wide mt-1">Select chips below to deal</div>
+            {state.player.length === 0 && state.phase === "betting" && (
+              <div className="text-[10px] text-slate-500 font-bold tracking-wide mt-1">
+                Select chips below to deal
+              </div>
             )}
           </div>
         </div>
@@ -464,8 +524,7 @@ const BJView: React.FC<ViewProps> = ({
         data-game-action-panel
         className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2.5 pb-3"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(8,17,31,0.90), rgba(5,7,13,0.98))",
+          background: "linear-gradient(180deg, rgba(8,17,31,0.90), rgba(5,7,13,0.98))",
           borderColor: `${accent}40`,
           boxShadow: `0 -14px 34px ${accent}16`,
         }}
@@ -477,9 +536,7 @@ const BJView: React.FC<ViewProps> = ({
                 <div className="text-[10px] tracking-[0.32em] font-black text-amber-300">
                   PLACE BET
                 </div>
-                <div className="text-xs text-slate-400">
-                  Choose your virtual chips
-                </div>
+                <div className="text-xs text-slate-400">Choose your virtual chips</div>
               </div>
               <div
                 className="px-3 py-1 rounded-full text-xs font-black tabular-nums"
@@ -499,9 +556,7 @@ const BJView: React.FC<ViewProps> = ({
                   onClick={() => setPendingBet(c)}
                   className={`h-10 rounded-full font-black text-[11px] transition-all active:scale-95 trey-gold-chip ${tvRemoteMode && pendingBet === c ? "ring-4 ring-amber-300/70" : ""}`}
                   style={{
-                    border:
-                      "1px solid " +
-                      (pendingBet === c ? "#FFC857" : "rgba(255,200,87,0.28)"),
+                    border: "1px solid " + (pendingBet === c ? "#FFC857" : "rgba(255,200,87,0.28)"),
                     color: pendingBet === c ? "#05070D" : "#FFE4A3",
                     opacity: pendingBet === c ? 1 : 0.72,
                     boxShadow:
@@ -530,8 +585,17 @@ const BJView: React.FC<ViewProps> = ({
         )}
         {state.phase === "player" && (
           <div className="grid grid-cols-4 gap-2">
-            <ActionBtn label="HIT" onClick={onHit} remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 0} />
-            <ActionBtn label="STAND" onClick={onStand} primary remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 1} />
+            <ActionBtn
+              label="HIT"
+              onClick={onHit}
+              remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 0}
+            />
+            <ActionBtn
+              label="STAND"
+              onClick={onStand}
+              primary
+              remoteFocused={tvRemoteMode && remoteActionIndex % 3 === 1}
+            />
             <ActionBtn
               label="DOUBLE"
               onClick={onDouble}
@@ -599,9 +663,7 @@ const TableLabel: React.FC<{
       {label}
     </span>
     {value !== undefined && (
-      <span className="text-xs font-black text-white/90 tabular-nums">
-        {value}
-      </span>
+      <span className="text-xs font-black text-white/90 tabular-nums">{value}</span>
     )}
   </div>
 );
@@ -616,11 +678,9 @@ const ActionBtn: React.FC<{
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] transition-all active:scale-95 trey-glass-button ${disabled ? 'trey-premium-disabled' : ''} ${remoteFocused ? 'ring-4 ring-amber-300/70 shadow-[0_0_24px_rgba(251,191,36,0.45)]' : ''}`}
+    className={`py-3 rounded-2xl font-black text-[11px] tracking-[0.13em] transition-all active:scale-95 trey-glass-button ${disabled ? "trey-premium-disabled" : ""} ${remoteFocused ? "ring-4 ring-amber-300/70 shadow-[0_0_24px_rgba(251,191,36,0.45)]" : ""}`}
     style={{
-      background: primary
-        ? "linear-gradient(90deg,#FFC857,#FFB000)"
-        : "rgba(255,200,87,0.08)",
+      background: primary ? "linear-gradient(90deg,#FFC857,#FFB000)" : "rgba(255,200,87,0.08)",
       color: primary ? "#05070D" : "#FFC857",
       border: "1px solid rgba(255,200,87,0.38)",
       boxShadow: primary

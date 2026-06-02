@@ -5,8 +5,8 @@
 // <GameRoomModule currentUser={...} /> so rooms, queue entries, chat, requests,
 // and stats attach to the user's real profile/UID instead of guest storage.
 
-const ID_KEY = 'trey_game_user_id';
-const NAME_KEY = 'trey_game_display_name';
+const ID_KEY = "trey_game_user_id";
+const NAME_KEY = "trey_game_display_name";
 
 export interface PlayerIdentity {
   userId: string;
@@ -30,25 +30,42 @@ export interface TreyGameUserInput {
 }
 
 function canUseStorage(): boolean {
-  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
 function randomHex(n: number): string {
-  const chars = 'abcdef0123456789';
-  let s = '';
+  const chars = "abcdef0123456789";
+  let s = "";
   for (let i = 0; i < n; i++) s += chars[Math.floor(Math.random() * chars.length)];
   return s;
 }
 
 const NAMES = [
-  'Neon Ace','Velvet Wolf','Midnight King','Silver Spade','Echo Queen',
-  'Glass Bishop','Storm Joker','Crown Drift','Vapor Knight','Lux Phantom',
-  'Onyx Reign','Ember Sage','Cobalt Lyric','Soul Marquis','Pulse Heir',
+  "Neon Ace",
+  "Velvet Wolf",
+  "Midnight King",
+  "Silver Spade",
+  "Echo Queen",
+  "Glass Bishop",
+  "Storm Joker",
+  "Crown Drift",
+  "Vapor Knight",
+  "Lux Phantom",
+  "Onyx Reign",
+  "Ember Sage",
+  "Cobalt Lyric",
+  "Soul Marquis",
+  "Pulse Heir",
 ];
 
 export function getOrCreateIdentity(): PlayerIdentity {
   if (!canUseStorage()) {
-    return { userId: `guest-${randomHex(12)}`, displayName: 'Trey TV Guest', publicProfileUid: null, avatarUrl: null };
+    return {
+      userId: `guest-${randomHex(12)}`,
+      displayName: "Trey TV Guest",
+      publicProfileUid: null,
+      avatarUrl: null,
+    };
   }
 
   let userId = localStorage.getItem(ID_KEY);
@@ -68,9 +85,16 @@ export function identityFromTreyUser(user?: TreyGameUserInput | null): PlayerIde
   const fallback = getOrCreateIdentity();
   if (!user) return fallback;
 
-  const userId = user.userId || user.id || user.publicProfileUid || user.public_profile_uid || user.site_uid || fallback.userId;
+  const userId =
+    user.userId ||
+    user.id ||
+    user.publicProfileUid ||
+    user.public_profile_uid ||
+    user.site_uid ||
+    fallback.userId;
   const displayName = user.displayName || user.name || user.username || fallback.displayName;
-  const publicProfileUid = user.publicProfileUid || user.public_profile_uid || user.site_uid || null;
+  const publicProfileUid =
+    user.publicProfileUid || user.public_profile_uid || user.site_uid || null;
   const avatarUrl = user.avatarUrl || user.avatar_url || user.profileImageUrl || null;
 
   return {
@@ -87,8 +111,8 @@ export function setDisplayName(name: string) {
 }
 
 export function generateRoomCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }

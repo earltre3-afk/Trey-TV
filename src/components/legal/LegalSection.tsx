@@ -10,10 +10,15 @@ export function LegalSection({ section }: { section: LegalSectionType }) {
       >
         <summary className="lg:pointer-events-none list-none cursor-pointer p-5 lg:p-6 flex items-center justify-between gap-3">
           <h2 className="text-base sm:text-lg font-bold tracking-tight">
-            <span className="text-primary mr-2 font-mono text-[11px] align-middle hidden sm:inline">§</span>
+            <span className="text-primary mr-2 font-mono text-[11px] align-middle hidden sm:inline">
+              §
+            </span>
             {section.heading}
           </h2>
-          <span className="lg:hidden text-muted-foreground transition-transform group-open:rotate-180" aria-hidden>
+          <span
+            className="lg:hidden text-muted-foreground transition-transform group-open:rotate-180"
+            aria-hidden
+          >
             ▾
           </span>
         </summary>

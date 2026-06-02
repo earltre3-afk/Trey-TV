@@ -9,6 +9,7 @@
 ## Task 1 — Preserve hardcoded values as rollback target
 
 **Files involved:**
+
 - `src/routes/rewards.tsx`
 
 **What to do:**
@@ -26,6 +27,7 @@ Add comment blocks in `rewards.tsx` immediately above the three hardcoded value 
 Do not change any logic.
 
 **Acceptance criteria:**
+
 - Comment blocks exist above the relevant lines.
 - No logic changed.
 - `pnpm tsc --noEmit` passes.
@@ -36,6 +38,7 @@ Do not change any logic.
 **Rollback risk:** None.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -46,12 +49,14 @@ pnpm build
 ## Task 2 — Define internal types and pure helper functions
 
 **Files involved:**
+
 - `src/hooks/use-rewards.ts` (new file)
 
 **What to do:**
 Create `src/hooks/use-rewards.ts` with only types and pure helper functions — no React, no Supabase calls yet.
 
 Include:
+
 1. `BalanceRow` type (internal, unexported)
 2. `EventRow` type (internal, unexported)
 3. `RewardTransaction` type (exported)
@@ -63,6 +68,7 @@ Include:
 Export only `RewardTransaction`, `UseRewardsReturn`, and the three helper functions.
 
 **Acceptance criteria:**
+
 - File compiles with zero TypeScript errors.
 - No React imports, no Supabase imports.
 - `pnpm tsc --noEmit` passes.
@@ -72,6 +78,7 @@ Export only `RewardTransaction`, `UseRewardsReturn`, and the three helper functi
 **Rollback risk:** None.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -81,6 +88,7 @@ pnpm tsc --noEmit
 ## Task 3 — Implement `useRewards()` hook
 
 **Files involved:**
+
 - `src/hooks/use-rewards.ts`
 - `src/hooks/use-current-user.ts` (read-only reference)
 - `src/lib/supabase-browser.ts` (read-only reference)
@@ -100,6 +108,7 @@ Add the `useRewards()` hook to `src/hooks/use-rewards.ts`:
 5. Export `useRewards` as named export.
 
 **Acceptance criteria:**
+
 - Hook compiles with zero TypeScript errors.
 - Signed-out path returns zero state without calling Supabase.
 - `pnpm tsc --noEmit` passes.
@@ -110,6 +119,7 @@ Add the `useRewards()` hook to `src/hooks/use-rewards.ts`:
 **Rollback risk:** Low. New file, nothing imports it yet.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -120,6 +130,7 @@ pnpm build
 ## Task 4 — Wire `useRewards()` and `useCurrentUser()` into `rewards.tsx`
 
 **Files involved:**
+
 - `src/routes/rewards.tsx`
 - `src/hooks/use-rewards.ts` (read-only)
 - `src/hooks/use-current-user.ts` (read-only)
@@ -128,18 +139,21 @@ pnpm build
 Make five targeted replacements in `rewards.tsx`:
 
 1. Add imports:
+
    ```ts
    import { useRewards } from "@/hooks/use-rewards";
    import { useCurrentUser } from "@/hooks/use-current-user";
    ```
 
 2. Inside `Rewards()`, add:
+
    ```ts
    const { balance, tier, streakDays, lifetimeEarned, lifetimeSpent, transactions } = useRewards();
    const currentUser = useCurrentUser();
    ```
 
 3. Replace:
+
    ```ts
    // before:
    const points = user?.rewards?.points ?? 12480;
@@ -161,6 +175,7 @@ Make five targeted replacements in `rewards.tsx`:
 Do not change any JSX structure, class names, or layout.
 
 **Acceptance criteria:**
+
 - `points`, `tier`, `uid` read from real Supabase data when signed in.
 - `transactions` list renders real events (or empty list if none).
 - Quick stats show real lifetime/streak values.
@@ -174,6 +189,7 @@ Do not change any JSX structure, class names, or layout.
 **Rollback risk:** Medium. Rollback: remove the two new imports and hook calls, uncomment the mock fallback blocks from Task 1.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -184,16 +200,19 @@ pnpm build
 ## Task 5 — Final cleanup and verification
 
 **Files involved:**
+
 - `src/hooks/use-rewards.ts`
 - `src/routes/rewards.tsx`
 
 **What to do:**
+
 1. Remove any unused imports from both files.
 2. Confirm `user?.rewards` references are fully replaced (no dangling `user?.rewards?.points` or `user?.rewards?.tier`).
 3. Confirm mock fallback comment blocks are still present in `rewards.tsx`.
 4. Run full type check and build.
 
 **Acceptance criteria:**
+
 - Zero TypeScript errors: `pnpm tsc --noEmit`.
 - Clean production build: `pnpm build`.
 - No unused imports in modified files.
@@ -205,6 +224,7 @@ pnpm build
 **Rollback risk:** None. Cleanup only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -214,13 +234,13 @@ pnpm build
 
 ## Summary Table
 
-| # | Task | Files | Risk | Validation |
-|---|---|---|---|---|
-| 1 | Preserve mock as rollback | rewards.tsx | None | tsc + build |
-| 2 | Types and pure helpers | use-rewards.ts (new) | None | tsc |
-| 3 | Implement useRewards() hook | use-rewards.ts | Low | tsc + build |
-| 4 | Wire hook into rewards.tsx | rewards.tsx | Medium | tsc + build |
-| 5 | Final cleanup and verification | both | None | tsc + build |
+| #   | Task                           | Files                | Risk   | Validation  |
+| --- | ------------------------------ | -------------------- | ------ | ----------- |
+| 1   | Preserve mock as rollback      | rewards.tsx          | None   | tsc + build |
+| 2   | Types and pure helpers         | use-rewards.ts (new) | None   | tsc         |
+| 3   | Implement useRewards() hook    | use-rewards.ts       | Low    | tsc + build |
+| 4   | Wire hook into rewards.tsx     | rewards.tsx          | Medium | tsc + build |
+| 5   | Final cleanup and verification | both                 | None   | tsc + build |
 
 All tasks are sequential. Do not start a task until the previous task's validation passes.
 

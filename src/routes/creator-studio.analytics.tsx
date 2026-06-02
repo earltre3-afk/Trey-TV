@@ -2,9 +2,28 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { CreatorStudioLayout } from "@/components/layout/CreatorStudioLayout";
 import { CreatorMetricCard, SectionHeader } from "@/components/creator/CreatorPrimitives";
-import { RangePicker, Sparkline, MiniBars, useSeries, type Range } from "@/components/creator/CreatorCharts";
+import {
+  RangePicker,
+  Sparkline,
+  MiniBars,
+  useSeries,
+  type Range,
+} from "@/components/creator/CreatorCharts";
 import { useCreatorStudio } from "@/hooks/use-creator-studio";
-import { Eye, Clock, Users, Heart, TrendingUp, Wand2, Share2, Bookmark, Globe2, Compass, Search, Crown } from "lucide-react";
+import {
+  Eye,
+  Clock,
+  Users,
+  Heart,
+  TrendingUp,
+  Wand2,
+  Share2,
+  Bookmark,
+  Globe2,
+  Compass,
+  Search,
+  Crown,
+} from "lucide-react";
 
 export const Route = createFileRoute("/creator-studio/analytics")({
   component: AnalyticsPage,
@@ -28,9 +47,10 @@ function AnalyticsPage() {
   ];
 
   const { episodes: studioEpisodes } = useCreatorStudio();
-  const episodes = useMemo(() =>
-    studioEpisodes.filter((ep) => ep.publish_status === "published").slice(0, 8)
-  , [studioEpisodes]);
+  const episodes = useMemo(
+    () => studioEpisodes.filter((ep) => ep.publish_status === "published").slice(0, 8),
+    [studioEpisodes],
+  );
   const epSeries = useSeries(11, Math.max(episodes.length, 1) * 14, 200, 140);
   const hourly = useSeries(99, 24, 50, 50);
 
@@ -41,12 +61,43 @@ function AnalyticsPage() {
       actions={<RangePicker value={range} onChange={setRange} />}
     >
       <section>
-        <SectionHeader icon={TrendingUp} title={`Overview · Last ${range === "all" ? "all time" : range}`} />
+        <SectionHeader
+          icon={TrendingUp}
+          title={`Overview · Last ${range === "all" ? "all time" : range}`}
+        />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <MetricWithSpark label="Views" value={fmt(views.reduce((a, b) => a + b))} delta="+12.4%" icon={Eye} tone="cyan" series={views} />
-          <MetricWithSpark label="Watch Time" value={`${Math.round(watch.reduce((a, b) => a + b) / 60)}h`} delta="+8.1%" icon={Clock} tone="purple" series={watch} />
-          <MetricWithSpark label="Followers" value={`+${fmt(followers.reduce((a, b) => a + b))}`} delta="+22%" icon={Users} tone="magenta" series={followers} />
-          <MetricWithSpark label="Engagement" value="9.7%" delta="+1.3%" icon={Heart} tone="gold" series={engagement} />
+          <MetricWithSpark
+            label="Views"
+            value={fmt(views.reduce((a, b) => a + b))}
+            delta="+12.4%"
+            icon={Eye}
+            tone="cyan"
+            series={views}
+          />
+          <MetricWithSpark
+            label="Watch Time"
+            value={`${Math.round(watch.reduce((a, b) => a + b) / 60)}h`}
+            delta="+8.1%"
+            icon={Clock}
+            tone="purple"
+            series={watch}
+          />
+          <MetricWithSpark
+            label="Followers"
+            value={`+${fmt(followers.reduce((a, b) => a + b))}`}
+            delta="+22%"
+            icon={Users}
+            tone="magenta"
+            series={followers}
+          />
+          <MetricWithSpark
+            label="Engagement"
+            value="9.7%"
+            delta="+1.3%"
+            icon={Heart}
+            tone="gold"
+            series={engagement}
+          />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
           <CreatorMetricCard label="Saves" value="3,812" icon={Bookmark} tone="purple" />
@@ -59,9 +110,12 @@ function AnalyticsPage() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2 rounded-3xl glass neon-border p-4 md:p-5">
           <SectionHeader icon={TrendingUp} title="Views over time" />
-          <div className="h-40"><Sparkline values={views} height={140} /></div>
+          <div className="h-40">
+            <Sparkline values={views} height={140} />
+          </div>
           <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>{length}d ago</span><span>today</span>
+            <span>{length}d ago</span>
+            <span>today</span>
           </div>
         </div>
 
@@ -71,11 +125,16 @@ function AnalyticsPage() {
             {sources.map((s) => (
               <li key={s.id} className="text-xs">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="flex items-center gap-1.5"><s.icon className="size-3.5 text-primary" /> {s.label}</span>
+                  <span className="flex items-center gap-1.5">
+                    <s.icon className="size-3.5 text-primary" /> {s.label}
+                  </span>
                   <span className="tabular-nums text-muted-foreground">{s.pct}%</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-primary to-[oklch(0.7_0.25_340)]" style={{ width: `${s.pct}%` }} />
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-[oklch(0.7_0.25_340)]"
+                    style={{ width: `${s.pct}%` }}
+                  />
                 </div>
               </li>
             ))}
@@ -116,21 +175,33 @@ function AnalyticsPage() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {episodes.map((e, i) => {
-                const v = 8000 + (i * 3700) + (i % 3) * 1200;
+                const v = 8000 + i * 3700 + (i % 3) * 1200;
                 const series = epSeries.slice(i * 14, (i + 1) * 14);
                 return (
                   <tr key={e.id} className="hover:bg-white/5">
-                    <td className="p-2 font-semibold truncate max-w-[200px]">{e.title || "Untitled"}</td>
-                    <td className="p-2 w-32"><div className="h-8"><Sparkline values={series} height={28} /></div></td>
+                    <td className="p-2 font-semibold truncate max-w-[200px]">
+                      {e.title || "Untitled"}
+                    </td>
+                    <td className="p-2 w-32">
+                      <div className="h-8">
+                        <Sparkline values={series} height={28} />
+                      </div>
+                    </td>
                     <td className="p-2 text-right tabular-nums">{fmt(v)}</td>
-                    <td className="p-2 text-right tabular-nums">{Math.floor(8 + i)}:{String(10 + (i * 7) % 50).padStart(2, "0")}</td>
-                    <td className="p-2 text-right tabular-nums">{55 + (i * 3) % 30}%</td>
+                    <td className="p-2 text-right tabular-nums">
+                      {Math.floor(8 + i)}:{String(10 + ((i * 7) % 50)).padStart(2, "0")}
+                    </td>
+                    <td className="p-2 text-right tabular-nums">{55 + ((i * 3) % 30)}%</td>
                     <td className="p-2 text-right tabular-nums">{fmt(120 + i * 80)}</td>
                   </tr>
                 );
               })}
               {episodes.length === 0 && (
-                <tr><td colSpan={6} className="p-6 text-center text-muted-foreground text-sm">Publish episodes to see performance.</td></tr>
+                <tr>
+                  <td colSpan={6} className="p-6 text-center text-muted-foreground text-sm">
+                    Publish episodes to see performance.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -141,19 +212,27 @@ function AnalyticsPage() {
         <SectionHeader icon={Clock} title="When your fans watch" />
         <MiniBars values={hourly} />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-          <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+          <span>12am</span>
+          <span>6am</span>
+          <span>12pm</span>
+          <span>6pm</span>
+          <span>11pm</span>
         </div>
       </section>
     </CreatorStudioLayout>
   );
 }
 
-function MetricWithSpark(props: React.ComponentProps<typeof CreatorMetricCard> & { series: number[] }) {
+function MetricWithSpark(
+  props: React.ComponentProps<typeof CreatorMetricCard> & { series: number[] },
+) {
   const { series, ...rest } = props;
   return (
     <div className="space-y-1">
       <CreatorMetricCard {...rest} />
-      <div className="h-8 px-1"><Sparkline values={series} height={32} /></div>
+      <div className="h-8 px-1">
+        <Sparkline values={series} height={32} />
+      </div>
     </div>
   );
 }

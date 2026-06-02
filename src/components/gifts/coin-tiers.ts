@@ -4,13 +4,13 @@ export type CoinTierId = "penny" | "nickel" | "dime" | "quarter" | "dollar";
 export type CoinTier = {
   id: CoinTierId;
   name: string;
-  symbol: string;   // primary emoji shown in the burst
+  symbol: string; // primary emoji shown in the burst
   cost: number;
   className: string;
   glow: string;
-  accent: string;   // accent color for petals/sparkles
+  accent: string; // accent color for petals/sparkles
   particles: number;
-  shower: number;   // floating accents (petals, bubbles, fireworks)
+  shower: number; // floating accents (petals, bubbles, fireworks)
   showerGlyphs: string[];
   blurb: string;
 };

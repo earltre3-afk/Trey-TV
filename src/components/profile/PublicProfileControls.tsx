@@ -62,7 +62,11 @@ export function PublicProfileControls({ profile, viewerRole }: Props) {
       </div>
 
       {/* Engagement snapshot — shown to everyone */}
-      <ProfileSectionCard title="This month" icon={TrendingUp} iconColor="text-[oklch(0.78_0.18_150)]">
+      <ProfileSectionCard
+        title="This month"
+        icon={TrendingUp}
+        iconColor="text-[oklch(0.78_0.18_150)]"
+      >
         <ul className="space-y-3 text-sm">
           {[
             { label: "Profile views", val: "12.4K" },
@@ -113,7 +117,9 @@ export function PublicProfileControls({ profile, viewerRole }: Props) {
       {/* Guest CTA block */}
       {isGuest && (
         <div className="rounded-3xl liquid-glass border border-white/10 p-4 text-center space-y-2">
-          <p className="text-xs text-muted-foreground">Join Trey TV to follow, message, and interact.</p>
+          <p className="text-xs text-muted-foreground">
+            Join Trey TV to follow, message, and interact.
+          </p>
           <Link
             to="/signup"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press"

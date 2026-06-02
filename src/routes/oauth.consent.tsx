@@ -11,7 +11,10 @@ export const Route = createFileRoute("/oauth/consent")({
   head: () => ({
     meta: [
       { title: "Authorize FWD - Trey TV" },
-      { name: "description", content: "Approve sign-in access for FWD using your Trey TV account." },
+      {
+        name: "description",
+        content: "Approve sign-in access for FWD using your Trey TV account.",
+      },
     ],
   }),
 });
@@ -36,7 +39,8 @@ function OAuthConsentPage() {
   const nav = useNavigate();
   const search: any = useSearch({ strict: false });
   const { session, user, loading } = useSupabaseSession();
-  const authorizationId = typeof search?.authorization_id === "string" ? search.authorization_id.trim() : "";
+  const authorizationId =
+    typeof search?.authorization_id === "string" ? search.authorization_id.trim() : "";
   const [details, setDetails] = useState<OAuthAuthorizationDetails | null>(null);
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [error, setError] = useState("");
@@ -51,7 +55,10 @@ function OAuthConsentPage() {
 
   const scopes = useMemo(() => {
     const rawScope = details?.scope ?? "";
-    return rawScope.split(/\s+/).map((scope) => scope.trim()).filter(Boolean);
+    return rawScope
+      .split(/\s+/)
+      .map((scope) => scope.trim())
+      .filter(Boolean);
   }, [details?.scope]);
 
   useEffect(() => {
@@ -130,7 +137,9 @@ function OAuthConsentPage() {
         decision === "approve"
           ? supabase.auth.oauth.approveAuthorization
           : supabase.auth.oauth.denyAuthorization;
-      const { data, error: consentError } = await method(authorizationId, { skipBrowserRedirect: true });
+      const { data, error: consentError } = await method(authorizationId, {
+        skipBrowserRedirect: true,
+      });
 
       if (consentError) {
         setError(consentError.message || "Could not complete this sign-in request.");
@@ -170,7 +179,9 @@ function OAuthConsentPage() {
           <div className="rounded-[28px] liquid-glass neon-border p-7 text-center">
             <Loader2 className="mx-auto size-8 animate-spin text-primary" />
             <h1 className="mt-4 text-xl font-bold">Preparing Trey TV sign-in</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Checking your session and the FWD request.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Checking your session and the FWD request.
+            </p>
           </div>
         )}
       </ConsentShell>
@@ -193,7 +204,9 @@ function OAuthConsentPage() {
     user?.user_metadata?.full_name ||
     user?.email ||
     "Trey TV user";
-  const profileHandle = profile?.username ? `@${profile.username}` : profile?.public_profile_uid ?? "Trey TV account";
+  const profileHandle = profile?.username
+    ? `@${profile.username}`
+    : (profile?.public_profile_uid ?? "Trey TV account");
 
   return (
     <ConsentShell>
@@ -207,7 +220,8 @@ function OAuthConsentPage() {
             {appName} wants to sign in using Trey TV.
           </h1>
           <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Continue only if you trust this request. Trey TV will never share your password or private session.
+            Continue only if you trust this request. Trey TV will never share your password or
+            private session.
           </p>
         </div>
 
@@ -223,7 +237,9 @@ function OAuthConsentPage() {
             <div className="min-w-0 text-left">
               <p className="truncate text-sm font-bold">{displayName}</p>
               <p className="truncate text-xs text-muted-foreground">{profileHandle}</p>
-              <p className="truncate text-xs text-muted-foreground">{user?.email ?? details.user?.email}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user?.email ?? details.user?.email}
+              </p>
             </div>
           </div>
         </div>
@@ -250,12 +266,17 @@ function OAuthConsentPage() {
             </p>
             <div className="mt-3 space-y-2">
               {(scopes.length ? scopes : ["openid"]).map((scope) => (
-                <div key={scope} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-3">
+                <div
+                  key={scope}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-3"
+                >
                   <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
                     <Check className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold">{SCOPE_LABELS[scope] ?? `Access: ${scope}`}</p>
+                    <p className="text-sm font-semibold">
+                      {SCOPE_LABELS[scope] ?? `Access: ${scope}`}
+                    </p>
                     <p className="text-xs text-muted-foreground">{scope}</p>
                   </div>
                 </div>
@@ -270,7 +291,11 @@ function OAuthConsentPage() {
               disabled={!!busy}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground glow-gold transition active:scale-[0.98] disabled:opacity-60"
             >
-              {busy === "approve" ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              {busy === "approve" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
               Continue with Trey TV
             </button>
             <button
@@ -279,7 +304,11 @@ function OAuthConsentPage() {
               disabled={!!busy}
               className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 text-sm font-semibold transition hover:bg-white/[0.08] active:scale-[0.98] disabled:opacity-60"
             >
-              {busy === "deny" ? <Loader2 className="size-4 animate-spin" /> : <X className="size-4" />}
+              {busy === "deny" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <X className="size-4" />
+              )}
               Cancel
             </button>
           </div>
@@ -307,7 +336,13 @@ function ErrorState({ title, message }: { title: string; message: string }) {
   );
 }
 
-function ConsentShell({ children, backHome = false }: { children: React.ReactNode; backHome?: boolean }) {
+function ConsentShell({
+  children,
+  backHome = false,
+}: {
+  children: React.ReactNode;
+  backHome?: boolean;
+}) {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background px-4 py-6 text-foreground sm:py-10">
       <div

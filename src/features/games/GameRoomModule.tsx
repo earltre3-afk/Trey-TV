@@ -1,38 +1,66 @@
 // Trey TV Game Room — main module entry point.
-import './trey-game-room.css';
-import React, { useEffect, useState } from 'react';
-import { GameRoomHome } from './components/GameRoomHome';
-import { SpadesTable } from './components/spades/SpadesTable';
-import { BlackjackTable } from './components/blackjack/BlackjackTable';
-import { BullshitTable } from './components/bullshit/BullshitTable';
-import { AdminPanel } from './components/AdminPanel';
-import { SuitLegendModal } from './components/shared/SuitLegendModal';
-import { CreateRoomModal, JoinRoomModal } from './components/lounge/CreateJoinModals';
-import { RoomLobby } from './components/lounge/RoomLobby';
-import { QueueScreen } from './components/lounge/QueueScreen';
-import { FriendInviteCenter } from './components/lounge/FriendInviteCenter';
-import { GameRequestsInbox } from './components/lounge/GameRequestsInbox';
-import TrunoMatchScreen from '@/features/truno/screens/MatchScreen';
-import { getOrCreateIdentity, identityFromTreyUser, setDisplayName, PlayerIdentity, TreyGameUserInput } from './lib/services/identity';
+import "./trey-game-room.css";
+import React, { useEffect, useState } from "react";
+import { GameRoomHome } from "./components/GameRoomHome";
+import { SpadesTable } from "./components/spades/SpadesTable";
+import { BlackjackTable } from "./components/blackjack/BlackjackTable";
+import { BullshitTable } from "./components/bullshit/BullshitTable";
+import { AdminPanel } from "./components/AdminPanel";
+import { SuitLegendModal } from "./components/shared/SuitLegendModal";
+import { CreateRoomModal, JoinRoomModal } from "./components/lounge/CreateJoinModals";
+import { RoomLobby } from "./components/lounge/RoomLobby";
+import { QueueScreen } from "./components/lounge/QueueScreen";
+import { FriendInviteCenter } from "./components/lounge/FriendInviteCenter";
+import { GameRequestsInbox } from "./components/lounge/GameRequestsInbox";
+import TrunoMatchScreen from "@/features/truno/screens/MatchScreen";
 import {
-  createRoom, joinRoomByCode, GameType, getActiveSession, findRoomByCode,
-} from './lib/services/roomService';
-import { GameRequest } from './lib/services/socialService';
+  getOrCreateIdentity,
+  identityFromTreyUser,
+  setDisplayName,
+  PlayerIdentity,
+  TreyGameUserInput,
+} from "./lib/services/identity";
+import {
+  createRoom,
+  joinRoomByCode,
+  GameType,
+  getActiveSession,
+  findRoomByCode,
+} from "./lib/services/roomService";
+import { GameRequest } from "./lib/services/socialService";
 
-export type GameView = 'home' | 'lobby' | 'spades' | 'blackjack' | 'bullshit' | 'truno' | 'admin' | 'queue' | 'friends' | 'inbox';
+export type GameView =
+  | "home"
+  | "lobby"
+  | "spades"
+  | "blackjack"
+  | "bullshit"
+  | "truno"
+  | "admin"
+  | "queue"
+  | "friends"
+  | "inbox";
 
-interface RoomCtx { roomId: string; gameType: GameType; }
+interface RoomCtx {
+  roomId: string;
+  gameType: GameType;
+}
 
-export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: TreyGameUserInput | null }> = ({ initialView = 'home', currentUser = null }) => {
+export const GameRoomModule: React.FC<{
+  initialView?: GameView;
+  currentUser?: TreyGameUserInput | null;
+}> = ({ initialView = "home", currentUser = null }) => {
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<GameView>(initialView);
   const [legendOpen, setLegendOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-  const [createDefaultGame, setCreateDefaultGame] = useState<GameType>('spades');
+  const [createDefaultGame, setCreateDefaultGame] = useState<GameType>("spades");
   const [joinOpen, setJoinOpen] = useState(false);
-  const [identity, setIdentity] = useState<PlayerIdentity>(() => currentUser ? identityFromTreyUser(currentUser) : getOrCreateIdentity());
+  const [identity, setIdentity] = useState<PlayerIdentity>(() =>
+    currentUser ? identityFromTreyUser(currentUser) : getOrCreateIdentity(),
+  );
   const [room, setRoom] = useState<RoomCtx | null>(null);
-  const [queueGame, setQueueGame] = useState<GameType>('spades');
+  const [queueGame, setQueueGame] = useState<GameType>("spades");
 
   useEffect(() => {
     setMounted(true);
@@ -40,24 +68,38 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
 
   useEffect(() => {
     if (currentUser) setIdentity(identityFromTreyUser(currentUser));
-  }, [currentUser?.id, currentUser?.userId, currentUser?.displayName, currentUser?.username, currentUser?.publicProfileUid, currentUser?.public_profile_uid, currentUser?.site_uid, currentUser?.avatarUrl, currentUser?.avatar_url]);
+  }, [
+    currentUser?.id,
+    currentUser?.userId,
+    currentUser?.displayName,
+    currentUser?.username,
+    currentUser?.publicProfileUid,
+    currentUser?.public_profile_uid,
+    currentUser?.site_uid,
+    currentUser?.avatarUrl,
+    currentUser?.avatar_url,
+  ]);
 
   useEffect(() => {
-    if (room && view === 'lobby') {
-      getActiveSession(room.roomId).then(s => {
+    if (room && view === "lobby") {
+      getActiveSession(room.roomId).then((s) => {
         if (s) setView(room.gameType);
       });
     }
   }, [room, view]);
 
-  const handleCreate = async (opts: { gameType: GameType; isPrivate: boolean; targetScore: number }) => {
+  const handleCreate = async (opts: {
+    gameType: GameType;
+    isPrivate: boolean;
+    targetScore: number;
+  }) => {
     try {
       const { room: newRoom } = await createRoom({ identity, ...opts });
       setRoom({ roomId: newRoom.id, gameType: opts.gameType });
       setCreateOpen(false);
-      setView('lobby');
+      setView("lobby");
     } catch (err: any) {
-      alert(`Failed to create room: ${err?.message ?? 'Unknown error'}`);
+      alert(`Failed to create room: ${err?.message ?? "Unknown error"}`);
     }
   };
 
@@ -66,12 +108,12 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
     setRoom({ roomId: joined.id, gameType: joined.game_type });
     setJoinOpen(false);
     const s = await getActiveSession(joined.id);
-    setView(s ? joined.game_type : 'lobby');
+    setView(s ? joined.game_type : "lobby");
   };
 
   const handleMatched = (roomId: string, gameType: GameType) => {
     setRoom({ roomId, gameType });
-    setView('lobby');
+    setView("lobby");
   };
 
   const handleAcceptInbox = async (req: GameRequest) => {
@@ -82,23 +124,26 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
           const { room: joined } = await joinRoomByCode(req.room_code, identity);
           setRoom({ roomId: joined.id, gameType: joined.game_type });
           const s = await getActiveSession(joined.id);
-          setView(s ? joined.game_type : 'lobby');
+          setView(s ? joined.game_type : "lobby");
           return;
         }
       }
       // fallback — drop them into the queue for that game
       setQueueGame(req.game_type);
-      setView('queue');
+      setView("queue");
     } catch {
       setQueueGame(req.game_type);
-      setView('queue');
+      setView("queue");
     }
   };
 
-  const handleBackToHome = () => { setRoom(null); setView('home'); };
+  const handleBackToHome = () => {
+    setRoom(null);
+    setView("home");
+  };
 
   const handleEditName = () => {
-    const next = prompt('Your display name:', identity.displayName);
+    const next = prompt("Your display name:", identity.displayName);
     if (next && next.trim()) {
       setDisplayName(next);
       setIdentity({ ...identity, displayName: next.trim().slice(0, 24) });
@@ -107,17 +152,22 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
 
   const renderGameTable = (game: GameType) => {
     const commonProps = room
-      ? { roomId: room.roomId, identity, onBack: handleBackToHome, onLegend: () => setLegendOpen(true) }
+      ? {
+          roomId: room.roomId,
+          identity,
+          onBack: handleBackToHome,
+          onLegend: () => setLegendOpen(true),
+        }
       : { onBack: handleBackToHome, onLegend: () => setLegendOpen(true) };
-    if (game === 'spades') return <SpadesTable {...commonProps} />;
-    if (game === 'blackjack') return <BlackjackTable {...commonProps} />;
-    if (game === 'truno') {
+    if (game === "spades") return <SpadesTable {...commonProps} />;
+    if (game === "blackjack") return <BlackjackTable {...commonProps} />;
+    if (game === "truno") {
       return (
         <TrunoMatchScreen
           identity={identity}
           roomId={room?.roomId}
           onNavigate={(next) => {
-            if (next === 'room' && room) setView('lobby');
+            if (next === "room" && room) setView("lobby");
             else handleBackToHome();
           }}
         />
@@ -130,18 +180,18 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
     return (
       <div
         className="trey-game-room font-sans antialiased"
-        style={{ background: '#05070D', color: '#F8FAFC', minHeight: '100vh' }}
+        style={{ background: "#05070D", color: "#F8FAFC", minHeight: "100vh" }}
       >
         <div className="min-h-screen w-full flex items-center justify-center px-6">
           <div
             className="rounded-3xl border px-6 py-5 text-center"
             style={{
-              background: 'rgba(8,17,31,0.78)',
-              borderColor: 'rgba(0,183,255,0.3)',
-              boxShadow: '0 0 44px rgba(0,183,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)',
+              background: "rgba(8,17,31,0.78)",
+              borderColor: "rgba(0,183,255,0.3)",
+              boxShadow: "0 0 44px rgba(0,183,255,0.18), inset 0 1px 0 rgba(255,255,255,0.06)",
             }}
           >
-            <div className="text-[10px] font-bold tracking-[0.3em]" style={{ color: '#00B7FF' }}>
+            <div className="text-[10px] font-bold tracking-[0.3em]" style={{ color: "#00B7FF" }}>
               TREY TV
             </div>
             <div className="mt-1 text-base font-black">Loading Game Room</div>
@@ -152,52 +202,64 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
   }
 
   return (
-    <div className="trey-game-room font-sans antialiased" style={{ background: '#05070D', color: '#F8FAFC', minHeight: '100vh' }}>
-      {view === 'home' && (
+    <div
+      className="trey-game-room font-sans antialiased"
+      style={{ background: "#05070D", color: "#F8FAFC", minHeight: "100vh" }}
+    >
+      {view === "home" && (
         <GameRoomHome
           displayName={identity.displayName}
           userId={identity.userId}
           onEditName={handleEditName}
-          onLaunchSolo={(g) => { setRoom(null); setView(g); }}
-          onCreateRoom={(g) => { setCreateDefaultGame(g || 'spades'); setCreateOpen(true); }}
+          onLaunchSolo={(g) => {
+            setRoom(null);
+            setView(g);
+          }}
+          onCreateRoom={(g) => {
+            setCreateDefaultGame(g || "spades");
+            setCreateOpen(true);
+          }}
           onJoinRoom={() => setJoinOpen(true)}
-          onAdmin={() => setView('admin')}
+          onAdmin={() => setView("admin")}
           onLegend={() => setLegendOpen(true)}
-          onJoinQueue={(g) => { setQueueGame(g); setView('queue'); }}
-          onOpenFriends={() => setView('friends')}
-          onOpenInbox={() => setView('inbox')}
+          onJoinQueue={(g) => {
+            setQueueGame(g);
+            setView("queue");
+          }}
+          onOpenFriends={() => setView("friends")}
+          onOpenInbox={() => setView("inbox")}
         />
       )}
 
-      {view === 'queue' && (
+      {view === "queue" && (
         <QueueScreen
           gameType={queueGame}
           identity={identity}
           onBack={handleBackToHome}
           onMatched={handleMatched}
-          onInviteFriends={() => setView('friends')}
+          onInviteFriends={() => setView("friends")}
         />
       )}
 
-      {view === 'friends' && (
+      {view === "friends" && (
         <FriendInviteCenter
           identity={identity}
           defaultGame={queueGame}
           roomId={room?.roomId ?? null}
           roomCode={null}
-          onBack={() => setView('home')}
+          onBack={() => setView("home")}
         />
       )}
 
-      {view === 'inbox' && (
+      {view === "inbox" && (
         <GameRequestsInbox
           identity={identity}
-          onBack={() => setView('home')}
+          onBack={() => setView("home")}
           onAccept={handleAcceptInbox}
         />
       )}
 
-      {view === 'lobby' && room && (
+      {view === "lobby" && room && (
         <RoomLobby
           roomId={room.roomId}
           identity={identity}
@@ -206,21 +268,29 @@ export const GameRoomModule: React.FC<{ initialView?: GameView; currentUser?: Tr
         />
       )}
 
-      {view === 'spades' && renderGameTable('spades')}
-      {view === 'blackjack' && renderGameTable('blackjack')}
-      {view === 'bullshit' && renderGameTable('bullshit')}
-      {view === 'truno' && renderGameTable('truno')}
-      {view === 'admin' && <AdminPanel onBack={handleBackToHome} />}
+      {view === "spades" && renderGameTable("spades")}
+      {view === "blackjack" && renderGameTable("blackjack")}
+      {view === "bullshit" && renderGameTable("bullshit")}
+      {view === "truno" && renderGameTable("truno")}
+      {view === "admin" && <AdminPanel onBack={handleBackToHome} />}
 
       <SuitLegendModal open={legendOpen} onClose={() => setLegendOpen(false)} />
-      <CreateRoomModal open={createOpen} onClose={() => setCreateOpen(false)} onCreate={handleCreate} defaultGame={createDefaultGame} />
+      <CreateRoomModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreate={handleCreate}
+        defaultGame={createDefaultGame}
+      />
       <JoinRoomModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoin={handleJoin} />
     </div>
   );
 };
 
 export const AdminGameRoomModule: React.FC = () => (
-  <div className="trey-game-room font-sans antialiased" style={{ background: '#05070D', color: '#F8FAFC', minHeight: '100vh' }}>
+  <div
+    className="trey-game-room font-sans antialiased"
+    style={{ background: "#05070D", color: "#F8FAFC", minHeight: "100vh" }}
+  >
     <AdminPanel onBack={() => window.history.back()} />
   </div>
 );

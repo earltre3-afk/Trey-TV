@@ -1,8 +1,8 @@
-import React from 'react';
-import { TreyLogo } from '../components/Logo';
-import { Pause, Rewind, FastForward, Subtitles, SkipForward, Plus, ArrowLeft } from 'lucide-react';
-import { IMG } from '../mockData';
-import { useTV } from '../TVContext';
+import React from "react";
+import { TreyLogo } from "../components/Logo";
+import { Pause, Rewind, FastForward, Subtitles, SkipForward, Plus, ArrowLeft } from "lucide-react";
+import { IMG } from "../mockData";
+import { useTV } from "../TVContext";
 
 export const PlayerScreen: React.FC = () => {
   const { back } = useTV();
@@ -13,7 +13,10 @@ export const PlayerScreen: React.FC = () => {
 
       {/* Top bar */}
       <div className="relative z-10 flex items-start justify-between p-8">
-        <button onClick={back} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-fuchsia-400 focus:shadow-[0_0_22px_rgba(255,43,214,0.6)]">
+        <button
+          onClick={back}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-fuchsia-400 focus:shadow-[0_0_22px_rgba(255,43,214,0.6)]"
+        >
           <ArrowLeft className="w-5 h-5" /> Back
         </button>
         <TreyLogo size="sm" />
@@ -27,7 +30,10 @@ export const PlayerScreen: React.FC = () => {
         </button>
         <div className="mt-8 flex items-center gap-3">
           {[Rewind, SkipForward, Subtitles, Plus].map((Icon, i) => (
-            <button key={i} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center outline-none focus:border-fuchsia-400 focus:shadow-[0_0_24px_rgba(255,43,214,0.6)] focus:scale-110 transition-all">
+            <button
+              key={i}
+              className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center outline-none focus:border-fuchsia-400 focus:shadow-[0_0_24px_rgba(255,43,214,0.6)] focus:scale-110 transition-all"
+            >
               <Icon className="w-6 h-6" />
             </button>
           ))}
@@ -37,7 +43,9 @@ export const PlayerScreen: React.FC = () => {
       {/* Bottom info + progress */}
       <div className="absolute bottom-0 left-0 right-0 z-10 p-10 flex items-end gap-10">
         <div className="flex-1">
-          <div className="text-fuchsia-300 text-sm font-bold tracking-widest">LIFE OF A CREATOR</div>
+          <div className="text-fuchsia-300 text-sm font-bold tracking-widest">
+            LIFE OF A CREATOR
+          </div>
           <div className="text-3xl font-black mt-1">S3 E1 — The Come Up</div>
           <p className="text-white/70 text-sm mt-2 max-w-xl">
             Trey takes us inside his studio for a raw look at the grind behind the spotlight.

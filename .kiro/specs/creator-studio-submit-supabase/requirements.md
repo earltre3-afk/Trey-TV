@@ -14,10 +14,10 @@ Wire the "Save Draft" and "Submit for Admin Approval" actions in `creator-studio
 
 ## 2. Critical Schema Finding: Two Tables, One Blocker
 
-| Table | `stream_uid` | Browser INSERT safe? | Use for this phase? |
-|---|---|---|---|
-| `creator_edit_projects` | nullable | ✅ Yes | ✅ **Target table** |
-| `creator_post_queue` | `NOT NULL` | ❌ No — requires Cloudflare Stream UID | ❌ Out of scope |
+| Table                   | `stream_uid` | Browser INSERT safe?                   | Use for this phase? |
+| ----------------------- | ------------ | -------------------------------------- | ------------------- |
+| `creator_edit_projects` | nullable     | ✅ Yes                                 | ✅ **Target table** |
+| `creator_post_queue`    | `NOT NULL`   | ❌ No — requires Cloudflare Stream UID | ❌ Out of scope     |
 
 `creator_post_queue` requires a `stream_uid` (Cloudflare Stream UID) which is not available without a video upload. It cannot be used for metadata-only drafts.
 
@@ -29,32 +29,32 @@ Wire the "Save Draft" and "Submit for Admin Approval" actions in `creator-studio
 
 ### Table: `public.creator_edit_projects`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | `uuid` PK | `gen_random_uuid()` |
-| `creator_id` | `uuid` FK → `auth.users` | NOT NULL — `auth.uid()` |
-| `title` | `text` | nullable |
-| `description` | `text` | nullable |
-| `status` | `text` | NOT NULL, default `'draft'` — enum: `draft / uploading / processing / ready / submitted / published / rejected` |
-| `aspect_ratio` | `text` | NOT NULL, default `'9:16'` |
-| `stream_uid` | `text` | nullable — not set in this phase |
-| `thumbnail_url` | `text` | nullable |
-| `poster_time_seconds` | `numeric` | default 0 |
-| `trim_start_seconds` | `numeric` | default 0 |
-| `trim_end_seconds` | `numeric` | nullable |
-| `utility_state` | `jsonb` | default `'{}'` — used to store extra metadata (show, season, episode, tags, etc.) |
-| `metadata` | `jsonb` | default `'{}'` — additional metadata |
-| `created_at` | `timestamptz` | NOT NULL |
-| `updated_at` | `timestamptz` | NOT NULL, auto-updated by trigger |
+| Column                | Type                     | Notes                                                                                                           |
+| --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `id`                  | `uuid` PK                | `gen_random_uuid()`                                                                                             |
+| `creator_id`          | `uuid` FK → `auth.users` | NOT NULL — `auth.uid()`                                                                                         |
+| `title`               | `text`                   | nullable                                                                                                        |
+| `description`         | `text`                   | nullable                                                                                                        |
+| `status`              | `text`                   | NOT NULL, default `'draft'` — enum: `draft / uploading / processing / ready / submitted / published / rejected` |
+| `aspect_ratio`        | `text`                   | NOT NULL, default `'9:16'`                                                                                      |
+| `stream_uid`          | `text`                   | nullable — not set in this phase                                                                                |
+| `thumbnail_url`       | `text`                   | nullable                                                                                                        |
+| `poster_time_seconds` | `numeric`                | default 0                                                                                                       |
+| `trim_start_seconds`  | `numeric`                | default 0                                                                                                       |
+| `trim_end_seconds`    | `numeric`                | nullable                                                                                                        |
+| `utility_state`       | `jsonb`                  | default `'{}'` — used to store extra metadata (show, season, episode, tags, etc.)                               |
+| `metadata`            | `jsonb`                  | default `'{}'` — additional metadata                                                                            |
+| `created_at`          | `timestamptz`            | NOT NULL                                                                                                        |
+| `updated_at`          | `timestamptz`            | NOT NULL, auto-updated by trigger                                                                               |
 
 ### RLS Policies on `creator_edit_projects`
 
-| Operation | Policy |
-|---|---|
-| SELECT | `creator_id = auth.uid()` |
-| INSERT | `creator_id = auth.uid()` |
-| UPDATE | `creator_id = auth.uid()` |
-| DELETE | `creator_id = auth.uid()` |
+| Operation | Policy                    |
+| --------- | ------------------------- |
+| SELECT    | `creator_id = auth.uid()` |
+| INSERT    | `creator_id = auth.uid()` |
+| UPDATE    | `creator_id = auth.uid()` |
+| DELETE    | `creator_id = auth.uid()` |
 
 All operations are browser-safe via the anon/user client. No service-role key needed.
 
@@ -71,16 +71,19 @@ The `creator_edit_projects` table has `utility_state jsonb` and `metadata jsonb`
 ## 4. Functional Requirements
 
 ### FR-1: New `useCreatorSubmit()` hook
+
 - Create `src/hooks/use-creator-submit.ts`.
 - Exposes: `saveDraft(draft: Submission): Promise<string | null>`, `submitForReview(draft: Submission): Promise<boolean>`, `saving`.
 - Signed-out / non-creator: operations are no-ops returning `null` / `false`.
 
 ### FR-2: Creator access check before write
+
 - Before any INSERT or UPDATE, verify the user has an approved channel via `useCreatorStudio()` (already implemented).
 - If no channel: return null/false, show `toast.error('Creator access required')`.
 - Do not use `profiles.is_creator`.
 
 ### FR-3: Save draft
+
 - `saveDraft(draft)`:
   - If `draft.content_id` starts with `'seed-'` or is a UUID not yet in Supabase: INSERT a new `creator_edit_projects` row.
   - If `draft.content_id` is a real Supabase UUID already saved: UPDATE the existing row.
@@ -96,6 +99,7 @@ The `creator_edit_projects` table has `utility_state jsonb` and `metadata jsonb`
   - On error: `toast.error('Failed to save draft')`, return `null`.
 
 ### FR-4: Submit for review
+
 - `submitForReview(draft)`:
   - Calls `saveDraft(draft)` first to ensure the row exists.
   - Then UPDATEs `status = 'submitted'` on the row.
@@ -104,26 +108,31 @@ The `creator_edit_projects` table has `utility_state jsonb` and `metadata jsonb`
   - On success: the existing `navigate({ to: '/creator-studio/submitted' })` call in the route proceeds unchanged.
 
 ### FR-5: Wire `creator-studio.submit.tsx`
+
 - The `saveSilent()` function currently calls `store.updateDraft(d.content_id, d)` — add a call to `saveDraft(d)` after the local store update.
 - The `onSubmit()` function currently calls `store.submit(d.content_id)` then navigates — replace with `submitForReview(d)` then navigate on success.
 - The local `submissions-store` calls remain as the optimistic/local layer — they are not removed.
 - No JSX changes.
 
 ### FR-6: Signed-out / non-creator graceful handling
+
 - If `useCreatorStudio().isApprovedCreator` is false: hook operations are no-ops.
 - The existing `LockedScreen` component in `submit.tsx` already handles the non-creator UI — no change needed.
 - No crash, no browser alert.
 
 ### FR-7: Visual preservation
+
 - `creator-studio.submit.tsx` layout, form sections, checklist, and sticky submit bar are structurally unchanged.
 - `creator-studio.edit.tsx` is not modified.
 - The only changes to `submit.tsx` are two function body additions (one line each in `saveSilent` and `onSubmit`).
 
 ### FR-8: No `creator_post_queue` writes
+
 - Do not INSERT or UPDATE `creator_post_queue` in this phase.
 - `stream_uid` is not set on any row.
 
 ### FR-9: No video file upload
+
 - No `<input type="file">` wiring to Supabase Storage or Cloudflare Stream.
 - `video_url` in the draft remains a local blob URL or empty string — not persisted to Supabase.
 

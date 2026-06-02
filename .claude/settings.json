@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "PowerShell(echo $PROFILE)"
-    ]
+    "allow": ["PowerShell(echo $PROFILE)"]
   }
 }

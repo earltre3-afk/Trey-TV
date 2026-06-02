@@ -1,5 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type CSSProperties, type ChangeEvent, type ReactNode, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ChangeEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -54,7 +62,10 @@ export const Route = createFileRoute("/edit-profile")({
   head: () => ({
     meta: [
       { title: "Edit Profile - Trey TV" },
-      { name: "description", content: "Edit your Trey TV profile: name, handle, bio, avatar, banner, accent." },
+      {
+        name: "description",
+        content: "Edit your Trey TV profile: name, handle, bio, avatar, banner, accent.",
+      },
     ],
   }),
 });
@@ -100,7 +111,13 @@ function EditProfile() {
   const { user: supabaseUser } = useSupabaseAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const base = user ?? { ...currentUser, role: "creator" as const, banner: "", accent: "#FFC857" as const, rewards: { points: 0, tier: "GOLD" as const } };
+  const base = user ?? {
+    ...currentUser,
+    role: "creator" as const,
+    banner: "",
+    accent: "#FFC857" as const,
+    rewards: { points: 0, tier: "GOLD" as const },
+  };
   const [profileUid, setProfileUid] = useState(base.uid);
   const baseAccent = isValidHexColor((base as any).accent) ? (base as any).accent : "#FFC857";
 
@@ -176,16 +193,23 @@ function EditProfile() {
     if (!file) return;
 
     const isBanner = key === "banner";
-    const isAllowedMedia = file.type.startsWith("image/") || (isBanner && file.type.startsWith("video/"));
+    const isAllowedMedia =
+      file.type.startsWith("image/") || (isBanner && file.type.startsWith("video/"));
     const maxSize = isBanner ? 25 * 1024 * 1024 : 8 * 1024 * 1024;
 
     if (!isAllowedMedia) {
-      toast.error(isBanner ? "Choose an image or short video for your banner." : "Choose an image for your avatar.");
+      toast.error(
+        isBanner
+          ? "Choose an image or short video for your banner."
+          : "Choose an image for your avatar.",
+      );
       return;
     }
 
     if (file.size > maxSize) {
-      toast.error(isBanner ? "Banner files must be under 25 MB." : "Avatar files must be under 8 MB.");
+      toast.error(
+        isBanner ? "Banner files must be under 25 MB." : "Avatar files must be under 8 MB.",
+      );
       return;
     }
 
@@ -203,8 +227,18 @@ function EditProfile() {
     }
 
     setBannerUpload(file);
-    recordUserTrace({ userUid: base.uid, action: "profile.banner_update", targetType: "profile", targetId: base.uid, details: { fileType: file.type } });
-    toast.success(/gif|video/.test(file.type) ? "Animated banner ready - it'll loop forever" : "Banner ready to save");
+    recordUserTrace({
+      userUid: base.uid,
+      action: "profile.banner_update",
+      targetType: "profile",
+      targetId: base.uid,
+      details: { fileType: file.type },
+    });
+    toast.success(
+      /gif|video/.test(file.type)
+        ? "Animated banner ready - it'll loop forever"
+        : "Banner ready to save",
+    );
   };
 
   const isAnimatedBanner = (() => {
@@ -269,14 +303,16 @@ function EditProfile() {
           gif_of_day_url: gifOfDay ? gifOfDay.url : null,
           gif_of_day_poster_url: gifOfDay ? (gifOfDay.preview_url ?? null) : null,
           gif_of_day_provider: gifOfDay ? "fwd" : null,
-          gif_of_day_caption: gifOfDay ? (gifOfDayCaption.trim() || null) : null,
+          gif_of_day_caption: gifOfDay ? gifOfDayCaption.trim() || null : null,
           gif_of_day_set_at: gifOfDay ? new Date().toISOString() : null,
         };
 
         if (isPublicProfileUid(existingPublicUid)) {
           savedPublicProfileUid = existingPublicUid!;
         } else {
-          const { data: generatedUid, error: uidError } = await (supabase as any).rpc("generate_trey_public_profile_uid");
+          const { data: generatedUid, error: uidError } = await (supabase as any).rpc(
+            "generate_trey_public_profile_uid",
+          );
           if (uidError) throw uidError;
           if (isPublicProfileUid(generatedUid)) {
             savedPublicProfileUid = generatedUid;
@@ -289,7 +325,9 @@ function EditProfile() {
           .from("profiles")
           .update(profileUpdate)
           .eq("id", supabaseUser.id)
-          .select("public_profile_uid, avatar_url, banner_url, display_name, username, bio, location, link_url, profile_accent_color")
+          .select(
+            "public_profile_uid, avatar_url, banner_url, display_name, username, bio, location, link_url, profile_accent_color",
+          )
           .single();
         if (error) {
           if (error.code === "23505") {
@@ -332,7 +370,7 @@ function EditProfile() {
         gifOfDayUrl: gifOfDay ? gifOfDay.url : null,
         gifOfDayPosterUrl: gifOfDay ? (gifOfDay.preview_url ?? null) : null,
         gifOfDayProvider: gifOfDay ? "fwd" : null,
-        gifOfDayCaption: gifOfDay ? (gifOfDayCaption.trim() || null) : null,
+        gifOfDayCaption: gifOfDay ? gifOfDayCaption.trim() || null : null,
         gifOfDaySetAt: gifOfDay ? new Date().toISOString() : null,
       });
 
@@ -340,7 +378,13 @@ function EditProfile() {
         markUsed.mutate({ id: gifOfDay.gif_id, gif_url: gifOfDay.url });
       }
 
-      recordUserTrace({ userUid: savedPublicProfileUid, action: "profile.update", targetType: "profile", targetId: savedPublicProfileUid, details: { handle: draft.handle, visibility: draft.profileVisibility } });
+      recordUserTrace({
+        userUid: savedPublicProfileUid,
+        action: "profile.update",
+        targetType: "profile",
+        targetId: savedPublicProfileUid,
+        details: { handle: draft.handle, visibility: draft.profileVisibility },
+      });
       toast.success("Profile published");
       setTimeout(() => nav({ to: "/u/$uid", params: { uid: savedPublicProfileUid } }), 350);
     } catch (error) {
@@ -352,9 +396,8 @@ function EditProfile() {
   };
 
   const accentVar = accentVariableFor(draft.accent);
-  const isDefaultBanner = !draft.banner ||
-                          draft.banner === "/profile-banner" ||
-                          draft.banner.includes("profile-banner");
+  const isDefaultBanner =
+    !draft.banner || draft.banner === "/profile-banner" || draft.banner.includes("profile-banner");
   const bannerSrc = isDefaultBanner ? staticBanner : draft.banner;
 
   return (
@@ -362,7 +405,12 @@ function EditProfile() {
       <div className="edit-profile-redesign min-h-screen text-foreground pb-36 lg:pb-10">
         <section className="relative -mx-0 overflow-hidden rounded-b-[2rem] lg:rounded-[2rem]">
           <div className="relative h-56 w-full sm:h-64 lg:h-72">
-            <AnimatedBanner src={bannerSrc} fallback={bannerFallback} alt="Profile banner" className="absolute inset-0 size-full object-cover" />
+            <AnimatedBanner
+              src={bannerSrc}
+              fallback={bannerFallback}
+              alt="Profile banner"
+              className="absolute inset-0 size-full object-cover"
+            />
 
             {isDefaultBanner && (
               <>
@@ -370,11 +418,60 @@ function EditProfile() {
                 {/* Trey TV Logo */}
                 <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 pointer-events-none transition-all duration-300">
                   <div className="relative logo-anim transition-all duration-300 w-[180px] sm:w-[220px] lg:w-[260px]">
-                    <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[70%] rounded-[50%] blur-3xl opacity-60 logo-halo-pulse" style={{ background: `radial-gradient(ellipse at center,#A855F755 0%,#22D3EE33 45%,transparent 70%)` }} />
-                    <img src={treyTvLogo} alt="Trey TV" className="relative w-full h-auto object-contain" style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 10px rgba(168,85,247,0.35))" }} />
-                    <div aria-hidden className="absolute inset-0 mix-blend-screen opacity-70" style={{ WebkitMaskImage: `url(${treyTvLogo})`, maskImage: `url(${treyTvLogo})`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center", background: "linear-gradient(to bottom,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.18) 38%,rgba(255,255,255,0) 55%)" }} />
-                    <div aria-hidden className="absolute inset-0 overflow-hidden" style={{ WebkitMaskImage: `url(${treyTvLogo})`, maskImage: `url(${treyTvLogo})`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center" }}>
-                      <div className="absolute -inset-y-6 -left-1/3 w-1/3 animate-scan-sweep" style={{ background: "linear-gradient(115deg,transparent 35%,rgba(255,255,255,0.9) 50%,transparent 65%)", filter: "blur(2px)" }} />
+                    <div
+                      aria-hidden
+                      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[70%] rounded-[50%] blur-3xl opacity-60 logo-halo-pulse"
+                      style={{
+                        background: `radial-gradient(ellipse at center,#A855F755 0%,#22D3EE33 45%,transparent 70%)`,
+                      }}
+                    />
+                    <img
+                      src={treyTvLogo}
+                      alt="Trey TV"
+                      className="relative w-full h-auto object-contain"
+                      style={{
+                        filter:
+                          "drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 10px rgba(168,85,247,0.35))",
+                      }}
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 mix-blend-screen opacity-70"
+                      style={{
+                        WebkitMaskImage: `url(${treyTvLogo})`,
+                        maskImage: `url(${treyTvLogo})`,
+                        WebkitMaskSize: "contain",
+                        maskSize: "contain",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskPosition: "center",
+                        maskPosition: "center",
+                        background:
+                          "linear-gradient(to bottom,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.18) 38%,rgba(255,255,255,0) 55%)",
+                      }}
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 overflow-hidden"
+                      style={{
+                        WebkitMaskImage: `url(${treyTvLogo})`,
+                        maskImage: `url(${treyTvLogo})`,
+                        WebkitMaskSize: "contain",
+                        maskSize: "contain",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskPosition: "center",
+                        maskPosition: "center",
+                      }}
+                    >
+                      <div
+                        className="absolute -inset-y-6 -left-1/3 w-1/3 animate-scan-sweep"
+                        style={{
+                          background:
+                            "linear-gradient(115deg,transparent 35%,rgba(255,255,255,0.9) 50%,transparent 65%)",
+                          filter: "blur(2px)",
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -382,7 +479,10 @@ function EditProfile() {
             )}
 
             <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background z-10" />
-            <button className="absolute left-4 top-4 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 backdrop-blur-md z-20" aria-label="Help">
+            <button
+              className="absolute left-4 top-4 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 backdrop-blur-md z-20"
+              aria-label="Help"
+            >
               <HelpCircle className="size-4 text-muted-foreground" />
             </button>
             <button
@@ -412,7 +512,9 @@ function EditProfile() {
             <div className="relative">
               <span
                 className="absolute -inset-4 -z-10 rounded-full blur-2xl opacity-60"
-                style={{ background: `radial-gradient(closest-side, color-mix(in oklab, ${accentVar} 70%, transparent), transparent 70%)` }}
+                style={{
+                  background: `radial-gradient(closest-side, color-mix(in oklab, ${accentVar} 70%, transparent), transparent 70%)`,
+                }}
                 aria-hidden
               />
               <span
@@ -425,7 +527,11 @@ function EditProfile() {
                 aria-hidden
               />
               <div className="relative rounded-full p-[2px] bg-[var(--edit-gradient-accent-ring)]">
-                <img src={draft.avatar || undefined} alt="Avatar" className="size-28 rounded-full border-4 border-background object-cover" />
+                <img
+                  src={draft.avatar || undefined}
+                  alt="Avatar"
+                  className="size-28 rounded-full border-4 border-background object-cover"
+                />
               </div>
               <button
                 type="button"
@@ -435,9 +541,19 @@ function EditProfile() {
               >
                 <Camera className="size-4" />
               </button>
-              <input ref={avatarFile} type="file" accept="image/*" className="hidden" onChange={(event) => handleFileChange(event, "avatar")} />
+              <input
+                ref={avatarFile}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => handleFileChange(event, "avatar")}
+              />
             </div>
-            <button type="button" onClick={() => pickFile(avatarFile)} className="flex-1 pb-2 text-left">
+            <button
+              type="button"
+              onClick={() => pickFile(avatarFile)}
+              className="flex-1 pb-2 text-left"
+            >
               <p className="text-sm font-semibold">Change Avatar</p>
               <p className="text-[11px] tracking-wider text-muted-foreground">JPG, PNG, GIF</p>
             </button>
@@ -447,11 +563,17 @@ function EditProfile() {
           </div>
 
           <div className="mt-5 flex items-center justify-between">
-            <button onClick={goBack} className="glass-panel grid size-10 place-items-center rounded-full" aria-label="Back">
+            <button
+              onClick={goBack}
+              className="glass-panel grid size-10 place-items-center rounded-full"
+              aria-label="Back"
+            >
               <ArrowLeft className="size-4" />
             </button>
             <div className="text-center">
-              <p className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">PROFILE</p>
+              <p className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
+                PROFILE
+              </p>
               <h1 className="text-2xl font-bold">Edit Profile</h1>
             </div>
             <button
@@ -464,27 +586,97 @@ function EditProfile() {
             </button>
           </div>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-2" style={{ ["--neon" as string]: "var(--cyan)", ["--accent-2" as string]: "var(--purple)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-2"
+            style={
+              {
+                ["--neon" as string]: "var(--cyan)",
+                ["--accent-2" as string]: "var(--purple)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "0s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "0s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl">
-              <div className="col-span-2"><Field icon={<UserRound className="size-4" />} label="DISPLAY NAME" value={draft.name} onChange={(name) => setDraft((d) => ({ ...d, name }))} /></div>
-              <div className="col-span-2"><Field icon={<AtSign className="size-4" />} label="USERNAME" value={draft.handle} onChange={(handle) => setDraft((d) => ({ ...d, handle: handle.replace(/\s+/g, "").toLowerCase() }))} /></div>
-              <div className="col-span-2"><Field icon={<Pencil className="size-4" />} label="PROFILE TAGLINE" value={draft.tagline} onChange={(tagline) => setDraft((d) => ({ ...d, tagline }))} placeholder="Add a short tagline..." /></div>
-              <div className="col-span-2"><Field icon={<MapPin className="size-4" />} label="LOCATION" value={draft.location} onChange={(location) => setDraft((d) => ({ ...d, location }))} placeholder="City, Country" /></div>
-              <Field icon={<Users className="size-4" />} label="PRONOUNS" value={draft.pronouns} onChange={(pronouns) => setDraft((d) => ({ ...d, pronouns }))} placeholder="Add pronouns..." />
-              <Field icon={<Cake className="size-4" />} label="BIRTHDAY" value={draft.birthday} type="date" onChange={(birthday) => setDraft((d) => ({ ...d, birthday }))} />
+              <div className="col-span-2">
+                <Field
+                  icon={<UserRound className="size-4" />}
+                  label="DISPLAY NAME"
+                  value={draft.name}
+                  onChange={(name) => setDraft((d) => ({ ...d, name }))}
+                />
+              </div>
+              <div className="col-span-2">
+                <Field
+                  icon={<AtSign className="size-4" />}
+                  label="USERNAME"
+                  value={draft.handle}
+                  onChange={(handle) =>
+                    setDraft((d) => ({ ...d, handle: handle.replace(/\s+/g, "").toLowerCase() }))
+                  }
+                />
+              </div>
+              <div className="col-span-2">
+                <Field
+                  icon={<Pencil className="size-4" />}
+                  label="PROFILE TAGLINE"
+                  value={draft.tagline}
+                  onChange={(tagline) => setDraft((d) => ({ ...d, tagline }))}
+                  placeholder="Add a short tagline..."
+                />
+              </div>
+              <div className="col-span-2">
+                <Field
+                  icon={<MapPin className="size-4" />}
+                  label="LOCATION"
+                  value={draft.location}
+                  onChange={(location) => setDraft((d) => ({ ...d, location }))}
+                  placeholder="City, Country"
+                />
+              </div>
+              <Field
+                icon={<Users className="size-4" />}
+                label="PRONOUNS"
+                value={draft.pronouns}
+                onChange={(pronouns) => setDraft((d) => ({ ...d, pronouns }))}
+                placeholder="Add pronouns..."
+              />
+              <Field
+                icon={<Cake className="size-4" />}
+                label="BIRTHDAY"
+                value={draft.birthday}
+                type="date"
+                onChange={(birthday) => setDraft((d) => ({ ...d, birthday }))}
+              />
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: accentVar, ["--accent-2" as string]: "var(--cyan)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: accentVar,
+                ["--accent-2" as string]: "var(--cyan)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "1.5s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "1.5s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
                 <MessageSquare className="size-4" style={{ color: accentVar }} /> BIO
               </div>
-              <span className="text-[10px] tracking-wider text-muted-foreground">{draft.bio.length}/240</span>
+              <span className="text-[10px] tracking-wider text-muted-foreground">
+                {draft.bio.length}/240
+              </span>
             </div>
             <textarea
               value={draft.bio}
@@ -492,21 +684,40 @@ function EditProfile() {
               rows={4}
               placeholder="Tell people what you're about..."
               className="w-full resize-none rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-transparent focus:ring-2"
-              style={{ ["--tw-ring-color" as string]: `color-mix(in oklab, ${accentVar} 55%, transparent)` } as CSSProperties}
+              style={
+                {
+                  ["--tw-ring-color" as string]: `color-mix(in oklab, ${accentVar} 55%, transparent)`,
+                } as CSSProperties
+              }
             />
             <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
               <Sparkles className="size-3 text-gold" /> AI can polish this for you
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--gold)", ["--accent-2" as string]: "var(--magenta)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: "var(--gold)",
+                ["--accent-2" as string]: "var(--magenta)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "2.2s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "2.2s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
                 <Crown className="size-4 text-gold" /> TOP 3 FRIENDS
               </div>
-              <button onClick={() => setTopThreeOpen(true)} className="rounded-full border border-gold/30 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/10">
+              <button
+                onClick={() => setTopThreeOpen(true)}
+                className="rounded-full border border-gold/30 px-3 py-1 text-[11px] font-semibold text-gold transition hover:bg-gold/10"
+              >
                 Manage
               </button>
             </div>
@@ -518,44 +729,112 @@ function EditProfile() {
                   onClick={() => setTopThreeOpen(true)}
                   className="group relative flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-2 transition hover:border-white/30"
                 >
-                  <span className="absolute -top-px left-1/2 -translate-x-1/2 rounded-b-md px-2 py-0.5 text-[10px] font-bold tracking-widest" style={{ background: RANK_COLORS[i], color: "#0a0a0a" }}>
+                  <span
+                    className="absolute -top-px left-1/2 -translate-x-1/2 rounded-b-md px-2 py-0.5 text-[10px] font-bold tracking-widest"
+                    style={{ background: RANK_COLORS[i], color: "#0a0a0a" }}
+                  >
                     #{i + 1}
                   </span>
                   <div className="grid size-14 place-items-center rounded-full border border-dashed border-white/20 bg-white/[0.02]">
                     <Users className="size-5 text-muted-foreground" />
                   </div>
-                  <p className="text-center text-[10px] tracking-wider text-muted-foreground">EDIT TOP 3</p>
+                  <p className="text-center text-[10px] tracking-wider text-muted-foreground">
+                    EDIT TOP 3
+                  </p>
                 </button>
               ))}
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--purple)", ["--accent-2" as string]: "var(--cyan)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: "var(--purple)",
+                ["--accent-2" as string]: "var(--cyan)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "3.7s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "3.7s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
               <Star className="size-4" style={{ color: "var(--purple)" }} /> SOCIAL HANDLES
             </div>
             <div className="space-y-2">
-              <SocialField icon={<Instagram className="size-4" />} platform="Instagram" prefix="@" value={draft.socialInstagram} onChange={(socialInstagram) => setDraft((d) => ({ ...d, socialInstagram }))} />
-              <SocialField icon={<Music2 className="size-4" />} platform="TikTok" prefix="@" value={draft.socialTikTok} onChange={(socialTikTok) => setDraft((d) => ({ ...d, socialTikTok }))} />
-              <SocialField icon={<Youtube className="size-4" />} platform="YouTube" prefix="/" value={draft.socialYouTube} onChange={(socialYouTube) => setDraft((d) => ({ ...d, socialYouTube }))} />
-              <SocialField icon={<Link2 className="size-4" />} platform="Website" prefix="" value={draft.link} onChange={(link) => setDraft((d) => ({ ...d, link }))} placeholder="https://" />
+              <SocialField
+                icon={<Instagram className="size-4" />}
+                platform="Instagram"
+                prefix="@"
+                value={draft.socialInstagram}
+                onChange={(socialInstagram) => setDraft((d) => ({ ...d, socialInstagram }))}
+              />
+              <SocialField
+                icon={<Music2 className="size-4" />}
+                platform="TikTok"
+                prefix="@"
+                value={draft.socialTikTok}
+                onChange={(socialTikTok) => setDraft((d) => ({ ...d, socialTikTok }))}
+              />
+              <SocialField
+                icon={<Youtube className="size-4" />}
+                platform="YouTube"
+                prefix="/"
+                value={draft.socialYouTube}
+                onChange={(socialYouTube) => setDraft((d) => ({ ...d, socialYouTube }))}
+              />
+              <SocialField
+                icon={<Link2 className="size-4" />}
+                platform="Website"
+                prefix=""
+                value={draft.link}
+                onChange={(link) => setDraft((d) => ({ ...d, link }))}
+                placeholder="https://"
+              />
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--cyan)", ["--accent-2" as string]: "var(--gold)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: "var(--cyan)",
+                ["--accent-2" as string]: "var(--gold)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "2.5s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "2.5s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
               <ImageIcon className="size-4 text-[var(--cyan)]" /> GIF OF THE DAY
             </div>
-            <p className="mb-3 text-xs text-muted-foreground">Pick a GIF from your FWD library to feature on your profile. Changes save when you click Save Changes.</p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Pick a GIF from your FWD library to feature on your profile. Changes save when you
+              click Save Changes.
+            </p>
             {gifOfDay ? (
               <div className="flex items-start gap-3">
                 <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-white/10">
-                  {gifOfDay.preview_url && <img src={gifOfDay.preview_url} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm" />}
-                  <img src={gifOfDay.url} alt="GIF of the Day" className="relative h-full w-full object-cover" />
+                  {gifOfDay.preview_url && (
+                    <img
+                      src={gifOfDay.preview_url}
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 h-full w-full object-cover opacity-25 blur-sm"
+                    />
+                  )}
+                  <img
+                    src={gifOfDay.url}
+                    alt="GIF of the Day"
+                    className="relative h-full w-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => setGifOfDay(null)}
@@ -594,26 +873,75 @@ function EditProfile() {
             )}
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: "var(--magenta)", ["--accent-2" as string]: "var(--gold)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: "var(--magenta)",
+                ["--accent-2" as string]: "var(--gold)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "3s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "3s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
               <Shield className="size-4 text-gold" /> PROFILE PRIVACY
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <PrivacyPill active={draft.profileVisibility === "public"} onClick={() => setDraft((d) => ({ ...d, profileVisibility: "public" }))} icon={<Globe className="size-4" />} label="Public" />
-              <PrivacyPill active={draft.profileVisibility === "members_only"} onClick={() => setDraft((d) => ({ ...d, profileVisibility: "members_only" }))} icon={<Users className="size-4" />} label="Members" />
-              <PrivacyPill active={draft.profileVisibility === "private"} onClick={() => setDraft((d) => ({ ...d, profileVisibility: "private" }))} icon={<Lock className="size-4" />} label="Private" />
+              <PrivacyPill
+                active={draft.profileVisibility === "public"}
+                onClick={() => setDraft((d) => ({ ...d, profileVisibility: "public" }))}
+                icon={<Globe className="size-4" />}
+                label="Public"
+              />
+              <PrivacyPill
+                active={draft.profileVisibility === "members_only"}
+                onClick={() => setDraft((d) => ({ ...d, profileVisibility: "members_only" }))}
+                icon={<Users className="size-4" />}
+                label="Members"
+              />
+              <PrivacyPill
+                active={draft.profileVisibility === "private"}
+                onClick={() => setDraft((d) => ({ ...d, profileVisibility: "private" }))}
+                icon={<Lock className="size-4" />}
+                label="Private"
+              />
             </div>
             <div className="mt-4 space-y-2">
-              <ToggleRow icon={<MapPin className="size-4" />} label="Show location on profile" checked={draft.showLocation} onChange={(showLocation) => setDraft((d) => ({ ...d, showLocation }))} />
-              <ToggleRow icon={<Cake className="size-4" />} label="Show birthday on profile" checked={draft.showBirthday} onChange={(showBirthday) => setDraft((d) => ({ ...d, showBirthday }))} />
+              <ToggleRow
+                icon={<MapPin className="size-4" />}
+                label="Show location on profile"
+                checked={draft.showLocation}
+                onChange={(showLocation) => setDraft((d) => ({ ...d, showLocation }))}
+              />
+              <ToggleRow
+                icon={<Cake className="size-4" />}
+                label="Show birthday on profile"
+                checked={draft.showBirthday}
+                onChange={(showBirthday) => setDraft((d) => ({ ...d, showBirthday }))}
+              />
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5" style={{ ["--neon" as string]: accentVar, ["--accent-2" as string]: "var(--cyan)" } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: accentVar,
+                ["--accent-2" as string]: "var(--cyan)",
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "4.5s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "4.5s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
               <Sparkles className="size-4 text-gold" /> PROFILE ACCENT
             </div>
@@ -625,9 +953,22 @@ function EditProfile() {
                     key={a.id}
                     onClick={() => setDraft((d) => ({ ...d, accent: a.hex }))}
                     className={`glass-panel flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border px-2 text-[12px] font-medium transition ${active ? "neon-static" : "border-white/10 text-foreground/80 hover:border-white/25"}`}
-                    style={{ ["--neon" as string]: a.hex, ...(active ? { color: a.hex, borderColor: `color-mix(in oklab, ${a.hex} 70%, transparent)` } : {}) } as CSSProperties}
+                    style={
+                      {
+                        ["--neon" as string]: a.hex,
+                        ...(active
+                          ? {
+                              color: a.hex,
+                              borderColor: `color-mix(in oklab, ${a.hex} 70%, transparent)`,
+                            }
+                          : {}),
+                      } as CSSProperties
+                    }
                   >
-                    <span className="size-2.5 rounded-full" style={{ background: a.hex, boxShadow: `0 0 10px ${a.hex}` }} />
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ background: a.hex, boxShadow: `0 0 10px ${a.hex}` }}
+                    />
                     {a.label}
                   </button>
                 );
@@ -635,9 +976,21 @@ function EditProfile() {
             </div>
           </section>
 
-          <section className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-3" style={{ ["--neon" as string]: "var(--gold)", ["--accent-2" as string]: accentVar } as CSSProperties}>
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-3"
+            style={
+              {
+                ["--neon" as string]: "var(--gold)",
+                ["--accent-2" as string]: accentVar,
+              } as CSSProperties
+            }
+          >
             <span className="aurora-bg" aria-hidden />
-            <span className="shimmer-sweep" style={{ ["--shimmer-delay" as string]: "6s" } as CSSProperties} aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "6s" } as CSSProperties}
+              aria-hidden
+            />
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -645,7 +998,9 @@ function EditProfile() {
                 className="neon-border rounded-2xl bg-white/[0.04] px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-white/[0.08]"
                 style={{ ["--neon" as string]: accentVar } as CSSProperties}
               >
-                <span className="flex items-center justify-center gap-2"><Eye className="size-4" /> Preview Changes</span>
+                <span className="flex items-center justify-center gap-2">
+                  <Eye className="size-4" /> Preview Changes
+                </span>
               </button>
               <button
                 type="button"
@@ -654,22 +1009,40 @@ function EditProfile() {
                 className="neon-border rounded-2xl bg-gradient-to-r from-amber-300 via-gold to-amber-500 px-4 py-3 text-sm font-semibold text-black transition disabled:cursor-wait disabled:opacity-70"
                 style={{ ["--neon" as string]: "var(--gold)" } as CSSProperties}
               >
-                <span className="flex items-center justify-center gap-2"><Rocket className="size-4" /> {saving ? "Saving..." : "Save Changes"}</span>
+                <span className="flex items-center justify-center gap-2">
+                  <Rocket className="size-4" /> {saving ? "Saving..." : "Save Changes"}
+                </span>
               </button>
             </div>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">Changes are previewed live. Save when you're ready.</p>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              Changes are previewed live. Save when you're ready.
+            </p>
           </section>
         </main>
       </div>
 
-      <ProfilePreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} draft={draft} profileUid={profileUid} accentVar={accentVar} bannerFallback={bannerFallback} />
-      <TopThreeEditor open={topThreeOpen} onClose={() => setTopThreeOpen(false)} onSave={() => qc.invalidateQueries({ queryKey: ["current-user"] })} />
+      <ProfilePreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        draft={draft}
+        profileUid={profileUid}
+        accentVar={accentVar}
+        bannerFallback={bannerFallback}
+      />
+      <TopThreeEditor
+        open={topThreeOpen}
+        onClose={() => setTopThreeOpen(false)}
+        onSave={() => qc.invalidateQueries({ queryKey: ["current-user"] })}
+      />
       <FwdGifPicker
         open={showGifOfDayPicker}
         context="profile"
         treyTvUid={profileUid}
         onClose={() => setShowGifOfDayPicker(false)}
-        onSelect={(gif) => { setGifOfDay(gif); setShowGifOfDayPicker(false); }}
+        onSelect={(gif) => {
+          setGifOfDay(gif);
+          setShowGifOfDayPicker(false);
+        }}
       />
     </AppShell>
   );
@@ -702,23 +1075,48 @@ function ProfilePreviewModal({
   ].filter(Boolean);
 
   return (
-    <div className="edit-profile-redesign fixed inset-0 z-[10080] overflow-y-auto bg-black/75 px-4 py-5 text-foreground backdrop-blur-xl sm:py-8" role="dialog" aria-modal="true" aria-label="Profile preview">
+    <div
+      className="edit-profile-redesign fixed inset-0 z-[10080] overflow-y-auto bg-black/75 px-4 py-5 text-foreground backdrop-blur-xl sm:py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Profile preview"
+    >
       <div className="mx-auto w-full max-w-3xl">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">LIVE PREVIEW</p>
+            <p className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
+              LIVE PREVIEW
+            </p>
             <h2 className="text-xl font-bold">Profile Page</h2>
           </div>
-          <button type="button" onClick={onClose} className="glass-panel grid size-10 place-items-center rounded-full" aria-label="Close profile preview">
+          <button
+            type="button"
+            onClick={onClose}
+            className="glass-panel grid size-10 place-items-center rounded-full"
+            aria-label="Close profile preview"
+          >
             <X className="size-4" />
           </button>
         </div>
 
-        <section className="neon-border panel-sheen glass-panel relative overflow-hidden rounded-[2rem]" style={{ ["--neon" as string]: accentVar, ["--accent-2" as string]: "var(--cyan)" } as CSSProperties}>
+        <section
+          className="neon-border panel-sheen glass-panel relative overflow-hidden rounded-[2rem]"
+          style={
+            {
+              ["--neon" as string]: accentVar,
+              ["--accent-2" as string]: "var(--cyan)",
+            } as CSSProperties
+          }
+        >
           <span className="aurora-bg" aria-hidden />
           <div className="relative h-48 overflow-hidden rounded-t-[2rem] sm:h-64">
             {bannerSrc ? (
-              <AnimatedBanner src={bannerSrc} fallback={bannerFallback} alt="Profile banner preview" className="absolute inset-0 size-full object-cover" />
+              <AnimatedBanner
+                src={bannerSrc}
+                fallback={bannerFallback}
+                alt="Profile banner preview"
+                className="absolute inset-0 size-full object-cover"
+              />
             ) : (
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(var(--profile-accent-rgb),0.2),transparent_35%),linear-gradient(135deg,#090b17,#171024_45%,#05070d)]" />
             )}
@@ -727,15 +1125,27 @@ function ProfilePreviewModal({
 
           <div className="relative px-5 pb-6 sm:px-7">
             <div className="-mt-14 flex flex-wrap items-end gap-4">
-              <img src={draft.avatar || undefined} alt="Profile avatar preview" className="size-28 rounded-full border-4 border-background object-cover ring-2 ring-white/15" />
+              <img
+                src={draft.avatar || undefined}
+                alt="Profile avatar preview"
+                className="size-28 rounded-full border-4 border-background object-cover ring-2 ring-white/15"
+              />
               <div className="min-w-0 flex-1 pb-2">
                 <h3 className="truncate text-3xl font-black">{draft.name || "Your name"}</h3>
-                <p className="truncate text-sm text-muted-foreground">@{draft.handle || "username"}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  @{draft.handle || "username"}
+                </p>
               </div>
             </div>
 
-            {draft.tagline && <p className="mt-4 text-base font-semibold" style={{ color: accentVar }}>{draft.tagline}</p>}
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/85">{draft.bio || "Your bio preview will appear here."}</p>
+            {draft.tagline && (
+              <p className="mt-4 text-base font-semibold" style={{ color: accentVar }}>
+                {draft.tagline}
+              </p>
+            )}
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground/85">
+              {draft.bio || "Your bio preview will appear here."}
+            </p>
 
             <div className="mt-5 flex flex-wrap gap-2 text-xs text-muted-foreground">
               {showLocation && (
@@ -743,15 +1153,22 @@ function ProfilePreviewModal({
                   <MapPin className="size-3.5" /> {draft.location}
                 </span>
               )}
-              {draft.pronouns && <span className="glass-panel rounded-full px-3 py-1.5">{draft.pronouns}</span>}
+              {draft.pronouns && (
+                <span className="glass-panel rounded-full px-3 py-1.5">{draft.pronouns}</span>
+              )}
               <span className="glass-panel rounded-full px-3 py-1.5">/u/{profileUid}</span>
-              <span className="glass-panel rounded-full px-3 py-1.5 capitalize">{draft.profileVisibility.replace("_", " ")}</span>
+              <span className="glass-panel rounded-full px-3 py-1.5 capitalize">
+                {draft.profileVisibility.replace("_", " ")}
+              </span>
             </div>
 
             {socials.length > 0 && (
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 {socials.map((social) => (
-                  <div key={social} className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-foreground/85">
+                  <div
+                    key={social}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-foreground/85"
+                  >
                     {social}
                   </div>
                 ))}
@@ -759,10 +1176,17 @@ function ProfilePreviewModal({
             )}
 
             <div className="mt-6 flex gap-3">
-              <button type="button" className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-foreground">
+              <button
+                type="button"
+                className="flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-foreground"
+              >
                 Message
               </button>
-              <button type="button" className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-black" style={{ background: accentVar }}>
+              <button
+                type="button"
+                className="flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-black"
+                style={{ background: accentVar }}
+              >
                 Follow
               </button>
             </div>
@@ -790,9 +1214,13 @@ function Field({
 }) {
   return (
     <label className="group flex items-start gap-3 bg-white/[0.02] p-4 transition hover:bg-white/[0.05] focus-within:bg-white/[0.06] focus-within:ring-1 focus-within:ring-gold/40">
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted-foreground group-focus-within:text-gold">{icon}</span>
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted-foreground group-focus-within:text-gold">
+        {icon}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-medium tracking-[0.2em] text-muted-foreground">{label}</span>
+        <span className="block text-[10px] font-medium tracking-[0.2em] text-muted-foreground">
+          {label}
+        </span>
         <input
           type={type}
           value={value}
@@ -805,12 +1233,24 @@ function Field({
   );
 }
 
-function PrivacyPill({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
+function PrivacyPill({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  label: string;
+}) {
   return (
     <button
       onClick={onClick}
       className={`glass-panel flex items-center justify-center gap-2 rounded-full px-2 py-2.5 text-xs transition sm:px-3 sm:text-sm ${
-        active ? "border-2 border-gold text-gold gold-glow" : "border border-white/10 text-foreground/80"
+        active
+          ? "border-2 border-gold text-gold gold-glow"
+          : "border border-white/10 text-foreground/80"
       }`}
     >
       {icon} {label}
@@ -818,7 +1258,17 @@ function PrivacyPill({ active, onClick, icon, label }: { active: boolean; onClic
   );
 }
 
-function ToggleRow({ icon, label, checked, onChange }: { icon: ReactNode; label: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ToggleRow({
+  icon,
+  label,
+  checked,
+  onChange,
+}: {
+  icon: ReactNode;
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="glass-panel flex items-center gap-3 rounded-2xl px-4 py-3">
       <span className="text-muted-foreground">{icon}</span>
@@ -828,7 +1278,9 @@ function ToggleRow({ icon, label, checked, onChange }: { icon: ReactNode; label:
         className={`relative h-6 w-11 rounded-full transition ${checked ? "bg-gold gold-glow" : "bg-white/15"}`}
         aria-pressed={checked}
       >
-        <span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition ${checked ? "left-[22px]" : "left-0.5"}`} />
+        <span
+          className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition ${checked ? "left-[22px]" : "left-0.5"}`}
+        />
       </button>
     </div>
   );
@@ -851,9 +1303,13 @@ function SocialField({
 }) {
   return (
     <label className="group flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 transition hover:border-white/20 focus-within:border-purple/60 focus-within:bg-white/[0.06]">
-      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted-foreground group-focus-within:text-foreground">{icon}</span>
+      <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white/5 text-muted-foreground group-focus-within:text-foreground">
+        {icon}
+      </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-medium tracking-[0.2em] text-muted-foreground">{platform.toUpperCase()}</span>
+        <span className="block text-[10px] font-medium tracking-[0.2em] text-muted-foreground">
+          {platform.toUpperCase()}
+        </span>
         <span className="mt-0.5 flex items-center gap-1">
           {prefix && <span className="text-sm text-muted-foreground">{prefix}</span>}
           <input

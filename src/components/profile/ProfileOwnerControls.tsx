@@ -8,8 +8,16 @@
 
 import { Link } from "@tanstack/react-router";
 import {
-  Gem, Crown, TrendingUp, Sparkles, BookmarkCheck, Heart,
-  BarChart2, Settings, CheckCircle2, Tv,
+  Gem,
+  Crown,
+  TrendingUp,
+  Sparkles,
+  BookmarkCheck,
+  Heart,
+  BarChart2,
+  Settings,
+  CheckCircle2,
+  Tv,
 } from "lucide-react";
 import type { ProfileContext } from "./ProfileTypes";
 import { ProfileSectionCard } from "./ProfileSectionCard";
@@ -36,7 +44,10 @@ export function ProfileOwnerControls({ profile, profileType }: Props) {
           id="rewards-card-link"
           className="block rounded-3xl liquid-glass liquid-hover border border-white/10 p-4 relative overflow-hidden group"
         >
-          <div aria-hidden className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/30 blur-3xl group-hover:bg-primary/50 transition pointer-events-none" />
+          <div
+            aria-hidden
+            className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/30 blur-3xl group-hover:bg-primary/50 transition pointer-events-none"
+          />
           <div className="relative flex items-center gap-3">
             <div className="size-12 rounded-2xl grid place-items-center bg-primary/15 text-primary glow-gold shrink-0">
               <Gem className="size-6" />
@@ -66,7 +77,10 @@ export function ProfileOwnerControls({ profile, profileType }: Props) {
           id="creator-studio-owner-card"
           className="block rounded-3xl liquid-glass liquid-hover border border-primary/25 p-4 relative overflow-hidden group"
         >
-          <div aria-hidden className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+          <div
+            aria-hidden
+            className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/20 blur-3xl pointer-events-none"
+          />
           <div className="relative flex items-center gap-3">
             <div className="size-12 rounded-2xl grid place-items-center bg-primary/15 text-primary glow-gold shrink-0">
               <Crown className="size-6" />
@@ -87,7 +101,10 @@ export function ProfileOwnerControls({ profile, profileType }: Props) {
           id="creator-channel-owner-card"
           className="block rounded-3xl liquid-glass liquid-hover border border-primary/25 p-4 relative overflow-hidden group"
         >
-          <div aria-hidden className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+          <div
+            aria-hidden
+            className="absolute -top-10 -right-10 size-32 rounded-full bg-primary/20 blur-3xl pointer-events-none"
+          />
           <div className="relative flex items-center gap-3">
             <div className="size-12 rounded-2xl grid place-items-center bg-primary/15 text-primary glow-gold shrink-0">
               <Tv className="size-6" />

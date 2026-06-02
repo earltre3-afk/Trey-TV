@@ -26,11 +26,15 @@ export function ZodiacGroupsHub({
   onLeave?: (group: ZodiacHubGroup) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterByMembership, setFilterByMembership] = useState<"all" | "joined" | "available">("all");
+  const [filterByMembership, setFilterByMembership] = useState<"all" | "joined" | "available">(
+    "all",
+  );
 
   const filteredGroups = groups.filter((group) => {
     const q = searchQuery.toLowerCase();
-    const matchesSearch = group.groupName.toLowerCase().includes(q) || group.tags.some((tag) => tag.toLowerCase().includes(q));
+    const matchesSearch =
+      group.groupName.toLowerCase().includes(q) ||
+      group.tags.some((tag) => tag.toLowerCase().includes(q));
     const matchesMembership =
       filterByMembership === "all" ||
       (filterByMembership === "joined" && group.isMember) ||

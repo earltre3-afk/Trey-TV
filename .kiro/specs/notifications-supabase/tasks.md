@@ -9,12 +9,14 @@
 ## Task 1 — Preserve mock items as rollback target
 
 **Files involved:**
+
 - `src/components/layout/NotificationsPopover.tsx`
 
 **What to do:**
 At the bottom of `NotificationsPopover.tsx`, add the existing hardcoded `items` array as a commented-out block labeled `// MOCK FALLBACK`. Do not change any logic. This is the rollback artifact — if the Supabase hook causes issues, uncomment and revert in under a minute.
 
 **Acceptance criteria:**
+
 - The comment block exists at the bottom of the file.
 - No logic is changed.
 - `pnpm tsc --noEmit` passes.
@@ -25,6 +27,7 @@ At the bottom of `NotificationsPopover.tsx`, add the existing hardcoded `items` 
 **Rollback risk:** None.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -35,12 +38,14 @@ pnpm build
 ## Task 2 — Define internal Supabase types and helper functions
 
 **Files involved:**
+
 - `src/hooks/use-notifications.ts` (new file)
 
 **What to do:**
 Create `src/hooks/use-notifications.ts` with only types and pure helper functions — no React, no Supabase calls yet.
 
 Include:
+
 1. `SupabaseNotificationRow` type (internal)
 2. `ActorProfile` type (internal)
 3. `NotificationItem` type (exported — mirrors the `N` type in `NotificationsPopover.tsx`)
@@ -51,6 +56,7 @@ Include:
 Export only `NotificationItem` and the three helper functions. Keep internal types unexported.
 
 **Acceptance criteria:**
+
 - File compiles with zero TypeScript errors.
 - No React imports, no Supabase imports in this task.
 - `pnpm tsc --noEmit` passes.
@@ -60,6 +66,7 @@ Export only `NotificationItem` and the three helper functions. Keep internal typ
 **Rollback risk:** None. New file, nothing imports it yet.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -69,6 +76,7 @@ pnpm tsc --noEmit
 ## Task 3 — Implement `useNotifications()` hook
 
 **Files involved:**
+
 - `src/hooks/use-notifications.ts`
 - `src/hooks/use-current-user.ts` (read-only reference)
 - `src/lib/supabase-browser.ts` (read-only reference)
@@ -89,6 +97,7 @@ Add the `useNotifications()` hook to `src/hooks/use-notifications.ts`:
 5. Export `useNotifications` as named export.
 
 **Acceptance criteria:**
+
 - Hook compiles with zero TypeScript errors.
 - Signed-out path returns empty state without calling Supabase.
 - `pnpm tsc --noEmit` passes.
@@ -99,6 +108,7 @@ Add the `useNotifications()` hook to `src/hooks/use-notifications.ts`:
 **Rollback risk:** Low. New file, nothing imports it yet.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -109,6 +119,7 @@ pnpm build
 ## Task 4 — Wire `useNotifications()` into `NotificationsPopover`
 
 **Files involved:**
+
 - `src/components/layout/NotificationsPopover.tsx`
 - `src/hooks/use-notifications.ts` (read-only)
 
@@ -128,6 +139,7 @@ Make five targeted edits to `NotificationsPopover.tsx`:
 Do not change any JSX structure, class names, or layout.
 
 **Acceptance criteria:**
+
 - Popover renders with real data when signed in (or empty list when signed out).
 - Unread count in header reflects real `read_at IS NULL` count.
 - "Mark all as read" calls `markAllRead()` and fires the existing toast.
@@ -140,6 +152,7 @@ Do not change any JSX structure, class names, or layout.
 **Rollback risk:** Medium. Rollback: uncomment the mock `items` block from Task 1, remove the hook import and destructure, restore the hardcoded `unread` line.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -150,10 +163,12 @@ pnpm build
 ## Task 5 — Final cleanup and verification
 
 **Files involved:**
+
 - `src/hooks/use-notifications.ts`
 - `src/components/layout/NotificationsPopover.tsx`
 
 **What to do:**
+
 1. Remove any unused imports from both files.
 2. Confirm `creators` import from `mock-data` is removed from `NotificationsPopover.tsx` if no longer used.
 3. Confirm `activity-store.tsx` is untouched.
@@ -161,6 +176,7 @@ pnpm build
 5. Run full type check and build.
 
 **Acceptance criteria:**
+
 - Zero TypeScript errors: `pnpm tsc --noEmit`.
 - Clean production build: `pnpm build`.
 - No unused imports in modified files.
@@ -172,6 +188,7 @@ pnpm build
 **Rollback risk:** None. Cleanup only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -181,13 +198,13 @@ pnpm build
 
 ## Summary Table
 
-| # | Task | Files | Risk | Validation |
-|---|---|---|---|---|
-| 1 | Preserve mock as rollback | NotificationsPopover.tsx | None | tsc + build |
-| 2 | Types and pure helpers | use-notifications.ts (new) | None | tsc |
-| 3 | Implement useNotifications() hook | use-notifications.ts | Low | tsc + build |
-| 4 | Wire hook into NotificationsPopover | NotificationsPopover.tsx | Medium | tsc + build |
-| 5 | Final cleanup and verification | both | None | tsc + build |
+| #   | Task                                | Files                      | Risk   | Validation  |
+| --- | ----------------------------------- | -------------------------- | ------ | ----------- |
+| 1   | Preserve mock as rollback           | NotificationsPopover.tsx   | None   | tsc + build |
+| 2   | Types and pure helpers              | use-notifications.ts (new) | None   | tsc         |
+| 3   | Implement useNotifications() hook   | use-notifications.ts       | Low    | tsc + build |
+| 4   | Wire hook into NotificationsPopover | NotificationsPopover.tsx   | Medium | tsc + build |
+| 5   | Final cleanup and verification      | both                       | None   | tsc + build |
 
 All tasks are sequential. Do not start a task until the previous task's validation passes.
 

@@ -45,6 +45,7 @@ are unchanged.
 ## Queue SELECT — Additional Fields Needed
 
 The existing SELECT fetches:
+
 ```
 id, creator_id, edit_project_id, channel_id, show_id, episode_number,
 title, stream_uid, is_plus_content
@@ -109,6 +110,7 @@ bypass: `admin_publish_override = true`. When set, the trigger skips all checks 
 auto-sets `published_at`.
 
 The episode payload must always include:
+
 ```
 admin_publish_override: true,
 admin_publish_override_by: adminUser.id,
@@ -120,34 +122,33 @@ admin_publish_override_at: now,
 ## Episode Payload
 
 ```typescript
-const now = new Date().toISOString()
-const isScheduled = !!queue.scheduled_at && new Date(queue.scheduled_at) > new Date()
-const accessType = (queue.episode_number <= 2) ? "free"
-                 : queue.is_plus_content ? "locked" : "free"
-const slug = slugify(queue.title)
+const now = new Date().toISOString();
+const isScheduled = !!queue.scheduled_at && new Date(queue.scheduled_at) > new Date();
+const accessType = queue.episode_number <= 2 ? "free" : queue.is_plus_content ? "locked" : "free";
+const slug = slugify(queue.title);
 
 const episodePayload = {
-  channel_id:                  queue.channel_id,
-  show_id:                     queue.show_id,
-  episode_number:              queue.episode_number,
-  season_number:               1,
-  title:                       queue.title,
-  slug,                        // INSERT only; not updated on re-approval
-  description:                 queue.description ?? null,
-  thumbnail_url:               queue.thumbnail_url ?? null,
-  video_thumbnail_url:         queue.thumbnail_url ?? null,
-  video_provider:              "cloudflare_stream",
-  video_asset_id:              queue.stream_uid,
-  video_status:                "ready",
-  publish_status:              isScheduled ? "scheduled" : "published",
-  access_type:                 accessType,
-  scheduled_at:                queue.scheduled_at ?? null,
+  channel_id: queue.channel_id,
+  show_id: queue.show_id,
+  episode_number: queue.episode_number,
+  season_number: 1,
+  title: queue.title,
+  slug, // INSERT only; not updated on re-approval
+  description: queue.description ?? null,
+  thumbnail_url: queue.thumbnail_url ?? null,
+  video_thumbnail_url: queue.thumbnail_url ?? null,
+  video_provider: "cloudflare_stream",
+  video_asset_id: queue.stream_uid,
+  video_status: "ready",
+  publish_status: isScheduled ? "scheduled" : "published",
+  access_type: accessType,
+  scheduled_at: queue.scheduled_at ?? null,
   // published_at set automatically by trigger when admin_publish_override = true
-  admin_publish_override:      true,
-  admin_publish_override_by:   adminUser.id,
-  admin_publish_override_at:   now,
-  updated_at:                  now,
-}
+  admin_publish_override: true,
+  admin_publish_override_by: adminUser.id,
+  admin_publish_override_at: now,
+  updated_at: now,
+};
 ```
 
 ---
@@ -161,30 +162,28 @@ const { data: existing } = await (supabase as any)
   .select("id, slug")
   .eq("show_id", queue.show_id)
   .eq("video_asset_id", queue.stream_uid)
-  .maybeSingle()
+  .maybeSingle();
 
-let episodeError: unknown = null
+let episodeError: unknown = null;
 
 if (existing) {
   // UPDATE — do not change slug
   const { error } = await (supabase as any)
     .from("episodes")
-    .update({ ...episodePayload, slug: undefined })  // omit slug on update
-    .eq("id", existing.id)
-  episodeError = error
+    .update({ ...episodePayload, slug: undefined }) // omit slug on update
+    .eq("id", existing.id);
+  episodeError = error;
 } else {
   // INSERT — include slug; handle slug collision by appending episode_number
-  const { error } = await (supabase as any)
-    .from("episodes")
-    .insert(episodePayload)
+  const { error } = await (supabase as any).from("episodes").insert(episodePayload);
   if (error && error.code === "23505") {
     // Unique violation on (show_id, slug) — retry with episode_number suffix
     const { error: retryError } = await (supabase as any)
       .from("episodes")
-      .insert({ ...episodePayload, slug: `${slug}-${queue.episode_number}` })
-    episodeError = retryError
+      .insert({ ...episodePayload, slug: `${slug}-${queue.episode_number}` });
+    episodeError = retryError;
   } else {
-    episodeError = error
+    episodeError = error;
   }
 }
 ```
@@ -200,16 +199,16 @@ If `episodeError` is non-null after the INSERT/UPDATE attempt:
 await (supabase as any)
   .from("creator_post_queue")
   .update({ approval_status: "pending", admin_notes: null })
-  .eq("id", data.queueId)
+  .eq("id", data.queueId);
 
 if (queue.edit_project_id) {
   await (supabase as any)
     .from("creator_edit_projects")
     .update({ status: "submitted" })
-    .eq("id", queue.edit_project_id)
+    .eq("id", queue.edit_project_id);
 }
 
-throw new Error("Publishing failed: " + (episodeError as any).message)
+throw new Error("Publishing failed: " + (episodeError as any).message);
 ```
 
 The revert is best-effort. If it fails, the original episode error is still thrown.
@@ -219,49 +218,49 @@ The admin UI surfaces the error. Retry is safe (idempotent by `show_id + video_a
 
 ## Publish Status Logic
 
-| `scheduled_at` | `publish_status` | `published_at` |
-|----------------|-----------------|----------------|
-| null | `"published"` | set by trigger (override path) |
-| past timestamp | `"published"` | set by trigger (override path) |
-| future timestamp | `"scheduled"` | null (set when scheduler fires) |
+| `scheduled_at`   | `publish_status` | `published_at`                  |
+| ---------------- | ---------------- | ------------------------------- |
+| null             | `"published"`    | set by trigger (override path)  |
+| past timestamp   | `"published"`    | set by trigger (override path)  |
+| future timestamp | `"scheduled"`    | null (set when scheduler fires) |
 
 ---
 
 ## Access Type Logic
 
-| `episode_number` | `is_plus_content` | `access_type` |
-|-----------------|-------------------|---------------|
-| 1 or 2 | any | `"free"` (forced; DB trigger also enforces) |
-| 3+ | false | `"free"` |
-| 3+ | true | `"locked"` |
+| `episode_number` | `is_plus_content` | `access_type`                               |
+| ---------------- | ----------------- | ------------------------------------------- |
+| 1 or 2           | any               | `"free"` (forced; DB trigger also enforces) |
+| 3+               | false             | `"free"`                                    |
+| 3+               | true              | `"locked"`                                  |
 
 ---
 
 ## Security Boundaries
 
-| Boundary | Enforcement |
-|----------|-------------|
-| Service-role key | Only in `getAdminClient()`, server-side, no `VITE_` prefix |
-| Admin verification | `verifyAdmin()` called before any write |
-| Browser admin gate | Visual-only — not used for writes |
-| `profiles.is_creator` | Not queried |
-| Self-approval | Existing check: `queue.creator_id === adminUser.id` throws |
-| RLS bypass | Service-role client bypasses RLS on `episodes` |
+| Boundary              | Enforcement                                                |
+| --------------------- | ---------------------------------------------------------- |
+| Service-role key      | Only in `getAdminClient()`, server-side, no `VITE_` prefix |
+| Admin verification    | `verifyAdmin()` called before any write                    |
+| Browser admin gate    | Visual-only — not used for writes                          |
+| `profiles.is_creator` | Not queried                                                |
+| Self-approval         | Existing check: `queue.creator_id === adminUser.id` throws |
+| RLS bypass            | Service-role client bypasses RLS on `episodes`             |
 
 ---
 
 ## What Is NOT Changed
 
-| Area | Reason |
-|------|--------|
-| `watch-data.ts` | Static mock — Watch Now reads from here, not Supabase |
-| `guide-store.tsx` | localStorage — Guide reads from here, not Supabase |
-| `feed-store.tsx` | localStorage — Feed reads from here, not Supabase |
-| `index.tsx` | Watch Now route — no Supabase query added |
-| `guide.tsx` | Guide route — no Supabase query added |
-| `watch.$id.tsx` | Reads from `submissions-store` — not changed |
-| `user_posts` | Social feed posts — not the target for video episodes |
-| Admin UI routes | `admin.content-approval.tsx`, `admin.content-approval.$id.tsx` — unchanged |
+| Area              | Reason                                                                     |
+| ----------------- | -------------------------------------------------------------------------- |
+| `watch-data.ts`   | Static mock — Watch Now reads from here, not Supabase                      |
+| `guide-store.tsx` | localStorage — Guide reads from here, not Supabase                         |
+| `feed-store.tsx`  | localStorage — Feed reads from here, not Supabase                          |
+| `index.tsx`       | Watch Now route — no Supabase query added                                  |
+| `guide.tsx`       | Guide route — no Supabase query added                                      |
+| `watch.$id.tsx`   | Reads from `submissions-store` — not changed                               |
+| `user_posts`      | Social feed posts — not the target for video episodes                      |
+| Admin UI routes   | `admin.content-approval.tsx`, `admin.content-approval.$id.tsx` — unchanged |
 
 ---
 

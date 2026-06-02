@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getTreyIServiceClient, verifyTreyIUser, saveProfileFieldsForUser } from "@/lib/trey-i/onboarding.server";
+import {
+  getTreyIServiceClient,
+  verifyTreyIUser,
+  saveProfileFieldsForUser,
+} from "@/lib/trey-i/onboarding.server";
 
 type StartIntakeSessionInput = {
   accessToken: string;
@@ -74,9 +78,14 @@ const skipPattern = /^(skip|skip it|pass|no thanks|not now|later|next)$/i;
 const finishPattern = /^(finish|done|complete|wrap up|that'?s all|all set)$/i;
 const manualPattern = /^(manual|switch to manual|stop|cancel|i want manual|do it manually)$/i;
 
-const validateStartIntakeSessionInput = (input: StartIntakeSessionInput): StartIntakeSessionInput => ({
+const validateStartIntakeSessionInput = (
+  input: StartIntakeSessionInput,
+): StartIntakeSessionInput => ({
   accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
-  intakeMethod: input?.intakeMethod === "ai_voice" || input?.intakeMethod === "manual" ? input.intakeMethod : "manual",
+  intakeMethod:
+    input?.intakeMethod === "ai_voice" || input?.intakeMethod === "manual"
+      ? input.intakeMethod
+      : "manual",
 });
 
 const validateProfileSetupTurnInput = (input: ProfileSetupTurnInput): ProfileSetupTurnInput => ({
@@ -86,7 +95,10 @@ const validateProfileSetupTurnInput = (input: ProfileSetupTurnInput): ProfileSet
 });
 
 function cleanText(value: unknown, max = 500): string {
-  return String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, max);
 }
 
 function normalizeSpokenUsername(value: string): string {
@@ -103,7 +115,9 @@ function normalizeSpokenUsername(value: string): string {
 
 function stageFrom(value: unknown): ProfileSetupStage {
   const stage = String(value ?? "ask_display_name");
-  return STAGES.includes(stage as ProfileSetupStage) ? (stage as ProfileSetupStage) : "ask_display_name";
+  return STAGES.includes(stage as ProfileSetupStage)
+    ? (stage as ProfileSetupStage)
+    : "ask_display_name";
 }
 
 function pendingFrom(metadata: Record<string, unknown>): PendingField | null {
@@ -122,7 +136,11 @@ function isFillerAtAskStage(input: string): boolean {
   return yesPattern.test(input) || noPattern.test(input) || skipPattern.test(input);
 }
 
-function response(message: string, confirmedFields: ConfirmedFields, extras: Omit<ProfileSetupTurnResponse, "assistant" | "confirmedFields"> = {}): ProfileSetupTurnResponse {
+function response(
+  message: string,
+  confirmedFields: ConfirmedFields,
+  extras: Omit<ProfileSetupTurnResponse, "assistant" | "confirmedFields"> = {},
+): ProfileSetupTurnResponse {
   return {
     assistant: { message },
     confirmedFields,
@@ -245,7 +263,10 @@ async function goReview(
   confirmedFields: ConfirmedFields,
 ): Promise<ProfileSetupTurnResponse> {
   await updateConversationState(supabase, sessionId, metadata, "review", null);
-  return response(`Here is your profile setup. ${summary(confirmedFields)}. Does this look right?`, confirmedFields);
+  return response(
+    `Here is your profile setup. ${summary(confirmedFields)}. Does this look right?`,
+    confirmedFields,
+  );
 }
 
 export const startIntakeSession = createServerFn({ method: "POST" })
@@ -314,12 +335,19 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
     const confirmedFields = typedSession.confirmed_fields ?? {};
 
     if (manualPattern.test(transcript)) {
-      return response("No problem. I'll switch you to manual setup and keep what we saved.", confirmedFields, {
-        switchToManual: true,
-      });
+      return response(
+        "No problem. I'll switch you to manual setup and keep what we saved.",
+        confirmedFields,
+        {
+          switchToManual: true,
+        },
+      );
     }
 
-    if (finishPattern.test(transcript) && !["confirm_display_name", "confirm_username", "review", "complete"].includes(stage)) {
+    if (
+      finishPattern.test(transcript) &&
+      !["confirm_display_name", "confirm_username", "review", "complete"].includes(stage)
+    ) {
       return goReview(supabase as any, sessionId, metadata, confirmedFields);
     }
 
@@ -328,7 +356,11 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
         return response("Say the profile name you want people to see on Trey TV.", confirmedFields);
       }
 
-      const displayName = transcript.replace(/^my name is\s+/i, "").replace(/^call me\s+/i, "").trim().slice(0, 50);
+      const displayName = transcript
+        .replace(/^my name is\s+/i, "")
+        .replace(/^call me\s+/i, "")
+        .trim()
+        .slice(0, 50);
       if (displayName.length < 2) {
         return response("Say the profile name one more time for me.", confirmedFields);
       }
@@ -342,23 +374,46 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
 
     if (stage === "confirm_display_name") {
       if (pending?.field !== "display_name") {
-        await updateConversationState(supabase as any, sessionId, metadata, "ask_display_name", null);
+        await updateConversationState(
+          supabase as any,
+          sessionId,
+          metadata,
+          "ask_display_name",
+          null,
+        );
         return response("What name should show on your profile?", confirmedFields);
       }
 
       if (yesPattern.test(transcript)) {
-        const nextFields = await saveConfirmedField(supabase as any, sessionId, confirmedFields, "display_name", pending.value);
+        const nextFields = await saveConfirmedField(
+          supabase as any,
+          sessionId,
+          confirmedFields,
+          "display_name",
+          pending.value,
+        );
         await updateConversationState(supabase as any, sessionId, metadata, "ask_username", null);
         return response("Saved. What username do you want on Trey TV?", nextFields);
       }
 
-      const replacement = noPattern.test(transcript) ? transcript.replace(noPattern, "").trim() : transcript;
+      const replacement = noPattern.test(transcript)
+        ? transcript.replace(noPattern, "").trim()
+        : transcript;
       if (replacement.length >= 2) {
-        await updateConversationState(supabase as any, sessionId, metadata, "confirm_display_name", {
-          field: "display_name",
-          value: replacement.slice(0, 50),
-        });
-        return response(`Got it. I heard ${replacement.slice(0, 50)}. Is that spelled right?`, confirmedFields);
+        await updateConversationState(
+          supabase as any,
+          sessionId,
+          metadata,
+          "confirm_display_name",
+          {
+            field: "display_name",
+            value: replacement.slice(0, 50),
+          },
+        );
+        return response(
+          `Got it. I heard ${replacement.slice(0, 50)}. Is that spelled right?`,
+          confirmedFields,
+        );
       }
 
       await updateConversationState(supabase as any, sessionId, metadata, "ask_display_name", null);
@@ -367,7 +422,10 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
 
     if (stage === "ask_username") {
       if (isFillerAtAskStage(transcript)) {
-        return response("Say the username you want, using letters, numbers, or underscores.", confirmedFields);
+        return response(
+          "Say the username you want, using letters, numbers, or underscores.",
+          confirmedFields,
+        );
       }
 
       const username = normalizeSpokenUsername(transcript);
@@ -386,12 +444,23 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
       }
 
       if (yesPattern.test(transcript)) {
-        const nextFields = await saveConfirmedField(supabase as any, sessionId, confirmedFields, "username", pending.value);
+        const nextFields = await saveConfirmedField(
+          supabase as any,
+          sessionId,
+          confirmedFields,
+          "username",
+          pending.value,
+        );
         await updateConversationState(supabase as any, sessionId, metadata, "ask_bio", null);
-        return response("Username saved. Want to add a short bio? You can say one now, or say skip.", nextFields);
+        return response(
+          "Username saved. Want to add a short bio? You can say one now, or say skip.",
+          nextFields,
+        );
       }
 
-      const username = normalizeSpokenUsername(noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript);
+      const username = normalizeSpokenUsername(
+        noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript,
+      );
       if (username.length >= 3) {
         await assertUsernameAvailable(supabase as any, username, user.id);
         await updateConversationState(supabase as any, sessionId, metadata, "confirm_username", {
@@ -408,7 +477,10 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
     if (stage === "ask_bio") {
       if (skipPattern.test(transcript)) {
         await updateConversationState(supabase as any, sessionId, metadata, "ask_location", null);
-        return response("No bio for now. Want to add your location? Say it now, or say skip.", confirmedFields);
+        return response(
+          "No bio for now. Want to add your location? Say it now, or say skip.",
+          confirmedFields,
+        );
       }
 
       if (yesPattern.test(transcript) || noPattern.test(transcript)) {
@@ -416,30 +488,53 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
       }
 
       const bio = transcript.slice(0, 160);
-      await updateConversationState(supabase as any, sessionId, metadata, "confirm_bio", { field: "bio", value: bio });
+      await updateConversationState(supabase as any, sessionId, metadata, "confirm_bio", {
+        field: "bio",
+        value: bio,
+      });
       return response(`I heard this bio: ${bio}. Should I save it?`, confirmedFields);
     }
 
     if (stage === "confirm_bio") {
       if (pending?.field !== "bio") {
         await updateConversationState(supabase as any, sessionId, metadata, "ask_bio", null);
-        return response("Want to add a short bio? You can say one now, or say skip.", confirmedFields);
+        return response(
+          "Want to add a short bio? You can say one now, or say skip.",
+          confirmedFields,
+        );
       }
 
       if (yesPattern.test(transcript)) {
-        const nextFields = await saveConfirmedField(supabase as any, sessionId, confirmedFields, "bio", pending.value);
+        const nextFields = await saveConfirmedField(
+          supabase as any,
+          sessionId,
+          confirmedFields,
+          "bio",
+          pending.value,
+        );
         await updateConversationState(supabase as any, sessionId, metadata, "ask_location", null);
-        return response("Bio saved. Want to add your location? Say it now, or say skip.", nextFields);
+        return response(
+          "Bio saved. Want to add your location? Say it now, or say skip.",
+          nextFields,
+        );
       }
 
       if (skipPattern.test(transcript)) {
         await updateConversationState(supabase as any, sessionId, metadata, "ask_location", null);
-        return response("No bio for now. Want to add your location? Say it now, or say skip.", confirmedFields);
+        return response(
+          "No bio for now. Want to add your location? Say it now, or say skip.",
+          confirmedFields,
+        );
       }
 
-      const bio = (noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript).trim().slice(0, 160);
+      const bio = (noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript)
+        .trim()
+        .slice(0, 160);
       if (bio) {
-        await updateConversationState(supabase as any, sessionId, metadata, "confirm_bio", { field: "bio", value: bio });
+        await updateConversationState(supabase as any, sessionId, metadata, "confirm_bio", {
+          field: "bio",
+          value: bio,
+        });
         return response(`Got it. I heard this bio: ${bio}. Should I save it?`, confirmedFields);
       }
 
@@ -471,7 +566,13 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
       }
 
       if (yesPattern.test(transcript)) {
-        const nextFields = await saveConfirmedField(supabase as any, sessionId, confirmedFields, "location", pending.value);
+        const nextFields = await saveConfirmedField(
+          supabase as any,
+          sessionId,
+          confirmedFields,
+          "location",
+          pending.value,
+        );
         return goReview(supabase as any, sessionId, metadata, nextFields);
       }
 
@@ -479,13 +580,18 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
         return goReview(supabase as any, sessionId, metadata, confirmedFields);
       }
 
-      const location = (noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript).trim().slice(0, 50);
+      const location = (noPattern.test(transcript) ? transcript.replace(noPattern, "") : transcript)
+        .trim()
+        .slice(0, 50);
       if (location) {
         await updateConversationState(supabase as any, sessionId, metadata, "confirm_location", {
           field: "location",
           value: location,
         });
-        return response(`Got it. I heard ${location}. Should I save that location?`, confirmedFields);
+        return response(
+          `Got it. I heard ${location}. Should I save that location?`,
+          confirmedFields,
+        );
       }
 
       await updateConversationState(supabase as any, sessionId, metadata, "ask_location", null);
@@ -494,15 +600,28 @@ export const profileSetupTurn = createServerFn({ method: "POST" })
 
     if (stage === "review") {
       if (!yesPattern.test(transcript)) {
-        await updateConversationState(supabase as any, sessionId, metadata, "ask_display_name", null);
-        return response("No problem. Let's run it back. What name should show on your profile?", confirmedFields);
+        await updateConversationState(
+          supabase as any,
+          sessionId,
+          metadata,
+          "ask_display_name",
+          null,
+        );
+        return response(
+          "No problem. Let's run it back. What name should show on your profile?",
+          confirmedFields,
+        );
       }
 
-      const { publicProfileUid } = await saveProfileFieldsForUser(data.accessToken, confirmedFields, {
-        complete: true,
-        method: "voice",
-        requireBasics: true,
-      });
+      const { publicProfileUid } = await saveProfileFieldsForUser(
+        data.accessToken,
+        confirmedFields,
+        {
+          complete: true,
+          method: "voice",
+          requireBasics: true,
+        },
+      );
 
       const now = new Date().toISOString();
       const { error } = await (supabase as any)

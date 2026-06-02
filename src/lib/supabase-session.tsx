@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isTreyOwnerEmail, TREY_OWNER_EMAIL } from "@/lib/trey-owner";
@@ -11,6 +18,7 @@ const TESTER_ADMIN_AUTOLOGIN = import.meta.env.VITE_TESTER_ADMIN_AUTOLOGIN === "
 const TESTER_ADMIN_EMAIL =
   (import.meta.env.VITE_TESTER_ADMIN_EMAIL as string | undefined)?.trim() || TREY_OWNER_EMAIL;
 const TESTER_ADMIN_PASSWORD = import.meta.env.VITE_TESTER_ADMIN_PASSWORD as string | undefined;
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 10000;
 
 export type AdminRole = "owner" | "admin" | "moderator" | null;
 
@@ -31,6 +39,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [adminRole, setAdminRole] = useState<AdminRole>(null);
   const [loading, setLoading] = useState(true);
+  const hasTesterAutoLogin = TESTER_ADMIN_AUTOLOGIN && !!TESTER_ADMIN_PASSWORD;
 
   // Sign in as the CaliforniaTrey admin using the configured tester credentials.
   // Used both by boot auto-login and the Trey-I chat access code.
@@ -54,64 +63,90 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up listener FIRST
     let sub: any = null;
+    let cancelled = false;
+    let initialLoadSettled = false;
+
+    const finishInitialLoad = () => {
+      if (cancelled || initialLoadSettled) return;
+      initialLoadSettled = true;
+      setLoading(false);
+    };
+
+    const deferAdminLoad = (uid: string, email?: string | null) => {
+      setTimeout(() => {
+        if (!cancelled) void loadAdmin(uid, email);
+      }, 0);
+    };
+
     try {
-      const { data } = supabase.auth.onAuthStateChange((_event, s) => {
+      const { data } = supabase.auth.onAuthStateChange((event, s) => {
         setSession(s);
         if (s?.user) {
           // defer admin lookup to avoid deadlocking the listener
-          setTimeout(() => loadAdmin(s.user.id, s.user.email), 0);
+          deferAdminLoad(s.user.id, s.user.email);
         } else {
           setAdminRole(null);
+        }
+
+        if (event === "INITIAL_SESSION") {
+          if (s?.user || !hasTesterAutoLogin) finishInitialLoad();
+          return;
+        }
+
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          finishInitialLoad();
         }
       });
       sub = data;
     } catch (err) {
       console.error("Error setting up auth state change listener:", err);
+      finishInitialLoad();
     }
 
     // Then check existing session
-    const safetyTimeout = setTimeout(() => {
-      console.warn("[Supabase] Safety timeout reached! Forcing session loading to false.");
-      setLoading(false);
-    }, 3500);
+    const bootstrapTimeout = setTimeout(() => {
+      console.warn("Supabase auth bootstrap timed out; continuing with current session state.");
+      finishInitialLoad();
+    }, AUTH_BOOTSTRAP_TIMEOUT_MS);
 
     try {
       supabase.auth
         .getSession()
         .then(async ({ data }) => {
-          clearTimeout(safetyTimeout);
+          if (cancelled) return;
           if (data.session?.user) {
             setSession(data.session);
-            loadAdmin(data.session.user.id, data.session.user.email);
-            setLoading(false);
+            deferAdminLoad(data.session.user.id, data.session.user.email);
+            finishInitialLoad();
             return;
           }
 
           // No session: tester builds sign in as the CaliforniaTrey admin.
-          if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
+          if (hasTesterAutoLogin) {
             const { error } = await signInAsTesterAdmin();
+            if (cancelled) return;
             if (error) console.error("Tester admin auto-login failed:", error.message);
-            setLoading(false);
+            finishInitialLoad();
             return;
           }
 
           setSession(null);
-          setLoading(false);
+          finishInitialLoad();
         })
         .catch((err) => {
-          clearTimeout(safetyTimeout);
           console.error("Failed to get Supabase session on init:", err);
           setSession(null);
-          setLoading(false);
+          finishInitialLoad();
         });
     } catch (err) {
-      clearTimeout(safetyTimeout);
       console.error("Critical error in getSession setup:", err);
       setSession(null);
-      setLoading(false);
+      finishInitialLoad();
     }
 
     return () => {
+      cancelled = true;
+      clearTimeout(bootstrapTimeout);
       if (sub?.subscription) {
         try {
           sub.subscription.unsubscribe();
@@ -120,7 +155,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
         }
       }
     };
-  }, []);
+  }, [hasTesterAutoLogin, signInAsTesterAdmin]);
 
   async function loadAdmin(uid: string, email?: string | null) {
     try {

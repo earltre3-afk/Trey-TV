@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { LiquidGlassCard, NeonGlassButton } from './LiquidGlass';
-import { Mail, X, ShieldCheck, Sparkles, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { LiquidGlassCard, NeonGlassButton } from "./LiquidGlass";
+import { Mail, X, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -10,27 +10,27 @@ interface Props {
 }
 
 const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink }) => {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [errMsg, setErrMsg] = useState('');
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errMsg, setErrMsg] = useState("");
 
   useEffect(() => {
     if (!open) {
-      setStatus('idle');
-      setErrMsg('');
+      setStatus("idle");
+      setErrMsg("");
     }
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
     };
   }, [open, onClose]);
 
@@ -40,19 +40,19 @@ const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink })
     e.preventDefault();
     const trimmed = email.trim();
     if (!trimmed || !/^\S+@\S+\.\S+$/.test(trimmed)) {
-      setStatus('error');
-      setErrMsg('Please enter a valid email address.');
+      setStatus("error");
+      setErrMsg("Please enter a valid email address.");
       return;
     }
-    setStatus('sending');
-    setErrMsg('');
+    setStatus("sending");
+    setErrMsg("");
 
     const res = await sendMagicLink(trimmed);
     if (res.ok) {
-      setStatus('sent');
+      setStatus("sent");
     } else {
-      setStatus('error');
-      setErrMsg(res.error || 'Could not send the link. Please try again.');
+      setStatus("error");
+      setErrMsg(res.error || "Could not send the link. Please try again.");
     }
   };
 
@@ -81,8 +81,10 @@ const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink })
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-14 h-14 mx-auto rounded-full bg-black/60 border border-fuchsia-400/50 flex items-center justify-center"
-              style={{ boxShadow: '0 0 24px rgba(217,70,239,0.45)' }}>
+            <div
+              className="w-14 h-14 mx-auto rounded-full bg-black/60 border border-fuchsia-400/50 flex items-center justify-center"
+              style={{ boxShadow: "0 0 24px rgba(217,70,239,0.45)" }}
+            >
               <Sparkles className="w-7 h-7 text-fuchsia-300" />
             </div>
 
@@ -90,25 +92,30 @@ const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink })
               id="signin-title"
               className="font-serif text-2xl text-center mt-3 leading-tight"
               style={{
-                backgroundImage: 'linear-gradient(90deg,#fcd34d,#f0abfc,#c4b5fd)',
-                WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent',
+                backgroundImage: "linear-gradient(90deg,#fcd34d,#f0abfc,#c4b5fd)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
               }}
             >
               Sign in to save your prescriptions
             </h2>
             <p className="text-center text-white/70 text-sm mt-2">
-              {message || 'Save, favorite, and replay your Trey TV prescriptions on any device.'}
+              {message || "Save, favorite, and replay your Trey TV prescriptions on any device."}
             </p>
 
-            {status === 'sent' ? (
+            {status === "sent" ? (
               <div className="mt-5 text-center">
-                <div className="mx-auto w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-400/50 flex items-center justify-center mb-3"
-                  style={{ boxShadow: '0 0 18px rgba(16,185,129,0.45)' }}>
+                <div
+                  className="mx-auto w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-400/50 flex items-center justify-center mb-3"
+                  style={{ boxShadow: "0 0 18px rgba(16,185,129,0.45)" }}
+                >
                   <CheckCircle2 className="w-6 h-6 text-emerald-300" />
                 </div>
                 <div className="font-serif text-lg text-white">Check your email</div>
                 <p className="text-white/65 text-sm mt-1">
-                  We sent a magic link to <span className="text-cyan-300">{email}</span>. Tap it to sign in.
+                  We sent a magic link to <span className="text-cyan-300">{email}</span>. Tap it to
+                  sign in.
                 </p>
                 <button
                   onClick={onClose}
@@ -123,7 +130,10 @@ const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink })
                   Email address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" aria-hidden />
+                  <Mail
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50"
+                    aria-hidden
+                  />
                   <input
                     id="signin-email"
                     type="email"
@@ -136,27 +146,28 @@ const SignInModal: React.FC<Props> = ({ open, onClose, message, sendMagicLink })
                   />
                 </div>
 
-                {status === 'error' && (
-                  <div className="mt-2 text-xs text-rose-300">{errMsg}</div>
-                )}
+                {status === "error" && <div className="mt-2 text-xs text-rose-300">{errMsg}</div>}
 
                 <div className="mt-4">
                   <NeonGlassButton
                     type="submit"
-                    disabled={status === 'sending'}
+                    disabled={status === "sending"}
                     className="w-full"
                     ariaLabel="Send magic link"
                   >
                     <span className="inline-flex items-center justify-center gap-2">
                       <Mail className="w-4 h-4" />
-                      {status === 'sending' ? 'Sending magic link...' : 'Send magic link'}
+                      {status === "sending" ? "Sending magic link..." : "Send magic link"}
                     </span>
                   </NeonGlassButton>
                 </div>
 
                 <div className="mt-4 flex items-start gap-2 text-[11px] text-white/55 leading-relaxed">
                   <ShieldCheck className="w-3.5 h-3.5 text-cyan-300 mt-0.5 flex-shrink-0" />
-                  <span>No passwords. We&rsquo;ll email you a one-tap sign-in link. Your vibe stays private.</span>
+                  <span>
+                    No passwords. We&rsquo;ll email you a one-tap sign-in link. Your vibe stays
+                    private.
+                  </span>
                 </div>
               </form>
             )}

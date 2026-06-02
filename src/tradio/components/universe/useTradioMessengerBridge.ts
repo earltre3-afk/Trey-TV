@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from "react";
 import {
   buildAboutLabel,
   buildDisplayContextLabel,
   MESSENGER_COPY,
   type MessageContext,
   type UniverseNotification,
-} from '@/tradio/lib/universe/messageContext';
+} from "@/tradio/lib/universe/messageContext";
 
 /**
  * TREY TV UNIVERSE — Tradio Messenger bridge (state only; no separate inbox).
@@ -21,7 +21,7 @@ let bridgeIdCounter = 0;
 const nextId = () => `bridge-${Date.now()}-${(bridgeIdCounter += 1)}`;
 
 export interface PushNotificationInput {
-  kind?: UniverseNotification['kind'];
+  kind?: UniverseNotification["kind"];
   senderName?: string;
   senderId?: string;
   body?: string;
@@ -31,11 +31,13 @@ export interface PushNotificationInput {
 /** Builds the Trey TV Messenger deep link, preserving where to return in Tradio. */
 export const buildMessengerDeepLink = (notification: UniverseNotification): string => {
   const params = new URLSearchParams();
-  if (notification.senderId) params.set('thread', notification.senderId);
-  if (notification.context.return_to_url) params.set('return_to', notification.context.return_to_url);
-  if (notification.context.source_surface) params.set('source', notification.context.source_surface);
+  if (notification.senderId) params.set("thread", notification.senderId);
+  if (notification.context.return_to_url)
+    params.set("return_to", notification.context.return_to_url);
+  if (notification.context.source_surface)
+    params.set("source", notification.context.source_surface);
   const query = params.toString();
-  return `/messenger${query ? `?${query}` : ''}`;
+  return `/messenger${query ? `?${query}` : ""}`;
 };
 
 export interface TradioMessengerBridge {
@@ -51,19 +53,23 @@ export interface TradioMessengerBridge {
   openInMessenger: (notification: UniverseNotification) => void;
 }
 
-export const useTradioMessengerBridge = (options: {
-  onOpenMessenger?: (deepLink: string, notification: UniverseNotification) => void;
-  seed?: UniverseNotification[];
-} = {}): TradioMessengerBridge => {
+export const useTradioMessengerBridge = (
+  options: {
+    onOpenMessenger?: (deepLink: string, notification: UniverseNotification) => void;
+    seed?: UniverseNotification[];
+  } = {},
+): TradioMessengerBridge => {
   const [notifications, setNotifications] = useState<UniverseNotification[]>(options.seed ?? []);
 
   const push = useCallback((input: PushNotificationInput): UniverseNotification => {
     const aboutLabel = buildAboutLabel(input.context);
     const notification: UniverseNotification = {
       id: nextId(),
-      kind: input.kind ?? 'messenger_message',
+      kind: input.kind ?? "messenger_message",
       livesInTreyTvMessenger: true,
-      title: input.senderName ? MESSENGER_COPY.fromSender(input.senderName) : MESSENGER_COPY.newMessage,
+      title: input.senderName
+        ? MESSENGER_COPY.fromSender(input.senderName)
+        : MESSENGER_COPY.newMessage,
       body: input.body ?? aboutLabel ?? buildDisplayContextLabel(input.context),
       senderName: input.senderName,
       senderId: input.senderId,
@@ -87,13 +93,25 @@ export const useTradioMessengerBridge = (options: {
     setNotifications((current) => current.filter((n) => n.id !== id));
   }, []);
 
-  const openInMessenger = useCallback((notification: UniverseNotification) => {
-    markRead(notification.id);
-    options.onOpenMessenger?.(buildMessengerDeepLink(notification), notification);
-  }, [markRead, options]);
+  const openInMessenger = useCallback(
+    (notification: UniverseNotification) => {
+      markRead(notification.id);
+      options.onOpenMessenger?.(buildMessengerDeepLink(notification), notification);
+    },
+    [markRead, options],
+  );
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
   const latest = useMemo(() => notifications.find((n) => !n.read) ?? null, [notifications]);
 
-  return { notifications, unreadCount, latest, push, markRead, markAllRead, dismiss, openInMessenger };
+  return {
+    notifications,
+    unreadCount,
+    latest,
+    push,
+    markRead,
+    markAllRead,
+    dismiss,
+    openInMessenger,
+  };
 };

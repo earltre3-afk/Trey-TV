@@ -1,7 +1,25 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { fetchSignalRecord } from "@/lib/tests/naturalAbilityStorage";
-import { MessageCircle, Repeat2, Bookmark, Send, MoreHorizontal, Play, Pause, Heart, Reply, X, Pencil, Trash2, Check, Image as ImageIcon, Loader2, ExternalLink, Forward } from "lucide-react";
+import {
+  MessageCircle,
+  Repeat2,
+  Bookmark,
+  Send,
+  MoreHorizontal,
+  Play,
+  Pause,
+  Heart,
+  Reply,
+  X,
+  Pencil,
+  Trash2,
+  Check,
+  Image as ImageIcon,
+  Loader2,
+  ExternalLink,
+  Forward,
+} from "lucide-react";
 import { toast } from "sonner";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import type { posts as Posts } from "@/lib/mock-data";
@@ -30,7 +48,9 @@ function fmt(n: number) {
 export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
 
-  const [authorSignal, setAuthorSignal] = useState<{ symbol: string; ability: string } | null>(null);
+  const [authorSignal, setAuthorSignal] = useState<{ symbol: string; ability: string } | null>(
+    null,
+  );
   const [busyAction, setBusyAction] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,7 +72,12 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const isSignedIn = !isGuest;
   const nav = useNavigate();
 
-  const { reaction, toggleReaction, likeCount, pending: reactionPending } = useSupabaseReactions(post.id, post.likes);
+  const {
+    reaction,
+    toggleReaction,
+    likeCount,
+    pending: reactionPending,
+  } = useSupabaseReactions(post.id, post.likes);
   const saved = !!saves[post.id];
   const [reshared, setReshared] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -78,14 +103,20 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { openThread, send: sendMessage } = useMessages();
   const treyTvUid = currentProfile.uid || (user as any)?.id || null;
   const allComments = byPost(post.id);
-  const commentCount = commentsLoaded(post.id) ? allComments.length : Math.max(post.comments, allComments.length);
+  const commentCount = commentsLoaded(post.id)
+    ? allComments.length
+    : Math.max(post.comments, allComments.length);
   const topComments = allComments.filter((c) => !c.parentId);
   const repliesOf = (id: string) => allComments.filter((c) => c.parentId === id);
 
   const saveCount = post.saves + (saved ? 1 : 0);
   const reshareCount = post.reshares + (reshared ? 1 : 0);
 
-  const meta = { title: post.text.split("\n")[0].slice(0, 60), creator: post.creator.handle, thumb: post.media };
+  const meta = {
+    title: post.text.split("\n")[0].slice(0, 60),
+    creator: post.creator.handle,
+    thumb: post.media,
+  };
   const creatorPublicProfileUid =
     (post.creator as any).publicProfileUid ||
     (isPublicProfileUid((post.creator as any).id) ? (post.creator as any).id : null);
@@ -107,7 +138,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   }, [postMenuOpen, editOpen, deleteOpen, fwdOpen, fwdPickerOpen]);
 
   const requireAuth = (fn: () => void) => () => {
-    if (isGuest) { toast("Sign up to interact"); nav({ to: "/signup" }); return; }
+    if (isGuest) {
+      toast("Sign up to interact");
+      nav({ to: "/signup" });
+      return;
+    }
     fn();
   };
 
@@ -193,7 +228,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
 
   const configureFwd = () => {
     const returnTo = encodeURIComponent(window.location.href);
-    window.open(`https://fwd.treytv.com/signup?returnTo=${returnTo}`, "_blank", "noopener,noreferrer");
+    window.open(
+      `https://fwd.treytv.com/signup?returnTo=${returnTo}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const onCommentLike = async (id: string) => {
@@ -249,12 +288,12 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         avatar_url: c.avatar,
         verification_type: c.verified,
       }));
-      
+
       const combined = [...dbMutuals];
-      mockMutuals.forEach(m => {
-        if (!combined.some(c => c.username === m.username)) combined.push(m);
+      mockMutuals.forEach((m) => {
+        if (!combined.some((c) => c.username === m.username)) combined.push(m);
       });
-      
+
       setMutuals(combined);
     } catch (err) {
       console.error(err);
@@ -264,7 +303,7 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   };
 
   const handleShareInternally = (peer: any) => {
-    if (!mutuals.some(m => m.id === peer.id)) {
+    if (!mutuals.some((m) => m.id === peer.id)) {
       toast.error("You can only share with mutual friends!");
       return;
     }
@@ -290,10 +329,15 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
     >
       {/* Share Dialog */}
       {shareDialogOpen && (
-        <ModalShell title="Share Internally" eyebrow="Send to Friends" onClose={() => setShareDialogOpen(false)}>
+        <ModalShell
+          title="Share Internally"
+          eyebrow="Send to Friends"
+          onClose={() => setShareDialogOpen(false)}
+        >
           <div className="space-y-4 py-2">
             <p className="text-xs text-muted-foreground">
-              You can only share posts with mutual follows (friends). If you don't see someone, add/follow them first!
+              You can only share posts with mutual follows (friends). If you don't see someone,
+              add/follow them first!
             </p>
             {loadingMutuals ? (
               <div className="flex h-32 items-center justify-center">
@@ -304,7 +348,10 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
                 <p>No mutual friends found.</p>
                 <button
                   type="button"
-                  onClick={() => { setShareDialogOpen(false); nav({ to: "/explore" }); }}
+                  onClick={() => {
+                    setShareDialogOpen(false);
+                    nav({ to: "/explore" });
+                  }}
                   className="text-xs font-semibold text-primary hover:underline"
                 >
                   Explore and follow creators to build connections!
@@ -319,7 +366,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
                     onClick={() => handleShareInternally(peer)}
                     className="flex w-full items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] px-3 py-2 text-left hover:bg-white/[0.08] transition"
                   >
-                    <img src={peer.avatar_url} alt="" className="size-9 rounded-full object-cover ring-1 ring-white/10" />
+                    <img
+                      src={peer.avatar_url}
+                      alt=""
+                      className="size-9 rounded-full object-cover ring-1 ring-white/10"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-semibold truncate">{peer.display_name}</div>
                       <div className="text-xs text-muted-foreground truncate">@{peer.username}</div>
@@ -345,31 +396,49 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
             {creatorPublicProfileUid ? (
-              <Link to="/u/$uid" params={{ uid: creatorPublicProfileUid }} className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap">
+              <Link
+                to="/u/$uid"
+                params={{ uid: creatorPublicProfileUid }}
+                className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap"
+              >
                 <span>{post.creator.name}</span>
                 {authorSignal && (
                   <span className="inline-flex items-center gap-0.5 text-xs text-amber-300 font-normal opacity-90">
                     <span>{authorSignal.symbol}</span>
-                    <span className="tracking-wide text-[10px] uppercase font-bold">{authorSignal.ability}</span>
+                    <span className="tracking-wide text-[10px] uppercase font-bold">
+                      {authorSignal.ability}
+                    </span>
                   </span>
                 )}
               </Link>
             ) : (
-              <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap">
+              <Link
+                to="/channel/$handle"
+                params={{ handle: post.creator.handle }}
+                className="font-semibold hover:underline flex items-center gap-1.5 flex-wrap"
+              >
                 <span>{post.creator.name}</span>
                 {authorSignal && (
                   <span className="inline-flex items-center gap-0.5 text-xs text-amber-300 font-normal opacity-90">
                     <span>{authorSignal.symbol}</span>
-                    <span className="tracking-wide text-[10px] uppercase font-bold">{authorSignal.ability}</span>
+                    <span className="tracking-wide text-[10px] uppercase font-bold">
+                      {authorSignal.ability}
+                    </span>
                   </span>
                 )}
               </Link>
             )}
             <VerifiedBadge kind={post.creator.verified} />
-            <Link to="/channel/$handle" params={{ handle: post.creator.handle }} className="text-xs text-muted-foreground hover:text-foreground">
+            <Link
+              to="/channel/$handle"
+              params={{ handle: post.creator.handle }}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
               @{post.creator.handle} · {post.timeAgo}
             </Link>
-            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">Creator</span>
+            <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-md border border-primary/50 text-primary">
+              Creator
+            </span>
           </div>
         </div>
         <button
@@ -393,16 +462,31 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
       {post.media && (
         <div className="px-0 sm:px-3">
           <div className="relative rounded-none sm:rounded-2xl overflow-hidden border-y border-x-0 sm:border-x border-white/10 shadow-[0_0_28px_-12px_oklch(0.65_0.22_300_/_0.6)] shimmer-sweep">
-            <img src={isFwdPost ? (post.gifPosterUrl || post.media) : post.media} alt="" className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]" loading="lazy" />
+            <img
+              src={isFwdPost ? post.gifPosterUrl || post.media : post.media}
+              alt=""
+              className="w-full aspect-video object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              loading="lazy"
+            />
             {isFwdPost && (
               <span className="absolute left-3 top-3 rounded-full border border-primary/40 bg-black/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-primary backdrop-blur">
                 FWD GIF
               </span>
             )}
             {!isFwdPost && (
-              <button onClick={() => setPlaying((p) => !p)} className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition" aria-label="Play">
-                <span className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}>
-                  {playing ? <Pause className="size-6 fill-white text-white" /> : <Play className="size-6 fill-white text-white" />}
+              <button
+                onClick={() => setPlaying((p) => !p)}
+                className="absolute inset-0 grid place-items-center bg-black/10 hover:bg-black/30 transition"
+                aria-label="Play"
+              >
+                <span
+                  className={`size-14 rounded-full grid place-items-center bg-black/50 backdrop-blur-md border border-white/20 transition-transform ${playing ? "scale-90" : "scale-100 group-hover:scale-110"} animate-glow-pulse`}
+                >
+                  {playing ? (
+                    <Pause className="size-6 fill-white text-white" />
+                  ) : (
+                    <Play className="size-6 fill-white text-white" />
+                  )}
                 </span>
               </button>
             )}
@@ -420,7 +504,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         <div className="relative">
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickerOpen((v) => !v); }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPickerOpen((v) => !v);
+            }}
             onMouseEnter={() => setPickerOpen(true)}
             disabled={reactionPending}
             className={`flex items-center gap-1.5 transition tilt-press disabled:opacity-70 ${current ? "" : "text-muted-foreground hover:text-foreground"}`}
@@ -430,7 +518,9 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
             title={current ? current.label : "Choose a reaction"}
           >
             {current ? (
-              <span className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}>
+              <span
+                className={`text-lg leading-none ${burst ? "animate-react-burst inline-block" : "inline-block"}`}
+              >
                 {current.emoji}
               </span>
             ) : (
@@ -448,7 +538,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
                 <button
                   key={r.key}
                   type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); void onReactionPick(r.key); }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void onReactionPick(r.key);
+                  }}
                   disabled={reactionPending}
                   title={r.label}
                   className={`size-9 grid place-items-center rounded-full text-xl hover:scale-125 transition-transform disabled:opacity-60 ${reaction === r.key ? "bg-white/10" : ""}`}
@@ -463,17 +557,41 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
 
         <button
           type="button"
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCommentsOpen((v) => !v); }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCommentsOpen((v) => !v);
+          }}
           className={`flex items-center gap-1.5 transition tilt-press ${commentsOpen ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
           aria-expanded={commentsOpen}
         >
           <MessageCircle className="size-5" /> {commentCount}
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); requireAuth(() => { setReshared((v) => !v); toast(reshared ? "Unshared" : "Reshared to your channel"); })(); }} className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requireAuth(() => {
+              setReshared((v) => !v);
+              toast(reshared ? "Unshared" : "Reshared to your channel");
+            })();
+          }}
+          className={`flex items-center gap-1.5 transition tilt-press ${reshared ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        >
           <Repeat2 className={`size-5 ${reshared ? "animate-burst" : ""}`} /> {reshareCount}
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); requireAuth(() => toggleSave(post.id, meta))(); }} className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-          <Bookmark className={`size-5 ${saved ? "fill-current animate-burst" : ""}`} /> {fmt(saveCount)}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            requireAuth(() => toggleSave(post.id, meta))();
+          }}
+          className={`flex items-center gap-1.5 transition tilt-press ${saved ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          <Bookmark className={`size-5 ${saved ? "fill-current animate-burst" : ""}`} />{" "}
+          {fmt(saveCount)}
         </button>
         <button
           type="button"
@@ -500,7 +618,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         <div className="border-t border-white/10 bg-black/20 px-4 py-4 animate-rise">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-semibold">Comments · {commentCount}</h4>
-            <button onClick={() => setCommentsOpen(false)} className="text-muted-foreground hover:text-foreground" aria-label="Close comments">
+            <button
+              onClick={() => setCommentsOpen(false)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close comments"
+            >
               <X className="size-4" />
             </button>
           </div>
@@ -511,11 +633,28 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
             )}
             {topComments.map((c) => (
               <li key={c.id} className="space-y-2">
-                <CommentRow c={c} mine={isMine(c)} onLike={() => onCommentLike(c.id)} onReply={() => setReplyTo(c)} onEdit={(t) => onCommentEdit(c.id, t)} onDelete={() => onCommentDelete(c.id)} />
+                <CommentRow
+                  c={c}
+                  mine={isMine(c)}
+                  onLike={() => onCommentLike(c.id)}
+                  onReply={() => setReplyTo(c)}
+                  onEdit={(t) => onCommentEdit(c.id, t)}
+                  onDelete={() => onCommentDelete(c.id)}
+                />
                 {repliesOf(c.id).length > 0 && (
                   <ul className="pl-10 space-y-2 border-l border-white/10 ml-4">
                     {repliesOf(c.id).map((r) => (
-                      <li key={r.id}><CommentRow c={r} mine={isMine(r)} onLike={() => onCommentLike(r.id)} onReply={() => setReplyTo(c)} onEdit={(t) => onCommentEdit(r.id, t)} onDelete={() => onCommentDelete(r.id)} compact /></li>
+                      <li key={r.id}>
+                        <CommentRow
+                          c={r}
+                          mine={isMine(r)}
+                          onLike={() => onCommentLike(r.id)}
+                          onReply={() => setReplyTo(c)}
+                          onEdit={(t) => onCommentEdit(r.id, t)}
+                          onDelete={() => onCommentDelete(r.id)}
+                          compact
+                        />
+                      </li>
                     ))}
                   </ul>
                 )}
@@ -526,20 +665,30 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
           <div className="mt-3 pt-3 border-t border-white/5">
             {replyTo && (
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5 px-1">
-                <span>Replying to <span className="text-primary">@{replyTo.author.handle}</span></span>
-                <button onClick={() => setReplyTo(null)} className="hover:text-foreground"><X className="size-3" /></button>
+                <span>
+                  Replying to <span className="text-primary">@{replyTo.author.handle}</span>
+                </span>
+                <button onClick={() => setReplyTo(null)} className="hover:text-foreground">
+                  <X className="size-3" />
+                </button>
               </div>
             )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (isGuest) { toast("Sign up to comment"); nav({ to: "/signup" }); return; }
+                if (isGuest) {
+                  toast("Sign up to comment");
+                  nav({ to: "/signup" });
+                  return;
+                }
                 void (async () => {
-                  const gifPayload = commentGif ? {
-                    gifUrl: commentGif.url,
-                    gifPosterUrl: commentGif.preview_url ?? null,
-                    gifFwdId: commentGif.gif_id ?? null,
-                  } : undefined;
+                  const gifPayload = commentGif
+                    ? {
+                        gifUrl: commentGif.url,
+                        gifPosterUrl: commentGif.preview_url ?? null,
+                        gifFwdId: commentGif.gif_id ?? null,
+                      }
+                    : undefined;
                   const ok = await add(post.id, newComment, replyTo?.id, gifPayload);
                   if (!ok) {
                     toast("Comment couldn't post. Try again.");
@@ -557,7 +706,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
             >
               {commentGif && (
                 <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10">
-                  <img src={commentGif.preview_url ?? commentGif.url} alt="GIF" className="w-full h-full object-cover" />
+                  <img
+                    src={commentGif.preview_url ?? commentGif.url}
+                    alt="GIF"
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => setCommentGif(null)}
@@ -571,7 +724,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (isGuest) { toast("Sign up to add GIFs"); nav({ to: "/signup" }); return; }
+                    if (isGuest) {
+                      toast("Sign up to add GIFs");
+                      nav({ to: "/signup" });
+                      return;
+                    }
                     setShowGifPicker(true);
                   }}
                   className="grid size-9 shrink-0 place-items-center rounded-full bg-white/5 border border-white/10 text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
@@ -599,7 +756,10 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
               context="comment"
               treyTvUid={treyTvUid}
               onClose={() => setShowGifPicker(false)}
-              onSelect={(gif) => { setCommentGif(gif); setShowGifPicker(false); }}
+              onSelect={(gif) => {
+                setCommentGif(gif);
+                setShowGifPicker(false);
+              }}
             />
           </div>
         </div>
@@ -631,10 +791,19 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
             className="min-h-36 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-white outline-none focus:border-primary/60"
           />
           <div className="mt-4 flex items-center justify-end gap-2">
-            <button type="button" onClick={() => setEditOpen(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white"
+            >
               Cancel
             </button>
-            <button type="button" onClick={() => void saveEdit()} disabled={busyAction === "edit"} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => void saveEdit()}
+              disabled={busyAction === "edit"}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+            >
               {busyAction === "edit" && <Loader2 className="size-4 animate-spin" />} Save
             </button>
           </div>
@@ -642,15 +811,29 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
       )}
 
       {deleteOpen && (
-        <ModalShell title="Delete this post?" eyebrow="Confirm action" onClose={() => setDeleteOpen(false)}>
+        <ModalShell
+          title="Delete this post?"
+          eyebrow="Confirm action"
+          onClose={() => setDeleteOpen(false)}
+        >
           <p className="text-sm leading-6 text-white/70">
-            This removes the post from Trey TV. Reactions, comments, saves, and repost activity attached to this post will no longer appear with it.
+            This removes the post from Trey TV. Reactions, comments, saves, and repost activity
+            attached to this post will no longer appear with it.
           </p>
           <div className="mt-5 flex items-center justify-end gap-2">
-            <button type="button" onClick={() => setDeleteOpen(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(false)}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/70 hover:text-white"
+            >
               Cancel
             </button>
-            <button type="button" onClick={() => void confirmDelete()} disabled={busyAction === "delete"} className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => void confirmDelete()}
+              disabled={busyAction === "delete"}
+              className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+            >
               {busyAction === "delete" && <Loader2 className="size-4 animate-spin" />} Delete
             </button>
           </div>
@@ -661,8 +844,16 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
         <ModalShell title="Post with FWD" eyebrow="GIF composer" onClose={() => setFwdOpen(false)}>
           {selectedFwdGif ? (
             <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/50">
-              <img src={selectedFwdGif.preview_url ?? selectedFwdGif.url} alt={selectedFwdGif.title ?? "Selected GIF"} className="max-h-72 w-full object-cover" />
-              <button type="button" onClick={() => setSelectedFwdGif(null)} className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/70 text-white">
+              <img
+                src={selectedFwdGif.preview_url ?? selectedFwdGif.url}
+                alt={selectedFwdGif.title ?? "Selected GIF"}
+                className="max-h-72 w-full object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => setSelectedFwdGif(null)}
+                className="absolute right-2 top-2 grid size-8 place-items-center rounded-full bg-black/70 text-white"
+              >
                 <X className="size-4" />
               </button>
             </div>
@@ -685,16 +876,29 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
           />
 
           {fwdStatus.data && !fwdStatus.data.connected && (
-            <button type="button" onClick={configureFwd} className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline">
+            <button
+              type="button"
+              onClick={configureFwd}
+              className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+            >
               Configure FWD <ExternalLink className="size-3.5" />
             </button>
           )}
 
           <div className="mt-4 flex items-center justify-between gap-2">
-            <button type="button" onClick={() => setFwdPickerOpen(true)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:text-white">
+            <button
+              type="button"
+              onClick={() => setFwdPickerOpen(true)}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:text-white"
+            >
               {selectedFwdGif ? "Change GIF" : "Browse GIFs"}
             </button>
-            <button type="button" onClick={() => void postFwdGif()} disabled={!selectedFwdGif || busyAction === "fwd"} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => void postFwdGif()}
+              disabled={!selectedFwdGif || busyAction === "fwd"}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+            >
               {busyAction === "fwd" && <Loader2 className="size-4 animate-spin" />} Post FWD
             </button>
           </div>
@@ -736,7 +940,9 @@ function PostActionSheet({
       role="dialog"
       aria-modal="true"
       aria-label="Post actions"
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/95 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] ring-1 ring-primary/15 backdrop-blur-xl"
@@ -749,15 +955,25 @@ function PostActionSheet({
         }}
       >
         <div className="border-b border-white/10 px-4 py-3">
-          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">Post actions</div>
-          {!isOwner && <div className="mt-1 text-xs text-white/50">Only the post owner can edit or delete.</div>}
+          <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">
+            Post actions
+          </div>
+          {!isOwner && (
+            <div className="mt-1 text-xs text-white/50">
+              Only the post owner can edit or delete.
+            </div>
+          )}
         </div>
         <div className="p-2">
           <ActionRow icon={Pencil} label="Edit" disabled={!isOwner} onClick={onEdit} />
           <ActionRow icon={Trash2} label="Delete" danger disabled={!isOwner} onClick={onDelete} />
           <ActionRow icon={Forward} label="FWD" onClick={onFwd} />
         </div>
-        <button type="button" onClick={onClose} className="w-full border-t border-white/10 px-4 py-3 text-sm font-semibold text-white/60 hover:bg-white/5 hover:text-white">
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full border-t border-white/10 px-4 py-3 text-sm font-semibold text-white/60 hover:bg-white/5 hover:text-white"
+        >
           Cancel
         </button>
       </div>
@@ -786,7 +1002,9 @@ function ActionRow({
       disabled={disabled}
       title={disabled ? "Only the post owner can do this" : label}
       className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-sm font-semibold transition ${
-        danger ? "text-red-300 hover:bg-red-500/10" : "text-white/85 hover:bg-white/[0.07] hover:text-white"
+        danger
+          ? "text-red-300 hover:bg-red-500/10"
+          : "text-white/85 hover:bg-white/[0.07] hover:text-white"
       } disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent`}
     >
       <Icon className="size-4" />
@@ -813,7 +1031,9 @@ function ModalShell({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="w-full max-w-lg rounded-3xl border border-white/10 bg-zinc-950/95 p-4 shadow-[0_24px_80px_-24px_rgba(0,0,0,0.9)] ring-1 ring-primary/15 backdrop-blur-xl"
@@ -827,10 +1047,17 @@ function ModalShell({
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">{eyebrow}</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.28em] text-primary">
+              {eyebrow}
+            </div>
             <h3 className="mt-1 font-display text-xl font-black text-white">{title}</h3>
           </div>
-          <button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/70 hover:text-white" aria-label="Close">
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/70 hover:text-white"
+            aria-label="Close"
+          >
             <X className="size-4" />
           </button>
         </div>
@@ -850,27 +1077,62 @@ function timeAgo(ts: number) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c: Comment; mine?: boolean; onLike: () => void | Promise<void>; onReply: () => void; onEdit: (text: string) => void | Promise<void>; onDelete: () => void | Promise<void>; compact?: boolean }) {
+function CommentRow({
+  c,
+  mine,
+  onLike,
+  onReply,
+  onEdit,
+  onDelete,
+  compact,
+}: {
+  c: Comment;
+  mine?: boolean;
+  onLike: () => void | Promise<void>;
+  onReply: () => void;
+  onEdit: (text: string) => void | Promise<void>;
+  onDelete: () => void | Promise<void>;
+  compact?: boolean;
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(c.text);
   return (
     <div className="flex gap-2.5">
-      <ProfilePictureLink publicProfileUid={c.author.publicProfileUid} label={`Open @${c.author.handle}'s public profile`} className="shrink-0">
-        <img src={c.author.avatar} alt="" className={`${compact ? "size-7" : "size-8"} rounded-full object-cover ring-1 ring-white/10`} />
+      <ProfilePictureLink
+        publicProfileUid={c.author.publicProfileUid}
+        label={`Open @${c.author.handle}'s public profile`}
+        className="shrink-0"
+      >
+        <img
+          src={c.author.avatar}
+          alt=""
+          className={`${compact ? "size-7" : "size-8"} rounded-full object-cover ring-1 ring-white/10`}
+        />
       </ProfilePictureLink>
       <div className="flex-1 min-w-0">
         <div className="rounded-2xl bg-white/[0.04] border border-white/5 px-3 py-2">
           <div className="flex items-center gap-1.5 text-xs">
             {c.author.publicProfileUid ? (
-              <Link to="/u/$uid" params={{ uid: c.author.publicProfileUid }} className="font-semibold hover:underline">
+              <Link
+                to="/u/$uid"
+                params={{ uid: c.author.publicProfileUid }}
+                className="font-semibold hover:underline"
+              >
                 {c.author.name}
               </Link>
             ) : (
-              <Link to="/channel/$handle" params={{ handle: c.author.handle }} className="font-semibold hover:underline">
+              <Link
+                to="/channel/$handle"
+                params={{ handle: c.author.handle }}
+                className="font-semibold hover:underline"
+              >
                 {c.author.name}
               </Link>
             )}
-            <span className="text-muted-foreground">· {timeAgo(c.createdAt)}{c.editedAt ? " · edited" : ""}</span>
+            <span className="text-muted-foreground">
+              · {timeAgo(c.createdAt)}
+              {c.editedAt ? " · edited" : ""}
+            </span>
           </div>
           {editing ? (
             <div className="mt-1 flex items-center gap-2">
@@ -889,40 +1151,77 @@ function CommentRow({ c, mine, onLike, onReply, onEdit, onDelete, compact }: { c
               >
                 <Check className="size-4" />
               </button>
-              <button onClick={() => { setDraft(c.text); setEditing(false); }} className="text-muted-foreground"><X className="size-4" /></button>
+              <button
+                onClick={() => {
+                  setDraft(c.text);
+                  setEditing(false);
+                }}
+                className="text-muted-foreground"
+              >
+                <X className="size-4" />
+              </button>
             </div>
           ) : (
             <div className="mt-0.5">
               {c.text && <p className="text-sm break-words whitespace-pre-wrap">{c.text}</p>}
               {c.gifUrl && (
-                <a href={buildFwdGifDetailUrl(c.gifFwdId)} target="_blank" rel="noreferrer" className="relative mt-1 block max-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] transition hover:border-primary/40" aria-label="Open FWD GIF">
-                  {c.gifPosterUrl && <img src={c.gifPosterUrl} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm" />}
+                <a
+                  href={buildFwdGifDetailUrl(c.gifFwdId)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="relative mt-1 block max-w-[200px] overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] transition hover:border-primary/40"
+                  aria-label="Open FWD GIF"
+                >
+                  {c.gifPosterUrl && (
+                    <img
+                      src={c.gifPosterUrl}
+                      alt=""
+                      aria-hidden
+                      className="absolute inset-0 h-full w-full object-cover opacity-30 blur-sm"
+                    />
+                  )}
                   <img
                     src={c.gifUrl}
                     alt="FWD GIF"
                     className="relative max-h-[200px] w-full object-cover"
                     loading="lazy"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
                   />
-                  <span className="absolute bottom-1 left-1 rounded-full border border-white/20 bg-black/55 px-1.5 py-0.5 text-[9px] font-black tracking-[0.18em] text-primary">FWD</span>
+                  <span className="absolute bottom-1 left-1 rounded-full border border-white/20 bg-black/55 px-1.5 py-0.5 text-[9px] font-black tracking-[0.18em] text-primary">
+                    FWD
+                  </span>
                 </a>
               )}
             </div>
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 px-1 text-[11px] text-muted-foreground">
-          <button onClick={onLike} className={`flex items-center gap-1 hover:text-foreground transition ${c.likedByMe ? "text-[oklch(0.7_0.25_15)]" : ""}`}>
+          <button
+            onClick={onLike}
+            className={`flex items-center gap-1 hover:text-foreground transition ${c.likedByMe ? "text-[oklch(0.7_0.25_15)]" : ""}`}
+          >
             <Heart className={`size-3.5 ${c.likedByMe ? "fill-current" : ""}`} /> {c.likes}
           </button>
-          <button onClick={onReply} className="flex items-center gap-1 hover:text-foreground transition">
+          <button
+            onClick={onReply}
+            className="flex items-center gap-1 hover:text-foreground transition"
+          >
             <Reply className="size-3.5" /> Reply
           </button>
           {mine && !editing && (
             <>
-              <button onClick={() => setEditing(true)} className="flex items-center gap-1 hover:text-foreground transition">
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-1 hover:text-foreground transition"
+              >
                 <Pencil className="size-3.5" /> Edit
               </button>
-              <button onClick={onDelete} className="flex items-center gap-1 hover:text-[oklch(0.7_0.25_15)] transition">
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-1 hover:text-[oklch(0.7_0.25_15)] transition"
+              >
                 <Trash2 className="size-3.5" /> Delete
               </button>
             </>

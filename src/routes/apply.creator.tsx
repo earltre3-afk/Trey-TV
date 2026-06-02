@@ -1,6 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import { Check, ChevronLeft, ChevronRight, Crown, FileEdit, FileText, HelpCircle, Loader2, Save, Search, Shield, X, MapPin } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Crown,
+  FileEdit,
+  FileText,
+  HelpCircle,
+  Loader2,
+  Save,
+  Search,
+  Shield,
+  X,
+  MapPin,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,8 +66,32 @@ const EMPTY: FormData = {
   agreed_to_standards: false,
 };
 
-const NICHES = ["Music", "Film & TV", "Comedy", "Lifestyle", "Sports", "Gaming", "Food", "Fashion", "Tech", "Education", "News", "Art", "Fitness", "Travel", "Business"];
-const FORMATS = ["Video", "Short-form", "Music", "Podcast", "Live Stream", "Documentary", "Tutorials"];
+const NICHES = [
+  "Music",
+  "Film & TV",
+  "Comedy",
+  "Lifestyle",
+  "Sports",
+  "Gaming",
+  "Food",
+  "Fashion",
+  "Tech",
+  "Education",
+  "News",
+  "Art",
+  "Fitness",
+  "Travel",
+  "Business",
+];
+const FORMATS = [
+  "Video",
+  "Short-form",
+  "Music",
+  "Podcast",
+  "Live Stream",
+  "Documentary",
+  "Tutorials",
+];
 const FREQUENCIES = ["Daily", "3–4x per week", "Weekly", "2x per month", "Monthly"];
 const TIMELINES = ["Within 1 week", "2–4 weeks", "1–3 months", "3+ months"];
 const TOTAL_STEPS = 6;
@@ -83,15 +121,25 @@ type ExistingApplication = {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function InputField({
-  label, value, onChange, placeholder, required, maxLength,
+  label,
+  value,
+  onChange,
+  placeholder,
+  required,
+  maxLength,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; required?: boolean; maxLength?: number;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  maxLength?: number;
 }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}{required && <span className="text-[oklch(0.7_0.25_340)] ml-0.5">*</span>}
+        {label}
+        {required && <span className="text-[oklch(0.7_0.25_340)] ml-0.5">*</span>}
       </label>
       <input
         value={value}
@@ -101,22 +149,36 @@ function InputField({
         className="w-full px-4 py-3 rounded-xl bg-black/25 border border-[oklch(0.82_0.15_215_/_0.42)] text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-[oklch(0.82_0.15_215_/_0.9)] focus:bg-white/8 transition shadow-[inset_0_0_16px_oklch(0.82_0.15_215_/_0.08)]"
       />
       {maxLength && value.length > maxLength * 0.8 && (
-        <div className="text-right text-[10px] text-muted-foreground">{value.length}/{maxLength}</div>
+        <div className="text-right text-[10px] text-muted-foreground">
+          {value.length}/{maxLength}
+        </div>
       )}
     </div>
   );
 }
 
 function TextareaField({
-  label, value, onChange, placeholder, rows = 3, required, maxLength,
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  required,
+  maxLength,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; rows?: number; required?: boolean; maxLength?: number;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+  required?: boolean;
+  maxLength?: number;
 }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}{required && <span className="text-[oklch(0.7_0.25_340)] ml-0.5">*</span>}
+        {label}
+        {required && <span className="text-[oklch(0.7_0.25_340)] ml-0.5">*</span>}
       </label>
       <textarea
         value={value}
@@ -127,22 +189,34 @@ function TextareaField({
         className="w-full px-4 py-3 rounded-xl bg-black/25 border border-[oklch(0.82_0.15_215_/_0.42)] text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-[oklch(0.82_0.15_215_/_0.9)] focus:bg-white/8 transition resize-none shadow-[inset_0_0_16px_oklch(0.82_0.15_215_/_0.08)]"
       />
       {maxLength && (
-        <div className="text-right text-[10px] text-muted-foreground">{value.length}/{maxLength}</div>
+        <div className="text-right text-[10px] text-muted-foreground">
+          {value.length}/{maxLength}
+        </div>
       )}
     </div>
   );
 }
 
-function PillSelect({ label, options, value, onToggle, single }: {
-  label: string; options: string[]; value: string | string[];
-  onToggle: (v: string) => void; single?: boolean;
+function PillSelect({
+  label,
+  options,
+  value,
+  onToggle,
+  single,
+}: {
+  label: string;
+  options: string[];
+  value: string | string[];
+  onToggle: (v: string) => void;
+  single?: boolean;
 }) {
-  const isActive = (o: string) =>
-    Array.isArray(value) ? value.includes(o) : value === o;
+  const isActive = (o: string) => (Array.isArray(value) ? value.includes(o) : value === o);
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</label>
+      <label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+        {label}
+      </label>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
@@ -200,7 +274,11 @@ function Step1({ data, set }: { data: FormData; set: (k: keyof FormData, v: stri
   );
 }
 
-function Step2({ data, set, toggleFormat }: {
+function Step2({
+  data,
+  set,
+  toggleFormat,
+}: {
   data: FormData;
   set: (k: keyof FormData, v: string) => void;
   toggleFormat: (v: string) => void;
@@ -240,7 +318,11 @@ function Step2({ data, set, toggleFormat }: {
   );
 }
 
-function Step3({ data, set, toggleFormat }: {
+function Step3({
+  data,
+  set,
+  toggleFormat,
+}: {
   data: FormData;
   set: (k: keyof FormData, v: string) => void;
   toggleFormat: (v: string) => void;
@@ -349,9 +431,11 @@ function Step5({ data, setAgreed }: { data: FormData; setAgreed: (v: boolean) =>
             : "border-white/15 bg-white/3 text-muted-foreground hover:border-white/25"
         }`}
       >
-        <div className={`size-6 rounded-lg border-2 grid place-items-center transition-all ${
-          data.agreed_to_standards ? "border-primary bg-primary" : "border-muted-foreground"
-        }`}>
+        <div
+          className={`size-6 rounded-lg border-2 grid place-items-center transition-all ${
+            data.agreed_to_standards ? "border-primary bg-primary" : "border-muted-foreground"
+          }`}
+        >
           {data.agreed_to_standards && <Check className="size-3.5 text-primary-foreground" />}
         </div>
         <span className="text-sm font-semibold">I agree to all community standards</span>
@@ -365,7 +449,12 @@ function Step6({ data, goToStep }: { data: FormData; goToStep: (i: number) => vo
     { n: 1, title: "Your Identity", sub: "Personal information and creator profile", step: 0 },
     { n: 2, title: "Your Channel", sub: "Channel details, category, and branding", step: 1 },
     { n: 3, title: "Your Content Style", sub: "Content focus, format, and unique value", step: 2 },
-    { n: 4, title: "Your Launch Plan", sub: "Publishing plan, goals, and growth strategy", step: 3 },
+    {
+      n: 4,
+      title: "Your Launch Plan",
+      sub: "Publishing plan, goals, and growth strategy",
+      step: 3,
+    },
     { n: 5, title: "Community Standards", sub: "Content guidelines and compliance", step: 4 },
     { n: 6, title: "Review & Confirm", sub: "Final review and declarations", step: 5 },
   ];
@@ -374,8 +463,16 @@ function Step6({ data, goToStep }: { data: FormData; goToStep: (i: number) => vo
     { icon: "📺", label: "Channel Name", value: data.channel_name || "—" },
     { icon: "🏷️", label: "Category", value: data.niche || "—" },
     { icon: "📅", label: "Upload Frequency", value: data.posting_frequency || "—" },
-    { icon: "🎙️", label: "First Show", value: data.first_content_idea ? data.first_content_idea.slice(0, 40) : "—" },
-    { icon: "🛡️", label: "Rights Confirmation", value: data.agreed_to_standards ? "Yes" : "Pending" },
+    {
+      icon: "🎙️",
+      label: "First Show",
+      value: data.first_content_idea ? data.first_content_idea.slice(0, 40) : "—",
+    },
+    {
+      icon: "🛡️",
+      label: "Rights Confirmation",
+      value: data.agreed_to_standards ? "Yes" : "Pending",
+    },
     { icon: "🚀", label: "Launch Timeline", value: data.release_timeline || "—" },
   ];
 
@@ -396,7 +493,10 @@ function Step6({ data, goToStep }: { data: FormData; goToStep: (i: number) => vo
           <h3 className="font-bold mb-3">Review &amp; Submit</h3>
           <div className="space-y-2">
             {sections.map((s) => (
-              <div key={s.n} className="flex items-center gap-3 p-3 rounded-2xl border border-[oklch(0.82_0.15_215_/_0.25)] bg-[oklch(0.12_0.05_220_/_0.5)]">
+              <div
+                key={s.n}
+                className="flex items-center gap-3 p-3 rounded-2xl border border-[oklch(0.82_0.15_215_/_0.25)] bg-[oklch(0.12_0.05_220_/_0.5)]"
+              >
                 <div className="size-7 rounded-full border border-[oklch(0.82_0.15_215_/_0.5)] grid place-items-center text-[11px] font-bold text-[oklch(0.82_0.15_215)] shrink-0">
                   {s.n}
                 </div>
@@ -427,8 +527,12 @@ function Step6({ data, goToStep }: { data: FormData; goToStep: (i: number) => vo
                   {row.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{row.label}</div>
-                  <div className="text-sm font-bold text-[oklch(0.82_0.15_215)] truncate">{row.value}</div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {row.label}
+                  </div>
+                  <div className="text-sm font-bold text-[oklch(0.82_0.15_215)] truncate">
+                    {row.value}
+                  </div>
                 </div>
               </div>
             ))}
@@ -441,7 +545,8 @@ function Step6({ data, goToStep }: { data: FormData; goToStep: (i: number) => vo
           <Check className="size-5 text-[oklch(0.82_0.15_215)]" />
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          By submitting, you confirm that all information provided is accurate and you agree to comply with Trey TV's{" "}
+          By submitting, you confirm that all information provided is accurate and you agree to
+          comply with Trey TV's{" "}
           <span className="text-[oklch(0.82_0.15_215)] font-semibold">Community Guidelines.</span>
         </p>
       </div>
@@ -476,7 +581,10 @@ function Submitted() {
   return (
     <div
       className="min-h-screen flex flex-col items-center px-6 pt-16 pb-10 text-center"
-      style={{ background: "radial-gradient(ellipse 120% 60% at 50% 0%, oklch(0.18 0.08 230 / 0.55) 0%, #02050B 60%)" }}
+      style={{
+        background:
+          "radial-gradient(ellipse 120% 60% at 50% 0%, oklch(0.18 0.08 230 / 0.55) 0%, #02050B 60%)",
+      }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-[oklch(0.82_0.15_215_/_0.10)] blur-[140px]" />
@@ -487,7 +595,10 @@ function Submitted() {
         <div className="relative mb-10">
           <div className="absolute inset-0 -m-8 rounded-full blur-3xl bg-[oklch(0.82_0.15_215_/_0.5)] animate-pulse-glow" />
           <div className="relative size-40 rounded-3xl border-2 border-[oklch(0.82_0.15_215_/_0.7)] bg-[oklch(0.10_0.05_230_/_0.6)] grid place-items-center shadow-[0_0_60px_oklch(0.82_0.15_215_/_0.6),inset_0_0_30px_oklch(0.82_0.15_215_/_0.25)]">
-            <FileText className="size-20 text-[oklch(0.82_0.15_215)] drop-shadow-[0_0_18px_oklch(0.82_0.15_215_/_0.9)]" strokeWidth={1.5} />
+            <FileText
+              className="size-20 text-[oklch(0.82_0.15_215)] drop-shadow-[0_0_18px_oklch(0.82_0.15_215_/_0.9)]"
+              strokeWidth={1.5}
+            />
             <div className="absolute bottom-3 right-3 size-10 rounded-full bg-[oklch(0.82_0.15_215_/_0.2)] border-2 border-[oklch(0.82_0.15_215)] grid place-items-center shadow-[0_0_20px_oklch(0.82_0.15_215_/_0.8)]">
               <Check className="size-5 text-[oklch(0.92_0.15_220)]" strokeWidth={3} />
             </div>
@@ -502,7 +613,9 @@ function Submitted() {
           Is In!
         </h1>
         <p className="text-sm text-muted-foreground leading-relaxed mb-7 max-w-sm">
-          We received your channel application.<br />You can check the status from your profile.
+          We received your channel application.
+          <br />
+          You can check the status from your profile.
         </p>
 
         <div className="w-full space-y-3 mb-8">
@@ -545,9 +658,7 @@ function Submitted() {
                   {t.label}
                 </p>
               </div>
-              {i < timeline.length - 1 && (
-                <div className="h-px w-2 mt-5 shrink-0 bg-white/10" />
-              )}
+              {i < timeline.length - 1 && <div className="h-px w-2 mt-5 shrink-0 bg-white/10" />}
             </div>
           ))}
         </div>
@@ -612,7 +723,15 @@ function ExistingApplicationState({ app }: { app: ExistingApplication }) {
 
 // ── Step progress indicator ───────────────────────────────────────────────────
 
-function CreatorPassport({ data, user, step }: { data: FormData; user: NonNullable<ReturnType<typeof useAuth>["user"]>; step: number }) {
+function CreatorPassport({
+  data,
+  user,
+  step,
+}: {
+  data: FormData;
+  user: NonNullable<ReturnType<typeof useAuth>["user"]>;
+  step: number;
+}) {
   const percent = Math.round(((step + 1) / TOTAL_STEPS) * 100);
   return (
     <aside className="apply-shell-panel hidden w-full rounded-[28px] p-5 lg:block">
@@ -645,7 +764,9 @@ function CreatorPassport({ data, user, step }: { data: FormData; user: NonNullab
         <div className="grid size-28 place-items-center rounded-full bg-[#02050b] text-center">
           <div>
             <div className="text-4xl font-extrabold">{percent}%</div>
-            <div className="text-sm text-[oklch(0.82_0.15_215)]">Step {step + 1} of {TOTAL_STEPS}</div>
+            <div className="text-sm text-[oklch(0.82_0.15_215)]">
+              Step {step + 1} of {TOTAL_STEPS}
+            </div>
           </div>
         </div>
       </div>
@@ -665,7 +786,11 @@ function StepProgress({ current }: { current: number }) {
               <div
                 className="relative shrink-0 size-8 sm:size-9 rounded-full grid place-items-center text-xs sm:text-sm font-bold border-2 transition-all duration-300"
                 style={{
-                  background: done ? C.blue : active ? "oklch(0.82 0.15 215 / 0.18)" : "oklch(1 0 0 / 0.05)",
+                  background: done
+                    ? C.blue
+                    : active
+                      ? "oklch(0.82 0.15 215 / 0.18)"
+                      : "oklch(1 0 0 / 0.05)",
                   borderColor: done ? C.blue : active ? C.blue : "oklch(1 0 0 / 0.15)",
                   boxShadow: active ? `0 0 18px ${C.blue}` : "none",
                   color: done ? "#fff" : active ? C.blue : "oklch(0.5 0 0)",
@@ -674,7 +799,10 @@ function StepProgress({ current }: { current: number }) {
                 {done ? <Check className="size-4" /> : s.short}
               </div>
               {i < STEPS.length - 1 && (
-                <div className="flex-1 h-px mx-1" style={{ background: done ? C.blue : "oklch(1 0 0 / 0.1)" }} />
+                <div
+                  className="flex-1 h-px mx-1"
+                  style={{ background: done ? C.blue : "oklch(1 0 0 / 0.1)" }}
+                />
               )}
             </div>
           );
@@ -739,7 +867,9 @@ function CreatorApplication() {
 
   useEffect(() => {
     if (isGuest) {
-      try { sessionStorage.setItem("treytv_post_auth_redirect", "/apply/creator"); } catch {}
+      try {
+        sessionStorage.setItem("treytv_post_auth_redirect", "/apply/creator");
+      } catch {}
       navigate({ to: "/login" });
     }
   }, [isGuest, navigate]);
@@ -790,7 +920,9 @@ function CreatorApplication() {
         });
       } catch {}
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.uid]);
 
   const set = useCallback(<K extends keyof FormData>(k: K, v: FormData[K]) => {
@@ -864,7 +996,10 @@ function CreatorApplication() {
 
   const handleNext = () => {
     const err = validateStep(step, data);
-    if (err) { toast.error(err); return; }
+    if (err) {
+      toast.error(err);
+      return;
+    }
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
   };
 
@@ -893,7 +1028,9 @@ function CreatorApplication() {
           onClick={step === 0 ? () => navigate({ to: "/apply" }) : handleBack}
           className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition"
         >
-          <ChevronLeft className="size-4 text-[oklch(0.82_0.15_215)]" /> <span className="hidden sm:inline">Back to Apply</span><span className="sm:hidden">Back</span>
+          <ChevronLeft className="size-4 text-[oklch(0.82_0.15_215)]" />{" "}
+          <span className="hidden sm:inline">Back to Apply</span>
+          <span className="sm:hidden">Back</span>
         </button>
         <Logo className="absolute left-1/2 top-3 h-14 sm:h-20 -translate-x-1/2 drop-shadow-[0_0_28px_oklch(0.82_0.16_85_/_0.7)]" />
         <button
@@ -901,7 +1038,11 @@ function CreatorApplication() {
           disabled={saving}
           className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
         >
-          {saving ? <Loader2 className="size-4 animate-spin text-[oklch(0.82_0.15_215)]" /> : <Save className="size-4 text-[oklch(0.82_0.15_215)]" />}
+          {saving ? (
+            <Loader2 className="size-4 animate-spin text-[oklch(0.82_0.15_215)]" />
+          ) : (
+            <Save className="size-4 text-[oklch(0.82_0.15_215)]" />
+          )}
           Save Draft
         </button>
       </header>
@@ -909,7 +1050,9 @@ function CreatorApplication() {
       <div className="shrink-0 px-5 pb-3 pt-14 sm:pt-20 text-center">
         <h1 className="text-4xl font-extrabold tracking-normal sm:text-5xl">
           Creator Channel{" "}
-          <span className="text-[oklch(0.82_0.15_215)] drop-shadow-[0_0_20px_oklch(0.82_0.15_215_/_0.7)]">Application</span>
+          <span className="text-[oklch(0.82_0.15_215)] drop-shadow-[0_0_20px_oklch(0.82_0.15_215_/_0.7)]">
+            Application
+          </span>
         </h1>
       </div>
 
@@ -921,8 +1064,20 @@ function CreatorApplication() {
         <div className="mx-auto grid w-full max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div className="apply-shell-panel animate-rise rounded-[28px] p-5 sm:p-6 lg:p-8">
             {step === 0 && <Step1 data={data} set={(k, v) => set(k as keyof FormData, v as any)} />}
-            {step === 1 && <Step2 data={data} set={(k, v) => set(k as keyof FormData, v as any)} toggleFormat={toggleFormat} />}
-            {step === 2 && <Step3 data={data} set={(k, v) => set(k as keyof FormData, v as any)} toggleFormat={toggleFormat} />}
+            {step === 1 && (
+              <Step2
+                data={data}
+                set={(k, v) => set(k as keyof FormData, v as any)}
+                toggleFormat={toggleFormat}
+              />
+            )}
+            {step === 2 && (
+              <Step3
+                data={data}
+                set={(k, v) => set(k as keyof FormData, v as any)}
+                toggleFormat={toggleFormat}
+              />
+            )}
             {step === 3 && <Step4 data={data} set={(k, v) => set(k as keyof FormData, v as any)} />}
             {step === 4 && <Step5 data={data} setAgreed={(v) => set("agreed_to_standards", v)} />}
             {step === 5 && <Step6 data={data} goToStep={setStep} />}
@@ -937,37 +1092,47 @@ function CreatorApplication() {
       >
         <div className="mx-auto flex max-w-5xl gap-4">
           {step > 0 && (
-          <button
-            onClick={handleBack}
-            className="flex-1 py-4 rounded-full font-bold text-sm flex items-center justify-center gap-2 text-white"
-            style={{ background: "oklch(0.15 0.05 230 / 0.7)", border: `1px solid ${C.blueDim}` }}
-          >
-            <ChevronLeft className="size-4" /> Back
-          </button>
+            <button
+              onClick={handleBack}
+              className="flex-1 py-4 rounded-full font-bold text-sm flex items-center justify-center gap-2 text-white"
+              style={{ background: "oklch(0.15 0.05 230 / 0.7)", border: `1px solid ${C.blueDim}` }}
+            >
+              <ChevronLeft className="size-4" /> Back
+            </button>
           )}
           {step < TOTAL_STEPS - 1 ? (
-          <button
-            onClick={handleNext}
-            className="flex-1 py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(90deg, oklch(0.45 0.20 230), oklch(0.62 0.22 220))", boxShadow: "0 0 28px oklch(0.82 0.15 215 / 0.55)" }}
-          >
-            Next Step
-            <ChevronRight className="size-4" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex-1 py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50"
-            style={{ background: "linear-gradient(90deg, oklch(0.45 0.20 230), oklch(0.62 0.22 220))", boxShadow: "0 0 28px oklch(0.82 0.15 215 / 0.55)" }}
-          >
-            {submitting ? (
-              <><Loader2 className="size-4 animate-spin" /> Submitting…</>
-            ) : (
-              <><Crown className="size-4" /> Submit Application</>
-            )}
-          </button>
-        )}
+            <button
+              onClick={handleNext}
+              className="flex-1 py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2"
+              style={{
+                background: "linear-gradient(90deg, oklch(0.45 0.20 230), oklch(0.62 0.22 220))",
+                boxShadow: "0 0 28px oklch(0.82 0.15 215 / 0.55)",
+              }}
+            >
+              Next Step
+              <ChevronRight className="size-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="flex-1 py-4 rounded-full font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{
+                background: "linear-gradient(90deg, oklch(0.45 0.20 230), oklch(0.62 0.22 220))",
+                boxShadow: "0 0 28px oklch(0.82 0.15 215 / 0.55)",
+              }}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Submitting…
+                </>
+              ) : (
+                <>
+                  <Crown className="size-4" /> Submit Application
+                </>
+              )}
+            </button>
+          )}
         </div>
         <div className="mt-2 text-center">
           <button

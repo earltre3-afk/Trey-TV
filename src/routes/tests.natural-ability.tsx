@@ -1,31 +1,35 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
-import { useSupabaseSession } from '@/lib/supabase-session';
-import { useCurrentUser } from '@/hooks/use-current-user';
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import { useCurrentUser } from "@/hooks/use-current-user";
 
-import SignalTestIntro from '@/components/tests/SignalTestIntro';
-import SignalTestRules from '@/components/tests/SignalTestRules';
-import SignalScenarioCard from '@/components/tests/SignalScenarioCard';
-import SignalPulseCheckpoint from '@/components/tests/SignalPulseCheckpoint';
-import SignalRevealScreen from '@/components/tests/SignalRevealScreen';
-import SignalResultCard from '@/components/tests/SignalResultCard';
+import SignalTestIntro from "@/components/tests/SignalTestIntro";
+import SignalTestRules from "@/components/tests/SignalTestRules";
+import SignalScenarioCard from "@/components/tests/SignalScenarioCard";
+import SignalPulseCheckpoint from "@/components/tests/SignalPulseCheckpoint";
+import SignalRevealScreen from "@/components/tests/SignalRevealScreen";
+import SignalResultCard from "@/components/tests/SignalResultCard";
 
-import { SCENARIOS } from '@/lib/tests/naturalAbilityQuestions';
-import { calculateResult } from '@/lib/tests/naturalAbilityScoring';
-import { fetchSignalRecord, getOrCreateUserId } from '@/lib/tests/naturalAbilityStorage';
-import { SignalResult, UserAnswer, NaturalAbility, SignalStrength } from '@/types/naturalAbility';
-import { judgeSignalTest } from '@/lib/trey-i/vertex.server';
+import { SCENARIOS } from "@/lib/tests/naturalAbilityQuestions";
+import { calculateResult } from "@/lib/tests/naturalAbilityScoring";
+import { fetchSignalRecord, getOrCreateUserId } from "@/lib/tests/naturalAbilityStorage";
+import { SignalResult, UserAnswer, NaturalAbility, SignalStrength } from "@/types/naturalAbility";
+import { judgeSignalTest } from "@/lib/trey-i/vertex.server";
 
-type Stage = 'intro' | 'rules' | 'scenario' | 'checkpoint' | 'reveal' | 'result';
+type Stage = "intro" | "rules" | "scenario" | "checkpoint" | "reveal" | "result";
 
-export const Route = createFileRoute('/tests/natural-ability')({
+export const Route = createFileRoute("/tests/natural-ability")({
   component: NaturalAbilityTestPage,
   head: () => ({
     meta: [
-      { title: 'The Signal Test — Trey TV' },
-      { name: 'description', content: 'Take the Signal Test to discover your Natural Ability and unlock your profile badge.' },
+      { title: "The Signal Test — Trey TV" },
+      {
+        name: "description",
+        content:
+          "Take the Signal Test to discover your Natural Ability and unlock your profile badge.",
+      },
     ],
   }),
 });
@@ -37,7 +41,7 @@ function NaturalAbilityTestPage() {
   const { user: supaUser } = useSupabaseSession();
   const currentUser = useCurrentUser();
 
-  const [stage, setStage] = useState<Stage>('intro');
+  const [stage, setStage] = useState<Stage>("intro");
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [answers, setAnswers] = useState<UserAnswer[]>([]);
   const [result, setResult] = useState<SignalResult | null>(null);
@@ -63,7 +67,7 @@ function NaturalAbilityTestPage() {
           signalStrength: row.signal_strength as SignalStrength,
           scores: {} as Record<NaturalAbility, number>,
         });
-        setStage('result');
+        setStage("result");
       }
       setLoadingRecord(false);
     });
@@ -75,9 +79,9 @@ function NaturalAbilityTestPage() {
     const justAnswered = scenarioIndex + 1;
 
     if (justAnswered === 10) {
-      setStage('checkpoint');
+      setStage("checkpoint");
     } else if (justAnswered >= total) {
-      setStage('reveal');
+      setStage("reveal");
       // Call Gemini asynchronously
       judgeSignalTest({ data: { answers: next, scenarios: SCENARIOS } })
         .then((aiResult) => {
@@ -98,12 +102,12 @@ function NaturalAbilityTestPage() {
 
   const continueFromCheckpoint = () => {
     setScenarioIndex(10);
-    setStage('scenario');
+    setStage("scenario");
   };
 
   const handleReveal = () => {
     if (result) {
-      setStage('result');
+      setStage("result");
     } else {
       console.warn("AI result not ready yet on reveal. Calculating local fallback.");
       const r = calculateResult(answers, SCENARIOS);
@@ -111,7 +115,7 @@ function NaturalAbilityTestPage() {
         ...r,
         interpretation: `Based on your test inputs, you show a primary connection to the path of the ${r.primaryAbility}.`,
       });
-      setStage('result');
+      setStage("result");
     }
   };
 
@@ -137,8 +141,8 @@ function NaturalAbilityTestPage() {
             </p>
             <button
               onClick={() => {
-                sessionStorage.setItem('treytv_post_auth_redirect', '/tests/natural-ability');
-                navigate({ to: '/login' });
+                sessionStorage.setItem("treytv_post_auth_redirect", "/tests/natural-ability");
+                navigate({ to: "/login" });
               }}
               className="mt-6 w-full rounded-2xl py-3 px-4 font-semibold text-white bg-gradient-to-r from-fuchsia-600 via-violet-500 to-cyan-500 active:scale-[0.98] transition"
             >
@@ -152,9 +156,9 @@ function NaturalAbilityTestPage() {
 
   return (
     <div className="relative bg-[#06030f] min-h-[100dvh] w-full text-white">
-      {stage === 'intro' && <SignalTestIntro onStart={() => setStage('rules')} />}
-      {stage === 'rules' && <SignalTestRules onContinue={() => setStage('scenario')} />}
-      {stage === 'scenario' && (
+      {stage === "intro" && <SignalTestIntro onStart={() => setStage("rules")} />}
+      {stage === "rules" && <SignalTestRules onContinue={() => setStage("scenario")} />}
+      {stage === "scenario" && (
         <SignalScenarioCard
           key={scenarioIndex}
           scenario={SCENARIOS[scenarioIndex]}
@@ -163,9 +167,9 @@ function NaturalAbilityTestPage() {
           onLockIn={handleAnswer}
         />
       )}
-      {stage === 'checkpoint' && <SignalPulseCheckpoint onContinue={continueFromCheckpoint} />}
-      {stage === 'reveal' && <SignalRevealScreen onReveal={handleReveal} />}
-      {stage === 'result' && result && (
+      {stage === "checkpoint" && <SignalPulseCheckpoint onContinue={continueFromCheckpoint} />}
+      {stage === "reveal" && <SignalRevealScreen onReveal={handleReveal} />}
+      {stage === "result" && result && (
         <SignalResultCard result={result} userName={currentUser.name} answers={answers} />
       )}
     </div>

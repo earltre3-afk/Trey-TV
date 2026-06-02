@@ -1,11 +1,11 @@
-import { GameRoomModule, type GameView } from './GameRoomModule';
-import { useAuth } from '@/lib/auth';
+import { GameRoomModule, type GameView } from "./GameRoomModule";
+import { useAuth } from "@/lib/auth";
 
 interface GameRoomRouteMountProps {
   initialView?: GameView;
 }
 
-export function GameRoomRouteMount({ initialView = 'home' }: GameRoomRouteMountProps) {
+export function GameRoomRouteMount({ initialView = "home" }: GameRoomRouteMountProps) {
   const { user, isGuest } = useAuth();
 
   return (

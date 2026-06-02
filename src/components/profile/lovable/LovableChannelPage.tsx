@@ -126,7 +126,7 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
   const toggleFollow = () => {
     const next = !following;
     setFollowing(next);
-    setFollowers((f) => typeof f === "number" ? Math.max(0, f + (next ? 1 : -1)) : f);
+    setFollowers((f) => (typeof f === "number" ? Math.max(0, f + (next ? 1 : -1)) : f));
     toast(next ? `Following ${profile.name}` : "Unfollowed");
   };
 
@@ -222,7 +222,14 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
 
           <div className="mt-4 flex flex-col items-center gap-1">
             <Link to="/" className="ring-pulse p-[2px] hover-scale">
-            <AvatarWithFallback src={profile.avatar || portrait} alt="" name={profile.name} uid={profile.uid} size="sm" className="w-10 h-10 rounded-full object-cover" />
+              <AvatarWithFallback
+                src={profile.avatar || portrait}
+                alt=""
+                name={profile.name}
+                uid={profile.uid}
+                size="sm"
+                className="w-10 h-10 rounded-full object-cover"
+              />
             </Link>
             <ChevronDown className="w-4 h-4 text-white/40" />
           </div>
@@ -339,7 +346,11 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
 
                     <h1
                       className="font-display font-extrabold text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] tracking-tight break-words overflow-hidden"
-                      style={{ textShadow: "0 6px 30px rgba(0,0,0,0.7)", maxWidth: "100%", wordWrap: "break-word" }}
+                      style={{
+                        textShadow: "0 6px 30px rgba(0,0,0,0.7)",
+                        maxWidth: "100%",
+                        wordWrap: "break-word",
+                      }}
                     >
                       {profile.name.toUpperCase()}
                     </h1>
@@ -351,7 +362,9 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
                       {profile.isVerified && <GoldCheck size={18} className="shrink-0" />}
                     </div>
 
-                    <p className="mt-3 text-[13px] md:text-sm text-white/85 leading-relaxed">{profile.bio || "Creator channel is being built."}</p>
+                    <p className="mt-3 text-[13px] md:text-sm text-white/85 leading-relaxed">
+                      {profile.bio || "Creator channel is being built."}
+                    </p>
 
                     <div className="mt-5 flex items-center gap-7">
                       <div>
@@ -363,13 +376,17 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
                         </div>
                       </div>
                       <div>
-                        <div className="font-display font-extrabold text-2xl md:text-3xl">{profile.views ?? "-"}</div>
+                        <div className="font-display font-extrabold text-2xl md:text-3xl">
+                          {profile.views ?? "-"}
+                        </div>
                         <div className="text-[11px] uppercase tracking-wider text-white/60">
                           Views
                         </div>
                       </div>
                       <div>
-                        <div className="font-display font-extrabold text-2xl md:text-3xl">{profile.posts ?? 0}</div>
+                        <div className="font-display font-extrabold text-2xl md:text-3xl">
+                          {profile.posts ?? 0}
+                        </div>
                         <div className="text-[11px] uppercase tracking-wider text-white/60">
                           Videos
                         </div>
@@ -415,8 +432,12 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
                   </div>
 
                   <div className="lg:w-[300px] xl:w-[340px] panel p-5 reveal">
-                    <div className="font-display font-bold text-base mb-2">About {profile.name}</div>
-                    <p className="text-[13px] leading-relaxed text-white/80">{profile.bio || "Creator channel is being built."}</p>
+                    <div className="font-display font-bold text-base mb-2">
+                      About {profile.name}
+                    </div>
+                    <p className="text-[13px] leading-relaxed text-white/80">
+                      {profile.bio || "Creator channel is being built."}
+                    </p>
                     <button
                       onClick={() => setActiveTab("About")}
                       className="mt-4 inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 text-[12px] font-semibold transition active:scale-95"
@@ -457,80 +478,82 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
           <section className="px-5 md:px-10 lg:px-14 mt-6">
             <h2 className="font-display font-bold text-xl mb-3">Latest Release</h2>
             {profile.isFounder ? (
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 group">
-              <img
-                src={post1}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                className="w-full h-[260px] md:h-[340px] lg:h-[400px] object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgba(5,7,13,0.88) 0%, rgba(5,7,13,0.55) 45%, rgba(5,7,13,0.1) 75%, transparent 100%)",
-                }}
-              />
-              <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end max-w-xl">
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 group">
+                <img
+                  src={post1}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-[260px] md:h-[340px] lg:h-[400px] object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                />
                 <div
-                  className="text-[11px] font-extrabold tracking-[0.22em] uppercase mb-2"
-                  style={{ color: PURPLE }}
-                >
-                  TREY <span className="text-white/85">ORIGINAL</span>
-                </div>
-                <h3 className="font-display font-extrabold text-3xl md:text-4xl lg:text-5xl leading-[0.95] mb-2">
-                  LATE NIGHTS
-                  <br />
-                  IN ATL
-                </h3>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm text-white/85 font-medium">S2 • E5 "The Aftermath"</span>
-                  <span
-                    className="px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider"
-                    style={{ background: PURPLE, color: "#fff" }}
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, rgba(5,7,13,0.88) 0%, rgba(5,7,13,0.55) 45%, rgba(5,7,13,0.1) 75%, transparent 100%)",
+                  }}
+                />
+                <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end max-w-xl">
+                  <div
+                    className="text-[11px] font-extrabold tracking-[0.22em] uppercase mb-2"
+                    style={{ color: PURPLE }}
                   >
-                    NEW
-                  </span>
-                </div>
-                <p className="text-sm text-white/75 mb-4">
-                  The night was lit… but the morning hit different.
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={playLatest}
-                    className="inline-flex items-center gap-2 px-4 h-10 rounded-full font-bold text-sm text-white active:scale-95 hover:brightness-110 transition"
-                    style={{
-                      background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
-                      boxShadow: "0 8px 24px rgba(168,85,247,0.55)",
-                    }}
-                  >
-                    <Play className="w-4 h-4 fill-white" /> Watch Now
-                  </button>
-                  <button
-                    onClick={() => toggleWatch("latest", "Late Nights in ATL")}
-                    aria-label="Add to watchlist"
-                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition active:scale-95 ${watchlist.has("latest") ? "border-[#A855F7] bg-[#A855F7]/20" : "border-white/25 bg-white/5 hover:bg-white/10"}`}
-                  >
-                    {watchlist.has("latest") ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Plus className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                <div className="absolute bottom-5 right-6 flex gap-1.5">
-                  {[0, 1, 2, 3].map((i) => (
+                    TREY <span className="text-white/85">ORIGINAL</span>
+                  </div>
+                  <h3 className="font-display font-extrabold text-3xl md:text-4xl lg:text-5xl leading-[0.95] mb-2">
+                    LATE NIGHTS
+                    <br />
+                    IN ATL
+                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm text-white/85 font-medium">
+                      S2 • E5 "The Aftermath"
+                    </span>
+                    <span
+                      className="px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider"
+                      style={{ background: PURPLE, color: "#fff" }}
+                    >
+                      NEW
+                    </span>
+                  </div>
+                  <p className="text-sm text-white/75 mb-4">
+                    The night was lit… but the morning hit different.
+                  </p>
+                  <div className="flex items-center gap-2">
                     <button
-                      key={i}
-                      onClick={() => setSlide(i)}
-                      aria-label={`Slide ${i + 1}`}
-                      className={`h-1.5 rounded-full transition-all ${i === slide ? "w-6 bg-[#A855F7]" : "w-1.5 bg-white/35 hover:bg-white/60"}`}
-                    />
-                  ))}
+                      onClick={playLatest}
+                      className="inline-flex items-center gap-2 px-4 h-10 rounded-full font-bold text-sm text-white active:scale-95 hover:brightness-110 transition"
+                      style={{
+                        background: "linear-gradient(135deg, #8b5cf6, #a855f7)",
+                        boxShadow: "0 8px 24px rgba(168,85,247,0.55)",
+                      }}
+                    >
+                      <Play className="w-4 h-4 fill-white" /> Watch Now
+                    </button>
+                    <button
+                      onClick={() => toggleWatch("latest", "Late Nights in ATL")}
+                      aria-label="Add to watchlist"
+                      className={`w-10 h-10 rounded-full border flex items-center justify-center transition active:scale-95 ${watchlist.has("latest") ? "border-[#A855F7] bg-[#A855F7]/20" : "border-white/25 bg-white/5 hover:bg-white/10"}`}
+                    >
+                      {watchlist.has("latest") ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <Plus className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="absolute bottom-5 right-6 flex gap-1.5">
+                    {[0, 1, 2, 3].map((i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSlide(i)}
+                        aria-label={`Slide ${i + 1}`}
+                        className={`h-1.5 rounded-full transition-all ${i === slide ? "w-6 bg-[#A855F7]" : "w-1.5 bg-white/35 hover:bg-white/60"}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
             ) : (
               <div className="channel-panel rounded-2xl px-6 py-12 text-center text-white/70">
                 First episode coming soon.
@@ -551,39 +574,41 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {seasons.length > 0 ? seasons.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => toast(`Opening ${s.title.replace(/\n/g, " ")}`)}
-                  className="group relative rounded-xl overflow-hidden border border-white/10 hover-lift cursor-pointer aspect-[4/5] text-left"
-                >
-                  <img
-                    src={s.img}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(180deg, transparent 35%, rgba(5,7,13,0.88) 100%)",
-                    }}
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 p-3.5">
-                    <h3 className="font-display font-extrabold text-lg leading-[0.95] whitespace-pre-line mb-1.5">
-                      {s.title}
-                    </h3>
+              {seasons.length > 0 ? (
+                seasons.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => toast(`Opening ${s.title.replace(/\n/g, " ")}`)}
+                    className="group relative rounded-xl overflow-hidden border border-white/10 hover-lift cursor-pointer aspect-[4/5] text-left"
+                  >
+                    <img
+                      src={s.img}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                     <div
-                      className="text-[10px] font-extrabold tracking-[0.18em] uppercase"
-                      style={{ color: PURPLE }}
-                    >
-                      {s.count}
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, transparent 35%, rgba(5,7,13,0.88) 100%)",
+                      }}
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 p-3.5">
+                      <h3 className="font-display font-extrabold text-lg leading-[0.95] whitespace-pre-line mb-1.5">
+                        {s.title}
+                      </h3>
+                      <div
+                        className="text-[10px] font-extrabold tracking-[0.18em] uppercase"
+                        style={{ color: PURPLE }}
+                      >
+                        {s.count}
+                      </div>
                     </div>
-                  </div>
-                </button>
-              )) : (
+                  </button>
+                ))
+              ) : (
                 <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.04] p-8 text-center text-sm text-white/60">
                   No seasons yet.
                 </div>
@@ -604,50 +629,52 @@ export function LovableChannelPage({ profile }: { profile: LovableChannelProfile
               </button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {popular.length > 0 ? popular.map((v) => (
-                <div
-                  key={v.id}
-                  className="group cursor-pointer"
-                  onClick={() => toast(`▶ ${v.title}`)}
-                >
-                  <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video">
-                    <img
-                      src={v.img}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <span className="w-12 h-12 rounded-full bg-white/95 text-black flex items-center justify-center shadow-2xl">
-                        <Play className="w-5 h-5 fill-black" />
-                      </span>
+              {popular.length > 0 ? (
+                popular.map((v) => (
+                  <div
+                    key={v.id}
+                    className="group cursor-pointer"
+                    onClick={() => toast(`▶ ${v.title}`)}
+                  >
+                    <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video">
+                      <img
+                        src={v.img}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <span className="w-12 h-12 rounded-full bg-white/95 text-black flex items-center justify-center shadow-2xl">
+                          <Play className="w-5 h-5 fill-black" />
+                        </span>
+                      </div>
+                      <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/85 text-[10px] font-bold">
+                        {v.len}
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWatch(v.id, v.title);
+                        }}
+                        className={`absolute top-1.5 right-1.5 w-7 h-7 rounded-full border flex items-center justify-center backdrop-blur transition active:scale-90 ${watchlist.has(v.id) ? "border-[#A855F7] bg-[#A855F7]/30" : "border-white/30 bg-black/40 hover:bg-black/70"}`}
+                      >
+                        {watchlist.has(v.id) ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
-                    <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/85 text-[10px] font-bold">
-                      {v.len}
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWatch(v.id, v.title);
-                      }}
-                      className={`absolute top-1.5 right-1.5 w-7 h-7 rounded-full border flex items-center justify-center backdrop-blur transition active:scale-90 ${watchlist.has(v.id) ? "border-[#A855F7] bg-[#A855F7]/30" : "border-white/30 bg-black/40 hover:bg-black/70"}`}
-                    >
-                      {watchlist.has(v.id) ? (
-                        <Check className="w-3.5 h-3.5" />
-                      ) : (
-                        <Plus className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                    <h3 className="mt-2 text-[13px] font-semibold leading-snug line-clamp-2">
+                      {v.title}
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-white/55">
+                      {v.views} • {v.ago}
+                    </p>
                   </div>
-                  <h3 className="mt-2 text-[13px] font-semibold leading-snug line-clamp-2">
-                    {v.title}
-                  </h3>
-                  <p className="mt-0.5 text-[11px] text-white/55">
-                    {v.views} • {v.ago}
-                  </p>
-                </div>
-              )) : (
+                ))
+              ) : (
                 <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.04] p-8 text-center text-sm text-white/60">
                   No uploads yet.
                 </div>

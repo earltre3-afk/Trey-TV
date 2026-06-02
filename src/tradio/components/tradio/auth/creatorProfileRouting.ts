@@ -12,7 +12,7 @@
  * - Shell deep link: `openEditCreatorProfile(role)`
  */
 
-import type { RoleProfileType } from './roleProfile';
+import type { RoleProfileType } from "./roleProfile";
 
 /**
  * Parse a public profile URL into role + lookup key.
@@ -21,7 +21,9 @@ import type { RoleProfileType } from './roleProfile';
  * - `/tradio/artist/:public_profile_uid` → { role: 'artist', publicProfileUid }
  * - `/tradio/artist/@:handle` → { role: 'artist', handle }
  */
-export function parseCreatorProfileUrl(pathname: string): { role: RoleProfileType; publicProfileUid?: string; handle?: string } | null {
+export function parseCreatorProfileUrl(
+  pathname: string,
+): { role: RoleProfileType; publicProfileUid?: string; handle?: string } | null {
   const match = pathname.match(/^\/tradio\/(artist|producer|dj)(?:\/(.+))?$/);
   if (!match) return null;
 
@@ -30,7 +32,7 @@ export function parseCreatorProfileUrl(pathname: string): { role: RoleProfileTyp
 
   if (!lookup) return { role };
 
-  if (lookup.startsWith('@')) {
+  if (lookup.startsWith("@")) {
     return { role, handle: lookup.substring(1) };
   }
 
@@ -40,7 +42,10 @@ export function parseCreatorProfileUrl(pathname: string): { role: RoleProfileTyp
 /**
  * Build a public profile URL.
  */
-export function buildCreatorProfileUrl(role: RoleProfileType, lookup: { publicProfileUid?: string; handle?: string }): string {
+export function buildCreatorProfileUrl(
+  role: RoleProfileType,
+  lookup: { publicProfileUid?: string; handle?: string },
+): string {
   if (lookup.publicProfileUid) {
     return `/tradio/${role}/${lookup.publicProfileUid}`;
   }
@@ -62,22 +67,22 @@ export function buildCreatorProfileUrl(role: RoleProfileType, lookup: { publicPr
  */
 export function openPublicCreatorProfile(
   role: RoleProfileType,
-  lookup: string | { publicProfileUid?: string; handle?: string }
+  lookup: string | { publicProfileUid?: string; handle?: string },
 ): {
-  kind: 'roleProfile';
+  kind: "roleProfile";
   role: RoleProfileType;
   ownerView: false;
   lookup: { publicProfileUid?: string; handle?: string };
 } {
   const parsedLookup =
-    typeof lookup === 'string'
-      ? lookup.startsWith('@')
+    typeof lookup === "string"
+      ? lookup.startsWith("@")
         ? { handle: lookup.substring(1) }
         : { publicProfileUid: lookup }
       : lookup;
 
   return {
-    kind: 'roleProfile',
+    kind: "roleProfile",
     role,
     ownerView: false,
     lookup: parsedLookup,
@@ -89,12 +94,12 @@ export function openPublicCreatorProfile(
  * Automatically uses the current user's identity.
  */
 export function openMyCreatorProfile(role: RoleProfileType): {
-  kind: 'roleProfile';
+  kind: "roleProfile";
   role: RoleProfileType;
   ownerView: true;
 } {
   return {
-    kind: 'roleProfile',
+    kind: "roleProfile",
     role,
     ownerView: true,
   };
@@ -105,13 +110,13 @@ export function openMyCreatorProfile(role: RoleProfileType): {
  * (Currently the same as owner view; future-friendly for separate edit flow.)
  */
 export function openEditCreatorProfile(role: RoleProfileType): {
-  kind: 'roleProfile';
+  kind: "roleProfile";
   role: RoleProfileType;
   ownerView: true;
   editMode?: true;
 } {
   return {
-    kind: 'roleProfile',
+    kind: "roleProfile",
     role,
     ownerView: true,
     editMode: true,
@@ -122,15 +127,18 @@ export function openEditCreatorProfile(role: RoleProfileType): {
  * Shell integration: command to open the public viewing mode of ProfileScreen
  * (the legacy polished shell).
  */
-export function openPublicProfileScreen(role: 'artist' | 'producer' | 'host', name?: string): {
-  kind: 'profile';
-  role: 'artist' | 'producer' | 'host';
+export function openPublicProfileScreen(
+  role: "artist" | "producer" | "host",
+  name?: string,
+): {
+  kind: "profile";
+  role: "artist" | "producer" | "host";
   name: string;
 } {
   return {
-    kind: 'profile',
+    kind: "profile",
     role,
-    name: name || 'Profile',
+    name: name || "Profile",
   };
 }
 
@@ -139,9 +147,9 @@ export function openPublicProfileScreen(role: 'artist' | 'producer' | 'host', na
  */
 export function getCreatorRoleLabel(role: RoleProfileType): string {
   const labels: Record<RoleProfileType, string> = {
-    artist: 'Artist',
-    producer: 'Producer',
-    dj: 'DJ / Host',
+    artist: "Artist",
+    producer: "Producer",
+    dj: "DJ / Host",
   };
   return labels[role];
 }
@@ -149,11 +157,16 @@ export function getCreatorRoleLabel(role: RoleProfileType): string {
 /**
  * Helper: map role to the corresponding capability flag for access checks.
  */
-export function getCreatorRoleCapability(role: RoleProfileType): 'release-music' | 'upload-beat' | 'create-broadcast' {
-  const capabilities: Record<RoleProfileType, 'release-music' | 'upload-beat' | 'create-broadcast'> = {
-    artist: 'release-music',
-    producer: 'upload-beat',
-    dj: 'create-broadcast',
+export function getCreatorRoleCapability(
+  role: RoleProfileType,
+): "release-music" | "upload-beat" | "create-broadcast" {
+  const capabilities: Record<
+    RoleProfileType,
+    "release-music" | "upload-beat" | "create-broadcast"
+  > = {
+    artist: "release-music",
+    producer: "upload-beat",
+    dj: "create-broadcast",
   };
   return capabilities[role];
 }
@@ -161,6 +174,6 @@ export function getCreatorRoleCapability(role: RoleProfileType): 'release-music'
 /**
  * Helper: map role to the corresponding Tradio role for identity checks.
  */
-export function getCreatorRoleName(role: RoleProfileType): 'artist' | 'producer' | 'dj' {
+export function getCreatorRoleName(role: RoleProfileType): "artist" | "producer" | "dj" {
   return role;
 }

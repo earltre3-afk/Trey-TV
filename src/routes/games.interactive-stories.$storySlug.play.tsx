@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
 const InteractiveStoriesPlayer = lazy(
-  () => import("@/features/interactive-stories/components/InteractiveStoriesPlayer")
+  () => import("@/features/interactive-stories/components/InteractiveStoriesPlayer"),
 );
 
 export const Route = createFileRoute("/games/interactive-stories/$storySlug/play")({
@@ -13,9 +13,16 @@ function StoryPlayPage() {
   const { storySlug } = useParams({ from: "/games/interactive-stories/$storySlug/play" });
 
   return (
-    <div className="font-sans antialiased" style={{ background: "#05070D", color: "#F8FAFC", minHeight: "100vh" }}>
+    <div
+      className="font-sans antialiased"
+      style={{ background: "#05070D", color: "#F8FAFC", minHeight: "100vh" }}
+    >
       <Suspense fallback={<RouteLoader label="Loading Story" />}>
-        <InteractiveStoriesPlayer storySlug={storySlug} initialView="main" onBack={() => window.history.back()} />
+        <InteractiveStoriesPlayer
+          storySlug={storySlug}
+          initialView="main"
+          onBack={() => window.history.back()}
+        />
       </Suspense>
     </div>
   );

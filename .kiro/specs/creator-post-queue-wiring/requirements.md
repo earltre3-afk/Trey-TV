@@ -16,13 +16,13 @@ The queue INSERT must never happen without a confirmed `stream_uid`. If `stream_
 
 ## 2. Security Boundary — Non-Negotiable
 
-| Rule | Detail |
-|---|---|
-| Browser INSERT is allowed | RLS permits INSERT with `creator_id = auth.uid()` and `approval_status = 'pending'` and `is_approved_creator_for_current_user()` |
-| No service-role key in browser | The anon/user Supabase client is sufficient |
+| Rule                            | Detail                                                                                                                                          |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser INSERT is allowed       | RLS permits INSERT with `creator_id = auth.uid()` and `approval_status = 'pending'` and `is_approved_creator_for_current_user()`                |
+| No service-role key in browser  | The anon/user Supabase client is sufficient                                                                                                     |
 | Creator identity via auth email | `is_approved_creator_for_current_user()` checks `channels.owner_email = auth.jwt()->>'email'` — same pattern already used in `useCreatorStudio` |
-| `stream_uid` guard | Queue INSERT is skipped entirely if `stream_uid` is null or empty — no partial rows |
-| `approval_status` hardcoded | Always `'pending'` — never passed from user input |
+| `stream_uid` guard              | Queue INSERT is skipped entirely if `stream_uid` is null or empty — no partial rows                                                             |
+| `approval_status` hardcoded     | Always `'pending'` — never passed from user input                                                                                               |
 
 ---
 
@@ -30,35 +30,35 @@ The queue INSERT must never happen without a confirmed `stream_uid`. If `stream_
 
 ### `creator_post_queue` — confirmed columns
 
-| Column | Type | Constraint | Notes |
-|---|---|---|---|
-| `id` | `uuid` | PK, `gen_random_uuid()` | Auto-generated |
-| `creator_id` | `uuid` | NOT NULL, FK `auth.users` | `auth.uid()` |
-| `edit_project_id` | `uuid` | nullable, FK `creator_edit_projects` ON DELETE SET NULL | The `draftId` from upload |
-| `channel_id` | `uuid` | nullable | From `useCreatorStudio().channel.id` |
-| `show_id` | `uuid` | nullable | From `draft.show_id` (stored in `utility_state`) |
-| `episode_number` | `integer` | nullable | From `draft.episode_number` |
-| `title` | `text` | NOT NULL | From `draft.title` |
-| `description` | `text` | nullable | From `draft.short_description` |
-| `stream_uid` | `text` | NOT NULL | Read from `creator_edit_projects` row by `edit_project_id` |
-| `thumbnail_url` | `text` | nullable | From `draft.thumbnail_url` |
-| `visibility` | `text` | NOT NULL, default `'submitted'` | Mapped from `draft.visibility` |
-| `is_plus_content` | `boolean` | NOT NULL, default `false` | `false` if `episode_number <= 2`, else `draft.access_type === 'subscribers'` |
-| `scheduled_at` | `timestamptz` | nullable | From `draft.scheduled_at` when `visibility = 'scheduled'` |
-| `approval_status` | `text` | NOT NULL, default `'pending'` | Always `'pending'` on INSERT |
-| `admin_notes` | `text` | nullable | Not set on INSERT |
-| `created_at` | `timestamptz` | NOT NULL | Auto |
-| `updated_at` | `timestamptz` | NOT NULL | Auto via trigger |
+| Column            | Type          | Constraint                                              | Notes                                                                        |
+| ----------------- | ------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `id`              | `uuid`        | PK, `gen_random_uuid()`                                 | Auto-generated                                                               |
+| `creator_id`      | `uuid`        | NOT NULL, FK `auth.users`                               | `auth.uid()`                                                                 |
+| `edit_project_id` | `uuid`        | nullable, FK `creator_edit_projects` ON DELETE SET NULL | The `draftId` from upload                                                    |
+| `channel_id`      | `uuid`        | nullable                                                | From `useCreatorStudio().channel.id`                                         |
+| `show_id`         | `uuid`        | nullable                                                | From `draft.show_id` (stored in `utility_state`)                             |
+| `episode_number`  | `integer`     | nullable                                                | From `draft.episode_number`                                                  |
+| `title`           | `text`        | NOT NULL                                                | From `draft.title`                                                           |
+| `description`     | `text`        | nullable                                                | From `draft.short_description`                                               |
+| `stream_uid`      | `text`        | NOT NULL                                                | Read from `creator_edit_projects` row by `edit_project_id`                   |
+| `thumbnail_url`   | `text`        | nullable                                                | From `draft.thumbnail_url`                                                   |
+| `visibility`      | `text`        | NOT NULL, default `'submitted'`                         | Mapped from `draft.visibility`                                               |
+| `is_plus_content` | `boolean`     | NOT NULL, default `false`                               | `false` if `episode_number <= 2`, else `draft.access_type === 'subscribers'` |
+| `scheduled_at`    | `timestamptz` | nullable                                                | From `draft.scheduled_at` when `visibility = 'scheduled'`                    |
+| `approval_status` | `text`        | NOT NULL, default `'pending'`                           | Always `'pending'` on INSERT                                                 |
+| `admin_notes`     | `text`        | nullable                                                | Not set on INSERT                                                            |
+| `created_at`      | `timestamptz` | NOT NULL                                                | Auto                                                                         |
+| `updated_at`      | `timestamptz` | NOT NULL                                                | Auto via trigger                                                             |
 
 ### Visibility mapping
 
 | `draft.visibility` | `creator_post_queue.visibility` |
-|---|---|
-| `'public'` | `'submitted'` |
-| `'subscribers'` | `'submitted'` |
-| `'private'` | `'private'` |
-| `'scheduled'` | `'scheduled'` |
-| anything else | `'submitted'` |
+| ------------------ | ------------------------------- |
+| `'public'`         | `'submitted'`                   |
+| `'subscribers'`    | `'submitted'`                   |
+| `'private'`        | `'private'`                     |
+| `'scheduled'`      | `'scheduled'`                   |
+| anything else      | `'submitted'`                   |
 
 ### DB constraint: `creator_post_queue_first_two_not_plus_check`
 
@@ -70,11 +70,11 @@ check (episode_number is null or episode_number not in (1, 2) or is_plus_content
 
 ### RLS policies on `creator_post_queue`
 
-| Operation | Policy |
-|---|---|
-| SELECT | `creator_id = auth.uid() AND is_approved_creator_for_current_user()` |
-| INSERT | `creator_id = auth.uid() AND approval_status = 'pending' AND is_approved_creator_for_current_user()` |
-| UPDATE | `creator_id = auth.uid() AND approval_status IN ('pending','needs_changes') AND is_approved_creator_for_current_user()` |
+| Operation | Policy                                                                                                                  |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- |
+| SELECT    | `creator_id = auth.uid() AND is_approved_creator_for_current_user()`                                                    |
+| INSERT    | `creator_id = auth.uid() AND approval_status = 'pending' AND is_approved_creator_for_current_user()`                    |
+| UPDATE    | `creator_id = auth.uid() AND approval_status IN ('pending','needs_changes') AND is_approved_creator_for_current_user()` |
 
 Browser INSERT is safe with the anon/user client. No service-role key required.
 
@@ -85,6 +85,7 @@ Browser INSERT is safe with the anon/user client. No service-role key required.
 ### FR-1: Queue INSERT inside `submitForReview()`
 
 `useCreatorSubmit.submitForReview(draft)` currently:
+
 1. Calls `saveDraft(draft)` → returns `rowId`
 2. UPDATEs `creator_edit_projects.status = 'submitted'`
 3. Returns `true`
@@ -92,9 +93,10 @@ Browser INSERT is safe with the anon/user client. No service-role key required.
 After this change, step 2.5 is added between the status UPDATE and the return:
 
 2.5. If `rowId` exists:
-  - SELECT `stream_uid` from `creator_edit_projects` WHERE `id = rowId AND creator_id = userId`
-  - If `stream_uid` is a non-empty string: INSERT into `creator_post_queue`
-  - If `stream_uid` is null/empty: skip silently — no error, no crash
+
+- SELECT `stream_uid` from `creator_edit_projects` WHERE `id = rowId AND creator_id = userId`
+- If `stream_uid` is a non-empty string: INSERT into `creator_post_queue`
+- If `stream_uid` is null/empty: skip silently — no error, no crash
 
 The queue INSERT is non-blocking for the submit flow. If it fails, `submitForReview()` still returns `true` (the `creator_edit_projects` update succeeded). A `toast.error` is shown only if the queue INSERT fails with an unexpected error.
 
@@ -104,10 +106,10 @@ Before inserting into `creator_post_queue`, read `stream_uid` from the `creator_
 
 ```ts
 const { data: project } = await supabase
-  .from('creator_edit_projects')
-  .select('stream_uid')
-  .eq('id', rowId)
-  .eq('creator_id', userId)
+  .from("creator_edit_projects")
+  .select("stream_uid")
+  .eq("id", rowId)
+  .eq("creator_id", userId)
   .maybeSingle();
 
 const streamUid = project?.stream_uid?.trim() || null;
@@ -119,7 +121,7 @@ This is the only safe source of `stream_uid`. It must not be passed from compone
 ### FR-3: Queue INSERT payload
 
 ```ts
-await supabase.from('creator_post_queue').insert({
+await supabase.from("creator_post_queue").insert({
   creator_id: userId,
   edit_project_id: rowId,
   channel_id: channel?.id ?? null,
@@ -131,10 +133,11 @@ await supabase.from('creator_post_queue').insert({
   thumbnail_url: draft.thumbnail_url || null,
   visibility: mapVisibility(draft.visibility),
   is_plus_content: isPlusContent(draft.episode_number, draft.access_type),
-  scheduled_at: draft.visibility === 'scheduled' && draft.scheduled_at
-    ? new Date(draft.scheduled_at).toISOString()
-    : null,
-  approval_status: 'pending',
+  scheduled_at:
+    draft.visibility === "scheduled" && draft.scheduled_at
+      ? new Date(draft.scheduled_at).toISOString()
+      : null,
+  approval_status: "pending",
 });
 ```
 
@@ -142,9 +145,9 @@ await supabase.from('creator_post_queue').insert({
 
 ```ts
 function mapVisibility(v: string): string {
-  if (v === 'private') return 'private';
-  if (v === 'scheduled') return 'scheduled';
-  return 'submitted';
+  if (v === "private") return "private";
+  if (v === "scheduled") return "scheduled";
+  return "submitted";
 }
 ```
 
@@ -153,7 +156,7 @@ function mapVisibility(v: string): string {
 ```ts
 function isPlusContent(episodeNumber: number, accessType: string): boolean {
   if (episodeNumber <= 2) return false;
-  return accessType === 'subscribers';
+  return accessType === "subscribers";
 }
 ```
 
@@ -175,10 +178,10 @@ Before inserting into `creator_post_queue`, SELECT to check whether a row alread
 
 ```ts
 const { data: existing } = await supabase
-  .from('creator_post_queue')
-  .select('id')
-  .eq('creator_id', userId)
-  .eq('edit_project_id', rowId)
+  .from("creator_post_queue")
+  .select("id")
+  .eq("creator_id", userId)
+  .eq("edit_project_id", rowId)
   .maybeSingle();
 
 if (existing) return true; // already queued — skip silently

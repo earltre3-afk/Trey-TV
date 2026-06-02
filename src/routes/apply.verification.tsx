@@ -1,9 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
-import {
-  Check, ChevronLeft, ChevronRight,
-  ExternalLink, Loader2, Save, Star,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Save, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,71 +14,121 @@ export const Route = createFileRoute("/apply/verification")({
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type VerifData = {
-  display_name: string; username: string; applying_as: string;
-  profile_title: string; short_bio: string; why_gold_badge: string;
+  display_name: string;
+  username: string;
+  applying_as: string;
+  profile_title: string;
+  short_bio: string;
+  why_gold_badge: string;
   notability_types: string[];
-  recognition_description: string; major_achievements: string;
-  press_mentions: string; official_releases: string;
-  monthly_listeners: string; social_followers: string;
-  media_mentions: string; awards_count: string;
-  link_website: string; link_instagram: string; link_tiktok: string;
-  link_youtube: string; link_spotify: string; link_apple_music: string;
-  link_imdb: string; link_linkedin: string;
-  link_press_1: string; link_press_2: string; link_press_3: string;
+  recognition_description: string;
+  major_achievements: string;
+  press_mentions: string;
+  official_releases: string;
+  monthly_listeners: string;
+  social_followers: string;
+  media_mentions: string;
+  awards_count: string;
+  link_website: string;
+  link_instagram: string;
+  link_tiktok: string;
+  link_youtube: string;
+  link_spotify: string;
+  link_apple_music: string;
+  link_imdb: string;
+  link_linkedin: string;
+  link_press_1: string;
+  link_press_2: string;
+  link_press_3: string;
   link_other: string;
-  safety_confirmed: boolean; impersonation_notes: string;
+  safety_confirmed: boolean;
+  impersonation_notes: string;
 };
 
 const EMPTY: VerifData = {
-  display_name: "", username: "", applying_as: "", profile_title: "",
-  short_bio: "", why_gold_badge: "",
+  display_name: "",
+  username: "",
+  applying_as: "",
+  profile_title: "",
+  short_bio: "",
+  why_gold_badge: "",
   notability_types: [],
-  recognition_description: "", major_achievements: "", press_mentions: "",
-  official_releases: "", monthly_listeners: "", social_followers: "",
-  media_mentions: "", awards_count: "",
-  link_website: "", link_instagram: "", link_tiktok: "", link_youtube: "",
-  link_spotify: "", link_apple_music: "", link_imdb: "", link_linkedin: "",
-  link_press_1: "", link_press_2: "", link_press_3: "", link_other: "",
-  safety_confirmed: false, impersonation_notes: "",
+  recognition_description: "",
+  major_achievements: "",
+  press_mentions: "",
+  official_releases: "",
+  monthly_listeners: "",
+  social_followers: "",
+  media_mentions: "",
+  awards_count: "",
+  link_website: "",
+  link_instagram: "",
+  link_tiktok: "",
+  link_youtube: "",
+  link_spotify: "",
+  link_apple_music: "",
+  link_imdb: "",
+  link_linkedin: "",
+  link_press_1: "",
+  link_press_2: "",
+  link_press_3: "",
+  link_other: "",
+  safety_confirmed: false,
+  impersonation_notes: "",
 };
 
 const APPLYING_AS = [
-  "Artist / Musician", "Actor / Actress", "Athlete / Sports Figure",
-  "Public Brand / Business", "Content Creator", "Journalist / Media",
-  "Community Leader", "Public Figure / Celebrity", "Other",
+  "Artist / Musician",
+  "Actor / Actress",
+  "Athlete / Sports Figure",
+  "Public Brand / Business",
+  "Content Creator",
+  "Journalist / Media",
+  "Community Leader",
+  "Public Figure / Celebrity",
+  "Other",
 ];
 const TITLES = [
-  "Recording Artist", "Actor", "Professional Athlete", "Brand",
-  "Content Creator", "Journalist", "Coach / Mentor", "Public Figure",
-  "Director", "Producer", "Author", "Other",
+  "Recording Artist",
+  "Actor",
+  "Professional Athlete",
+  "Brand",
+  "Content Creator",
+  "Journalist",
+  "Coach / Mentor",
+  "Public Figure",
+  "Director",
+  "Producer",
+  "Author",
+  "Other",
 ];
 
 const NOTABILITY = [
-  { id: "press",     emoji: "📰", label: "Press\nCoverage" },
-  { id: "music",     emoji: "🎵", label: "Music\nReleases" },
-  { id: "social",    emoji: "👥", label: "Large Social\nFollowing" },
-  { id: "brand",     emoji: "💼", label: "Public Brand /\nBusiness" },
-  { id: "verified",  emoji: "✅", label: "Verified\nElsewhere" },
+  { id: "press", emoji: "📰", label: "Press\nCoverage" },
+  { id: "music", emoji: "🎵", label: "Music\nReleases" },
+  { id: "social", emoji: "👥", label: "Large Social\nFollowing" },
+  { id: "brand", emoji: "💼", label: "Public Brand /\nBusiness" },
+  { id: "verified", emoji: "✅", label: "Verified\nElsewhere" },
   { id: "community", emoji: "🤝", label: "Community\nImpact" },
-  { id: "awards",    emoji: "🏆", label: "Awards /\nRecognition" },
-  { id: "imdb",      emoji: "🎬", label: "IMDb / Film /\nTV Credits" },
-  { id: "sports",    emoji: "👕", label: "Sports / Team\nAffiliation" },
-  { id: "other",     emoji: "···", label: "Other" },
+  { id: "awards", emoji: "🏆", label: "Awards /\nRecognition" },
+  { id: "imdb", emoji: "🎬", label: "IMDb / Film /\nTV Credits" },
+  { id: "sports", emoji: "👕", label: "Sports / Team\nAffiliation" },
+  { id: "other", emoji: "···", label: "Other" },
 ];
 
 const LINK_ROWS: { key: keyof VerifData; emoji: string; label: string }[] = [
-  { key: "link_website",     emoji: "🌐", label: "Official Website" },
-  { key: "link_instagram",   emoji: "📸", label: "Instagram" },
-  { key: "link_tiktok",      emoji: "🎵", label: "TikTok" },
-  { key: "link_youtube",     emoji: "▶️",  label: "YouTube" },
-  { key: "link_spotify",     emoji: "🎧", label: "Spotify" },
+  { key: "link_website", emoji: "🌐", label: "Official Website" },
+  { key: "link_instagram", emoji: "📸", label: "Instagram" },
+  { key: "link_tiktok", emoji: "🎵", label: "TikTok" },
+  { key: "link_youtube", emoji: "▶️", label: "YouTube" },
+  { key: "link_spotify", emoji: "🎧", label: "Spotify" },
   { key: "link_apple_music", emoji: "🎼", label: "Apple Music" },
-  { key: "link_imdb",        emoji: "🎬", label: "IMDb" },
-  { key: "link_linkedin",    emoji: "💼", label: "LinkedIn" },
-  { key: "link_press_1",     emoji: "📄", label: "Press Article 1" },
-  { key: "link_press_2",     emoji: "📄", label: "Press Article 2" },
-  { key: "link_press_3",     emoji: "📄", label: "Press Article 3" },
-  { key: "link_other",       emoji: "🔗", label: "Other Proof Link" },
+  { key: "link_imdb", emoji: "🎬", label: "IMDb" },
+  { key: "link_linkedin", emoji: "💼", label: "LinkedIn" },
+  { key: "link_press_1", emoji: "📄", label: "Press Article 1" },
+  { key: "link_press_2", emoji: "📄", label: "Press Article 2" },
+  { key: "link_press_3", emoji: "📄", label: "Press Article 3" },
+  { key: "link_other", emoji: "🔗", label: "Other Proof Link" },
 ];
 
 const SAFETY_ITEMS = [
@@ -94,11 +141,11 @@ const SAFETY_ITEMS = [
 
 // Step labels matching the reference screenshots
 const STEPS = [
-  { label: "Badge\nIdentity",     short: "1" },
-  { label: "Notability\nProof",   short: "2" },
-  { label: "Official\nLinks",     short: "3" },
-  { label: "Safety\nCheck",       short: "4" },
-  { label: "Review &\nSubmit",    short: "5" },
+  { label: "Badge\nIdentity", short: "1" },
+  { label: "Notability\nProof", short: "2" },
+  { label: "Official\nLinks", short: "3" },
+  { label: "Safety\nCheck", short: "4" },
+  { label: "Review &\nSubmit", short: "5" },
 ];
 
 type ExistingVerification = {
@@ -110,21 +157,34 @@ type ExistingVerification = {
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
 const G = {
-  gold:   "oklch(0.82 0.16 85)",
+  gold: "oklch(0.82 0.16 85)",
   goldDim: "oklch(0.82 0.16 85 / 0.35)",
-  blue:   "oklch(0.82 0.15 215)",
+  blue: "oklch(0.82 0.15 215)",
   blueDim: "oklch(0.82 0.15 215 / 0.4)",
 };
 
-function GInput({ label, value, onChange, placeholder, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string;
+function GInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</label>
+      <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </label>
       <input
-        type={type} value={value} placeholder={placeholder}
+        type={type}
+        value={value}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-black/25 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
         style={{ borderColor: G.goldDim }}
@@ -133,21 +193,41 @@ function GInput({ label, value, onChange, placeholder, type = "text" }: {
   );
 }
 
-function GSelect({ label, value, onChange, options, placeholder }: {
-  label: string; value: string; onChange: (v: string) => void;
-  options: string[]; placeholder?: string;
+function GSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</label>
+      <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </label>
       <div className="relative">
         <select
-          value={value} onChange={(e) => onChange(e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full appearance-none px-3.5 py-2.5 pr-8 rounded-xl text-sm bg-black/25 border focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition text-foreground shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
           style={{ borderColor: G.goldDim }}
         >
-          {placeholder && <option value="" className="bg-[#020508]">{placeholder}</option>}
-          {options.map((o) => <option key={o} value={o} className="bg-[#020508]">{o}</option>)}
+          {placeholder && (
+            <option value="" className="bg-[#020508]">
+              {placeholder}
+            </option>
+          )}
+          {options.map((o) => (
+            <option key={o} value={o} className="bg-[#020508]">
+              {o}
+            </option>
+          ))}
         </select>
         <ChevronRight className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground rotate-90 pointer-events-none" />
       </div>
@@ -155,16 +235,33 @@ function GSelect({ label, value, onChange, options, placeholder }: {
   );
 }
 
-function GTextarea({ label, value, onChange, placeholder, rows = 3, hint }: {
-  label?: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; rows?: number; hint?: string;
+function GTextarea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+  hint,
+}: {
+  label?: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  rows?: number;
+  hint?: string;
 }) {
   return (
     <div className="space-y-1">
-      {label && <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</label>}
+      {label && (
+        <label className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </label>
+      )}
       {hint && <p className="text-[10px] text-white/35">{hint}</p>}
       <textarea
-        value={value} rows={rows} placeholder={placeholder}
+        value={value}
+        rows={rows}
+        placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-black/25 border placeholder:text-white/20 focus:outline-none focus:border-[oklch(0.82_0.16_85_/_0.85)] transition resize-none shadow-[inset_0_0_16px_oklch(0.82_0.16_85_/_0.08)]"
         style={{ borderColor: G.goldDim }}
@@ -181,17 +278,19 @@ function StepBar({ current }: { current: number }) {
       {/* Circles + connectors */}
       <div className="flex items-center">
         {STEPS.map((s, i) => {
-          const done   = i < current;
+          const done = i < current;
           const active = i === current;
           return (
             <div key={i} className="flex items-center flex-1">
               <div
                 className="relative shrink-0 size-9 rounded-full grid place-items-center text-sm font-bold border-2 transition-all duration-300"
                 style={{
-                  background: done   ? G.blue :
-                              active ? "oklch(0.82 0.16 85 / 0.2)" : "oklch(1 0 0 / 0.05)",
-                  borderColor: done   ? G.blue :
-                               active ? G.gold : "oklch(1 0 0 / 0.15)",
+                  background: done
+                    ? G.blue
+                    : active
+                      ? "oklch(0.82 0.16 85 / 0.2)"
+                      : "oklch(1 0 0 / 0.05)",
+                  borderColor: done ? G.blue : active ? G.gold : "oklch(1 0 0 / 0.15)",
                   boxShadow: active ? `0 0 18px ${G.gold}` : "none",
                   color: done ? "#fff" : active ? G.gold : "oklch(0.5 0 0)",
                 }}
@@ -199,7 +298,10 @@ function StepBar({ current }: { current: number }) {
                 {done ? <Check className="size-4" /> : s.short}
               </div>
               {i < STEPS.length - 1 && (
-                <div className="flex-1 h-px mx-1" style={{ background: done ? G.blue : "oklch(1 0 0 / 0.1)" }} />
+                <div
+                  className="flex-1 h-px mx-1"
+                  style={{ background: done ? G.blue : "oklch(1 0 0 / 0.1)" }}
+                />
               )}
             </div>
           );
@@ -209,7 +311,7 @@ function StepBar({ current }: { current: number }) {
       <div className="flex mt-2">
         {STEPS.map((s, i) => {
           const active = i === current;
-          const done   = i < current;
+          const done = i < current;
           return (
             <div key={i} className="flex-1 text-center">
               <span
@@ -231,17 +333,27 @@ function StepBar({ current }: { current: number }) {
 
 // ── Section card ───────────────────────────────────────────────────────────────
 
-function SectionCard({ emoji, title, sub, children }: {
-  emoji: string; title: string; sub: string; children: React.ReactNode;
+function SectionCard({
+  emoji,
+  title,
+  sub,
+  children,
+}: {
+  emoji: string;
+  title: string;
+  sub: string;
+  children: React.ReactNode;
 }) {
   return (
     <div
       className="apply-shell-panel rounded-[28px] p-5 space-y-5"
-      style={{
-        "--apply-panel-edge": "oklch(0.82 0.16 85 / 0.72)",
-        "--apply-panel-glow": "oklch(0.82 0.16 85 / 0.18)",
-        "--apply-panel-shadow": "oklch(0.82 0.16 85 / 0.75)",
-      } as React.CSSProperties}
+      style={
+        {
+          "--apply-panel-edge": "oklch(0.82 0.16 85 / 0.72)",
+          "--apply-panel-glow": "oklch(0.82 0.16 85 / 0.18)",
+          "--apply-panel-shadow": "oklch(0.82 0.16 85 / 0.75)",
+        } as React.CSSProperties
+      }
     >
       <div className="flex items-center gap-3">
         <div
@@ -262,19 +374,59 @@ function SectionCard({ emoji, title, sub, children }: {
 
 // ── Step 1: Badge Identity ─────────────────────────────────────────────────────
 
-function Step1({ d, set, avatar }: {
-  d: VerifData; set: (k: keyof VerifData, v: string) => void; avatar: string;
+function Step1({
+  d,
+  set,
+  avatar,
+}: {
+  d: VerifData;
+  set: (k: keyof VerifData, v: string) => void;
+  avatar: string;
 }) {
   const showPreview = !!(d.display_name || d.profile_title);
   return (
     <SectionCard emoji="🛡️" title="Badge Identity" sub="Tell us who you are.">
       <div className="space-y-3">
-        <GInput label="Display name to verify" value={d.display_name} onChange={(v) => set("display_name", v)} placeholder="Your public name" />
-        <GInput label="Username" value={d.username} onChange={(v) => set("username", v.startsWith("@") ? v : v ? "@" + v : "")} placeholder="@yourhandle" />
-        <GSelect label="What are you applying as?" value={d.applying_as} onChange={(v) => set("applying_as", v)} options={APPLYING_AS} placeholder="Select category…" />
-        <GSelect label="What title should appear near your profile?" value={d.profile_title} onChange={(v) => set("profile_title", v)} options={TITLES} placeholder="Select title…" />
-        <GTextarea label="Short public bio" value={d.short_bio} onChange={(v) => set("short_bio", v)} placeholder="Brief description of who you are and what you do." rows={3} />
-        <GTextarea label="Why should this profile receive a gold badge?" value={d.why_gold_badge} onChange={(v) => set("why_gold_badge", v)} placeholder="Describe your notability, achievements, and public recognition." rows={3} />
+        <GInput
+          label="Display name to verify"
+          value={d.display_name}
+          onChange={(v) => set("display_name", v)}
+          placeholder="Your public name"
+        />
+        <GInput
+          label="Username"
+          value={d.username}
+          onChange={(v) => set("username", v.startsWith("@") ? v : v ? "@" + v : "")}
+          placeholder="@yourhandle"
+        />
+        <GSelect
+          label="What are you applying as?"
+          value={d.applying_as}
+          onChange={(v) => set("applying_as", v)}
+          options={APPLYING_AS}
+          placeholder="Select category…"
+        />
+        <GSelect
+          label="What title should appear near your profile?"
+          value={d.profile_title}
+          onChange={(v) => set("profile_title", v)}
+          options={TITLES}
+          placeholder="Select title…"
+        />
+        <GTextarea
+          label="Short public bio"
+          value={d.short_bio}
+          onChange={(v) => set("short_bio", v)}
+          placeholder="Brief description of who you are and what you do."
+          rows={3}
+        />
+        <GTextarea
+          label="Why should this profile receive a gold badge?"
+          value={d.why_gold_badge}
+          onChange={(v) => set("why_gold_badge", v)}
+          placeholder="Describe your notability, achievements, and public recognition."
+          rows={3}
+        />
       </div>
 
       {/* Gold Badge Preview — appears once name or title is entered */}
@@ -287,7 +439,9 @@ function Step1({ d, set, avatar }: {
             boxShadow: `0 0 30px oklch(0.82 0.16 85 / 0.35)`,
           }}
         >
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: G.gold }}>Gold Badge Preview</p>
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: G.gold }}>
+            Gold Badge Preview
+          </p>
           <div className="flex justify-center">
             <div className="relative">
               <div
@@ -307,11 +461,19 @@ function Step1({ d, set, avatar }: {
           <div>
             <div className="font-extrabold">{d.display_name || "Your Name"}</div>
             <div className="text-xs text-muted-foreground">{d.username || "@handle"}</div>
-            {d.profile_title && <div className="text-xs mt-0.5" style={{ color: G.gold }}>{d.profile_title}</div>}
+            {d.profile_title && (
+              <div className="text-xs mt-0.5" style={{ color: G.gold }}>
+                {d.profile_title}
+              </div>
+            )}
           </div>
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border"
-            style={{ color: G.gold, borderColor: G.goldDim, background: "oklch(0.82 0.16 85 / 0.1)" }}
+            style={{
+              color: G.gold,
+              borderColor: G.goldDim,
+              background: "oklch(0.82 0.16 85 / 0.1)",
+            }}
           >
             <Star className="size-3" fill="currentColor" /> Notable Account
           </div>
@@ -323,21 +485,51 @@ function Step1({ d, set, avatar }: {
 
 // ── Step 2: Notability Proof ───────────────────────────────────────────────────
 
-function Step2({ d, set, toggle }: {
-  d: VerifData; set: (k: keyof VerifData, v: string) => void; toggle: (id: string) => void;
+function Step2({
+  d,
+  set,
+  toggle,
+}: {
+  d: VerifData;
+  set: (k: keyof VerifData, v: string) => void;
+  toggle: (id: string) => void;
 }) {
   const fields = [
-    { emoji: "✏️", label: "Describe your public recognition (3–6 sentences)", hint: "Share how you're recognized in your field and why it matters.", key: "recognition_description" as keyof VerifData, rows: 4 },
-    { emoji: "⭐", label: "Any major achievements?", hint: "List key milestones, accomplishments, or standout moments.", key: "major_achievements" as keyof VerifData, rows: 2 },
-    { emoji: "📰", label: "Any press mentions?", hint: "Include articles, interviews, or media features.", key: "press_mentions" as keyof VerifData, rows: 2 },
-    { emoji: "▶️", label: "Any official releases / projects?", hint: "Share links or details about your releases or productions.", key: "official_releases" as keyof VerifData, rows: 2 },
+    {
+      emoji: "✏️",
+      label: "Describe your public recognition (3–6 sentences)",
+      hint: "Share how you're recognized in your field and why it matters.",
+      key: "recognition_description" as keyof VerifData,
+      rows: 4,
+    },
+    {
+      emoji: "⭐",
+      label: "Any major achievements?",
+      hint: "List key milestones, accomplishments, or standout moments.",
+      key: "major_achievements" as keyof VerifData,
+      rows: 2,
+    },
+    {
+      emoji: "📰",
+      label: "Any press mentions?",
+      hint: "Include articles, interviews, or media features.",
+      key: "press_mentions" as keyof VerifData,
+      rows: 2,
+    },
+    {
+      emoji: "▶️",
+      label: "Any official releases / projects?",
+      hint: "Share links or details about your releases or productions.",
+      key: "official_releases" as keyof VerifData,
+      rows: 2,
+    },
   ];
 
   const stats = [
     { emoji: "🎧", label: "Monthly Listeners", key: "monthly_listeners" as keyof VerifData },
-    { emoji: "👥", label: "Social Followers",  key: "social_followers"  as keyof VerifData },
-    { emoji: "📰", label: "Media Mentions",    key: "media_mentions"    as keyof VerifData },
-    { emoji: "🏆", label: "Awards",            key: "awards_count"      as keyof VerifData },
+    { emoji: "👥", label: "Social Followers", key: "social_followers" as keyof VerifData },
+    { emoji: "📰", label: "Media Mentions", key: "media_mentions" as keyof VerifData },
+    { emoji: "🏆", label: "Awards", key: "awards_count" as keyof VerifData },
   ];
 
   return (
@@ -359,7 +551,9 @@ function Step2({ d, set, toggle }: {
               }}
             >
               <span className="text-xl leading-none">{n.emoji}</span>
-              <span className="text-[8px] leading-tight text-center whitespace-pre-line font-semibold text-muted-foreground">{n.label}</span>
+              <span className="text-[8px] leading-tight text-center whitespace-pre-line font-semibold text-muted-foreground">
+                {n.label}
+              </span>
             </button>
           );
         })}
@@ -397,11 +591,15 @@ function Step2({ d, set, toggle }: {
         style={{ background: "oklch(0.82 0.16 85 / 0.07)", border: `1px solid ${G.goldDim}` }}
       >
         <div className="flex items-center gap-2 mb-3">
-          <p className="text-xs font-bold tracking-wide" style={{ color: G.gold }}>Recognition Summary</p>
+          <p className="text-xs font-bold tracking-wide" style={{ color: G.gold }}>
+            Recognition Summary
+          </p>
           <div
             className="size-4 rounded-full grid place-items-center text-[8px] font-bold border"
             style={{ color: G.gold, borderColor: G.goldDim }}
-          >i</div>
+          >
+            i
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {stats.map(({ emoji, label, key }) => (
@@ -427,7 +625,11 @@ function Step2({ d, set, toggle }: {
 
 function Step3({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string) => void }) {
   return (
-    <SectionCard emoji="🔗" title="Official Links" sub="Add links that confirm your identity and notability.">
+    <SectionCard
+      emoji="🔗"
+      title="Official Links"
+      sub="Add links that confirm your identity and notability."
+    >
       <div className="space-y-1">
         {LINK_ROWS.map(({ key, emoji, label }) => {
           const val = d[key] as string;
@@ -435,7 +637,10 @@ function Step3({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string) 
             <div
               key={String(key)}
               className="flex items-center gap-3 px-4 py-3 rounded-2xl border transition"
-              style={{ background: "oklch(0.07 0.02 85 / 0.7)", borderColor: val ? G.gold : G.goldDim }}
+              style={{
+                background: "oklch(0.07 0.02 85 / 0.7)",
+                borderColor: val ? G.gold : G.goldDim,
+              }}
             >
               <span className="text-base w-6 text-center shrink-0">{emoji}</span>
               <input
@@ -446,7 +651,12 @@ function Step3({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string) 
                 className="flex-1 text-sm bg-transparent focus:outline-none placeholder:text-white/30 min-w-0"
               />
               {val ? (
-                <a href={val} target="_blank" rel="noopener noreferrer" className="shrink-0 text-muted-foreground hover:text-primary">
+                <a
+                  href={val}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 text-muted-foreground hover:text-primary"
+                >
                   <ExternalLink className="size-3.5" />
                 </a>
               ) : (
@@ -462,7 +672,13 @@ function Step3({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string) 
 
 // ── Step 4: Safety Check ──────────────────────────────────────────────────────
 
-function Step4({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string | boolean) => void }) {
+function Step4({
+  d,
+  set,
+}: {
+  d: VerifData;
+  set: (k: keyof VerifData, v: string | boolean) => void;
+}) {
   return (
     <SectionCard emoji="🛡️" title="Safety Check" sub="Please confirm the following.">
       {/* Pre-confirmed items — gold check circles like the reference */}
@@ -471,10 +687,18 @@ function Step4({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string |
         style={{ border: `1px solid ${G.goldDim}`, borderColor: G.goldDim }}
       >
         {SAFETY_ITEMS.map((item, i) => (
-          <div key={i} className="flex items-start gap-3 px-4 py-3.5" style={{ background: "oklch(0.07 0.02 85 / 0.7)" }}>
+          <div
+            key={i}
+            className="flex items-start gap-3 px-4 py-3.5"
+            style={{ background: "oklch(0.07 0.02 85 / 0.7)" }}
+          >
             <div
               className="size-6 rounded-full border-2 grid place-items-center shrink-0 mt-0.5"
-              style={{ borderColor: G.gold, background: "oklch(0.82 0.16 85 / 0.15)", boxShadow: `0 0 8px ${G.gold}` }}
+              style={{
+                borderColor: G.gold,
+                background: "oklch(0.82 0.16 85 / 0.15)",
+                boxShadow: `0 0 8px ${G.gold}`,
+              }}
             >
               <Check className="size-3.5" strokeWidth={3} style={{ color: G.gold }} />
             </div>
@@ -491,11 +715,23 @@ function Step4({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string |
         <div className="flex items-start gap-2">
           <div
             className="size-6 rounded-full grid place-items-center text-xs font-bold shrink-0 mt-0.5 border"
-            style={{ color: G.blue, borderColor: G.blueDim, background: "oklch(0.82 0.15 215 / 0.1)" }}
-          >?</div>
+            style={{
+              color: G.blue,
+              borderColor: G.blueDim,
+              background: "oklch(0.82 0.15 215 / 0.1)",
+            }}
+          >
+            ?
+          </div>
           <div>
-            <p className="text-sm font-semibold">Is there any impersonation risk or confusion we should know about? <span className="text-muted-foreground font-normal">(Optional)</span></p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">For example: similar account names, logos, or brands that might be confused with your channel.</p>
+            <p className="text-sm font-semibold">
+              Is there any impersonation risk or confusion we should know about?{" "}
+              <span className="text-muted-foreground font-normal">(Optional)</span>
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              For example: similar account names, logos, or brands that might be confused with your
+              channel.
+            </p>
           </div>
         </div>
         <textarea
@@ -514,7 +750,9 @@ function Step4({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string |
         onClick={() => set("safety_confirmed", !d.safety_confirmed)}
         className="w-full flex items-center gap-3 p-4 rounded-2xl border transition-all"
         style={{
-          background: d.safety_confirmed ? "oklch(0.82 0.16 85 / 0.12)" : "oklch(0.07 0.02 85 / 0.7)",
+          background: d.safety_confirmed
+            ? "oklch(0.82 0.16 85 / 0.12)"
+            : "oklch(0.07 0.02 85 / 0.7)",
           borderColor: d.safety_confirmed ? G.gold : G.goldDim,
           boxShadow: d.safety_confirmed ? `0 0 20px oklch(0.82 0.16 85 / 0.25)` : "none",
         }}
@@ -536,16 +774,24 @@ function Step4({ d, set }: { d: VerifData; set: (k: keyof VerifData, v: string |
 
 // ── Step 5: Review & Submit ───────────────────────────────────────────────────
 
-function Step5({ d, goTo, agreed, setAgreed }: {
-  d: VerifData; goTo: (s: number) => void; agreed: boolean; setAgreed: (v: boolean) => void;
+function Step5({
+  d,
+  goTo,
+  agreed,
+  setAgreed,
+}: {
+  d: VerifData;
+  goTo: (s: number) => void;
+  agreed: boolean;
+  setAgreed: (v: boolean) => void;
 }) {
-  const linksCount = LINK_ROWS.filter(({ key }) => (d[key] as string)).length;
+  const linksCount = LINK_ROWS.filter(({ key }) => d[key] as string).length;
 
   const sections = [
-    { emoji: "🛡️", title: "Badge Identity",    sub: "Your official identity details", step: 0 },
-    { emoji: "⭐",  title: "Notability Proof",   sub: "Proof of your notability",       step: 1 },
-    { emoji: "🔗",  title: "Official Links",      sub: "Links to your official presence", step: 2 },
-    { emoji: "✅",  title: "Safety Check",        sub: "Confirm your account safety",    step: 3 },
+    { emoji: "🛡️", title: "Badge Identity", sub: "Your official identity details", step: 0 },
+    { emoji: "⭐", title: "Notability Proof", sub: "Proof of your notability", step: 1 },
+    { emoji: "🔗", title: "Official Links", sub: "Links to your official presence", step: 2 },
+    { emoji: "✅", title: "Safety Check", sub: "Confirm your account safety", step: 3 },
   ];
 
   const summary = [
@@ -555,7 +801,10 @@ function Step5({ d, goTo, agreed, setAgreed }: {
       const n = NOTABILITY.find((x) => x.id === id);
       return n ? { emoji: n.emoji, text: n.label.replace(/\n/g, " ") } : null;
     }),
-    linksCount > 0 && { emoji: "🔗", text: `${linksCount} link${linksCount !== 1 ? "s" : ""} added` },
+    linksCount > 0 && {
+      emoji: "🔗",
+      text: `${linksCount} link${linksCount !== 1 ? "s" : ""} added`,
+    },
     d.safety_confirmed && { emoji: "✅", text: "All confirmations accepted" },
   ].filter(Boolean) as { emoji: string; text: string }[];
 
@@ -563,7 +812,9 @@ function Step5({ d, goTo, agreed, setAgreed }: {
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-extrabold">Review & Submit</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Review your request before submitting.</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Review your request before submitting.
+        </p>
       </div>
 
       {/* Two-column layout matching the reference screenshot */}
@@ -578,7 +829,10 @@ function Step5({ d, goTo, agreed, setAgreed }: {
             >
               <div
                 className="size-9 rounded-xl grid place-items-center text-base shrink-0"
-                style={{ background: "oklch(0.82 0.15 215 / 0.15)", border: `1px solid ${G.blueDim}` }}
+                style={{
+                  background: "oklch(0.82 0.15 215 / 0.15)",
+                  border: `1px solid ${G.blueDim}`,
+                }}
               >
                 {s.emoji}
               </div>
@@ -589,7 +843,11 @@ function Step5({ d, goTo, agreed, setAgreed }: {
               <button
                 onClick={() => goTo(s.step)}
                 className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold border transition"
-                style={{ color: G.blue, borderColor: G.blueDim, background: "oklch(0.82 0.15 215 / 0.1)" }}
+                style={{
+                  color: G.blue,
+                  borderColor: G.blueDim,
+                  background: "oklch(0.82 0.15 215 / 0.1)",
+                }}
               >
                 ✏️ Edit
               </button>
@@ -600,9 +858,15 @@ function Step5({ d, goTo, agreed, setAgreed }: {
         {/* Right: Application Summary */}
         <div
           className="col-span-2 rounded-2xl p-3 space-y-2"
-          style={{ background: "oklch(0.82 0.16 85 / 0.07)", border: `1px solid ${G.gold}`, boxShadow: `0 0 24px oklch(0.82 0.16 85 / 0.2)` }}
+          style={{
+            background: "oklch(0.82 0.16 85 / 0.07)",
+            border: `1px solid ${G.gold}`,
+            boxShadow: `0 0 24px oklch(0.82 0.16 85 / 0.2)`,
+          }}
         >
-          <p className="text-[10px] font-bold tracking-wide" style={{ color: G.gold }}>Application Summary</p>
+          <p className="text-[10px] font-bold tracking-wide" style={{ color: G.gold }}>
+            Application Summary
+          </p>
           {summary.map((s, i) => (
             <div key={i} className="flex items-start gap-1.5">
               <span className="text-xs shrink-0">{s.emoji}</span>
@@ -621,10 +885,15 @@ function Step5({ d, goTo, agreed, setAgreed }: {
           <div
             className="size-12 rounded-2xl grid place-items-center text-2xl shrink-0"
             style={{ background: "oklch(0.82 0.16 85 / 0.15)", border: `1px solid ${G.goldDim}` }}
-          >🛡️</div>
+          >
+            🛡️
+          </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            By submitting, you confirm that all information provided is accurate and you agree to the{" "}
-            <span className="font-semibold" style={{ color: G.gold }}>Trey TV Community Guidelines.</span>
+            By submitting, you confirm that all information provided is accurate and you agree to
+            the{" "}
+            <span className="font-semibold" style={{ color: G.gold }}>
+              Trey TV Community Guidelines.
+            </span>
           </p>
         </div>
         <button
@@ -641,7 +910,10 @@ function Step5({ d, goTo, agreed, setAgreed }: {
           >
             {agreed && <Check className="size-3 text-black" strokeWidth={3} />}
           </div>
-          <span className={agreed ? "font-medium" : "text-muted-foreground"} style={agreed ? { color: G.gold } : {}}>
+          <span
+            className={agreed ? "font-medium" : "text-muted-foreground"}
+            style={agreed ? { color: G.gold } : {}}
+          >
             I agree to the community guidelines
           </span>
         </button>
@@ -653,27 +925,39 @@ function Step5({ d, goTo, agreed, setAgreed }: {
 // ── Submitted screen ──────────────────────────────────────────────────────────
 
 const TIMELINE = [
-  { label: "Submitted",         emoji: "📄" },
-  { label: "Under Review",      emoji: "🔍" },
+  { label: "Submitted", emoji: "📄" },
+  { label: "Under Review", emoji: "🔍" },
   { label: "More Info\nNeeded", emoji: "ℹ️" },
-  { label: "Approved",          emoji: "🛡️" },
-  { label: "Denied",            emoji: "✗" },
+  { label: "Approved", emoji: "🛡️" },
+  { label: "Denied", emoji: "✗" },
 ];
 
 function VerificationSubmitted() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen flex flex-col items-center px-5 pb-10" style={{ background: "radial-gradient(ellipse 100% 50% at 50% 0%, oklch(0.22 0.09 85 / 0.6) 0%, #020508 55%)" }}>
+    <div
+      className="min-h-screen flex flex-col items-center px-5 pb-10"
+      style={{
+        background:
+          "radial-gradient(ellipse 100% 50% at 50% 0%, oklch(0.22 0.09 85 / 0.6) 0%, #020508 55%)",
+      }}
+    >
       <div className="w-full max-w-sm flex flex-col items-center pt-12 space-y-6">
         <Logo className="h-14 drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.8)]" />
 
         {/* Gold shield */}
         <div className="relative">
-          <div className="size-44 rounded-full grid place-items-center" style={{ background: "radial-gradient(circle, oklch(0.82 0.16 85 / 0.2) 0%, transparent 70%)" }}>
+          <div
+            className="size-44 rounded-full grid place-items-center"
+            style={{
+              background: "radial-gradient(circle, oklch(0.82 0.16 85 / 0.2) 0%, transparent 70%)",
+            }}
+          >
             <div
               className="size-32 rounded-[2.5rem] grid place-items-center text-7xl"
               style={{
-                background: "linear-gradient(145deg, oklch(0.78 0.22 78), oklch(0.62 0.20 68), oklch(0.50 0.18 62))",
+                background:
+                  "linear-gradient(145deg, oklch(0.78 0.22 78), oklch(0.62 0.20 68), oklch(0.50 0.18 62))",
                 border: "2px solid oklch(0.85 0.20 82 / 0.8)",
                 boxShadow: `0 0 80px oklch(0.82 0.16 85 / 0.9), 0 0 160px oklch(0.82 0.16 85 / 0.4), inset 0 2px 0 oklch(1 0 0 / 0.3)`,
               }}
@@ -686,12 +970,14 @@ function VerificationSubmitted() {
 
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-extrabold leading-tight">
-            Your{" "}
-            <span style={{ color: G.gold }}>Gold Verification</span>
-            <br />Request Is In!
+            Your <span style={{ color: G.gold }}>Gold Verification</span>
+            <br />
+            Request Is In!
           </h1>
           <p className="text-sm text-muted-foreground">
-            We received your request.<br />You can track the status from your profile.
+            We received your request.
+            <br />
+            You can track the status from your profile.
           </p>
         </div>
 
@@ -699,7 +985,10 @@ function VerificationSubmitted() {
           <button
             onClick={() => navigate({ to: "/applications" })}
             className="w-full py-4 rounded-full font-bold text-sm flex items-center justify-between px-6 text-black"
-            style={{ background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`, boxShadow: `0 0 40px oklch(0.82 0.16 85 / 0.7)` }}
+            style={{
+              background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`,
+              boxShadow: `0 0 40px oklch(0.82 0.16 85 / 0.7)`,
+            }}
           >
             View Verification Status <ChevronRight className="size-5" />
           </button>
@@ -715,7 +1004,10 @@ function VerificationSubmitted() {
         {/* Status timeline — matches the reference bottom card */}
         <div
           className="w-full rounded-3xl p-4"
-          style={{ background: "oklch(0.10 0.03 0 / 0.8)", border: "1px solid oklch(1 0 0 / 0.08)" }}
+          style={{
+            background: "oklch(0.10 0.03 0 / 0.8)",
+            border: "1px solid oklch(1 0 0 / 0.08)",
+          }}
         >
           <div className="flex items-start">
             {TIMELINE.map((s, i) => {
@@ -731,9 +1023,11 @@ function VerificationSubmitted() {
                         boxShadow: isFirst ? `0 0 14px ${G.gold}` : "none",
                       }}
                     >
-                      {isFirst
-                        ? <Check className="size-4" style={{ color: G.gold }} />
-                        : <span className="text-sm">{s.emoji}</span>}
+                      {isFirst ? (
+                        <Check className="size-4" style={{ color: G.gold }} />
+                      ) : (
+                        <span className="text-sm">{s.emoji}</span>
+                      )}
                     </div>
                     <p
                       className="text-[9px] text-center mt-1.5 leading-tight whitespace-pre-line font-semibold"
@@ -743,7 +1037,10 @@ function VerificationSubmitted() {
                     </p>
                   </div>
                   {i < TIMELINE.length - 1 && (
-                    <div className="h-px w-3 mt-5 shrink-0" style={{ background: "oklch(1 0 0 / 0.1)" }} />
+                    <div
+                      className="h-px w-3 mt-5 shrink-0"
+                      style={{ background: "oklch(1 0 0 / 0.1)" }}
+                    />
                   )}
                 </div>
               );
@@ -778,10 +1075,30 @@ function ExistingVerificationState({ app }: { app: ExistingVerification }) {
   const copy = statusCopy[app.status] ?? statusCopy.pending;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-5" style={{ background: "radial-gradient(ellipse 100% 50% at 50% 0%, oklch(0.22 0.09 85 / 0.6) 0%, #020508 55%)" }}>
-      <div className="w-full max-w-md rounded-3xl p-6 text-center" style={{ background: "oklch(0.09 0.03 85 / 0.9)", border: `1px solid ${G.goldDim}`, boxShadow: `0 0 60px oklch(0.82 0.16 85 / 0.25)` }}>
+    <div
+      className="min-h-screen flex items-center justify-center px-5"
+      style={{
+        background:
+          "radial-gradient(ellipse 100% 50% at 50% 0%, oklch(0.22 0.09 85 / 0.6) 0%, #020508 55%)",
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-3xl p-6 text-center"
+        style={{
+          background: "oklch(0.09 0.03 85 / 0.9)",
+          border: `1px solid ${G.goldDim}`,
+          boxShadow: `0 0 60px oklch(0.82 0.16 85 / 0.25)`,
+        }}
+      >
         <Logo className="h-12 mx-auto drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.8)]" />
-        <div className="mx-auto mt-6 size-20 rounded-[1.75rem] grid place-items-center text-4xl" style={{ background: "linear-gradient(145deg, oklch(0.78 0.22 78), oklch(0.62 0.20 68))", border: "2px solid oklch(0.85 0.20 82 / 0.8)", boxShadow: `0 0 50px oklch(0.82 0.16 85 / 0.75)` }}>
+        <div
+          className="mx-auto mt-6 size-20 rounded-[1.75rem] grid place-items-center text-4xl"
+          style={{
+            background: "linear-gradient(145deg, oklch(0.78 0.22 78), oklch(0.62 0.20 68))",
+            border: "2px solid oklch(0.85 0.20 82 / 0.8)",
+            boxShadow: `0 0 50px oklch(0.82 0.16 85 / 0.75)`,
+          }}
+        >
           🛡️
         </div>
         <h1 className="mt-6 text-2xl font-extrabold leading-tight">{copy.title}</h1>
@@ -795,7 +1112,10 @@ function ExistingVerificationState({ app }: { app: ExistingVerification }) {
           <button
             onClick={() => navigate({ to: "/applications" })}
             className="w-full py-4 rounded-full font-bold text-sm text-black"
-            style={{ background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`, boxShadow: `0 0 34px oklch(0.82 0.16 85 / 0.55)` }}
+            style={{
+              background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`,
+              boxShadow: `0 0 34px oklch(0.82 0.16 85 / 0.55)`,
+            }}
           >
             View Verification Status
           </button>
@@ -819,7 +1139,8 @@ function validate(step: number, d: VerifData): string | null {
     if (!d.display_name.trim()) return "Display name is required.";
     if (!d.username.trim()) return "Username is required.";
     if (!d.applying_as) return "Please select what you're applying as.";
-    if (!d.why_gold_badge.trim()) return "Please tell us why this profile should receive a gold badge.";
+    if (!d.why_gold_badge.trim())
+      return "Please tell us why this profile should receive a gold badge.";
   }
   if (step === 1) {
     if (d.notability_types.length === 0) return "Select at least one notability type.";
@@ -847,7 +1168,9 @@ function GoldVerificationApplication() {
 
   useEffect(() => {
     if (isGuest) {
-      try { sessionStorage.setItem("treytv_post_auth_redirect", "/apply/verification"); } catch {}
+      try {
+        sessionStorage.setItem("treytv_post_auth_redirect", "/apply/verification");
+      } catch {}
       navigate({ to: "/login" });
     }
   }, [isGuest, navigate]);
@@ -875,7 +1198,8 @@ function GoldVerificationApplication() {
           .select("id, status, review_notes, verification_data")
           .eq("application_type", "verification")
           .eq("user_id", authUserId)
-          .limit(1).maybeSingle();
+          .limit(1)
+          .maybeSingle();
         if (dead || !row) return;
         if (!["draft", "needs_more_info"].includes(row.status)) {
           setExistingApp({
@@ -889,7 +1213,9 @@ function GoldVerificationApplication() {
         if (row.verification_data) setData((p) => ({ ...p, ...row.verification_data }));
       } catch {}
     })();
-    return () => { dead = true; };
+    return () => {
+      dead = true;
+    };
   }, [user?.uid]);
 
   const set = useCallback(<K extends keyof VerifData>(k: K, v: VerifData[K]) => {
@@ -909,13 +1235,26 @@ function GoldVerificationApplication() {
     const { data: auth } = await supabase.auth.getUser();
     const authUserId = auth.user?.id;
     if (!authUserId) throw new Error("Please sign in before submitting a verification request.");
-    const payload = { user_id: authUserId, application_type: "verification", status, verification_data: data, updated_at: new Date().toISOString() };
+    const payload = {
+      user_id: authUserId,
+      application_type: "verification",
+      status,
+      verification_data: data,
+      updated_at: new Date().toISOString(),
+    };
     if (appId) {
-      const { error } = await (supabase as any).from("creator_applications").update(payload).eq("id", appId);
+      const { error } = await (supabase as any)
+        .from("creator_applications")
+        .update(payload)
+        .eq("id", appId);
       if (error) throw error;
       return appId;
     }
-    const { data: row, error } = await (supabase as any).from("creator_applications").insert(payload).select("id").single();
+    const { data: row, error } = await (supabase as any)
+      .from("creator_applications")
+      .insert(payload)
+      .select("id")
+      .single();
     if (error) throw error;
     setAppId(row.id);
     return row.id as string;
@@ -923,26 +1262,45 @@ function GoldVerificationApplication() {
 
   const handleDraft = async () => {
     setSaving(true);
-    try { await upsert("draft"); toast.success("Draft saved!"); }
-    catch (e: any) { toast.error(e?.message ?? "Failed to save draft."); }
-    finally { setSaving(false); }
+    try {
+      await upsert("draft");
+      toast.success("Draft saved!");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to save draft.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleNext = () => {
     const err = validate(step, data);
-    if (err) { toast.error(err); return; }
+    if (err) {
+      toast.error(err);
+      return;
+    }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleBack = () => { setStep((s) => Math.max(s - 1, 0)); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const handleBack = () => {
+    setStep((s) => Math.max(s - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSubmit = async () => {
-    if (!agreed) { toast.error("Please agree to the community guidelines."); return; }
+    if (!agreed) {
+      toast.error("Please agree to the community guidelines.");
+      return;
+    }
     setSubmitting(true);
-    try { await upsert("pending"); setSubmitted(true); }
-    catch (e: any) { toast.error(e?.message ?? "Failed to submit."); }
-    finally { setSubmitting(false); }
+    try {
+      await upsert("pending");
+      setSubmitted(true);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to submit.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (isGuest) return null;
@@ -957,7 +1315,9 @@ function GoldVerificationApplication() {
           onClick={step === 0 ? () => navigate({ to: "/apply" }) : handleBack}
           className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition"
         >
-          <ChevronLeft className="size-4 text-[oklch(0.82_0.15_215)]" /> <span className="hidden sm:inline">Back to Apply</span><span className="sm:hidden">Back</span>
+          <ChevronLeft className="size-4 text-[oklch(0.82_0.15_215)]" />{" "}
+          <span className="hidden sm:inline">Back to Apply</span>
+          <span className="sm:hidden">Back</span>
         </button>
         <Logo className="absolute left-1/2 top-3 h-14 sm:h-20 -translate-x-1/2 drop-shadow-[0_0_30px_oklch(0.82_0.16_85_/_0.85)]" />
         <button
@@ -965,7 +1325,11 @@ function GoldVerificationApplication() {
           disabled={saving}
           className="apply-pill-button flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
         >
-          {saving ? <Loader2 className="size-4 animate-spin text-[oklch(0.82_0.16_85)]" /> : <Save className="size-4 text-[oklch(0.82_0.16_85)]" />}
+          {saving ? (
+            <Loader2 className="size-4 animate-spin text-[oklch(0.82_0.16_85)]" />
+          ) : (
+            <Save className="size-4 text-[oklch(0.82_0.16_85)]" />
+          )}
           Save Draft
         </button>
       </header>
@@ -973,7 +1337,10 @@ function GoldVerificationApplication() {
       {/* ── Logo + title on every step ── */}
       <div className="shrink-0 px-5 pb-3 pt-14 sm:pt-20 text-center">
         <h1 className="text-4xl font-extrabold tracking-normal sm:text-5xl">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[oklch(0.98_0.12_95)] via-[oklch(0.82_0.16_85)] to-white drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.7)]">Gold Verification</span> Request
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[oklch(0.98_0.12_95)] via-[oklch(0.82_0.16_85)] to-white drop-shadow-[0_0_24px_oklch(0.82_0.16_85_/_0.7)]">
+            Gold Verification
+          </span>{" "}
+          Request
         </h1>
       </div>
 
@@ -985,7 +1352,9 @@ function GoldVerificationApplication() {
       {/* ── Scrollable content ── */}
       <div className="flex-1 px-4 pb-8">
         <div className="animate-rise mx-auto w-full max-w-5xl">
-          {step === 0 && <Step1 d={data} set={(k, v) => set(k, v as any)} avatar={user?.avatar ?? ""} />}
+          {step === 0 && (
+            <Step1 d={data} set={(k, v) => set(k, v as any)} avatar={user?.avatar ?? ""} />
+          )}
           {step === 1 && <Step2 d={data} set={(k, v) => set(k, v as any)} toggle={toggle} />}
           {step === 2 && <Step3 d={data} set={(k, v) => set(k, v as any)} />}
           {step === 3 && <Step4 d={data} set={(k, v) => set(k, v as any)} />}
@@ -1012,7 +1381,10 @@ function GoldVerificationApplication() {
             <button
               onClick={handleNext}
               className="flex-1 py-4 rounded-full font-bold text-sm text-black flex items-center justify-center gap-2"
-              style={{ background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`, boxShadow: `0 0 28px oklch(0.82 0.16 85 / 0.55)` }}
+              style={{
+                background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`,
+                boxShadow: `0 0 28px oklch(0.82 0.16 85 / 0.55)`,
+              }}
             >
               Next Step <ChevronRight className="size-4" />
             </button>
@@ -1021,7 +1393,10 @@ function GoldVerificationApplication() {
               onClick={handleSubmit}
               disabled={submitting || !agreed}
               className="flex-1 py-4 rounded-full font-bold text-sm text-black flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`, boxShadow: `0 0 28px oklch(0.82 0.16 85 / 0.55)` }}
+              style={{
+                background: `linear-gradient(90deg, oklch(0.65 0.20 72), oklch(0.80 0.22 82))`,
+                boxShadow: `0 0 28px oklch(0.82 0.16 85 / 0.55)`,
+              }}
             >
               {submitting ? <Loader2 className="size-4 animate-spin text-black" /> : "🛡️"}
               {submitting ? "Submitting…" : "Submit Verification Request"}

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+﻿import React from "react";
 
 /**
  * Official Trey TV logo (silver + gold metallic wordmark).
@@ -8,7 +8,7 @@
  * height looks crisp on dark backgrounds.
  */
 export const TREY_TV_LOGO_URL =
-  'https://d64gsuwffb70l.cloudfront.net/6a060641815889c4c7c610fd_1778783806509_ab6fb4ed.png';
+  "https://d64gsuwffb70l.cloudfront.net/6a060641815889c4c7c610fd_1778783806509_ab6fb4ed.png";
 
 interface TreyTVLogoProps {
   /** Pixel height of the logo. Width auto-scales. */
@@ -20,7 +20,7 @@ interface TreyTVLogoProps {
 
 export const TreyTVLogo: React.FC<TreyTVLogoProps> = ({
   size = 32,
-  className = '',
+  className = "",
   glow = false,
 }) => (
   <span
@@ -28,20 +28,16 @@ export const TreyTVLogo: React.FC<TreyTVLogoProps> = ({
     style={{ height: size }}
   >
     {glow && (
-      <span
-        aria-hidden
-        className="absolute inset-0 rounded-full bg-amber-400/20 blur-2xl"
-      />
+      <span aria-hidden className="absolute inset-0 rounded-full bg-amber-400/20 blur-2xl" />
     )}
     <img
       src={TREY_TV_LOGO_URL}
       alt="Trey TV"
       draggable={false}
-      style={{ height: size, width: 'auto' }}
+      style={{ height: size, width: "auto" }}
       className="relative select-none object-contain"
     />
   </span>
 );
 
 export default TreyTVLogo;
-

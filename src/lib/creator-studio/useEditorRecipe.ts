@@ -8,8 +8,13 @@
 import { useCallback, useMemo, useState } from "react";
 import * as R from "./editRecipe";
 import type {
-  EditRecipe, EffectType, FilterType, TransitionType,
-  OverlayClip, TextClip, AudioClip,
+  EditRecipe,
+  EffectType,
+  FilterType,
+  TransitionType,
+  OverlayClip,
+  TextClip,
+  AudioClip,
 } from "./editRecipe";
 
 interface History {
@@ -38,9 +43,21 @@ export interface EditorRecipeApi {
   toggleEffect: (clipId: string, effect: EffectType) => void;
   setOpacity: (clipId: string, opacity: number) => void;
 
-  addText: (init: { text: string; start?: number; length?: number } & Partial<Omit<TextClip, "kind" | "id">>) => void;
-  addOverlay: (init: { src: string; start?: number; length?: number } & Partial<Omit<OverlayClip, "kind" | "id">>) => void;
-  addAudio: (init: { src: string; start?: number; length?: number } & Partial<Omit<AudioClip, "kind" | "id">>) => void;
+  addText: (
+    init: { text: string; start?: number; length?: number } & Partial<
+      Omit<TextClip, "kind" | "id">
+    >,
+  ) => void;
+  addOverlay: (
+    init: { src: string; start?: number; length?: number } & Partial<
+      Omit<OverlayClip, "kind" | "id">
+    >,
+  ) => void;
+  addAudio: (
+    init: { src: string; start?: number; length?: number } & Partial<
+      Omit<AudioClip, "kind" | "id">
+    >,
+  ) => void;
   addCaption: (init: { text: string; start?: number; length?: number }) => void;
 
   remove: (clipId: string) => void;
@@ -95,29 +112,32 @@ export function useEditorRecipe(initial: EditRecipe | null = null): EditorRecipe
     });
   }, []);
 
-  return useMemo<EditorRecipeApi>(() => ({
-    recipe: hist?.present ?? null,
-    init,
-    reset,
-    undo,
-    redo,
-    canUndo: (hist?.past.length ?? 0) > 0,
-    canRedo: (hist?.future.length ?? 0) > 0,
+  return useMemo<EditorRecipeApi>(
+    () => ({
+      recipe: hist?.present ?? null,
+      init,
+      reset,
+      undo,
+      redo,
+      canUndo: (hist?.past.length ?? 0) > 0,
+      canRedo: (hist?.future.length ?? 0) > 0,
 
-    split: (id, t) => commit((r) => R.splitClip(r, id, t)),
-    trim: (id, p) => commit((r) => R.trimClip(r, id, p)),
-    setSpeed: (id, s) => commit((r) => R.setSpeed(r, id, s)),
-    setTransition: (id, side, type) => commit((r) => R.setTransition(r, id, side, type)),
-    setFilter: (id, f) => commit((r) => R.setFilter(r, id, f)),
-    toggleEffect: (id, e) => commit((r) => R.toggleEffect(r, id, e)),
-    setOpacity: (id, o) => commit((r) => R.setOpacity(r, id, o)),
+      split: (id, t) => commit((r) => R.splitClip(r, id, t)),
+      trim: (id, p) => commit((r) => R.trimClip(r, id, p)),
+      setSpeed: (id, s) => commit((r) => R.setSpeed(r, id, s)),
+      setTransition: (id, side, type) => commit((r) => R.setTransition(r, id, side, type)),
+      setFilter: (id, f) => commit((r) => R.setFilter(r, id, f)),
+      toggleEffect: (id, e) => commit((r) => R.toggleEffect(r, id, e)),
+      setOpacity: (id, o) => commit((r) => R.setOpacity(r, id, o)),
 
-    addText: (i) => commit((r) => R.addTextClip(r, i)),
-    addOverlay: (i) => commit((r) => R.addOverlayClip(r, i)),
-    addAudio: (i) => commit((r) => R.addAudioClip(r, i)),
-    addCaption: (i) => commit((r) => R.addCaptionClip(r, i)),
+      addText: (i) => commit((r) => R.addTextClip(r, i)),
+      addOverlay: (i) => commit((r) => R.addOverlayClip(r, i)),
+      addAudio: (i) => commit((r) => R.addAudioClip(r, i)),
+      addCaption: (i) => commit((r) => R.addCaptionClip(r, i)),
 
-    remove: (id) => commit((r) => R.deleteClip(r, id)),
-    move: (id, s) => commit((r) => R.moveClip(r, id, s)),
-  }), [hist, commit, init, reset, undo, redo]);
+      remove: (id) => commit((r) => R.deleteClip(r, id)),
+      move: (id, s) => commit((r) => R.moveClip(r, id, s)),
+    }),
+    [hist, commit, init, reset, undo, redo],
+  );
 }

@@ -30,8 +30,12 @@ const KEY = "treytv_follows_v1";
 const PUBLIC_UID_RE = /^\d{10,}$/;
 
 const SEED: FollowedCreator[] = creators.slice(0, 3).map((c, i) => ({
-  id: c.id, name: c.name, handle: c.handle, avatar: c.avatar as unknown as string,
-  followedAt: Date.now() - i * 86_400_000, watchScore: 100 - i * 20,
+  id: c.id,
+  name: c.name,
+  handle: c.handle,
+  avatar: c.avatar as unknown as string,
+  followedAt: Date.now() - i * 86_400_000,
+  watchScore: 100 - i * 20,
 }));
 
 type FollowedProfileRow = {
@@ -64,7 +68,9 @@ export function FollowProvider({ children }: { children: ReactNode }) {
   }, [storageKey]);
 
   useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify(localFollowed)); } catch {}
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(localFollowed));
+    } catch {}
   }, [localFollowed, storageKey]);
 
   useEffect(() => {
@@ -87,20 +93,24 @@ export function FollowProvider({ children }: { children: ReactNode }) {
             .maybeSingle(),
           supabase
             .from("follows")
-            .select(`
+            .select(
+              `
               following:profiles!follows_following_id_fkey(
                 public_profile_uid,
                 display_name,
                 username,
                 avatar_url
               )
-            `)
+            `,
+            )
             .eq("follower_id", supaUser.id),
         ]);
 
         if (cancelled) return;
 
-        setOwnPublicProfileUid((ownProfile as { public_profile_uid?: string | null } | null)?.public_profile_uid ?? null);
+        setOwnPublicProfileUid(
+          (ownProfile as { public_profile_uid?: string | null } | null)?.public_profile_uid ?? null,
+        );
 
         if (error) {
           console.error("Failed to load follows:", error);
@@ -155,7 +165,17 @@ export function FollowProvider({ children }: { children: ReactNode }) {
     if (!isRealProfileId(c.id)) {
       setLocalFollowed((s) => {
         if (s.some((f) => f.handle === c.handle)) return s.filter((f) => f.handle !== c.handle);
-        return [...s, { id: c.id, name: c.name, handle: c.handle, avatar: c.avatar, followedAt: Date.now(), watchScore: 10 }];
+        return [
+          ...s,
+          {
+            id: c.id,
+            name: c.name,
+            handle: c.handle,
+            avatar: c.avatar,
+            followedAt: Date.now(),
+            watchScore: 10,
+          },
+        ];
       });
       recordUserTrace({
         userUid: ownPublicProfileUid ?? "",
@@ -236,9 +256,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
               .delete()
               .eq("follower_id", supaUser.id)
               .eq("following_id", followingId)
-          : await supabase
-              .from("follows")
-              .insert(followRow);
+          : await supabase.from("follows").insert(followRow);
 
         if (error) throw error;
       } catch (error) {
@@ -252,14 +270,20 @@ export function FollowProvider({ children }: { children: ReactNode }) {
   };
 
   const bumpWatch: Ctx["bumpWatch"] = (handle) =>
-    setLocalFollowed((s) => s.map((f) => f.handle === handle ? { ...f, watchScore: f.watchScore + 5 } : f));
+    setLocalFollowed((s) =>
+      s.map((f) => (f.handle === handle ? { ...f, watchScore: f.watchScore + 5 } : f)),
+    );
 
   const topThree = useMemo(
     () => [...followed].sort((a, b) => b.watchScore - a.watchScore).slice(0, 3),
-    [followed]
+    [followed],
   );
 
-  return <C.Provider value={{ followed, isFollowing, toggle, bumpWatch, topThree }}>{children}</C.Provider>;
+  return (
+    <C.Provider value={{ followed, isFollowing, toggle, bumpWatch, topThree }}>
+      {children}
+    </C.Provider>
+  );
 }
 
 export function useFollow() {

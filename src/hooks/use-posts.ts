@@ -42,7 +42,8 @@ export function usePosts() {
         const supabase = createBrowserClient();
         const { data, error } = await supabase
           .from("user_posts")
-          .select(`
+          .select(
+            `
             id,
             body,
             content,
@@ -55,7 +56,8 @@ export function usePosts() {
             created_at,
             author:profiles!user_posts_author_id_fkey(public_profile_uid, display_name, username, avatar_url),
             creator:profiles!user_posts_creator_id_fkey(public_profile_uid, display_name, username, avatar_url)
-          `)
+          `,
+          )
           .eq("status", "published")
           .eq("visibility", "public")
           .order("created_at", { ascending: false })
@@ -64,9 +66,10 @@ export function usePosts() {
         if (error) {
           // If the precise relation name fails, fall back to simple relation names.
           if (error.message.includes("relationship")) {
-             const fallback = await supabase
+            const fallback = await supabase
               .from("user_posts")
-              .select(`
+              .select(
+                `
                 id,
                 body,
                 content,
@@ -78,19 +81,20 @@ export function usePosts() {
                 comments_count,
                 created_at,
                 author:profiles(public_profile_uid, display_name, username, avatar_url)
-              `)
+              `,
+              )
               .eq("status", "published")
               .eq("visibility", "public")
               .order("created_at", { ascending: false })
               .limit(30);
-              
-              if (fallback.error) throw fallback.error;
-              if (mounted) {
-                setPosts(fallback.data as SupabasePost[]);
-                setError(null);
-                setLoading(false);
-              }
-              return;
+
+            if (fallback.error) throw fallback.error;
+            if (mounted) {
+              setPosts(fallback.data as SupabasePost[]);
+              setError(null);
+              setLoading(false);
+            }
+            return;
           }
           throw error;
         }

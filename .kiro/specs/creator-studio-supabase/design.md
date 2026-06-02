@@ -36,7 +36,7 @@ type CreatorStudioData = {
   channel: ChannelRow | null;
   shows: ShowRow[];
   episodes: EpisodeRow[];
-  submissions: Submission[];       // episodes mapped to Lovable Submission shape
+  submissions: Submission[]; // episodes mapped to Lovable Submission shape
   isApprovedCreator: boolean;
   loading: boolean;
 };
@@ -134,9 +134,13 @@ The `channels` table uses `owner_email` (not `owner_id` / `user_id`) as the owne
 **Solution:** Use `supabase.auth.getUser()` inside the hook to get the authenticated user's email, separate from `useCurrentUser()`. This is a one-time call on mount, not a subscription.
 
 ```ts
-const { data: { user: authUser } } = await supabase.auth.getUser();
+const {
+  data: { user: authUser },
+} = await supabase.auth.getUser();
 const email = authUser?.email?.toLowerCase() ?? null;
-if (!email) { /* not signed in */ return; }
+if (!email) {
+  /* not signed in */ return;
+}
 ```
 
 This avoids adding `email` to the `profiles` schema or `useCurrentUser()`.
@@ -147,45 +151,45 @@ This avoids adding `email` to the `profiles` schema or `useCurrentUser()`.
 
 ```ts
 function episodeToSubmission(ep: EpisodeRow, shows: ShowRow[]): Submission {
-  const show = shows.find(s => s.id === ep.show_id);
+  const show = shows.find((s) => s.id === ep.show_id);
   return {
     content_id: ep.id,
     creator_id: ep.channel_id,
-    creator_name: '',
-    creator_handle: '',
-    creator_avatar: '',
+    creator_name: "",
+    creator_handle: "",
+    creator_avatar: "",
     title: ep.title,
-    short_description: '',
-    full_description: '',
-    viewer_context: '',
-    what_to_know: '',
-    why_it_matters: '',
-    creator_note: '',
+    short_description: "",
+    full_description: "",
+    viewer_context: "",
+    what_to_know: "",
+    why_it_matters: "",
+    creator_note: "",
     show_id: ep.show_id,
-    show_title: show?.title ?? '',
+    show_title: show?.title ?? "",
     season_number: ep.season_number,
     episode_number: ep.episode_number,
-    episode_type: 'Full Episode',
+    episode_type: "Full Episode",
     category: [],
     tags: [],
     mood_tags: [],
-    thumbnail_url: ep.thumbnail_url ?? '',
-    poster_url: '',
-    video_url: '',
-    duration: '',
-    quality: '',
-    visibility: 'public',
-    access_type: 'free',
-    content_rating: '',
-    language: '',
+    thumbnail_url: ep.thumbnail_url ?? "",
+    poster_url: "",
+    video_url: "",
+    duration: "",
+    quality: "",
+    visibility: "public",
+    access_type: "free",
+    content_rating: "",
+    language: "",
     explicit_content: false,
     is_trailer: false,
     is_bonus: false,
     is_finale: false,
     is_premiere: false,
     status: publishStatusToSubmissionStatus(ep.publish_status),
-    admin_feedback: '',
-    admin_internal_note: '',
+    admin_feedback: "",
+    admin_internal_note: "",
     policy_ack: true,
     created_at: ep.created_at,
     updated_at: ep.updated_at,
@@ -193,11 +197,11 @@ function episodeToSubmission(ep: EpisodeRow, shows: ShowRow[]): Submission {
 }
 
 function publishStatusToSubmissionStatus(s: string): SubmissionStatus {
-  if (s === 'draft') return 'draft';
-  if (s === 'scheduled') return 'scheduled';
-  if (s === 'published') return 'published';
-  if (s === 'archived') return 'approved';
-  return 'pending';
+  if (s === "draft") return "draft";
+  if (s === "scheduled") return "scheduled";
+  if (s === "published") return "published";
+  if (s === "archived") return "approved";
+  return "pending";
 }
 ```
 
@@ -206,12 +210,14 @@ function publishStatusToSubmissionStatus(s: string): SubmissionStatus {
 ## 6. Changes to Route Files
 
 ### `creator-studio.index.tsx`
+
 - Add import: `useCreatorStudio`
 - Replace: `const { submissions } = useSubmissions()` → `const { submissions, isApprovedCreator } = useCreatorStudio()`
 - Remove: `useSubmissions` import (if no longer used)
 - `myName` / `channelHandle`: already from `useAuth()` — leave as-is (useCurrentUser bridge handles this)
 
 ### `creator-studio.submissions.tsx`
+
 - Add import: `useCreatorStudio`
 - Replace: `const store = useSubmissions()` → `const { submissions } = useCreatorStudio()`
 - Replace: `const mine = user ? store.byCreator(user.uid) : store.submissions` → `const mine = submissions`
@@ -220,6 +226,7 @@ function publishStatusToSubmissionStatus(s: string): SubmissionStatus {
 - Keep `STATUS_LABEL`, `STATUS_TONE` imports from `submissions-store` (still needed for rendering)
 
 ### `creator-studio.analytics.tsx`
+
 - Add import: `useCreatorStudio`
 - Replace: `const store = useSubmissions()` → `const { episodes } = useCreatorStudio()`
 - Replace: `store.submissions.filter(...)` → `episodes.filter(ep => ep.publish_status === 'published')`
@@ -227,6 +234,7 @@ function publishStatusToSubmissionStatus(s: string): SubmissionStatus {
 - Sparkline values remain randomly generated
 
 ### `creator-studio.fans.tsx`
+
 - Add import: `useCurrentUser`
 - Replace: `"32.7K"` in Total Fans metric card → `` `${currentUser?.follower_count?.toLocaleString() ?? '—'}` ``
 - Fan list remains mock — no other changes
@@ -245,14 +253,14 @@ This is the minimal safe change: one additional hook call, one field swap.
 
 ## 8. Files Changed
 
-| File | Change |
-|---|---|
-| `src/hooks/use-creator-studio.ts` | New file |
-| `src/components/layout/CreatorStudioLayout.tsx` | Add `useCreatorStudio()`, replace `isApprovedCreator` source |
-| `src/routes/creator-studio.index.tsx` | Replace `useSubmissions()` with `useCreatorStudio()` |
-| `src/routes/creator-studio.submissions.tsx` | Replace `useSubmissions()` with `useCreatorStudio()`, wire `remove` to toast |
-| `src/routes/creator-studio.analytics.tsx` | Replace `useSubmissions()` with `useCreatorStudio()` for episode table |
-| `src/routes/creator-studio.fans.tsx` | Replace hardcoded follower count with `useCurrentUser()` |
+| File                                            | Change                                                                       |
+| ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `src/hooks/use-creator-studio.ts`               | New file                                                                     |
+| `src/components/layout/CreatorStudioLayout.tsx` | Add `useCreatorStudio()`, replace `isApprovedCreator` source                 |
+| `src/routes/creator-studio.index.tsx`           | Replace `useSubmissions()` with `useCreatorStudio()`                         |
+| `src/routes/creator-studio.submissions.tsx`     | Replace `useSubmissions()` with `useCreatorStudio()`, wire `remove` to toast |
+| `src/routes/creator-studio.analytics.tsx`       | Replace `useSubmissions()` with `useCreatorStudio()` for episode table       |
+| `src/routes/creator-studio.fans.tsx`            | Replace hardcoded follower count with `useCurrentUser()`                     |
 
 `submissions-store.tsx` is not modified.
 

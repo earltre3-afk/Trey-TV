@@ -1,27 +1,39 @@
 import { useEffect, useRef } from "react";
-import { Heart, MessageCircle, UserPlus, Zap, Sparkles, Radio, CheckCheck, X, Bell } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  UserPlus,
+  Zap,
+  Sparkles,
+  Radio,
+  CheckCheck,
+  X,
+  Bell,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useNotifications, type NotificationItem } from "@/hooks/use-notifications";
 import { toast } from "sonner";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
 
-const iconFor = (k: NotificationItem["kind"]) => ({
-  like: Heart,
-  comment: MessageCircle,
-  follow: UserPlus,
-  live: Radio,
-  trey: Sparkles,
-  boost: Zap,
-}[k]);
+const iconFor = (k: NotificationItem["kind"]) =>
+  ({
+    like: Heart,
+    comment: MessageCircle,
+    follow: UserPlus,
+    live: Radio,
+    trey: Sparkles,
+    boost: Zap,
+  })[k];
 
-const tintFor = (k: NotificationItem["kind"]) => ({
-  like: "text-[oklch(0.7_0.25_340)] bg-[oklch(0.7_0.25_340_/_0.12)]",
-  comment: "text-[oklch(0.82_0.15_215)] bg-[oklch(0.82_0.15_215_/_0.12)]",
-  follow: "text-primary bg-primary/15",
-  live: "text-[oklch(0.7_0.25_340)] bg-[oklch(0.7_0.25_340_/_0.15)]",
-  trey: "text-[oklch(0.65_0.22_300)] bg-[oklch(0.65_0.22_300_/_0.15)]",
-  boost: "text-primary bg-primary/15",
-}[k]);
+const tintFor = (k: NotificationItem["kind"]) =>
+  ({
+    like: "text-[oklch(0.7_0.25_340)] bg-[oklch(0.7_0.25_340_/_0.12)]",
+    comment: "text-[oklch(0.82_0.15_215)] bg-[oklch(0.82_0.15_215_/_0.12)]",
+    follow: "text-primary bg-primary/15",
+    live: "text-[oklch(0.7_0.25_340)] bg-[oklch(0.7_0.25_340_/_0.15)]",
+    trey: "text-[oklch(0.65_0.22_300)] bg-[oklch(0.65_0.22_300_/_0.15)]",
+    boost: "text-primary bg-primary/15",
+  })[k];
 
 export function NotificationsPopover({ open, onClose }: { open: boolean; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,9 +62,18 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
     >
       <div className="rounded-3xl glass-strong border border-white/10 shadow-[0_20px_60px_-20px_oklch(0_0_0_/_0.8)] overflow-hidden">
         {/* aurora trim */}
-        <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,oklch(0.82_0.16_85_/_0.7),oklch(0.7_0.25_340_/_0.6),oklch(0.65_0.22_300_/_0.6),transparent)]" />
-        <div aria-hidden className="absolute -top-16 -right-10 size-40 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
-        <div aria-hidden className="absolute -bottom-16 -left-10 size-40 rounded-full bg-[oklch(0.7_0.25_340_/_0.15)] blur-3xl pointer-events-none" />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,oklch(0.82_0.16_85_/_0.7),oklch(0.7_0.25_340_/_0.6),oklch(0.65_0.22_300_/_0.6),transparent)]"
+        />
+        <div
+          aria-hidden
+          className="absolute -top-16 -right-10 size-40 rounded-full bg-primary/15 blur-3xl pointer-events-none"
+        />
+        <div
+          aria-hidden
+          className="absolute -bottom-16 -left-10 size-40 rounded-full bg-[oklch(0.7_0.25_340_/_0.15)] blur-3xl pointer-events-none"
+        />
 
         <header className="relative flex items-center justify-between px-4 pt-3 pb-2">
           <div className="flex items-center gap-2">
@@ -64,7 +85,11 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
               <div className="text-[10px] text-muted-foreground">{unreadCount} new updates</div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="size-8 grid place-items-center rounded-full glass hover:bg-white/5">
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="size-8 grid place-items-center rounded-full glass hover:bg-white/5"
+          >
             <X className="size-4" />
           </button>
         </header>
@@ -100,16 +125,27 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
 
                 <div className="relative shrink-0">
                   {n.who ? (
-                    <ProfilePictureLink publicProfileUid={n.who.publicProfileUid} label={`Open @${n.who.handle}'s public profile`}>
-                      <img src={n.who.avatar} alt="" className="size-10 rounded-full object-cover ring-1 ring-white/10" />
+                    <ProfilePictureLink
+                      publicProfileUid={n.who.publicProfileUid}
+                      label={`Open @${n.who.handle}'s public profile`}
+                    >
+                      <img
+                        src={n.who.avatar}
+                        alt=""
+                        className="size-10 rounded-full object-cover ring-1 ring-white/10"
+                      />
                     </ProfilePictureLink>
                   ) : (
-                    <div className={`size-10 rounded-full grid place-items-center ${tintFor(n.kind)}`}>
+                    <div
+                      className={`size-10 rounded-full grid place-items-center ${tintFor(n.kind)}`}
+                    >
                       <Icon className="size-5" />
                     </div>
                   )}
                   {n.who && (
-                    <div className={`absolute -bottom-0.5 -right-0.5 size-5 rounded-full grid place-items-center ring-2 ring-background ${tintFor(n.kind)}`}>
+                    <div
+                      className={`absolute -bottom-0.5 -right-0.5 size-5 rounded-full grid place-items-center ring-2 ring-background ${tintFor(n.kind)}`}
+                    >
                       <Icon className="size-3" />
                     </div>
                   )}
@@ -118,12 +154,20 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
                 <div className="flex-1 min-w-0">
                   <div className="text-xs leading-snug">
                     {n.who && <span className="font-semibold">{n.who.name} </span>}
-                    <span className={n.unread ? "text-foreground" : "text-muted-foreground"}>{n.text}</span>
+                    <span className={n.unread ? "text-foreground" : "text-muted-foreground"}>
+                      {n.text}
+                    </span>
                   </div>
                   <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
                     <span>{n.time}</span>
                     {n.kind === "follow" && (
-                      <button onClick={(e) => { e.preventDefault(); toast.success("Following back"); }} className="px-2 py-0.5 rounded-full border border-primary/40 text-primary hover:bg-primary/10">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toast.success("Following back");
+                        }}
+                        className="px-2 py-0.5 rounded-full border border-primary/40 text-primary hover:bg-primary/10"
+                      >
                         Follow back
                       </button>
                     )}
@@ -137,23 +181,46 @@ export function NotificationsPopover({ open, onClose }: { open: boolean; onClose
               </div>
             );
             return n.to ? (
-              <Link key={n.id} to={n.to} onClick={() => { markRead(n.id); onClose(); }} className="block">
+              <Link
+                key={n.id}
+                to={n.to}
+                onClick={() => {
+                  markRead(n.id);
+                  onClose();
+                }}
+                className="block"
+              >
                 {Body}
               </Link>
             ) : (
-              <div key={n.id} onClick={() => { markRead(n.id); onClose(); }}>{Body}</div>
+              <div
+                key={n.id}
+                onClick={() => {
+                  markRead(n.id);
+                  onClose();
+                }}
+              >
+                {Body}
+              </div>
             );
           })}
         </div>
 
         <footer className="relative flex items-center justify-between px-3 py-2 border-t border-white/5 bg-white/[0.02]">
           <button
-            onClick={() => { markAllRead(); toast.success("All caught up"); }}
+            onClick={() => {
+              markAllRead();
+              toast.success("All caught up");
+            }}
             className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
           >
             <CheckCheck className="size-3.5" /> Mark all as read
           </button>
-          <Link to="/inbox" onClick={onClose} className="text-[11px] font-semibold text-primary hover:underline">
+          <Link
+            to="/inbox"
+            onClick={onClose}
+            className="text-[11px] font-semibold text-primary hover:underline"
+          >
             Open Inbox →
           </Link>
         </footer>

@@ -3,6 +3,7 @@
 ## Source Reference
 
 RESTORE project ElevenLabs implementation studied at:
+
 - `app/api/elevenlabs/conversation/token/route.ts` — conversation token route
 - `app/api/elevenlabs/conversation/signed-url/route.ts` — signed URL route
 - `app/api/elevenlabs/agent-session/route.ts` — agent session route (most complete)
@@ -11,6 +12,7 @@ RESTORE project ElevenLabs implementation studied at:
 - `lib/env/server-env.ts` — `getElevenLabsServerConfig()` and env catalog
 
 ANTIGRAVITY established server function pattern:
+
 - `src/lib/trey-i/tts.server.ts` — Phase 2 server function (most recent pattern to match)
 - `src/lib/trey-i/intake.server.ts` — auth gate pattern (`verifyTreyIUser`)
 
@@ -108,12 +110,9 @@ const SIGNED_URL_PATHS = ["get_signed_url", "get-signed-url"] as const;
 
 // --- Input validator ---
 
-function validateElevenLabsSessionInput(
-  input: ElevenLabsSessionInput
-): ElevenLabsSessionInput {
+function validateElevenLabsSessionInput(input: ElevenLabsSessionInput): ElevenLabsSessionInput {
   return {
-    accessToken:
-      typeof input?.accessToken === "string" ? input.accessToken : "",
+    accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
   };
 }
 
@@ -194,7 +193,9 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
             safeBody = (await upstream.text())
               .slice(0, 200)
               .replace(/xi-api-key|api_key|key/gi, "***");
-          } catch { /* harmless */ }
+          } catch {
+            /* harmless */
+          }
           log("error", "ELEVENLABS_API_KEY_PERMISSIONS_ISSUE", {
             status: upstream.status,
             path,
@@ -202,7 +203,10 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
           });
           return {
             ok: false,
-            code: upstream.status === 401 ? "ELEVENLABS_API_KEY_INVALID" : "ELEVENLABS_API_KEY_FORBIDDEN",
+            code:
+              upstream.status === 401
+                ? "ELEVENLABS_API_KEY_INVALID"
+                : "ELEVENLABS_API_KEY_FORBIDDEN",
             message: FALLBACK_MESSAGE,
           };
         }
@@ -223,15 +227,19 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
 
         if (!payload) {
           log("error", "ELEVENLABS_RESPONSE_SHAPE_INVALID", { path, note: "JSON parse failed" });
-          return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
         }
 
         const signedUrl =
           typeof payload.signed_url === "string"
             ? payload.signed_url
             : typeof payload.signedUrl === "string"
-            ? payload.signedUrl
-            : "";
+              ? payload.signedUrl
+              : "";
 
         if (!signedUrl) {
           log("error", "ELEVENLABS_RESPONSE_SHAPE_INVALID", {
@@ -239,15 +247,19 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
             payloadKeys: Object.keys(payload),
             note: "signed_url field missing or not a string",
           });
-          return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
         }
 
         const conversationId =
           typeof payload.conversation_id === "string"
             ? payload.conversation_id
             : typeof payload.conversationId === "string"
-            ? payload.conversationId
-            : undefined;
+              ? payload.conversationId
+              : undefined;
 
         log("info", "SIGNED_URL_FETCH_OK", { path, hasConversationId: Boolean(conversationId) });
 
@@ -278,10 +290,10 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
 
 Studied from RESTORE `agent-session/route.ts` (most complete implementation):
 
-| Path variant      | Status     | Notes                                   |
-|-------------------|------------|-----------------------------------------|
-| `get_signed_url`  | Canonical  | Underscore — ElevenLabs docs confirm    |
-| `get-signed-url`  | Legacy     | Hyphen — kept as silent fallback        |
+| Path variant     | Status    | Notes                                |
+| ---------------- | --------- | ------------------------------------ |
+| `get_signed_url` | Canonical | Underscore — ElevenLabs docs confirm |
+| `get-signed-url` | Legacy    | Hyphen — kept as silent fallback     |
 
 Try 1 → if 404, try 2 → if both exhausted, return `ELEVENLABS_SESSION_CREATE_FAILED`.
 
@@ -298,6 +310,7 @@ ANTIGRAVITY uses TanStack Start `createServerFn` — the established pattern
 from `tts.server.ts` and `intake.server.ts`.
 
 Key differences:
+
 - TanStack Start server functions are called as typed async functions from the browser
   (`await treyIElevenLabsSession({ data: { ... } })`), not as HTTP fetch calls
 - The server/browser boundary is enforced by the framework, not by the developer
@@ -320,15 +333,15 @@ It is already available in `onboarding.voice.tsx` (set in state from the Phase 1
 
 ## Safe Log Policy
 
-| Log target              | Logged?                  | Format                        |
-|-------------------------|--------------------------|-------------------------------|
-| `hasApiKey`             | Yes (boolean only)       | `true` / `false`              |
-| `hasAgentId`            | Yes (boolean only)       | `true` / `false`              |
-| `agentIdSuffix`         | Yes (last 6 chars only)  | e.g. `"...xAbC9z"`            |
-| `apiKey` value          | **Never**                | —                             |
-| Upstream error body     | Dev only, redacted       | Key material replaced with `***` |
-| HTTP status code        | Yes                      | Integer                       |
-| `path` variant tried    | Yes                      | `"get_signed_url"` etc.       |
+| Log target           | Logged?                 | Format                           |
+| -------------------- | ----------------------- | -------------------------------- |
+| `hasApiKey`          | Yes (boolean only)      | `true` / `false`                 |
+| `hasAgentId`         | Yes (boolean only)      | `true` / `false`                 |
+| `agentIdSuffix`      | Yes (last 6 chars only) | e.g. `"...xAbC9z"`               |
+| `apiKey` value       | **Never**               | —                                |
+| Upstream error body  | Dev only, redacted      | Key material replaced with `***` |
+| HTTP status code     | Yes                     | Integer                          |
+| `path` variant tried | Yes                     | `"get_signed_url"` etc.          |
 
 In production (`NODE_ENV === "production"`), `info`-level logs are suppressed.
 `warn` and `error` always log (for diagnostics without exposing secrets).
@@ -339,16 +352,16 @@ In production (`NODE_ENV === "production"`), `info`-level logs are suppressed.
 
 The following files are **not modified** in Phase 3:
 
-| File                                      | Status in Phase 3 |
-|-------------------------------------------|-------------------|
-| `src/lib/trey-i/intake.server.ts`         | Untouched         |
-| `src/lib/trey-i/onboarding.server.ts`     | Untouched         |
-| `src/lib/trey-i/tts.server.ts`            | Untouched         |
-| `src/routes/onboarding.voice.tsx`         | Untouched         |
-| `src/routes/__root.tsx`                   | Untouched         |
-| `package.json`                            | Untouched         |
-| `pnpm-lock.yaml`                          | Untouched         |
-| `.claude/`                                | Untouched         |
+| File                                  | Status in Phase 3 |
+| ------------------------------------- | ----------------- |
+| `src/lib/trey-i/intake.server.ts`     | Untouched         |
+| `src/lib/trey-i/onboarding.server.ts` | Untouched         |
+| `src/lib/trey-i/tts.server.ts`        | Untouched         |
+| `src/routes/onboarding.voice.tsx`     | Untouched         |
+| `src/routes/__root.tsx`               | Untouched         |
+| `package.json`                        | Untouched         |
+| `pnpm-lock.yaml`                      | Untouched         |
+| `.claude/`                            | Untouched         |
 
 ---
 
@@ -358,7 +371,10 @@ Phase 4 imports `treyIElevenLabsSession` and `ElevenLabsSessionResult` from Phas
 
 ```typescript
 // onboarding.voice.tsx (Phase 4 addition — not implemented in Phase 3)
-import { treyIElevenLabsSession, type ElevenLabsSessionResult } from "@/lib/trey-i/elevenlabs-session.server";
+import {
+  treyIElevenLabsSession,
+  type ElevenLabsSessionResult,
+} from "@/lib/trey-i/elevenlabs-session.server";
 
 // On mic button enable:
 const result: ElevenLabsSessionResult = await treyIElevenLabsSession({

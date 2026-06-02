@@ -1,4 +1,4 @@
-export type SongWarRole = 'fan' | 'artist' | 'dj' | 'moderator' | 'admin';
+export type SongWarRole = "fan" | "artist" | "dj" | "moderator" | "admin";
 
 export interface SongWarArtist {
   id: string;
@@ -25,15 +25,21 @@ export interface SongWarRound {
   trackB: SongWarTrack;
   votesA: number;
   votesB: number;
-  winner: 'A' | 'B' | null;
+  winner: "A" | "B" | null;
   duration: number; // in seconds
-  status: 'pending' | 'playing' | 'voting' | 'completed';
+  status: "pending" | "playing" | "voting" | "completed";
 }
 
 export interface SongWarBattle {
   id: string;
   title: string;
-  type: 'Artist vs Artist' | 'Producer Beat Battle' | 'DJ Mix Battle' | 'City vs City' | 'New Release Battle' | 'Fan Pick Battle';
+  type:
+    | "Artist vs Artist"
+    | "Producer Beat Battle"
+    | "DJ Mix Battle"
+    | "City vs City"
+    | "New Release Battle"
+    | "Fan Pick Battle";
   artistA: SongWarArtist;
   artistB: SongWarArtist;
   roundsCount: number;
@@ -44,8 +50,8 @@ export interface SongWarBattle {
   hostId: string;
   hostName: string;
   scheduleDate: string;
-  visibility: 'Public' | 'Private' | 'Invite Only';
-  moderationMode: 'Auto' | 'Host Controlled' | 'Admin Only';
+  visibility: "Public" | "Private" | "Invite Only";
+  moderationMode: "Auto" | "Host Controlled" | "Admin Only";
   settings: {
     allowFanChat: boolean;
     allowGIFs: boolean;
@@ -54,7 +60,7 @@ export interface SongWarBattle {
     allowFanSongRequests: boolean;
   };
   prize: string;
-  status: 'live' | 'upcoming' | 'replay';
+  status: "live" | "upcoming" | "replay";
   listenersCount: number;
   scoreA: number;
   scoreB: number;
@@ -80,14 +86,14 @@ export interface SongWarVote {
   battleId: string;
   roundNumber: number;
   userId: string;
-  votedFor: 'A' | 'B';
+  votedFor: "A" | "B";
   timestamp: string;
 }
 
 export interface SongWarReaction {
   id: string;
   emoji: string;
-  type: 'fire' | 'crown' | 'lightning' | 'heart' | 'speaker' | 'roar';
+  type: "fire" | "crown" | "lightning" | "heart" | "speaker" | "roar";
   x?: number; // relative horizontal % for floating effect
   y?: number; // relative vertical % for floating effect
 }
@@ -96,8 +102,8 @@ export interface SongWarSession {
   battleId: string;
   role: SongWarRole;
   isVoteLocked: boolean;
-  myVote: 'A' | 'B' | null;
-  currentStatus: 'entrance' | 'battle' | 'voting' | 'winnerReveal' | 'completed';
+  myVote: "A" | "B" | null;
+  currentStatus: "entrance" | "battle" | "voting" | "winnerReveal" | "completed";
   animationState: SongWarAnimationState;
   chatLocked: boolean;
   slowMode: boolean;
@@ -126,7 +132,13 @@ export interface SongWarPrize {
   description: string;
 }
 
-export type SongWarAnimationState = 'none' | 'entrance' | 'vsemblem-pulse' | 'waveform-clash' | 'winner-reveal' | 'reaction-burst';
+export type SongWarAnimationState =
+  | "none"
+  | "entrance"
+  | "vsemblem-pulse"
+  | "waveform-clash"
+  | "winner-reveal"
+  | "reaction-burst";
 
 export interface SongWarModerationState {
   chatLocked: boolean;

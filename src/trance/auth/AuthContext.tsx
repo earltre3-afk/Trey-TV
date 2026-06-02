@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { DancerProfile } from '../types';
-import { useAuth as useTvAuth } from '@/lib/auth';
-import { mapTreyTvProfileToTranceProfile } from './tranceAuthBridge';
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { DancerProfile } from "../types";
+import { useAuth as useTvAuth } from "@/lib/auth";
+import { mapTreyTvProfileToTranceProfile } from "./tranceAuthBridge";
 
 interface AuthState {
   profile: DancerProfile | null;
@@ -62,6 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = (): AuthState => {
   const ctx = useContext(AuthCtx);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };

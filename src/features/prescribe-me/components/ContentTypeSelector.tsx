@@ -1,29 +1,27 @@
-import React from 'react';
-import StepShell from './StepShell';
-import { LiquidGlassCard, NeonGlassButton } from './LiquidGlass';
-import {
-  Music, Smile, Drama, Tv, Mic, Zap, Heart, Search, Sofa, Check, Play,
-} from 'lucide-react';
-import type { ContentType } from './data';
+import React from "react";
+import StepShell from "./StepShell";
+import { LiquidGlassCard, NeonGlassButton } from "./LiquidGlass";
+import { Music, Smile, Drama, Tv, Mic, Zap, Heart, Search, Sofa, Check, Play } from "lucide-react";
+import type { ContentType } from "./data";
 
 interface Opt {
   value: ContentType;
   color: string;
-  accent: 'gold' | 'cyan' | 'magenta' | 'purple' | 'pink' | 'orange';
+  accent: "gold" | "cyan" | "magenta" | "purple" | "pink" | "orange";
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
 // PDF: exact 9-item 3x3 grid (Music, Drama, Comedy, Reality, Interviews, Motivation, Romance, Mystery, Comfort Content).
 const OPTS: Opt[] = [
-  { value: 'Music',           color: '#fbbf24', accent: 'gold',    icon: Music },
-  { value: 'Drama',           color: '#c084fc', accent: 'purple',  icon: Drama },
-  { value: 'Comedy',          color: '#67e8f9', accent: 'cyan',    icon: Smile },
-  { value: 'Reality',         color: '#f0abfc', accent: 'pink',    icon: Tv },
-  { value: 'Interviews',      color: '#22d3ee', accent: 'cyan',    icon: Mic },
-  { value: 'Motivation',      color: '#ec4899', accent: 'magenta', icon: Zap },
-  { value: 'Romance',         color: '#fb7185', accent: 'pink',    icon: Heart },
-  { value: 'Mystery',         color: '#a78bfa', accent: 'purple',  icon: Search },
-  { value: 'Comfort Content', color: '#fb923c', accent: 'orange',  icon: Sofa },
+  { value: "Music", color: "#fbbf24", accent: "gold", icon: Music },
+  { value: "Drama", color: "#c084fc", accent: "purple", icon: Drama },
+  { value: "Comedy", color: "#67e8f9", accent: "cyan", icon: Smile },
+  { value: "Reality", color: "#f0abfc", accent: "pink", icon: Tv },
+  { value: "Interviews", color: "#22d3ee", accent: "cyan", icon: Mic },
+  { value: "Motivation", color: "#ec4899", accent: "magenta", icon: Zap },
+  { value: "Romance", color: "#fb7185", accent: "pink", icon: Heart },
+  { value: "Mystery", color: "#a78bfa", accent: "purple", icon: Search },
+  { value: "Comfort Content", color: "#fb923c", accent: "orange", icon: Sofa },
 ];
 
 interface Props {
@@ -44,7 +42,13 @@ const ContentTypeSelector: React.FC<Props> = ({ value, onChange, onNext, onBack,
     <StepShell
       step={step}
       totalSteps={total}
-      title={<>What do you want<br />more of tonight?</>}
+      title={
+        <>
+          What do you want
+          <br />
+          more of tonight?
+        </>
+      }
       subtitle="Pick one or more lanes."
       onBack={onBack}
       footer={
@@ -68,7 +72,7 @@ const ContentTypeSelector: React.FC<Props> = ({ value, onChange, onNext, onBack,
               onClick={() => toggle(o.value)}
               role="checkbox"
               ariaPressed={selected}
-              ariaLabel={`${o.value}${selected ? ', selected' : ''}`}
+              ariaLabel={`${o.value}${selected ? ", selected" : ""}`}
             >
               <div className="relative px-2 py-3 flex flex-col items-center gap-1.5 min-h-[86px] justify-center">
                 {selected && (
@@ -85,7 +89,7 @@ const ContentTypeSelector: React.FC<Props> = ({ value, onChange, onNext, onBack,
                 />
                 <span
                   className="text-[10px] sm:text-[11px] text-center font-medium leading-tight"
-                  style={{ color: selected ? o.color : 'rgba(255,255,255,0.85)' }}
+                  style={{ color: selected ? o.color : "rgba(255,255,255,0.85)" }}
                 >
                   {o.value}
                 </span>

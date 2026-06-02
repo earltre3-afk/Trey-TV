@@ -1,14 +1,28 @@
-import React from 'react';
-import { useParams, useNavigate } from '../hooks/router-compat';
-import { Sparkles, Zap, XCircle, Target, CheckCircle2, Play, ChevronRight, Home, ArrowUpRight, Star } from 'lucide-react';
-import { TranceShell } from '../components/shell';
-import { TranceGlassCard, ScoreMeter } from '../components/primitives';
-import { IMG } from '../data/devFixtures';
-import { TRANCE_ROUTES } from '../routes/manifest';
-import { tranceRoutineService, tranceScoringService } from '../services';
+import React from "react";
+import { useParams, useNavigate } from "../hooks/router-compat";
+import {
+  Sparkles,
+  Zap,
+  XCircle,
+  Target,
+  CheckCircle2,
+  Play,
+  ChevronRight,
+  Home,
+  ArrowUpRight,
+  Star,
+} from "lucide-react";
+import { TranceShell } from "../components/shell";
+import { TranceGlassCard, ScoreMeter } from "../components/primitives";
+import { IMG } from "../data/devFixtures";
+import { TRANCE_ROUTES } from "../routes/manifest";
+import { tranceRoutineService, tranceScoringService } from "../services";
 
 const ResultsScreen: React.FC = () => {
-  const { routineId, sessionAttemptId } = useParams<{ routineId: string; sessionAttemptId: string }>();
+  const { routineId, sessionAttemptId } = useParams<{
+    routineId: string;
+    sessionAttemptId: string;
+  }>();
   const navigate = useNavigate();
 
   const [r, setR] = React.useState<any>(null);
@@ -21,9 +35,11 @@ const ResultsScreen: React.FC = () => {
 
     async function loadData() {
       try {
-        const details = await tranceRoutineService.getRoutineDetails(routineId || 'rt001');
-        const sc = await tranceScoringService.getScoreForAttempt(sessionAttemptId || 'att-mock');
-        const feedback = await tranceScoringService.computeSessionScore(sessionAttemptId || 'att-mock');
+        const details = await tranceRoutineService.getRoutineDetails(routineId || "rt001");
+        const sc = await tranceScoringService.getScoreForAttempt(sessionAttemptId || "att-mock");
+        const feedback = await tranceScoringService.computeSessionScore(
+          sessionAttemptId || "att-mock",
+        );
 
         if (active) {
           setR(details);
@@ -31,7 +47,7 @@ const ResultsScreen: React.FC = () => {
           setFb(feedback);
         }
       } catch (err) {
-        console.error('Failed to load attempt results:', err);
+        console.error("Failed to load attempt results:", err);
       } finally {
         if (active) setLoading(false);
       }
@@ -49,7 +65,9 @@ const ResultsScreen: React.FC = () => {
         <div className="min-h-screen grid place-items-center">
           <div className="text-center">
             <div className="w-12 h-12 rounded-full border-4 border-t-fuchsia-500 border-white/10 animate-spin mx-auto mb-4" />
-            <div className="text-xs text-white/50 uppercase tracking-widest">Loading Results...</div>
+            <div className="text-xs text-white/50 uppercase tracking-widest">
+              Loading Results...
+            </div>
           </div>
         </div>
       </TranceShell>
@@ -60,20 +78,30 @@ const ResultsScreen: React.FC = () => {
     <TranceShell hideNav>
       {/* Hero */}
       <div className="relative rounded-3xl overflow-hidden border border-fuchsia-400/20 mb-4">
-        <img src={r.cover || IMG.maleA} className="absolute inset-0 w-full h-full object-cover opacity-30" alt="" />
+        <img
+          src={r.cover || IMG.maleA}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          alt=""
+        />
         <div className="relative p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] font-black text-yellow-300 uppercase tracking-widest">Session Complete</span>
+            <span className="text-[10px] font-black text-yellow-300 uppercase tracking-widest">
+              Session Complete
+            </span>
             <TranceGlassCard glow="magenta" className="px-3 py-1.5 text-right">
               <div className="text-[8px] text-white/60 uppercase">Trance Score</div>
               <div className="text-lg font-black text-fuchsia-300">
-                {(score.total * 25).toLocaleString()}{' '}
+                {(score.total * 25).toLocaleString()}{" "}
                 <span className="text-cyan-300 text-xs">+{Math.round(score.total * 2.5)}↑</span>
               </div>
             </TranceGlassCard>
           </div>
-          <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-400 to-cyan-400">AI FEEDBACK</h1>
-          <p className="text-sm text-white/60 mt-2">Keep building, Superstar. You're leveling up.</p>
+          <h1 className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-500 via-purple-400 to-cyan-400">
+            AI FEEDBACK
+          </h1>
+          <p className="text-sm text-white/60 mt-2">
+            Keep building, Superstar. You're leveling up.
+          </p>
         </div>
       </div>
 
@@ -86,15 +114,36 @@ const ResultsScreen: React.FC = () => {
           </div>
           {score.newPB && (
             <span className="text-[10px] font-black text-yellow-300 bg-yellow-500/15 border border-yellow-400/30 px-3 py-1 rounded-full flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />New Personal Best!
+              <Sparkles className="w-3 h-3" />
+              New Personal Best!
             </span>
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <ScoreMeter value={score.accuracy} label="Accuracy" color="#a855f7" desc="You hit the moves with precision." />
-          <ScoreMeter value={score.timing} label="Timing" color="#ec4899" desc="Great rhythm. Keep tightening." />
-          <ScoreMeter value={score.energy} label="Energy" color="#2dd4bf" desc="High impact! You bring the vibe." />
-          <ScoreMeter value={score.sync} label="Sync" color="#3b82f6" desc="Well connected. Nice control." />
+          <ScoreMeter
+            value={score.accuracy}
+            label="Accuracy"
+            color="#a855f7"
+            desc="You hit the moves with precision."
+          />
+          <ScoreMeter
+            value={score.timing}
+            label="Timing"
+            color="#ec4899"
+            desc="Great rhythm. Keep tightening."
+          />
+          <ScoreMeter
+            value={score.energy}
+            label="Energy"
+            color="#2dd4bf"
+            desc="High impact! You bring the vibe."
+          />
+          <ScoreMeter
+            value={score.sync}
+            label="Sync"
+            color="#3b82f6"
+            desc="Well connected. Nice control."
+          />
         </div>
       </TranceGlassCard>
 
@@ -111,18 +160,30 @@ const ResultsScreen: React.FC = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          {([
-            ['Your Pose', IMG.maleB, '#a855f7'],
-            ['Target Pose', r.cover || IMG.maleA, '#22d3ee'],
-          ] as [string, string, string][]).map(([label, img, color]) => (
-            <div key={label} className="relative rounded-2xl overflow-hidden border" style={{ borderColor: `${color}55` }}>
+          {(
+            [
+              ["Your Pose", IMG.maleB, "#a855f7"],
+              ["Target Pose", r.cover || IMG.maleA, "#22d3ee"],
+            ] as [string, string, string][]
+          ).map(([label, img, color]) => (
+            <div
+              key={label}
+              className="relative rounded-2xl overflow-hidden border"
+              style={{ borderColor: `${color}55` }}
+            >
               <img src={img} className="w-full h-44 object-cover" alt={label} />
               <div className="absolute inset-0 bg-black/30" />
-              <span className="absolute top-2 left-2 text-[9px] font-bold uppercase" style={{ color }}>
+              <span
+                className="absolute top-2 left-2 text-[9px] font-bold uppercase"
+                style={{ color }}
+              >
                 {label}
               </span>
-              {label === 'Your Pose' && (
-                <div className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black" style={{ color }}>
+              {label === "Your Pose" && (
+                <div
+                  className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2 py-1 text-[10px] font-black"
+                  style={{ color }}
+                >
                   {fb.matchPct}% MATCH
                 </div>
               )}
@@ -191,7 +252,9 @@ const ResultsScreen: React.FC = () => {
           </div>
           <div className="flex-1">
             <h4 className="font-black text-fuchsia-300 uppercase text-sm">Session Replay</h4>
-            <p className="text-[11px] text-white/50">Watch your full performance with AI insights.</p>
+            <p className="text-[11px] text-white/50">
+              Watch your full performance with AI insights.
+            </p>
             <button className="text-xs font-bold text-cyan-300 flex items-center gap-1 mt-1">
               View Replay <ChevronRight className="w-3 h-3" />
             </button>
@@ -203,7 +266,7 @@ const ResultsScreen: React.FC = () => {
           </div>
           <div className="flex-1">
             <div className="text-xl font-black text-white">
-              +{Math.round(score.total * 2.5)}{' '}
+              +{Math.round(score.total * 2.5)}{" "}
               <span className="text-xs text-yellow-300">XP EARNED</span>
             </div>
             <div className="flex items-center justify-between text-[9px] text-white/50 mt-1">
@@ -211,7 +274,10 @@ const ResultsScreen: React.FC = () => {
               <span>LVL 19</span>
             </div>
             <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-yellow-400 to-amber-500" style={{ width: '80%' }} />
+              <div
+                className="h-full bg-gradient-to-r from-yellow-400 to-amber-500"
+                style={{ width: "80%" }}
+              />
             </div>
             <div className="text-[9px] text-white/40 text-center mt-0.5">3,210 / 4,000 XP</div>
           </div>

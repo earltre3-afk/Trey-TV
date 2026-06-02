@@ -30,7 +30,9 @@ export const pluginFeatures: PluginFeature[] = [
       "src/routes/inbox.tsx",
       "src/routes/edit-profile.tsx",
     ],
-    notes: ["OAuth, picker, feed, comments, messages, and profile GIF-of-the-day surfaces are present."],
+    notes: [
+      "OAuth, picker, feed, comments, messages, and profile GIF-of-the-day surfaces are present.",
+    ],
   },
   {
     key: "truno-local-play",
@@ -45,15 +47,24 @@ export const pluginFeatures: PluginFeature[] = [
     displayName: "Truno multiplayer",
     status: "in_progress",
     protected: false,
-    relatedFiles: ["src/features/truno/lib/api.ts", "supabase/migrations/20260518051800_truno_game_tables.sql"],
-    notes: ["Room and tournament helpers exist; treat as in progress until the full live play path is verified."],
+    relatedFiles: [
+      "src/features/truno/lib/api.ts",
+      "supabase/migrations/20260518051800_truno_game_tables.sql",
+    ],
+    notes: [
+      "Room and tournament helpers exist; treat as in progress until the full live play path is verified.",
+    ],
   },
   {
     key: "game-hub",
     displayName: "Game hub",
     status: "active",
     protected: false,
-    relatedFiles: ["src/routes/games.tsx", "src/routes/games.index.tsx", "src/features/games/GameRoomModule.tsx"],
+    relatedFiles: [
+      "src/routes/games.tsx",
+      "src/routes/games.index.tsx",
+      "src/features/games/GameRoomModule.tsx",
+    ],
     notes: ["Game room hub, routes, and shared services are present."],
   },
   {
@@ -61,8 +72,14 @@ export const pluginFeatures: PluginFeature[] = [
     displayName: "Profile sync",
     status: "needs_polish",
     protected: false,
-    relatedFiles: ["src/hooks/use-current-user.ts", "src/hooks/use-profile.ts", "src/routes/u.$uid.tsx"],
-    notes: ["UID-backed profile surfaces exist; keep diagnostics conservative until end-to-end sync is verified."],
+    relatedFiles: [
+      "src/hooks/use-current-user.ts",
+      "src/hooks/use-profile.ts",
+      "src/routes/u.$uid.tsx",
+    ],
+    notes: [
+      "UID-backed profile surfaces exist; keep diagnostics conservative until end-to-end sync is verified.",
+    ],
   },
   {
     key: "prescribe-me",
@@ -77,7 +94,11 @@ export const pluginFeatures: PluginFeature[] = [
     displayName: "Creator Studio",
     status: "active",
     protected: false,
-    relatedFiles: ["src/routes/creator-studio.tsx", "src/routes/creator-studio.index.tsx", "src/hooks/use-creator-studio.ts"],
+    relatedFiles: [
+      "src/routes/creator-studio.tsx",
+      "src/routes/creator-studio.index.tsx",
+      "src/hooks/use-creator-studio.ts",
+    ],
     notes: ["Creator Studio routes, hooks, and upload helper are present."],
   },
   {
@@ -85,7 +106,11 @@ export const pluginFeatures: PluginFeature[] = [
     displayName: "Rewards",
     status: "active",
     protected: false,
-    relatedFiles: ["src/routes/rewards.tsx", "src/hooks/use-rewards.ts", "src/routes/admin.rewards.tsx"],
+    relatedFiles: [
+      "src/routes/rewards.tsx",
+      "src/hooks/use-rewards.ts",
+      "src/routes/admin.rewards.tsx",
+    ],
     notes: ["User and admin rewards surfaces are present."],
   },
 ];
@@ -170,14 +195,20 @@ export function getProtectedFlowStatus(): ProtectedFlowStatus {
       "src/routes/onboarding.voice.tsx",
       "src/routes/onboarding.import-screenshot.tsx",
     ],
-    treyIOnboardingProtectedPatterns: ["src/lib/trey-i/**", "src/routes/onboarding*.tsx", "supabase/migrations/*onboarding*"],
+    treyIOnboardingProtectedPatterns: [
+      "src/lib/trey-i/**",
+      "src/routes/onboarding*.tsx",
+      "supabase/migrations/*onboarding*",
+    ],
     profileUidRoutingRules: [
       "Public profile routes use /u/$uid.",
       "Prefer public_profile_uid for profile links and cross-feature profile references.",
       "Do not expose private auth user IDs in plugin diagnostics.",
     ],
-    dateOfBirthRule: "Use profiles.date_of_birth for birth-date workflows; do not use profiles.age.",
-    publicUidRule: "Use 423-style public_profile_uid where available for public profile references.",
+    dateOfBirthRule:
+      "Use profiles.date_of_birth for birth-date workflows; do not use profiles.age.",
+    publicUidRule:
+      "Use 423-style public_profile_uid where available for public profile references.",
     warnings: ["This endpoint reports protected patterns only; it does not read onboarding data."],
   };
 }

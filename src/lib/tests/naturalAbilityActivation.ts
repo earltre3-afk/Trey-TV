@@ -1,5 +1,5 @@
-import { PrivacyMode, SignalResult, UserAnswer } from '@/types/naturalAbility';
-import { ABILITY_RESULTS } from './naturalAbilityResults';
+import { PrivacyMode, SignalResult, UserAnswer } from "@/types/naturalAbility";
+import { ABILITY_RESULTS } from "./naturalAbilityResults";
 
 export interface NaturalAbilityBadgeActivation {
   badgeSlug: string;
@@ -39,14 +39,17 @@ export function slugifyAbility(value: string): string {
   return value
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-export function getVisibilityFlags(privacyMode: PrivacyMode): { showOnProfile: boolean; showInFeed: boolean } {
+export function getVisibilityFlags(privacyMode: PrivacyMode): {
+  showOnProfile: boolean;
+  showInFeed: boolean;
+} {
   return {
-    showOnProfile: privacyMode === 'public' || privacyMode === 'profile',
-    showInFeed: privacyMode === 'public',
+    showOnProfile: privacyMode === "public" || privacyMode === "profile",
+    showInFeed: privacyMode === "public",
   };
 }
 

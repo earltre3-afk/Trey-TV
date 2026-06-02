@@ -12,6 +12,7 @@ but "going live" is still a **simulation**: `DJStudio.tsx` "Go Live" toggles a l
 a mock item; there is no real audio and no real listeners.
 
 The repo already runs **LiveKit** in production:
+
 - `src/lib/livekit-token.server.ts` issues access tokens per **room kind**
   (`interactive-story | story-maker | game | inbox | watch-party`) with per-kind publish
   permissions (watch-party even checks mute/kick via `party_members`), and exposes
@@ -24,6 +25,7 @@ This sub-project makes a show actually broadcast live: a host talks on mic and l
 live, with a real live listener count.
 
 ## Goals
+
 - A DJ/host can take a saved show **live**: tap Go Live → a real LiveKit audio room → publishes mic.
 - **Listeners** tune in and hear the live audio, and see a real **live listener count**.
 - Real **on-air / ended** state, persisted, so listeners can discover what's live and the host can
@@ -31,21 +33,24 @@ live, with a real live listener count.
 - Reuse the existing LiveKit token server + client patterns and the existing `PlayerContext`.
 
 ## Non-goals (later sub-projects)
+
 - In-show chat / requests / polls (#3), AI voice host + TTS (#4), live AI co-pilot (#5),
   music-in-broadcast + replays (#6).
 - A dedicated full live-listen page/route (listeners use existing surfaces + the player).
 - Multi-host / co-host rooms (single host publishes for now).
 
 ## Approach
+
 Approach **A** (approved): extend the existing LiveKit token server with a `tradio-show` room kind,
 add a `tradio_live_sessions` table, a small server service, and a `useTradioLiveRoom` client hook;
 wire DJStudio "Go Live" (host) and a "Listen Live" affordance (listener) through the existing
 `PlayerContext`. Reuses all proven LiveKit infra (no new realtime stack).
 
 ## Token server — new `tradio-show` room kind (`livekit-token.server.ts`)
+
 - Add `"tradio-show"` to `RoomKind` and `roomKindFrom` (accept `roomKind: 'tradio-show'`).
 - `resolveRoom` for `tradio-show`: `roomName = \`tradio-show:${cleanPart(body.sessionId, 'session')}\``,
-  `dispatchAgent: false`, `metadata.mode: 'voice-room'`.
+`dispatchAgent: false`, `metadata.mode: 'voice-room'`.
 - **Role-based publish** (mirrors the watch-party block): look up the `tradio_live_sessions` row by
   `sessionId`; if the authenticated user's id equals `host_user_id` → `canPublish = true` (host);
   otherwise `canPublish = false`, `canSubscribe = true` (listener). If the session is missing or
@@ -53,6 +58,7 @@ wire DJStudio "Go Live" (host) and a "Listen Live" affordance (listener) through
   only. Reuse `getTreyIServiceClient()` + bearer-token user resolution already in the file.
 
 ## Persistence — migration `tradio_live_sessions`
+
 Columns: `id uuid pk default gen_random_uuid()`, `show_id uuid references public.tradio_radio_shows(id)
 on delete set null`, `host_user_id uuid not null references auth.users(id) on delete cascade`,
 `room_name text not null`, `status text not null default 'live' check (status in ('live','ended'))`,
@@ -61,6 +67,7 @@ on delete set null`, `host_user_id uuid not null references auth.users(id) on de
 `created_at timestamptz not null default now()`.
 
 RLS:
+
 - public `SELECT` where `status = 'live'` (listeners discover what's on air);
 - host `SELECT`/`INSERT`/`UPDATE` of own rows (`auth.uid() = host_user_id`).
 
@@ -68,7 +75,9 @@ Going live also sets the show's `status='live'`; ending sets it back to `'draft'
 if the host chooses — out of scope here, default `'draft'`).
 
 ## Server service — `tradioLiveService` (server fns in a new `src/lib/tradio/live.server.ts` or
+
 extend an existing tradio server module)
+
 - `goLive({ showId })` → verify the caller owns the show + has host capability; insert a
   `tradio_live_sessions` row (`status='live'`, `room_name='tradio-show:<id>'`); set the show
   `status='live'`; return `{ sessionId, roomName }`. (The room itself is created lazily by LiveKit
@@ -80,7 +89,9 @@ extend an existing tradio server module)
 - `updatePeakListeners({ sessionId, count })` → best-effort max update (called from the host client).
 
 ## Client hook — `useTradioLiveRoom({ role, sessionId, roomName })`
+
 Wraps `livekit-client` `Room`:
+
 - Fetch a token from `/api/livekit/token` (`roomKind: 'tradio-show', sessionId`, bearer = Supabase
   access token), `room.connect(livekitUrl, token)`.
 - **Host** (`role: 'host'`): `createLocalAudioTrack()` + `room.localParticipant.publishTrack(...)`;
@@ -92,6 +103,7 @@ Wraps `livekit-client` `Room`:
 - Listener count: host pushes `peak_listeners` via `updatePeakListeners` on change (best-effort).
 
 ## UI wiring (reuse — no new page)
+
 - **Host — `DJStudio.tsx`:** "Go Live" calls `goLive(show)` → connects via `useTradioLiveRoom` as
   host → publishes mic → header shows real **ON AIR** + live listener count; "End Broadcast" calls
   `endLive` + disconnects. The legal-acceptance gate already present stays.
@@ -101,6 +113,7 @@ Wraps `livekit-client` `Room`:
   as "ON AIR." Tune out = leave the room.
 
 ## Error handling
+
 - LiveKit unconfigured → `/api/livekit/token` returns 503 → UI shows "Live isn't available right
   now" (no crash; Go Live disabled).
 - Mic permission denied → toast + remain off-air (session not created, or created then ended).
@@ -110,6 +123,7 @@ Wraps `livekit-client` `Room`:
 - Listener network drop → `livekit-client` auto-reconnect; on terminal failure, leave + clear player.
 
 ## Verification
+
 - **Unit test** (`node:test`) for the token server's `tradio-show` room resolution + role→publish
   mapping (host id → `canPublish:true`; other id → `canPublish:false, canSubscribe:true`; ended/missing
   session → listener-only / 403 for host publish). Factor the pure resolution into a testable helper.
@@ -119,6 +133,7 @@ Wraps `livekit-client` `Room`:
   → both tear down and the show leaves "live".
 
 ## Decisions / defaults
+
 - Single host per session (no co-hosts yet).
 - Listener count derived from LiveKit room presence; `peak_listeners` persisted best-effort.
 - Room name keyed by `sessionId` (`tradio-show:<id>`), not show id, so re-going-live makes a fresh room.

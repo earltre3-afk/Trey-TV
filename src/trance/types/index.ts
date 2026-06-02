@@ -2,39 +2,39 @@
 // Core TypeScript interfaces. These typed shapes are the contract that
 // backend wiring (Supabase, AI pose tracking, scoring) should fulfill.
 
-export * from './identity';
+export * from "./identity";
 
-export type RoutineDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Elite';
+export type RoutineDifficulty = "Beginner" | "Intermediate" | "Advanced" | "Elite";
 export type Difficulty = RoutineDifficulty; // alias for compatibility
 
 export type DanceStyle =
-  | 'Hip-Hop'
-  | 'Contemporary'
-  | 'Afrobeats'
-  | 'Dancehall'
-  | 'Popping'
-  | 'Heels'
-  | 'Freestyle'
-  | 'K-Pop';
+  | "Hip-Hop"
+  | "Contemporary"
+  | "Afrobeats"
+  | "Dancehall"
+  | "Popping"
+  | "Heels"
+  | "Freestyle"
+  | "K-Pop";
 
-export type EnergyLevel = 'Chill' | 'Medium' | 'High' | 'Explosive';
-export type SessionMode = 'Learn' | 'Practice' | 'Performance';
+export type EnergyLevel = "Chill" | "Medium" | "High" | "Explosive";
+export type SessionMode = "Learn" | "Practice" | "Performance";
 
-export type RoutineVisibility = 'Public' | 'Private' | 'Studio-only' | 'Link-only';
+export type RoutineVisibility = "Public" | "Private" | "Studio-only" | "Link-only";
 export type Visibility = RoutineVisibility; // alias for compatibility
 
 export type SessionAttemptStatus =
-  | 'draft'
-  | 'uploading'
-  | 'uploaded'
-  | 'processing'
-  | 'needs_review'
-  | 'ready'
-  | 'published'
-  | 'failed'
-  | 'archived';
+  | "draft"
+  | "uploading"
+  | "uploaded"
+  | "processing"
+  | "needs_review"
+  | "ready"
+  | "published"
+  | "failed"
+  | "archived";
 
-export type ModerationStatus = 'pending' | 'approved' | 'flagged' | 'rejected';
+export type ModerationStatus = "pending" | "approved" | "flagged" | "rejected";
 
 export interface TranceUser {
   id: string;
@@ -42,7 +42,7 @@ export interface TranceUser {
   displayName: string;
   avatar: string;
   verified: boolean;
-  role: 'dancer' | 'choreographer' | 'studio';
+  role: "dancer" | "choreographer" | "studio";
 }
 
 export interface DancerProfile extends TranceUser {
@@ -91,7 +91,7 @@ export interface StudioRoom {
   locked: boolean;
   members: number;
   capacity: number;
-  status: 'LIVE' | 'LOCKED' | 'OPEN';
+  status: "LIVE" | "LOCKED" | "OPEN";
   tagline: string;
 }
 
@@ -99,7 +99,7 @@ export interface StudioMembership {
   id: string;
   studioId: string;
   userId: string;
-  role: 'studio_owner' | 'studio_admin' | 'studio_member';
+  role: "studio_owner" | "studio_admin" | "studio_member";
   joinedAt: string;
 }
 
@@ -113,7 +113,7 @@ export interface MoveHint {
 export interface DirectionCue {
   id: string;
   timestamp: string;
-  direction: 'up' | 'down' | 'left' | 'right' | 'up-right' | 'up-left';
+  direction: "up" | "down" | "left" | "right" | "up-right" | "up-left";
   facing: string;
 }
 
@@ -221,7 +221,7 @@ export interface Badge {
   id: string;
   name: string;
   description: string;
-  tier: 'gold' | 'purple' | 'cyan' | 'magenta' | 'locked';
+  tier: "gold" | "purple" | "cyan" | "magenta" | "locked";
   icon: string; // lucide icon name
   earned: boolean;
 }
@@ -242,7 +242,7 @@ export interface LeaderboardEntry {
   score: number;
   accuracy: number;
   streak: number;
-  badgeTier: 'gold' | 'purple' | 'cyan' | 'magenta';
+  badgeTier: "gold" | "purple" | "cyan" | "magenta";
 }
 
 export interface RehearsalAssignment {

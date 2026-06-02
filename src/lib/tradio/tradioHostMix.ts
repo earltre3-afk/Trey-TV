@@ -1,4 +1,4 @@
-import { SFX_ASSETS, BED_ASSETS } from './sfxAssets';
+import { SFX_ASSETS, BED_ASSETS } from "./sfxAssets";
 
 /**
  * One Web Audio graph on the host's machine that mixes mic + SFX + music beds +
@@ -20,9 +20,10 @@ export interface HostMix {
 }
 
 export async function createHostMix(): Promise<HostMix> {
-  const Ctx: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+  const Ctx: typeof AudioContext =
+    (window as any).AudioContext || (window as any).webkitAudioContext;
   const ctx = new Ctx();
-  if (ctx.state === 'suspended') await ctx.resume();
+  if (ctx.state === "suspended") await ctx.resume();
 
   const dest = ctx.createMediaStreamDestination();
   const analyser = ctx.createAnalyser();
@@ -63,7 +64,11 @@ export async function createHostMix(): Promise<HostMix> {
     analyser,
     setMicStream(stream) {
       if (micNode) {
-        try { micNode.disconnect(); } catch { /* ignore */ }
+        try {
+          micNode.disconnect();
+        } catch {
+          /* ignore */
+        }
         micNode = null;
       }
       if (stream && stream.getAudioTracks().length) {
@@ -71,8 +76,12 @@ export async function createHostMix(): Promise<HostMix> {
         micNode.connect(master);
       }
     },
-    setMasterVolume(v) { master.gain.value = Math.max(0, Math.min(1, v)); },
-    setBedVolume(v) { bed.gain.value = Math.max(0, Math.min(1, v)); },
+    setMasterVolume(v) {
+      master.gain.value = Math.max(0, Math.min(1, v));
+    },
+    setBedVolume(v) {
+      bed.gain.value = Math.max(0, Math.min(1, v));
+    },
     async playSfx(id) {
       const asset = SFX_ASSETS.find((a) => a.id === id);
       if (!asset) return;
@@ -89,16 +98,24 @@ export async function createHostMix(): Promise<HostMix> {
       if (!asset) return;
       const buf = await load(asset.src);
       if (!buf) return;
-      try { bedSource?.stop(); } catch { /* ignore */ }
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
       const src = ctx.createBufferSource();
       src.buffer = buf;
-      src.loop = asset.id === 'under';
+      src.loop = asset.id === "under";
       src.connect(bed);
       src.start();
       bedSource = src;
     },
     stopBed() {
-      try { bedSource?.stop(); } catch { /* ignore */ }
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
       bedSource = null;
     },
     async playAiBuffer(arrayBuffer) {
@@ -114,9 +131,21 @@ export async function createHostMix(): Promise<HostMix> {
       }
     },
     async close() {
-      try { bedSource?.stop(); } catch { /* ignore */ }
-      try { micNode?.disconnect(); } catch { /* ignore */ }
-      try { await ctx.close(); } catch { /* ignore */ }
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
+      try {
+        micNode?.disconnect();
+      } catch {
+        /* ignore */
+      }
+      try {
+        await ctx.close();
+      } catch {
+        /* ignore */
+      }
     },
   };
 }

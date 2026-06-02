@@ -33,7 +33,9 @@ export function getPublicProfileUid(profile?: CanonicalProfile | null): string |
 }
 
 export function routeToProfile(publicProfileUid?: string | null): string {
-  return publicProfileUid?.trim() ? `/u/${encodeURIComponent(publicProfileUid.trim())}` : "/profile";
+  return publicProfileUid?.trim()
+    ? `/u/${encodeURIComponent(publicProfileUid.trim())}`
+    : "/profile";
 }
 
 export function useProfileByUid(publicProfileUid?: string | null) {
@@ -104,7 +106,11 @@ export function useProfileById(profileId?: string | null) {
   return { profile, loading };
 }
 
-export function useFollowState(targetUserId?: string | null, initialFollowing = false, onChange?: (following: boolean) => void) {
+export function useFollowState(
+  targetUserId?: string | null,
+  initialFollowing = false,
+  onChange?: (following: boolean) => void,
+) {
   const [following, setFollowing] = useState(initialFollowing);
   const [pending, setPending] = useState(false);
   const [countsTick, setCountsTick] = useState(0);
@@ -152,8 +158,16 @@ export function useFollowState(targetUserId?: string | null, initialFollowing = 
     onChange?.(next);
 
     const result = next
-      ? await supabase.from("follows").upsert({ follower_id: auth.user.id, following_id: targetUserId } as any, { onConflict: "follower_id,following_id" })
-      : await supabase.from("follows").delete().eq("follower_id", auth.user.id).eq("following_id", targetUserId);
+      ? await supabase
+          .from("follows")
+          .upsert({ follower_id: auth.user.id, following_id: targetUserId } as any, {
+            onConflict: "follower_id,following_id",
+          })
+      : await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", auth.user.id)
+          .eq("following_id", targetUserId);
 
     setPending(false);
     if (result.error) {
@@ -170,7 +184,11 @@ export function useFollowState(targetUserId?: string | null, initialFollowing = 
   return { following, pending, toggle };
 }
 
-export function useSubscribeState(targetUserId?: string | null, initialSubscribed = false, onChange?: (subscribed: boolean) => void) {
+export function useSubscribeState(
+  targetUserId?: string | null,
+  initialSubscribed = false,
+  onChange?: (subscribed: boolean) => void,
+) {
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [pending, setPending] = useState(false);
 
@@ -217,8 +235,16 @@ export function useSubscribeState(targetUserId?: string | null, initialSubscribe
     onChange?.(next);
 
     const result = next
-      ? await (supabase as any).from("creator_subscriptions").upsert({ subscriber_id: auth.user.id, subscribed_to_id: targetUserId } as any, { onConflict: "subscriber_id,subscribed_to_id" })
-      : await (supabase as any).from("creator_subscriptions").delete().eq("subscriber_id", auth.user.id).eq("subscribed_to_id", targetUserId);
+      ? await (supabase as any)
+          .from("creator_subscriptions")
+          .upsert({ subscriber_id: auth.user.id, subscribed_to_id: targetUserId } as any, {
+            onConflict: "subscriber_id,subscribed_to_id",
+          })
+      : await (supabase as any)
+          .from("creator_subscriptions")
+          .delete()
+          .eq("subscriber_id", auth.user.id)
+          .eq("subscribed_to_id", targetUserId);
 
     setPending(false);
     if (result.error) {

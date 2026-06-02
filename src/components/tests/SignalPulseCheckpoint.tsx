@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowRight, Activity } from 'lucide-react';
-import { Logo } from '@/components/brand/Logo';
+import React, { useEffect, useState } from "react";
+import { ArrowRight, Activity } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 interface Props {
   onContinue: () => void;
@@ -37,10 +37,22 @@ const SignalPulseCheckpoint: React.FC<Props> = ({ onContinue }) => {
           <div className="rounded-[26px] bg-gradient-to-b from-white/[0.05] to-white/[0.02] backdrop-blur-xl border border-white/5 px-5 py-6 sm:px-7 sm:py-10">
             <div className="relative mx-auto w-44 h-44 flex items-center justify-center sm:w-56 sm:h-56">
               <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
                 <circle
-                  cx="50" cy="50" r="45" fill="none"
-                  stroke="url(#g1)" strokeWidth="3" strokeLinecap="round"
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  strokeWidth="3"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="url(#g1)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
                   strokeDasharray={`${(pct / 100) * 283} 283`}
                   className="drop-shadow-[0_0_8px_rgba(217,70,239,0.7)] transition-all duration-100"
                 />
@@ -53,8 +65,12 @@ const SignalPulseCheckpoint: React.FC<Props> = ({ onContinue }) => {
                 </defs>
               </svg>
               <div className="text-center">
-                <div className="text-4xl font-bold bg-gradient-to-b from-white to-slate-200 bg-clip-text text-transparent sm:text-5xl">{pct}%</div>
-                <div className="text-[11px] tracking-[0.3em] text-slate-400 mt-1">SIGNAL STRENGTH</div>
+                <div className="text-4xl font-bold bg-gradient-to-b from-white to-slate-200 bg-clip-text text-transparent sm:text-5xl">
+                  {pct}%
+                </div>
+                <div className="text-[11px] tracking-[0.3em] text-slate-400 mt-1">
+                  SIGNAL STRENGTH
+                </div>
               </div>
             </div>
 
@@ -67,10 +83,11 @@ const SignalPulseCheckpoint: React.FC<Props> = ({ onContinue }) => {
             </div>
 
             <p className="text-center text-slate-300 leading-relaxed">
-              Your choices are starting to show a pattern. So far, your strongest reactions are coming from how you handle{' '}
-              <span className="text-amber-300 font-semibold">pressure</span>,{' '}
-              <span className="text-fuchsia-300 font-semibold">people</span>,{' '}
-              <span className="text-violet-300 font-semibold">emotion</span>, and{' '}
+              Your choices are starting to show a pattern. So far, your strongest reactions are
+              coming from how you handle{" "}
+              <span className="text-amber-300 font-semibold">pressure</span>,{" "}
+              <span className="text-fuchsia-300 font-semibold">people</span>,{" "}
+              <span className="text-violet-300 font-semibold">emotion</span>, and{" "}
               <span className="text-cyan-300 font-semibold">change</span>.
             </p>
 

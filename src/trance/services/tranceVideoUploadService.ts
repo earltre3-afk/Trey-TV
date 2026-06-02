@@ -1,13 +1,13 @@
-import { supabase } from '@/lib/supabase';
-import { UploadAsset } from '../types';
-import { assertConfigured, shouldUseFixtures } from './config';
+import { supabase } from "@/lib/supabase";
+import { UploadAsset } from "../types";
+import { assertConfigured, shouldUseFixtures } from "./config";
 
 export const tranceVideoUploadService = {
   uploadRoutineVideo: async (
     file: File,
-    onProgress?: (progressPct: number) => void
+    onProgress?: (progressPct: number) => void,
   ): Promise<UploadAsset> => {
-    assertConfigured('VideoUploadService');
+    assertConfigured("VideoUploadService");
     const assetId = `as-${Math.random().toString(36).substr(2, 9)}`;
     const mockAsset: UploadAsset = {
       id: assetId,
@@ -15,19 +15,21 @@ export const tranceVideoUploadService = {
       fileSize: file.size,
       mimeType: file.type,
       url: `mock://routines/${assetId}/${file.name}`,
-      ownerId: 'u001',
+      ownerId: "u001",
       createdAt: new Date().toISOString(),
     };
 
-    const enableUploads = import.meta.env.VITE_TRANCE_ENABLE_UPLOADS === 'true';
+    const enableUploads = import.meta.env.VITE_TRANCE_ENABLE_UPLOADS === "true";
     if (!enableUploads && shouldUseFixtures()) {
-      console.warn('[Video Upload] Uploads disabled by environment variables. Using fixture response.');
+      console.warn(
+        "[Video Upload] Uploads disabled by environment variables. Using fixture response.",
+      );
       if (onProgress) onProgress(100);
       return mockAsset;
     }
 
     if (shouldUseFixtures()) {
-      console.log('[Dev Mode] Uploading file locally:', file.name);
+      console.log("[Dev Mode] Uploading file locally:", file.name);
       if (onProgress) {
         let pct = 0;
         const interval = setInterval(() => {
@@ -40,12 +42,12 @@ export const tranceVideoUploadService = {
     }
 
     const filePath = `routines/${Date.now()}_${file.name}`;
-    
+
     // Real upload to Supabase storage bucket
     const { data, error } = await supabase.storage
-      .from('trance-routine-videos')
+      .from("trance-routine-videos")
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl: "3600",
         upsert: false,
       });
 
@@ -53,7 +55,7 @@ export const tranceVideoUploadService = {
     if (onProgress) onProgress(100);
 
     const { data: publicUrlData } = supabase.storage
-      .from('trance-routine-videos')
+      .from("trance-routine-videos")
       .getPublicUrl(data.path);
 
     const authUser = await supabase.auth.getUser();
@@ -64,7 +66,7 @@ export const tranceVideoUploadService = {
       fileSize: file.size,
       mimeType: file.type,
       url: publicUrlData.publicUrl,
-      ownerId: authUser.data.user?.id || 'guest',
+      ownerId: authUser.data.user?.id || "guest",
       createdAt: new Date().toISOString(),
     };
   },

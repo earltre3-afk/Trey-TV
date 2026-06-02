@@ -30,7 +30,7 @@ type DbRow = {
 };
 
 // Cast to any for tables not in generated Database types
- 
+
 const db = supabase as any;
 
 const KIND_MAP: Record<string, NotificationItem["kind"]> = {
@@ -103,10 +103,12 @@ export function useNotifications() {
       setLoading(true);
       const { data, error } = await db
         .from("notifications")
-        .select(`
+        .select(
+          `
           id, type, message, read_at, created_at, post_id, metadata,
           actor:profiles!notifications_actor_id_fkey(public_profile_uid, display_name, username, avatar_url)
-        `)
+        `,
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -141,13 +143,8 @@ export function useNotifications() {
   }, []);
 
   const markRead = useCallback(async (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
-    await db
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("id", id);
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+    await db.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
   }, []);
 
   const markAllRead = useCallback(async () => {

@@ -1,4 +1,4 @@
-export type StoryVoiceProvider = 'system' | 'elevenlabs' | 'openai' | 'uploaded' | 'none';
+export type StoryVoiceProvider = "system" | "elevenlabs" | "openai" | "uploaded" | "none";
 
 export interface StoryVoiceConfig {
   voiceProvider: StoryVoiceProvider;
@@ -23,7 +23,7 @@ export interface StoryVoiceCharacter {
 
 export interface StoryBeatVoiceLine {
   id?: string;
-  type?: 'narration' | 'dialogue';
+  type?: "narration" | "dialogue";
   character_id?: string;
   characterId?: string;
   speakerId?: string;

@@ -3,7 +3,15 @@
  * visible/audible right now. Drives the in-editor approximate preview; the
  * Shotstack render remains authoritative.
  */
-import { clipLength, type EditRecipe, type VideoClip, type TextClip, type OverlayClip, type AudioClip, type CaptionClip } from "./editRecipe";
+import {
+  clipLength,
+  type EditRecipe,
+  type VideoClip,
+  type TextClip,
+  type OverlayClip,
+  type AudioClip,
+  type CaptionClip,
+} from "./editRecipe";
 
 export interface ActivePreview {
   /** Base video clip under the playhead + the source time to display. */
@@ -51,12 +59,19 @@ export function previewFromRecipe(recipe: EditRecipe, t: number): ActivePreview 
 /** Map a recipe filter to an approximate CSS `filter` string for the preview. */
 export function filterToCss(filter: string): string {
   switch (filter) {
-    case "boost": return "saturate(1.4) contrast(1.1)";
-    case "contrast": return "contrast(1.3)";
-    case "muted": return "saturate(0.6)";
-    case "darken": return "brightness(0.8)";
-    case "lighten": return "brightness(1.2)";
-    case "greyscale": return "grayscale(1)";
-    default: return "none";
+    case "boost":
+      return "saturate(1.4) contrast(1.1)";
+    case "contrast":
+      return "contrast(1.3)";
+    case "muted":
+      return "saturate(0.6)";
+    case "darken":
+      return "brightness(0.8)";
+    case "lighten":
+      return "brightness(1.2)";
+    case "greyscale":
+      return "grayscale(1)";
+    default:
+      return "none";
   }
 }

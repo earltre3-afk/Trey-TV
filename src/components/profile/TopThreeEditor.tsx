@@ -59,9 +59,7 @@ export function TopThreeEditor({ open, onClose, onSave }: Props) {
 
     const results = await searchUsersForTopThree(query, 10);
     // Filter out users already in Top 3
-    const filtered = results.filter(
-      (r) => !topThree.some((t) => t.featured_user_id === r.id)
-    );
+    const filtered = results.filter((r) => !topThree.some((t) => t.featured_user_id === r.id));
     setSearchResults(filtered);
   };
 
@@ -212,7 +210,9 @@ function TopThreeEditorItem({
       {/* Position controls */}
       <div className="flex flex-col gap-1">
         <button
-          onClick={() => entry.position > 1 && onReorder(entry.featured_user_id, entry.position - 1)}
+          onClick={() =>
+            entry.position > 1 && onReorder(entry.featured_user_id, entry.position - 1)
+          }
           disabled={entry.position === 1}
           className="text-xs text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
         >
@@ -222,7 +222,9 @@ function TopThreeEditorItem({
           {entry.position}
         </div>
         <button
-          onClick={() => entry.position < maxPosition && onReorder(entry.featured_user_id, entry.position + 1)}
+          onClick={() =>
+            entry.position < maxPosition && onReorder(entry.featured_user_id, entry.position + 1)
+          }
           disabled={entry.position === maxPosition}
           className="text-xs text-muted-foreground hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
         >

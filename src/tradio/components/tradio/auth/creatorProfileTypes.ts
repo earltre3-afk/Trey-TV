@@ -6,8 +6,8 @@
  * with or without Supabase configured, gracefully degrading to mock fallbacks.
  */
 
-import type { RoleProfileType } from './roleProfile';
-import type { TradioIdentity } from './types';
+import type { RoleProfileType } from "./roleProfile";
+import type { TradioIdentity } from "./types";
 
 /**
  * Lookup key variations for profile queries.
@@ -32,15 +32,22 @@ export interface CreatorProfileBase {
   avatar_url?: string | null;
   banner_url?: string | null;
   bio?: string | null;
-  tradio_verification_status: 'unverified' | 'pending' | 'verified' | 'rejected' | 'revoked';
-  broadcast_access: 'invite_only' | 'submitted' | 'pending' | 'under_review' | 'cleared' | 'denied' | 'revoked';
+  tradio_verification_status: "unverified" | "pending" | "verified" | "rejected" | "revoked";
+  broadcast_access:
+    | "invite_only"
+    | "submitted"
+    | "pending"
+    | "under_review"
+    | "cleared"
+    | "denied"
+    | "revoked";
   badges?: string[] | null;
   studio_access: boolean;
   created_at: string;
   updated_at: string;
 
   // Spotify-style Featured Pick & Socials
-  artist_pick_type?: 'track' | 'beat' | 'show' | 'album' | 'playlist' | null;
+  artist_pick_type?: "track" | "beat" | "show" | "album" | "playlist" | null;
   artist_pick_title?: string | null;
   artist_pick_message?: string | null;
   artist_pick_image?: string | null;
@@ -96,18 +103,21 @@ export interface DjHostProfileRecord extends CreatorProfileBase {
 /**
  * Discriminated union of all creator profile records.
  */
-export type CreatorProfileRecord = ArtistProfileRecord | ProducerProfileRecord | DjHostProfileRecord;
+export type CreatorProfileRecord =
+  | ArtistProfileRecord
+  | ProducerProfileRecord
+  | DjHostProfileRecord;
 
 /**
  * Backend status/diagnostic for a profile query result.
  */
 export type CreatorProfileBackendStatus =
-  | 'connected' // Supabase available and profile found
-  | 'not_configured' // Supabase not configured
-  | 'table_missing' // Supabase available but table doesn't exist yet
-  | 'not_found' // Supabase available but no row for this lookup
-  | 'error' // Supabase query error
-  | 'mock'; // Fallback to mock identity-derived data
+  | "connected" // Supabase available and profile found
+  | "not_configured" // Supabase not configured
+  | "table_missing" // Supabase available but table doesn't exist yet
+  | "not_found" // Supabase available but no row for this lookup
+  | "error" // Supabase query error
+  | "mock"; // Fallback to mock identity-derived data
 
 /**
  * Result of a profile service query. Always includes a profile and status.
@@ -118,7 +128,7 @@ export interface CreatorProfileServiceResult {
   profile: CreatorProfileRecord | null;
 
   /** Whether this is Supabase-backed or mock-derived. */
-  source: 'supabase' | 'mock' | 'fallback';
+  source: "supabase" | "mock" | "fallback";
 
   /** Current backend status. */
   backendStatus: CreatorProfileBackendStatus;
@@ -130,7 +140,7 @@ export interface CreatorProfileServiceResult {
   notFoundReason?: string;
 
   /** Visibility of the profile (public/private/unlisted). Derived or explicit. */
-  visibility: 'public' | 'private' | 'unlisted';
+  visibility: "public" | "private" | "unlisted";
 
   /** Whether the profile is publication-ready. */
   isPublicReady: boolean;
@@ -154,7 +164,7 @@ export interface CreatorProfileDraftPayload {
   slug?: string;
   avatarUrl?: string;
   bannerUrl?: string;
-  visibility?: 'public' | 'private' | 'unlisted';
+  visibility?: "public" | "private" | "unlisted";
   metadata?: Record<string, unknown>;
 }
 
@@ -165,7 +175,7 @@ export interface CreatorProfileUpdateResult {
   success: boolean;
   error?: string;
   updatedProfile?: CreatorProfileRecord | null;
-  source: 'supabase' | 'mock';
+  source: "supabase" | "mock";
 }
 
 /**
@@ -252,18 +262,25 @@ export interface EnrichedCreatorProfile extends CreatorProfileServiceResult {
 /**
  * Status of a profile draft in the local editing session.
  */
-export type CreatorProfileDraftStatus = 'empty' | 'dirty' | 'saving' | 'saved' | 'failed' | 'submitted' | 'published';
+export type CreatorProfileDraftStatus =
+  | "empty"
+  | "dirty"
+  | "saving"
+  | "saved"
+  | "failed"
+  | "submitted"
+  | "published";
 
 /**
  * Publication/visibility status of a profile.
  */
 export type CreatorProfilePublishStatus =
-  | 'private' // Only visible to owner
-  | 'draft' // Saved as draft, not public
-  | 'ready_for_review' // Ready for moderation review
-  | 'public' // Published and public
-  | 'hidden' // Owner-hidden
-  | 'suspended'; // Admin-suspended
+  | "private" // Only visible to owner
+  | "draft" // Saved as draft, not public
+  | "ready_for_review" // Ready for moderation review
+  | "public" // Published and public
+  | "hidden" // Owner-hidden
+  | "suspended"; // Admin-suspended
 
 /**
  * Validation issue found during profile completion check.
@@ -271,7 +288,7 @@ export type CreatorProfilePublishStatus =
 export interface CreatorProfileValidationIssue {
   field: string;
   message: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   fixedBy?: string; // e.g., "adding a bio" or "uploading an avatar"
 }
 
@@ -293,7 +310,7 @@ export interface CreatorProfileDraft {
 
     // Additional fields not in base payload
     releaseGoal?: string; // artist
-    beatLicensingIntent?: 'exclusive' | 'non_exclusive' | 'open' | 'not_selling'; // producer
+    beatLicensingIntent?: "exclusive" | "non_exclusive" | "open" | "not_selling"; // producer
     showTypes?: string[]; // dj
     broadcastConcept?: string; // dj
     scheduleGoal?: string; // dj
@@ -305,7 +322,7 @@ export interface CreatorProfileDraft {
     collabAvailability?: string; // producer
 
     // Spotify-inspired Artist Pick (Pinned Featured Item) & Social Links
-    artistPickType?: 'track' | 'beat' | 'show' | 'album' | 'playlist';
+    artistPickType?: "track" | "beat" | "show" | "album" | "playlist";
     artistPickTitle?: string;
     artistPickMessage?: string;
     artistPickImage?: string;
@@ -320,8 +337,8 @@ export interface CreatorProfileDraft {
  * Artist profile draft (role-specific).
  */
 export interface ArtistProfileDraft extends CreatorProfileDraft {
-  role: 'artist';
-  data: CreatorProfileDraft['data'] & {
+  role: "artist";
+  data: CreatorProfileDraft["data"] & {
     artistName: string;
     genres: string[];
     bio?: string;
@@ -336,8 +353,8 @@ export interface ArtistProfileDraft extends CreatorProfileDraft {
  * Producer profile draft (role-specific).
  */
 export interface ProducerProfileDraft extends CreatorProfileDraft {
-  role: 'producer';
-  data: CreatorProfileDraft['data'] & {
+  role: "producer";
+  data: CreatorProfileDraft["data"] & {
     producerName: string;
     genres: string[];
     moods?: string[];
@@ -352,8 +369,8 @@ export interface ProducerProfileDraft extends CreatorProfileDraft {
  * DJ/Host profile draft (role-specific).
  */
 export interface DjHostProfileDraft extends CreatorProfileDraft {
-  role: 'dj';
-  data: CreatorProfileDraft['data'] & {
+  role: "dj";
+  data: CreatorProfileDraft["data"] & {
     djName: string;
     genres: string[];
     specialties?: string[];
@@ -369,7 +386,10 @@ export interface DjHostProfileDraft extends CreatorProfileDraft {
 /**
  * Discriminated union of role-specific drafts.
  */
-export type CreatorProfileSpecificDraft = ArtistProfileDraft | ProducerProfileDraft | DjHostProfileDraft;
+export type CreatorProfileSpecificDraft =
+  | ArtistProfileDraft
+  | ProducerProfileDraft
+  | DjHostProfileDraft;
 
 /**
  * Completion checklist for a profile.
@@ -416,7 +436,7 @@ export interface CreatorProfilePublishResult {
 /**
  * Modes for previewing a draft.
  */
-export type CreatorProfilePreviewMode = 'owner' | 'public';
+export type CreatorProfilePreviewMode = "owner" | "public";
 
 /**
  * Configuration for editing/draft lifecycle.
@@ -431,5 +451,5 @@ export interface CreatorProfileEditConfig {
   /** Draft expiration time (ms). 0 = never. */
   draftExpiration: number;
   /** Persistent storage method: 'localStorage' | 'memory' */
-  persistenceMethod: 'localStorage' | 'memory';
+  persistenceMethod: "localStorage" | "memory";
 }

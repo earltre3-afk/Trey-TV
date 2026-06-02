@@ -29,9 +29,7 @@ export type ElevenLabsSessionResult =
 const FALLBACK_MESSAGE = "Voice is unavailable. Type to continue.";
 const SIGNED_URL_PATHS = ["get_signed_url", "get-signed-url"] as const;
 
-function validateElevenLabsSessionInput(
-  input: ElevenLabsSessionInput,
-): ElevenLabsSessionInput {
+function validateElevenLabsSessionInput(input: ElevenLabsSessionInput): ElevenLabsSessionInput {
   return {
     accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
   };
@@ -48,8 +46,8 @@ function log(level: "info" | "warn" | "error", code: string, detail?: object) {
 
 // Unauthenticated version for onboarding — no user session required.
 // Auth happens at the end of onboarding when the profile is saved.
-export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" })
-  .handler(async (): Promise<ElevenLabsSessionResult> => {
+export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" }).handler(
+  async (): Promise<ElevenLabsSessionResult> => {
     try {
       const apiKey = process.env.ELEVENLABS_API_KEY?.trim() || "";
       const agentId = process.env.ELEVENLABS_AGENT_ID?.trim() || "";
@@ -77,7 +75,10 @@ export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" }
         if (upstream.status === 401 || upstream.status === 403) {
           return {
             ok: false,
-            code: upstream.status === 401 ? "ELEVENLABS_API_KEY_INVALID" : "ELEVENLABS_API_KEY_FORBIDDEN",
+            code:
+              upstream.status === 401
+                ? "ELEVENLABS_API_KEY_INVALID"
+                : "ELEVENLABS_API_KEY_FORBIDDEN",
             message: FALLBACK_MESSAGE,
           };
         }
@@ -87,17 +88,32 @@ export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" }
         }
 
         const payload = (await upstream.json().catch(() => null)) as {
-          signed_url?: unknown; signedUrl?: unknown;
-          conversation_id?: unknown; conversationId?: unknown;
+          signed_url?: unknown;
+          signedUrl?: unknown;
+          conversation_id?: unknown;
+          conversationId?: unknown;
         } | null;
 
-        if (!payload) return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+        if (!payload)
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
 
         const signedUrl =
-          typeof payload.signed_url === "string" ? payload.signed_url
-          : typeof payload.signedUrl === "string" ? payload.signedUrl : "";
+          typeof payload.signed_url === "string"
+            ? payload.signed_url
+            : typeof payload.signedUrl === "string"
+              ? payload.signedUrl
+              : "";
 
-        if (!signedUrl) return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+        if (!signedUrl)
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
 
         return { ok: true, provider: "elevenlabs", signedUrl, expiresInSeconds: 900 };
       }
@@ -109,7 +125,8 @@ export const treyIElevenLabsOnboardingSession = createServerFn({ method: "GET" }
       });
       return { ok: false, code: "UNKNOWN_ELEVENLABS_ERROR", message: FALLBACK_MESSAGE };
     }
-  });
+  },
+);
 
 export const treyIElevenLabsSession = createServerFn({ method: "POST" })
   .inputValidator(validateElevenLabsSessionInput)
@@ -171,7 +188,9 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
             safeBody = (await upstream.text())
               .slice(0, 200)
               .replace(/xi-api-key|api_key|key/gi, "***");
-          } catch { /* harmless */ }
+          } catch {
+            /* harmless */
+          }
           log("error", "ELEVENLABS_API_KEY_PERMISSIONS_ISSUE", {
             status: upstream.status,
             path,
@@ -179,7 +198,10 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
           });
           return {
             ok: false,
-            code: upstream.status === 401 ? "ELEVENLABS_API_KEY_INVALID" : "ELEVENLABS_API_KEY_FORBIDDEN",
+            code:
+              upstream.status === 401
+                ? "ELEVENLABS_API_KEY_INVALID"
+                : "ELEVENLABS_API_KEY_FORBIDDEN",
             message: FALLBACK_MESSAGE,
           };
         }
@@ -198,15 +220,19 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
 
         if (!payload) {
           log("error", "ELEVENLABS_RESPONSE_SHAPE_INVALID", { path, note: "JSON parse failed" });
-          return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
         }
 
         const signedUrl =
           typeof payload.signed_url === "string"
             ? payload.signed_url
             : typeof payload.signedUrl === "string"
-            ? payload.signedUrl
-            : "";
+              ? payload.signedUrl
+              : "";
 
         if (!signedUrl) {
           log("error", "ELEVENLABS_RESPONSE_SHAPE_INVALID", {
@@ -214,15 +240,19 @@ export const treyIElevenLabsSession = createServerFn({ method: "POST" })
             payloadKeys: Object.keys(payload),
             note: "signed_url field missing or not a string",
           });
-          return { ok: false, code: "ELEVENLABS_RESPONSE_SHAPE_INVALID", message: FALLBACK_MESSAGE };
+          return {
+            ok: false,
+            code: "ELEVENLABS_RESPONSE_SHAPE_INVALID",
+            message: FALLBACK_MESSAGE,
+          };
         }
 
         const conversationId =
           typeof payload.conversation_id === "string"
             ? payload.conversation_id
             : typeof payload.conversationId === "string"
-            ? payload.conversationId
-            : undefined;
+              ? payload.conversationId
+              : undefined;
 
         log("info", "SIGNED_URL_FETCH_OK", { path, hasConversationId: Boolean(conversationId) });
 

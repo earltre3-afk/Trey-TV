@@ -25,19 +25,24 @@ export type PolishContext = {
  * Requires at least 3 letters in a spelling sequence so "D-J" or "A-I" are preserved.
  */
 export function extractName(utterance: string): string {
-  return utterance
-    // "spelled T-R-E-Y" or "it's spelled T-R-E-Y"
-    .replace(/,?\s*(?:it'?s\s+)?spelled?\s+[A-Za-z](?:-[A-Za-z]){2,}/gi, "")
-    // standalone spelling sequences: ", T-R-E-Y" or at string start
-    .replace(/,?\s*\b[A-Za-z](?:-[A-Za-z]){2,}\b/g, "")
-    // name / correction prefixes
-    .replace(/^(?:i mean|actually|no[,\s]|it'?s|the name is|my name is|call me|i'?m|i am|it should be|i meant)\s+/i, "")
-    // "not Tray" / "instead of Tray" correction suffixes
-    .replace(/,?\s*(?:not|instead of|rather than)\s+\S+$/i, "")
-    // leading punctuation artifacts from noRe.replace()
-    .replace(/^[,.\s]+/, "")
-    .trim()
-    .slice(0, 50);
+  return (
+    utterance
+      // "spelled T-R-E-Y" or "it's spelled T-R-E-Y"
+      .replace(/,?\s*(?:it'?s\s+)?spelled?\s+[A-Za-z](?:-[A-Za-z]){2,}/gi, "")
+      // standalone spelling sequences: ", T-R-E-Y" or at string start
+      .replace(/,?\s*\b[A-Za-z](?:-[A-Za-z]){2,}\b/g, "")
+      // name / correction prefixes
+      .replace(
+        /^(?:i mean|actually|no[,\s]|it'?s|the name is|my name is|call me|i'?m|i am|it should be|i meant)\s+/i,
+        "",
+      )
+      // "not Tray" / "instead of Tray" correction suffixes
+      .replace(/,?\s*(?:not|instead of|rather than)\s+\S+$/i, "")
+      // leading punctuation artifacts from noRe.replace()
+      .replace(/^[,.\s]+/, "")
+      .trim()
+      .slice(0, 50)
+  );
 }
 
 /** Title-cases a display name (first letter of each word capitalized). */
@@ -141,10 +146,8 @@ export function polishAllFields(fields: Record<string, unknown>): Record<string,
 
   if (typeof fields.display_name === "string")
     result.display_name = toTitleCase(extractName(fields.display_name));
-  if (typeof fields.location === "string")
-    result.location = cleanLocation(fields.location);
-  if (typeof fields.bio === "string")
-    result.bio = polishBio(fields.bio, ctx);
+  if (typeof fields.location === "string") result.location = cleanLocation(fields.location);
+  if (typeof fields.bio === "string") result.bio = polishBio(fields.bio, ctx);
   if (Array.isArray(fields.favorite_categories))
     result.favorite_categories = polishInterestList(fields.favorite_categories as string[]);
   if (Array.isArray(fields.favorite_moods))

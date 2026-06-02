@@ -56,11 +56,16 @@ export function useUserPreferences() {
       try {
         await (supabase as any).rpc("ensure_user_preferences", { _user_id: supabaseUser.id });
       } catch (rpcError: any) {
-        console.warn("RPC ensure_user_preferences failed, proceeding with direct query:", rpcError?.message || rpcError);
+        console.warn(
+          "RPC ensure_user_preferences failed, proceeding with direct query:",
+          rpcError?.message || rpcError,
+        );
       }
       const { data, error } = await (supabase as any)
         .from("user_preferences")
-        .select("profile_preferences, feed_preferences, inbox_preferences, rewards_preferences, prescribe_preferences, app_settings")
+        .select(
+          "profile_preferences, feed_preferences, inbox_preferences, rewards_preferences, prescribe_preferences, app_settings",
+        )
         .eq("user_id", supabaseUser.id)
         .maybeSingle();
 
@@ -89,21 +94,22 @@ export function useUserPreferences() {
       try {
         const supabase = createBrowserClient();
         const nextSection = { ...(preferences[section] ?? {}), ...patch };
-        const { error } = await (supabase as any)
-          .from("user_preferences")
-          .upsert({
+        const { error } = await (supabase as any).from("user_preferences").upsert(
+          {
             user_id: supabaseUser.id,
             public_profile_uid: currentUser.uid,
             [section]: nextSection,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id" });
+          },
+          { onConflict: "user_id" },
+        );
 
         if (error) throw error;
       } catch (error: any) {
         console.error("Failed to save UID preferences:", error?.message || error);
       }
     },
-    [currentUser.uid, preferences, supabaseUser?.id]
+    [currentUser.uid, preferences, supabaseUser?.id],
   );
 
   return { preferences, updateSection, loading: loading || isLoading, reload: load };

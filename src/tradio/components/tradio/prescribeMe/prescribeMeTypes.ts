@@ -1,4 +1,4 @@
-export type TradioMode = 'fan' | 'artist' | 'producer' | 'dj' | 'admin' | 'owner';
+export type TradioMode = "fan" | "artist" | "producer" | "dj" | "admin" | "owner";
 
 export interface QuestionOption {
   label: string;
@@ -7,7 +7,7 @@ export interface QuestionOption {
 
 export interface PrescribeMeQuestion {
   id: string;
-  category: 'currentNeed' | 'emotionalState' | 'desiredShift' | 'familiarity' | 'contentType';
+  category: "currentNeed" | "emotionalState" | "desiredShift" | "familiarity" | "contentType";
   text: string;
   options: QuestionOption[];
 }
@@ -29,7 +29,7 @@ export interface Prescription {
   reason: string; // Dynamic reason based on questions answered
   confidenceLabel: string; // e.g. "98% MATCH"
   primaryCtaLabel: string;
-  ctaType: 'start_radio' | 'navigate_screen' | 'open_forge' | 'action_alert';
+  ctaType: "start_radio" | "navigate_screen" | "open_forge" | "action_alert";
   secondaryCtaLabel?: string;
   timestamp: number;
 }

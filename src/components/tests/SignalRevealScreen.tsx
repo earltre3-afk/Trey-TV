@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Sparkles, Crown } from 'lucide-react';
-import { Logo } from '@/components/brand/Logo';
+import React, { useEffect, useState } from "react";
+import { Sparkles, Crown } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 
 interface Props {
   onReveal: () => void;
@@ -24,7 +24,7 @@ const SignalRevealScreen: React.FC<Props> = ({ onReveal }) => {
     return () => clearInterval(id);
   }, []);
 
-  const orbitIcons = ['◇', '☾', '♡', '✦', '⚗', '❧', '◉', '⟡'];
+  const orbitIcons = ["◇", "☾", "♡", "✦", "⚗", "❧", "◉", "⟡"];
 
   return (
     <div className="signal-test-above-mobile-nav w-full bg-[#06030f] text-white relative overflow-x-hidden overflow-y-auto flex items-center justify-center px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -35,7 +35,9 @@ const SignalRevealScreen: React.FC<Props> = ({ onReveal }) => {
         <div className="flex justify-center mb-3">
           <Logo className="h-16 w-16" />
         </div>
-        <p className="text-center text-xs tracking-[0.3em] text-cyan-300/80 mb-4">— THE SIGNAL TEST —</p>
+        <p className="text-center text-xs tracking-[0.3em] text-cyan-300/80 mb-4">
+          — THE SIGNAL TEST —
+        </p>
 
         <h1 className="text-center text-3xl font-bold bg-gradient-to-b from-white via-cyan-100 to-violet-200 bg-clip-text text-transparent sm:text-4xl md:text-5xl">
           Reading Your Signal…
@@ -61,7 +63,12 @@ const SignalRevealScreen: React.FC<Props> = ({ onReveal }) => {
             const r = 112;
             const x = Math.cos(angle) * r;
             const y = Math.sin(angle) * r;
-            const colors = ['text-cyan-300', 'text-fuchsia-300', 'text-amber-300', 'text-violet-300'];
+            const colors = [
+              "text-cyan-300",
+              "text-fuchsia-300",
+              "text-amber-300",
+              "text-violet-300",
+            ];
             return (
               <div
                 key={i}
@@ -92,15 +99,17 @@ const SignalRevealScreen: React.FC<Props> = ({ onReveal }) => {
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="text-center mt-2 text-[10px] tracking-[0.2em] text-slate-500">— TUNING INTO YOUR FREQUENCY —</p>
+          <p className="text-center mt-2 text-[10px] tracking-[0.2em] text-slate-500">
+            — TUNING INTO YOUR FREQUENCY —
+          </p>
         </div>
 
         {/* result found */}
         <div
           className={`mt-5 rounded-2xl p-[1.5px] transition-all duration-700 ${
             ready
-              ? 'bg-gradient-to-r from-amber-400 via-fuchsia-500 to-cyan-500 opacity-100 translate-y-0'
-              : 'opacity-30 translate-y-2 bg-white/10'
+              ? "bg-gradient-to-r from-amber-400 via-fuchsia-500 to-cyan-500 opacity-100 translate-y-0"
+              : "opacity-30 translate-y-2 bg-white/10"
           }`}
         >
           <div className="rounded-2xl bg-[#0a0518]/90 backdrop-blur-xl border border-white/5 px-5 py-5 text-center">
@@ -112,11 +121,13 @@ const SignalRevealScreen: React.FC<Props> = ({ onReveal }) => {
               onClick={onReveal}
               disabled={!ready}
               className={`group relative w-full mt-4 rounded-full py-3.5 px-5 font-bold tracking-wider overflow-hidden transition ${
-                ready ? 'active:scale-[0.98]' : 'opacity-40 cursor-not-allowed'
+                ready ? "active:scale-[0.98]" : "opacity-40 cursor-not-allowed"
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500" />
-              {ready && <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 blur-md opacity-70" />}
+              {ready && (
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 blur-md opacity-70" />
+              )}
               <span className="relative flex items-center justify-center gap-3 text-white">
                 <Sparkles className="w-5 h-5" />
                 REVEAL MY ABILITY

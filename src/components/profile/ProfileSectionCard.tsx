@@ -32,7 +32,10 @@ export function ProfileSectionCard({
     <section className={`rounded-3xl ${cardClass} p-5 relative overflow-hidden ${className}`}>
       {/* Subtle ambient glow spot */}
       {isOwner && (
-        <div aria-hidden className="absolute -top-16 -right-16 size-40 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+        <div
+          aria-hidden
+          className="absolute -top-16 -right-16 size-40 rounded-full bg-primary/20 blur-3xl pointer-events-none"
+        />
       )}
 
       {(title || trailing) && (

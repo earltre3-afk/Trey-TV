@@ -9,7 +9,12 @@ import {
   resolvePluginAccess,
   type PluginAccessDecision,
 } from "./permissions";
-import { getFwdPluginStatus, getProtectedFlowStatus, pluginFeatures, pluginGames } from "./featureRegistry";
+import {
+  getFwdPluginStatus,
+  getProtectedFlowStatus,
+  pluginFeatures,
+  pluginGames,
+} from "./featureRegistry";
 import { listTreyTvMcpTools } from "./mcp/manifest";
 import type { PluginRegistryPayload } from "./types";
 
@@ -30,7 +35,11 @@ const pluginRoutes = new Set<string>([
   "/api/plugins/mcp-manifest",
 ]);
 
-function payloadForRoute(request: Request, pathname: PluginRoute, access: PluginAccessDecision): PluginRegistryPayload {
+function payloadForRoute(
+  request: Request,
+  pathname: PluginRoute,
+  access: PluginAccessDecision,
+): PluginRegistryPayload {
   const metadata = createPluginMetadata(request, access);
   switch (pathname) {
     case "/api/plugins/status": {

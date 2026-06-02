@@ -37,11 +37,15 @@ export interface AIStoryMakerNarrationContext {
 let currentContext: InteractiveStoryNarrationContext | null = null;
 let currentAIStoryMakerContext: AIStoryMakerNarrationContext | null = null;
 
-export function setCurrentInteractiveStoryNarrationContext(context: InteractiveStoryNarrationContext | null) {
+export function setCurrentInteractiveStoryNarrationContext(
+  context: InteractiveStoryNarrationContext | null,
+) {
   currentContext = context;
 }
 
-export function setCurrentAIStoryMakerNarrationContext(context: AIStoryMakerNarrationContext | null) {
+export function setCurrentAIStoryMakerNarrationContext(
+  context: AIStoryMakerNarrationContext | null,
+) {
   currentAIStoryMakerContext = context;
 }
 
@@ -58,7 +62,9 @@ function safeId(value: unknown, fallback: string) {
 }
 
 function currentChapterFromContext(context: InteractiveStoryNarrationContext) {
-  return context.chapter || context.beat || context.branch.chapters[context.branch.chapters.length - 1];
+  return (
+    context.chapter || context.beat || context.branch.chapters[context.branch.chapters.length - 1]
+  );
 }
 
 export function getInteractiveStoryMetadata(branch: Branch) {
@@ -78,7 +84,8 @@ export function getInteractiveStoryMetadata(branch: Branch) {
       id: "switch_kicks",
       title: "Switch Kicks",
       genre: "Body-swap dramedy",
-      description: "Twin brothers trade worlds across football, ballet, family pressure, and first love.",
+      description:
+        "Twin brothers trade worlds across football, ballet, family pressure, and first love.",
       tone: branch.toneHistory[branch.toneHistory.length - 1] || "Bold",
     };
   }
@@ -106,14 +113,13 @@ export function adaptBeatToCurrentStoryPage(
   }
 
   const activeBeat = beat || chapter;
-  const pageId = safeId(activeBeat?.sceneId, `chapter-${activeBeat?.number || currentBeatIndex + 1}`);
+  const pageId = safeId(
+    activeBeat?.sceneId,
+    `chapter-${activeBeat?.number || currentBeatIndex + 1}`,
+  );
   const rawBeat = activeBeat as unknown as Record<string, unknown> | undefined;
   const content = String(
-    rawBeat?.narration ||
-      rawBeat?.content ||
-      rawBeat?.text ||
-      activeBeat?.prose ||
-      "",
+    rawBeat?.narration || rawBeat?.content || rawBeat?.text || activeBeat?.prose || "",
   );
 
   return {
@@ -143,11 +149,15 @@ function characterDescription(character: Record<string, unknown>) {
 
 function normalizeNarratorCharacter(character: Record<string, unknown>, index: number) {
   const id = safeId(character.character_id || character.id, `character_${index + 1}`);
-  const name = safeId(character.display_name || character.name || character.firstName, id.replace(/[_-]+/g, " "));
+  const name = safeId(
+    character.display_name || character.name || character.firstName,
+    id.replace(/[_-]+/g, " "),
+  );
   const description = characterDescription(character);
-  const voice = character.voice && typeof character.voice === "object"
-    ? character.voice as Record<string, unknown>
-    : undefined;
+  const voice =
+    character.voice && typeof character.voice === "object"
+      ? (character.voice as Record<string, unknown>)
+      : undefined;
 
   return {
     id,
@@ -155,24 +165,31 @@ function normalizeNarratorCharacter(character: Record<string, unknown>, index: n
     role: String(character.role || "Character"),
     age: String(character.age || ""),
     personality: String(character.personality || description || "Story character"),
-    voiceStyle: String(voice?.audioStyle || voice?.voiceName || character.voiceStyle || `${name} character voice`),
+    voiceStyle: String(
+      voice?.audioStyle || voice?.voiceName || character.voiceStyle || `${name} character voice`,
+    ),
     speechPattern: String(character.speechPattern || character.quote || ""),
     emotionalTone: String(character.emotionalTone || character.tone || ""),
-    visualDescription: String(character.visualDescription || description || character.portrait || character.image || ""),
+    visualDescription: String(
+      character.visualDescription || description || character.portrait || character.image || "",
+    ),
   };
 }
 
 export function adaptStoryCharactersForNarrator(storyOrContext?: unknown) {
-  const context = storyOrContext && typeof storyOrContext === "object" && "branch" in storyOrContext
-    ? storyOrContext as InteractiveStoryNarrationContext
-    : currentContext;
+  const context =
+    storyOrContext && typeof storyOrContext === "object" && "branch" in storyOrContext
+      ? (storyOrContext as InteractiveStoryNarrationContext)
+      : currentContext;
   const chapter = context ? currentChapterFromContext(context) : undefined;
   const installed = context ? getInstalledStoryPackage(context.branch.storyId) : null;
-  const rawCharacters =
-    chapter?.storyCharacters?.length ? chapter.storyCharacters :
-    installed?.characters?.length ? installed.characters :
-    context?.branch.storyId === "switch_kicks" ? CHARACTERS :
-    [];
+  const rawCharacters = chapter?.storyCharacters?.length
+    ? chapter.storyCharacters
+    : installed?.characters?.length
+      ? installed.characters
+      : context?.branch.storyId === "switch_kicks"
+        ? CHARACTERS
+        : [];
 
   if (!rawCharacters.length) {
     return {
@@ -184,7 +201,9 @@ export function adaptStoryCharactersForNarrator(storyOrContext?: unknown) {
 
   return {
     available: true,
-    characters: rawCharacters.map((character, index) => normalizeNarratorCharacter(character as Record<string, unknown>, index)),
+    characters: rawCharacters.map((character, index) =>
+      normalizeNarratorCharacter(character as Record<string, unknown>, index),
+    ),
   };
 }
 
@@ -207,9 +226,11 @@ export function createNarrationScriptFromBeat(_story: unknown, beat?: ChapterRec
       .filter((line) => line.text?.trim())
       .sort((a, b) => (a.lineIndex || 0) - (b.lineIndex || 0))
       .map((line, index) => {
-        const type = line.type === "dialogue" || (lineSpeakerName(line) && lineSpeakerName(line) !== "narrator")
-          ? "dialogue"
-          : "narrator";
+        const type =
+          line.type === "dialogue" ||
+          (lineSpeakerName(line) && lineSpeakerName(line) !== "narrator")
+            ? "dialogue"
+            : "narrator";
         return {
           id: line.id || `line_${index + 1}`,
           type,
@@ -256,7 +277,7 @@ export function createNarrationScriptFromBeat(_story: unknown, beat?: ChapterRec
 export function createDirectionOptionsFromChoices(beatOrChoices?: ChapterRecord | Choice[] | null) {
   const choices = Array.isArray(beatOrChoices) ? beatOrChoices : [];
   if (!choices.length) return [];
-  return choices.map((choice) => choice.label ? `${choice.label}. ${choice.text}` : choice.text);
+  return choices.map((choice) => (choice.label ? `${choice.label}. ${choice.text}` : choice.text));
 }
 
 export function prepareDirectionFromBranch(branch: Branch) {
@@ -266,10 +287,7 @@ export function prepareDirectionFromBranch(branch: Branch) {
       canContinue: true,
       needsDirection: true,
       currentPrompt: "What happens next?",
-      suggestedDirections: [
-        ...createDirectionOptionsFromChoices(choices),
-        "Say my own choice",
-      ],
+      suggestedDirections: [...createDirectionOptionsFromChoices(choices), "Say my own choice"],
     };
   }
 
@@ -377,7 +395,12 @@ export function getCurrentStoryPageForNarrator() {
   }
   const story = context.story || getInteractiveStoryMetadata(context.branch);
   const chapter = currentChapterFromContext(context);
-  return adaptBeatToCurrentStoryPage(story, chapter, context.beat || chapter, context.currentBeatIndex ?? 0);
+  return adaptBeatToCurrentStoryPage(
+    story,
+    chapter,
+    context.beat || chapter,
+    context.currentBeatIndex ?? 0,
+  );
 }
 
 export function getCurrentDirectionForNarrator() {

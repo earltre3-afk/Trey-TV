@@ -42,9 +42,7 @@ export interface LiveKitConfigDiagnostics {
  * The error message never includes raw secret values.
  */
 export function loadLiveKitConfig(env: unknown): LiveKitConfig {
-  const url =
-    readEnv(env, "LIVEKIT_URL") ||
-    readEnv(env, "VITE_LIVEKIT_URL"); // legacy fallback
+  const url = readEnv(env, "LIVEKIT_URL") || readEnv(env, "VITE_LIVEKIT_URL"); // legacy fallback
 
   const apiKey = readEnv(env, "LIVEKIT_API_KEY");
   const apiSecret = readEnv(env, "LIVEKIT_API_SECRET");

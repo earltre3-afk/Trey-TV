@@ -1,14 +1,18 @@
-import { useNavigate as useTsNavigate, useParams as useTsParams, useLocation as useTsLocation } from '@tanstack/react-router';
+import {
+  useNavigate as useTsNavigate,
+  useParams as useTsParams,
+  useLocation as useTsLocation,
+} from "@tanstack/react-router";
 
 export const useNavigate = () => {
   const navigate = useTsNavigate();
   return (to: string | number, options?: { replace?: boolean; state?: any }) => {
-    if (typeof to === 'number') {
+    if (typeof to === "number") {
       window.history.go(to);
     } else {
-      void navigate({ 
-        to: to as any, 
-        replace: options?.replace 
+      void navigate({
+        to: to as any,
+        replace: options?.replace,
       });
     }
   };

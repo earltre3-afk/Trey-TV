@@ -11,7 +11,7 @@
  * - Preserves current UX while preparing for real Supabase-backed profiles
  */
 
-import { supabase } from '@/tradio/lib/supabaseClient';
+import { supabase } from "@/tradio/lib/supabaseClient";
 import type {
   ArtistProfileRecord,
   CreatorProfileBackendStatus,
@@ -23,14 +23,14 @@ import type {
   CreatorProfileUpdateResult,
   DjHostProfileRecord,
   ProducerProfileRecord,
-} from './creatorProfileTypes';
-import type { RoleProfileType } from './roleProfile';
-import type { TradioIdentity } from './types';
+} from "./creatorProfileTypes";
+import type { RoleProfileType } from "./roleProfile";
+import type { TradioIdentity } from "./types";
 
 const TABLE_NAMES: Record<RoleProfileType, string> = {
-  artist: 'tradio_artist_profiles',
-  producer: 'tradio_producer_profiles',
-  dj: 'tradio_dj_profiles',
+  artist: "tradio_artist_profiles",
+  producer: "tradio_producer_profiles",
+  dj: "tradio_dj_profiles",
 };
 
 /**
@@ -52,11 +52,11 @@ export async function initCreatorProfileService(): Promise<CreatorProfileService
 
   try {
     // Try a lightweight query to each table to detect existence.
-    for (const role of ['artist', 'producer', 'dj'] as RoleProfileType[]) {
+    for (const role of ["artist", "producer", "dj"] as RoleProfileType[]) {
       const tableName = TABLE_NAMES[role];
-      const { error } = await supabase.from(tableName).select('id').limit(1);
+      const { error } = await supabase.from(tableName).select("id").limit(1);
 
-      if (error?.code === 'PGRST116' || error?.message?.includes('does not exist')) {
+      if (error?.code === "PGRST116" || error?.message?.includes("does not exist")) {
         serviceConfig.tablesExist[role] = false;
       } else if (!error) {
         serviceConfig.tablesExist[role] = true;
@@ -79,9 +79,12 @@ export function getServiceConfig(): CreatorProfileServiceConfig {
  * Derive a mock profile from a Tradio identity.
  * Used as fallback when Supabase is not available.
  */
-function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): CreatorProfileRecord | null {
+function deriveMockProfile(
+  identity: TradioIdentity,
+  role: RoleProfileType,
+): CreatorProfileRecord | null {
   // Read local draft if available
-   
+
   let localDraftData: any = {};
   try {
     const stored = localStorage.getItem(`tradio_draft_${role}_${identity.user_id}`);
@@ -98,19 +101,19 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
     user_id: identity.user_id,
     profile_id: identity.profile_id,
     public_profile_uid: identity.public_profile_uid,
-    slug: `${identity.username}-${role}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+    slug: `${identity.username}-${role}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
     avatar_url: localDraftData.avatar || identity.avatar_url,
     banner_url: localDraftData.banner || identity.banner_url,
     bio: localDraftData.bio || (identity.display_name ? `Tradio ${role} creator profile.` : null),
     tradio_verification_status: identity.verification_status,
     broadcast_access: identity.broadcast_access_status,
     badges: [],
-    studio_access: identity.roles.some((r) => ['admin', 'owner'].includes(r.role)),
+    studio_access: identity.roles.some((r) => ["admin", "owner"].includes(r.role)),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
 
     // Spotify-style Pinned Pick & Socials mapping
-    artist_pick_type: localDraftData.artistPickType || 'track',
+    artist_pick_type: localDraftData.artistPickType || "track",
     artist_pick_title: localDraftData.artistPickTitle || null,
     artist_pick_message: localDraftData.artistPickMessage || null,
     artist_pick_image: localDraftData.artistPickImage || null,
@@ -120,11 +123,14 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
     social_twitter: localDraftData.socialTwitter || null,
   };
 
-  if (role === 'artist') {
+  if (role === "artist") {
     return {
       ...baseProfile,
       artist_name: localDraftData.artistName || identity.display_name || `@${identity.username}`,
-      tradio_genres: (localDraftData.genres && localDraftData.genres.length > 0) ? localDraftData.genres : (identity.genres || []),
+      tradio_genres:
+        localDraftData.genres && localDraftData.genres.length > 0
+          ? localDraftData.genres
+          : identity.genres || [],
       city: localDraftData.city || identity.city,
       region: localDraftData.region || identity.region,
       monthly_listeners: 0,
@@ -135,11 +141,15 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
     } as ArtistProfileRecord;
   }
 
-  if (role === 'producer') {
+  if (role === "producer") {
     return {
       ...baseProfile,
-      producer_name: localDraftData.producerName || identity.display_name || `@${identity.username}`,
-      tradio_genres: (localDraftData.genres && localDraftData.genres.length > 0) ? localDraftData.genres : (identity.genres || []),
+      producer_name:
+        localDraftData.producerName || identity.display_name || `@${identity.username}`,
+      tradio_genres:
+        localDraftData.genres && localDraftData.genres.length > 0
+          ? localDraftData.genres
+          : identity.genres || [],
       tradio_moods: localDraftData.moods || [],
       specialties: localDraftData.specialties || [],
       beat_count: 0,
@@ -149,11 +159,14 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
     } as ProducerProfileRecord;
   }
 
-  if (role === 'dj') {
+  if (role === "dj") {
     return {
       ...baseProfile,
       dj_name: localDraftData.djName || identity.display_name || `@${identity.username}`,
-      tradio_genres: (localDraftData.genres && localDraftData.genres.length > 0) ? localDraftData.genres : (identity.genres || []),
+      tradio_genres:
+        localDraftData.genres && localDraftData.genres.length > 0
+          ? localDraftData.genres
+          : identity.genres || [],
       specialties: localDraftData.specialties || [],
       show_count: 0,
       mix_count: 0,
@@ -172,32 +185,32 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
  */
 export async function getCreatorProfileByRoleAndUser(
   role: RoleProfileType,
-  userId: string
+  userId: string,
 ): Promise<CreatorProfileServiceResult> {
   try {
     const client = supabase;
     if (!serviceConfig.isSupabaseReady || !serviceConfig.tablesExist[role] || !client) {
       return {
         profile: null,
-        source: 'mock',
-        backendStatus: serviceConfig.isSupabaseReady ? 'table_missing' : 'not_configured',
-        visibility: 'private',
+        source: "mock",
+        backendStatus: serviceConfig.isSupabaseReady ? "table_missing" : "not_configured",
+        visibility: "private",
         isPublicReady: false,
         isComplete: false,
-        notFoundReason: 'Supabase not available.',
+        notFoundReason: "Supabase not available.",
       };
     }
 
     const tableName = TABLE_NAMES[role];
-    const { data, error } = await client.from(tableName).select('*').eq('user_id', userId).single();
+    const { data, error } = await client.from(tableName).select("*").eq("user_id", userId).single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return {
           profile: null,
-          source: 'supabase',
-          backendStatus: 'not_found',
-          visibility: 'private',
+          source: "supabase",
+          backendStatus: "not_found",
+          visibility: "private",
           isPublicReady: false,
           isComplete: false,
           notFoundReason: `No ${role} profile found for user ${userId}.`,
@@ -208,19 +221,22 @@ export async function getCreatorProfileByRoleAndUser(
 
     return {
       profile: data as CreatorProfileRecord,
-      source: 'supabase',
-      backendStatus: 'connected',
-      visibility: (data?.visibility as 'public' | 'private' | 'unlisted') || 'private',
-      isPublicReady: data?.visibility === 'public' && data?.status !== 'draft',
+      source: "supabase",
+      backendStatus: "connected",
+      visibility: (data?.visibility as "public" | "private" | "unlisted") || "private",
+      isPublicReady: data?.visibility === "public" && data?.status !== "draft",
       isComplete: !!data?.artist_name || !!data?.producer_name || !!data?.dj_name,
     };
   } catch (err) {
-    console.error(`[creatorProfileService] Error fetching ${role} profile for user ${userId}:`, err);
+    console.error(
+      `[creatorProfileService] Error fetching ${role} profile for user ${userId}:`,
+      err,
+    );
     return {
       profile: null,
-      source: 'supabase',
-      backendStatus: 'error',
-      visibility: 'private',
+      source: "supabase",
+      backendStatus: "error",
+      visibility: "private",
       isPublicReady: false,
       isComplete: false,
       error: String(err),
@@ -234,17 +250,17 @@ export async function getCreatorProfileByRoleAndUser(
  */
 export async function getCreatorProfileByPublicUid(
   role: RoleProfileType,
-  publicProfileUid: string
+  publicProfileUid: string,
 ): Promise<CreatorProfileServiceResult> {
   if (!publicProfileUid) {
     return {
       profile: null,
-      source: 'mock',
-      backendStatus: 'not_configured',
-      visibility: 'private',
+      source: "mock",
+      backendStatus: "not_configured",
+      visibility: "private",
       isPublicReady: false,
       isComplete: false,
-      notFoundReason: 'No public UID provided.',
+      notFoundReason: "No public UID provided.",
     };
   }
 
@@ -253,25 +269,29 @@ export async function getCreatorProfileByPublicUid(
     if (!serviceConfig.isSupabaseReady || !serviceConfig.tablesExist[role] || !client) {
       return {
         profile: null,
-        source: 'mock',
-        backendStatus: serviceConfig.isSupabaseReady ? 'table_missing' : 'not_configured',
-        visibility: 'private',
+        source: "mock",
+        backendStatus: serviceConfig.isSupabaseReady ? "table_missing" : "not_configured",
+        visibility: "private",
         isPublicReady: false,
         isComplete: false,
-        notFoundReason: 'Supabase not available.',
+        notFoundReason: "Supabase not available.",
       };
     }
 
     const tableName = TABLE_NAMES[role];
-    const { data, error } = await client.from(tableName).select('*').eq('public_profile_uid', publicProfileUid).single();
+    const { data, error } = await client
+      .from(tableName)
+      .select("*")
+      .eq("public_profile_uid", publicProfileUid)
+      .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return {
           profile: null,
-          source: 'supabase',
-          backendStatus: 'not_found',
-          visibility: 'private',
+          source: "supabase",
+          backendStatus: "not_found",
+          visibility: "private",
           isPublicReady: false,
           isComplete: false,
           notFoundReason: `No ${role} profile found with public UID ${publicProfileUid}.`,
@@ -282,19 +302,22 @@ export async function getCreatorProfileByPublicUid(
 
     return {
       profile: data as CreatorProfileRecord,
-      source: 'supabase',
-      backendStatus: 'connected',
-      visibility: (data?.visibility as 'public' | 'private' | 'unlisted') || 'private',
-      isPublicReady: data?.visibility === 'public' && data?.status !== 'draft',
+      source: "supabase",
+      backendStatus: "connected",
+      visibility: (data?.visibility as "public" | "private" | "unlisted") || "private",
+      isPublicReady: data?.visibility === "public" && data?.status !== "draft",
       isComplete: !!data?.artist_name || !!data?.producer_name || !!data?.dj_name,
     };
   } catch (err) {
-    console.error(`[creatorProfileService] Error fetching ${role} profile by public UID ${publicProfileUid}:`, err);
+    console.error(
+      `[creatorProfileService] Error fetching ${role} profile by public UID ${publicProfileUid}:`,
+      err,
+    );
     return {
       profile: null,
-      source: 'supabase',
-      backendStatus: 'error',
-      visibility: 'private',
+      source: "supabase",
+      backendStatus: "error",
+      visibility: "private",
       isPublicReady: false,
       isComplete: false,
       error: String(err),
@@ -308,17 +331,17 @@ export async function getCreatorProfileByPublicUid(
  */
 export async function getCreatorProfileByHandle(
   role: RoleProfileType,
-  handle: string
+  handle: string,
 ): Promise<CreatorProfileServiceResult> {
   if (!handle) {
     return {
       profile: null,
-      source: 'mock',
-      backendStatus: 'not_configured',
-      visibility: 'private',
+      source: "mock",
+      backendStatus: "not_configured",
+      visibility: "private",
       isPublicReady: false,
       isComplete: false,
-      notFoundReason: 'No handle provided.',
+      notFoundReason: "No handle provided.",
     };
   }
 
@@ -327,25 +350,25 @@ export async function getCreatorProfileByHandle(
     if (!serviceConfig.isSupabaseReady || !serviceConfig.tablesExist[role] || !client) {
       return {
         profile: null,
-        source: 'mock',
-        backendStatus: serviceConfig.isSupabaseReady ? 'table_missing' : 'not_configured',
-        visibility: 'private',
+        source: "mock",
+        backendStatus: serviceConfig.isSupabaseReady ? "table_missing" : "not_configured",
+        visibility: "private",
         isPublicReady: false,
         isComplete: false,
-        notFoundReason: 'Supabase not available.',
+        notFoundReason: "Supabase not available.",
       };
     }
 
     const tableName = TABLE_NAMES[role];
-    const { data, error } = await client.from(tableName).select('*').eq('slug', handle).single();
+    const { data, error } = await client.from(tableName).select("*").eq("slug", handle).single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
+      if (error.code === "PGRST116") {
         return {
           profile: null,
-          source: 'supabase',
-          backendStatus: 'not_found',
-          visibility: 'private',
+          source: "supabase",
+          backendStatus: "not_found",
+          visibility: "private",
           isPublicReady: false,
           isComplete: false,
           notFoundReason: `No ${role} profile found with handle @${handle}.`,
@@ -356,19 +379,22 @@ export async function getCreatorProfileByHandle(
 
     return {
       profile: data as CreatorProfileRecord,
-      source: 'supabase',
-      backendStatus: 'connected',
-      visibility: (data?.visibility as 'public' | 'private' | 'unlisted') || 'private',
-      isPublicReady: data?.visibility === 'public' && data?.status !== 'draft',
+      source: "supabase",
+      backendStatus: "connected",
+      visibility: (data?.visibility as "public" | "private" | "unlisted") || "private",
+      isPublicReady: data?.visibility === "public" && data?.status !== "draft",
       isComplete: !!data?.artist_name || !!data?.producer_name || !!data?.dj_name,
     };
   } catch (err) {
-    console.error(`[creatorProfileService] Error fetching ${role} profile by handle ${handle}:`, err);
+    console.error(
+      `[creatorProfileService] Error fetching ${role} profile by handle ${handle}:`,
+      err,
+    );
     return {
       profile: null,
-      source: 'supabase',
-      backendStatus: 'error',
-      visibility: 'private',
+      source: "supabase",
+      backendStatus: "error",
+      visibility: "private",
       isPublicReady: false,
       isComplete: false,
       error: String(err),
@@ -382,7 +408,7 @@ export async function getCreatorProfileByHandle(
  */
 export async function getMyCreatorProfile(
   role: RoleProfileType,
-  identity: TradioIdentity
+  identity: TradioIdentity,
 ): Promise<CreatorProfileServiceResult> {
   // First, try to load from Supabase.
   const result = await getCreatorProfileByRoleAndUser(role, identity.user_id);
@@ -396,7 +422,7 @@ export async function getMyCreatorProfile(
   const mockProfile = deriveMockProfile(identity, role);
 
   // Check draft status for visibility & completeness fallback
-  let visibility: 'private' | 'public' = 'private';
+  let visibility: "private" | "public" = "private";
   let isPublicReady = false;
   let isComplete = false;
 
@@ -404,18 +430,27 @@ export async function getMyCreatorProfile(
     const stored = localStorage.getItem(`tradio_draft_${role}_${identity.user_id}`);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (parsed.status === 'published' || parsed.data?.visibility === 'public') {
-        visibility = 'public';
+      if (parsed.status === "published" || parsed.data?.visibility === "public") {
+        visibility = "public";
         isPublicReady = true;
       }
 
       const data = parsed.data || {};
-      if (role === 'artist') {
+      if (role === "artist") {
         isComplete = !!data.artistName && data.genres?.length > 0 && !!data.bio;
-      } else if (role === 'producer') {
-        isComplete = !!data.producerName && data.genres?.length > 0 && !!data.bio && (data.moods?.length > 0 || data.specialties?.length > 0);
-      } else if (role === 'dj') {
-        isComplete = !!data.djName && data.genres?.length > 0 && !!data.bio && data.showTypes?.length > 0 && !!data.broadcastConcept;
+      } else if (role === "producer") {
+        isComplete =
+          !!data.producerName &&
+          data.genres?.length > 0 &&
+          !!data.bio &&
+          (data.moods?.length > 0 || data.specialties?.length > 0);
+      } else if (role === "dj") {
+        isComplete =
+          !!data.djName &&
+          data.genres?.length > 0 &&
+          !!data.bio &&
+          data.showTypes?.length > 0 &&
+          !!data.broadcastConcept;
       }
     }
   } catch (e) {
@@ -424,7 +459,7 @@ export async function getMyCreatorProfile(
 
   return {
     profile: mockProfile,
-    source: 'mock',
+    source: "mock",
     backendStatus: result.backendStatus,
     visibility,
     isPublicReady,
@@ -440,7 +475,7 @@ export async function getMyCreatorProfile(
 export async function updateCreatorProfileDraft(
   role: RoleProfileType,
   userId: string,
-  payload: CreatorProfileDraftPayload
+  payload: CreatorProfileDraftPayload,
 ): Promise<CreatorProfileUpdateResult> {
   // For Pass 4J, updates are local-only simulation.
   // Real backend updates would require role validation, RLS checks, etc.
@@ -454,40 +489,51 @@ export async function updateCreatorProfileDraft(
       const updatePayload: Record<string, unknown> = {};
 
       if (payload.displayName !== undefined) {
-        const displayNameField = role === 'artist' ? 'artist_name' : role === 'producer' ? 'producer_name' : 'dj_name';
+        const displayNameField =
+          role === "artist" ? "artist_name" : role === "producer" ? "producer_name" : "dj_name";
         updatePayload[displayNameField] = payload.displayName;
       }
       if (payload.bio !== undefined) updatePayload.bio = payload.bio;
       if (payload.genres !== undefined) updatePayload.tradio_genres = payload.genres;
-      if (payload.moods !== undefined && role === 'producer') updatePayload.tradio_moods = payload.moods;
-      if (payload.specialties !== undefined && (role === 'producer' || role === 'dj')) updatePayload.specialties = payload.specialties;
+      if (payload.moods !== undefined && role === "producer")
+        updatePayload.tradio_moods = payload.moods;
+      if (payload.specialties !== undefined && (role === "producer" || role === "dj"))
+        updatePayload.specialties = payload.specialties;
       if (payload.city !== undefined) updatePayload.city = payload.city;
       if (payload.region !== undefined) updatePayload.region = payload.region;
       if (payload.avatarUrl !== undefined) updatePayload.avatar_url = payload.avatarUrl;
       if (payload.bannerUrl !== undefined) updatePayload.banner_url = payload.bannerUrl;
 
-      const { data, error } = await client.from(tableName).update(updatePayload).eq('user_id', userId).select().single();
+      const { data, error } = await client
+        .from(tableName)
+        .update(updatePayload)
+        .eq("user_id", userId)
+        .select()
+        .single();
 
       if (error) throw error;
 
       return {
         success: true,
         updatedProfile: data as CreatorProfileRecord,
-        source: 'supabase',
+        source: "supabase",
       };
     }
 
     // Mock only: return success without actually persisting.
     return {
       success: true,
-      source: 'mock',
+      source: "mock",
     };
   } catch (err) {
-    console.error(`[creatorProfileService] Error updating ${role} profile for user ${userId}:`, err);
+    console.error(
+      `[creatorProfileService] Error updating ${role} profile for user ${userId}:`,
+      err,
+    );
     return {
       success: false,
       error: String(err),
-      source: serviceConfig.isSupabaseReady ? 'supabase' : 'mock',
+      source: serviceConfig.isSupabaseReady ? "supabase" : "mock",
     };
   }
 }
@@ -505,10 +551,11 @@ export function isCreatorProfilePublicReady(result: CreatorProfileServiceResult)
  */
 export function getCreatorProfilePublicUrl(
   role: RoleProfileType,
-  profile: CreatorProfileRecord | TradioIdentity
+  profile: CreatorProfileRecord | TradioIdentity,
 ): string {
-  const publicUid = 'public_profile_uid' in profile ? profile.public_profile_uid : profile?.public_profile_uid;
-  if (!publicUid) return '';
+  const publicUid =
+    "public_profile_uid" in profile ? profile.public_profile_uid : profile?.public_profile_uid;
+  if (!publicUid) return "";
   return `/tradio/${role}/${publicUid}`;
 }
 
@@ -516,7 +563,10 @@ export function getCreatorProfilePublicUrl(
  * Get content modules available for a role + profile state.
  * (Already defined in roleProfile.ts; this is a convenience re-export hook.)
  */
-export function getCreatorProfileContentModules(role: RoleProfileType, result: CreatorProfileServiceResult) {
+export function getCreatorProfileContentModules(
+  role: RoleProfileType,
+  result: CreatorProfileServiceResult,
+) {
   // This would integrate with ROLE_PROFILE_SECTIONS from roleProfile.ts
   // and filter based on completion/broadcast/visibility state.
   // For now, return a list; RoleProfilePage will apply filtering.
@@ -530,7 +580,7 @@ export function getCreatorProfileContentModules(role: RoleProfileType, result: C
 export function getCreatorProfileCompletion(
   role: RoleProfileType,
   profile: CreatorProfileRecord | null,
-  identity: TradioIdentity
+  identity: TradioIdentity,
 ) {
   // This would combine identity signals + Supabase profile data
   // to produce a detailed completion checklist.
@@ -542,17 +592,17 @@ export function getCreatorProfileCompletion(
   let completed = 0;
   const total = 4; // Display name, avatar, bio, role approval
 
-  if (role === 'artist') {
+  if (role === "artist") {
     completed += (profile as ArtistProfileRecord).artist_name ? 1 : 0;
-  } else if (role === 'producer') {
+  } else if (role === "producer") {
     completed += (profile as ProducerProfileRecord).producer_name ? 1 : 0;
-  } else if (role === 'dj') {
+  } else if (role === "dj") {
     completed += (profile as DjHostProfileRecord).dj_name ? 1 : 0;
   }
 
   completed += profile.avatar_url ? 1 : 0;
   completed += profile.bio ? 1 : 0;
-  completed += identity.roles.some((r) => r.role === role && r.role_status === 'active') ? 1 : 0;
+  completed += identity.roles.some((r) => r.role === role && r.role_status === "active") ? 1 : 0;
 
   return { percent: Math.round((completed / total) * 100), completed, total };
 }

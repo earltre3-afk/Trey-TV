@@ -58,7 +58,11 @@ export function ProfileAvatarLink({
 }) {
   const accessibleLabel = label || (name ? `Open ${name}'s public profile` : "Open public profile");
   return (
-    <ProfilePictureLink publicProfileUid={publicProfileUid} label={accessibleLabel} className={className}>
+    <ProfilePictureLink
+      publicProfileUid={publicProfileUid}
+      label={accessibleLabel}
+      className={className}
+    >
       <AvatarWithFallback
         src={src}
         alt={name ? `${name}'s profile photo` : "Profile photo"}

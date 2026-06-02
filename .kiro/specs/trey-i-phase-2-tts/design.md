@@ -101,6 +101,7 @@ export const treyITts = createServerFn({ method: "POST" })
 ```
 
 **Key design decisions:**
+
 - Returns `{ audioBase64: null }` instead of throwing on any failure — the browser never sees an error
 - Uses direct API key auth (`new GoogleGenAI({ apiKey })`) — no Vertex AI / Google Cloud ADC required for this phase
 - `Buffer` is available in Cloudflare Workers via the `nodejs_compat` flag (already used in the project)
@@ -117,14 +118,14 @@ The critical `submit()` path is unchanged — text renders immediately regardles
 ```typescript
 async function playTts(message: string) {
   try {
-    const result = await treyITts({ data: { text: message } })
-    if (!result.audioBase64) return
-    const bytes = Uint8Array.from(atob(result.audioBase64), (c) => c.charCodeAt(0))
-    const blob = new Blob([bytes], { type: result.mimeType })
-    const url = URL.createObjectURL(blob)
-    const audio = new Audio(url)
-    audio.onended = () => URL.revokeObjectURL(url)
-    await audio.play()
+    const result = await treyITts({ data: { text: message } });
+    if (!result.audioBase64) return;
+    const bytes = Uint8Array.from(atob(result.audioBase64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes], { type: result.mimeType });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => URL.revokeObjectURL(url);
+    await audio.play();
   } catch {
     // silent — TTS failure never surfaces to user
   }
@@ -132,10 +133,11 @@ async function playTts(message: string) {
 ```
 
 Call site inside `submit()`, after `setAssistantMessage(result.assistant.message)`:
+
 ```typescript
-setAssistantMessage(result.assistant.message)
-setConfirmedFields(result.confirmedFields)
-playTts(result.assistant.message)   // fire-and-forget, no await
+setAssistantMessage(result.assistant.message);
+setConfirmedFields(result.confirmedFields);
+playTts(result.assistant.message); // fire-and-forget, no await
 ```
 
 No other changes to `onboarding.voice.tsx`.
@@ -145,6 +147,7 @@ No other changes to `onboarding.voice.tsx`.
 ## Dependency Addition
 
 Add to `package.json` dependencies:
+
 ```json
 "@google/genai": "^1.50.1"
 ```
@@ -155,13 +158,13 @@ This is the same version used in RESTORE-599. Run `pnpm install` after adding.
 
 ## Environment Variables (server-only)
 
-| Variable | Purpose | Required? |
-|----------|---------|-----------|
-| `GOOGLE_GENAI_API_KEY` | Primary Gemini API key | One of the three must be set for TTS to work |
-| `GEMINI_API_KEY` | Fallback Gemini API key | |
-| `GOOGLE_API_KEY` | Fallback Google API key | |
-| `GEMINI_TREYI_TTS_MODEL` | Override TTS model | Optional; defaults to `gemini-2.5-flash-preview-tts` |
-| `GEMINI_TREYI_VOICE_NAME` | Override TTS voice | Optional; defaults to `Algieba` |
+| Variable                  | Purpose                 | Required?                                            |
+| ------------------------- | ----------------------- | ---------------------------------------------------- |
+| `GOOGLE_GENAI_API_KEY`    | Primary Gemini API key  | One of the three must be set for TTS to work         |
+| `GEMINI_API_KEY`          | Fallback Gemini API key |                                                      |
+| `GOOGLE_API_KEY`          | Fallback Google API key |                                                      |
+| `GEMINI_TREYI_TTS_MODEL`  | Override TTS model      | Optional; defaults to `gemini-2.5-flash-preview-tts` |
+| `GEMINI_TREYI_VOICE_NAME` | Override TTS voice      | Optional; defaults to `Algieba`                      |
 
 None of these may have a `VITE_` prefix. If none are set, `treyITts` returns
 `{ audioBase64: null }` silently — TTS is simply disabled.
@@ -170,23 +173,23 @@ None of these may have a `VITE_` prefix. If none are set, `treyITts` returns
 
 ## Security Boundaries
 
-| Boundary | Enforcement |
-|----------|-------------|
-| Google API key | `process.env` server-side only; no `VITE_` prefix |
-| Browser receives | Only base64 WAV audio bytes — no credentials |
-| TTS failure | Returns `{ audioBase64: null }` — never throws to browser |
+| Boundary         | Enforcement                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| Google API key   | `process.env` server-side only; no `VITE_` prefix                                  |
+| Browser receives | Only base64 WAV audio bytes — no credentials                                       |
+| TTS failure      | Returns `{ audioBase64: null }` — never throws to browser                          |
 | No auth required | TTS is stateless; no user data is sent to Gemini (only the assistant message text) |
 
 ---
 
 ## What Is NOT Changed
 
-| Area | Reason |
-|------|--------|
-| `intake.server.ts` | No change — `profileSetupTurn` return type unchanged |
-| `onboarding.server.ts` | No change |
-| `onboarding.tsx` | Entry page — no change |
-| `TreyIWidget.tsx` | Separate future lane |
-| Watch Now / Guide | Static/localStorage — not touched |
-| Creator/admin pipeline | Not touched |
-| Mic button behavior | Still visual-only — TTS is output only, not input |
+| Area                   | Reason                                               |
+| ---------------------- | ---------------------------------------------------- |
+| `intake.server.ts`     | No change — `profileSetupTurn` return type unchanged |
+| `onboarding.server.ts` | No change                                            |
+| `onboarding.tsx`       | Entry page — no change                               |
+| `TreyIWidget.tsx`      | Separate future lane                                 |
+| Watch Now / Guide      | Static/localStorage — not touched                    |
+| Creator/admin pipeline | Not touched                                          |
+| Mic button behavior    | Still visual-only — TTS is output only, not input    |

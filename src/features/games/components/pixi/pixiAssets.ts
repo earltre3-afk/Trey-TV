@@ -3,9 +3,9 @@
  * Centralized asset loading and texture cache for Trey TV game tables.
  * All textures are loaded once and reused across scenes.
  */
-import { Assets, Texture } from 'pixi.js';
+import { Assets, Texture } from "pixi.js";
 
-export const CARD_BACK_URL = '/assets/games/cards/trey-tv-luxury/card-back.png';
+export const CARD_BACK_URL = "/assets/games/cards/trey-tv-luxury/card-back.png";
 
 export interface GameTextures {
   cardBack: Texture | null;
@@ -21,7 +21,10 @@ export async function loadCardBack(): Promise<Texture | null> {
   if (_sharedBack) return _sharedBack;
   if (_backLoading) return _backLoading;
   _backLoading = Assets.load(CARD_BACK_URL)
-    .then((t: Texture) => { _sharedBack = t; return t; })
+    .then((t: Texture) => {
+      _sharedBack = t;
+      return t;
+    })
     .catch(() => null);
   return _backLoading;
 }
@@ -35,10 +38,10 @@ export async function loadCardBack(): Promise<Texture | null> {
  *   Clubs   (C) → /keys/
  */
 const SUIT_DIRS: Record<string, string> = {
-  S: 'blades',
-  H: 'soul',
-  D: 'flame',
-  C: 'keys',
+  S: "blades",
+  H: "soul",
+  D: "flame",
+  C: "keys",
 };
 
 export function cardIdToUrl(cardId: string): string | null {
@@ -53,7 +56,7 @@ export function cardIdToUrl(cardId: string): string | null {
 /** Load a set of card face textures. Returns a map cardId → Texture. */
 export async function loadCardFaces(cardIds: string[]): Promise<Map<string, Texture>> {
   const result = new Map<string, Texture>();
-  const toLoad = cardIds.filter(id => cardIdToUrl(id) !== null);
+  const toLoad = cardIds.filter((id) => cardIdToUrl(id) !== null);
 
   await Promise.all(
     toLoad.map(async (id) => {

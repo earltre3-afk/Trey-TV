@@ -13,7 +13,9 @@ interface Props extends ProfileContext {}
 function StatItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="p-3 lg:p-4 text-center">
-      <div className="text-[10px] lg:text-[11px] tracking-wider text-muted-foreground uppercase">{label}</div>
+      <div className="text-[10px] lg:text-[11px] tracking-wider text-muted-foreground uppercase">
+        {label}
+      </div>
       <div className="text-lg lg:text-2xl font-bold mt-0.5 tabular-nums">{value}</div>
     </div>
   );

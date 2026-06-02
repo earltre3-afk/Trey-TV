@@ -1,42 +1,47 @@
-import type { PrescribeMeQuestionKey as ContentFeelQuestionKey } from '@/tradio/lib/content-feel/contentFeelQuestions';
-import type { ConfidenceLabel, ContentFeelProfile } from '@/tradio/lib/content-feel/contentFeelTypes';
+import type { PrescribeMeQuestionKey as ContentFeelQuestionKey } from "@/tradio/lib/content-feel/contentFeelQuestions";
+import type {
+  ConfidenceLabel,
+  ContentFeelProfile,
+} from "@/tradio/lib/content-feel/contentFeelTypes";
 
 export type RouteMePlatformLane =
-  | 'trey_tv'
-  | 'tradio'
-  | 'fwd'
-  | 'storybook'
-  | 'games'
-  | 'trance'
-  | 'all';
+  | "trey_tv"
+  | "tradio"
+  | "fwd"
+  | "storybook"
+  | "games"
+  | "trance"
+  | "all";
 
-export type PrescribeMeQuestionKey =
-  | Extract<ContentFeelQuestionKey, 'current_need' | 'current_energy' | 'desired_shift' | 'platform_lane' | 'content_type_preference'>;
+export type PrescribeMeQuestionKey = Extract<
+  ContentFeelQuestionKey,
+  "current_need" | "current_energy" | "desired_shift" | "platform_lane" | "content_type_preference"
+>;
 
 export type PrescribeMeFlowStatus =
-  | 'idle'
-  | 'in_progress'
-  | 'complete'
-  | 'limit_reached'
-  | 'viewing_saved'
-  | 'error';
+  | "idle"
+  | "in_progress"
+  | "complete"
+  | "limit_reached"
+  | "viewing_saved"
+  | "error";
 
 export type PrescribeMeRouteDestination =
-  | 'creator'
-  | 'episode'
-  | 'room'
-  | 'video'
-  | 'station'
-  | 'artist_station'
-  | 'track'
-  | 'song_war_battle'
-  | 'show'
-  | 'beat'
-  | 'dj_mix'
-  | 'gif_pack'
-  | 'story_path'
-  | 'game_challenge'
-  | 'dance_trend';
+  | "creator"
+  | "episode"
+  | "room"
+  | "video"
+  | "station"
+  | "artist_station"
+  | "track"
+  | "song_war_battle"
+  | "show"
+  | "beat"
+  | "dj_mix"
+  | "gif_pack"
+  | "story_path"
+  | "game_challenge"
+  | "dance_trend";
 
 export type PrescribeMeRouteConfidence = ConfidenceLabel;
 
@@ -97,11 +102,7 @@ export interface PrescribeMeSession {
   result?: PrescribeMeRouteResult;
 }
 
-export type RouteMeSection =
-  | 'prescribe_me'
-  | 'universe_lanes'
-  | 'quiet_routes'
-  | 'saved_routes';
+export type RouteMeSection = "prescribe_me" | "universe_lanes" | "quiet_routes" | "saved_routes";
 
 export interface RouteMeUniverseSurface {
   id: RouteMePlatformLane;

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useFocusGrid } from '../hooks/useFocusGrid';
-import { useTV } from '../TVContext';
+import React, { useEffect, useState } from "react";
+import { useFocusGrid } from "../hooks/useFocusGrid";
+import { useTV } from "../TVContext";
 
 /**
  * Mount once near the root of the TV shell. Hooks up:
@@ -26,7 +26,7 @@ export const SpatialFocusRing: React.FC = () => {
     let raf = 0;
     const tick = () => {
       const el = document.activeElement as HTMLElement | null;
-      if (el && el !== document.body && el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') {
+      if (el && el !== document.body && el.tagName !== "INPUT" && el.tagName !== "TEXTAREA") {
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.height > 0) {
           setRect(r);
@@ -53,18 +53,19 @@ export const SpatialFocusRing: React.FC = () => {
     <div
       aria-hidden
       style={{
-        position: 'fixed',
+        position: "fixed",
         top: rect.top - PAD,
         left: rect.left - PAD,
         width: rect.width + PAD * 2,
         height: rect.height + PAD * 2,
         borderRadius: radius + PAD,
-        pointerEvents: 'none',
+        pointerEvents: "none",
         zIndex: 9999,
         boxShadow:
-          '0 0 0 2px rgba(255,43,214,0.95), 0 0 22px 4px rgba(255,43,214,0.55), 0 0 60px 12px rgba(168,85,247,0.35)',
-        transition: 'top 140ms ease, left 140ms ease, width 140ms ease, height 140ms ease, border-radius 140ms ease',
-        willChange: 'top, left, width, height',
+          "0 0 0 2px rgba(255,43,214,0.95), 0 0 22px 4px rgba(255,43,214,0.55), 0 0 60px 12px rgba(168,85,247,0.35)",
+        transition:
+          "top 140ms ease, left 140ms ease, width 140ms ease, height 140ms ease, border-radius 140ms ease",
+        willChange: "top, left, width, height",
       }}
     />
   );

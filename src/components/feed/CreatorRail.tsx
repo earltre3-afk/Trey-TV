@@ -2,12 +2,14 @@ import { Radio } from "lucide-react";
 import { toast } from "sonner";
 import { creators } from "@/lib/mock-data";
 
-
 export function CreatorRail() {
   return (
     <div className="flex items-start gap-3 overflow-x-auto no-scrollbar px-2 py-2">
       <div className="flex flex-col items-center gap-1 shrink-0">
-        <button onClick={() => toast("Going live — preparing your stream")} className="size-16 rounded-2xl border border-primary/60 grid place-items-center text-primary glow-gold bg-primary/5">
+        <button
+          onClick={() => toast("Going live — preparing your stream")}
+          className="size-16 rounded-2xl border border-primary/60 grid place-items-center text-primary glow-gold bg-primary/5"
+        >
           <Radio className="size-6" />
         </button>
         <span className="text-[11px] text-primary font-semibold">Go Live</span>
@@ -31,7 +33,9 @@ export function CreatorRail() {
               </span>
             )}
           </div>
-          <span className="text-[11px] text-foreground/90 truncate w-full text-center">{c.name}</span>
+          <span className="text-[11px] text-foreground/90 truncate w-full text-center">
+            {c.name}
+          </span>
         </button>
       ))}
     </div>

@@ -20,21 +20,33 @@ function SiteEditor() {
   if (!isAdmin) return null;
   const { data } = useQuery({
     queryKey: ["admin", "site-blocks"],
-    queryFn: async () => (await supabase.from("site_content_blocks").select("*").order("page")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("site_content_blocks").select("*").order("page")).data ?? [],
   });
 
   const save = async (block: any) => {
     const e = edits[block.id] ?? {};
-    const { error } = await supabase.from("site_content_blocks").update({
-      title: e.title ?? block.title,
-      body: e.body ?? block.body,
-      status: "published",
-      updated_at: new Date().toISOString(),
-    }).eq("id", block.id);
+    const { error } = await supabase
+      .from("site_content_blocks")
+      .update({
+        title: e.title ?? block.title,
+        body: e.body ?? block.body,
+        status: "published",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", block.id);
     if (error) return toast.error(error.message);
-    await logAdminAction({ action: "site_content_edited", target_type: "site_content_blocks", target_id: block.key });
+    await logAdminAction({
+      action: "site_content_edited",
+      target_type: "site_content_blocks",
+      target_id: block.key,
+    });
     toast.success("Published");
-    setEdits((p) => { const n = { ...p }; delete n[block.id]; return n; });
+    setEdits((p) => {
+      const n = { ...p };
+      delete n[block.id];
+      return n;
+    });
     qc.invalidateQueries({ queryKey: ["admin", "site-blocks"] });
   };
 
@@ -52,18 +64,25 @@ function SiteEditor() {
               </div>
               <input
                 value={e.title ?? b.title ?? ""}
-                onChange={(ev) => setEdits((p) => ({ ...p, [b.id]: { ...p[b.id], title: ev.target.value } }))}
+                onChange={(ev) =>
+                  setEdits((p) => ({ ...p, [b.id]: { ...p[b.id], title: ev.target.value } }))
+                }
                 placeholder="Title"
                 className="w-full bg-transparent text-sm font-bold border-b border-white/10 pb-1 focus:outline-none focus:border-primary"
               />
               <textarea
                 value={e.body ?? b.body ?? ""}
-                onChange={(ev) => setEdits((p) => ({ ...p, [b.id]: { ...p[b.id], body: ev.target.value } }))}
+                onChange={(ev) =>
+                  setEdits((p) => ({ ...p, [b.id]: { ...p[b.id], body: ev.target.value } }))
+                }
                 placeholder="Body"
                 rows={3}
                 className="mt-2 w-full bg-transparent text-xs text-foreground/80 border border-white/10 rounded-xl p-2 focus:outline-none focus:border-primary"
               />
-              <button onClick={() => save(b)} className="mt-2 px-3 h-9 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5 glow-gold">
+              <button
+                onClick={() => save(b)}
+                className="mt-2 px-3 h-9 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1.5 glow-gold"
+              >
                 <Save className="size-3.5" /> Publish
               </button>
             </div>

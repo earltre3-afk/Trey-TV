@@ -27,6 +27,7 @@
 ## File map
 
 **Create:**
+
 - `src/lib/tradio/showRundown.ts` — pure rundown/pacing math
 - `src/lib/tradio/showRundown.test.ts`
 - `src/lib/tradio/callerLogic.ts` — pure caller status transitions + publish resolution
@@ -42,6 +43,7 @@
 - `public/tradio-sfx/*` and `public/tradio-beds/*` — bundled audio assets
 
 **Modify:**
+
 - `src/lib/tradio/liveSessionPolicy.test.ts` — fix import extension (Task 0)
 - `src/tradio/components/tradio/useTradioLiveRoom.ts` — use `createHostMix`; expose SFX/bed/volume/analyser
 - `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx` — remove mock role switcher; render `LiveShowConsole`; real role; `'golive'` deep-link
@@ -51,6 +53,7 @@
 - `src/server.ts` — register `/api/tradio/caller`
 
 **Delete:**
+
 - `src/tradio/components/tradio/screens/LiveShowDashboard.tsx`
 
 ---
@@ -58,6 +61,7 @@
 ## Task 0: Fix the existing test import so the test runner is green
 
 **Files:**
+
 - Modify: `src/lib/tradio/liveSessionPolicy.test.ts:3`
 
 - [ ] **Step 1: Run the existing test to confirm it currently fails to resolve**
@@ -70,13 +74,13 @@ Expected: FAIL — `ERR_MODULE_NOT_FOUND ... liveSessionPolicy`
 Change line 3 from:
 
 ```ts
-import { resolveTradioShowPublish, tradioShowRoomName } from './liveSessionPolicy';
+import { resolveTradioShowPublish, tradioShowRoomName } from "./liveSessionPolicy";
 ```
 
 to:
 
 ```ts
-import { resolveTradioShowPublish, tradioShowRoomName } from './liveSessionPolicy.ts';
+import { resolveTradioShowPublish, tradioShowRoomName } from "./liveSessionPolicy.ts";
 ```
 
 - [ ] **Step 3: Run the test to verify it passes**
@@ -98,6 +102,7 @@ git commit -m "test(tradio): fix liveSessionPolicy test import resolution"
 ## Task 1: Extract the live console into its own file (no behavior change yet)
 
 **Files:**
+
 - Create: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 - Modify: `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx`
 
@@ -106,14 +111,25 @@ git commit -m "test(tradio): fix liveSessionPolicy test import resolution"
 Cut the entire `LiveShowDirectorConsole` component (currently `BroadcastStudioGateway.tsx` lines ~166–669, the block starting with the `// ─── LIVE SHOW DIRECTOR CONSOLE ───` comment through its closing `};`) into the new file. Add the imports it uses at the top of the new file:
 
 ```tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  Clock, Mic2, Music, Phone, Volume2, Activity, Sliders, Zap, Radio, Users,
-  Flame, MessageSquare, VolumeX,
-} from 'lucide-react';
-import { GlassCard, Chip, Waveform } from '../ui';
-import { IMG, type RadioShow } from '../data';
-import { toast } from 'sonner';
+  Clock,
+  Mic2,
+  Music,
+  Phone,
+  Volume2,
+  Activity,
+  Sliders,
+  Zap,
+  Radio,
+  Users,
+  Flame,
+  MessageSquare,
+  VolumeX,
+} from "lucide-react";
+import { GlassCard, Chip, Waveform } from "../ui";
+import { IMG, type RadioShow } from "../data";
+import { toast } from "sonner";
 
 export const LiveShowConsole: React.FC<{
   show: RadioShow;
@@ -132,7 +148,7 @@ Rename the component `LiveShowConsole` (was `LiveShowDirectorConsole`). Keep the
 Remove the now-moved component definition. Add at top with the other screen imports:
 
 ```tsx
-import { LiveShowConsole } from './LiveShowConsole';
+import { LiveShowConsole } from "./LiveShowConsole";
 ```
 
 Replace the JSX usage `<LiveShowDirectorConsole show={activeLiveShow} onEndLive={...} />` (around line 879) with:
@@ -168,6 +184,7 @@ git commit -m "refactor(tradio): extract LiveShowConsole from BroadcastStudioGat
 ## Task 2: Wire the console to the real backend (listeners, chat, requests, polls, AI host)
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 - Modify: `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx`
 
@@ -178,16 +195,20 @@ The console must receive a live session and real data. We hoist the live hooks i
 Add imports:
 
 ```tsx
-import { goLive, endLive } from '../tradioLiveService';
-import { useTradioLiveRoom } from '../useTradioLiveRoom';
-import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
+import { goLive, endLive } from "../tradioLiveService";
+import { useTradioLiveRoom } from "../useTradioLiveRoom";
+import { useTradioLiveInteraction } from "../useTradioLiveInteraction";
 ```
 
 Add state + hooks near the other `useState`s in `BroadcastStudioGateway`:
 
 ```tsx
 const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
-const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
+const live = useTradioLiveRoom({
+  active: Boolean(liveSessionId),
+  role: "host",
+  sessionId: liveSessionId,
+});
 const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
 ```
 
@@ -196,8 +217,15 @@ Change the `ShowBuilder` `onGoLive` handler (around line 887) to actually start 
 ```tsx
 <ShowBuilder
   onGoLive={async (show) => {
-    const { session, error } = await goLive({ showId: show.id ?? null, title: show.title, hostName: show.djName ?? 'Host' });
-    if (error || !session) { toast.error(error ?? 'Could not go live.'); return; }
+    const { session, error } = await goLive({
+      showId: show.id ?? null,
+      title: show.title,
+      hostName: show.djName ?? "Host",
+    });
+    if (error || !session) {
+      toast.error(error ?? "Could not go live.");
+      return;
+    }
     setLiveSessionId(session.id);
     setActiveLiveShow(show);
     toast.success(`Broadcasting LIVE with "${show.title}"!`);
@@ -218,7 +246,12 @@ Replace the `<LiveShowConsole ... />` usage with:
   live={live}
   interaction={interaction}
   onEndLive={async () => {
-    if (liveSessionId) await endLive({ sessionId: liveSessionId, showId: activeLiveShow.id ?? null, peakListeners: live.listenerCount });
+    if (liveSessionId)
+      await endLive({
+        sessionId: liveSessionId,
+        showId: activeLiveShow.id ?? null,
+        peakListeners: live.listenerCount,
+      });
     live.leave();
     setLiveSessionId(null);
     setActiveLiveShow(null);
@@ -244,6 +277,7 @@ export const LiveShowConsole: React.FC<{
 ```
 
 Make these replacements in the body:
+
 - **Chat:** delete the `chats` `useState` and the chat-simulator `useEffect`. Render from `interaction.chat` instead (`c.authorName || 'Listener'`, `c.body`). For the "FX FEED"/"SYSTEM" local notices, keep a small local `notices` state array appended on SFX/caller actions and render it merged above `interaction.chat`.
 - **Listeners/peak:** in the top banner and any stat, use `live.listenerCount` (and a local `peakListeners` tracked with a `useEffect` raising on `live.listenerCount`, same as the old `LiveShowDashboard` did).
 - **Mic mute:** wire the master-deck "Host Mic LIVE/MUTED" button to `live.micOn` / `live.toggleMic()` (was local `micMuted`).
@@ -269,6 +303,7 @@ git commit -m "feat(tradio): wire live console to real LiveKit + Supabase backen
 ## Task 3: Remove the "keep on key" auto-pitch panel (it was a misread; pacing handled in Phase 4)
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 
 - [ ] **Step 1: Delete the Auto-Pitch Correction card and its state**
@@ -292,6 +327,7 @@ git commit -m "refactor(tradio): drop auto-pitch panel from live console (out of
 ## Task 4: Make the Broadcast Suite the one home — remove the mock role switcher
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx`
 
 The `AccessGate` (capability `create-broadcast`) already gates real access. The "Mock Gateway Portal Switcher" + `role` state are QA scaffolding driving lock states; replace with a fixed cleared role for the gated user.
@@ -302,8 +338,8 @@ Delete the entire "Dynamic role switch for QA preview" `<div>` block (the "Mock 
 
 ```tsx
 // Inside the gate the user is cleared; default to artist tooling.
-const role: BroadcastRole = 'artist';
-const accessStatus: BroadcastAccessStatus = 'Cleared';
+const role: BroadcastRole = "artist";
+const accessStatus: BroadcastAccessStatus = "Cleared";
 ```
 
 Remove the `setRole`/`setAccessStatus` setters and the `useEffect` branch that set `accessStatus` from `role` (keep the `initialTab === 'builder'` branch). Remove the now-dead `role === 'fan'` "Apply For Access" form block (the gate handles unauthorized users).
@@ -325,6 +361,7 @@ git commit -m "refactor(tradio): remove mock role switcher; Suite is the one hom
 ## Task 5: Remove DJ Studio's parallel go-live and delete the basic dashboard
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/DJStudio.tsx`
 - Delete: `src/tradio/components/tradio/screens/LiveShowDashboard.tsx`
 
@@ -337,7 +374,7 @@ Remove these from `DJStudio.tsx`: the `goLive`/`endLive` import, `useTradioLiveR
 Change the hero "Go Live" `PrimaryButton` to deep-link into the Suite live flow:
 
 ```tsx
-<PrimaryButton onClick={() => onOpenBroadcastStudio?.('golive')}>
+<PrimaryButton onClick={() => onOpenBroadcastStudio?.("golive")}>
   <Radio className="h-4 w-4" /> Go Live
 </PrimaryButton>
 ```
@@ -367,6 +404,7 @@ git commit -m "refactor(tradio): remove DJ Studio parallel go-live; delete LiveS
 ## Task 6: Add the `'golive'` deep-link target
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx`
 
 - [ ] **Step 1: Honor `initialTab === 'golive'`**
@@ -375,7 +413,7 @@ In the `useEffect` that reads `initialTab`, when it is `'golive'`, open the buil
 
 ```tsx
 useEffect(() => {
-  if (initialTab === 'builder' || initialTab === 'golive') {
+  if (initialTab === "builder" || initialTab === "golive") {
     setIsBuildingShow(true);
   }
   // (role/accessStatus now fixed; nothing else to set)
@@ -404,12 +442,14 @@ git commit -m "feat(tradio): add 'golive' deep-link into the Suite"
 ## Task 7: SFX/bed asset registry
 
 **Files:**
+
 - Create: `src/lib/tradio/sfxAssets.ts`
 - Create: `public/tradio-sfx/` and `public/tradio-beds/` (audio files)
 
 - [ ] **Step 1: Add bundled audio assets**
 
 Place short royalty-free files (CC0 / public-domain; record the source in a `public/tradio-sfx/CREDITS.txt`):
+
 - `public/tradio-sfx/airhorn.mp3`, `scratch.mp3`, `crowd-cheer.mp3`, `bass-drop.mp3`, `reverb-out.mp3`, `ai-drop.mp3`
 - `public/tradio-beds/intro.mp3`, `outro.mp3`, `under.mp3`, `transition.mp3`
 
@@ -419,23 +459,37 @@ Place short royalty-free files (CC0 / public-domain; record the source in a `pub
 
 ```ts
 // src/lib/tradio/sfxAssets.ts
-export interface SfxAsset { id: string; label: string; src: string; }
-export interface BedAsset { id: string; label: string; src: string; durationLabel: string; }
+export interface SfxAsset {
+  id: string;
+  label: string;
+  src: string;
+}
+export interface BedAsset {
+  id: string;
+  label: string;
+  src: string;
+  durationLabel: string;
+}
 
 export const SFX_ASSETS: SfxAsset[] = [
-  { id: 'airhorn', label: 'Airhorn', src: '/tradio-sfx/airhorn.mp3' },
-  { id: 'scratch', label: 'Scratch', src: '/tradio-sfx/scratch.mp3' },
-  { id: 'crowd', label: 'Crowd Cheer', src: '/tradio-sfx/crowd-cheer.mp3' },
-  { id: 'drop', label: 'Bass Drop', src: '/tradio-sfx/bass-drop.mp3' },
-  { id: 'reverb', label: 'Reverb Out', src: '/tradio-sfx/reverb-out.mp3' },
-  { id: 'ai-drop', label: 'AI Drop', src: '/tradio-sfx/ai-drop.mp3' },
+  { id: "airhorn", label: "Airhorn", src: "/tradio-sfx/airhorn.mp3" },
+  { id: "scratch", label: "Scratch", src: "/tradio-sfx/scratch.mp3" },
+  { id: "crowd", label: "Crowd Cheer", src: "/tradio-sfx/crowd-cheer.mp3" },
+  { id: "drop", label: "Bass Drop", src: "/tradio-sfx/bass-drop.mp3" },
+  { id: "reverb", label: "Reverb Out", src: "/tradio-sfx/reverb-out.mp3" },
+  { id: "ai-drop", label: "AI Drop", src: "/tradio-sfx/ai-drop.mp3" },
 ];
 
 export const BED_ASSETS: BedAsset[] = [
-  { id: 'intro', label: 'Intro Bed', src: '/tradio-beds/intro.mp3', durationLabel: '30s' },
-  { id: 'outro', label: 'Outro Bed', src: '/tradio-beds/outro.mp3', durationLabel: '45s' },
-  { id: 'under', label: 'Under Bed', src: '/tradio-beds/under.mp3', durationLabel: '∞' },
-  { id: 'transition', label: 'Transition', src: '/tradio-beds/transition.mp3', durationLabel: '8s' },
+  { id: "intro", label: "Intro Bed", src: "/tradio-beds/intro.mp3", durationLabel: "30s" },
+  { id: "outro", label: "Outro Bed", src: "/tradio-beds/outro.mp3", durationLabel: "45s" },
+  { id: "under", label: "Under Bed", src: "/tradio-beds/under.mp3", durationLabel: "∞" },
+  {
+    id: "transition",
+    label: "Transition",
+    src: "/tradio-beds/transition.mp3",
+    durationLabel: "8s",
+  },
 ];
 ```
 
@@ -451,6 +505,7 @@ git commit -m "feat(tradio): add SFX/music-bed asset registry"
 ## Task 8: The host mix graph factory
 
 **Files:**
+
 - Create: `src/lib/tradio/tradioHostMix.ts`
 
 This is integration code over the Web Audio API (no meaningful unit test without a DOM AudioContext); verified by build + manual smoke. It owns one `AudioContext`, mixes mic + SFX + beds + AI into a `MediaStreamDestination`, and exposes an `AnalyserNode`.
@@ -459,14 +514,14 @@ This is integration code over the Web Audio API (no meaningful unit test without
 
 ```ts
 // src/lib/tradio/tradioHostMix.ts
-import { SFX_ASSETS, BED_ASSETS } from './sfxAssets.ts';
+import { SFX_ASSETS, BED_ASSETS } from "./sfxAssets.ts";
 
 export interface HostMix {
   readonly stream: MediaStream;
   readonly analyser: AnalyserNode;
   setMicStream(stream: MediaStream | null): void;
-  setMasterVolume(v: number): void;   // 0..1 (mic + AI)
-  setBedVolume(v: number): void;      // 0..1
+  setMasterVolume(v: number): void; // 0..1 (mic + AI)
+  setBedVolume(v: number): void; // 0..1
   playSfx(id: string): Promise<void>;
   playBed(id: string): Promise<void>;
   stopBed(): void;
@@ -475,19 +530,24 @@ export interface HostMix {
 }
 
 export async function createHostMix(): Promise<HostMix> {
-  const Ctx: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+  const Ctx: typeof AudioContext =
+    (window as any).AudioContext || (window as any).webkitAudioContext;
   const ctx = new Ctx();
-  if (ctx.state === 'suspended') await ctx.resume();
+  if (ctx.state === "suspended") await ctx.resume();
 
   const dest = ctx.createMediaStreamDestination();
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 256;
 
   // master = mic + AI; bed = music beds; sfx routes direct to dest.
-  const master = ctx.createGain(); master.gain.value = 0.85;
-  const bed = ctx.createGain(); bed.gain.value = 0.3;
-  master.connect(dest); master.connect(analyser);
-  bed.connect(dest); bed.connect(analyser);
+  const master = ctx.createGain();
+  master.gain.value = 0.85;
+  const bed = ctx.createGain();
+  bed.gain.value = 0.3;
+  master.connect(dest);
+  master.connect(analyser);
+  bed.connect(dest);
+  bed.connect(analyser);
 
   let micNode: MediaStreamAudioSourceNode | null = null;
   let bedSource: AudioBufferSourceNode | null = null;
@@ -507,38 +567,83 @@ export async function createHostMix(): Promise<HostMix> {
     stream: dest.stream,
     analyser,
     setMicStream(stream) {
-      if (micNode) { try { micNode.disconnect(); } catch { /* ignore */ } micNode = null; }
+      if (micNode) {
+        try {
+          micNode.disconnect();
+        } catch {
+          /* ignore */
+        }
+        micNode = null;
+      }
       if (stream && stream.getAudioTracks().length) {
         micNode = ctx.createMediaStreamSource(stream);
         micNode.connect(master);
       }
     },
-    setMasterVolume(v) { master.gain.value = Math.max(0, Math.min(1, v)); },
-    setBedVolume(v) { bed.gain.value = Math.max(0, Math.min(1, v)); },
+    setMasterVolume(v) {
+      master.gain.value = Math.max(0, Math.min(1, v));
+    },
+    setBedVolume(v) {
+      bed.gain.value = Math.max(0, Math.min(1, v));
+    },
     async playSfx(id) {
-      const asset = SFX_ASSETS.find((a) => a.id === id); if (!asset) return;
+      const asset = SFX_ASSETS.find((a) => a.id === id);
+      if (!asset) return;
       const buf = await load(asset.src);
-      const src = ctx.createBufferSource(); src.buffer = buf;
-      src.connect(dest); src.connect(analyser); src.start();
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(dest);
+      src.connect(analyser);
+      src.start();
     },
     async playBed(id) {
-      const asset = BED_ASSETS.find((a) => a.id === id); if (!asset) return;
+      const asset = BED_ASSETS.find((a) => a.id === id);
+      if (!asset) return;
       const buf = await load(asset.src);
-      try { bedSource?.stop(); } catch { /* ignore */ }
-      const src = ctx.createBufferSource(); src.buffer = buf; src.loop = asset.id === 'under';
-      src.connect(bed); src.start(); bedSource = src;
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = asset.id === "under";
+      src.connect(bed);
+      src.start();
+      bedSource = src;
     },
-    stopBed() { try { bedSource?.stop(); } catch { /* ignore */ } bedSource = null; },
+    stopBed() {
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
+      bedSource = null;
+    },
     async playAiBuffer(arrayBuffer) {
       const buf = await ctx.decodeAudioData(arrayBuffer.slice(0));
-      const src = ctx.createBufferSource(); src.buffer = buf;
-      src.connect(master); src.start();
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(master);
+      src.start();
       return src;
     },
     async close() {
-      try { bedSource?.stop(); } catch { /* ignore */ }
-      try { micNode?.disconnect(); } catch { /* ignore */ }
-      try { await ctx.close(); } catch { /* ignore */ }
+      try {
+        bedSource?.stop();
+      } catch {
+        /* ignore */
+      }
+      try {
+        micNode?.disconnect();
+      } catch {
+        /* ignore */
+      }
+      try {
+        await ctx.close();
+      } catch {
+        /* ignore */
+      }
     },
   };
 }
@@ -561,6 +666,7 @@ git commit -m "feat(tradio): host audio mixing graph (mic + sfx + beds + ai)"
 ## Task 9: Publish the host mix as the single LiveKit track
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/useTradioLiveRoom.ts`
 
 Today the host publishes the raw mic and separately publishes AI voice. Replace both with the single mixed track from `createHostMix`.
@@ -585,13 +691,13 @@ Add `import { createHostMix, type HostMix } from '@/lib/tradio/tradioHostMix';` 
 In the connect effect, for `role === 'host'`, instead of `await room.localParticipant.setMicrophoneEnabled(true)`:
 
 ```ts
-if (role === 'host') {
+if (role === "host") {
   const mix = await createHostMix();
   mixRef.current = mix;
   // capture mic and route into the mix
   const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   mix.setMicStream(micStream);
-  const { LocalAudioTrack } = await import('livekit-client');
+  const { LocalAudioTrack } = await import("livekit-client");
   const track = new LocalAudioTrack(mix.stream.getAudioTracks()[0]);
   aiTrackRef.current = track; // reuse existing ref as "the published track"
   await room.localParticipant.publishTrack(track);
@@ -605,7 +711,8 @@ if (role === 'host') {
 
 ```ts
 const toggleMic = async () => {
-  const mix = mixRef.current; if (role !== 'host' || !mix) return;
+  const mix = mixRef.current;
+  if (role !== "host" || !mix) return;
   const next = !micOn;
   mix.setMasterVolume(next ? 0.85 : 0);
   setMicOn(next);
@@ -617,17 +724,27 @@ const toggleMic = async () => {
 ```ts
 const aiSpeak = async (text: string, label?: string) => {
   const mix = mixRef.current;
-  if (role !== 'host' || !mix || !text.trim()) return;
+  if (role !== "host" || !mix || !text.trim()) return;
   try {
     const res = await treyITts({ data: { text } });
-    if (!res.audioBase64) { setError("AI voice isn't available right now."); return; }
+    if (!res.audioBase64) {
+      setError("AI voice isn't available right now.");
+      return;
+    }
     const bytes = Uint8Array.from(atob(res.audioBase64), (c) => c.charCodeAt(0));
-    setAiSpeaking(true); setAiSegmentLabel(label ?? null);
+    setAiSpeaking(true);
+    setAiSegmentLabel(label ?? null);
     const src = await mix.playAiBuffer(bytes.buffer);
     aiSourceRef.current = src;
-    src.onended = () => { setAiSpeaking(false); setAiSegmentLabel(null); aiSourceRef.current = null; };
+    src.onended = () => {
+      setAiSpeaking(false);
+      setAiSegmentLabel(null);
+      aiSourceRef.current = null;
+    };
   } catch (err) {
-    setAiSpeaking(false); setAiSegmentLabel(null); setError((err as Error).message);
+    setAiSpeaking(false);
+    setAiSegmentLabel(null);
+    setError((err as Error).message);
   }
 };
 ```
@@ -635,8 +752,12 @@ const aiSpeak = async (text: string, label?: string) => {
 - [ ] **Step 4: Add the new controls + analyser + teardown**
 
 ```ts
-const playSfx = (id: string) => { void mixRef.current?.playSfx(id); };
-const playBed = (id: string) => { void mixRef.current?.playBed(id); };
+const playSfx = (id: string) => {
+  void mixRef.current?.playSfx(id);
+};
+const playBed = (id: string) => {
+  void mixRef.current?.playBed(id);
+};
 const stopBed = () => mixRef.current?.stopBed();
 const setMasterVolume = (v: number) => mixRef.current?.setMasterVolume(v);
 const setBedVolume = (v: number) => mixRef.current?.setBedVolume(v);
@@ -663,6 +784,7 @@ git commit -m "feat(tradio): publish unified host mix as single LiveKit track"
 ## Task 10: Wire soundboard, beds, master deck, and real VU into the console
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 
 - [ ] **Step 1: Drive the soundboard + beds from `live`**
@@ -685,9 +807,11 @@ useEffect(() => {
   const data = new Uint8Array(analyser.frequencyBinCount);
   const tick = () => {
     analyser.getByteFrequencyData(data);
-    const n = 12; const step = Math.floor(data.length / n) || 1;
+    const n = 12;
+    const step = Math.floor(data.length / n) || 1;
     const bins = Array.from({ length: n }, (_, i) => {
-      const v = data[i * step] ?? 0; return Math.round((v / 255) * 100);
+      const v = data[i * step] ?? 0;
+      return Math.round((v / 255) * 100);
     });
     setVuLeft(bins);
     setVuRight(bins.map((b) => Math.max(0, b - 6)));
@@ -718,6 +842,7 @@ git commit -m "feat(tradio): real soundboard, beds, master deck, and VU in live 
 ## Task 11: Caller status logic (pure, TDD)
 
 **Files:**
+
 - Create: `src/lib/tradio/callerLogic.ts`
 - Create: `src/lib/tradio/callerLogic.test.ts`
 
@@ -725,26 +850,26 @@ git commit -m "feat(tradio): real soundboard, beds, master deck, and VU in live 
 
 ```ts
 // src/lib/tradio/callerLogic.test.ts
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { nextCallerStatus, resolveCallerPublish, type CallerStatus } from './callerLogic.ts';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { nextCallerStatus, resolveCallerPublish, type CallerStatus } from "./callerLogic.ts";
 
-test('pending -> on_air via take', () => {
-  assert.equal(nextCallerStatus('pending', 'take'), 'on_air');
+test("pending -> on_air via take", () => {
+  assert.equal(nextCallerStatus("pending", "take"), "on_air");
 });
-test('on_air -> ended via disconnect', () => {
-  assert.equal(nextCallerStatus('on_air', 'disconnect'), 'ended');
+test("on_air -> ended via disconnect", () => {
+  assert.equal(nextCallerStatus("on_air", "disconnect"), "ended");
 });
-test('pending -> ended via decline', () => {
-  assert.equal(nextCallerStatus('pending', 'decline'), 'ended');
+test("pending -> ended via decline", () => {
+  assert.equal(nextCallerStatus("pending", "decline"), "ended");
 });
-test('illegal transition keeps current status', () => {
-  assert.equal(nextCallerStatus('ended', 'take' as any), 'ended');
+test("illegal transition keeps current status", () => {
+  assert.equal(nextCallerStatus("ended", "take" as any), "ended");
 });
-test('only an on_air caller in a live session may publish', () => {
-  assert.equal(resolveCallerPublish({ status: 'on_air', sessionStatus: 'live' }), true);
-  assert.equal(resolveCallerPublish({ status: 'pending', sessionStatus: 'live' }), false);
-  assert.equal(resolveCallerPublish({ status: 'on_air', sessionStatus: 'ended' }), false);
+test("only an on_air caller in a live session may publish", () => {
+  assert.equal(resolveCallerPublish({ status: "on_air", sessionStatus: "live" }), true);
+  assert.equal(resolveCallerPublish({ status: "pending", sessionStatus: "live" }), false);
+  assert.equal(resolveCallerPublish({ status: "on_air", sessionStatus: "ended" }), false);
 });
 ```
 
@@ -757,18 +882,21 @@ Expected: FAIL — cannot find module `./callerLogic.ts`.
 
 ```ts
 // src/lib/tradio/callerLogic.ts
-export type CallerStatus = 'pending' | 'on_air' | 'ended';
-export type CallerAction = 'take' | 'disconnect' | 'decline';
+export type CallerStatus = "pending" | "on_air" | "ended";
+export type CallerAction = "take" | "disconnect" | "decline";
 
 export function nextCallerStatus(current: CallerStatus, action: CallerAction): CallerStatus {
-  if (current === 'pending' && action === 'take') return 'on_air';
-  if (current === 'pending' && action === 'decline') return 'ended';
-  if (current === 'on_air' && action === 'disconnect') return 'ended';
+  if (current === "pending" && action === "take") return "on_air";
+  if (current === "pending" && action === "decline") return "ended";
+  if (current === "on_air" && action === "disconnect") return "ended";
   return current;
 }
 
-export function resolveCallerPublish(input: { status: CallerStatus; sessionStatus: 'live' | 'ended' }): boolean {
-  return input.status === 'on_air' && input.sessionStatus === 'live';
+export function resolveCallerPublish(input: {
+  status: CallerStatus;
+  sessionStatus: "live" | "ended";
+}): boolean {
+  return input.status === "on_air" && input.sessionStatus === "live";
 }
 ```
 
@@ -789,6 +917,7 @@ git commit -m "feat(tradio): caller status transition + publish resolution logic
 ## Task 12: Call-requests table migration
 
 **Files:**
+
 - Create: `supabase/migrations/<timestamp>_tradio_live_call_requests.sql`
 
 - [ ] **Step 1: Write the migration**
@@ -846,6 +975,7 @@ git commit -m "feat(tradio): add tradio_live_call_requests table + RLS"
 ## Task 13: Caller client service + realtime hook
 
 **Files:**
+
 - Create: `src/tradio/components/tradio/tradioCallerService.ts`
 - Create: `src/tradio/components/tradio/useTradioCallers.ts`
 
@@ -853,37 +983,63 @@ git commit -m "feat(tradio): add tradio_live_call_requests table + RLS"
 
 ```ts
 // src/tradio/components/tradio/tradioCallerService.ts
-import { isSupabaseConfigured, supabase } from '@/tradio/lib/supabaseClient';
-import type { CallerStatus } from '@/lib/tradio/callerLogic';
+import { isSupabaseConfigured, supabase } from "@/tradio/lib/supabaseClient";
+import type { CallerStatus } from "@/lib/tradio/callerLogic";
 
 export interface CallRequest {
-  id: string; sessionId: string; userId: string;
-  callerIdentity: string; callerName: string | null;
-  lineNote: string | null; status: CallerStatus; createdAt: string;
+  id: string;
+  sessionId: string;
+  userId: string;
+  callerIdentity: string;
+  callerName: string | null;
+  lineNote: string | null;
+  status: CallerStatus;
+  createdAt: string;
 }
 
 const ok = isSupabaseConfigured && supabase;
 
 function rowToCall(r: any): CallRequest {
-  return { id: r.id, sessionId: r.session_id, userId: r.user_id,
-    callerIdentity: r.caller_identity, callerName: r.caller_name,
-    lineNote: r.line_note, status: r.status, createdAt: r.created_at };
+  return {
+    id: r.id,
+    sessionId: r.session_id,
+    userId: r.user_id,
+    callerIdentity: r.caller_identity,
+    callerName: r.caller_name,
+    lineNote: r.line_note,
+    status: r.status,
+    createdAt: r.created_at,
+  };
 }
 
 export async function listCallRequests(sessionId: string): Promise<CallRequest[]> {
   if (!ok) return [];
-  const { data } = await supabase!.from('tradio_live_call_requests')
-    .select('*').eq('session_id', sessionId).order('created_at', { ascending: true }).limit(100);
+  const { data } = await supabase!
+    .from("tradio_live_call_requests")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("created_at", { ascending: true })
+    .limit(100);
   return (data ?? []).map(rowToCall);
 }
 
-export async function requestCall(input: { sessionId: string; callerIdentity: string; callerName?: string; lineNote?: string }): Promise<{ error: string | null }> {
-  if (!ok) return { error: 'Calling in needs Supabase.' };
+export async function requestCall(input: {
+  sessionId: string;
+  callerIdentity: string;
+  callerName?: string;
+  lineNote?: string;
+}): Promise<{ error: string | null }> {
+  if (!ok) return { error: "Calling in needs Supabase." };
   const { data: u } = await supabase!.auth.getUser();
-  const userId = u.user?.id; if (!userId) return { error: 'Sign in to call in.' };
-  const { error } = await supabase!.from('tradio_live_call_requests').insert({
-    session_id: input.sessionId, user_id: userId, caller_identity: input.callerIdentity,
-    caller_name: input.callerName ?? null, line_note: input.lineNote ?? null, status: 'pending',
+  const userId = u.user?.id;
+  if (!userId) return { error: "Sign in to call in." };
+  const { error } = await supabase!.from("tradio_live_call_requests").insert({
+    session_id: input.sessionId,
+    user_id: userId,
+    caller_identity: input.callerIdentity,
+    caller_name: input.callerName ?? null,
+    line_note: input.lineNote ?? null,
+    status: "pending",
   });
   return { error: error?.message ?? null };
 }
@@ -893,22 +1049,36 @@ export async function requestCall(input: { sessionId: string; callerIdentity: st
 
 ```ts
 // src/tradio/components/tradio/useTradioCallers.ts
-import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/tradio/lib/supabaseClient';
-import { listCallRequests, type CallRequest } from './tradioCallerService';
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/tradio/lib/supabaseClient";
+import { listCallRequests, type CallRequest } from "./tradioCallerService";
 
 export function useTradioCallers(opts: { sessionId: string | null }) {
   const { sessionId } = opts;
   const [calls, setCalls] = useState<CallRequest[]>([]);
-  const reload = useCallback(async () => { if (sessionId) setCalls(await listCallRequests(sessionId)); }, [sessionId]);
+  const reload = useCallback(async () => {
+    if (sessionId) setCalls(await listCallRequests(sessionId));
+  }, [sessionId]);
 
   useEffect(() => {
     if (!sessionId || !supabase) return;
     void reload();
-    const ch = supabase.channel(`tradio-callers:${sessionId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'tradio_live_call_requests', filter: `session_id=eq.${sessionId}` }, () => void reload())
+    const ch = supabase
+      .channel(`tradio-callers:${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tradio_live_call_requests",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        () => void reload(),
+      )
       .subscribe();
-    return () => { void supabase!.removeChannel(ch); };
+    return () => {
+      void supabase!.removeChannel(ch);
+    };
   }, [sessionId, reload]);
 
   return { calls, reload };
@@ -932,6 +1102,7 @@ git commit -m "feat(tradio): caller request service + realtime hook"
 ## Task 14: Server endpoint to grant/revoke caller publish
 
 **Files:**
+
 - Create: `src/lib/tradio/tradioCaller.server.ts`
 - Modify: `src/server.ts:63` (route registration area)
 
@@ -939,74 +1110,97 @@ git commit -m "feat(tradio): caller request service + realtime hook"
 
 ```ts
 // src/lib/tradio/tradioCaller.server.ts
-import { RoomServiceClient } from 'livekit-server-sdk';
-import { getTreyIServiceClient } from '../trey-i/onboarding.server';
-import { loadLiveKitConfig } from '../livekit-config.server';
-import { tradioShowRoomName } from './liveSessionPolicy';
-import { nextCallerStatus, type CallerAction } from './callerLogic';
+import { RoomServiceClient } from "livekit-server-sdk";
+import { getTreyIServiceClient } from "../trey-i/onboarding.server";
+import { loadLiveKitConfig } from "../livekit-config.server";
+import { tradioShowRoomName } from "./liveSessionPolicy";
+import { nextCallerStatus, type CallerAction } from "./callerLogic";
 
 function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  });
 }
 function bearer(req: Request): string {
-  return (req.headers.get('authorization') ?? '').match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? '';
+  return (req.headers.get("authorization") ?? "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? "";
 }
 function httpUrl(url: string): string {
-  if (url.startsWith('wss://')) return `https://${url.slice(6)}`;
-  if (url.startsWith('ws://')) return `http://${url.slice(5)}`;
+  if (url.startsWith("wss://")) return `https://${url.slice(6)}`;
+  if (url.startsWith("ws://")) return `http://${url.slice(5)}`;
   return url;
 }
 
 export async function handleTradioCaller(request: Request, env: unknown): Promise<Response> {
-  if (request.method === 'OPTIONS') return json({});
-  if (request.method !== 'POST') return json({ error: 'Method not allowed.' }, 405);
+  if (request.method === "OPTIONS") return json({});
+  if (request.method !== "POST") return json({ error: "Method not allowed." }, 405);
 
   let config;
-  try { config = loadLiveKitConfig(env); }
-  catch (err) { return json({ error: err instanceof Error ? err.message : 'LiveKit not configured.' }, 503); }
+  try {
+    config = loadLiveKitConfig(env);
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : "LiveKit not configured." }, 503);
+  }
 
   try {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
-    const action = String(body.action || '') as CallerAction;        // 'take' | 'disconnect' | 'decline'
-    const requestId = String(body.requestId || '').trim();
-    if (!requestId || !['take', 'disconnect', 'decline'].includes(action)) return json({ error: 'Bad request.' }, 400);
+    const action = String(body.action || "") as CallerAction; // 'take' | 'disconnect' | 'decline'
+    const requestId = String(body.requestId || "").trim();
+    if (!requestId || !["take", "disconnect", "decline"].includes(action))
+      return json({ error: "Bad request." }, 400);
 
     const supabase = getTreyIServiceClient();
     const token = bearer(request);
     const { data: authData } = await (supabase as any).auth.getUser(token);
     const hostId = authData?.user?.id;
-    if (!hostId) return json({ error: 'Unauthenticated.' }, 401);
+    if (!hostId) return json({ error: "Unauthenticated." }, 401);
 
     // Load the call request + its session; verify caller of the action is the host.
     const { data: call } = await (supabase as any)
-      .from('tradio_live_call_requests').select('*').eq('id', requestId).maybeSingle();
-    if (!call) return json({ error: 'Call request not found.' }, 404);
+      .from("tradio_live_call_requests")
+      .select("*")
+      .eq("id", requestId)
+      .maybeSingle();
+    if (!call) return json({ error: "Call request not found." }, 404);
     const { data: session } = await (supabase as any)
-      .from('tradio_live_sessions').select('id, host_user_id, status').eq('id', call.session_id).maybeSingle();
-    if (!session || session.host_user_id !== hostId) return json({ error: 'Not the host.' }, 403);
+      .from("tradio_live_sessions")
+      .select("id, host_user_id, status")
+      .eq("id", call.session_id)
+      .maybeSingle();
+    if (!session || session.host_user_id !== hostId) return json({ error: "Not the host." }, 403);
 
     const newStatus = nextCallerStatus(call.status, action);
-    const canPublish = newStatus === 'on_air' && session.status === 'live';
+    const canPublish = newStatus === "on_air" && session.status === "live";
 
     const svc = new RoomServiceClient(httpUrl(config.url), config.apiKey, config.apiSecret);
     const room = tradioShowRoomName(session.id);
     try {
       await svc.updateParticipant(room, call.caller_identity, undefined, {
-        canPublish, canSubscribe: true, canPublishData: true,
+        canPublish,
+        canSubscribe: true,
+        canPublishData: true,
       });
-      if (!canPublish) { try { await svc.mutePublishedTrack(room, call.caller_identity, '', true); } catch { /* no track */ } }
+      if (!canPublish) {
+        try {
+          await svc.mutePublishedTrack(room, call.caller_identity, "", true);
+        } catch {
+          /* no track */
+        }
+      }
     } catch (err) {
-      console.warn('[tradioCaller] updateParticipant failed', err);
-      return json({ error: 'Could not update caller audio permission.' }, 502);
+      console.warn("[tradioCaller] updateParticipant failed", err);
+      return json({ error: "Could not update caller audio permission." }, 502);
     }
 
-    await (supabase as any).from('tradio_live_call_requests')
-      .update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', requestId);
+    await (supabase as any)
+      .from("tradio_live_call_requests")
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq("id", requestId);
 
     return json({ ok: true, status: newStatus, canPublish });
   } catch (err) {
-    console.error('[tradioCaller] error', err);
-    return json({ error: 'Caller action failed.' }, 500);
+    console.error("[tradioCaller] error", err);
+    return json({ error: "Caller action failed." }, 500);
   }
 }
 ```
@@ -1022,9 +1216,9 @@ import { handleTradioCaller } from "./lib/tradio/tradioCaller.server";
 Add the route next to the LiveKit routes (after line 67):
 
 ```ts
-  if (url.pathname === "/api/tradio/caller") {
-    return handleTradioCaller(request, env);
-  }
+if (url.pathname === "/api/tradio/caller") {
+  return handleTradioCaller(request, env);
+}
 ```
 
 - [ ] **Step 3: Verify build**
@@ -1044,6 +1238,7 @@ git commit -m "feat(tradio): server endpoint to grant/revoke caller publish"
 ## Task 15: Listener "Call in / raise hand" button
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/LiveRoomModal.tsx`
 
 - [ ] **Step 1: Add the call-in control**
@@ -1051,18 +1246,26 @@ git commit -m "feat(tradio): server endpoint to grant/revoke caller publish"
 Import the service and add a button that inserts a request. The listener's LiveKit identity equals their `public_profile_uid` (see `resolveParticipant` in `livekit-token.server.ts`); fetch it from the profile, or fall back to the auth user id. Concretely:
 
 ```tsx
-import { requestCall } from './tradioCallerService';
-import { supabase } from './lib/supabaseClient';
-import { toast } from 'sonner';
+import { requestCall } from "./tradioCallerService";
+import { supabase } from "./lib/supabaseClient";
+import { toast } from "sonner";
 
 async function handleCallIn(sessionId: string) {
   const { data } = await supabase!.auth.getUser();
-  const user = data.user; if (!user) { toast.error('Sign in to call in.'); return; }
-  const { data: prof } = await supabase!.from('profiles').select('public_profile_uid, display_name').eq('id', user.id).maybeSingle();
+  const user = data.user;
+  if (!user) {
+    toast.error("Sign in to call in.");
+    return;
+  }
+  const { data: prof } = await supabase!
+    .from("profiles")
+    .select("public_profile_uid, display_name")
+    .eq("id", user.id)
+    .maybeSingle();
   const identity = (prof?.public_profile_uid as string) || user.id;
-  const name = (prof?.display_name as string) || user.email?.split('@')[0] || 'Listener';
+  const name = (prof?.display_name as string) || user.email?.split("@")[0] || "Listener";
   const { error } = await requestCall({ sessionId, callerIdentity: identity, callerName: name });
-  toast[error ? 'error' : 'success'](error ?? 'You raised your hand — waiting for the host.');
+  toast[error ? "error" : "success"](error ?? "You raised your hand — waiting for the host.");
 }
 ```
 
@@ -1086,6 +1289,7 @@ git commit -m "feat(tradio): listener call-in (raise hand) control"
 ## Task 16: Host caller queue — take/disconnect for real
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 - Modify: `src/tradio/components/tradio/screens/BroadcastStudioGateway.tsx`
 
@@ -1098,18 +1302,23 @@ In `BroadcastStudioGateway`, add `import { useTradioCallers } from '../useTradio
 In `LiveShowConsole`, delete the mock `callers`/`activeCaller` seed arrays. Derive:
 
 ```tsx
-const pendingCallers = callers.filter((c) => c.status === 'pending');
-const onAirCaller = callers.find((c) => c.status === 'on_air') ?? null;
+const pendingCallers = callers.filter((c) => c.status === "pending");
+const onAirCaller = callers.find((c) => c.status === "on_air") ?? null;
 
-async function callerAction(requestId: string, action: 'take' | 'disconnect' | 'decline') {
+async function callerAction(requestId: string, action: "take" | "disconnect" | "decline") {
   const { data } = await supabaseBrowser.auth.getSession();
-  const tokenStr = data.session?.access_token ?? '';
-  const res = await fetch('/api/tradio/caller', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', ...(tokenStr ? { authorization: `Bearer ${tokenStr}` } : {}) },
+  const tokenStr = data.session?.access_token ?? "";
+  const res = await fetch("/api/tradio/caller", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      ...(tokenStr ? { authorization: `Bearer ${tokenStr}` } : {}),
+    },
     body: JSON.stringify({ requestId, action }),
   });
-  if (!res.ok) { toast.error('Caller action failed.'); }
+  if (!res.ok) {
+    toast.error("Caller action failed.");
+  }
 }
 ```
 
@@ -1146,6 +1355,7 @@ git commit -m "feat(tradio): real take/disconnect callers via LiveKit runtime pe
 ## Task 17: Rundown/pacing math (pure, TDD)
 
 **Files:**
+
 - Create: `src/lib/tradio/showRundown.ts`
 - Create: `src/lib/tradio/showRundown.test.ts`
 
@@ -1153,33 +1363,41 @@ git commit -m "feat(tradio): real take/disconnect callers via LiveKit runtime pe
 
 ```ts
 // src/lib/tradio/showRundown.test.ts
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { cumulativeStarts, pacingState, shouldAdvance } from './showRundown.ts';
+import test from "node:test";
+import assert from "node:assert/strict";
+import { cumulativeStarts, pacingState, shouldAdvance } from "./showRundown.ts";
 
 const segs = [{ duration: 60 }, { duration: 120 }, { duration: 30 }];
 
-test('cumulative start offsets', () => {
+test("cumulative start offsets", () => {
   assert.deepEqual(cumulativeStarts(segs), [0, 60, 180]);
 });
-test('shouldAdvance when elapsed reaches segment duration', () => {
+test("shouldAdvance when elapsed reaches segment duration", () => {
   assert.equal(shouldAdvance({ segments: segs, currentIndex: 0, elapsedInSegment: 60 }), true);
   assert.equal(shouldAdvance({ segments: segs, currentIndex: 0, elapsedInSegment: 59 }), false);
 });
-test('shouldAdvance false on last segment', () => {
+test("shouldAdvance false on last segment", () => {
   assert.equal(shouldAdvance({ segments: segs, currentIndex: 2, elapsedInSegment: 999 }), false);
 });
-test('pacing on-time when wall matches plan', () => {
+test("pacing on-time when wall matches plan", () => {
   const p = pacingState({ segments: segs, currentIndex: 1, elapsedInSegment: 0, wallElapsed: 60 });
-  assert.equal(p.status, 'on-time'); assert.equal(p.deltaSeconds, 0);
+  assert.equal(p.status, "on-time");
+  assert.equal(p.deltaSeconds, 0);
 });
-test('pacing behind when wall exceeds plan', () => {
-  const p = pacingState({ segments: segs, currentIndex: 1, elapsedInSegment: 30, wallElapsed: 120 });
-  assert.equal(p.status, 'behind'); assert.equal(p.deltaSeconds, 30);
+test("pacing behind when wall exceeds plan", () => {
+  const p = pacingState({
+    segments: segs,
+    currentIndex: 1,
+    elapsedInSegment: 30,
+    wallElapsed: 120,
+  });
+  assert.equal(p.status, "behind");
+  assert.equal(p.deltaSeconds, 30);
 });
-test('pacing ahead when wall is under plan', () => {
+test("pacing ahead when wall is under plan", () => {
   const p = pacingState({ segments: segs, currentIndex: 1, elapsedInSegment: 0, wallElapsed: 40 });
-  assert.equal(p.status, 'ahead'); assert.equal(p.deltaSeconds, -20);
+  assert.equal(p.status, "ahead");
+  assert.equal(p.deltaSeconds, -20);
 });
 ```
 
@@ -1192,27 +1410,42 @@ Expected: FAIL — cannot find module `./showRundown.ts`.
 
 ```ts
 // src/lib/tradio/showRundown.ts
-export interface RundownSegment { duration: number; } // seconds
+export interface RundownSegment {
+  duration: number;
+} // seconds
 
 export function cumulativeStarts(segments: RundownSegment[]): number[] {
-  const out: number[] = []; let acc = 0;
-  for (const s of segments) { out.push(acc); acc += s.duration; }
+  const out: number[] = [];
+  let acc = 0;
+  for (const s of segments) {
+    out.push(acc);
+    acc += s.duration;
+  }
   return out;
 }
 
-export function shouldAdvance(input: { segments: RundownSegment[]; currentIndex: number; elapsedInSegment: number }): boolean {
+export function shouldAdvance(input: {
+  segments: RundownSegment[];
+  currentIndex: number;
+  elapsedInSegment: number;
+}): boolean {
   const { segments, currentIndex, elapsedInSegment } = input;
   if (currentIndex >= segments.length - 1) return false;
   return elapsedInSegment >= segments[currentIndex].duration;
 }
 
-export type PacingStatus = 'on-time' | 'behind' | 'ahead';
+export type PacingStatus = "on-time" | "behind" | "ahead";
 
-export function pacingState(input: { segments: RundownSegment[]; currentIndex: number; elapsedInSegment: number; wallElapsed: number }): { status: PacingStatus; deltaSeconds: number } {
+export function pacingState(input: {
+  segments: RundownSegment[];
+  currentIndex: number;
+  elapsedInSegment: number;
+  wallElapsed: number;
+}): { status: PacingStatus; deltaSeconds: number } {
   const starts = cumulativeStarts(input.segments);
   const plannedElapsed = (starts[input.currentIndex] ?? 0) + input.elapsedInSegment;
   const delta = Math.round(input.wallElapsed - plannedElapsed); // +behind, -ahead
-  const status: PacingStatus = delta > 5 ? 'behind' : delta < -5 ? 'ahead' : 'on-time';
+  const status: PacingStatus = delta > 5 ? "behind" : delta < -5 ? "ahead" : "on-time";
   return { status, deltaSeconds: delta };
 }
 ```
@@ -1234,15 +1467,16 @@ git commit -m "feat(tradio): pure show-rundown pacing + advance logic"
 ## Task 18: `useShowRundown` hook (timers + auto-pilot + AI trigger)
 
 **Files:**
+
 - Create: `src/tradio/components/tradio/useShowRundown.ts`
 
 - [ ] **Step 1: Implement the hook**
 
 ```ts
 // src/tradio/components/tradio/useShowRundown.ts
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { shouldAdvance, pacingState, type PacingStatus } from '@/lib/tradio/showRundown';
-import type { ShowSegment } from './data';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { shouldAdvance, pacingState, type PacingStatus } from "@/lib/tradio/showRundown";
+import type { ShowSegment } from "./data";
 
 export interface ShowRundownState {
   currentIndex: number;
@@ -1269,7 +1503,9 @@ export function useShowRundown(opts: {
   const enteredRef = useRef<number>(-1);
 
   const enterSegment = useCallback((index: number) => {
-    setCurrentIndex(index); setElapsed(0); setExtra(0);
+    setCurrentIndex(index);
+    setElapsed(0);
+    setExtra(0);
   }, []);
 
   // Fire onEnterSegment exactly once per segment entry.
@@ -1294,7 +1530,9 @@ export function useShowRundown(opts: {
   // Auto-advance.
   useEffect(() => {
     if (!active || !autoPilot) return;
-    const effective = segments.map((s, i) => i === currentIndex ? { duration: s.duration + extra } : { duration: s.duration });
+    const effective = segments.map((s, i) =>
+      i === currentIndex ? { duration: s.duration + extra } : { duration: s.duration },
+    );
     if (shouldAdvance({ segments: effective, currentIndex, elapsedInSegment })) {
       enterSegment(currentIndex + 1);
     }
@@ -1333,6 +1571,7 @@ git commit -m "feat(tradio): useShowRundown hook with auto-pilot + per-segment e
 ## Task 19: Drive the console's active segment from the rundown (auto-pilot + AI host)
 
 **Files:**
+
 - Modify: `src/tradio/components/tradio/screens/LiveShowConsole.tsx`
 
 - [ ] **Step 1: Replace manual `activeSegmentIdx` with the rundown**
@@ -1342,15 +1581,17 @@ In `LiveShowConsole`, remove the local `activeSegmentIdx` state and use:
 ```tsx
 const rundown = useShowRundown({
   segments: show.segments,
-  active: live.connection === 'connected',
+  active: live.connection === "connected",
   onEnterSegment: (seg) => {
     if (rundown.autoPilot && (seg.script || seg.hostNotes)) {
-      void live.aiSpeak(seg.script ?? seg.hostNotes ?? '', seg.title);
+      void live.aiSpeak(seg.script ?? seg.hostNotes ?? "", seg.title);
     }
   },
 });
 const activeSegmentIdx = rundown.currentIndex;
-const currentSegment = show.segments[activeSegmentIdx] ?? { title: 'Talk Break', type: 'host-talk', hostNotes: 'Vibe check.', duration: 120 } as any;
+const currentSegment =
+  show.segments[activeSegmentIdx] ??
+  ({ title: "Talk Break", type: "host-talk", hostNotes: "Vibe check.", duration: 120 } as any);
 ```
 
 (Import `useShowRundown` from `../useShowRundown`.) Note: reference `rundown.autoPilot` inside `onEnterSegment` via a ref to avoid stale closure — capture `autoPilotRef` updated each render, or read `live`/auto-pilot through a ref. Simplest: gate the AI trigger on a `autoPilotRef.current` ref set in an effect.

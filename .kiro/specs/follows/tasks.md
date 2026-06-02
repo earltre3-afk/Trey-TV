@@ -10,6 +10,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 **Files:** `C:\Users\info\TREY-TV-RESTORE-599\supabase\migrations\20260427133000_trey_tv_social_platform.sql`
 
 **Work:** Confirm against the migration:
+
 - Table: `follows`
 - Columns: `follower_id`, `following_id`, `created_at`
 - Primary key: `(follower_id, following_id)` — no separate `id` column
@@ -20,6 +21,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 - RLS ALL: `using (auth.uid() = follower_id) with check (auth.uid() = follower_id)`
 
 **Acceptance criteria:**
+
 - [ ] No `id` column — PK is composite `(follower_id, following_id)`
 - [ ] Both FKs confirmed as `profiles(id)`
 - [ ] RLS `for all` confirmed (covers insert + delete in one policy)
@@ -37,6 +39,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 `src/routes/channel.$handle.tsx`, `src/routes/explore.tsx`
 
 **Work:**
+
 - Confirm the full `Ctx` interface: `followed`, `isFollowing`, `toggle`, `bumpWatch`, `topThree`
 - Confirm `toggle()` return type is `boolean`
 - Confirm what `id` value each call site passes to `toggle()`:
@@ -46,6 +49,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 - Confirm `isFollowing` is keyed by `handle` string
 
 **Acceptance criteria:**
+
 - [ ] Full `Ctx` interface documented
 - [ ] `toggle()` return type confirmed as `boolean`
 - [ ] `id` values at each call site confirmed
@@ -62,12 +66,14 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 **Files:** `src/lib/follow-store.tsx`
 
 **Work:** Rewrite the provider internals per design.md. Keep identical:
+
 - `FollowedCreator` type export
 - `FollowProvider` export
 - `useFollow()` export
 - Full `Ctx` interface and all five members
 
 New internals:
+
 - `dbFollowed: Set<string>` — handles of DB-confirmed follows
 - `localFollowed: FollowedCreator[]` — mock/localStorage follows (keep SEED)
 - On mount (signed-in): fetch all follows for `auth.uid()`, join profiles for `username`, populate `dbFollowed`
@@ -80,6 +86,7 @@ New internals:
 - `bumpWatch`, `topThree`: local-only, unchanged behavior
 
 **Acceptance criteria:**
+
 - [ ] `FollowedCreator` type unchanged
 - [ ] `Ctx` interface unchanged
 - [ ] `useFollow()` export unchanged
@@ -104,6 +111,7 @@ New internals:
 **Work:** Confirm the git diff contains changes only to `src/lib/follow-store.tsx`.
 
 **Acceptance criteria:**
+
 - [ ] `src/routes/u.$uid.tsx` unmodified
 - [ ] `src/routes/channel.$handle.tsx` unmodified
 - [ ] `src/routes/explore.tsx` unmodified
@@ -120,11 +128,13 @@ New internals:
 **Files:** `src/lib/follow-store.tsx`
 
 **Work:** Confirm:
+
 - `follower_id` UUID is not in `FollowedCreator` or any returned object
 - `following_id` UUID is not in `FollowedCreator` or any returned object
 - Only `handle`, `name`, `avatar`, `followedAt`, `watchScore` are in `FollowedCreator`
 
 **Acceptance criteria:**
+
 - [ ] No UUID FK columns in the public-facing `FollowedCreator` shape
 
 **Terminal validation:** `pnpm tsc --noEmit` if any correction is made.
@@ -141,6 +151,7 @@ pnpm tsc --noEmit
 ```
 
 **Acceptance criteria:**
+
 - [ ] Zero errors
 - [ ] If errors: fix only in `follow-store.tsx`, re-run before proceeding
 
@@ -158,6 +169,7 @@ pnpm build
 ```
 
 **Acceptance criteria:**
+
 - [ ] Build completes with zero errors
 - [ ] If errors: fix only in `follow-store.tsx`, re-run before proceeding
 
@@ -174,12 +186,14 @@ pnpm build
 **Work:** Code review only — no browser check.
 
 Trace the signed-out path through `toggle()`:
+
 1. `isRealProfile(c.id)` is true
 2. `!isSignedIn` → toast("Sign up to follow") + nav to `/onboarding` + return `false`
 3. No DB call is made
 4. No unhandled promise rejection
 
 **Acceptance criteria:**
+
 - [ ] Signed-out guard present before any async DB call
 - [ ] Returns `false` without throwing
 - [ ] No `await` before the signed-out check
@@ -195,6 +209,7 @@ Trace the signed-out path through `toggle()`:
 **Files:** `.kiro/steering/migration-map.md`, `.kiro/steering/file-map.md`
 
 **Work:**
+
 - Move "Follow state" from 🟡 Mock to ✅ Real in `migration-map.md`
 - Note table: `follows`, validation: tsc ✅ build ✅
 - Update `follow-store.tsx` label in `file-map.md`
@@ -204,6 +219,7 @@ Trace the signed-out path through `toggle()`:
 ## Definition of Done
 
 All of the following must be true before this task is closed:
+
 1. `pnpm tsc --noEmit` passes
 2. `pnpm build` passes
 3. `Ctx` interface and `useFollow()` export unchanged

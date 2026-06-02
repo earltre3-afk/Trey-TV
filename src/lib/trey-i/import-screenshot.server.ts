@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { verifyTreyIUser, getTreyIServiceClient, saveProfileFieldsForUser } from "./onboarding.server";
+import {
+  verifyTreyIUser,
+  getTreyIServiceClient,
+  saveProfileFieldsForUser,
+} from "./onboarding.server";
 import { aiGenerateVisionJson } from "./aiProvider.server";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -43,7 +47,12 @@ function validateStartInput(input: { accessToken: string; consentAccepted: boole
   };
 }
 
-function validateExtractInput(input: { accessToken: string; jobId: string; imageBase64: string; mimeType: string }) {
+function validateExtractInput(input: {
+  accessToken: string;
+  jobId: string;
+  imageBase64: string;
+  mimeType: string;
+}) {
   return {
     accessToken: typeof input?.accessToken === "string" ? input.accessToken.trim() : "",
     jobId: typeof input?.jobId === "string" ? input.jobId.trim().slice(0, 64) : "",
@@ -129,14 +138,12 @@ export const startImportJob = createServerFn({ method: "POST" })
     const now = new Date().toISOString();
 
     // Record consent
-    await (supabase as any)
-      .from("profile_import_consents")
-      .insert({
-        user_id: user.id,
-        consent_text: CONSENT_TEXT,
-        consent_version: CONSENT_VERSION,
-        accepted_at: now,
-      });
+    await (supabase as any).from("profile_import_consents").insert({
+      user_id: user.id,
+      consent_text: CONSENT_TEXT,
+      consent_version: CONSENT_VERSION,
+      accepted_at: now,
+    });
 
     // Create job
     const { data: job, error } = await (supabase as any)
@@ -160,62 +167,60 @@ export const startImportJob = createServerFn({ method: "POST" })
 /** Step 2 – Extract profile data from an uploaded screenshot (server-side, key never exposed). */
 export const extractScreenshot = createServerFn({ method: "POST" })
   .inputValidator(validateExtractInput)
-  .handler(
-    async ({ data }): Promise<{ extracted: ExtractedProfile; fallback: boolean }> => {
-      const { supabase, user } = await verifyTreyIUser(data.accessToken);
+  .handler(async ({ data }): Promise<{ extracted: ExtractedProfile; fallback: boolean }> => {
+    const { supabase, user } = await verifyTreyIUser(data.accessToken);
 
-      if (!data.jobId) throw new Error("Invalid import job");
+    if (!data.jobId) throw new Error("Invalid import job");
 
-      // Verify job belongs to this user
-      const { data: job, error: jobError } = await (supabase as any)
-        .from("profile_import_jobs")
-        .select("id, status")
-        .eq("id", data.jobId)
-        .eq("user_id", user.id)
-        .maybeSingle();
+    // Verify job belongs to this user
+    const { data: job, error: jobError } = await (supabase as any)
+      .from("profile_import_jobs")
+      .select("id, status")
+      .eq("id", data.jobId)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-      if (jobError || !job) throw new Error("Import job not found");
+    if (jobError || !job) throw new Error("Import job not found");
 
-      const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-      // Mark extracting
-      await (supabase as any)
-        .from("profile_import_jobs")
-        .update({ status: "extracting", updated_at: now })
-        .eq("id", data.jobId);
+    // Mark extracting
+    await (supabase as any)
+      .from("profile_import_jobs")
+      .update({ status: "extracting", updated_at: now })
+      .eq("id", data.jobId);
 
-      let extracted: ExtractedProfile = {};
-      let fallback = false;
+    let extracted: ExtractedProfile = {};
+    let fallback = false;
 
-      try {
-        const allowedMimes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-        const safeMime = allowedMimes.includes(data.mimeType) ? data.mimeType : "image/png";
+    try {
+      const allowedMimes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+      const safeMime = allowedMimes.includes(data.mimeType) ? data.mimeType : "image/png";
 
-        if (!data.imageBase64) throw new Error("No image data");
-        extracted = await extractFromImage(data.imageBase64, safeMime);
-        if (!extracted || Object.keys(extracted).length === 0) {
-          fallback = true;
-        }
-      } catch (err) {
-        console.error("[extractScreenshot] vision extraction failed:", err);
+      if (!data.imageBase64) throw new Error("No image data");
+      extracted = await extractFromImage(data.imageBase64, safeMime);
+      if (!extracted || Object.keys(extracted).length === 0) {
         fallback = true;
-        extracted = {};
       }
+    } catch (err) {
+      console.error("[extractScreenshot] vision extraction failed:", err);
+      fallback = true;
+      extracted = {};
+    }
 
-      // Save extracted data to job
-      await (supabase as any)
-        .from("profile_import_jobs")
-        .update({
-          status: "extracted",
-          extracted_json: extracted,
-          error_message: fallback ? "Vision extraction failed; manual review mode." : null,
-          updated_at: now,
-        })
-        .eq("id", data.jobId);
+    // Save extracted data to job
+    await (supabase as any)
+      .from("profile_import_jobs")
+      .update({
+        status: "extracted",
+        extracted_json: extracted,
+        error_message: fallback ? "Vision extraction failed; manual review mode." : null,
+        updated_at: now,
+      })
+      .eq("id", data.jobId);
 
-      return { extracted, fallback };
-    },
-  );
+    return { extracted, fallback };
+  });
 
 /** Step 3 – Save edited draft back to the job (does not publish to profile). */
 export const saveImportDraft = createServerFn({ method: "POST" })
@@ -251,8 +256,7 @@ export const publishImportProfile = createServerFn({ method: "POST" })
     if (!data.accessToken) throw new Error("Sign in required");
 
     // date_of_birth is required for publish
-    const dob =
-      typeof data.draft.date_of_birth === "string" ? data.draft.date_of_birth.trim() : "";
+    const dob = typeof data.draft.date_of_birth === "string" ? data.draft.date_of_birth.trim() : "";
     if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
       throw new Error("Date of birth is required and must be in YYYY-MM-DD format");
     }

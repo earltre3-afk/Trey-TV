@@ -32,5 +32,5 @@ export type UseFreeTvGuideState = {
   channels: FreeTvGuideChannel[];
   loading: boolean;
   error: string | null;
-  source: 'api' | 'fallback';
+  source: "api" | "fallback";
 };

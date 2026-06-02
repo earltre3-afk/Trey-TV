@@ -118,7 +118,11 @@ function loadSlateCacheFromDisk(): { slates: Set<string>; playable: Set<string> 
   const empty = { slates: new Set<string>(), playable: new Set<string>() };
   try {
     const raw = readFileSync(SLATE_CACHE_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as { version?: number; channels?: string[]; playable?: string[] };
+    const parsed = JSON.parse(raw) as {
+      version?: number;
+      channels?: string[];
+      playable?: string[];
+    };
     if (parsed.version !== SLATE_CACHE_VERSION) {
       console.log("[pluto] slate cache version changed; ignoring stale markings");
       return empty;
@@ -126,7 +130,9 @@ function loadSlateCacheFromDisk(): { slates: Set<string>; playable: Set<string> 
     const slates = new Set(parsed.channels ?? []);
     const playable = new Set(parsed.playable ?? []);
     if (slates.size || playable.size) {
-      console.log(`[pluto] loaded ${slates.size} unplayable + ${playable.size} playable channels from disk`);
+      console.log(
+        `[pluto] loaded ${slates.size} unplayable + ${playable.size} playable channels from disk`,
+      );
     }
     return { slates, playable };
   } catch {
@@ -179,7 +185,9 @@ async function ensureBoot(): Promise<void> {
   const deviceId = randomUuid();
   const bootUrl = `https://boot.pluto.tv/v4/start?appName=web&appVersion=9.13.0&deviceType=web&deviceMake=Chrome&deviceModel=web&deviceVersion=131&deviceId=${deviceId}&clientID=${deviceId}&clientModelNumber=1&serverSideAds=true`;
   try {
-    const res = await fetch(bootUrl, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" } });
+    const res = await fetch(bootUrl, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+    });
     if (!res.ok) {
       console.warn(`[pluto] boot HTTP ${res.status}; falling back to synthesized params`);
       bootCache.stitcherParams = synthesizedParams();
@@ -268,12 +276,7 @@ async function buildVodStreamUrl(episodeId: string): Promise<string> {
 // por aqui" — Pluto Brazil shutdown; "iEso fue todo!" — Pluto Latino). Filter
 // them by category first (most reliable), then by name/slug keywords for the
 // stragglers that aren't tagged.
-const RESTRICTED_CATEGORIES = new Set([
-  "En Español",
-  "Latino",
-  "Português",
-  "Brasil",
-]);
+const RESTRICTED_CATEGORIES = new Set(["En Español", "Latino", "Português", "Brasil"]);
 const RESTRICTED_PATTERNS = [
   /latino/i,
   /espa[nñ]ol/i,
@@ -333,11 +336,17 @@ async function fetchPlutoVod(): Promise<PlutoVodItem[]> {
     // region-appropriate VOD library and so the response shape stays stable.
     const params = await getStitcherParams();
     const token = await getSessionToken();
-    const headers: Record<string, string> = { Accept: "application/json", "User-Agent": "Mozilla/5.0" };
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+    };
     if (token) headers["Authorization"] = `Bearer ${token}`;
-    const res = await fetch(`https://service-vod.clusters.pluto.tv/v4/vod/categories?includeItems=true&${params}`, {
-      headers,
-    });
+    const res = await fetch(
+      `https://service-vod.clusters.pluto.tv/v4/vod/categories?includeItems=true&${params}`,
+      {
+        headers,
+      },
+    );
     if (!res.ok) {
       console.warn(`[pluto] vod/categories HTTP ${res.status}`);
       return vodCache.items;
@@ -345,7 +354,7 @@ async function fetchPlutoVod(): Promise<PlutoVodItem[]> {
     const json = await res.json();
     // Pluto's VOD endpoint sometimes returns `[...]`, sometimes
     // `{ categories: [...] }`. Normalize defensively.
-    const raw = (Array.isArray(json) ? json : json?.categories ?? []) as PlutoRawCategory[];
+    const raw = (Array.isArray(json) ? json : (json?.categories ?? [])) as PlutoRawCategory[];
     const items: PlutoVodItem[] = [];
     for (const cat of raw) {
       for (const it of cat.items ?? []) {
@@ -358,8 +367,7 @@ async function fetchPlutoVod(): Promise<PlutoVodItem[]> {
           summary: it.summary ?? it.description,
           duration: it.duration,
           category: cat.name,
-          poster: it.covers?.find((c) => c.aspectRatio === "16:9")?.url
-            ?? it.covers?.[0]?.url,
+          poster: it.covers?.find((c) => c.aspectRatio === "16:9")?.url ?? it.covers?.[0]?.url,
         });
       }
     }
@@ -424,7 +432,9 @@ async function maybePrewarmSlateCache(): Promise<void> {
   // Skip channels we've already classified (playable or unplayable).
   const targets = channels.filter((c) => !slateChannels.has(c._id) && !playableChannels.has(c._id));
   if (!targets.length) {
-    console.log(`[pluto] pre-warm skipped — ${playableChannels.size} playable / ${slateChannels.size} unplayable cached`);
+    console.log(
+      `[pluto] pre-warm skipped — ${playableChannels.size} playable / ${slateChannels.size} unplayable cached`,
+    );
     return;
   }
   console.log(`[pluto] pre-warming: probing ${targets.length} channels (concurrency 6)…`);
@@ -450,13 +460,17 @@ async function maybePrewarmSlateCache(): Promise<void> {
     }
   }
   await Promise.all(Array.from({ length: concurrency }, () => worker()));
-  console.log(`[pluto] pre-warm done: ${playableChannels.size} playable, ${slateChannels.size} unplayable cached`);
+  console.log(
+    `[pluto] pre-warm done: ${playableChannels.size} playable, ${slateChannels.size} unplayable cached`,
+  );
 }
 
 async function probeChannelPlayable(channelId: string): Promise<boolean> {
   try {
     const url = await buildChannelStreamUrl(channelId);
-    const masterRes = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/vnd.apple.mpegurl" } });
+    const masterRes = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/vnd.apple.mpegurl" },
+    });
     if (!masterRes.ok) return false;
     const masterBody = await masterRes.text();
     if (masterBody.length < 800) return false;
@@ -466,7 +480,9 @@ async function probeChannelPlayable(channelId: string): Promise<boolean> {
     // Master alone isn't enough — geo-block slates ARE valid HLS streams
     // pointing to the "ptv_takedownslates_..." clip. Fetch the first variant
     // playlist and look for the slate clip in segment URIs.
-    const variantUriMatch = masterBody.split(/\r?\n/).find((line) => line && !line.startsWith("#") && /\.m3u8/.test(line));
+    const variantUriMatch = masterBody
+      .split(/\r?\n/)
+      .find((line) => line && !line.startsWith("#") && /\.m3u8/.test(line));
     if (!variantUriMatch) return true; // odd shape; accept by default
     const variant = new URL(variantUriMatch, url);
     // v2 variant playlists don't inherit the master's jwt and 401 without it,
@@ -476,7 +492,9 @@ async function probeChannelPlayable(channelId: string): Promise<boolean> {
       if (token) variant.searchParams.set("jwt", token);
     }
     const variantUrl = variant.toString();
-    const variantRes = await fetch(variantUrl, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/vnd.apple.mpegurl" } });
+    const variantRes = await fetch(variantUrl, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/vnd.apple.mpegurl" },
+    });
     if (!variantRes.ok) return false;
     const variantBody = await variantRes.text();
     if (/takedownslates|where-watch|geo[-_]?block/i.test(variantBody)) return false;
@@ -543,18 +561,24 @@ function rewriteManifest(text: string, manifestUrl: string, proxyBase: string): 
   const lines = text.split(/\r?\n/);
   const out: string[] = [];
 
-  const proxify = (absUrl: string) => `${proxyBase}/api/pluto/m3u8?src=${encodeURIComponent(absUrl)}`;
+  const proxify = (absUrl: string) =>
+    `${proxyBase}/api/pluto/m3u8?src=${encodeURIComponent(absUrl)}`;
   const absolutize = (raw: string) => new URL(raw, base).toString();
   const isPlaylist = (u: string) => u.endsWith(".m3u8") || u.includes(".m3u8?");
 
   for (const line of lines) {
-    if (!line) { out.push(line); continue; }
+    if (!line) {
+      out.push(line);
+      continue;
+    }
     if (line.startsWith("#")) {
       // Rewrite URI="..." attributes in directives (EXT-X-KEY, EXT-X-MEDIA, etc.)
-      out.push(line.replace(/URI="([^"]+)"/g, (_, uri) => {
-        const abs = absolutize(uri);
-        return `URI="${isPlaylist(abs) ? proxify(abs) : abs}"`;
-      }));
+      out.push(
+        line.replace(/URI="([^"]+)"/g, (_, uri) => {
+          const abs = absolutize(uri);
+          return `URI="${isPlaylist(abs) ? proxify(abs) : abs}"`;
+        }),
+      );
       continue;
     }
     // URI line — segment or sub-playlist
@@ -570,7 +594,11 @@ async function handleManifestProxy(request: Request): Promise<Response> {
   if (!src) return new Response("missing src", { status: 400 });
 
   let target: URL;
-  try { target = new URL(src); } catch { return new Response("bad src", { status: 400 }); }
+  try {
+    target = new URL(src);
+  } catch {
+    return new Response("bad src", { status: 400 });
+  }
   if (!isAllowedManifestHost(target.hostname)) {
     return new Response("host not allowed", { status: 400 });
   }
@@ -606,7 +634,10 @@ async function handleManifestProxy(request: Request): Promise<Response> {
     });
   } catch (err) {
     console.error("[pluto] manifest proxy error", err);
-    return new Response("proxy failed", { status: 502, headers: { "access-control-allow-origin": "*" } });
+    return new Response("proxy failed", {
+      status: 502,
+      headers: { "access-control-allow-origin": "*" },
+    });
   }
 }
 
@@ -618,7 +649,10 @@ function renderPlayerHtml(opts: {
   proxyBase: string;
 }): string {
   const proxied = `${opts.proxyBase}/api/pluto/m3u8?src=${encodeURIComponent(opts.streamUrl)}`;
-  const safeTitle = opts.title.replace(/[<&>"]/g, (c) => ({ "<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;" }[c]!));
+  const safeTitle = opts.title.replace(
+    /[<&>"]/g,
+    (c) => ({ "<": "&lt;", "&": "&amp;", ">": "&gt;", '"': "&quot;" })[c]!,
+  );
   const safePoster = (opts.poster ?? "").replace(/"/g, "&quot;");
 
   return `<!doctype html>
@@ -836,7 +870,7 @@ export async function handlePlutoApiRequest(request: Request): Promise<Response 
     const proxyBase = `${url.protocol}//${url.host}`;
     const trayChannelId = url.searchParams.get("channel");
     const trayEpisodeId = url.searchParams.get("episode");
-    const directPlutoId = url.searchParams.get("id");      // Pluto channel id passthrough
+    const directPlutoId = url.searchParams.get("id"); // Pluto channel id passthrough
     const directPlutoVodId = url.searchParams.get("vodId"); // Pluto VOD id passthrough
 
     // Direct Pluto-channel-id playback (used by /live/$id route).
@@ -845,7 +879,12 @@ export async function handlePlutoApiRequest(request: Request): Promise<Response 
       const match = all.find((c) => c._id === directPlutoId);
       if (!match) return new Response("Channel not found", { status: 404 });
       const streamUrl = await buildChannelStreamUrl(match._id);
-      const html = renderPlayerHtml({ streamUrl, title: match.name, poster: match.logo, proxyBase });
+      const html = renderPlayerHtml({
+        streamUrl,
+        title: match.name,
+        poster: match.logo,
+        proxyBase,
+      });
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
@@ -857,7 +896,12 @@ export async function handlePlutoApiRequest(request: Request): Promise<Response 
       const match = all.find((v) => v._id === directPlutoVodId);
       if (!match) return new Response("VOD title not found", { status: 404 });
       const streamUrl = await buildVodStreamUrl(match._id);
-      const html = renderPlayerHtml({ streamUrl, title: match.name, poster: match.poster, proxyBase });
+      const html = renderPlayerHtml({
+        streamUrl,
+        title: match.name,
+        poster: match.poster,
+        proxyBase,
+      });
       return new Response(html, {
         status: 200,
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
@@ -870,8 +914,9 @@ export async function handlePlutoApiRequest(request: Request): Promise<Response 
       // mirrors the host. Anything else is a Trey TV handle that we hash-map to
       // a playable Pluto channel.
       const picked = trayChannelId.startsWith("pluto:")
-        ? (await fetchPlutoChannels()).find((c) => c._id === trayChannelId.slice("pluto:".length))
-          ?? (await pickChannelFor(trayChannelId))
+        ? ((await fetchPlutoChannels()).find(
+            (c) => c._id === trayChannelId.slice("pluto:".length),
+          ) ?? (await pickChannelFor(trayChannelId)))
         : await pickChannelFor(trayChannelId);
       if (!picked) {
         return new Response("No Pluto channels available", { status: 503 });

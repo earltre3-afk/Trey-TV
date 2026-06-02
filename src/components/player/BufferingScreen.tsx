@@ -6,10 +6,14 @@ interface Props {
 
 const CIRCUMFERENCE = 2 * Math.PI * 65; // ≈ 408.4
 const SEG_COUNT = 10;
-const STALL_ZONES: [number, number][] = [[28, 32], [58, 63], [88, 92]];
+const STALL_ZONES: [number, number][] = [
+  [28, 32],
+  [58, 63],
+  [88, 92],
+];
 
 const STATUS_MESSAGES: [number, string][] = [
-  [0,  "Connecting to TreyTV…"],
+  [0, "Connecting to TreyTV…"],
   [10, "Authenticating stream…"],
   [22, "Loading channel data…"],
   [35, "Fetching video source…"],
@@ -55,7 +59,7 @@ export function BufferingScreen({ onPlay }: Props) {
         size: 0.4 + Math.random() * 1.4,
         dur: `${2 + Math.random() * 4}s`,
         delay: `${Math.random() * 5}s`,
-      }))
+      })),
     );
   }, []);
 
@@ -103,7 +107,14 @@ export function BufferingScreen({ onPlay }: Props) {
             <div
               key={s.id}
               className="buf-star"
-              style={{ left: s.left, top: s.top, width: `${s.size}px`, height: `${s.size}px`, animationDuration: s.dur, animationDelay: s.delay }}
+              style={{
+                left: s.left,
+                top: s.top,
+                width: `${s.size}px`,
+                height: `${s.size}px`,
+                animationDuration: s.dur,
+                animationDelay: s.delay,
+              }}
             />
           ))}
         </div>
@@ -114,8 +125,10 @@ export function BufferingScreen({ onPlay }: Props) {
             <span className="buf-logo-tv">
               TV
               <span className="buf-spark">
-                <span className="buf-sp buf-sp1" /><span className="buf-sp buf-sp2" />
-                <span className="buf-sp buf-sp3" /><span className="buf-sp buf-sp4" />
+                <span className="buf-sp buf-sp1" />
+                <span className="buf-sp buf-sp2" />
+                <span className="buf-sp buf-sp3" />
+                <span className="buf-sp buf-sp4" />
               </span>
             </span>
           </div>
@@ -127,18 +140,27 @@ export function BufferingScreen({ onPlay }: Props) {
             <svg className="buf-ring-svg" viewBox="0 0 160 160" aria-hidden="true">
               <defs>
                 <linearGradient id="bufRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stopColor="#c8860a" />
-                  <stop offset="40%"  stopColor="#fce060" />
-                  <stop offset="70%"  stopColor="#fff4a0" />
+                  <stop offset="0%" stopColor="#c8860a" />
+                  <stop offset="40%" stopColor="#fce060" />
+                  <stop offset="70%" stopColor="#fff4a0" />
                   <stop offset="100%" stopColor="#f0c040" />
                 </linearGradient>
                 <filter id="bufRingGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="2.5" result="blur" />
-                  <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
                 </filter>
               </defs>
               <circle className="buf-ring-track" cx="80" cy="80" r="65" />
-              <circle className="buf-ring-fill" cx="80" cy="80" r="65" style={{ strokeDashoffset: offset }} />
+              <circle
+                className="buf-ring-fill"
+                cx="80"
+                cy="80"
+                r="65"
+                style={{ strokeDashoffset: offset }}
+              />
             </svg>
             <div className="buf-ring-inner">
               <span className="buf-pct-num">{pct}</span>
@@ -155,7 +177,9 @@ export function BufferingScreen({ onPlay }: Props) {
             </div>
             <div className="buf-ticks">
               {[0, 25, 50, 75, 100].map((v) => (
-                <span key={v} className={`buf-tick${pct >= v ? " lit" : ""}`}>{v}</span>
+                <span key={v} className={`buf-tick${pct >= v ? " lit" : ""}`}>
+                  {v}
+                </span>
               ))}
             </div>
             <div className="buf-segs">
@@ -171,7 +195,9 @@ export function BufferingScreen({ onPlay }: Props) {
         {flash && (
           <>
             <div key={`f-${flash.key}`} className="buf-flash pop" />
-            <div key={`b-${flash.key}`} className="buf-badge show">✦ {flash.text} ✦</div>
+            <div key={`b-${flash.key}`} className="buf-badge show">
+              ✦ {flash.text} ✦
+            </div>
           </>
         )}
 
@@ -181,8 +207,10 @@ export function BufferingScreen({ onPlay }: Props) {
             <span className="buf-co-tv">
               TV
               <span className="buf-co-spark">
-                <span className="buf-co-sp buf-co-sp1" /><span className="buf-co-sp buf-co-sp2" />
-                <span className="buf-co-sp buf-co-sp3" /><span className="buf-co-sp buf-co-sp4" />
+                <span className="buf-co-sp buf-co-sp1" />
+                <span className="buf-co-sp buf-co-sp2" />
+                <span className="buf-co-sp buf-co-sp3" />
+                <span className="buf-co-sp buf-co-sp4" />
               </span>
             </span>
           </div>
@@ -194,8 +222,12 @@ export function BufferingScreen({ onPlay }: Props) {
           <div className="buf-co-title">Thank You For Waiting</div>
           <div className="buf-co-exclusive">Here's Your Trizzy Exclusive Clip</div>
           <div className="buf-co-enjoy">Enjoy!</div>
-          <button className="buf-play-btn" onClick={onPlay} aria-label="Play video">▶</button>
-          <button className="buf-replay-btn" onClick={() => window.location.reload()}>↺ Watch Again</button>
+          <button className="buf-play-btn" onClick={onPlay} aria-label="Play video">
+            ▶
+          </button>
+          <button className="buf-replay-btn" onClick={() => window.location.reload()}>
+            ↺ Watch Again
+          </button>
         </div>
       </div>
     </>

@@ -1,5 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
@@ -33,22 +38,41 @@ export function ApplicationWizardChrome({
   const isGold = variant === "gold";
   const isTradio = variant === "tradio";
   const outer = isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
-  const accentText = isTradio ? "text-purple-300" : isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
-  const titleSplit = isTradio ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold" : isGold ? "title-split-gold" : "title-split-blue";
-  const stepActive = isTradio ? "is-active-purple bg-purple-500 text-white border-purple-400" : isGold ? "is-active-gold" : "is-active-blue";
+  const accentText = isTradio
+    ? "text-purple-300"
+    : isGold
+      ? "text-[oklch(0.92_0.18_88)]"
+      : "text-[oklch(0.85_0.2_240)]";
+  const titleSplit = isTradio
+    ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold"
+    : isGold
+      ? "title-split-gold"
+      : "title-split-blue";
+  const stepActive = isTradio
+    ? "is-active-purple bg-purple-500 text-white border-purple-400"
+    : isGold
+      ? "is-active-gold"
+      : "is-active-blue";
   const pct = Math.round(((current - 1) / (steps.length - 1)) * 100);
 
   return (
-    <div className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTradio ? "purple" : ""}`}>
+    <div
+      className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTradio ? "purple" : ""}`}
+    >
       <div className="grid-veil" aria-hidden />
       <div className="orb-extra" aria-hidden />
 
       {/* ── Top nav bar ── */}
-      <div className="sticky top-0 z-30 border-b border-white/[0.06] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
-        style={{ background: "oklch(0.08 0.02 262 / 0.85)" }}>
+      <div
+        className="sticky top-0 z-30 border-b border-white/[0.06] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
+        style={{ background: "oklch(0.08 0.02 262 / 0.85)" }}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-6">
           {/* Back */}
-          <Link to="/apply" className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}>
+          <Link
+            to="/apply"
+            className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+          >
             <ChevronLeft className="h-4 w-4" /> Back
           </Link>
 
@@ -56,13 +80,16 @@ export function ApplicationWizardChrome({
           <div className="hidden items-center gap-3 md:flex">
             <Logo className="h-7" />
             <span className="text-sm font-semibold text-foreground/80">
-              {titleA}{" "}<span className={titleSplit}>{titleB}</span>
+              {titleA} <span className={titleSplit}>{titleB}</span>
             </span>
           </div>
 
           {/* Save draft */}
           {onSaveDraft && (
-            <button onClick={onSaveDraft} className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}>
+            <button
+              onClick={onSaveDraft}
+              className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+            >
               <Save className="h-4 w-4" />
               <span>{draftSaved ? "Saved ✓" : "Save Draft"}</span>
             </button>
@@ -79,8 +106,8 @@ export function ApplicationWizardChrome({
               boxShadow: isTradio
                 ? "0 0 12px rgba(168,85,247,0.8)"
                 : isGold
-                ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
-                : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
+                  ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
+                  : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
             }}
           />
         </div>
@@ -88,13 +115,11 @@ export function ApplicationWizardChrome({
 
       {/* ── Page body ── */}
       <div className="mx-auto max-w-7xl px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-6 md:px-6 md:pb-10 md:pt-8 lg:pt-10">
-
         {/* ── Hero card (full-width outer neon card) ── */}
         <div className={`relative ${outer} p-4 md:p-8 wizard-outer-pad`}>
           <div className="swoosh-bg" />
           <div className="liquid-sheen" />
           <div className="relative">
-
             {/* Header: Logo + Title + Steps */}
             <div className="mb-5 flex flex-col items-center text-center md:mb-8">
               <Logo className="logo-float h-10 md:h-14 lg:h-16" />
@@ -113,14 +138,21 @@ export function ApplicationWizardChrome({
                   const isActive = n === current;
                   const isDone = n < current;
                   return (
-                    <li key={s.label} className="flex min-w-fit items-center gap-1 sm:gap-1.5 md:gap-2">
+                    <li
+                      key={s.label}
+                      className="flex min-w-fit items-center gap-1 sm:gap-1.5 md:gap-2"
+                    >
                       <div className="flex flex-col items-center gap-1.5">
                         <span className={`step-circle ${state}`}>{isDone ? "✓" : n}</span>
-                        <span className={`whitespace-nowrap text-[9px] font-medium sm:text-[10px] md:text-xs ${isActive ? accentText : isDone ? "text-foreground/60" : "text-muted-foreground"}`}>
+                        <span
+                          className={`whitespace-nowrap text-[9px] font-medium sm:text-[10px] md:text-xs ${isActive ? accentText : isDone ? "text-foreground/60" : "text-muted-foreground"}`}
+                        >
                           {s.label}
                         </span>
                       </div>
-                      {n < steps.length && <span className="step-line -mt-5 w-3 sm:w-6 md:w-10 lg:w-16" />}
+                      {n < steps.length && (
+                        <span className="step-line -mt-5 w-3 sm:w-6 md:w-10 lg:w-16" />
+                      )}
                     </li>
                   );
                 })}
@@ -128,7 +160,9 @@ export function ApplicationWizardChrome({
             </div>
 
             {/* ── Content grid: form | sidebar ── */}
-            <div className={`grid min-w-0 gap-5 ${side ? "lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+            <div
+              className={`grid min-w-0 gap-5 ${side ? "lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}
+            >
               {/* Form panel */}
               <section className={`relative min-w-0 ${outer} p-4 md:p-7 wizard-section-pad`}>
                 <div className="liquid-sheen" />
@@ -217,7 +251,7 @@ export function Field({
 }
 
 export function NeonInput(
-  props: InputHTMLAttributes<HTMLInputElement> & { trailingIcon?: ReactNode }
+  props: InputHTMLAttributes<HTMLInputElement> & { trailingIcon?: ReactNode },
 ) {
   const { trailingIcon, className = "", ...rest } = props;
   return (
@@ -233,12 +267,15 @@ export function NeonInput(
 }
 
 export function NeonTextarea(
-  props: TextareaHTMLAttributes<HTMLTextAreaElement> & { trailingIcon?: ReactNode }
+  props: TextareaHTMLAttributes<HTMLTextAreaElement> & { trailingIcon?: ReactNode },
 ) {
   const { trailingIcon, className = "", ...rest } = props;
   return (
     <div className="relative">
-      <textarea {...rest} className={`neon-input w-full px-4 py-3 pr-11 text-base leading-relaxed ${className}`} />
+      <textarea
+        {...rest}
+        className={`neon-input w-full px-4 py-3 pr-11 text-base leading-relaxed ${className}`}
+      />
       {trailingIcon && (
         <span className="pointer-events-none absolute right-3 top-4 text-[oklch(0.7_0.18_245)]">
           {trailingIcon}
@@ -375,7 +412,12 @@ export function NeonCheckList({
                 : "bg-[oklch(0.09_0.03_262/0.55)] shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08)]"
             }`}
           >
-            <input type="checkbox" checked={active} onChange={() => onToggle(i)} className="sr-only" />
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={() => onToggle(i)}
+              className="sr-only"
+            />
             <span
               className={`mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded-md text-[12px] font-bold ${
                 active

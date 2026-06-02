@@ -32,10 +32,7 @@ function TrunoPage() {
         </div>
       }
     >
-      <TrunoModule
-        initialView="home"
-        onExitToGames={() => navigate({ to: "/games" })}
-      />
+      <TrunoModule initialView="home" onExitToGames={() => navigate({ to: "/games" })} />
     </Suspense>
   );
 }

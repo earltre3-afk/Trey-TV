@@ -2,23 +2,41 @@
  * pixiAnimations.ts
  * Reusable animation primitives for the Trey TV game Pixi scenes.
  */
-import type { Container } from 'pixi.js';
+import type { Container } from "pixi.js";
 
 export type EaseFn = (t: number) => number;
 
 export const ease = {
-  outCubic:  (t: number) => 1 - Math.pow(1 - t, 3),
-  outQuart:  (t: number) => 1 - Math.pow(1 - t, 4),
-  outBack:   (t: number) => { const c1 = 1.70158; const c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
-  inOutQuad: (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2,
-  linear:    (t: number) => t,
+  outCubic: (t: number) => 1 - Math.pow(1 - t, 3),
+  outQuart: (t: number) => 1 - Math.pow(1 - t, 4),
+  outBack: (t: number) => {
+    const c1 = 1.70158;
+    const c3 = c1 + 1;
+    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+  },
+  inOutQuad: (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
+  linear: (t: number) => t,
 };
 
 export interface Tween {
   obj: Container;
-  from: Partial<{ x: number; y: number; rotation: number; alpha: number; scaleX: number; scaleY: number }>;
-  to:   Partial<{ x: number; y: number; rotation: number; alpha: number; scaleX: number; scaleY: number }>;
-  duration: number;   // seconds
+  from: Partial<{
+    x: number;
+    y: number;
+    rotation: number;
+    alpha: number;
+    scaleX: number;
+    scaleY: number;
+  }>;
+  to: Partial<{
+    x: number;
+    y: number;
+    rotation: number;
+    alpha: number;
+    scaleX: number;
+    scaleY: number;
+  }>;
+  duration: number; // seconds
   elapsed: number;
   easeFn: EaseFn;
   onComplete?: () => void;
@@ -36,12 +54,16 @@ export function tickTween(tween: Tween, dt: number): boolean {
   const t = tween.easeFn(raw);
 
   const { obj, from, to } = tween;
-  if (from.x   !== undefined && to.x   !== undefined) obj.x        = from.x   + (to.x   - from.x)   * t;
-  if (from.y   !== undefined && to.y   !== undefined) obj.y        = from.y   + (to.y   - from.y)   * t;
-  if (from.rotation !== undefined && to.rotation !== undefined) obj.rotation = from.rotation + (to.rotation - from.rotation) * t;
-  if (from.alpha !== undefined && to.alpha !== undefined) obj.alpha = from.alpha + (to.alpha - from.alpha) * t;
-  if (from.scaleX !== undefined && to.scaleX !== undefined) obj.scale.x = from.scaleX + (to.scaleX - from.scaleX) * t;
-  if (from.scaleY !== undefined && to.scaleY !== undefined) obj.scale.y = from.scaleY + (to.scaleY - from.scaleY) * t;
+  if (from.x !== undefined && to.x !== undefined) obj.x = from.x + (to.x - from.x) * t;
+  if (from.y !== undefined && to.y !== undefined) obj.y = from.y + (to.y - from.y) * t;
+  if (from.rotation !== undefined && to.rotation !== undefined)
+    obj.rotation = from.rotation + (to.rotation - from.rotation) * t;
+  if (from.alpha !== undefined && to.alpha !== undefined)
+    obj.alpha = from.alpha + (to.alpha - from.alpha) * t;
+  if (from.scaleX !== undefined && to.scaleX !== undefined)
+    obj.scale.x = from.scaleX + (to.scaleX - from.scaleX) * t;
+  if (from.scaleY !== undefined && to.scaleY !== undefined)
+    obj.scale.y = from.scaleY + (to.scaleY - from.scaleY) * t;
 
   if (raw >= 1) {
     tween.onComplete?.();
@@ -53,8 +75,8 @@ export function tickTween(tween: Tween, dt: number): boolean {
 /** Convenience builder */
 export function tween(
   obj: Container,
-  from: Tween['from'],
-  to: Tween['to'],
+  from: Tween["from"],
+  to: Tween["to"],
   duration: number,
   options: { ease?: EaseFn; delay?: number; onComplete?: () => void } = {},
 ): Tween {

@@ -13,9 +13,9 @@
  *   </MessengerBridgeProvider>
  */
 
-import type { ParentBridgeHandlers } from '@/tradio/components/universe/MessengerBridgeContext';
-import type { PushNotificationInput } from '@/tradio/components/universe/useTradioMessengerBridge';
-import { buildMessengerDeepLink } from '@/tradio/components/universe/useTradioMessengerBridge';
+import type { ParentBridgeHandlers } from "@/tradio/components/universe/MessengerBridgeContext";
+import type { PushNotificationInput } from "@/tradio/components/universe/useTradioMessengerBridge";
+import { buildMessengerDeepLink } from "@/tradio/components/universe/useTradioMessengerBridge";
 import {
   createTradioMessageContext,
   type MessageContext,
@@ -23,7 +23,7 @@ import {
   type RoleContext,
   type SourceEntityType,
   type UniverseNotification,
-} from './messageContext';
+} from "./messageContext";
 
 /** Parent-owned navigation + system openers the adapter orchestrates. */
 export interface ParentBridgeDeps {
@@ -41,10 +41,10 @@ export interface ParentBridgeDeps {
 }
 
 const DEFAULT_ROUTES = {
-  messenger: '/messenger',
-  signalTest: '/signal-test',
-  notifications: '/notifications',
-  treyTvHome: '/',
+  messenger: "/messenger",
+  signalTest: "/signal-test",
+  notifications: "/notifications",
+  treyTvHome: "/",
 };
 
 /**
@@ -87,7 +87,7 @@ export const buildMessageNotification = (event: {
   senderRole?: RoleContext;
   recipientRole?: RoleContext;
 }): PushNotificationInput => ({
-  kind: 'messenger_message',
+  kind: "messenger_message",
   senderName: event.senderName,
   senderId: event.senderId,
   body: event.body,
@@ -119,10 +119,12 @@ export const buildMentionNotification = (event: {
   entityOwnerId?: string;
   returnToUrl?: string;
 }): PushNotificationInput => ({
-  kind: 'mention',
+  kind: "mention",
   senderName: event.byName,
   senderId: event.byId,
-  body: event.entityTitle ? `You were mentioned · ${event.entityTitle}` : 'You were mentioned on Tradio content',
+  body: event.entityTitle
+    ? `You were mentioned · ${event.entityTitle}`
+    : "You were mentioned on Tradio content",
   context: createTradioMessageContext({
     surface: event.surface,
     route: event.route,
@@ -135,7 +137,9 @@ export const buildMentionNotification = (event: {
 });
 
 /** Re-export for parent convenience (deep-link shape is owned by the bridge). */
-export const messengerDeepLinkFor = (notification: UniverseNotification): string => buildMessengerDeepLink(notification);
+export const messengerDeepLinkFor = (notification: UniverseNotification): string =>
+  buildMessengerDeepLink(notification);
 
 /** Type guard the parent can use when normalizing incoming context. */
-export const isTradioSurface = (context: MessageContext): boolean => context.source_surface !== 'trey_tv';
+export const isTradioSurface = (context: MessageContext): boolean =>
+  context.source_surface !== "trey_tv";

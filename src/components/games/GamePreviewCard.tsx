@@ -57,7 +57,9 @@ export function GamePreviewCard({
           <div
             aria-hidden
             className="absolute top-1 left-2 right-6 h-px rounded-full opacity-60"
-            style={{ background: `linear-gradient(90deg, transparent, ${accentHex}80, transparent)` }}
+            style={{
+              background: `linear-gradient(90deg, transparent, ${accentHex}80, transparent)`,
+            }}
           />
         </div>
 

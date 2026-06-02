@@ -44,8 +44,14 @@ function token(prefix: string) {
 function normalizeScopes(scopes: unknown): OAuthScope[] {
   const list = Array.isArray(scopes)
     ? scopes
-    : String(scopes ?? "").trim().split(/[,\s]+/);
-  return Array.from(new Set(list.filter((scope): scope is OAuthScope => OAUTH_SCOPES.includes(scope as OAuthScope))));
+    : String(scopes ?? "")
+        .trim()
+        .split(/[,\s]+/);
+  return Array.from(
+    new Set(
+      list.filter((scope): scope is OAuthScope => OAUTH_SCOPES.includes(scope as OAuthScope)),
+    ),
+  );
 }
 
 function safeOrigin(request: Request) {
@@ -65,7 +71,9 @@ async function readPayload(request: Request): Promise<TokenPayload> {
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     const body = await request.json().catch(() => ({}));
-    return Object.fromEntries(Object.entries(body ?? {}).map(([key, value]) => [key, String(value ?? "")]));
+    return Object.fromEntries(
+      Object.entries(body ?? {}).map(([key, value]) => [key, String(value ?? "")]),
+    );
   }
 
   const text = await request.text();
@@ -93,7 +101,13 @@ function pkceS256(verifier: string) {
   return createHash("sha256").update(verifier).digest("base64url");
 }
 
-async function audit(service: any, eventType: string, appId: string | null, actorUserId: string | null, metadata: Record<string, unknown> = {}) {
+async function audit(
+  service: any,
+  eventType: string,
+  appId: string | null,
+  actorUserId: string | null,
+  metadata: Record<string, unknown> = {},
+) {
   await service.from("developer_app_audit_events").insert({
     app_id: appId,
     actor_user_id: actorUserId,
@@ -111,7 +125,8 @@ async function getActiveApp(service: any, clientId: string) {
 
   if (error) throw new Error("app_lookup_failed");
   if (!app) return { error: oauthError("invalid_client", "Unknown client_id.", 401) };
-  if (app.status !== "active") return { error: oauthError("unauthorized_client", "Developer app is not active.", 401) };
+  if (app.status !== "active")
+    return { error: oauthError("unauthorized_client", "Developer app is not active.", 401) };
   return { app };
 }
 
@@ -167,30 +182,47 @@ async function exchangeAuthorizationCode(request: Request, payload: TokenPayload
   const codeVerifier = payload.code_verifier || "";
 
   if (!clientId || !code || !redirectUri || !codeVerifier) {
-    return oauthError("invalid_request", "grant_type, code, client_id, redirect_uri, and code_verifier are required.");
+    return oauthError(
+      "invalid_request",
+      "grant_type, code, client_id, redirect_uri, and code_verifier are required.",
+    );
   }
 
   const { app, error: appError } = await getActiveApp(service, clientId);
   if (appError) return appError;
-  if (!validateClientSecret(app, clientSecret)) return oauthError("invalid_client", "Invalid client credentials.", 401);
+  if (!validateClientSecret(app, clientSecret))
+    return oauthError("invalid_client", "Invalid client credentials.", 401);
 
   const { data: codeRow, error: codeError } = await service
     .from("oauth_authorization_codes")
-    .select("id, app_id, user_id, code_hash, redirect_uri, scopes, code_challenge, code_challenge_method, expires_at, used_at")
+    .select(
+      "id, app_id, user_id, code_hash, redirect_uri, scopes, code_challenge, code_challenge_method, expires_at, used_at",
+    )
     .eq("code_hash", hashSecret(code))
     .maybeSingle();
 
   if (codeError) throw new Error("code_lookup_failed");
-  if (!codeRow || codeRow.app_id !== app.id) return oauthError("invalid_grant", "Invalid authorization code.");
-  if (codeRow.redirect_uri !== redirectUri) return oauthError("invalid_grant", "redirect_uri does not match the authorization code.");
-  if (codeRow.used_at) return oauthError("invalid_grant", "Authorization code has already been used.");
-  if (isPast(codeRow.expires_at)) return oauthError("invalid_grant", "Authorization code has expired.");
-  if (!codeRow.code_challenge) return oauthError("invalid_grant", "Authorization code is missing PKCE.");
-  if ((codeRow.code_challenge_method ?? "S256") !== "S256") return oauthError("invalid_grant", "Unsupported PKCE method.");
-  if (pkceS256(codeVerifier) !== codeRow.code_challenge) return oauthError("invalid_grant", "Invalid PKCE verifier.");
+  if (!codeRow || codeRow.app_id !== app.id)
+    return oauthError("invalid_grant", "Invalid authorization code.");
+  if (codeRow.redirect_uri !== redirectUri)
+    return oauthError("invalid_grant", "redirect_uri does not match the authorization code.");
+  if (codeRow.used_at)
+    return oauthError("invalid_grant", "Authorization code has already been used.");
+  if (isPast(codeRow.expires_at))
+    return oauthError("invalid_grant", "Authorization code has expired.");
+  if (!codeRow.code_challenge)
+    return oauthError("invalid_grant", "Authorization code is missing PKCE.");
+  if ((codeRow.code_challenge_method ?? "S256") !== "S256")
+    return oauthError("invalid_grant", "Unsupported PKCE method.");
+  if (pkceS256(codeVerifier) !== codeRow.code_challenge)
+    return oauthError("invalid_grant", "Invalid PKCE verifier.");
 
   const scopes = normalizeScopes(codeRow.scopes);
-  if (!validateScopes(app, scopes)) return oauthError("invalid_grant", "Authorization code contains scopes not allowed by this app.");
+  if (!validateScopes(app, scopes))
+    return oauthError(
+      "invalid_grant",
+      "Authorization code contains scopes not allowed by this app.",
+    );
 
   const now = new Date().toISOString();
   const { data: usedRows, error: usedError } = await service
@@ -201,7 +233,8 @@ async function exchangeAuthorizationCode(request: Request, payload: TokenPayload
     .select("id");
 
   if (usedError) throw new Error("code_mark_failed");
-  if (!usedRows?.length) return oauthError("invalid_grant", "Authorization code has already been used.");
+  if (!usedRows?.length)
+    return oauthError("invalid_grant", "Authorization code has already been used.");
 
   return json(await issueTokenPair(service, app.id, codeRow.user_id, scopes));
 }
@@ -213,11 +246,13 @@ async function refreshAccessToken(request: Request, payload: TokenPayload) {
   const clientSecret = payload.client_secret || basic.client_secret;
   const refreshToken = payload.refresh_token || "";
 
-  if (!clientId || !refreshToken) return oauthError("invalid_request", "client_id and refresh_token are required.");
+  if (!clientId || !refreshToken)
+    return oauthError("invalid_request", "client_id and refresh_token are required.");
 
   const { app, error: appError } = await getActiveApp(service, clientId);
   if (appError) return appError;
-  if (!validateClientSecret(app, clientSecret)) return oauthError("invalid_client", "Invalid client credentials.", 401);
+  if (!validateClientSecret(app, clientSecret))
+    return oauthError("invalid_client", "Invalid client credentials.", 401);
 
   const { data: existing, error } = await service
     .from("developer_app_tokens")
@@ -226,9 +261,11 @@ async function refreshAccessToken(request: Request, payload: TokenPayload) {
     .maybeSingle();
 
   if (error) throw new Error("refresh_lookup_failed");
-  if (!existing || existing.app_id !== app.id) return oauthError("invalid_grant", "Invalid refresh token.");
+  if (!existing || existing.app_id !== app.id)
+    return oauthError("invalid_grant", "Invalid refresh token.");
   if (existing.revoked_at) return oauthError("invalid_grant", "Refresh token has been revoked.");
-  if (isPast(existing.refresh_token_expires_at)) return oauthError("invalid_grant", "Refresh token has expired.");
+  if (isPast(existing.refresh_token_expires_at))
+    return oauthError("invalid_grant", "Refresh token has expired.");
 
   const now = new Date().toISOString();
   const { data: revokedRows, error: revokeError } = await service
@@ -239,21 +276,32 @@ async function refreshAccessToken(request: Request, payload: TokenPayload) {
     .select("id");
 
   if (revokeError) throw new Error("refresh_rotate_failed");
-  if (!revokedRows?.length) return oauthError("invalid_grant", "Refresh token has already been used.");
+  if (!revokedRows?.length)
+    return oauthError("invalid_grant", "Refresh token has already been used.");
 
-  await audit(service, "token_revoked", app.id, existing.user_id, { token_id: existing.id, reason: "refresh_rotated" });
-  return json(await issueTokenPair(service, app.id, existing.user_id, normalizeScopes(existing.scopes)));
+  await audit(service, "token_revoked", app.id, existing.user_id, {
+    token_id: existing.id,
+    reason: "refresh_rotated",
+  });
+  return json(
+    await issueTokenPair(service, app.id, existing.user_id, normalizeScopes(existing.scopes)),
+  );
 }
 
 export async function handleOAuthToken(request: Request) {
   if (request.method === "OPTIONS") return json({});
-  if (request.method !== "POST") return oauthError("invalid_request", "Use POST for the token endpoint.", 405);
+  if (request.method !== "POST")
+    return oauthError("invalid_request", "Use POST for the token endpoint.", 405);
 
   try {
     const payload = await readPayload(request);
-    if (payload.grant_type === "authorization_code") return await exchangeAuthorizationCode(request, payload);
+    if (payload.grant_type === "authorization_code")
+      return await exchangeAuthorizationCode(request, payload);
     if (payload.grant_type === "refresh_token") return await refreshAccessToken(request, payload);
-    return oauthError("unsupported_grant_type", "Only authorization_code and refresh_token are supported.");
+    return oauthError(
+      "unsupported_grant_type",
+      "Only authorization_code and refresh_token are supported.",
+    );
   } catch {
     return oauthError("server_error", "The token request could not be completed.", 500);
   }
@@ -261,7 +309,8 @@ export async function handleOAuthToken(request: Request) {
 
 export async function handleOAuthUserInfo(request: Request) {
   if (request.method === "OPTIONS") return json({});
-  if (request.method !== "GET" && request.method !== "POST") return oauthError("invalid_request", "Use GET or POST for userinfo.", 405);
+  if (request.method !== "GET" && request.method !== "POST")
+    return oauthError("invalid_request", "Use GET or POST for userinfo.", 405);
 
   try {
     const auth = request.headers.get("authorization") ?? "";
@@ -276,9 +325,13 @@ export async function handleOAuthUserInfo(request: Request) {
       .maybeSingle();
 
     if (error) throw new Error("token_lookup_failed");
-    if (!tokenRow || tokenRow.revoked_at || isPast(tokenRow.expires_at)) return oauthError("invalid_token", "Access token is invalid or expired.", 401);
-    const tokenApp = Array.isArray(tokenRow.developer_apps) ? tokenRow.developer_apps[0] : tokenRow.developer_apps;
-    if (tokenApp?.status !== "active") return oauthError("invalid_token", "Developer app is not active.", 401);
+    if (!tokenRow || tokenRow.revoked_at || isPast(tokenRow.expires_at))
+      return oauthError("invalid_token", "Access token is invalid or expired.", 401);
+    const tokenApp = Array.isArray(tokenRow.developer_apps)
+      ? tokenRow.developer_apps[0]
+      : tokenRow.developer_apps;
+    if (tokenApp?.status !== "active")
+      return oauthError("invalid_token", "Developer app is not active.", 401);
 
     const now = new Date().toISOString();
     await service.from("developer_app_tokens").update({ last_used_at: now }).eq("id", tokenRow.id);
@@ -288,7 +341,9 @@ export async function handleOAuthUserInfo(request: Request) {
 
     const { data: profile } = await service
       .from("profiles")
-      .select("public_profile_uid, display_name, username, avatar_url, email, creator_status, gold_verified, verification_type, verification_category")
+      .select(
+        "public_profile_uid, display_name, username, avatar_url, email, creator_status, gold_verified, verification_type, verification_category",
+      )
       .eq("id", tokenRow.user_id)
       .maybeSingle();
 
@@ -297,10 +352,14 @@ export async function handleOAuthUserInfo(request: Request) {
       response.display_name = profile?.display_name ?? null;
       response.username = profile?.username ?? null;
       response.avatar_url = profile?.avatar_url ?? null;
-      response.profile_url = profile?.public_profile_uid ? `${safeOrigin(request)}/u/${profile.public_profile_uid}` : null;
+      response.profile_url = profile?.public_profile_uid
+        ? `${safeOrigin(request)}/u/${profile.public_profile_uid}`
+        : null;
     } else if (scopes.includes("public_uid:read")) {
       response.public_profile_uid = profile?.public_profile_uid ?? null;
-      response.profile_url = profile?.public_profile_uid ? `${safeOrigin(request)}/u/${profile.public_profile_uid}` : null;
+      response.profile_url = profile?.public_profile_uid
+        ? `${safeOrigin(request)}/u/${profile.public_profile_uid}`
+        : null;
     }
 
     if (scopes.includes("email:read")) {
@@ -325,7 +384,8 @@ export async function handleOAuthUserInfo(request: Request) {
 
     if (scopes.includes("verification:read")) {
       response.is_gold_verified = Boolean(profile?.gold_verified);
-      response.verification_type = profile?.verification_type ?? profile?.verification_category ?? null;
+      response.verification_type =
+        profile?.verification_type ?? profile?.verification_category ?? null;
     }
 
     return json(response);
@@ -336,7 +396,8 @@ export async function handleOAuthUserInfo(request: Request) {
 
 export async function handleOAuthRevoke(request: Request) {
   if (request.method === "OPTIONS") return json({});
-  if (request.method !== "POST") return oauthError("invalid_request", "Use POST for the revocation endpoint.", 405);
+  if (request.method !== "POST")
+    return oauthError("invalid_request", "Use POST for the revocation endpoint.", 405);
 
   try {
     const payload = await readPayload(request);
@@ -355,7 +416,10 @@ export async function handleOAuthRevoke(request: Request) {
       .select("id, app_id, user_id");
 
     for (const row of rows ?? []) {
-      await audit(service, "token_revoked", row.app_id, row.user_id, { token_id: row.id, reason: "revocation_endpoint" });
+      await audit(service, "token_revoked", row.app_id, row.user_id, {
+        token_id: row.id,
+        reason: "revocation_endpoint",
+      });
     }
 
     return json({ ok: true });

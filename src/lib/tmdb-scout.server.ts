@@ -48,13 +48,18 @@ const cache = new Map<string, { ts: number; items: TmdbContentItem[] }>();
 function getCached(key: string): TmdbContentItem[] | null {
   const e = cache.get(key);
   if (!e) return null;
-  if (Date.now() - e.ts > CACHE_TTL) { cache.delete(key); return null; }
+  if (Date.now() - e.ts > CACHE_TTL) {
+    cache.delete(key);
+    return null;
+  }
   return e.items;
 }
 function setCache(key: string, items: TmdbContentItem[]) {
   if (cache.size > 200) {
     const now = Date.now();
-    for (const [k, v] of cache) { if (now - v.ts > CACHE_TTL) cache.delete(k); }
+    for (const [k, v] of cache) {
+      if (now - v.ts > CACHE_TTL) cache.delete(k);
+    }
   }
   cache.set(key, { ts: Date.now(), items });
 }
@@ -71,12 +76,14 @@ async function tmdbGet<T>(path: string, params: Record<string, string>): Promise
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function normalize(r: TmdbRawResult, fallbackType: string): TmdbContentItem | null {
   const type = (r.media_type ?? fallbackType) as "movie" | "tv" | "person";
-  if (type === "person") return null;  // skip people results
+  if (type === "person") return null; // skip people results
 
   const title = r.title ?? r.name ?? r.original_title ?? r.original_name ?? "";
   if (!title) return null;
@@ -104,39 +111,59 @@ function normalize(r: TmdbRawResult, fallbackType: string): TmdbContentItem | nu
 // ─────────────────────────────────────────────────────────────────────────────
 export const searchTmdbContent = createServerFn({ method: "GET" })
   .inputValidator((input: { query: string }) => input)
-  .handler(async ({ data: input }): Promise<{ ok: true; items: TmdbContentItem[] } | { ok: false; error: string }> => {
-    const q = input.query?.trim();
-    if (!q || q.length < 2) return { ok: false, error: "Query too short." };
-    if (!process.env.TMDB_ACCESS_TOKEN?.trim()) return { ok: false, error: "TMDB not configured." };
+  .handler(
+    async ({
+      data: input,
+    }): Promise<{ ok: true; items: TmdbContentItem[] } | { ok: false; error: string }> => {
+      const q = input.query?.trim();
+      if (!q || q.length < 2) return { ok: false, error: "Query too short." };
+      if (!process.env.TMDB_ACCESS_TOKEN?.trim())
+        return { ok: false, error: "TMDB not configured." };
 
-    const cacheKey = q.toLowerCase();
-    const cached = getCached(cacheKey);
-    if (cached) return { ok: true, items: cached };
+      const cacheKey = q.toLowerCase();
+      const cached = getCached(cacheKey);
+      if (cached) return { ok: true, items: cached };
 
-    const [multi, movies, tvShows] = await Promise.all([
-      tmdbGet<{ results: TmdbRawResult[] }>("/3/search/multi", { query: q, include_adult: "false", language: "en-US" }),
-      tmdbGet<{ results: TmdbRawResult[] }>("/3/search/movie", { query: q, include_adult: "false", language: "en-US" }),
-      tmdbGet<{ results: TmdbRawResult[] }>("/3/search/tv", { query: q, include_adult: "false", language: "en-US" }),
-    ]);
+      const [multi, movies, tvShows] = await Promise.all([
+        tmdbGet<{ results: TmdbRawResult[] }>("/3/search/multi", {
+          query: q,
+          include_adult: "false",
+          language: "en-US",
+        }),
+        tmdbGet<{ results: TmdbRawResult[] }>("/3/search/movie", {
+          query: q,
+          include_adult: "false",
+          language: "en-US",
+        }),
+        tmdbGet<{ results: TmdbRawResult[] }>("/3/search/tv", {
+          query: q,
+          include_adult: "false",
+          language: "en-US",
+        }),
+      ]);
 
-    const seen = new Set<number>();
-    const items: TmdbContentItem[] = [];
-    const all = [
-      ...(multi?.results ?? []).map((r) => ({ r, type: r.media_type ?? "movie" })),
-      ...(movies?.results ?? []).map((r) => ({ r, type: "movie" as const })),
-      ...(tvShows?.results ?? []).map((r) => ({ r, type: "tv" as const })),
-    ];
+      const seen = new Set<number>();
+      const items: TmdbContentItem[] = [];
+      const all = [
+        ...(multi?.results ?? []).map((r) => ({ r, type: r.media_type ?? "movie" })),
+        ...(movies?.results ?? []).map((r) => ({ r, type: "movie" as const })),
+        ...(tvShows?.results ?? []).map((r) => ({ r, type: "tv" as const })),
+      ];
 
-    for (const { r, type } of all) {
-      if (seen.has(r.id)) continue;
-      seen.add(r.id);
-      const item = normalize(r, type);
-      if (item) { items.push(item); if (items.length >= 10) break; }
-    }
+      for (const { r, type } of all) {
+        if (seen.has(r.id)) continue;
+        seen.add(r.id);
+        const item = normalize(r, type);
+        if (item) {
+          items.push(item);
+          if (items.length >= 10) break;
+        }
+      }
 
-    setCache(cacheKey, items);
-    return { ok: true, items };
-  });
+      setCache(cacheKey, items);
+      return { ok: true, items };
+    },
+  );
 
 // ─────────────────────────────────────────────────────────────────────────────
 // captureTmdbContent — user selected a scout result → persist to tv_library.
@@ -149,9 +176,8 @@ export const captureTmdbContent = createServerFn({ method: "POST" })
     const item = input.item;
 
     // Upsert by tmdb_id so we don't duplicate
-    const { error } = await (service as any)
-      .from("tv_library")
-      .upsert({
+    const { error } = await (service as any).from("tv_library").upsert(
+      {
         tmdb_id: item.tmdb_id,
         media_type: item.media_type,
         title: item.title,
@@ -164,7 +190,9 @@ export const captureTmdbContent = createServerFn({ method: "POST" })
         genre_ids: item.genre_ids,
         source: "tmdb_scout",
         updated_at: new Date().toISOString(),
-      }, { onConflict: "tmdb_id" });
+      },
+      { onConflict: "tmdb_id" },
+    );
 
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const };

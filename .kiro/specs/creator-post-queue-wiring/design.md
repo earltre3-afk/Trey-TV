@@ -39,14 +39,14 @@ One file changes. No new files. No route changes. No UI changes.
 
 ```ts
 function mapVisibility(v: string): string {
-  if (v === 'private') return 'private';
-  if (v === 'scheduled') return 'scheduled';
-  return 'submitted';
+  if (v === "private") return "private";
+  if (v === "scheduled") return "scheduled";
+  return "submitted";
 }
 
 function isPlusContent(episodeNumber: number, accessType: string): boolean {
   if (episodeNumber <= 2) return false;
-  return accessType === 'subscribers';
+  return accessType === "subscribers";
 }
 ```
 
@@ -67,15 +67,18 @@ const submitForReview = async (draft: Submission): Promise<boolean> => {
   try {
     const supabase = createBrowserClient();
     const { error } = await (supabase as any)
-      .from('creator_edit_projects')
-      .update({ status: 'submitted', updated_at: new Date().toISOString() })
-      .eq('id', rowId)
-      .eq('creator_id', userId);
+      .from("creator_edit_projects")
+      .update({ status: "submitted", updated_at: new Date().toISOString() })
+      .eq("id", rowId)
+      .eq("creator_id", userId);
 
-    if (error) { toast.error('Failed to submit'); return false; }
+    if (error) {
+      toast.error("Failed to submit");
+      return false;
+    }
     return true;
   } catch {
-    toast.error('Failed to submit');
+    toast.error("Failed to submit");
     return false;
   }
 };
@@ -94,20 +97,23 @@ const submitForReview = async (draft: Submission): Promise<boolean> => {
   try {
     const supabase = createBrowserClient();
     const { error } = await (supabase as any)
-      .from('creator_edit_projects')
-      .update({ status: 'submitted', updated_at: new Date().toISOString() })
-      .eq('id', rowId)
-      .eq('creator_id', userId);
+      .from("creator_edit_projects")
+      .update({ status: "submitted", updated_at: new Date().toISOString() })
+      .eq("id", rowId)
+      .eq("creator_id", userId);
 
-    if (error) { toast.error('Failed to submit'); return false; }
+    if (error) {
+      toast.error("Failed to submit");
+      return false;
+    }
 
     // NEW: attempt queue INSERT — non-blocking
     try {
       const { data: project } = await (supabase as any)
-        .from('creator_edit_projects')
-        .select('stream_uid')
-        .eq('id', rowId)
-        .eq('creator_id', userId)
+        .from("creator_edit_projects")
+        .select("stream_uid")
+        .eq("id", rowId)
+        .eq("creator_id", userId)
         .maybeSingle();
 
       const streamUid: string | null = project?.stream_uid?.trim() || null;
@@ -115,37 +121,35 @@ const submitForReview = async (draft: Submission): Promise<boolean> => {
       if (streamUid) {
         // duplicate check — skip if already queued for this edit project
         const { data: existing } = await (supabase as any)
-          .from('creator_post_queue')
-          .select('id')
-          .eq('creator_id', userId)
-          .eq('edit_project_id', rowId)
+          .from("creator_post_queue")
+          .select("id")
+          .eq("creator_id", userId)
+          .eq("edit_project_id", rowId)
           .maybeSingle();
 
         if (!existing) {
           const epNum = draft.episode_number > 0 ? draft.episode_number : null;
-          const { error: queueError } = await (supabase as any)
-            .from('creator_post_queue')
-            .insert({
-              creator_id: userId,
-              edit_project_id: rowId,
-              channel_id: channel?.id ?? null,
-              show_id: draft.show_id || null,
-              episode_number: epNum,
-              title: draft.title.trim(),
-              description: draft.short_description?.trim() || null,
-              stream_uid: streamUid,
-              thumbnail_url: draft.thumbnail_url || null,
-              visibility: mapVisibility(draft.visibility),
-              is_plus_content: isPlusContent(draft.episode_number, draft.access_type),
-              scheduled_at:
-                draft.visibility === 'scheduled' && draft.scheduled_at
-                  ? new Date(draft.scheduled_at).toISOString()
-                  : null,
-              approval_status: 'pending',
-            });
+          const { error: queueError } = await (supabase as any).from("creator_post_queue").insert({
+            creator_id: userId,
+            edit_project_id: rowId,
+            channel_id: channel?.id ?? null,
+            show_id: draft.show_id || null,
+            episode_number: epNum,
+            title: draft.title.trim(),
+            description: draft.short_description?.trim() || null,
+            stream_uid: streamUid,
+            thumbnail_url: draft.thumbnail_url || null,
+            visibility: mapVisibility(draft.visibility),
+            is_plus_content: isPlusContent(draft.episode_number, draft.access_type),
+            scheduled_at:
+              draft.visibility === "scheduled" && draft.scheduled_at
+                ? new Date(draft.scheduled_at).toISOString()
+                : null,
+            approval_status: "pending",
+          });
 
           if (queueError) {
-            toast.error('Submission queued but review entry failed — contact support');
+            toast.error("Submission queued but review entry failed — contact support");
           }
         }
       }
@@ -155,7 +159,7 @@ const submitForReview = async (draft: Submission): Promise<boolean> => {
 
     return true;
   } catch {
-    toast.error('Failed to submit');
+    toast.error("Failed to submit");
     return false;
   }
 };
@@ -213,8 +217,8 @@ The `stream_uid` value is typed as `string` after the null/empty guard. The `map
 
 ## 5. Files Changed
 
-| File | Change |
-|---|---|
+| File                              | Change                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `src/hooks/use-creator-submit.ts` | Add `mapVisibility`, `isPlusContent` helpers; extend `submitForReview()` with stream_uid SELECT + queue INSERT |
 
 No other files are modified.

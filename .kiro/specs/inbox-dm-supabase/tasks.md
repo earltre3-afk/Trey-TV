@@ -9,6 +9,7 @@
 ## Task 1 — Preserve the mock store as a rollback target
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx` (read-only in this task)
 - `src/lib/messages-store.mock.tsx` (new file — copy of current mock)
 
@@ -16,6 +17,7 @@
 Copy the current `messages-store.tsx` to `messages-store.mock.tsx` verbatim. Do not modify either file. This is the rollback artifact.
 
 **Acceptance criteria:**
+
 - `messages-store.mock.tsx` exists and is byte-for-byte identical to the current `messages-store.tsx`.
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
@@ -25,6 +27,7 @@ Copy the current `messages-store.tsx` to `messages-store.mock.tsx` verbatim. Do 
 **Rollback risk:** None. Additive only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -35,6 +38,7 @@ pnpm build
 ## Task 2 — Define Supabase types for direct_messages
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx` (add types only, no logic change yet)
 
 **What to do:**
@@ -63,6 +67,7 @@ type SupabaseDM = {
 ```
 
 **Acceptance criteria:**
+
 - Types compile without error.
 - No exported interface changes.
 - `pnpm tsc --noEmit` passes.
@@ -72,6 +77,7 @@ type SupabaseDM = {
 **Rollback risk:** None. Types only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -81,6 +87,7 @@ pnpm tsc --noEmit
 ## Task 3 — Add helper functions: row → Lovable shape
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 
 **What to do:**
@@ -90,6 +97,7 @@ Add two pure helper functions (no side effects, no Supabase calls):
 2. `dmRowsToState(rows: SupabaseDM[], myId: string): { threads: ThreadMeta[]; messages: Message[] }` — groups raw rows into threads and messages.
 
 Rules for `dmProfileToPeer`:
+
 - `id` = profile.id
 - `name` = `profile.display_name ?? profile.username ?? 'Unknown'`
 - `handle` = `profile.username ?? profile.id`
@@ -98,6 +106,7 @@ Rules for `dmProfileToPeer`:
 - `online` = `false`
 
 Rules for `dmRowsToState`:
+
 - Thread ID = peer's `profiles.id` (UUID string)
 - `from` = `row.sender_id === myId ? 'me' : 'them'`
 - `ts` = `new Date(row.created_at).getTime()`
@@ -106,6 +115,7 @@ Rules for `dmRowsToState`:
 - `lastReadAt` per thread = 0 (not tracked client-side in this phase)
 
 **Acceptance criteria:**
+
 - Functions are pure and have no Supabase imports.
 - `pnpm tsc --noEmit` passes.
 - No exported interface changes.
@@ -115,6 +125,7 @@ Rules for `dmRowsToState`:
 **Rollback risk:** None. Internal helpers only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 ```
@@ -124,6 +135,7 @@ pnpm tsc --noEmit
 ## Task 4 — Replace mock state with Supabase fetch on mount
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 - `src/lib/supabase-browser.ts` (read-only reference)
 - `src/hooks/use-current-user.ts` (read-only reference)
@@ -147,6 +159,7 @@ In `MessagesProvider`:
 The `SEED_PEERS` constant and mock data imports can be removed. The `creators` import from `mock-data` can be removed if no longer used.
 
 **Acceptance criteria:**
+
 - Signed-in user: threads load from Supabase on mount.
 - Signed-out user: threads = [], no crash, no alert.
 - `pnpm tsc --noEmit` passes.
@@ -158,6 +171,7 @@ The `SEED_PEERS` constant and mock data imports can be removed. The `creators` i
 **Rollback risk:** Medium. This removes mock seed data. If Supabase is unreachable, the inbox shows empty. Rollback: swap import back to `messages-store.mock.tsx`.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -168,6 +182,7 @@ pnpm build
 ## Task 5 — Wire send() to Supabase insert
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 
 **What to do:**
@@ -183,6 +198,7 @@ Replace the mock `send()` implementation:
 Remove the simulated reply `setTimeout` blocks.
 
 **Acceptance criteria:**
+
 - Sending a message inserts a row in `direct_messages`.
 - Optimistic message appears immediately.
 - On error, message is removed and toast fires.
@@ -195,6 +211,7 @@ Remove the simulated reply `setTimeout` blocks.
 **Rollback risk:** Medium. Rollback: swap to mock store.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -205,6 +222,7 @@ pnpm build
 ## Task 6 — Wire markRead() to Supabase update
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 
 **What to do:**
@@ -225,6 +243,7 @@ Replace the mock `markRead()` implementation:
 5. On error: silent fail (non-critical).
 
 **Acceptance criteria:**
+
 - Opening a thread marks unread messages as read in Supabase.
 - Unread count drops to 0 for that thread after marking.
 - Signed-out: no-op.
@@ -236,6 +255,7 @@ Replace the mock `markRead()` implementation:
 **Rollback risk:** Low. This is an additive update path. Rollback: swap to mock store.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -246,6 +266,7 @@ pnpm build
 ## Task 7 — Wire ensureFromHandle() to profile lookup
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 
 **What to do:**
@@ -260,6 +281,7 @@ Replace the mock `ensureFromHandle(handle)` implementation:
 This supports the `?to=<handle>` URL param used by the inbox route.
 
 **Acceptance criteria:**
+
 - Navigating to `/inbox?to=somehandle` opens a thread for that user if they exist in `profiles`.
 - If the handle does not exist, no crash — thread list stays as-is.
 - `pnpm tsc --noEmit` passes.
@@ -270,6 +292,7 @@ This supports the `?to=<handle>` URL param used by the inbox route.
 **Rollback risk:** Low. Rollback: swap to mock store.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -280,16 +303,19 @@ pnpm build
 ## Task 8 — Final build verification and cleanup
 
 **Files involved:**
+
 - `src/lib/messages-store.tsx`
 - `src/lib/mock-data.ts` (verify still used elsewhere before removing any imports)
 
 **What to do:**
+
 1. Remove any unused imports from `messages-store.tsx` (e.g., `creators` from `mock-data` if no longer referenced).
 2. Verify `mock-data.ts` is still used by other files before removing it.
 3. Run full build and type check.
 4. Confirm `messages-store.mock.tsx` exists as rollback artifact.
 
 **Acceptance criteria:**
+
 - Zero TypeScript errors: `pnpm tsc --noEmit`.
 - Clean production build: `pnpm build`.
 - No unused imports in `messages-store.tsx`.
@@ -300,6 +326,7 @@ pnpm build
 **Rollback risk:** None. Cleanup only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -309,15 +336,15 @@ pnpm build
 
 ## Summary Table
 
-| # | Task | Files | Risk | Validation |
-|---|---|---|---|---|
-| 1 | Preserve mock as rollback | messages-store.mock.tsx | None | tsc + build |
-| 2 | Define SupabaseDM types | messages-store.tsx | None | tsc |
-| 3 | Add row→shape helpers | messages-store.tsx | None | tsc |
-| 4 | Replace mock state with Supabase fetch | messages-store.tsx | Medium | tsc + build |
-| 5 | Wire send() to insert | messages-store.tsx | Medium | tsc + build |
-| 6 | Wire markRead() to update | messages-store.tsx | Low | tsc + build |
-| 7 | Wire ensureFromHandle() to profile lookup | messages-store.tsx | Low | tsc + build |
-| 8 | Final cleanup and verification | messages-store.tsx | None | tsc + build |
+| #   | Task                                      | Files                   | Risk   | Validation  |
+| --- | ----------------------------------------- | ----------------------- | ------ | ----------- |
+| 1   | Preserve mock as rollback                 | messages-store.mock.tsx | None   | tsc + build |
+| 2   | Define SupabaseDM types                   | messages-store.tsx      | None   | tsc         |
+| 3   | Add row→shape helpers                     | messages-store.tsx      | None   | tsc         |
+| 4   | Replace mock state with Supabase fetch    | messages-store.tsx      | Medium | tsc + build |
+| 5   | Wire send() to insert                     | messages-store.tsx      | Medium | tsc + build |
+| 6   | Wire markRead() to update                 | messages-store.tsx      | Low    | tsc + build |
+| 7   | Wire ensureFromHandle() to profile lookup | messages-store.tsx      | Low    | tsc + build |
+| 8   | Final cleanup and verification            | messages-store.tsx      | None   | tsc + build |
 
 All tasks are sequential. Do not start a task until the previous task's validation passes.

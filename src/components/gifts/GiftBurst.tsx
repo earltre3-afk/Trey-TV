@@ -51,7 +51,7 @@ export function GiftBurstHost() {
         <BurstLayer key={b.id} tier={b.tier} recipient={b.recipient} />
       ))}
     </div>,
-    document.body
+    document.body,
   );
 }
 
@@ -67,7 +67,7 @@ function BurstLayer({ tier, recipient }: { tier: CoinTier; recipient?: string })
       rot: `${Math.random() * 720 - 360}deg`,
       glyph: tier.showerGlyphs[i % tier.showerGlyphs.length],
       key: i,
-    }))
+    })),
   ).current;
 
   const sparkles = useRef(
@@ -81,7 +81,7 @@ function BurstLayer({ tier, recipient }: { tier: CoinTier; recipient?: string })
         size: 3 + Math.random() * 5,
         key: i,
       };
-    })
+    }),
   ).current;
 
   return (

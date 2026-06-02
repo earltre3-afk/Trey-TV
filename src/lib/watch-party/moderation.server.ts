@@ -33,13 +33,19 @@ function safeDefault(reason: string): ModerationResult {
 
 function parseVerdict(raw: string): ModerationResult | null {
   // Strip code fences if API wrapped the JSON despite instructions.
-  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
   try {
     const obj = JSON.parse(cleaned) as Partial<ModerationResult>;
     const verdict = obj.verdict;
     const severity = obj.severity;
-    if (verdict !== "clean" && verdict !== "nudge" && verdict !== "block" && verdict !== "timeout") return null;
-    if (severity !== "none" && severity !== "low" && severity !== "medium" && severity !== "high") return null;
+    if (verdict !== "clean" && verdict !== "nudge" && verdict !== "block" && verdict !== "timeout")
+      return null;
+    if (severity !== "none" && severity !== "low" && severity !== "medium" && severity !== "high")
+      return null;
     return {
       verdict,
       severity,

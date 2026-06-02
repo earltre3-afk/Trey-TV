@@ -1,64 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Moon, 
-  Heart, 
-  Zap, 
-  Waves, 
-  Droplet, 
-  Sparkles, 
-  RotateCcw, 
-  ChevronRight, 
-  RefreshCw, 
-  Play, 
-  Terminal, 
-  Sliders, 
-  Check, 
-  Lock, 
+import React, { useState, useEffect } from "react";
+import {
+  Moon,
+  Heart,
+  Zap,
+  Waves,
+  Droplet,
+  Sparkles,
+  RotateCcw,
+  ChevronRight,
+  RefreshCw,
+  Play,
+  Terminal,
+  Sliders,
+  Check,
+  Lock,
   Unlock,
   Volume2,
-  Activity
-} from 'lucide-react';
-import { TopBar, GlassCard, PrimaryButton, Chip, SectionHeader, PlayCircle, Waveform } from '../ui';
-import { IMG, TRACKS } from '../data';
-import type { Track } from '@/tradio/contexts/PlayerContext';
-import { usePlayer } from '@/tradio/contexts/PlayerContext';
+  Activity,
+} from "lucide-react";
+import { TopBar, GlassCard, PrimaryButton, Chip, SectionHeader, PlayCircle, Waveform } from "../ui";
+import { IMG, TRACKS } from "../data";
+import type { Track } from "@/tradio/contexts/PlayerContext";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
 
-const VIBES: { label: string; icon: React.ReactNode; defaultDials: Record<string, number>; defaultBpm: number }[] = [
-  { 
-    label: 'Late Night', 
+const VIBES: {
+  label: string;
+  icon: React.ReactNode;
+  defaultDials: Record<string, number>;
+  defaultBpm: number;
+}[] = [
+  {
+    label: "Late Night",
     icon: <Moon className="h-3.5 w-3.5" />,
     defaultDials: { Energy: 40, Discovery: 80, Intimacy: 90 },
-    defaultBpm: 92
+    defaultBpm: 92,
   },
-  { 
-    label: 'Healing', 
+  {
+    label: "Healing",
     icon: <Heart className="h-3.5 w-3.5" />,
     defaultDials: { Energy: 20, Discovery: 60, Intimacy: 95 },
-    defaultBpm: 75
+    defaultBpm: 75,
   },
-  { 
-    label: 'Turn Up', 
+  {
+    label: "Turn Up",
     icon: <Zap className="h-3.5 w-3.5" />,
     defaultDials: { Energy: 95, Discovery: 75, Intimacy: 30 },
-    defaultBpm: 128
+    defaultBpm: 128,
   },
-  { 
-    label: 'Smooth', 
+  {
+    label: "Smooth",
     icon: <Waves className="h-3.5 w-3.5" />,
     defaultDials: { Energy: 50, Discovery: 70, Intimacy: 75 },
-    defaultBpm: 88
+    defaultBpm: 88,
   },
-  { 
-    label: 'Cry In Peace', 
+  {
+    label: "Cry In Peace",
     icon: <Droplet className="h-3.5 w-3.5" />,
     defaultDials: { Energy: 30, Discovery: 50, Intimacy: 85 },
-    defaultBpm: 80
+    defaultBpm: 80,
   },
-  { 
-    label: 'Memphis', 
+  {
+    label: "Memphis",
     icon: <Waveform className="h-3.5 w-4" />,
     defaultDials: { Energy: 85, Discovery: 75, Intimacy: 50 },
-    defaultBpm: 96
+    defaultBpm: 96,
   },
 ];
 
@@ -76,13 +81,24 @@ const DialControl: React.FC<{
     <GlassCard className="flex flex-col items-center p-4 border-white/8 hover:border-white/20 transition-all duration-300 relative group overflow-hidden">
       {/* Decorative top shimmer */}
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.02] to-transparent pointer-events-none" />
-      
+
       <div className="text-[10px] font-mono uppercase tracking-widest text-white/50">{label}</div>
-      <div className={`mt-1 text-base font-black tracking-tight ${color} filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]`}>{value}</div>
-      
+      <div
+        className={`mt-1 text-base font-black tracking-tight ${color} filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]`}
+      >
+        {value}
+      </div>
+
       <div className="relative my-3 h-[85px] w-[90px] flex items-center justify-center">
         <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-          <circle cx="50" cy="50" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
+          <circle
+            cx="50"
+            cy="50"
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.05)"
+            strokeWidth="5"
+          />
           <circle
             cx="50"
             cy="50"
@@ -108,17 +124,17 @@ const DialControl: React.FC<{
           <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,1)] animate-pulse" />
         </div>
       </div>
-      
+
       {/* Custom Adjust Controls */}
       <div className="flex w-full items-center justify-between gap-2.5">
-        <button 
+        <button
           onClick={onDecrease}
           className="flex-1 h-7 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 active:scale-90 text-sm font-black text-white/70 hover:text-white transition-all flex items-center justify-center"
           aria-label={`Decrease ${label}`}
         >
           -
         </button>
-        <button 
+        <button
           onClick={onIncrease}
           className="flex-1 h-7 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 active:scale-90 text-sm font-black text-white/70 hover:text-white transition-all flex items-center justify-center"
           aria-label={`Increase ${label}`}
@@ -131,33 +147,51 @@ const DialControl: React.FC<{
 };
 
 const RECIPES = [
-  { title: 'Midnight Drive', tags: 'R&B • Trap Soul', desc: 'Moody, melodic, made for the road after dark.', img: IMG.midnightDrive, track: TRACKS.midnightVelvet },
-  { title: 'Healing Waters', tags: 'R&B • Neo Soul', desc: 'Soothing sounds to relax, reset, and reflect.', img: IMG.healingLotus, track: TRACKS.fallingForYou },
-  { title: 'Memphis Heat', tags: 'Rap • Southern Hip-Hop', desc: 'Hard-hitting Memphis energy, all day.', img: IMG.memphisAfterDark, track: TRACKS.memphisAfterDark },
+  {
+    title: "Midnight Drive",
+    tags: "R&B • Trap Soul",
+    desc: "Moody, melodic, made for the road after dark.",
+    img: IMG.midnightDrive,
+    track: TRACKS.midnightVelvet,
+  },
+  {
+    title: "Healing Waters",
+    tags: "R&B • Neo Soul",
+    desc: "Soothing sounds to relax, reset, and reflect.",
+    img: IMG.healingLotus,
+    track: TRACKS.fallingForYou,
+  },
+  {
+    title: "Memphis Heat",
+    tags: "Rap • Southern Hip-Hop",
+    desc: "Hard-hitting Memphis energy, all day.",
+    img: IMG.memphisAfterDark,
+    track: TRACKS.memphisAfterDark,
+  },
 ];
 
 export const BuildStationScreen: React.FC = () => {
   const { play, playStation } = usePlayer();
 
   // State Management
-  const [vibe, setVibe] = useState('Late Night');
-  const [genres, setGenres] = useState(['R&B', 'Hip-Hop']);
+  const [vibe, setVibe] = useState("Late Night");
+  const [genres, setGenres] = useState(["R&B", "Hip-Hop"]);
   const [energy, setEnergy] = useState(40);
   const [discovery, setDiscovery] = useState(80);
   const [intimacy, setIntimacy] = useState(90);
   const [tempo, setTempo] = useState(92);
-  
-  const [promptInput, setPromptInput] = useState('');
+
+  const [promptInput, setPromptInput] = useState("");
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [synthesisStep, setSynthesisStep] = useState('');
-  
+  const [synthesisStep, setSynthesisStep] = useState("");
+
   const [generatedTracks, setGeneratedTracks] = useState<Track[]>([]);
   const [lockedTracks, setLockedTracks] = useState<Record<string, boolean>>({});
   const [isRefreshingTracks, setIsRefreshingTracks] = useState(false);
 
   // Sync dials when vibe changes
   useEffect(() => {
-    const selectedVibe = VIBES.find(v => v.label === vibe);
+    const selectedVibe = VIBES.find((v) => v.label === vibe);
     if (selectedVibe) {
       setEnergy(selectedVibe.defaultDials.Energy);
       setDiscovery(selectedVibe.defaultDials.Discovery);
@@ -172,22 +206,46 @@ export const BuildStationScreen: React.FC = () => {
     const timeout = setTimeout(() => {
       // Find default seeds for vibe
       const allCatalog = Object.values(TRACKS).filter(
-        t => t.id !== 'ai-radio' && t.id !== 'untitled-signal' && t.id !== 'broken-signal' && t.id !== 'processing-signal'
+        (t) =>
+          t.id !== "ai-radio" &&
+          t.id !== "untitled-signal" &&
+          t.id !== "broken-signal" &&
+          t.id !== "processing-signal",
       );
-      
+
       let seeds: Track[] = [];
-      if (vibe === 'Late Night') {
+      if (vibe === "Late Night") {
         seeds = [TRACKS.afterHours, TRACKS.persuasion, TRACKS.midnightVelvet, TRACKS.spinning];
-      } else if (vibe === 'Healing') {
-        seeds = [TRACKS.fallingForYou, TRACKS.noLookingBack, TRACKS.neonHeartbreak, TRACKS.outOfOrbit];
-      } else if (vibe === 'Turn Up') {
-        seeds = [TRACKS.treyTrizzyRadio, TRACKS.instantDrop, TRACKS.sixAmThoughts, TRACKS.underCityLights];
-      } else if (vibe === 'Smooth') {
+      } else if (vibe === "Healing") {
+        seeds = [
+          TRACKS.fallingForYou,
+          TRACKS.noLookingBack,
+          TRACKS.neonHeartbreak,
+          TRACKS.outOfOrbit,
+        ];
+      } else if (vibe === "Turn Up") {
+        seeds = [
+          TRACKS.treyTrizzyRadio,
+          TRACKS.instantDrop,
+          TRACKS.sixAmThoughts,
+          TRACKS.underCityLights,
+        ];
+      } else if (vibe === "Smooth") {
         seeds = [TRACKS.afterHours, TRACKS.fallingForYou, TRACKS.cityLights, TRACKS.dontCall];
-      } else if (vibe === 'Cry In Peace') {
-        seeds = [TRACKS.neonHeartbreak, TRACKS.dontCall, TRACKS.sixAmThoughts, TRACKS.fallingForYou];
-      } else if (vibe === 'Memphis') {
-        seeds = [TRACKS.memphisAfterDark, TRACKS.treyTrizzyRadio, TRACKS.instantDrop, TRACKS.sixAmThoughts];
+      } else if (vibe === "Cry In Peace") {
+        seeds = [
+          TRACKS.neonHeartbreak,
+          TRACKS.dontCall,
+          TRACKS.sixAmThoughts,
+          TRACKS.fallingForYou,
+        ];
+      } else if (vibe === "Memphis") {
+        seeds = [
+          TRACKS.memphisAfterDark,
+          TRACKS.treyTrizzyRadio,
+          TRACKS.instantDrop,
+          TRACKS.sixAmThoughts,
+        ];
       } else {
         seeds = allCatalog.slice(0, 4);
       }
@@ -214,63 +272,79 @@ export const BuildStationScreen: React.FC = () => {
     if (!promptInput.trim()) return;
 
     setIsSynthesizing(true);
-    setSynthesisStep('Initializing Prescription Neural Engine...');
+    setSynthesisStep("Initializing Prescription Neural Engine...");
 
     const logs = [
-      'Decoding prompt acoustic signature...',
-      'Matching user mood with spectral frequencies...',
-      'Synthesizing virtual stems & wave forms...',
-      'Aligning BPM grids and harmonic key locks...',
-      'Formulating unique Prescription Audio lane...'
+      "Decoding prompt acoustic signature...",
+      "Matching user mood with spectral frequencies...",
+      "Synthesizing virtual stems & wave forms...",
+      "Aligning BPM grids and harmonic key locks...",
+      "Formulating unique Prescription Audio lane...",
     ];
 
     logs.forEach((log, idx) => {
-      setTimeout(() => {
-        setSynthesisStep(log);
-      }, (idx + 1) * 650);
+      setTimeout(
+        () => {
+          setSynthesisStep(log);
+        },
+        (idx + 1) * 650,
+      );
     });
 
-    setTimeout(() => {
-      // Complete synthesis with fully updated dynamic dials
-      setEnergy(Math.floor(Math.random() * 45) + 50); // High-ish energy
-      setDiscovery(Math.floor(Math.random() * 30) + 65);
-      setIntimacy(Math.floor(Math.random() * 40) + 55);
-      setTempo(Math.floor(Math.random() * 60) + 80); // Random BPM
+    setTimeout(
+      () => {
+        // Complete synthesis with fully updated dynamic dials
+        setEnergy(Math.floor(Math.random() * 45) + 50); // High-ish energy
+        setDiscovery(Math.floor(Math.random() * 30) + 65);
+        setIntimacy(Math.floor(Math.random() * 40) + 55);
+        setTempo(Math.floor(Math.random() * 60) + 80); // Random BPM
 
-      const randomCatalog = Object.values(TRACKS)
-        .filter(t => t.id !== 'ai-radio' && t.id !== 'untitled-signal' && t.id !== 'broken-signal' && t.id !== 'processing-signal')
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 4);
+        const randomCatalog = Object.values(TRACKS)
+          .filter(
+            (t) =>
+              t.id !== "ai-radio" &&
+              t.id !== "untitled-signal" &&
+              t.id !== "broken-signal" &&
+              t.id !== "processing-signal",
+          )
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 4);
 
-      // Preserve locked tracks if possible, otherwise overwrite
-      const updatedList = randomCatalog.map((randTrack, idx) => {
-        const generatedId = generatedTracks[idx]?.id;
-        if (generatedId && lockedTracks[generatedId]) {
-          return generatedTracks[idx];
-        }
-        return randTrack;
-      });
+        // Preserve locked tracks if possible, otherwise overwrite
+        const updatedList = randomCatalog.map((randTrack, idx) => {
+          const generatedId = generatedTracks[idx]?.id;
+          if (generatedId && lockedTracks[generatedId]) {
+            return generatedTracks[idx];
+          }
+          return randTrack;
+        });
 
-      setGeneratedTracks(updatedList);
-      setIsSynthesizing(false);
-      setPromptInput('');
-    }, (logs.length + 1) * 650);
+        setGeneratedTracks(updatedList);
+        setIsSynthesizing(false);
+        setPromptInput("");
+      },
+      (logs.length + 1) * 650,
+    );
   };
 
   // Re-roll a single specific track in the playlist
   const handleSingleTrackReroll = (idxToReroll: number) => {
     const allCatalog = Object.values(TRACKS).filter(
-      t => t.id !== 'ai-radio' && t.id !== 'untitled-signal' && t.id !== 'broken-signal' && t.id !== 'processing-signal'
+      (t) =>
+        t.id !== "ai-radio" &&
+        t.id !== "untitled-signal" &&
+        t.id !== "broken-signal" &&
+        t.id !== "processing-signal",
     );
-    
+
     // Filter out tracks already in the generated list
-    const currentIds = generatedTracks.map(t => t.id);
-    const availablePool = allCatalog.filter(t => !currentIds.includes(t.id));
-    
+    const currentIds = generatedTracks.map((t) => t.id);
+    const availablePool = allCatalog.filter((t) => !currentIds.includes(t.id));
+
     if (availablePool.length === 0) return;
     const randomReplacement = availablePool[Math.floor(Math.random() * availablePool.length)];
-    
-    setGeneratedTracks(prev => {
+
+    setGeneratedTracks((prev) => {
       const copy = [...prev];
       copy[idxToReroll] = randomReplacement;
       return copy;
@@ -279,31 +353,40 @@ export const BuildStationScreen: React.FC = () => {
 
   // Toggle dynamic lock on individual tracks
   const toggleTrackLock = (trackId: string) => {
-    setLockedTracks(prev => ({
+    setLockedTracks((prev) => ({
       ...prev,
-      [trackId]: !prev[trackId]
+      [trackId]: !prev[trackId],
     }));
   };
 
   // Run full audio stream activation in PlayerContext
   const playForgedStation = () => {
     if (generatedTracks.length === 0) return;
-    playStation({
-      id: 'custom-prescription-station',
-      type: 'station',
-      label: 'Prescription Station',
-      title: `${vibe} Custom Prescription`,
-      subtitle: 'Dynamic Tailored Stream',
-      image: IMG.aiSphere,
-      isLive: true,
-      listenerCount: 24800,
-    }, generatedTracks);
+    playStation(
+      {
+        id: "custom-prescription-station",
+        type: "station",
+        label: "Prescription Station",
+        title: `${vibe} Custom Prescription`,
+        subtitle: "Dynamic Tailored Stream",
+        image: IMG.aiSphere,
+        isLive: true,
+        listenerCount: 24800,
+      },
+      generatedTracks,
+    );
   };
 
   // Dial Step Increments
-  const adjustValue = (setFn: React.Dispatch<React.SetStateAction<number>>, dir: 'up' | 'down', min: number, max: number, step: number = 5) => {
-    setFn(prev => {
-      const next = dir === 'up' ? prev + step : prev - step;
+  const adjustValue = (
+    setFn: React.Dispatch<React.SetStateAction<number>>,
+    dir: "up" | "down",
+    min: number,
+    max: number,
+    step: number = 5,
+  ) => {
+    setFn((prev) => {
+      const next = dir === "up" ? prev + step : prev - step;
       return Math.max(min, Math.min(max, next));
     });
   };
@@ -311,7 +394,7 @@ export const BuildStationScreen: React.FC = () => {
   return (
     <div className="space-y-8 pb-12 lg:space-y-10">
       <TopBar />
-      
+
       {/* 1. Futuristic Header */}
       <div className="px-4 sm:px-6 lg:px-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -325,10 +408,10 @@ export const BuildStationScreen: React.FC = () => {
             Inject prompts, shape audio dials, and forge the perfect musical prescription.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
-            setVibe('Late Night');
-            setGenres(['R&B', 'Hip-Hop']);
+            setVibe("Late Night");
+            setGenres(["R&B", "Hip-Hop"]);
           }}
           className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
         >
@@ -346,7 +429,9 @@ export const BuildStationScreen: React.FC = () => {
 
           <div className="flex items-center gap-2 mb-3.5">
             <Terminal className="h-4.5 w-4.5 text-cyan-300" />
-            <div className="text-xs font-mono font-black uppercase tracking-widest text-cyan-300">Prescription Command Injector</div>
+            <div className="text-xs font-mono font-black uppercase tracking-widest text-cyan-300">
+              Prescription Command Injector
+            </div>
           </div>
           <form onSubmit={handleAISynthesis} className="flex flex-col sm:flex-row gap-3">
             <input
@@ -378,7 +463,9 @@ export const BuildStationScreen: React.FC = () => {
               <Activity className="h-6 w-6 text-cyan-300 animate-pulse" />
             </div>
 
-            <h3 className="text-lg font-black tracking-widest text-white uppercase">Synthesizing Prescription</h3>
+            <h3 className="text-lg font-black tracking-widest text-white uppercase">
+              Synthesizing Prescription
+            </h3>
             <div className="mt-2 text-xs font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 rounded px-3 py-1.5 animate-pulse min-h-[34px] flex items-center justify-center">
               {synthesisStep}
             </div>
@@ -393,15 +480,17 @@ export const BuildStationScreen: React.FC = () => {
 
       {/* 3. Choose Presets */}
       <div>
-        <div className="px-4 pb-3 sm:px-6 lg:px-10 text-xs font-mono font-black uppercase tracking-widest text-purple-300">1. Select Preset Vibe Matrix</div>
+        <div className="px-4 pb-3 sm:px-6 lg:px-10 text-xs font-mono font-black uppercase tracking-widest text-purple-300">
+          1. Select Preset Vibe Matrix
+        </div>
         <div className="flex gap-2.5 overflow-x-auto px-4 sm:px-6 lg:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {VIBES.map((v) => (
-            <Chip 
-              key={v.label} 
-              label={v.label} 
-              icon={v.icon} 
-              selected={vibe === v.label} 
-              onClick={() => setVibe(v.label)} 
+            <Chip
+              key={v.label}
+              label={v.label}
+              icon={v.icon}
+              selected={vibe === v.label}
+              onClick={() => setVibe(v.label)}
             />
           ))}
         </div>
@@ -415,44 +504,43 @@ export const BuildStationScreen: React.FC = () => {
           </div>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <DialControl 
-            label="Energy" 
-            value={`${energy}%`} 
-            color="text-purple-300" 
-            pct={energy} 
-            onIncrease={() => adjustValue(setEnergy, 'up', 0, 100)}
-            onDecrease={() => adjustValue(setEnergy, 'down', 0, 100)}
+          <DialControl
+            label="Energy"
+            value={`${energy}%`}
+            color="text-purple-300"
+            pct={energy}
+            onIncrease={() => adjustValue(setEnergy, "up", 0, 100)}
+            onDecrease={() => adjustValue(setEnergy, "down", 0, 100)}
           />
-          <DialControl 
-            label="Discovery" 
-            value={`${discovery}%`} 
-            color="text-fuchsia-300" 
-            pct={discovery} 
-            onIncrease={() => adjustValue(setDiscovery, 'up', 0, 100)}
-            onDecrease={() => adjustValue(setDiscovery, 'down', 0, 100)}
+          <DialControl
+            label="Discovery"
+            value={`${discovery}%`}
+            color="text-fuchsia-300"
+            pct={discovery}
+            onIncrease={() => adjustValue(setDiscovery, "up", 0, 100)}
+            onDecrease={() => adjustValue(setDiscovery, "down", 0, 100)}
           />
-          <DialControl 
-            label="Intimacy" 
-            value={`${intimacy}%`} 
-            color="text-pink-300" 
-            pct={intimacy} 
-            onIncrease={() => adjustValue(setIntimacy, 'up', 0, 100)}
-            onDecrease={() => adjustValue(setIntimacy, 'down', 0, 100)}
+          <DialControl
+            label="Intimacy"
+            value={`${intimacy}%`}
+            color="text-pink-300"
+            pct={intimacy}
+            onIncrease={() => adjustValue(setIntimacy, "up", 0, 100)}
+            onDecrease={() => adjustValue(setIntimacy, "down", 0, 100)}
           />
-          <DialControl 
-            label="Tempo" 
-            value={`${tempo} BPM`} 
-            color="text-cyan-300" 
-            pct={Math.min(100, Math.max(0, ((tempo - 60) / 120) * 100))} 
-            onIncrease={() => adjustValue(setTempo, 'up', 60, 180, 4)}
-            onDecrease={() => adjustValue(setTempo, 'down', 60, 180, 4)}
+          <DialControl
+            label="Tempo"
+            value={`${tempo} BPM`}
+            color="text-cyan-300"
+            pct={Math.min(100, Math.max(0, ((tempo - 60) / 120) * 100))}
+            onIncrease={() => adjustValue(setTempo, "up", 60, 180, 4)}
+            onDecrease={() => adjustValue(setTempo, "down", 60, 180, 4)}
           />
         </div>
       </div>
 
       {/* 5. ACTIVE PRESCRIPTION TRACKLIST (Generated live) */}
       <div className="px-4 sm:px-6 lg:px-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
         {/* Left: Interactive Generated Playlist */}
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
@@ -470,18 +558,22 @@ export const BuildStationScreen: React.FC = () => {
             {generatedTracks.map((track, idx) => {
               const isLocked = !!lockedTracks[track?.id];
               return (
-                <div 
-                  key={track?.id || idx} 
+                <div
+                  key={track?.id || idx}
                   className={`flex items-center justify-between gap-4 p-2.5 rounded-2xl border transition-all duration-300 ${
-                    isLocked 
-                      ? 'border-fuchsia-500/20 bg-fuchsia-500/5' 
-                      : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]'
+                    isLocked
+                      ? "border-fuchsia-500/20 bg-fuchsia-500/5"
+                      : "border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]"
                   }`}
                 >
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Artwork */}
                     <div className="relative h-12 w-12 rounded-xl overflow-hidden shrink-0 border border-white/10">
-                      <img src={track?.art || IMG.aiSphere} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={track?.art || IMG.aiSphere}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity">
                         <PlayCircle size={28} onClick={() => play(track)} />
                       </div>
@@ -500,13 +592,19 @@ export const BuildStationScreen: React.FC = () => {
                     <button
                       onClick={() => toggleTrackLock(track.id)}
                       className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
-                        isLocked 
-                          ? 'border-fuchsia-500 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_10px_rgba(217,70,239,0.3)]' 
-                          : 'border-white/10 text-white/40 hover:text-white hover:border-white/20'
+                        isLocked
+                          ? "border-fuchsia-500 bg-fuchsia-500/10 text-fuchsia-300 shadow-[0_0_10px_rgba(217,70,239,0.3)]"
+                          : "border-white/10 text-white/40 hover:text-white hover:border-white/20"
                       }`}
-                      title={isLocked ? "Unlock track from re-generation" : "Lock track into playlist"}
+                      title={
+                        isLocked ? "Unlock track from re-generation" : "Lock track into playlist"
+                      }
                     >
-                      {isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+                      {isLocked ? (
+                        <Lock className="h-3.5 w-3.5" />
+                      ) : (
+                        <Unlock className="h-3.5 w-3.5" />
+                      )}
                     </button>
 
                     {/* Single Reroll */}
@@ -527,11 +625,16 @@ export const BuildStationScreen: React.FC = () => {
 
         {/* Right: Synthesis Preview Card */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="text-xs font-mono font-black uppercase tracking-widest text-purple-300">Station Matrix Preview</div>
+          <div className="text-xs font-mono font-black uppercase tracking-widest text-purple-300">
+            Station Matrix Preview
+          </div>
           <GlassCard glow className="overflow-hidden p-5 relative border-purple-500/15">
             {/* Glossy sweeping shine */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-color-dodge">
-              <div className="absolute -inset-[50%] bg-gradient-to-tr from-transparent via-purple-500/10 to-transparent" style={{ animation: 'streak-sweep 6s infinite linear' }} />
+              <div
+                className="absolute -inset-[50%] bg-gradient-to-tr from-transparent via-purple-500/10 to-transparent"
+                style={{ animation: "streak-sweep 6s infinite linear" }}
+              />
             </div>
 
             <div className="flex gap-4">
@@ -543,36 +646,43 @@ export const BuildStationScreen: React.FC = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-black text-white truncate">{vibe} Prescription Mix</div>
-                  <span className="rounded-full border border-purple-400/40 bg-purple-500/15 px-2 py-0.5 text-[9px] font-black text-purple-200">AI COMPILED</span>
+                  <div className="text-sm font-black text-white truncate">
+                    {vibe} Prescription Mix
+                  </div>
+                  <span className="rounded-full border border-purple-400/40 bg-purple-500/15 px-2 py-0.5 text-[9px] font-black text-purple-200">
+                    AI COMPILED
+                  </span>
                 </div>
                 <div className="text-[11px] text-white/50 font-mono mt-0.5 uppercase tracking-wide">
-                  {genres.join(' • ')} • {tempo} BPM
+                  {genres.join(" • ")} • {tempo} BPM
                 </div>
                 <p className="mt-2 text-xs leading-snug text-white/70">
-                  Tailor-forged acoustic prescription targeting {vibe.toLowerCase()} mood waves with perfect frequency alignment.
+                  Tailor-forged acoustic prescription targeting {vibe.toLowerCase()} mood waves with
+                  perfect frequency alignment.
                 </p>
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-purple-300 uppercase font-black">Status: Cleared</span>
+                  <span className="text-[10px] font-mono text-purple-300 uppercase font-black">
+                    Status: Cleared
+                  </span>
                   <Waveform className="h-3 w-6" bars={5} />
                 </div>
               </div>
             </div>
-            
+
             <div className="mt-5 flex items-center justify-between px-1 border-t border-white/5 pt-4">
               <Waveform className="h-5 w-32" bars={22} color="from-cyan-400 to-fuchsia-500" />
               <span className="flex items-center gap-1 text-[9px] font-black text-fuchsia-300 uppercase tracking-widest">
-                <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 animate-ping" /> Forge Ready
+                <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 animate-ping" /> Forge
+                Ready
               </span>
             </div>
           </GlassCard>
         </div>
-
       </div>
 
       {/* 6. GENERATE STATION & DISPENSE */}
       <div className="px-4 sm:px-6 lg:px-10">
-        <PrimaryButton 
+        <PrimaryButton
           onClick={playForgedStation}
           className="w-full py-4.5 text-base shadow-[0_0_30px_rgba(168,85,247,0.45)] hover:shadow-[0_0_45px_rgba(6,182,212,0.65)]"
         >
@@ -585,16 +695,29 @@ export const BuildStationScreen: React.FC = () => {
 
       {/* Recommended Recipes */}
       <div>
-        <div className="px-4 pb-3.5 sm:px-6 lg:px-10 text-xs font-mono font-black uppercase tracking-widest text-purple-300">Recommended Audio Recipes</div>
+        <div className="px-4 pb-3.5 sm:px-6 lg:px-10 text-xs font-mono font-black uppercase tracking-widest text-purple-300">
+          Recommended Audio Recipes
+        </div>
         <div className="flex gap-3 overflow-x-auto px-4 sm:px-6 lg:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {RECIPES.map((r) => (
-            <GlassCard key={r.title} className="w-[240px] shrink-0 overflow-hidden hover:border-purple-500/20 transition-all duration-300 group">
+            <GlassCard
+              key={r.title}
+              className="w-[240px] shrink-0 overflow-hidden hover:border-purple-500/20 transition-all duration-300 group"
+            >
               <div className="flex gap-3.5 p-3">
-                <img src={r.img} alt={r.title} className="h-14 w-14 rounded-xl object-cover border border-white/10 shrink-0" />
+                <img
+                  src={r.img}
+                  alt={r.title}
+                  className="h-14 w-14 rounded-xl object-cover border border-white/10 shrink-0"
+                />
                 <div className="min-w-0 flex-1 text-left">
                   <div className="truncate text-sm font-black text-white">{r.title}</div>
-                  <div className="truncate text-[10px] text-purple-300 font-mono font-bold mt-0.5 uppercase tracking-wide">{r.tags}</div>
-                  <p className="mt-1 line-clamp-2 text-[11px] text-white/50 leading-snug">{r.desc}</p>
+                  <div className="truncate text-[10px] text-purple-300 font-mono font-bold mt-0.5 uppercase tracking-wide">
+                    {r.tags}
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[11px] text-white/50 leading-snug">
+                    {r.desc}
+                  </p>
                 </div>
               </div>
               <div className="flex justify-end px-3 pb-3 border-t border-white/5 pt-2">

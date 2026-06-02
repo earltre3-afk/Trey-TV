@@ -1,18 +1,33 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 export type PlaybackSourceType =
-  | 'song'
-  | 'station'
-  | 'artist_station'
-  | 'instant_release'
-  | 'producer_beat'
-  | 'dj_mix'
-  | 'live_show'
-  | 'song_war_round'
-  | 'replay';
+  | "song"
+  | "station"
+  | "artist_station"
+  | "instant_release"
+  | "producer_beat"
+  | "dj_mix"
+  | "live_show"
+  | "song_war_round"
+  | "replay";
 
-export type PlaybackMode = 'normal' | 'repeat_one' | 'repeat_all';
-export type PlaybackStatus = 'idle' | 'buffering' | 'playing' | 'paused' | 'ended' | 'error' | 'unavailable';
+export type PlaybackMode = "normal" | "repeat_one" | "repeat_all";
+export type PlaybackStatus =
+  | "idle"
+  | "buffering"
+  | "playing"
+  | "paused"
+  | "ended"
+  | "error"
+  | "unavailable";
 
 export interface StationPlaybackContext {
   stationId?: string;
@@ -28,8 +43,8 @@ export interface SongWarsPlaybackContext {
   roundNumber: number;
   artistA: string;
   artistB: string;
-  activeCorner?: 'A' | 'B';
-  votingStatus?: 'playing' | 'voting' | 'completed';
+  activeCorner?: "A" | "B";
+  votingStatus?: "playing" | "voting" | "completed";
 }
 
 export interface LiveShowPlaybackContext {
@@ -170,52 +185,56 @@ interface PlayOptions {
 }
 
 const DEFAULT_SOURCE: PlaybackSource = {
-  id: 'tradio-library',
-  type: 'song',
-  label: 'Song',
-  title: 'Tradio Library',
+  id: "tradio-library",
+  type: "song",
+  label: "Song",
+  title: "Tradio Library",
 };
 
 const buildSourceForItem = (item: PlaybackItem, override?: PlaybackSource): PlaybackSource => {
   if (override) return override;
-  const type = item.sourceType || (item.isLive ? 'live_show' : 'song');
+  const type = item.sourceType || (item.isLive ? "live_show" : "song");
   const labels: Record<PlaybackSourceType, string> = {
-    song: 'Song',
-    station: 'Station',
-    artist_station: 'Artist Station',
-    instant_release: 'Release',
-    producer_beat: 'Beat',
-    dj_mix: 'DJ Mix',
-    live_show: 'Live Show',
-    song_war_round: 'Song War',
-    replay: 'Replay',
+    song: "Song",
+    station: "Station",
+    artist_station: "Artist Station",
+    instant_release: "Release",
+    producer_beat: "Beat",
+    dj_mix: "DJ Mix",
+    live_show: "Live Show",
+    song_war_round: "Song War",
+    replay: "Replay",
   };
 
   return {
     id: `${type}-${item.station || item.id}`,
     type,
     label: item.sourceLabel || labels[type],
-    title: item.station || item.context?.liveShow?.showTitle || item.context?.songWars?.battleName || item.title,
+    title:
+      item.station ||
+      item.context?.liveShow?.showTitle ||
+      item.context?.songWars?.battleName ||
+      item.title,
     subtitle: item.artist,
     image: item.coverUrl || item.art,
-    isLive: Boolean(item.isLive || type === 'station' || type === 'artist_station' || type === 'live_show'),
-    listenerCount:
-      item.context?.station?.listenerCount ||
-      item.context?.liveShow?.listenerCount,
+    isLive: Boolean(
+      item.isLive || type === "station" || type === "artist_station" || type === "live_show",
+    ),
+    listenerCount: item.context?.station?.listenerCount || item.context?.liveShow?.listenerCount,
   };
 };
 
 const normalizePlaybackItem = (item: PlaybackItem): PlaybackItem => ({
   ...item,
   art: item.coverUrl || item.art || null,
-  sourceType: item.sourceType || (item.isLive ? 'live_show' : 'song'),
+  sourceType: item.sourceType || (item.isLive ? "live_show" : "song"),
   sourceLabel: item.sourceLabel || DEFAULT_SOURCE.label,
   duration: item.isLive ? 0 : item.duration || 210,
 });
 
 const createQueue = (items: PlaybackItem[], source?: PlaybackSource): PlaybackQueue => ({
-  id: `queue-${source?.id || 'tradio'}-${Date.now()}`,
-  label: source?.label ? `${source.label} Queue` : 'Tradio Queue',
+  id: `queue-${source?.id || "tradio"}-${Date.now()}`,
+  label: source?.label ? `${source.label} Queue` : "Tradio Queue",
   source,
   items: items.map(normalizePlaybackItem),
 });
@@ -228,12 +247,12 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentSource, setCurrentSource] = useState<PlaybackSource | null>(null);
   const [playbackQueue, setPlaybackQueue] = useState<PlaybackQueue>(() => createQueue([]));
   const [history, setHistory] = useState<PlaybackItem[]>([]);
-  const [status, setStatus] = useState<PlaybackStatus>('idle');
+  const [status, setStatus] = useState<PlaybackStatus>("idle");
   const [currentTime, setCurrentTime] = useState(0);
   const currentTimeRef = useRef<number>(0);
   const lastPushedTimeRef = useRef<number>(0);
   const [duration, setDuration] = useState(0);
-  const [repeatMode, setRepeatMode] = useState<PlaybackMode>('normal');
+  const [repeatMode, setRepeatMode] = useState<PlaybackMode>("normal");
   const [shuffleMode, setShuffleMode] = useState(false);
   const [volume, setVolumeState] = useState(0.8);
   const [muted, setMuted] = useState(false);
@@ -251,92 +270,114 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setActiveCastDevice(null);
   }, []);
 
-  const isBuffering = status === 'buffering';
-  const isPlaying = status === 'playing';
+  const isBuffering = status === "buffering";
+  const isPlaying = status === "playing";
   const isLive = Boolean(currentSource?.isLive || currentItem?.isLive);
   const queue = playbackQueue.items;
   const upNext = queue[0] || null;
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
-  const beginPlayback = useCallback((item: PlaybackItem, source?: PlaybackSource, nextItems?: PlaybackItem[]) => {
-    const normalized = normalizePlaybackItem(item);
-    const resolvedSource = buildSourceForItem(normalized, source);
+  const beginPlayback = useCallback(
+    (item: PlaybackItem, source?: PlaybackSource, nextItems?: PlaybackItem[]) => {
+      const normalized = normalizePlaybackItem(item);
+      const resolvedSource = buildSourceForItem(normalized, source);
 
-    if (bufferTimer.current) window.clearTimeout(bufferTimer.current);
+      if (bufferTimer.current) window.clearTimeout(bufferTimer.current);
 
-    setCurrentItem((previous) => {
-      if (previous && previous.id !== normalized.id) {
-        setHistory((h) => [previous, ...h].slice(0, 50));
-      }
-      return normalized;
-    });
-    setCurrentSource(resolvedSource);
-    setCurrentTime(0);
-    setDuration(normalized.isLive || resolvedSource.isLive ? 0 : normalized.duration || 210);
-    if (nextItems) setPlaybackQueue(createQueue(nextItems, resolvedSource));
-    setStatus(normalized.unavailable ? 'unavailable' : 'buffering');
+      setCurrentItem((previous) => {
+        if (previous && previous.id !== normalized.id) {
+          setHistory((h) => [previous, ...h].slice(0, 50));
+        }
+        return normalized;
+      });
+      setCurrentSource(resolvedSource);
+      setCurrentTime(0);
+      setDuration(normalized.isLive || resolvedSource.isLive ? 0 : normalized.duration || 210);
+      if (nextItems) setPlaybackQueue(createQueue(nextItems, resolvedSource));
+      setStatus(normalized.unavailable ? "unavailable" : "buffering");
 
-    bufferTimer.current = window.setTimeout(() => {
-      setStatus(normalized.unavailable ? 'unavailable' : 'playing');
-    }, 350);
-  }, []);
+      bufferTimer.current = window.setTimeout(() => {
+        setStatus(normalized.unavailable ? "unavailable" : "playing");
+      }, 350);
+    },
+    [],
+  );
 
-  const playItem = useCallback((item: PlaybackItem, options?: PlayOptions) => {
-    beginPlayback(
-      { ...item, isLive: options?.isLive ?? item.isLive },
-      options?.source,
-      options?.queue
-    );
-  }, [beginPlayback]);
+  const playItem = useCallback(
+    (item: PlaybackItem, options?: PlayOptions) => {
+      beginPlayback(
+        { ...item, isLive: options?.isLive ?? item.isLive },
+        options?.source,
+        options?.queue,
+      );
+    },
+    [beginPlayback],
+  );
 
-  const play = useCallback((track: PlaybackItem, newQueue?: PlaybackItem[], source?: PlaybackSource) => {
-    playItem(track, { queue: newQueue, source });
-  }, [playItem]);
+  const play = useCallback(
+    (track: PlaybackItem, newQueue?: PlaybackItem[], source?: PlaybackSource) => {
+      playItem(track, { queue: newQueue, source });
+    },
+    [playItem],
+  );
 
-  const playQueue = useCallback((items: PlaybackItem[], startIndex = 0, source?: PlaybackSource) => {
-    if (!items.length) return;
-    const start = normalizePlaybackItem(items[startIndex] || items[0]);
-    const rest = items.slice(startIndex + 1).map(normalizePlaybackItem);
-    const resolvedSource = buildSourceForItem(start, source);
-    beginPlayback(start, resolvedSource, rest);
-  }, [beginPlayback]);
+  const playQueue = useCallback(
+    (items: PlaybackItem[], startIndex = 0, source?: PlaybackSource) => {
+      if (!items.length) return;
+      const start = normalizePlaybackItem(items[startIndex] || items[0]);
+      const rest = items.slice(startIndex + 1).map(normalizePlaybackItem);
+      const resolvedSource = buildSourceForItem(start, source);
+      beginPlayback(start, resolvedSource, rest);
+    },
+    [beginPlayback],
+  );
 
-  const playStation = useCallback((source: PlaybackSource, items: PlaybackItem[] = []) => {
-    const stationItems = items.length ? items : [
-      {
-        id: `${source.id}-live-signal`,
-        title: source.title || 'Live Station Signal',
-        artist: source.subtitle || source.label,
-        art: source.image,
-        station: source.title,
-        sourceType: source.type,
-        sourceLabel: source.label,
-        isLive: true,
-      },
-    ];
-    playQueue(stationItems.map((item) => ({ ...item, isLive: source.isLive ?? true })), 0, { ...source, isLive: true });
-  }, [playQueue]);
+  const playStation = useCallback(
+    (source: PlaybackSource, items: PlaybackItem[] = []) => {
+      const stationItems = items.length
+        ? items
+        : [
+            {
+              id: `${source.id}-live-signal`,
+              title: source.title || "Live Station Signal",
+              artist: source.subtitle || source.label,
+              art: source.image,
+              station: source.title,
+              sourceType: source.type,
+              sourceLabel: source.label,
+              isLive: true,
+            },
+          ];
+      playQueue(
+        stationItems.map((item) => ({ ...item, isLive: source.isLive ?? true })),
+        0,
+        { ...source, isLive: true },
+      );
+    },
+    [playQueue],
+  );
 
   const pause = useCallback(() => {
     if (!currentItem) return;
-    setStatus('paused');
+    setStatus("paused");
   }, [currentItem]);
 
   const resume = useCallback(() => {
     if (!currentItem || currentItem.unavailable) return;
-    setStatus('playing');
+    setStatus("playing");
   }, [currentItem]);
 
   const toggle = useCallback(() => {
     if (!currentItem) return;
-    setStatus((value) => value === 'playing' ? 'paused' : 'playing');
+    setStatus((value) => (value === "playing" ? "paused" : "playing"));
   }, [currentItem]);
 
   const next = useCallback(() => {
     setPlaybackQueue((existing) => {
       if (existing.items.length === 0) {
-        if (repeatMode === 'repeat_one' && currentItem) beginPlayback(currentItem, currentSource || undefined);
-        else setStatus(currentItem ? 'ended' : 'idle');
+        if (repeatMode === "repeat_one" && currentItem)
+          beginPlayback(currentItem, currentSource || undefined);
+        else setStatus(currentItem ? "ended" : "idle");
         return existing;
       }
 
@@ -366,48 +407,69 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, [beginPlayback, currentItem, currentSource, currentTime]);
 
-  const seek = useCallback((timeSec: number) => {
-    if (isLive) return;
-    setCurrentTime(Math.max(0, Math.min(timeSec, duration || timeSec)));
-  }, [duration, isLive]);
+  const seek = useCallback(
+    (timeSec: number) => {
+      if (isLive) return;
+      setCurrentTime(Math.max(0, Math.min(timeSec, duration || timeSec)));
+    },
+    [duration, isLive],
+  );
 
-  const seekPct = useCallback((pct: number) => {
-    if (isLive || duration <= 0) return;
-    setCurrentTime((Math.max(0, Math.min(100, pct)) / 100) * duration);
-  }, [duration, isLive]);
+  const seekPct = useCallback(
+    (pct: number) => {
+      if (isLive || duration <= 0) return;
+      setCurrentTime((Math.max(0, Math.min(100, pct)) / 100) * duration);
+    },
+    [duration, isLive],
+  );
 
-  const toggleLike = useCallback((id?: string) => {
-    const target = id || currentItem?.id;
-    if (!target) return;
-    setLiked((prev) => {
-      const nextSet = new Set(prev);
-      if (nextSet.has(target)) nextSet.delete(target);
-      else nextSet.add(target);
-      return nextSet;
-    });
-  }, [currentItem]);
+  const toggleLike = useCallback(
+    (id?: string) => {
+      const target = id || currentItem?.id;
+      if (!target) return;
+      setLiked((prev) => {
+        const nextSet = new Set(prev);
+        if (nextSet.has(target)) nextSet.delete(target);
+        else nextSet.add(target);
+        return nextSet;
+      });
+    },
+    [currentItem],
+  );
 
-  const toggleSave = useCallback((id?: string) => {
-    const target = id || currentItem?.id;
-    if (!target) return;
-    setSaved((prev) => {
-      const nextSet = new Set(prev);
-      if (nextSet.has(target)) nextSet.delete(target);
-      else nextSet.add(target);
-      return nextSet;
-    });
-  }, [currentItem]);
+  const toggleSave = useCallback(
+    (id?: string) => {
+      const target = id || currentItem?.id;
+      if (!target) return;
+      setSaved((prev) => {
+        const nextSet = new Set(prev);
+        if (nextSet.has(target)) nextSet.delete(target);
+        else nextSet.add(target);
+        return nextSet;
+      });
+    },
+    [currentItem],
+  );
 
   const addToQueue = useCallback((item: PlaybackItem) => {
-    setPlaybackQueue((existing) => ({ ...existing, items: [...existing.items, normalizePlaybackItem(item)] }));
+    setPlaybackQueue((existing) => ({
+      ...existing,
+      items: [...existing.items, normalizePlaybackItem(item)],
+    }));
   }, []);
 
   const playNext = useCallback((item: PlaybackItem) => {
-    setPlaybackQueue((existing) => ({ ...existing, items: [normalizePlaybackItem(item), ...existing.items] }));
+    setPlaybackQueue((existing) => ({
+      ...existing,
+      items: [normalizePlaybackItem(item), ...existing.items],
+    }));
   }, []);
 
   const removeFromQueue = useCallback((id: string) => {
-    setPlaybackQueue((existing) => ({ ...existing, items: existing.items.filter((item) => item.id !== id) }));
+    setPlaybackQueue((existing) => ({
+      ...existing,
+      items: existing.items.filter((item) => item.id !== id),
+    }));
   }, []);
 
   const clearQueue = useCallback(() => {
@@ -428,7 +490,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Track playhead with a ref and push updates to React state less often
   useEffect(() => {
-    if (status !== 'playing') return;
+    if (status !== "playing") return;
     currentTimeRef.current = currentTime;
     const timer = window.setInterval(() => {
       const newTime = (function (prev: number) {
@@ -453,127 +515,136 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => window.clearInterval(timer);
   }, [duration, isLive, next, status, currentTime]);
 
-  useEffect(() => () => {
-    if (bufferTimer.current) window.clearTimeout(bufferTimer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (bufferTimer.current) window.clearTimeout(bufferTimer.current);
+    },
+    [],
+  );
 
-  const session = useMemo<PlaybackSession>(() => ({
-    id: currentItem ? `session-${currentItem.id}` : 'session-idle',
-    status,
-    mode: repeatMode,
-    source: currentSource,
-    currentItem,
-    queue: playbackQueue,
-    history,
-    startedAt: currentItem ? Date.now() : undefined,
-  }), [currentItem, currentSource, history, playbackQueue, repeatMode, status]);
+  const session = useMemo<PlaybackSession>(
+    () => ({
+      id: currentItem ? `session-${currentItem.id}` : "session-idle",
+      status,
+      mode: repeatMode,
+      source: currentSource,
+      currentItem,
+      queue: playbackQueue,
+      history,
+      startedAt: currentItem ? Date.now() : undefined,
+    }),
+    [currentItem, currentSource, history, playbackQueue, repeatMode, status],
+  );
 
   // Memoize provider value to avoid recreating the object on every render
-  const value = useMemo<PlaybackContext>(() => ({
-    session,
-    currentItem,
-    currentTrack: currentItem,
-    currentSource,
-    playbackQueue,
-    queue,
-    upNext,
-    history,
-    isPlaying,
-    isBuffering,
-    isLive,
-    status,
-    progress,
-    currentTime,
-    duration,
-    repeatMode,
-    shuffleMode,
-    volume,
-    muted,
-    liked,
-    saved,
-    isCasting,
-    activeCastDevice,
-    startCast,
-    stopCast,
-    playItem,
-    playStation,
-    playQueue,
-    play,
-    pause,
-    resume,
-    toggle,
-    next,
-    previous,
-    prev: previous,
-    seek,
-    seekPct,
-    toggleLike,
-    toggleSave,
-    addToQueue,
-    playNext,
-    removeFromQueue,
-    clearQueue,
-    enqueue: addToQueue,
-    setPlaybackSource,
-    setRepeatMode,
-    toggleShuffle,
-    setVolume,
-    toggleMute,
-  }), [
-    session,
-    currentItem,
-    currentSource,
-    playbackQueue,
-    queue,
-    upNext,
-    history,
-    isPlaying,
-    isBuffering,
-    isLive,
-    status,
-    progress,
-    currentTime,
-    duration,
-    repeatMode,
-    shuffleMode,
-    volume,
-    muted,
-    liked,
-    saved,
-    isCasting,
-    activeCastDevice,
-    startCast,
-    stopCast,
-    playItem,
-    playStation,
-    playQueue,
-    play,
-    pause,
-    resume,
-    toggle,
-    next,
-    previous,
-    seek,
-    seekPct,
-    toggleLike,
-    toggleSave,
-    addToQueue,
-    playNext,
-    removeFromQueue,
-    clearQueue,
-    setPlaybackSource,
-    setRepeatMode,
-    toggleShuffle,
-    setVolume,
-    toggleMute,
-  ]);
+  const value = useMemo<PlaybackContext>(
+    () => ({
+      session,
+      currentItem,
+      currentTrack: currentItem,
+      currentSource,
+      playbackQueue,
+      queue,
+      upNext,
+      history,
+      isPlaying,
+      isBuffering,
+      isLive,
+      status,
+      progress,
+      currentTime,
+      duration,
+      repeatMode,
+      shuffleMode,
+      volume,
+      muted,
+      liked,
+      saved,
+      isCasting,
+      activeCastDevice,
+      startCast,
+      stopCast,
+      playItem,
+      playStation,
+      playQueue,
+      play,
+      pause,
+      resume,
+      toggle,
+      next,
+      previous,
+      prev: previous,
+      seek,
+      seekPct,
+      toggleLike,
+      toggleSave,
+      addToQueue,
+      playNext,
+      removeFromQueue,
+      clearQueue,
+      enqueue: addToQueue,
+      setPlaybackSource,
+      setRepeatMode,
+      toggleShuffle,
+      setVolume,
+      toggleMute,
+    }),
+    [
+      session,
+      currentItem,
+      currentSource,
+      playbackQueue,
+      queue,
+      upNext,
+      history,
+      isPlaying,
+      isBuffering,
+      isLive,
+      status,
+      progress,
+      currentTime,
+      duration,
+      repeatMode,
+      shuffleMode,
+      volume,
+      muted,
+      liked,
+      saved,
+      isCasting,
+      activeCastDevice,
+      startCast,
+      stopCast,
+      playItem,
+      playStation,
+      playQueue,
+      play,
+      pause,
+      resume,
+      toggle,
+      next,
+      previous,
+      seek,
+      seekPct,
+      toggleLike,
+      toggleSave,
+      addToQueue,
+      playNext,
+      removeFromQueue,
+      clearQueue,
+      setPlaybackSource,
+      setRepeatMode,
+      toggleShuffle,
+      setVolume,
+      toggleMute,
+    ],
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };
 
 export const usePlayer = (): PlaybackContext => {
   const ctx = useContext(Ctx);
-  if (!ctx) throw new Error('usePlayer must be used within PlayerProvider');
+  if (!ctx) throw new Error("usePlayer must be used within PlayerProvider");
   return ctx;
 };
 
@@ -581,5 +652,5 @@ export const formatTime = (s: number) => {
   if (!isFinite(s) || s < 0) s = 0;
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 };

@@ -5,7 +5,14 @@ import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-r
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Tv, UserPlus, LogOut, Crown, MicOff, MessageSquareOff, UserX,
+  ArrowLeft,
+  Tv,
+  UserPlus,
+  LogOut,
+  Crown,
+  MicOff,
+  MessageSquareOff,
+  UserX,
   X,
 } from "lucide-react";
 
@@ -76,7 +83,9 @@ function WatchPartyPage() {
     if (sessionLoading) return;
     if (!userId) {
       // Bounce to login, preserve next URL.
-      const next = encodeURIComponent(`/watch-party/${id}${inviteToken ? `?join=${inviteToken}` : ""}`);
+      const next = encodeURIComponent(
+        `/watch-party/${id}${inviteToken ? `?join=${inviteToken}` : ""}`,
+      );
       navigate({ to: "/login", search: { next } as any });
       return;
     }
@@ -130,7 +139,9 @@ function WatchPartyPage() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, inviteToken, sessionLoading, userId, session?.access_token, navigate]);
 
   // ── Realtime subscriptions: party row changes + member changes ─────────
@@ -138,7 +149,9 @@ function WatchPartyPage() {
     if (!party?.id) return;
     const ch = supabase
       .channel(`party-${party.id}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "watch_parties", filter: `id=eq.${party.id}` },
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "watch_parties", filter: `id=eq.${party.id}` },
         (payload) => {
           const next = payload.new as PartyRow;
           setParty(next);
@@ -148,7 +161,9 @@ function WatchPartyPage() {
           }
         },
       )
-      .on("postgres_changes", { event: "*", schema: "public", table: "party_members", filter: `party_id=eq.${party.id}` },
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "party_members", filter: `party_id=eq.${party.id}` },
         async () => {
           // Refetch the whole member list — simpler than reconciling deltas.
           const { data: memberRows } = await (supabase as any)
@@ -167,7 +182,9 @@ function WatchPartyPage() {
         },
       )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [party?.id, userId, navigate]);
 
   // ── Derived state ──────────────────────────────────────────────────────
@@ -176,10 +193,10 @@ function WatchPartyPage() {
   const composerDisabledReason = !me
     ? "Loading…"
     : me.kicked
-    ? "You've been removed"
-    : me.muted_chat
-    ? "Muted by host"
-    : null;
+      ? "You've been removed"
+      : me.muted_chat
+        ? "Muted by host"
+        : null;
 
   // ── Host actions ───────────────────────────────────────────────────────
   const onChangeChannel = useCallback(
@@ -197,7 +214,13 @@ function WatchPartyPage() {
     async (targetUserId: string) => {
       if (!party || !session?.access_token) return;
       const res = await setMemberFlag({
-        data: { accessToken: session.access_token, partyId: party.id, targetUserId, field: "kicked", value: true },
+        data: {
+          accessToken: session.access_token,
+          partyId: party.id,
+          targetUserId,
+          field: "kicked",
+          value: true,
+        },
       });
       if (!res.ok) toast.error(`Couldn't kick: ${res.error}`);
     },
@@ -208,7 +231,13 @@ function WatchPartyPage() {
     async (targetUserId: string, current: boolean) => {
       if (!party || !session?.access_token) return;
       const res = await setMemberFlag({
-        data: { accessToken: session.access_token, partyId: party.id, targetUserId, field: "muted_chat", value: !current },
+        data: {
+          accessToken: session.access_token,
+          partyId: party.id,
+          targetUserId,
+          field: "muted_chat",
+          value: !current,
+        },
       });
       if (!res.ok) toast.error(`Couldn't update: ${res.error}`);
     },
@@ -219,7 +248,13 @@ function WatchPartyPage() {
     async (targetUserId: string, current: boolean) => {
       if (!party || !session?.access_token) return;
       const res = await setMemberFlag({
-        data: { accessToken: session.access_token, partyId: party.id, targetUserId, field: "muted_mic", value: !current },
+        data: {
+          accessToken: session.access_token,
+          partyId: party.id,
+          targetUserId,
+          field: "muted_mic",
+          value: !current,
+        },
       });
       if (!res.ok) toast.error(`Couldn't update: ${res.error}`);
     },
@@ -229,7 +264,9 @@ function WatchPartyPage() {
   const onEndParty = useCallback(async () => {
     if (!party || !session?.access_token) return;
     if (!confirm("End this party for everyone?")) return;
-    const res = await endWatchParty({ data: { accessToken: session.access_token, partyId: party.id } });
+    const res = await endWatchParty({
+      data: { accessToken: session.access_token, partyId: party.id },
+    });
     if (!res.ok) toast.error(`Couldn't end: ${res.error}`);
     else navigate({ to: "/" });
   }, [party, session?.access_token, navigate]);
@@ -241,7 +278,9 @@ function WatchPartyPage() {
         <div className="max-w-md text-center">
           <h1 className="text-xl font-bold">Couldn't open party</h1>
           <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
-          <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">Go home</Link>
+          <Link to="/" className="mt-4 inline-block text-sm text-primary hover:underline">
+            Go home
+          </Link>
         </div>
       </div>
     );
@@ -249,7 +288,9 @@ function WatchPartyPage() {
 
   if (!party) {
     return (
-      <div className="min-h-screen grid place-items-center text-sm text-white/60">Loading party…</div>
+      <div className="min-h-screen grid place-items-center text-sm text-white/60">
+        Loading party…
+      </div>
     );
   }
 
@@ -258,7 +299,11 @@ function WatchPartyPage() {
       {/* Top bar */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-background/80 backdrop-blur">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate({ to: "/" })} aria-label="Back" className="text-white/70 hover:text-white">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            aria-label="Back"
+            className="text-white/70 hover:text-white"
+          >
             <ArrowLeft className="size-4" />
           </button>
           <div className="min-w-0">
@@ -266,9 +311,13 @@ function WatchPartyPage() {
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/15 border border-primary/40 text-primary text-[10px] tracking-widest font-bold">
                 <Crown className="size-3" /> WATCH PARTY
               </span>
-              <span className="text-sm font-semibold truncate">{party.name || "Untitled party"}</span>
+              <span className="text-sm font-semibold truncate">
+                {party.name || "Untitled party"}
+              </span>
             </div>
-            <div className="text-[10px] text-white/50">{members.length}/{party.max_members} members · channel {party.channel_id}</div>
+            <div className="text-[10px] text-white/50">
+              {members.length}/{party.max_members} members · channel {party.channel_id}
+            </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
             {isHost && (
@@ -314,7 +363,12 @@ function WatchPartyPage() {
                 <span className="text-[10px] text-white/40">private · AI-moderated</span>
               </div>
             </header>
-            <ChatMessageList kind="party" scopeId={party.id} pending={pending} currentUserId={userId} />
+            <ChatMessageList
+              kind="party"
+              scopeId={party.id}
+              pending={pending}
+              currentUserId={userId}
+            />
             <ChatComposer
               kind="party"
               scopeId={party.id}
@@ -344,7 +398,9 @@ function WatchPartyPage() {
                       <option value={party.channel_id}>{party.channel_id}</option>
                     )}
                     {treyChannels.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -387,7 +443,15 @@ type MembersPanelProps = {
   onToggleMuteMic: (userId: string, current: boolean) => void;
 };
 
-function MembersPanel({ members, hostId, currentUserId, isHost, onKick, onToggleMuteChat, onToggleMuteMic }: MembersPanelProps) {
+function MembersPanel({
+  members,
+  hostId,
+  currentUserId,
+  isHost,
+  onKick,
+  onToggleMuteChat,
+  onToggleMuteMic,
+}: MembersPanelProps) {
   const profiles = useChatProfiles(members.map((m) => m.user_id));
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
 
@@ -405,16 +469,24 @@ function MembersPanel({ members, hostId, currentUserId, isHost, onKick, onToggle
           return (
             <div key={m.user_id} className="flex items-center gap-2 group">
               <div className="size-7 rounded-full bg-white/10 overflow-hidden shrink-0">
-                {p?.avatar_url ? <img src={p.avatar_url} alt="" className="size-full object-cover" /> : null}
+                {p?.avatar_url ? (
+                  <img src={p.avatar_url} alt="" className="size-full object-cover" />
+                ) : null}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className={`text-xs font-semibold truncate ${isMeRow ? "text-primary" : ""}`}>{name}</span>
+                  <span
+                    className={`text-xs font-semibold truncate ${isMeRow ? "text-primary" : ""}`}
+                  >
+                    {name}
+                  </span>
                   {isHostRow && <Crown className="size-3 text-primary shrink-0" />}
                   {m.muted_chat && <MessageSquareOff className="size-3 text-amber-400 shrink-0" />}
                   {m.muted_mic && <MicOff className="size-3 text-amber-400 shrink-0" />}
                 </div>
-                {p?.username && <div className="text-[10px] text-white/40 truncate">@{p.username}</div>}
+                {p?.username && (
+                  <div className="text-[10px] text-white/40 truncate">@{p.username}</div>
+                )}
               </div>
               {isHost && !isHostRow && (
                 <div className="relative">
@@ -431,14 +503,20 @@ function MembersPanel({ members, hostId, currentUserId, isHost, onKick, onToggle
                       onMouseLeave={() => setOpenMenuFor(null)}
                     >
                       <button
-                        onClick={() => { onToggleMuteChat(m.user_id, m.muted_chat); setOpenMenuFor(null); }}
+                        onClick={() => {
+                          onToggleMuteChat(m.user_id, m.muted_chat);
+                          setOpenMenuFor(null);
+                        }}
                         className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-white/5 flex items-center gap-2"
                       >
                         <MessageSquareOff className="size-3" />
                         {m.muted_chat ? "Un-mute chat" : "Mute chat"}
                       </button>
                       <button
-                        onClick={() => { onToggleMuteMic(m.user_id, m.muted_mic); setOpenMenuFor(null); }}
+                        onClick={() => {
+                          onToggleMuteMic(m.user_id, m.muted_mic);
+                          setOpenMenuFor(null);
+                        }}
                         className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-white/5 flex items-center gap-2"
                       >
                         <MicOff className="size-3" />
@@ -446,7 +524,10 @@ function MembersPanel({ members, hostId, currentUserId, isHost, onKick, onToggle
                       </button>
                       <div className="h-px bg-white/10 my-1" />
                       <button
-                        onClick={() => { onKick(m.user_id); setOpenMenuFor(null); }}
+                        onClick={() => {
+                          onKick(m.user_id);
+                          setOpenMenuFor(null);
+                        }}
                         className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-red-500/10 text-red-300 flex items-center gap-2"
                       >
                         <UserX className="size-3" />

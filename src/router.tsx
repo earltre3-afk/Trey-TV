@@ -6,7 +6,7 @@ if (typeof window !== "undefined" && window.parent !== window) {
   let cachedFetch: typeof fetch | undefined;
   const originalFetch = window.fetch;
 
-  window.fetch = function(...args: any[]) {
+  window.fetch = function (...args: any[]) {
     if (cachedFetch) {
       return (cachedFetch as any)(...args);
     }

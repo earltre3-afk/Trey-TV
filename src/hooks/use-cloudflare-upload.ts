@@ -1,10 +1,7 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { createBrowserClient } from "@/lib/supabase-browser";
-import {
-  requestDirectUpload,
-  type DirectUploadResponse,
-} from "@/lib/creator-studio/upload.server";
+import { requestDirectUpload, type DirectUploadResponse } from "@/lib/creator-studio/upload.server";
 
 type UseCloudflareUploadReturn = {
   requestUpload: () => Promise<DirectUploadResponse | null>;
@@ -53,11 +50,7 @@ export function useCloudflareUpload(): UseCloudflareUploadReturn {
   }, []);
 
   const uploadFile = useCallback(
-    (
-      file: File,
-      uploadURL: string,
-      onProgress?: (pct: number) => void,
-    ): Promise<boolean> =>
+    (file: File, uploadURL: string, onProgress?: (pct: number) => void): Promise<boolean> =>
       new Promise((resolve) => {
         setUploadingFile(true);
         setProgress(0);

@@ -29,8 +29,8 @@ Two new data reads. One new file. Targeted edits to `rewards.tsx` only.
 type RewardTransaction = {
   id: string;
   title: string;
-  delta: number;   // positive = earn, negative = spend
-  when: string;    // relative time string
+  delta: number; // positive = earn, negative = spend
+  when: string; // relative time string
 };
 
 type UseRewardsReturn = {
@@ -87,16 +87,16 @@ The hook has no `markRead`, no `send`, no `insert`. Read-only.
 
 ```ts
 const TIER_LABELS: Record<string, string> = {
-  viewer: 'VIEWER',
-  supporter: 'SUPPORTER',
-  regular: 'REGULAR',
-  premiere_pull_up: 'PREMIERE',
-  channel_champion: 'CHAMPION',
-  trey_tv_insider: 'INSIDER',
-  community_mvp: 'MVP',
+  viewer: "VIEWER",
+  supporter: "SUPPORTER",
+  regular: "REGULAR",
+  premiere_pull_up: "PREMIERE",
+  channel_champion: "CHAMPION",
+  trey_tv_insider: "INSIDER",
+  community_mvp: "MVP",
 };
 function toTier(level: string | null): string {
-  return TIER_LABELS[level ?? ''] ?? 'VIEWER';
+  return TIER_LABELS[level ?? ""] ?? "VIEWER";
 }
 ```
 
@@ -104,20 +104,20 @@ function toTier(level: string | null): string {
 
 ```ts
 const EVENT_TITLES: Record<string, string> = {
-  episode_watch_completed: 'Watched episode',
-  episode_liked: 'Liked content',
-  episode_saved: 'Saved content',
-  meaningful_comment: 'Meaningful comment',
-  comment_liked: 'Comment liked',
-  premiere_attended: 'Attended premiere',
-  daily_streak: 'Daily streak bonus',
-  weekly_streak: 'Weekly streak bonus',
-  creator_followed: 'Followed a creator',
-  friend_invited: 'Friend invited',
-  helpful_report_confirmed: 'Helpful report',
+  episode_watch_completed: "Watched episode",
+  episode_liked: "Liked content",
+  episode_saved: "Saved content",
+  meaningful_comment: "Meaningful comment",
+  comment_liked: "Comment liked",
+  premiere_attended: "Attended premiere",
+  daily_streak: "Daily streak bonus",
+  weekly_streak: "Weekly streak bonus",
+  creator_followed: "Followed a creator",
+  friend_invited: "Friend invited",
+  helpful_report_confirmed: "Helpful report",
 };
 function toTitle(eventType: string): string {
-  return EVENT_TITLES[eventType] ?? eventType.replace(/_/g, ' ');
+  return EVENT_TITLES[eventType] ?? eventType.replace(/_/g, " ");
 }
 ```
 
@@ -126,8 +126,8 @@ function toTitle(eventType: string): string {
 ```ts
 function timeAgo(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 86400) return 'Today';
-  if (s < 172800) return 'Yesterday';
+  if (s < 86400) return "Today";
+  if (s < 172800) return "Yesterday";
   if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
   return `${Math.floor(s / 604800)}w ago`;
 }
@@ -160,13 +160,13 @@ Internal only — not exported.
 
 Five targeted replacements only:
 
-| # | Current | Replacement |
-|---|---|---|
-| 1 | `user?.rewards?.points ?? 12480` | `balance` from `useRewards()` |
-| 2 | `user?.rewards?.tier ?? 'GOLD'` | `tier` from `useRewards()` |
-| 3 | `user?.uid ?? '0000000000000000'` | `currentUser?.public_profile_uid ?? currentUser?.id ?? '0000000000000000'` |
-| 4 | `const transactions = [...]` (hardcoded) | `transactions` from `useRewards()` |
-| 5 | Quick stats hardcoded values | `lifetimeEarned`, `lifetimeSpent`, `streakDays` from `useRewards()` |
+| #   | Current                                  | Replacement                                                                |
+| --- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | `user?.rewards?.points ?? 12480`         | `balance` from `useRewards()`                                              |
+| 2   | `user?.rewards?.tier ?? 'GOLD'`          | `tier` from `useRewards()`                                                 |
+| 3   | `user?.uid ?? '0000000000000000'`        | `currentUser?.public_profile_uid ?? currentUser?.id ?? '0000000000000000'` |
+| 4   | `const transactions = [...]` (hardcoded) | `transactions` from `useRewards()`                                         |
+| 5   | Quick stats hardcoded values             | `lifetimeEarned`, `lifetimeSpent`, `streakDays` from `useRewards()`        |
 
 Add two imports: `useRewards` and `useCurrentUser`. No JSX structure changes.
 
@@ -176,11 +176,11 @@ The hardcoded `transactions` array is preserved as a comment block for rollback.
 
 ## 6. Quick Stats Mapping
 
-| Stat label | Current hardcoded | Hook field |
-|---|---|---|
-| Earned (30d) | `+3,240` | `lifetimeEarned.toLocaleString()` (prefixed `+`) |
-| Spent (30d) | `1,800` | `lifetimeSpent.toLocaleString()` |
-| Streak | `12d` | `` `${streakDays}d` `` |
+| Stat label   | Current hardcoded | Hook field                                       |
+| ------------ | ----------------- | ------------------------------------------------ |
+| Earned (30d) | `+3,240`          | `lifetimeEarned.toLocaleString()` (prefixed `+`) |
+| Spent (30d)  | `1,800`           | `lifetimeSpent.toLocaleString()`                 |
+| Streak       | `12d`             | `` `${streakDays}d` ``                           |
 
 Note: `lifetime_earned` and `lifetime_spent` are all-time totals, not 30-day. The label "Earned (30d)" / "Spent (30d)" is a UI label in the Lovable design — it is not changed. The data is the best available from the schema without a date-filtered aggregation query.
 
@@ -188,10 +188,10 @@ Note: `lifetime_earned` and `lifetime_spent` are all-time totals, not 30-day. Th
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/hooks/use-rewards.ts` | New file |
-| `src/routes/rewards.tsx` | 5 targeted replacements + 2 new imports |
+| File                       | Change                                  |
+| -------------------------- | --------------------------------------- |
+| `src/hooks/use-rewards.ts` | New file                                |
+| `src/routes/rewards.tsx`   | 5 targeted replacements + 2 new imports |
 
 No other files touched.
 

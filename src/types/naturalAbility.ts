@@ -1,25 +1,25 @@
 export type NaturalAbility =
-  | 'Diviner'
-  | 'Reaper'
-  | 'Empath'
-  | 'Charmer'
-  | 'Alchemist'
-  | 'Herbalist'
-  | 'Seer'
-  | 'Shapeshifter'
-  | 'Healer'
-  | 'Dreamer'
-  | 'Prophet'
-  | 'Ungifted'
-  | 'Manifestor'
-  | 'Creative';
+  | "Diviner"
+  | "Reaper"
+  | "Empath"
+  | "Charmer"
+  | "Alchemist"
+  | "Herbalist"
+  | "Seer"
+  | "Shapeshifter"
+  | "Healer"
+  | "Dreamer"
+  | "Prophet"
+  | "Ungifted"
+  | "Manifestor"
+  | "Creative";
 
-export type Genre = 'Drama' | 'Funny' | 'Scary' | 'Action' | 'Real Life';
+export type Genre = "Drama" | "Funny" | "Scary" | "Action" | "Real Life";
 
-export type SignalStrength = 'Strong' | 'Mixed' | 'Emerging' | 'Unreadable';
+export type SignalStrength = "Strong" | "Mixed" | "Emerging" | "Unreadable";
 
 export interface ScenarioChoice {
-  id: 'A' | 'B' | 'C';
+  id: "A" | "B" | "C";
   label: string;
   body: string;
   primary: NaturalAbility;
@@ -53,7 +53,7 @@ export interface AbilityResultContent {
 
 export interface UserAnswer {
   scenarioId: number;
-  selectedChoiceId?: 'A' | 'B' | 'C';
+  selectedChoiceId?: "A" | "B" | "C";
   customText?: string;
 }
 
@@ -66,7 +66,7 @@ export interface SignalResult {
   interpretation?: string;
 }
 
-export type PrivacyMode = 'public' | 'profile' | 'private';
+export type PrivacyMode = "public" | "profile" | "private";
 
 export interface ActiveNaturalAbilityBadge {
   badgeSlug: string;

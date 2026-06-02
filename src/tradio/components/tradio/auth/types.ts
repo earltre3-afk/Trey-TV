@@ -1,27 +1,45 @@
-export type TradioRole = 'fan' | 'artist' | 'producer' | 'dj' | 'moderator' | 'admin' | 'owner';
+export type TradioRole = "fan" | "artist" | "producer" | "dj" | "moderator" | "admin" | "owner";
 
-export type TradioMode = 'listener' | 'artist' | 'producer' | 'dj' | 'admin';
+export type TradioMode = "listener" | "artist" | "producer" | "dj" | "admin";
 
-export type TradioRoleStatus = 'active' | 'requested' | 'approved' | 'restricted' | 'revoked' | 'archived';
+export type TradioRoleStatus =
+  | "active"
+  | "requested"
+  | "approved"
+  | "restricted"
+  | "revoked"
+  | "archived";
 
-export type TradioAccessState = 'none' | 'available' | 'requested' | 'granted' | 'restricted';
+export type TradioAccessState = "none" | "available" | "requested" | "granted" | "restricted";
 
-export type TradioVerificationState = 'unverified' | 'pending' | 'verified' | 'rejected' | 'revoked';
+export type TradioVerificationState =
+  | "unverified"
+  | "pending"
+  | "verified"
+  | "rejected"
+  | "revoked";
 
-export type TradioBroadcastAccessState = 'invite_only' | 'submitted' | 'pending' | 'under_review' | 'cleared' | 'denied' | 'revoked';
+export type TradioBroadcastAccessState =
+  | "invite_only"
+  | "submitted"
+  | "pending"
+  | "under_review"
+  | "cleared"
+  | "denied"
+  | "revoked";
 
 export type TradioCapability =
-  | 'listen'
-  | 'access-studio'
-  | 'create-artist-station'
-  | 'release-music'
-  | 'upload-beat'
-  | 'create-broadcast'
-  | 'host-song-war'
-  | 'moderate-session'
-  | 'admin-platform'
-  | 'request-broadcast-access'
-  | 'request-verification';
+  | "listen"
+  | "access-studio"
+  | "create-artist-station"
+  | "release-music"
+  | "upload-beat"
+  | "create-broadcast"
+  | "host-song-war"
+  | "moderate-session"
+  | "admin-platform"
+  | "request-broadcast-access"
+  | "request-verification";
 
 export interface TradioProfileBridge {
   user_id: string;
@@ -42,7 +60,7 @@ export interface TradioRoleGrant {
 export interface TradioBadge {
   id: string;
   label: string;
-  tone?: 'cyan' | 'violet' | 'magenta' | 'gold' | 'emerald';
+  tone?: "cyan" | "violet" | "magenta" | "gold" | "emerald";
 }
 
 export interface TradioIdentity extends TradioProfileBridge {
@@ -68,22 +86,22 @@ export interface TradioIdentity extends TradioProfileBridge {
 // the user submits a request and waits for backend/RPC review (Pass 4G).
 
 /** Roles a user can apply to step up into (fan/listener is the default, not requestable). */
-export type TradioOnboardingRole = 'artist' | 'producer' | 'dj';
+export type TradioOnboardingRole = "artist" | "producer" | "dj";
 
 /** The kinds of access a user can request from the frontend. */
-export type RoleRequestType = 'artist' | 'producer' | 'dj' | 'verification' | 'broadcast';
+export type RoleRequestType = "artist" | "producer" | "dj" | "verification" | "broadcast";
 
 /** Lifecycle of any access request. */
 export type RoleRequestStatus =
-  | 'not_started'
-  | 'draft'
-  | 'submitted'
-  | 'pending'
-  | 'approved'
-  | 'rejected'
-  | 'restricted'
-  | 'needs_more_info'
-  | 'cancelled';
+  | "not_started"
+  | "draft"
+  | "submitted"
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "restricted"
+  | "needs_more_info"
+  | "cancelled";
 
 export type VerificationRequestStatus = RoleRequestStatus;
 export type BroadcastAccessRequestStatus = RoleRequestStatus;
@@ -111,14 +129,14 @@ export interface RoleApplicationAnswer {
 
 /** Lifecycle event types for an access request (mirrors tradio_access_request_event_type). */
 export type AccessRequestEventType =
-  | 'submitted'
-  | 'updated'
-  | 'needs_more_info'
-  | 'approved'
-  | 'rejected'
-  | 'restricted'
-  | 'cancelled'
-  | 'note_added';
+  | "submitted"
+  | "updated"
+  | "needs_more_info"
+  | "approved"
+  | "rejected"
+  | "restricted"
+  | "cancelled"
+  | "note_added";
 
 /** One entry in an access request's audit timeline. */
 export interface AccessRequestEvent {

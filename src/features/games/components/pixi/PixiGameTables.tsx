@@ -2,14 +2,14 @@
  * Lazy wrappers for game-specific Pixi table renderers.
  * These ensure PixiJS is only bundled and loaded on game routes.
  */
-import React, { lazy, Suspense } from 'react';
-import type { PixiBJTableProps } from './PixiBlackjackTable';
-import type { PixiSpadesProps } from './PixiSpadesTable';
-import type { PixiBullshitProps } from './PixiBullshitTable';
+import React, { lazy, Suspense } from "react";
+import type { PixiBJTableProps } from "./PixiBlackjackTable";
+import type { PixiSpadesProps } from "./PixiSpadesTable";
+import type { PixiBullshitProps } from "./PixiBullshitTable";
 
-const LazyBJTable      = lazy(() => import('./PixiBlackjackTable'));
-const LazySpadesTable  = lazy(() => import('./PixiSpadesTable'));
-const LazyBullshitTable = lazy(() => import('./PixiBullshitTable'));
+const LazyBJTable = lazy(() => import("./PixiBlackjackTable"));
+const LazySpadesTable = lazy(() => import("./PixiSpadesTable"));
+const LazyBullshitTable = lazy(() => import("./PixiBullshitTable"));
 
 export const PixiBlackjackTableLazy: React.FC<PixiBJTableProps> = (props) => (
   <Suspense fallback={null}>

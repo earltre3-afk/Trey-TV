@@ -1,18 +1,18 @@
-import { supabase } from '@/lib/supabase';
-import { SessionScore, PoseFeedback, RoutineDifficulty } from '../types';
-import { recentScores as devScores, sampleFeedback } from '../data/devFixtures';
-import { assertConfigured, shouldUseFixtures } from './config';
+import { supabase } from "@/lib/supabase";
+import { SessionScore, PoseFeedback, RoutineDifficulty } from "../types";
+import { recentScores as devScores, sampleFeedback } from "../data/devFixtures";
+import { assertConfigured, shouldUseFixtures } from "./config";
 
 export const tranceScoringService = {
   computeSessionScore: async (attemptId: string): Promise<PoseFeedback> => {
-    assertConfigured('ScoringService');
+    assertConfigured("ScoringService");
     if (shouldUseFixtures()) {
       return sampleFeedback;
     }
     const { data, error } = await supabase
-      .from('trance_pose_feedback')
-      .select('*')
-      .eq('attempt_id', attemptId)
+      .from("trance_pose_feedback")
+      .select("*")
+      .eq("attempt_id", attemptId)
       .maybeSingle();
 
     if (error) throw error;
@@ -26,31 +26,35 @@ export const tranceScoringService = {
     };
   },
 
-  saveScore: async (score: Partial<SessionScore>, attemptId: string, userId: string): Promise<SessionScore> => {
-    assertConfigured('ScoringService');
+  saveScore: async (
+    score: Partial<SessionScore>,
+    attemptId: string,
+    userId: string,
+  ): Promise<SessionScore> => {
+    assertConfigured("ScoringService");
     const newScore: SessionScore = {
       id: score.id || `sc-${Math.random().toString(36).substr(2, 9)}`,
-      routineId: score.routineId || 'rt001',
-      routineTitle: score.routineTitle || 'Euphoria',
-      cover: score.cover || '',
-      difficulty: score.difficulty || ('Intermediate' as RoutineDifficulty),
+      routineId: score.routineId || "rt001",
+      routineTitle: score.routineTitle || "Euphoria",
+      cover: score.cover || "",
+      difficulty: score.difficulty || ("Intermediate" as RoutineDifficulty),
       total: score.total || 90,
       accuracy: score.accuracy || 90,
       timing: score.timing || 90,
       energy: score.energy || 90,
       sync: score.sync || 90,
-      rank: score.rank || 'S',
+      rank: score.rank || "S",
       newPB: score.newPB || false,
-      when: 'Just now',
+      when: "Just now",
     };
 
     if (shouldUseFixtures()) {
-      console.log('[Dev Mode] Mock saving score for attempt:', attemptId, newScore);
+      console.log("[Dev Mode] Mock saving score for attempt:", attemptId, newScore);
       return newScore;
     }
 
     const { data, error } = await supabase
-      .from('trance_session_scores')
+      .from("trance_session_scores")
       .insert({
         attempt_id: attemptId,
         user_id: userId,
@@ -63,7 +67,7 @@ export const tranceScoringService = {
         rank: newScore.rank,
         is_pb: newScore.newPB,
       })
-      .select('*')
+      .select("*")
       .maybeSingle();
 
     if (error) throw error;
@@ -77,7 +81,7 @@ export const tranceScoringService = {
     userId: string,
     routineId: string,
     attemptId: string,
-    mode: 'Learn' | 'Practice' | 'Performance',
+    mode: "Learn" | "Practice" | "Performance",
     scoreData: {
       accuracy: number;
       timing: number;
@@ -85,20 +89,20 @@ export const tranceScoringService = {
       sync: number;
       total: number;
       rank: string;
-    }
+    },
   ): Promise<SessionScore> => {
-    assertConfigured('ScoringService');
-    
+    assertConfigured("ScoringService");
+
     // Fetch routine details dynamically to populate score model info
-    let routineTitle = 'Unknown Routine';
-    let cover = '';
-    let difficulty = 'Intermediate' as RoutineDifficulty;
+    let routineTitle = "Unknown Routine";
+    let cover = "";
+    let difficulty = "Intermediate" as RoutineDifficulty;
 
     if (!shouldUseFixtures()) {
       const { data: rData } = await supabase
-        .from('trance_routines')
-        .select('title, cover, difficulty')
-        .eq('id', routineId)
+        .from("trance_routines")
+        .select("title, cover, difficulty")
+        .eq("id", routineId)
         .maybeSingle();
       if (rData) {
         routineTitle = rData.title;
@@ -125,12 +129,12 @@ export const tranceScoringService = {
     const saved = await tranceScoringService.saveScore(sessionScore, attemptId, userId);
 
     // 2. Import dependencies dynamically to avoid circular references
-    const { tranceSessionService } = await import('./tranceSessionService');
-    const { tranceLeaderboardService } = await import('./tranceLeaderboardService');
-    const { tranceBadgeService } = await import('./tranceBadgeService');
+    const { tranceSessionService } = await import("./tranceSessionService");
+    const { tranceLeaderboardService } = await import("./tranceLeaderboardService");
+    const { tranceBadgeService } = await import("./tranceBadgeService");
 
     // 3. Update session attempt status to completed/ready
-    await tranceSessionService.updateAttemptStatus(attemptId, 'ready');
+    await tranceSessionService.updateAttemptStatus(attemptId, "ready");
 
     // 4. Submit score to leaderboard
     await tranceLeaderboardService.submitScoreToLeaderboard({
@@ -142,24 +146,24 @@ export const tranceScoringService = {
     });
 
     // 5. Unlock First Session badge
-    await tranceBadgeService.unlockBadge(userId, 'first_session');
+    await tranceBadgeService.unlockBadge(userId, "first_session");
 
     // 6. Update user profile totals
     if (!shouldUseFixtures()) {
       const { data: profile } = await supabase
-        .from('trance_profiles')
-        .select('total_points, routines_mastered')
-        .eq('id', userId)
+        .from("trance_profiles")
+        .select("total_points, routines_mastered")
+        .eq("id", userId)
         .maybeSingle();
 
       if (profile) {
         await supabase
-          .from('trance_profiles')
+          .from("trance_profiles")
           .update({
             total_points: (profile.total_points ?? 0) + Math.round(saved.total * 10),
             routines_mastered: (profile.routines_mastered ?? 0) + (saved.total >= 90 ? 1 : 0),
           })
-          .eq('id', userId);
+          .eq("id", userId);
       }
     }
 
@@ -167,13 +171,14 @@ export const tranceScoringService = {
   },
 
   getRecentScores: async (userId: string): Promise<SessionScore[]> => {
-    assertConfigured('ScoringService');
+    assertConfigured("ScoringService");
     if (shouldUseFixtures()) {
       return devScores;
     }
     const { data, error } = await supabase
-      .from('trance_session_scores')
-      .select(`
+      .from("trance_session_scores")
+      .select(
+        `
         id,
         routine_id,
         total,
@@ -185,9 +190,10 @@ export const tranceScoringService = {
         is_pb,
         created_at,
         routine:trance_routines(title, cover, difficulty)
-      `)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      `,
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
       .limit(10);
 
     if (error) throw error;
@@ -213,9 +219,9 @@ export const tranceScoringService = {
     return (data as unknown as DBScoreRow[]).map((d) => ({
       id: d.id,
       routineId: d.routine_id,
-      routineTitle: d.routine?.title || 'Unknown Routine',
-      cover: d.routine?.cover || '',
-      difficulty: (d.routine?.difficulty as RoutineDifficulty) || 'Intermediate',
+      routineTitle: d.routine?.title || "Unknown Routine",
+      cover: d.routine?.cover || "",
+      difficulty: (d.routine?.difficulty as RoutineDifficulty) || "Intermediate",
       total: d.total,
       accuracy: d.accuracy,
       timing: d.timing,
@@ -223,18 +229,19 @@ export const tranceScoringService = {
       sync: d.sync,
       rank: d.rank,
       newPB: d.is_pb,
-      when: 'Recent',
+      when: "Recent",
     }));
   },
 
   getScoreForAttempt: async (attemptId: string): Promise<SessionScore | null> => {
-    assertConfigured('ScoringService');
+    assertConfigured("ScoringService");
     if (shouldUseFixtures()) {
       return devScores[0];
     }
     const { data, error } = await supabase
-      .from('trance_session_scores')
-      .select(`
+      .from("trance_session_scores")
+      .select(
+        `
         id,
         routine_id,
         total,
@@ -246,8 +253,9 @@ export const tranceScoringService = {
         is_pb,
         created_at,
         routine:trance_routines(title, cover, difficulty)
-      `)
-      .eq('attempt_id', attemptId)
+      `,
+      )
+      .eq("attempt_id", attemptId)
       .maybeSingle();
 
     if (error) throw error;
@@ -257,9 +265,9 @@ export const tranceScoringService = {
     return {
       id: d.id,
       routineId: d.routine_id,
-      routineTitle: d.routine?.title || 'Unknown Routine',
-      cover: d.routine?.cover || '',
-      difficulty: (d.routine?.difficulty as RoutineDifficulty) || 'Intermediate',
+      routineTitle: d.routine?.title || "Unknown Routine",
+      cover: d.routine?.cover || "",
+      difficulty: (d.routine?.difficulty as RoutineDifficulty) || "Intermediate",
       total: Number(d.total),
       accuracy: Number(d.accuracy),
       timing: Number(d.timing),
@@ -267,7 +275,7 @@ export const tranceScoringService = {
       sync: Number(d.sync),
       rank: d.rank,
       newPB: d.is_pb,
-      when: 'Recent',
+      when: "Recent",
     };
   },
 };

@@ -27,7 +27,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;
@@ -74,7 +74,8 @@ async function handleOAuthApiRequest(request: Request, env: unknown): Promise<Re
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);
   if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
   if (url.pathname === "/oauth/revoke") return handleOAuthRevoke(request);
-  if (url.pathname === "/.well-known/openid-configuration") return handleOpenIdConfiguration(request);
+  if (url.pathname === "/.well-known/openid-configuration")
+    return handleOpenIdConfiguration(request);
   if (url.pathname === "/oauth/jwks.json") return handleJwks();
 
   return null;

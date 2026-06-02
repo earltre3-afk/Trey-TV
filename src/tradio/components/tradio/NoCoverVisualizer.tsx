@@ -1,5 +1,5 @@
-import React from 'react';
-import { Activity, Radio, Sparkles, AlertCircle, RotateCcw } from 'lucide-react';
+import React from "react";
+import { Activity, Radio, Sparkles, AlertCircle, RotateCcw } from "lucide-react";
 
 interface NoCoverVisualizerProps {
   title?: string;
@@ -11,14 +11,14 @@ interface NoCoverVisualizerProps {
   mood?: string;
   genre?: string;
   dominantColor?: string;
-  size?: 'mini' | 'card' | 'full';
+  size?: "mini" | "card" | "full";
   showLabel?: boolean;
   className?: string;
 }
 
 export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
-  title = 'Untitled Signal',
-  artist = 'Sonic Identity',
+  title = "Untitled Signal",
+  artist = "Sonic Identity",
   isPlaying = true,
   isLoading = false,
   isError = false,
@@ -26,27 +26,27 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
   mood,
   genre,
   dominantColor,
-  size = 'card',
+  size = "card",
   showLabel = true,
-  className = '',
+  className = "",
 }) => {
   // Use brand colors or custom dominantColor
-  const primaryColor = dominantColor || '#B026FF'; // Tradio premium purple
-  const secondaryColor = '#06B6D4'; // Tradio cyber cyan
-  const accentColor = '#EAB308'; // Premium gold
+  const primaryColor = dominantColor || "#B026FF"; // Tradio premium purple
+  const secondaryColor = "#06B6D4"; // Tradio cyber cyan
+  const accentColor = "#EAB308"; // Premium gold
 
   // Animation play state
   const isAnimating = isPlaying && !isLoading && !isError;
-  const playState = isAnimating ? 'running' : 'paused';
+  const playState = isAnimating ? "running" : "paused";
 
   // Base dimensions based on size
   const sizeClasses = {
-    mini: 'h-11 w-11 rounded-lg',
-    card: 'aspect-square w-full rounded-2xl sm:rounded-3xl',
-    full: 'aspect-[4/5] w-full rounded-2xl sm:rounded-3xl',
+    mini: "h-11 w-11 rounded-lg",
+    card: "aspect-square w-full rounded-2xl sm:rounded-3xl",
+    full: "aspect-[4/5] w-full rounded-2xl sm:rounded-3xl",
   };
 
-  if (size === 'mini') {
+  if (size === "mini") {
     return (
       <div
         className={`relative overflow-hidden bg-[#050508] border border-white/10 flex items-center justify-center shadow-inner transition-all duration-300 ${sizeClasses.mini} ${className}`}
@@ -65,7 +65,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
           <div className="absolute inset-0 flex items-center justify-center">
             <div
               className="h-5 w-5 rounded-full border border-purple-500/30 border-t-purple-500 animate-spin"
-              style={{ animationDuration: '1s' }}
+              style={{ animationDuration: "1s" }}
             />
           </div>
         ) : isError ? (
@@ -91,7 +91,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
           <div
             className="absolute inset-1 rounded-full border border-transparent border-t-cyan-400/80 animate-slow-spin"
             style={{
-              animationDuration: '3s',
+              animationDuration: "3s",
               animationPlayState: playState,
               filter: `drop-shadow(0 0 3px ${secondaryColor})`,
             }}
@@ -139,11 +139,11 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
           />
           <div
             className="absolute bottom-1/3 left-1/4 h-1.5 w-1.5 rounded-full bg-pink-400/30 blur-[0.5px] animate-particle-2"
-            style={{ animationPlayState: playState, animationDelay: '-3s' }}
+            style={{ animationPlayState: playState, animationDelay: "-3s" }}
           />
           <div
             className="absolute bottom-1/4 right-1/3 h-1 w-1 rounded-full bg-purple-300/50 blur-[0.5px] animate-particle-1"
-            style={{ animationPlayState: playState, animationDelay: '-4s' }}
+            style={{ animationPlayState: playState, animationDelay: "-4s" }}
           />
         </div>
       )}
@@ -162,7 +162,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
         {showLabel ? (
           <span className="inline-flex items-center gap-1.5 px-4 py-2 text-[10px] font-bold tracking-wider text-purple-300 rounded-full border border-purple-500/20 bg-black/40 backdrop-blur-md">
             <Radio className="h-3 w-3 animate-pulse" />
-            {isError ? 'SIGNAL LOSS' : isLoading ? 'TUNING SIGNAL...' : 'TRADIO SIGNAL'}
+            {isError ? "SIGNAL LOSS" : isLoading ? "TUNING SIGNAL..." : "TRADIO SIGNAL"}
           </span>
         ) : (
           <div />
@@ -206,15 +206,15 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
               <>
                 <div
                   className="absolute inset-0 rounded-full border border-purple-500/20 animate-wave-expand"
-                  style={{ animationPlayState: playState, animationDelay: '0s' }}
+                  style={{ animationPlayState: playState, animationDelay: "0s" }}
                 />
                 <div
                   className="absolute inset-0 rounded-full border border-cyan-400/15 animate-wave-expand"
-                  style={{ animationPlayState: playState, animationDelay: '1.5s' }}
+                  style={{ animationPlayState: playState, animationDelay: "1.5s" }}
                 />
                 <div
                   className="absolute inset-0 rounded-full border border-purple-400/10 animate-wave-expand"
-                  style={{ animationPlayState: playState, animationDelay: '3s' }}
+                  style={{ animationPlayState: playState, animationDelay: "3s" }}
                 />
               </>
             )}
@@ -222,11 +222,11 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
             {/* Glowing Central Orb or Vinyl Disc Circle */}
             <div
               className={`relative flex items-center justify-center rounded-full transition-all duration-700 ${
-                size === 'full' ? 'h-32 w-32' : 'h-24 w-24'
-              } ${isLoading ? 'animate-pulse-orb-slow' : 'animate-pulse-orb'}`}
+                size === "full" ? "h-32 w-32" : "h-24 w-24"
+              } ${isLoading ? "animate-pulse-orb-slow" : "animate-pulse-orb"}`}
               style={{
                 background: `radial-gradient(circle, rgba(0,0,0,0.9) 30%, ${primaryColor}22 75%, ${primaryColor}dd 100%)`,
-                border: '1px solid rgba(255, 255, 255, 0.12)',
+                border: "1px solid rgba(255, 255, 255, 0.12)",
                 animationPlayState: playState,
               }}
             >
@@ -240,7 +240,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
               {/* Core glowing nucleus */}
               <div
                 className={`rounded-full bg-white flex items-center justify-center shadow-lg transition-all duration-500 ${
-                  size === 'full' ? 'h-10 w-10' : 'h-8 w-8'
+                  size === "full" ? "h-10 w-10" : "h-8 w-8"
                 }`}
                 style={{
                   boxShadow: `0 0 25px ${primaryColor}, 0 0 45px ${secondaryColor}`,
@@ -249,11 +249,11 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
                 {isLoading ? (
                   <div
                     className="h-4 w-4 rounded-full border border-purple-600 border-t-white animate-spin"
-                    style={{ animationDuration: '0.8s' }}
+                    style={{ animationDuration: "0.8s" }}
                   />
                 ) : (
                   <Activity
-                    className={`h-4 w-4 text-purple-700 ${isAnimating ? 'animate-pulse' : ''}`}
+                    className={`h-4 w-4 text-purple-700 ${isAnimating ? "animate-pulse" : ""}`}
                   />
                 )}
               </div>
@@ -267,7 +267,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
                   className="absolute inset-[3px] rounded-full border border-transparent animate-slow-spin"
                   style={{
                     borderTopColor: secondaryColor,
-                    animationDuration: '4s',
+                    animationDuration: "4s",
                     animationPlayState: playState,
                     filter: `drop-shadow(0 0 6px ${secondaryColor})`,
                   }}
@@ -277,7 +277,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
                   className="absolute inset-[-12px] rounded-full border border-transparent animate-spin-reverse"
                   style={{
                     borderBottomColor: primaryColor,
-                    animationDuration: '6s',
+                    animationDuration: "6s",
                     animationPlayState: playState,
                     filter: `drop-shadow(0 0 8px ${primaryColor})`,
                   }}
@@ -288,7 +288,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
                   style={{
                     borderLeftColor: primaryColor,
                     borderRightColor: `${accentColor}44`,
-                    animationDuration: '9s',
+                    animationDuration: "9s",
                     animationPlayState: playState,
                     filter: `drop-shadow(0 0 4px ${primaryColor})`,
                   }}
@@ -308,18 +308,18 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
               <span className="relative flex h-2 w-2">
                 <span
                   className={`animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 ${
-                    isAnimating ? '' : 'paused-important'
+                    isAnimating ? "" : "paused-important"
                   }`}
                   style={{ animationPlayState: playState }}
                 />
                 <span
                   className={`relative inline-flex rounded-full h-2 w-2 ${
-                    isLoading ? 'bg-amber-400' : 'bg-green-500'
+                    isLoading ? "bg-amber-400" : "bg-green-500"
                   }`}
                 />
               </span>
               <span className="text-[9px] font-mono tracking-widest text-white/40">
-                {isLoading ? 'LOCKING...' : isAnimating ? 'HQ STEREO STREAM' : 'PAUSED'}
+                {isLoading ? "LOCKING..." : isAnimating ? "HQ STEREO STREAM" : "PAUSED"}
               </span>
             </div>
 
@@ -341,7 +341,7 @@ export const NoCoverVisualizer: React.FC<NoCoverVisualizerProps> = ({
 
 export interface TradioImageProps {
   src?: string;
-  fallbackSize?: 'mini' | 'card' | 'full';
+  fallbackSize?: "mini" | "card" | "full";
   title?: string;
   artist?: string;
   isPlaying?: boolean;
@@ -356,7 +356,7 @@ export interface TradioImageProps {
 
 export const TradioImage: React.FC<TradioImageProps> = ({
   src,
-  fallbackSize = 'card',
+  fallbackSize = "card",
   title,
   artist,
   isPlaying = true,
@@ -365,8 +365,8 @@ export const TradioImage: React.FC<TradioImageProps> = ({
   mood,
   genre,
   showLabel = false,
-  className = '',
-  imgClassName = '',
+  className = "",
+  imgClassName = "",
 }) => {
   const [imageError, setImageError] = React.useState(false);
 
@@ -374,7 +374,7 @@ export const TradioImage: React.FC<TradioImageProps> = ({
     setImageError(false);
   }, [src]);
 
-  const isCoverMissing = !src || src === 'processing' || src === 'null' || src === 'undefined';
+  const isCoverMissing = !src || src === "processing" || src === "null" || src === "undefined";
 
   if (isCoverMissing || imageError || isError) {
     return (
@@ -396,7 +396,7 @@ export const TradioImage: React.FC<TradioImageProps> = ({
   return (
     <img
       src={src}
-      alt={title || ''}
+      alt={title || ""}
       onError={() => setImageError(true)}
       className={`${imgClassName} ${className}`}
     />

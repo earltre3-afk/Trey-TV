@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { FreeTvConfigurationError, FreeTvProviderError } from './serverClient';
+import { NextResponse } from "next/server";
+import { FreeTvConfigurationError, FreeTvProviderError } from "./serverClient";
 
 export function jsonOk(data: unknown, status = 200): NextResponse {
   return NextResponse.json(data, { status });
@@ -15,10 +15,10 @@ export function handleFreeTvRouteError(error: unknown): NextResponse {
   }
 
   if (error instanceof FreeTvProviderError) {
-    return jsonError('Free TV provider is temporarily unavailable.', 502);
+    return jsonError("Free TV provider is temporarily unavailable.", 502);
   }
 
-  return jsonError('Free TV request failed.', 500);
+  return jsonError("Free TV request failed.", 500);
 }
 
 export function requiredSearchParam(request: Request, key: string): string | null {

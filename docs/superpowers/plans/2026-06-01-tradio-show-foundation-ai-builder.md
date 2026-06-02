@@ -11,12 +11,14 @@
 Spec: `docs/superpowers/specs/2026-06-01-tradio-show-foundation-ai-builder-design.md`
 
 **Consistency reconciliations (vs spec):**
+
 - `RadioShow.status` (in `data.ts`) is `'draft'|'template'|'scheduled'|'live'|'archived'`. The migration CHECK uses **these exact values** (spec's `'replay'` → use `'archived'`).
 - `ShowSegment` gains a new optional `script?: string` (the spoken host lines).
 
 ---
 
 ## File structure
+
 - Create `supabase/migrations/20260601030000_tradio_radio_shows.sql` — table + RLS.
 - Modify `src/tradio/components/tradio/data.ts` — add `script?: string` to `ShowSegment`.
 - Create `src/tradio/components/tradio/showPlan.ts` — pure: `ShowBuilderFormState`, `emptyForm`, `generateShowPlan`, segment-type coercion + `validateGeneratedShow`.
@@ -101,6 +103,7 @@ git commit -m "feat(tradio): tradio_radio_shows table + RLS"
 ## Task 2: Extract pure show-plan module + validation (TDD)
 
 **Files:**
+
 - Modify `src/tradio/components/tradio/data.ts` (add `script?` to `ShowSegment`)
 - Create `src/tradio/components/tradio/showPlan.ts`
 - Test `src/tradio/components/tradio/showPlan.test.ts`
@@ -109,6 +112,7 @@ git commit -m "feat(tradio): tradio_radio_shows table + RLS"
 - [ ] **Step 1: Add `script` to `ShowSegment`**
 
 In `data.ts`, inside `export interface ShowSegment { ... }`, after the `hostNotes?: string;` line add:
+
 ```ts
   script?: string;
 ```
@@ -116,37 +120,50 @@ In `data.ts`, inside `export interface ShowSegment { ... }`, after the `hostNote
 - [ ] **Step 2: Write the failing test** — `src/tradio/components/tradio/showPlan.test.ts`
 
 ```ts
-import test from 'node:test';
-import assert from 'node:assert/strict';
-import { coerceSegmentType, validateGeneratedShow, SHOW_SEGMENT_TYPES, emptyForm } from './showPlan';
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  coerceSegmentType,
+  validateGeneratedShow,
+  SHOW_SEGMENT_TYPES,
+  emptyForm,
+} from "./showPlan";
 
-test('coerceSegmentType accepts canonical types', () => {
+test("coerceSegmentType accepts canonical types", () => {
   for (const t of SHOW_SEGMENT_TYPES) assert.equal(coerceSegmentType(t), t);
 });
-test('coerceSegmentType is case-insensitive + tolerant', () => {
-  assert.equal(coerceSegmentType('Music-Block'), 'music-block');
-  assert.equal(coerceSegmentType('HOST-TALK'), 'host-talk');
+test("coerceSegmentType is case-insensitive + tolerant", () => {
+  assert.equal(coerceSegmentType("Music-Block"), "music-block");
+  assert.equal(coerceSegmentType("HOST-TALK"), "host-talk");
 });
-test('coerceSegmentType rejects unknown', () => {
-  assert.equal(coerceSegmentType('banana'), null);
+test("coerceSegmentType rejects unknown", () => {
+  assert.equal(coerceSegmentType("banana"), null);
   assert.equal(coerceSegmentType(42), null);
 });
-test('validateGeneratedShow drops invalid segments + clamps duration', () => {
+test("validateGeneratedShow drops invalid segments + clamps duration", () => {
   const show = validateGeneratedShow(
-    { title: 'X', segments: [
-      { type: 'intro', title: 'Hi', duration: 5, hostNotes: 'n', script: 's' },
-      { type: 'bogus', title: 'Bad', duration: 100 },
-      { type: 'music-block', title: 'Block', duration: 999999 },
-    ] },
+    {
+      title: "X",
+      segments: [
+        { type: "intro", title: "Hi", duration: 5, hostNotes: "n", script: "s" },
+        { type: "bogus", title: "Bad", duration: 100 },
+        { type: "music-block", title: "Block", duration: 999999 },
+      ],
+    },
     emptyForm,
   );
-  assert.equal(show.segments.length, 2);             // bogus dropped
-  assert.equal(show.segments[0].duration, 15);       // clamped up to min
-  assert.equal(show.segments[1].duration, 1800);     // clamped down to max
+  assert.equal(show.segments.length, 2); // bogus dropped
+  assert.equal(show.segments[0].duration, 15); // clamped up to min
+  assert.equal(show.segments[1].duration, 1800); // clamped down to max
   assert.equal(show.aiGenerated, true);
 });
-test('validateGeneratedShow throws when no valid segments', () => {
-  assert.throws(() => validateGeneratedShow({ title: 'X', segments: [{ type: 'nope', title: 'a', duration: 10 }] }, emptyForm));
+test("validateGeneratedShow throws when no valid segments", () => {
+  assert.throws(() =>
+    validateGeneratedShow(
+      { title: "X", segments: [{ type: "nope", title: "a", duration: 10 }] },
+      emptyForm,
+    ),
+  );
 });
 ```
 
@@ -157,17 +174,24 @@ test('validateGeneratedShow throws when no valid segments', () => {
 Move `ShowBuilderFormState`, `emptyForm`, and `generateShowPlan` out of `ShowBuilder.tsx` and add validation. Full file:
 
 ```ts
-import type { RadioShow, ShowSegment } from './data';
+import type { RadioShow, ShowSegment } from "./data";
 
-export const SHOW_SEGMENT_TYPES: ShowSegment['type'][] = [
-  'intro', 'music-block', 'host-talk', 'fan-request',
-  'producer-spotlight', 'artist-premiere', 'commercial', 'poll', 'closing',
+export const SHOW_SEGMENT_TYPES: ShowSegment["type"][] = [
+  "intro",
+  "music-block",
+  "host-talk",
+  "fan-request",
+  "producer-spotlight",
+  "artist-premiere",
+  "commercial",
+  "poll",
+  "closing",
 ];
 
 const MIN_SEGMENT_SEC = 15;
 const MAX_SEGMENT_SEC = 1800;
 
-export type SaveTarget = 'live show' | 'replay' | 'template';
+export type SaveTarget = "live show" | "replay" | "template";
 
 export type ShowBuilderFormState = {
   showName: string;
@@ -186,25 +210,25 @@ export type ShowBuilderFormState = {
 };
 
 export const emptyForm: ShowBuilderFormState = {
-  showName: '',
+  showName: "",
   showLength: 120,
-  showMood: 'late-night',
-  targetAudience: 'fans who want premieres and discovery',
-  hostTone: 'warm, cinematic',
-  musicSource: 'artist station plus Tradio catalog',
-  selectedStation: 'station-trey-trizzy',
+  showMood: "late-night",
+  targetAudience: "fans who want premieres and discovery",
+  hostTone: "warm, cinematic",
+  musicSource: "artist station plus Tradio catalog",
+  selectedStation: "station-trey-trizzy",
   commercialBreaks: 2,
-  fanInteractionStyle: 'polls, shoutouts, and request queue',
+  fanInteractionStyle: "polls, shoutouts, and request queue",
   includeProducerBeatSpotlight: true,
   includeArtistPremiere: true,
   includeListenerRequests: true,
-  saveAs: 'template',
+  saveAs: "template",
 };
 
 /** Local deterministic fallback generator (no AI). */
 export const generateShowPlan = (form: ShowBuilderFormState): RadioShow => ({
-  id: 'generated-show-pass-3',
-  title: form.showName || 'Midnight Network Session',
+  id: "generated-show-pass-3",
+  title: form.showName || "Midnight Network Session",
   duration: form.showLength,
   mood: form.showMood,
   targetAudience: form.targetAudience,
@@ -216,31 +240,128 @@ export const generateShowPlan = (form: ShowBuilderFormState): RadioShow => ({
   includeProducerSpotlight: form.includeProducerBeatSpotlight,
   includeArtistPremiere: form.includeArtistPremiere,
   includeListenerRequests: form.includeListenerRequests,
-  status: form.saveAs === 'template' ? 'template' : 'draft',
+  status: form.saveAs === "template" ? "template" : "draft",
   aiGenerated: true,
   segments: [
-    { id: 'gen-1', type: 'intro', title: 'Opening Intro', duration: 180, hostNotes: `Welcome listeners in a ${form.hostTone} voice and set the ${form.showMood} atmosphere.`, aiGenerated: true },
-    { id: 'gen-2', type: 'host-talk', title: 'Host Notes', duration: 120, description: `Frame the show for ${form.targetAudience}.`, hostNotes: 'Mention that requests and votes shape the back half of the show.', aiGenerated: true },
-    { id: 'gen-3', type: 'music-block', title: 'Song Block 1', duration: 480, description: `Curated from ${form.musicSource}.`, aiGenerated: true },
-    { id: 'gen-4', type: 'host-talk', title: 'Transition Script', duration: 90, hostNotes: 'Move from the opener into fan participation without breaking the mood.', aiGenerated: true },
-    { id: 'gen-5', type: 'commercial', title: 'Commercial / Ad Slot', duration: 60, description: `${form.commercialBreaks} planned break across the show.`, aiGenerated: true },
-    ...(form.includeListenerRequests ? [{ id: 'gen-6', type: 'fan-request' as const, title: 'Fan Request Segment', duration: 360, description: form.fanInteractionStyle, aiGenerated: true }] : []),
-    ...(form.includeProducerBeatSpotlight ? [{ id: 'gen-7', type: 'producer-spotlight' as const, title: 'Producer Beat Spotlight', duration: 240, description: 'Preview two beats and invite artists to save or pitch.', aiGenerated: true }] : []),
-    ...(form.includeArtistPremiere ? [{ id: 'gen-8', type: 'artist-premiere' as const, title: 'Artist Premiere Block', duration: 300, description: 'Pinned release, premiere intro, and first-listen fan chat.', aiGenerated: true }] : []),
-    { id: 'gen-9', type: 'music-block', title: 'DJ Mix Section', duration: 420, description: 'Blend catalog picks, beat spotlight stems, and requested tracks.', aiGenerated: true },
-    { id: 'gen-10', type: 'poll', title: 'Listener Interaction Moment', duration: 180, description: 'Vote what plays next and collect shoutouts.', aiGenerated: true },
-    { id: 'gen-11', type: 'closing', title: 'Closing Message + Replay Package', duration: 180, hostNotes: `Save as ${form.saveAs} and package highlights for replay listeners.`, aiGenerated: true },
+    {
+      id: "gen-1",
+      type: "intro",
+      title: "Opening Intro",
+      duration: 180,
+      hostNotes: `Welcome listeners in a ${form.hostTone} voice and set the ${form.showMood} atmosphere.`,
+      aiGenerated: true,
+    },
+    {
+      id: "gen-2",
+      type: "host-talk",
+      title: "Host Notes",
+      duration: 120,
+      description: `Frame the show for ${form.targetAudience}.`,
+      hostNotes: "Mention that requests and votes shape the back half of the show.",
+      aiGenerated: true,
+    },
+    {
+      id: "gen-3",
+      type: "music-block",
+      title: "Song Block 1",
+      duration: 480,
+      description: `Curated from ${form.musicSource}.`,
+      aiGenerated: true,
+    },
+    {
+      id: "gen-4",
+      type: "host-talk",
+      title: "Transition Script",
+      duration: 90,
+      hostNotes: "Move from the opener into fan participation without breaking the mood.",
+      aiGenerated: true,
+    },
+    {
+      id: "gen-5",
+      type: "commercial",
+      title: "Commercial / Ad Slot",
+      duration: 60,
+      description: `${form.commercialBreaks} planned break across the show.`,
+      aiGenerated: true,
+    },
+    ...(form.includeListenerRequests
+      ? [
+          {
+            id: "gen-6",
+            type: "fan-request" as const,
+            title: "Fan Request Segment",
+            duration: 360,
+            description: form.fanInteractionStyle,
+            aiGenerated: true,
+          },
+        ]
+      : []),
+    ...(form.includeProducerBeatSpotlight
+      ? [
+          {
+            id: "gen-7",
+            type: "producer-spotlight" as const,
+            title: "Producer Beat Spotlight",
+            duration: 240,
+            description: "Preview two beats and invite artists to save or pitch.",
+            aiGenerated: true,
+          },
+        ]
+      : []),
+    ...(form.includeArtistPremiere
+      ? [
+          {
+            id: "gen-8",
+            type: "artist-premiere" as const,
+            title: "Artist Premiere Block",
+            duration: 300,
+            description: "Pinned release, premiere intro, and first-listen fan chat.",
+            aiGenerated: true,
+          },
+        ]
+      : []),
+    {
+      id: "gen-9",
+      type: "music-block",
+      title: "DJ Mix Section",
+      duration: 420,
+      description: "Blend catalog picks, beat spotlight stems, and requested tracks.",
+      aiGenerated: true,
+    },
+    {
+      id: "gen-10",
+      type: "poll",
+      title: "Listener Interaction Moment",
+      duration: 180,
+      description: "Vote what plays next and collect shoutouts.",
+      aiGenerated: true,
+    },
+    {
+      id: "gen-11",
+      type: "closing",
+      title: "Closing Message + Replay Package",
+      duration: 180,
+      hostNotes: `Save as ${form.saveAs} and package highlights for replay listeners.`,
+      aiGenerated: true,
+    },
   ],
 });
 
 /** Coerce a model-returned segment type to a canonical value, else null. */
-export function coerceSegmentType(raw: unknown): ShowSegment['type'] | null {
-  if (typeof raw !== 'string') return null;
+export function coerceSegmentType(raw: unknown): ShowSegment["type"] | null {
+  if (typeof raw !== "string") return null;
   const cleaned = raw.trim().toLowerCase();
   return SHOW_SEGMENT_TYPES.find((t) => t === cleaned) ?? null;
 }
 
-type RawSeg = { type?: unknown; title?: unknown; duration?: unknown; description?: unknown; hostNotes?: unknown; script?: unknown };
+type RawSeg = {
+  type?: unknown;
+  title?: unknown;
+  duration?: unknown;
+  description?: unknown;
+  hostNotes?: unknown;
+  script?: unknown;
+};
 type RawShow = { title?: unknown; segments?: RawSeg[] };
 
 /** Validate/coerce a raw AI show into a RadioShow. Throws if no valid segments. */
@@ -251,23 +372,28 @@ export function validateGeneratedShow(raw: RawShow, form: ShowBuilderFormState):
     const type = coerceSegmentType(s?.type);
     if (!type) return;
     const dur = Number(s?.duration);
-    const duration = Number.isFinite(dur) ? Math.min(MAX_SEGMENT_SEC, Math.max(MIN_SEGMENT_SEC, Math.round(dur))) : 120;
+    const duration = Number.isFinite(dur)
+      ? Math.min(MAX_SEGMENT_SEC, Math.max(MIN_SEGMENT_SEC, Math.round(dur)))
+      : 120;
     segments.push({
       id: `ai-${i + 1}`,
       type,
-      title: typeof s?.title === 'string' && s.title.trim() ? s.title.trim() : type,
+      title: typeof s?.title === "string" && s.title.trim() ? s.title.trim() : type,
       duration,
-      description: typeof s?.description === 'string' ? s.description : undefined,
-      hostNotes: typeof s?.hostNotes === 'string' ? s.hostNotes : undefined,
-      script: typeof s?.script === 'string' ? s.script : undefined,
+      description: typeof s?.description === "string" ? s.description : undefined,
+      hostNotes: typeof s?.hostNotes === "string" ? s.hostNotes : undefined,
+      script: typeof s?.script === "string" ? s.script : undefined,
       aiGenerated: true,
     });
   });
-  if (!segments.length) throw new Error('AI returned no valid segments');
+  if (!segments.length) throw new Error("AI returned no valid segments");
   const totalMin = Math.round(segments.reduce((sum, s) => sum + s.duration, 0) / 60);
   return {
-    id: 'ai-generated-show',
-    title: typeof raw?.title === 'string' && raw.title.trim() ? raw.title.trim() : (form.showName || 'AI Radio Show'),
+    id: "ai-generated-show",
+    title:
+      typeof raw?.title === "string" && raw.title.trim()
+        ? raw.title.trim()
+        : form.showName || "AI Radio Show",
     duration: totalMin,
     mood: form.showMood,
     targetAudience: form.targetAudience,
@@ -280,7 +406,7 @@ export function validateGeneratedShow(raw: RawShow, form: ShowBuilderFormState):
     includeArtistPremiere: form.includeArtistPremiere,
     includeListenerRequests: form.includeListenerRequests,
     segments,
-    status: form.saveAs === 'template' ? 'template' : 'draft',
+    status: form.saveAs === "template" ? "template" : "draft",
     aiGenerated: true,
   };
 }
@@ -289,10 +415,17 @@ export function validateGeneratedShow(raw: RawShow, form: ShowBuilderFormState):
 - [ ] **Step 5: Remove the moved code from `ShowBuilder.tsx` and import it**
 
 In `ShowBuilder.tsx`: delete the local `type ShowBuilderFormState`, `type SaveTarget`, `const emptyForm`, and `const generateShowPlan` definitions (they now live in `showPlan.ts`). Add an import near the top:
+
 ```ts
-import { generateShowPlan, emptyForm, type ShowBuilderFormState, type SaveTarget } from '../showPlan';
+import {
+  generateShowPlan,
+  emptyForm,
+  type ShowBuilderFormState,
+  type SaveTarget,
+} from "../showPlan";
 ```
-(Leave all component code that *uses* them unchanged.)
+
+(Leave all component code that _uses_ them unchanged.)
 
 - [ ] **Step 6: Run the test (passes)** — Run: `npx tsx --test src/tradio/components/tradio/showPlan.test.ts` — Expected: 5 pass, 0 fail.
 - [ ] **Step 7: Typecheck** — Run: `npx tsc --noEmit -p tsconfig.json 2>&1 | grep -E "showPlan|ShowBuilder|tradio/components/tradio/data" || echo clean` — Expected: `clean`.
@@ -312,7 +445,12 @@ git commit -m "refactor(tradio): extract showPlan module + segment validation; a
 - [ ] **Step 1: Add imports** (top of file, with the other imports)
 
 ```ts
-import { generateShowPlan, validateGeneratedShow, SHOW_SEGMENT_TYPES, type ShowBuilderFormState } from "../../tradio/components/tradio/showPlan";
+import {
+  generateShowPlan,
+  validateGeneratedShow,
+  SHOW_SEGMENT_TYPES,
+  type ShowBuilderFormState,
+} from "../../tradio/components/tradio/showPlan";
 import type { RadioShow } from "../../tradio/components/tradio/data";
 ```
 
@@ -368,7 +506,14 @@ Return ONLY JSON: { "title": string, "segments": [ { "type", "title", "duration"
                   script: { type: "STRING" },
                 },
                 required: ["type", "title", "duration"],
-                propertyOrdering: ["type", "title", "duration", "description", "hostNotes", "script"],
+                propertyOrdering: [
+                  "type",
+                  "title",
+                  "duration",
+                  "description",
+                  "hostNotes",
+                  "script",
+                ],
               },
             },
           },
@@ -402,31 +547,35 @@ git commit -m "feat(tradio): generateRadioShow Gemini server fn (schema-validate
 - [ ] **Step 1: Create the service**
 
 ```ts
-import { isSupabaseConfigured, supabase } from '@/tradio/lib/supabaseClient';
-import { handleMissingTradioTables } from './auth/tradioProfileBootstrap';
-import { generateShowPlan, type ShowBuilderFormState } from './showPlan';
-import { generateRadioShow } from '@/lib/trey-i/vertex.server';
-import type { RadioShow } from './data';
+import { isSupabaseConfigured, supabase } from "@/tradio/lib/supabaseClient";
+import { handleMissingTradioTables } from "./auth/tradioProfileBootstrap";
+import { generateShowPlan, type ShowBuilderFormState } from "./showPlan";
+import { generateRadioShow } from "@/lib/trey-i/vertex.server";
+import type { RadioShow } from "./data";
 
-export type ShowServiceSource = 'ai' | 'local' | 'supabase' | 'mock';
-export interface ShowServiceResult<T> { source: ShowServiceSource; data: T | null; warning: string | null; }
+export type ShowServiceSource = "ai" | "local" | "supabase" | "mock";
+export interface ShowServiceResult<T> {
+  source: ShowServiceSource;
+  data: T | null;
+  warning: string | null;
+}
 
 const rowToShow = (row: Record<string, any>): RadioShow => ({
   id: String(row.id),
-  title: row.title ?? 'Untitled Show',
+  title: row.title ?? "Untitled Show",
   duration: Number(row.duration_min ?? 0),
-  mood: row.mood ?? '',
-  targetAudience: row.target_audience ?? '',
-  hostTone: row.host_tone ?? '',
-  musicSource: row.music_source ?? '',
+  mood: row.mood ?? "",
+  targetAudience: row.target_audience ?? "",
+  hostTone: row.host_tone ?? "",
+  musicSource: row.music_source ?? "",
   selectedStation: row.settings?.selectedStation,
   commercialBreaks: Number(row.settings?.commercialBreaks ?? 0),
-  fanInteractionStyle: row.settings?.fanInteractionStyle ?? '',
+  fanInteractionStyle: row.settings?.fanInteractionStyle ?? "",
   includeProducerSpotlight: Boolean(row.settings?.includeProducerSpotlight),
   includeArtistPremiere: Boolean(row.settings?.includeArtistPremiere),
   includeListenerRequests: Boolean(row.settings?.includeListenerRequests),
   segments: Array.isArray(row.segments) ? row.segments : [],
-  status: row.status ?? 'draft',
+  status: row.status ?? "draft",
   aiGenerated: Boolean(row.ai_generated),
 });
 
@@ -438,8 +587,8 @@ const showToRow = (show: RadioShow, userId: string) => ({
   target_audience: show.targetAudience,
   host_tone: show.hostTone,
   music_source: show.musicSource,
-  status: show.status === 'template' ? 'template' : show.status,
-  is_template: show.status === 'template',
+  status: show.status === "template" ? "template" : show.status,
+  is_template: show.status === "template",
   ai_generated: show.aiGenerated,
   segments: show.segments,
   settings: {
@@ -453,12 +602,18 @@ const showToRow = (show: RadioShow, userId: string) => ({
 });
 
 /** Generate a show plan via Gemini; falls back to the local generator. */
-export async function generateShow(form: ShowBuilderFormState): Promise<ShowServiceResult<RadioShow>> {
+export async function generateShow(
+  form: ShowBuilderFormState,
+): Promise<ShowServiceResult<RadioShow>> {
   try {
     const show = await generateRadioShow({ data: { form } });
-    return { source: show.aiGenerated ? 'ai' : 'local', data: show, warning: null };
+    return { source: show.aiGenerated ? "ai" : "local", data: show, warning: null };
   } catch (err) {
-    return { source: 'local', data: generateShowPlan(form), warning: err instanceof Error ? err.message : 'AI unavailable' };
+    return {
+      source: "local",
+      data: generateShowPlan(form),
+      warning: err instanceof Error ? err.message : "AI unavailable",
+    };
   }
 }
 
@@ -469,50 +624,75 @@ async function currentUserId(): Promise<string | null> {
 }
 
 export async function saveShow(show: RadioShow): Promise<ShowServiceResult<RadioShow>> {
-  if (!isSupabaseConfigured || !supabase) return { source: 'mock', data: show, warning: 'Supabase not configured; show kept locally.' };
+  if (!isSupabaseConfigured || !supabase)
+    return { source: "mock", data: show, warning: "Supabase not configured; show kept locally." };
   const uid = await currentUserId();
-  if (!uid) return { source: 'mock', data: show, warning: 'Sign in to save shows.' };
+  if (!uid) return { source: "mock", data: show, warning: "Sign in to save shows." };
   try {
-    const { data, error } = await supabase.from('tradio_radio_shows').insert(showToRow(show, uid)).select('*').maybeSingle();
-    if (error) return { source: 'mock', data: show, warning: handleMissingTradioTables(error).message };
-    return { source: 'supabase', data: data ? rowToShow(data) : show, warning: null };
+    const { data, error } = await supabase
+      .from("tradio_radio_shows")
+      .insert(showToRow(show, uid))
+      .select("*")
+      .maybeSingle();
+    if (error)
+      return { source: "mock", data: show, warning: handleMissingTradioTables(error).message };
+    return { source: "supabase", data: data ? rowToShow(data) : show, warning: null };
   } catch (err) {
-    return { source: 'mock', data: show, warning: handleMissingTradioTables(err).message };
+    return { source: "mock", data: show, warning: handleMissingTradioTables(err).message };
   }
 }
 
 export async function listMyShows(): Promise<ShowServiceResult<RadioShow[]>> {
-  if (!isSupabaseConfigured || !supabase) return { source: 'mock', data: null, warning: null };
+  if (!isSupabaseConfigured || !supabase) return { source: "mock", data: null, warning: null };
   const uid = await currentUserId();
-  if (!uid) return { source: 'mock', data: null, warning: null };
+  if (!uid) return { source: "mock", data: null, warning: null };
   try {
-    const { data, error } = await supabase.from('tradio_radio_shows').select('*').eq('user_id', uid).order('updated_at', { ascending: false });
-    if (error) return { source: 'mock', data: null, warning: handleMissingTradioTables(error).message };
-    return { source: 'supabase', data: (Array.isArray(data) ? data : []).map(rowToShow), warning: null };
+    const { data, error } = await supabase
+      .from("tradio_radio_shows")
+      .select("*")
+      .eq("user_id", uid)
+      .order("updated_at", { ascending: false });
+    if (error)
+      return { source: "mock", data: null, warning: handleMissingTradioTables(error).message };
+    return {
+      source: "supabase",
+      data: (Array.isArray(data) ? data : []).map(rowToShow),
+      warning: null,
+    };
   } catch (err) {
-    return { source: 'mock', data: null, warning: handleMissingTradioTables(err).message };
+    return { source: "mock", data: null, warning: handleMissingTradioTables(err).message };
   }
 }
 
 export async function listTemplates(): Promise<ShowServiceResult<RadioShow[]>> {
-  if (!isSupabaseConfigured || !supabase) return { source: 'mock', data: null, warning: null };
+  if (!isSupabaseConfigured || !supabase) return { source: "mock", data: null, warning: null };
   try {
-    const { data, error } = await supabase.from('tradio_radio_shows').select('*').eq('is_template', true).order('updated_at', { ascending: false });
-    if (error) return { source: 'mock', data: null, warning: handleMissingTradioTables(error).message };
-    return { source: 'supabase', data: (Array.isArray(data) ? data : []).map(rowToShow), warning: null };
+    const { data, error } = await supabase
+      .from("tradio_radio_shows")
+      .select("*")
+      .eq("is_template", true)
+      .order("updated_at", { ascending: false });
+    if (error)
+      return { source: "mock", data: null, warning: handleMissingTradioTables(error).message };
+    return {
+      source: "supabase",
+      data: (Array.isArray(data) ? data : []).map(rowToShow),
+      warning: null,
+    };
   } catch (err) {
-    return { source: 'mock', data: null, warning: handleMissingTradioTables(err).message };
+    return { source: "mock", data: null, warning: handleMissingTradioTables(err).message };
   }
 }
 
 export async function deleteShow(id: string): Promise<ShowServiceResult<null>> {
-  if (!isSupabaseConfigured || !supabase) return { source: 'mock', data: null, warning: null };
+  if (!isSupabaseConfigured || !supabase) return { source: "mock", data: null, warning: null };
   try {
-    const { error } = await supabase.from('tradio_radio_shows').delete().eq('id', id);
-    if (error) return { source: 'mock', data: null, warning: handleMissingTradioTables(error).message };
-    return { source: 'supabase', data: null, warning: null };
+    const { error } = await supabase.from("tradio_radio_shows").delete().eq("id", id);
+    if (error)
+      return { source: "mock", data: null, warning: handleMissingTradioTables(error).message };
+    return { source: "supabase", data: null, warning: null };
   } catch (err) {
-    return { source: 'mock', data: null, warning: handleMissingTradioTables(err).message };
+    return { source: "mock", data: null, warning: handleMissingTradioTables(err).message };
   }
 }
 ```
@@ -534,64 +714,73 @@ git commit -m "feat(tradio): radioShowService (generate/save/list/delete, supaba
 - [ ] **Step 1: Add imports + state**
 
 Add import:
+
 ```ts
-import { generateShow, saveShow, listMyShows, listTemplates } from '../radioShowService';
-import { toast } from 'sonner';
+import { generateShow, saveShow, listMyShows, listTemplates } from "../radioShowService";
+import { toast } from "sonner";
 ```
+
 In the `ShowBuilder` component, add state:
+
 ```ts
-  const [generating, setGenerating] = useState(false);
-  const [dbShows, setDbShows] = useState<RadioShow[] | null>(null);
-  const [dbTemplates, setDbTemplates] = useState<RadioShow[] | null>(null);
+const [generating, setGenerating] = useState(false);
+const [dbShows, setDbShows] = useState<RadioShow[] | null>(null);
+const [dbTemplates, setDbTemplates] = useState<RadioShow[] | null>(null);
 ```
+
 (`RadioShow` is already imported from `../data`.)
 
 - [ ] **Step 2: Replace the local `generate` with the AI call**
 
 Replace the existing `const generate = () => { ... }` with:
+
 ```ts
-  const generate = async () => {
-    setGenerating(true);
-    try {
-      const res = await generateShow(form);
-      if (res.data) {
-        setGeneratedShow(res.data);
-        setSaved(false);
-        setIsSimulating(false);
-        if (res.source === 'local') toast('Used the offline builder (AI unavailable).');
-      }
-    } finally {
-      setGenerating(false);
+const generate = async () => {
+  setGenerating(true);
+  try {
+    const res = await generateShow(form);
+    if (res.data) {
+      setGeneratedShow(res.data);
+      setSaved(false);
+      setIsSimulating(false);
+      if (res.source === "local") toast("Used the offline builder (AI unavailable).");
     }
-  };
+  } finally {
+    setGenerating(false);
+  }
+};
 ```
 
 - [ ] **Step 3: Replace `save` with real persistence**
 
 Replace the existing `const save = () => { ... }` with:
+
 ```ts
-  const save = async () => {
-    const show = generatedShow ?? generateShowPlan(form);
-    if (!generatedShow) setGeneratedShow(show);
-    const res = await saveShow(show);
-    setSaved(true);
-    toast[res.source === 'supabase' ? 'success' : 'message'](
-      res.source === 'supabase' ? 'Show saved to your library' : (res.warning ?? 'Saved locally'),
-    );
-    if (res.source === 'supabase') void refreshShows();
-  };
+const save = async () => {
+  const show = generatedShow ?? generateShowPlan(form);
+  if (!generatedShow) setGeneratedShow(show);
+  const res = await saveShow(show);
+  setSaved(true);
+  toast[res.source === "supabase" ? "success" : "message"](
+    res.source === "supabase" ? "Show saved to your library" : (res.warning ?? "Saved locally"),
+  );
+  if (res.source === "supabase") void refreshShows();
+};
 ```
 
 - [ ] **Step 4: Add a loader for DB shows/templates**
 
 Add, inside the component:
+
 ```ts
-  const refreshShows = async () => {
-    const [mine, tmpl] = await Promise.all([listMyShows(), listTemplates()]);
-    if (mine.source === 'supabase') setDbShows(mine.data ?? []);
-    if (tmpl.source === 'supabase') setDbTemplates(tmpl.data ?? []);
-  };
-  useEffect(() => { void refreshShows(); }, []);
+const refreshShows = async () => {
+  const [mine, tmpl] = await Promise.all([listMyShows(), listTemplates()]);
+  if (mine.source === "supabase") setDbShows(mine.data ?? []);
+  if (tmpl.source === "supabase") setDbTemplates(tmpl.data ?? []);
+};
+useEffect(() => {
+  void refreshShows();
+}, []);
 ```
 
 - [ ] **Step 5: Use DB lists in the tabs (fall back to mocks)**
@@ -602,8 +791,18 @@ Add, inside the component:
 - [ ] **Step 6: Render the AI `script` on segment cards**
 
 In the standard (non-editing) segment card, right after the `{segment.hostNotes && (...)}` block, add:
+
 ```tsx
-                                  {segment.script && <p className="mt-1.5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.04] p-2 text-[11px] leading-relaxed text-cyan-100/80"><span className="font-bold uppercase tracking-wider text-cyan-300/70 text-[9px] mr-1">Script</span>{segment.script}</p>}
+{
+  segment.script && (
+    <p className="mt-1.5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.04] p-2 text-[11px] leading-relaxed text-cyan-100/80">
+      <span className="font-bold uppercase tracking-wider text-cyan-300/70 text-[9px] mr-1">
+        Script
+      </span>
+      {segment.script}
+    </p>
+  );
+}
 ```
 
 - [ ] **Step 7: Show a generating state on the button**
@@ -627,9 +826,15 @@ git commit -m "feat(tradio): ShowBuilder uses real AI generation + DB persistenc
 - [ ] **Step 1: Load the host's shows**
 
 Add import: `import { listMyShows } from '../radioShowService';` and `import type { RadioShow } from '../data';` (if not present). In the component add:
+
 ```ts
-  const [myShows, setMyShows] = useState<RadioShow[] | null>(null);
-  useEffect(() => { void (async () => { const r = await listMyShows(); if (r.source === 'supabase') setMyShows(r.data ?? []); })(); }, []);
+const [myShows, setMyShows] = useState<RadioShow[] | null>(null);
+useEffect(() => {
+  void (async () => {
+    const r = await listMyShows();
+    if (r.source === "supabase") setMyShows(r.data ?? []);
+  })();
+}, []);
 ```
 
 - [ ] **Step 2: Use it in the `shows` tab**
@@ -656,6 +861,7 @@ git commit -m "feat(tradio): DJStudio Shows tab loads real shows"
 ---
 
 ## Self-review notes
+
 - **Spec coverage:** real Gemini generation w/ scripts (Task 3), schema-enum + coercion + fallback (Tasks 2–3), persistence + RLS (Task 1), service layer (Task 4), ShowBuilder Generate/Save/tabs + script render (Task 5), DJStudio shows (Task 6), verification (Task 7). All covered.
 - **Reconciliations:** status uses `'archived'` not `'replay'` (matches `RadioShow` type); `ShowSegment.script?` added (Task 2 Step 1).
 - **Type consistency:** `ShowBuilderFormState`/`emptyForm`/`generateShowPlan` defined in `showPlan.ts` (Task 2), consumed by `vertex.server.ts` (Task 3), `radioShowService.ts` (Task 4), `ShowBuilder.tsx` (Task 5). `validateGeneratedShow`/`SHOW_SEGMENT_TYPES` defined Task 2, used Task 3. `generateRadioShow` defined Task 3, used Task 4. `generateShow/saveShow/listMyShows/listTemplates` defined Task 4, used Tasks 5–6.

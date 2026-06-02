@@ -11,6 +11,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 `20260429183000_trey_tv_public_private_social_streaming.sql`
 
 **Work:** Confirm:
+
 - `profiles.id = auth.users.id` (PK is the auth UID)
 - `display_name`, `username`, `bio`, `location` exist in the base migration
 - `username` has UNIQUE constraint
@@ -22,6 +23,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
   must NOT be in the UPDATE payload
 
 **Acceptance criteria:**
+
 - [ ] Safe writable columns confirmed: `display_name`, `username`, `bio`, `location`, `profile_accent_color`
 - [ ] `username` UNIQUE constraint confirmed
 - [ ] RLS `for all` confirmed — covers UPDATE
@@ -38,6 +40,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 **Files:** `src/routes/edit-profile.tsx`
 
 **Work:** Confirm:
+
 - `save()` is currently synchronous
 - It calls `updateUser()` from `useAuth()` (`@/lib/auth`) — mock only
 - It calls `toast.success()` then navigates
@@ -46,6 +49,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 - No existing import of `useAuth` from `@/hooks/use-auth`
 
 **Acceptance criteria:**
+
 - [ ] `save()` confirmed as synchronous with no DB call
 - [ ] Blob URL behavior for avatar/banner confirmed
 - [ ] No existing Supabase import in this file
@@ -77,6 +81,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
    - Navigate
 
 **Fields in UPDATE payload — exactly these five, nothing else:**
+
 ```ts
 {
   display_name: draft.name,
@@ -91,6 +96,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 `role`, `verification_type`, `is_verified`, `verified_creator`, `id`
 
 **Acceptance criteria:**
+
 - [ ] DB write runs before `updateUser()` for signed-in users
 - [ ] `updateUser()` is NOT called if the DB write fails
 - [ ] DB write only runs when `supabaseUser` is present
@@ -118,6 +124,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 `date_of_birth`, `id`
 
 **Acceptance criteria:**
+
 - [ ] UPDATE payload contains only: `display_name`, `username`, `bio`, `location`, `profile_accent_color`
 
 **Terminal validation:** `pnpm tsc --noEmit` if any correction is made.
@@ -133,6 +140,7 @@ Terminal validation only — no browser checks, no screenshots, no Playwright.
 **Work:** Confirm the git diff contains changes only to `src/routes/edit-profile.tsx`.
 
 **Acceptance criteria:**
+
 - [ ] Exactly one file in the diff
 - [ ] No RESTORE component imported
 
@@ -150,6 +158,7 @@ pnpm tsc --noEmit
 ```
 
 **Acceptance criteria:**
+
 - [ ] Zero errors
 - [ ] If errors: fix only in `edit-profile.tsx`, re-run before proceeding
 
@@ -167,6 +176,7 @@ pnpm build
 ```
 
 **Acceptance criteria:**
+
 - [ ] Build completes with zero errors
 - [ ] If errors: fix only in `edit-profile.tsx`, re-run before proceeding
 
@@ -183,6 +193,7 @@ pnpm build
 **Work:** Code review only — no browser check.
 
 Trace the signed-out path through `save()`:
+
 1. `supabaseUser` is `null` → DB write block is skipped entirely
 2. `updateUser()` runs (mock — always safe for signed-out)
 3. `toast.success()` fires
@@ -190,6 +201,7 @@ Trace the signed-out path through `save()`:
 5. No unhandled promise rejection
 
 **Acceptance criteria:**
+
 - [ ] `supabaseUser` null-check gates the entire DB block
 - [ ] `updateUser()` is called in the signed-out path (mock behavior preserved)
 - [ ] No crash path exists for signed-out users
@@ -205,6 +217,7 @@ Trace the signed-out path through `save()`:
 **Files:** `.kiro/steering/migration-map.md`, `.kiro/steering/file-map.md`
 
 **Work:**
+
 - Move "Edit profile" from 🔴 Not Started to ✅ Real in `migration-map.md`
 - Note: text fields only (`display_name`, `username`, `bio`, `location`, `profile_accent_color`); avatar/banner upload out of scope
 - Note: tsc ✅ build ✅, no browser validation
@@ -215,6 +228,7 @@ Trace the signed-out path through `save()`:
 ## Definition of Done
 
 All of the following must be true before this task is closed:
+
 1. `pnpm tsc --noEmit` passes
 2. `pnpm build` passes
 3. Signed-in: DB write runs first; `updateUser()` only called on DB success
