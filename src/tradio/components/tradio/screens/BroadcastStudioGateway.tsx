@@ -34,6 +34,9 @@ import { AccessGate, PrescriptionRail } from '../auth/components';
 import { LegalAcceptanceGroup } from '../legal/LegalPrimitives';
 import { generateShowPlan } from '../showPlan';
 import { toast } from 'sonner';
+import { goLive, endLive } from '../tradioLiveService';
+import { useTradioLiveRoom } from '../useTradioLiveRoom';
+import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
 import {
   createLegalAcceptanceValues,
   isLegalFlowAccepted,
@@ -162,6 +165,9 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
   const [accessStatus, setAccessStatus] = useState<BroadcastAccessStatus>('Cleared');
   const [applied, setSavedApplied] = useState(false);
   const [activeLiveShow, setActiveLiveShow] = useState<RadioShow | null>(null);
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
+  const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
+  const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
 
   // Stepper show builder flow states
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -366,11 +372,22 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
       {activeLiveShow ? (
         <LiveShowConsole
           show={activeLiveShow}
-          onEndLive={() => { setActiveLiveShow(null); setIsBuildingShow(false); }}
+          live={live}
+          interaction={interaction}
+          onEndLive={async () => {
+            if (liveSessionId) await endLive({ sessionId: liveSessionId, showId: activeLiveShow.id ?? null, peakListeners: live.listenerCount });
+            live.leave();
+            setLiveSessionId(null);
+            setActiveLiveShow(null);
+            setIsBuildingShow(false);
+          }}
         />
       ) : isBuildingShow ? (
         <ShowBuilder
-          onGoLive={(show) => {
+          onGoLive={async (show) => {
+            const { session, error } = await goLive({ showId: show.id ?? null, title: show.title, hostName: show.djName ?? 'Host' });
+            if (error || !session) { toast.error(error ?? 'Could not go live.'); return; }
+            setLiveSessionId(session.id);
             setActiveLiveShow(show);
             toast.success(`Broadcasting LIVE with "${show.title}"!`);
           }}
@@ -606,7 +623,7 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
                     </div>
 
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         const showFromTemplate = generateShowPlan({
                           showName: s.title || s.type,
                           showLength: 60,
@@ -622,6 +639,8 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
                           includeListenerRequests: true,
                           saveAs: 'live show',
                         });
+                        const { session } = await goLive({ showId: null, title: showFromTemplate.title, hostName: showFromTemplate.djName ?? 'Host' });
+                        if (session) setLiveSessionId(session.id);
                         setActiveLiveShow(showFromTemplate);
                         toast.success(`Connected to scheduled live broadcast desk!`);
                       }}
