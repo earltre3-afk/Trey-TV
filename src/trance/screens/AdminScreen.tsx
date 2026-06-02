@@ -137,6 +137,7 @@ export const AdminScreen: React.FC = () => {
             </button>
           </div>
 
+          <div className="grid lg:grid-cols-2 gap-3">
           {reports.map((r) => (
             <TranceGlassCard
               key={r.id}
@@ -179,6 +180,7 @@ export const AdminScreen: React.FC = () => {
               </div>
             </TranceGlassCard>
           ))}
+          </div>
         </div>
       )}
 
@@ -187,6 +189,7 @@ export const AdminScreen: React.FC = () => {
           <h3 className="font-black text-white uppercase text-sm mb-2 flex items-center gap-2">
             <Star className="w-4 h-4 text-yellow-300" /> Choreographer Applications
           </h3>
+          <div className="grid lg:grid-cols-2 gap-3">
           {choreoRequests.map((req) => (
             <TranceGlassCard key={req.id} className="p-4">
               <div className="flex justify-between items-start mb-2">
@@ -206,6 +209,7 @@ export const AdminScreen: React.FC = () => {
               <p className="text-xs text-white/70 mt-2">{req.bio}</p>
             </TranceGlassCard>
           ))}
+          </div>
         </div>
       )}
 
