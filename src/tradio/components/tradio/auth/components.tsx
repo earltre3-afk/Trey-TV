@@ -73,7 +73,7 @@ export const ModeSwitcher: React.FC = () => {
           <img src={identity.avatar_url} alt="" className="h-10 w-10 rounded-xl border border-white/15 object-cover" />
           <div className="min-w-0">
             <div className="truncate text-sm font-bold text-white">
-              <span className="text-signature text-xl text-fuchsia-300 font-normal drop-shadow-[0_0_8px_rgba(217,70,239,0.4)]">{identity.display_name}</span>
+              <span className="text-signature text-2xl text-fuchsia-300 font-normal drop-shadow-[0_0_10px_rgba(217,70,239,0.5)] hover:scale-105 transition-transform duration-300 select-none block origin-left">{identity.display_name}</span>
             </div>
             <div className="truncate text-[10px] text-white/45">{identity.public_profile_uid}</div>
           </div>

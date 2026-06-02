@@ -36,7 +36,7 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = '' }) => {
 
   return (
     <div className={`px-4 pb-3 ${className}`}>
-      <div className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0A0914]/80 p-3.5 pr-4 backdrop-blur-2xl shadow-[0_15px_35px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-500 hover:border-white/18 hover:bg-[#0A0914]/90 sm:gap-4">
+      <div className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border-[0.5px] border-white/12 bg-gradient-to-b from-[#0e0e1a]/85 to-[#06050b]/92 p-3.5 pr-4 backdrop-blur-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1.5px_2px_rgba(255,255,255,0.14),inset_0_-1px_10px_rgba(0,0,0,0.5)] transition-all duration-500 hover:border-white/20 hover:bg-gradient-to-b hover:from-[#121226]/90 hover:to-[#08070e]/95 hover:shadow-[0_30px_70px_-10px_rgba(0,0,0,0.9),inset_0_1.5px_2.5px_rgba(255,255,255,0.22)] sm:gap-4">
         <button onClick={onOpen} className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4">
           <TradioImage
             src={(currentItem ? (currentItem.coverUrl || currentItem.art) : display.art) ?? undefined}

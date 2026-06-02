@@ -70,16 +70,7 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
 
   return (
     <div className="px-4 pb-24 space-y-6">
-      <div className="flex items-center justify-between pt-3">
-        <button
-          onClick={() => onNavigate('exit')}
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900/80 text-xs font-bold text-zinc-300 hover:text-white transition-all duration-300 active:scale-95 shadow-sm animate-fade-in"
-        >
-          <ArrowLeft size={14} className="text-fuchsia-400" /> Back to Games
-        </button>
-      </div>
-
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center pt-2">
         <TrunoLogo size="lg" subtitle="Match colors. Play action. Own the table." showParent={false} />
         <div className="mt-4 relative w-full max-w-md">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -96,11 +87,13 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
           <button
             key={key}
             onClick={() => handleMode(key)}
-            className={`relative rounded-2xl border ${border} bg-zinc-950/60 backdrop-blur-xl p-4 ${glow} hover:scale-[1.02] transition-all flex flex-col items-center gap-1.5`}
+            className={`relative rounded-2xl border ${border} bg-zinc-950/40 backdrop-blur-xl p-4 ${glow} hover:-translate-y-1 active:scale-95 transition-all duration-300 flex flex-col items-center gap-1.5 group overflow-hidden`}
           >
-            <Icon size={26} className={text} strokeWidth={2} />
+            <div className="absolute inset-0 bg-white/[0.01] group-hover:bg-white/[0.04] transition-colors pointer-events-none" />
+            <Icon size={26} className={`${text} group-hover:scale-110 transition-transform duration-300`} strokeWidth={2} />
             <span className={`font-bold text-base ${text}`}>{label}</span>
-            <span className="text-[11px] text-zinc-500">{sub}</span>
+            <span className="text-[11px] text-zinc-500 group-hover:text-zinc-400 transition-colors">{sub}</span>
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-current opacity-0 group-hover:opacity-40 transition-opacity" />
           </button>
         ))}
       </div>
@@ -108,12 +101,12 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold text-white tracking-wider">TONIGHT'S TABLES</h2>
+            <h2 className="text-sm font-bold text-zinc-300 tracking-wider">TONIGHT'S TABLES</h2>
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-300 font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" /> Live Now
             </span>
           </div>
-          <button className="text-xs text-zinc-400 flex items-center gap-1 hover:text-white">See all <ChevronRight size={14} /></button>
+          <button className="text-xs text-zinc-400 flex items-center gap-1 hover:text-white transition-colors">See all <ChevronRight size={14} /></button>
         </div>
 
         {loadingTables ? (
@@ -123,11 +116,11 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
             ))}
           </div>
         ) : tables.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950/60 p-6 text-center">
+          <div className="rounded-2xl border border-dashed border-zinc-800/80 bg-zinc-950/40 p-6 text-center">
             <p className="text-sm text-zinc-400">No open tables right now.</p>
             <button
               onClick={onPlayFriends}
-              className="mt-3 text-xs font-bold text-fuchsia-300 px-4 py-2 rounded-full border border-fuchsia-500/40 hover:bg-fuchsia-500/10"
+              className="mt-3 text-xs font-bold text-fuchsia-300 px-4 py-2 rounded-full border border-fuchsia-500/40 hover:bg-fuchsia-500/10 active:scale-95 transition-all"
             >
               Host a Table
             </button>
@@ -141,11 +134,11 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
               return (
                 <button
                   key={t.id}
-              onClick={() => onNavigate('room', { roomId: t.id })}
-                  className="flex-shrink-0 w-44 snap-start rounded-2xl border border-zinc-800/80 bg-zinc-950/70 backdrop-blur-xl overflow-hidden text-left hover:border-purple-500/50 transition-all"
+                  onClick={() => onNavigate('room', { roomId: t.id })}
+                  className="flex-shrink-0 w-44 snap-start rounded-2xl border border-zinc-850 bg-zinc-950/60 backdrop-blur-xl overflow-hidden text-left hover:border-purple-500/50 hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 group"
                 >
-                  <div className="relative h-24 bg-gradient-to-br from-purple-900 via-fuchsia-900 to-blue-950">
-                    <div className="absolute inset-0" style={{
+                  <div className="relative h-24 bg-gradient-to-br from-purple-900 via-fuchsia-900 to-blue-950 overflow-hidden">
+                    <div className="absolute inset-0 group-hover:scale-105 transition-transform duration-500" style={{
                       background: i % 2 === 0
                         ? 'radial-gradient(circle at 30% 50%, rgba(255,0,128,0.35), transparent 70%)'
                         : 'radial-gradient(circle at 70% 50%, rgba(0,217,255,0.3), transparent 70%)'
@@ -161,13 +154,13 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
                     </span>
                   </div>
                   <div className="p-3">
-                    <h3 className="font-bold text-white text-sm mb-0.5 truncate">{label}</h3>
+                    <h3 className="font-bold text-white text-sm mb-0.5 truncate group-hover:text-fuchsia-300 transition-colors">{label}</h3>
                     <p className="text-[11px] text-zinc-500 mb-2">{mode} • {t.max_players} Players</p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1 text-[11px] text-zinc-400">
                         <Users size={11} /> {t.current_players}
                       </div>
-                      <span className="text-[11px] font-bold text-fuchsia-300 px-3 py-1 rounded-full border border-fuchsia-500/40 hover:bg-fuchsia-500/10">
+                      <span className="text-[11px] font-bold text-fuchsia-300 px-3 py-1 rounded-full border border-fuchsia-500/40 group-hover:bg-fuchsia-500/15 group-hover:border-fuchsia-400/65 transition-all">
                         Join
                       </span>
                     </div>
@@ -180,26 +173,30 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/70 backdrop-blur-xl p-3">
-          <h3 className="text-[11px] font-bold text-zinc-400 tracking-wider mb-2">FRIENDS</h3>
-          <p className="text-[11px] text-zinc-500 leading-snug">Use Play Friends to create a real private table and invite your Trey TV crew.</p>
-          <button onClick={onPlayFriends} className="mt-2 text-[11px] font-bold text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/40 hover:bg-amber-500/10">
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-950/40 backdrop-blur-xl p-3 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+          <div>
+            <h3 className="text-[11px] font-bold text-zinc-400 tracking-wider mb-2">FRIENDS</h3>
+            <p className="text-[11px] text-zinc-500 leading-snug">Use Play Friends to create a real private table and invite your Trey TV crew.</p>
+          </div>
+          <button onClick={onPlayFriends} className="mt-2 text-[11px] font-bold text-amber-300 px-3 py-1.5 rounded-full border border-amber-500/30 hover:bg-amber-500/10 hover:border-amber-400/50 active:scale-95 transition-all text-center">
             Open Private Room
           </button>
         </div>
-        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/50 to-zinc-950/70 backdrop-blur-xl p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[11px] font-bold text-amber-300 tracking-wider mb-1">DAILY STREAK 🔥</h3>
-              <div className="flex items-center gap-1">
-                <Flame size={20} className="text-orange-400" />
-                <span className="text-sm font-black text-white">Coming Soon</span>
+        <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-950/20 to-zinc-950/40 backdrop-blur-xl p-3 hover:border-amber-500/30 transition-colors">
+          <div className="flex items-center justify-between h-full">
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-[11px] font-bold text-amber-400 tracking-wider mb-1">DAILY STREAK 🔥</h3>
+                <div className="flex items-center gap-1">
+                  <Flame size={20} className="text-orange-400 animate-pulse" />
+                  <span className="text-sm font-black text-white">Coming Soon</span>
+                </div>
               </div>
-              <p className="text-[10px] text-zinc-500 mt-0.5">Streak rewards are not live yet.</p>
+              <p className="text-[10px] text-zinc-500 mt-1">Streak rewards are not live yet.</p>
             </div>
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-700 to-amber-900 flex items-center justify-center text-sm">🎁</div>
-              <span className="text-[10px] text-amber-300 font-bold mt-1">Soon</span>
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-700/60 to-amber-900/60 flex items-center justify-center text-lg shadow-[0_0_15px_rgba(245,158,11,0.15)] animate-bounce" style={{ animationDuration: '3s' }}>🎁</div>
+              <span className="text-[10px] text-amber-300 font-bold mt-1.5">Soon</span>
             </div>
           </div>
         </div>
@@ -207,19 +204,19 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
 
       <button
         onClick={() => onNavigate('pass')}
-        className="w-full rounded-2xl border border-amber-500/40 bg-gradient-to-r from-purple-950/70 via-fuchsia-950/70 to-amber-950/50 backdrop-blur-xl p-4 hover:scale-[1.01] transition-all flex items-center justify-between text-left"
+        className="w-full rounded-2xl border border-amber-500/30 bg-gradient-to-r from-purple-950/40 via-fuchsia-950/40 to-amber-950/30 backdrop-blur-xl p-4 hover:-translate-y-0.5 hover:border-amber-500/50 active:scale-99 transition-all duration-300 flex items-center justify-between text-left group overflow-hidden"
       >
         <div className="flex items-center gap-3">
-          <Crown size={28} className="text-amber-400" />
+          <Crown size={28} className="text-amber-400 group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-amber-300">TRUNO PASS</span>
+              <span className="text-base font-black text-amber-300 group-hover:text-amber-200 transition-colors">TRUNO PASS</span>
               <span className="text-[9px] px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold">SEASON 1</span>
             </div>
             <p className="text-[11px] text-zinc-400 mt-0.5">Unlock exclusive cards, themes,<br/>and epic rewards.</p>
           </div>
         </div>
-        <span className="text-xs font-bold text-white px-4 py-2 rounded-xl border border-fuchsia-500/50 hover:bg-fuchsia-500/10">View Pass</span>
+        <span className="text-xs font-bold text-white px-4 py-2 rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/5 group-hover:bg-fuchsia-500/20 group-hover:border-fuchsia-400 transition-all">View Pass</span>
       </button>
     </div>
   );

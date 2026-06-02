@@ -80,7 +80,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         gif_url,
         gif_poster_url,
         gif_fwd_id,
-        edited_at,
+        updated_at,
         created_at
       `)
       .eq("post_id", postId)
@@ -89,7 +89,8 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Failed to fetch comments for post:", error);
+      console.error("Failed to fetch comments for post:", JSON.stringify(error, null, 2));
+      console.error("Error message:", error.message, "details:", error.details, "hint:", error.hint);
       setLoadedPosts((prev) => new Set(prev).add(postId));
       return;
     }
@@ -148,7 +149,9 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         likes: likesByComment.get(row.id) ?? 0,
         likedByMe: likedByMe.has(row.id),
         createdAt: new Date(row.created_at).getTime(),
-        editedAt: row.edited_at ? new Date(row.edited_at).getTime() : undefined,
+        editedAt: row.updated_at && new Date(row.updated_at).getTime() - new Date(row.created_at).getTime() > 1000
+          ? new Date(row.updated_at).getTime()
+          : undefined,
       };
     });
 
@@ -308,7 +311,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       const supabase = createBrowserClient();
       const { error } = await (supabase as any)
         .from("user_post_comments")
-        .update({ body: trimmed, edited_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({ body: trimmed, updated_at: new Date().toISOString() })
         .eq("id", id)
         .eq("creator_id", supabaseUser.id);
       if (error) throw error;

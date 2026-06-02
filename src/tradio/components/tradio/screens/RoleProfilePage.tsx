@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, ChevronLeft, ExternalLink, Eye, Heart, Link2, Lock, MessageCircle, PenSquare, Radio, Share2, Sparkles } from 'lucide-react';
+import { BarChart3, ChevronLeft, ExternalLink, Eye, Heart, Link2, Lock, MessageCircle, PenSquare, Play, Radio, Share2, Sparkles } from 'lucide-react';
 import { BadgeRow, type UniverseBadgeSpec } from '../../universe/RoleBadge';
 import { useMessengerBridge } from '../../universe/MessengerBridgeContext';
 import { createTradioMessageContext, type MessageSourceSurface, type SourceEntityType } from '@/tradio/lib/universe/messageContext';
@@ -303,6 +303,56 @@ export const RoleProfilePage: React.FC<{
                     />
                     {role === 'dj' && <BroadcastAccessBadge status={identity.broadcast_access_status} />}
                     <span className="text-[11px] text-white/45">@{owner.username}</span>
+
+                    {/* Social Handles Icons */}
+                    {(profileRecord?.social_instagram || profileRecord?.social_tiktok || profileRecord?.social_youtube || profileRecord?.social_twitter) && (
+                      <div className="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-2">
+                        {profileRecord.social_instagram && (
+                          <a
+                            href={`https://instagram.com/${profileRecord.social_instagram}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="size-6 rounded-md bg-white/5 border border-white/8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-bold"
+                            title={`Instagram: @${profileRecord.social_instagram}`}
+                          >
+                            IG
+                          </a>
+                        )}
+                        {profileRecord.social_tiktok && (
+                          <a
+                            href={`https://tiktok.com/@${profileRecord.social_tiktok}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="size-6 rounded-md bg-white/5 border border-white/8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-bold"
+                            title={`TikTok: @${profileRecord.social_tiktok}`}
+                          >
+                            TK
+                          </a>
+                        )}
+                        {profileRecord.social_youtube && (
+                          <a
+                            href={`https://youtube.com/@${profileRecord.social_youtube}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="size-6 rounded-md bg-white/5 border border-white/8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-bold"
+                            title={`YouTube: @${profileRecord.social_youtube}`}
+                          >
+                            YT
+                          </a>
+                        )}
+                        {profileRecord.social_twitter && (
+                          <a
+                            href={`https://twitter.com/${profileRecord.social_twitter}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="size-6 rounded-md bg-white/5 border border-white/8 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all text-[10px] font-bold"
+                            title={`X / Twitter: @${profileRecord.social_twitter}`}
+                          >
+                            X
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -419,6 +469,56 @@ export const RoleProfilePage: React.FC<{
           <GlassCard className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm font-bold text-white"><Radio className="h-4 w-4 text-purple-300" /> Live broadcast features need Broadcast Access</div>
             <SecondaryButton className="px-4 py-2.5 text-[11px]" onClick={() => access?.openFlow('broadcast')}>Apply for Broadcast Access</SecondaryButton>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Spotify-style Creator Pick / Artist Pick Pinned Release */}
+      {profileRecord?.artist_pick_title && (
+        <div className="mt-6 px-4 sm:px-6 lg:px-10 animate-fade-in">
+          <div className="mb-3 text-sm font-bold uppercase tracking-[0.15em] text-white/45 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" /> {role === 'artist' ? 'Artist' : role === 'producer' ? 'Producer' : 'Host'}'s Featured Pick
+          </div>
+          <GlassCard glow className="p-5 flex flex-col md:flex-row items-start md:items-center gap-5 bg-gradient-to-r from-purple-950/10 via-black/40 to-cyan-950/10 border-white/10 relative overflow-hidden group">
+            {/* Soft backdrop glow */}
+            <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary/5 blur-3xl group-hover:bg-primary/10 transition-all duration-700 pointer-events-none" />
+
+            {/* Pick Cover art / moving FWD GIF */}
+            <div className="relative h-24 w-24 rounded-2xl overflow-hidden border border-white/10 shadow-md shrink-0 bg-white/5">
+              {profileRecord.artist_pick_image ? (
+                <img src={profileRecord.artist_pick_image} alt="Featured Pick" className="h-full w-full object-cover transition-transform group-hover:scale-105 duration-500" />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-cyan-500/10 text-white/30 font-mono text-[9px] uppercase tracking-wider font-bold p-2 text-center">
+                  {profileRecord.artist_pick_type || 'featured'}
+                </div>
+              )}
+              {/* Floating Badge */}
+              <div className="absolute bottom-1.5 left-1.5 rounded-md bg-black/75 border border-white/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-primary">
+                {profileRecord.artist_pick_type === 'track' ? 'Release' : profileRecord.artist_pick_type === 'beat' ? 'Beat' : profileRecord.artist_pick_type === 'show' ? 'Show' : 'Album'}
+              </div>
+            </div>
+
+            {/* Title / Description / Message block */}
+            <div className="flex-1 min-w-0 space-y-1.5">
+              {profileRecord.artist_pick_message && (
+                <div className="inline-block rounded-lg bg-white/5 border border-white/8 px-3 py-1.5 text-xs text-white/80 italic relative after:content-[''] after:absolute after:top-full after:left-4 after:border-[6px] after:border-transparent after:border-t-white/5">
+                  "{profileRecord.artist_pick_message}"
+                </div>
+              )}
+              <div className="pt-2 md:pt-0">
+                <h3 className="text-lg font-black tracking-tight text-white group-hover:text-primary transition-colors truncate">{profileRecord.artist_pick_title}</h3>
+                <p className="text-xs text-white/50 leading-relaxed mt-0.5">
+                  Featured {profileRecord.artist_pick_type || 'release'} curated directly by the creator.
+                </p>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="shrink-0 w-full md:w-auto">
+              <PrimaryButton className="w-full md:w-auto px-5 py-2.5 text-xs font-black uppercase tracking-widest">
+                <Play className="h-3.5 w-3.5 fill-current" /> Play Feature
+              </PrimaryButton>
+            </div>
           </GlassCard>
         </div>
       )}

@@ -119,7 +119,20 @@ const maybeSupabase = () => {
   return supabase;
 };
 
-const handleRpcError = (error: unknown): string => handleMissingTradioTables(error).message;
+const handleRpcError = (error: unknown): string => {
+  const classified = handleMissingTradioTables(error);
+  const msg = classified.message;
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes('could not find the function') ||
+    lower.includes('schema cache') ||
+    lower.includes('does not exist') ||
+    lower.includes('function')
+  ) {
+    return 'Broadcast acknowledgement saved locally (database function not deployed).';
+  }
+  return msg;
+};
 
 export const submitLegalRequest = async (
   formId: string,

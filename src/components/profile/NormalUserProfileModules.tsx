@@ -235,32 +235,40 @@ function AboutTab({
       <div className="grid grid-cols-2 gap-2">
         <InfoPill label="UID" value={profile.uid} />
         <InfoPill label="Visibility" value={profile.profileVisibility?.replace("_", " ") ?? "public"} />
-        <InfoPill label="Pronouns" value={profile.pronouns ?? "-"} />
-        <InfoPill label="Birthday" value={profile.showBirthday ? (profile.birthday ?? "-") : "Hidden"} />
+        {profile.pronouns && profile.pronouns !== "-" && <InfoPill label="Pronouns" value={profile.pronouns} />}
+        {profile.showBirthday && profile.birthday && profile.birthday !== "-" && (
+          <InfoPill label="Birthday" value={profile.birthday} />
+        )}
         <div className={pillClass}>
           <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Joined</div>
           <div className="text-sm font-bold mt-0.5">{profile.joinedDate ?? "—"}</div>
         </div>
-        <div className={pillClass}>
-          <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Location</div>
-          <div className="text-sm font-bold mt-0.5">{profile.location ?? "—"}</div>
-        </div>
+        {profile.showLocation && profile.location && profile.location !== "-" && (
+          <div className={pillClass}>
+            <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Location</div>
+            <div className="text-sm font-bold mt-0.5">{profile.location}</div>
+          </div>
+        )}
         <div className={pillClass}>
           <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Posts</div>
           <div className="text-sm font-bold mt-0.5">{profile.stats.posts}</div>
         </div>
-        <div className={pillClass}>
-          <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Prescriptions</div>
-          <div className="text-sm font-bold mt-0.5">{profile.stats.prescriptions ?? "—"}</div>
+        {profile.stats.prescriptions !== undefined && profile.stats.prescriptions !== 0 && (
+          <div className={pillClass}>
+            <div className="text-[10px] tracking-wider text-muted-foreground uppercase">Prescriptions</div>
+            <div className="text-sm font-bold mt-0.5">{profile.stats.prescriptions}</div>
+          </div>
+        )}
+      </div>
+      {(profile.favoriteGenres || profile.favoriteCreators || profile.socialInstagram || profile.socialTikTok || profile.socialYouTube) && (
+        <div className="grid grid-cols-2 gap-2">
+          {profile.favoriteGenres && profile.favoriteGenres !== "-" && <InfoPill label="Genres" value={profile.favoriteGenres} />}
+          {profile.favoriteCreators && profile.favoriteCreators !== "-" && <InfoPill label="Creators" value={profile.favoriteCreators} />}
+          {profile.socialInstagram && profile.socialInstagram !== "-" && <InfoPill label="Instagram" value={profile.socialInstagram} />}
+          {profile.socialTikTok && profile.socialTikTok !== "-" && <InfoPill label="TikTok" value={profile.socialTikTok} />}
+          {profile.socialYouTube && profile.socialYouTube !== "-" && <InfoPill label="YouTube" value={profile.socialYouTube} />}
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <InfoPill label="Genres" value={profile.favoriteGenres ?? "-"} />
-        <InfoPill label="Creators" value={profile.favoriteCreators ?? "-"} />
-        <InfoPill label="Instagram" value={profile.socialInstagram ?? "-"} />
-        <InfoPill label="TikTok" value={profile.socialTikTok ?? "-"} />
-        <InfoPill label="YouTube" value={profile.socialYouTube ?? "-"} />
-      </div>
+      )}
       {isOwner && (
         <div className="flex items-center gap-1.5 pt-1">
           <Heart className="size-3 text-[oklch(0.7_0.25_340)]" />

@@ -3,7 +3,7 @@ import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTML
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
-type Variant = "creator" | "gold";
+type Variant = "creator" | "gold" | "tradio";
 
 export function ApplicationWizardChrome({
   variant,
@@ -31,14 +31,15 @@ export function ApplicationWizardChrome({
   side?: ReactNode;
 }) {
   const isGold = variant === "gold";
-  const outer = isGold ? "neon-gold" : "neon-blue";
-  const accentText = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
-  const titleSplit = isGold ? "title-split-gold" : "title-split-blue";
-  const stepActive = isGold ? "is-active-gold" : "is-active-blue";
+  const isTradio = variant === "tradio";
+  const outer = isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accentText = isTradio ? "text-purple-300" : isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
+  const titleSplit = isTradio ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold" : isGold ? "title-split-gold" : "title-split-blue";
+  const stepActive = isTradio ? "is-active-purple bg-purple-500 text-white border-purple-400" : isGold ? "is-active-gold" : "is-active-blue";
   const pct = Math.round(((current - 1) / (steps.length - 1)) * 100);
 
   return (
-    <div className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : ""}`}>
+    <div className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTradio ? "purple" : ""}`}>
       <div className="grid-veil" aria-hidden />
       <div className="orb-extra" aria-hidden />
 
@@ -47,7 +48,7 @@ export function ApplicationWizardChrome({
         style={{ background: "oklch(0.08 0.02 262 / 0.85)" }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-6">
           {/* Back */}
-          <Link to="/apply" className={`neon-btn-ghost ${isGold ? "gold" : ""} text-xs md:text-sm`}>
+          <Link to="/apply" className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}>
             <ChevronLeft className="h-4 w-4" /> Back
           </Link>
 
@@ -61,7 +62,7 @@ export function ApplicationWizardChrome({
 
           {/* Save draft */}
           {onSaveDraft && (
-            <button onClick={onSaveDraft} className={`neon-btn-ghost ${isGold ? "gold" : ""} text-xs md:text-sm`}>
+            <button onClick={onSaveDraft} className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}>
               <Save className="h-4 w-4" />
               <span>{draftSaved ? "Saved ✓" : "Save Draft"}</span>
             </button>
@@ -72,10 +73,12 @@ export function ApplicationWizardChrome({
         {/* Progress bar */}
         <div className="h-[2px] w-full bg-white/[0.05]">
           <div
-            className={`h-full transition-all duration-500 ease-out ${isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
+            className={`h-full transition-all duration-500 ease-out ${isTradio ? "bg-purple-500" : isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
             style={{
               width: `${pct}%`,
-              boxShadow: isGold
+              boxShadow: isTradio
+                ? "0 0 12px rgba(168,85,247,0.8)"
+                : isGold
                 ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
                 : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
             }}

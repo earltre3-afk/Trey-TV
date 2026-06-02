@@ -1138,7 +1138,12 @@ function VoiceOnboardingInner() {
         try {
           await saveOnboardingProfile({ data: { accessToken: token, fields: finalFields } });
           const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken: token, method: "voice" } });
-          window.location.href = `/u/${publicProfileUid}?tour=1`;
+          // Mark that onboarding was just completed so auth provider knows to refresh
+          try { sessionStorage.setItem("treytv_onboarding_completed", "1"); } catch {}
+          // Force full page reload to refresh auth state and ensure onboarding_completed is loaded
+          setTimeout(() => {
+            window.location.href = `/u/${publicProfileUid}?tour=1&_refresh=${Date.now()}`;
+          }, 200);
           return;
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Could not save your profile. Please try again.";

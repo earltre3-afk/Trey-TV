@@ -38,6 +38,16 @@ export interface CreatorProfileBase {
   studio_access: boolean;
   created_at: string;
   updated_at: string;
+
+  // Spotify-style Featured Pick & Socials
+  artist_pick_type?: 'track' | 'beat' | 'show' | 'album' | 'playlist' | null;
+  artist_pick_title?: string | null;
+  artist_pick_message?: string | null;
+  artist_pick_image?: string | null;
+  social_instagram?: string | null;
+  social_tiktok?: string | null;
+  social_youtube?: string | null;
+  social_twitter?: string | null;
 }
 
 /**
@@ -293,6 +303,16 @@ export interface CreatorProfileDraft {
     replayArchiveEnabled?: boolean; // dj
     fanCommunityEnabled?: boolean; // artist
     collabAvailability?: string; // producer
+
+    // Spotify-inspired Artist Pick (Pinned Featured Item) & Social Links
+    artistPickType?: 'track' | 'beat' | 'show' | 'album' | 'playlist';
+    artistPickTitle?: string;
+    artistPickMessage?: string;
+    artistPickImage?: string;
+    socialInstagram?: string;
+    socialTiktok?: string;
+    socialYoutube?: string;
+    socialTwitter?: string;
   };
 }
 

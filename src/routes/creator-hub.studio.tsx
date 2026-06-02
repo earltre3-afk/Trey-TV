@@ -310,8 +310,14 @@ function Studio() {
                 <button
                   key={s.id}
                   onClick={() => toast(`${s.label}`)}
-                  style={{ animationDelay: `${i * 40}ms` }}
-                  className={`relative px-3 py-2 rounded-lg flex flex-col items-center gap-0.5 min-w-[72px] tilt-press animate-rise transition ${
+                  style={{
+                    animationName: "rise",
+                    animationDuration: "300ms",
+                    animationTimingFunction: "ease-out",
+                    animationFillMode: "both",
+                    animationDelay: `${i * 40}ms`,
+                  }}
+                  className={`relative px-3 py-2 rounded-lg flex flex-col items-center gap-0.5 min-w-[72px] tilt-press transition ${
                     s.destructive ? "hover:bg-destructive/10" : "hover:bg-white/5"
                   }`}
                 >
@@ -342,8 +348,14 @@ function Studio() {
                 <button
                   key={t.id}
                   onClick={() => setTool(t.id)}
-                  style={{ animationDelay: `${i * 30}ms` }}
-                  className={`relative px-3 py-2 rounded-xl flex flex-col items-center gap-0.5 min-w-[76px] tilt-press animate-rise transition ${
+                  style={{
+                    animationName: "rise",
+                    animationDuration: "300ms",
+                    animationTimingFunction: "ease-out",
+                    animationFillMode: "both",
+                    animationDelay: `${i * 30}ms`,
+                  }}
+                  className={`relative px-3 py-2 rounded-xl flex flex-col items-center gap-0.5 min-w-[76px] tilt-press transition ${
                     active
                       ? "bg-primary/15 ring-1 ring-primary/40 glow-gold"
                       : "hover:bg-white/5"

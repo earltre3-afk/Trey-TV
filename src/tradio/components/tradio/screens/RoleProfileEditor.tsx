@@ -375,6 +375,111 @@ export const RoleProfileEditor: React.FC<RoleProfileEditorProps> = ({ role, iden
                     </div>
                   </div>
                 </div>
+
+                {/* Spotify-inspired Creator Pick / Artist Pick */}
+                <div className="space-y-3.5 border-t border-white/5 pt-4">
+                  <div className="flex items-center gap-1.5 pl-1">
+                    <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+                    <h4 className="text-[10px] font-mono font-black text-white/40 uppercase tracking-wider">Creator Featured Pick (Spotify-Style Pinned Release)</h4>
+                  </div>
+                  <p className="text-[10px] text-white/40 pl-1 leading-snug">
+                    Pin a track, beat pack, or live show to the top of your profile with a custom short message for your visitors.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">Pick Type</label>
+                      <select
+                        value={draft.data.artistPickType || 'track'}
+                        onChange={(e) => updateField('artistPickType', e.target.value)}
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none transition-all font-mono"
+                      >
+                        <option value="track">Track Release</option>
+                        <option value="beat">Beat Pack</option>
+                        <option value="show">DJ Show / Broadcast</option>
+                        <option value="album">Album / EP</option>
+                      </select>
+                    </div>
+                    <div className="sm:col-span-2 space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">Featured Item Title</label>
+                      <input
+                        type="text"
+                        value={draft.data.artistPickTitle || ''}
+                        onChange={(e) => updateField('artistPickTitle', e.target.value)}
+                        placeholder="e.g. Midnight Velvet (Slowed & Reverb)"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">Custom Creator Message</label>
+                      <input
+                        type="text"
+                        value={draft.data.artistPickMessage || ''}
+                        onChange={(e) => updateField('artistPickMessage', e.target.value)}
+                        placeholder="e.g. My new late night jam! Check it out!"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">Cover Image / GIF URL</label>
+                      <input
+                        type="text"
+                        value={draft.data.artistPickImage || ''}
+                        onChange={(e) => updateField('artistPickImage', e.target.value)}
+                        placeholder="e.g. URL to static image or animated GIF"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Handles */}
+                <div className="space-y-3.5 border-t border-white/5 pt-4">
+                  <h4 className="text-[10px] font-mono font-black text-white/40 uppercase tracking-wider pl-1">Social Handles</h4>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">Instagram Handle</label>
+                      <input
+                        type="text"
+                        value={draft.data.socialInstagram || ''}
+                        onChange={(e) => updateField('socialInstagram', e.target.value)}
+                        placeholder="e.g. treytrizzy"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">TikTok Handle</label>
+                      <input
+                        type="text"
+                        value={draft.data.socialTiktok || ''}
+                        onChange={(e) => updateField('socialTiktok', e.target.value)}
+                        placeholder="e.g. trey.trizzy.clips"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">YouTube Channel Handle</label>
+                      <input
+                        type="text"
+                        value={draft.data.socialYoutube || ''}
+                        onChange={(e) => updateField('socialYoutube', e.target.value)}
+                        placeholder="e.g. TreyTrizzyOfficial"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-mono font-bold text-white/50 uppercase tracking-widest pl-1 block">X / Twitter Handle</label>
+                      <input
+                        type="text"
+                        value={draft.data.socialTwitter || ''}
+                        onChange={(e) => updateField('socialTwitter', e.target.value)}
+                        placeholder="e.g. TreyTrizzy"
+                        className="w-full bg-black/50 border border-white/10 focus:border-purple-400/40 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none placeholder:text-white/20 transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

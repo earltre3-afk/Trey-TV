@@ -43,7 +43,7 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
 
       {/* Search Input & Filters Group */}
       <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-2xl border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.015] px-4 py-3 backdrop-blur-3xl focus-within:border-purple-400/55 focus-within:shadow-[0_0_25px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.12)] focus-within:bg-white/[0.08] transition-all duration-500">
           <SearchIcon className="h-5 w-5 text-white/50" />
           <input
             value={query}
@@ -51,7 +51,7 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
             className="flex-1 bg-transparent text-sm text-white focus:outline-none"
             placeholder="Search artists, stations, moods..."
           />
-          <button className="flex h-9 w-9 items-center justify-center rounded-full border border-purple-400/40 bg-purple-500/20">
+          <button className="flex h-9 w-9 items-center justify-center rounded-full border border-purple-400/30 bg-purple-500/20 hover:bg-purple-500/30 transition shadow-[0_0_12px_rgba(168,85,247,0.2)]">
             <Waveform className="h-4 w-4" bars={4} color="from-purple-300 to-purple-300" />
           </button>
         </div>

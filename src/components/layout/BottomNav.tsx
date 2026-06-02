@@ -1,4 +1,4 @@
-import { Compass, CalendarDays, Home, Inbox, Sparkles, LogIn } from "lucide-react";
+import { Compass, CalendarDays, Home, Inbox, Sparkles, LogIn, Music } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { currentUser } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth";
@@ -13,7 +13,12 @@ export function BottomNav() {
   const profileAvatar = user?.avatar ?? currentUser.avatar;
   const onProfile = pathname.startsWith("/u/");
 
-  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/music-review") || pathname.startsWith("/tradio");
+  const hideNav =
+    pathname.startsWith("/apply/") ||
+    pathname.startsWith("/onboarding/") ||
+    pathname.startsWith("/music-review") ||
+    pathname.startsWith("/tradio") ||
+    pathname.startsWith("/trance");
   if (hideNav) return null;
 
   return (
@@ -46,12 +51,13 @@ export function BottomNav() {
             <NavItem to="/signup" icon={LogIn} label="Sign up" active={isActive("/login") || isActive("/signup")} />
           </div>
         ) : (
-          <div className="grid grid-cols-7 items-center px-2 pt-2 pb-1 relative overflow-visible">
+          <div className="grid grid-cols-8 items-center px-2 pt-2 pb-1 relative overflow-visible">
             <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
             <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
             <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
             <div className="flex justify-center"><CreateWheel /></div>
             <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
+            <NavItem to="/tradio" icon={Music} label="Tradio" active={isActive("/tradio")} />
             <NavItem to="/inbox" icon={Inbox} label="Inbox" active={isActive("/inbox")} badge={8} />
             <ProfileItem active={onProfile} uid={profileUid} avatar={profileAvatar} />
           </div>

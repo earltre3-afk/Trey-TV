@@ -28,13 +28,13 @@ export const GlassCard: React.FC<React.HTMLAttributes<HTMLDivElement> & { glow?:
   ...rest
 }) => (
   <div
-    className={`relative rounded-3xl border-[0.5px] border-white/[0.08] bg-gradient-to-b from-white/[0.07] to-white/[0.01] backdrop-blur-3xl shadow-[0_20px_50px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(255,255,255,0.02)] transition-all duration-500 hover:border-white/18 hover:bg-white/[0.12] hover:-translate-y-[1px] hover:shadow-[0_30px_60px_rgba(0,0,0,0.75),inset_0_1px_0_rgba(255,255,255,0.15)] ${
-      glow ? 'shadow-[0_0_40px_rgba(168,85,247,0.12),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_0_50px_rgba(168,85,247,0.22),inset_0_1px_1.5px_rgba(255,255,255,0.3)] hover:border-purple-500/25' : ''
+    className={`relative group rounded-3xl border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] via-white/[0.015] to-[#04050d]/85 backdrop-blur-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85),inset_0_1.5px_2px_rgba(255,255,255,0.15),inset_0_-1px_1px_rgba(255,255,255,0.02)] transition-all duration-500 hover:border-white/20 hover:bg-gradient-to-b hover:from-white/[0.09] hover:via-white/[0.025] hover:to-[#04050d]/90 hover:-translate-y-[2px] hover:shadow-[0_35px_70px_-10px_rgba(0,0,0,0.9),inset_0_1.5px_2.5px_rgba(255,255,255,0.22)] ${
+      glow ? 'shadow-[0_0_40px_rgba(168,85,247,0.12),inset_0_1.5px_2px_rgba(255,255,255,0.22)] hover:shadow-[0_0_50px_rgba(168,85,247,0.28),inset_0_1.5px_3px_rgba(255,255,255,0.35),0_30px_70px_-10px_rgba(0,0,0,0.9)] hover:border-purple-500/35' : ''
     } ${className}`}
     {...rest}
   >
     <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/0 via-transparent to-cyan-500/0 opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/5 via-transparent to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
     </div>
     <div className="relative">{children}</div>
   </div>
@@ -47,7 +47,7 @@ export const PrimaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElemen
   ...rest
 }) => (
   <button
-    className={`relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-[0_15px_30px_rgba(168,85,247,0.3)] border border-white/10 transition-all duration-500 hover:shadow-[0_20px_45px_rgba(168,85,247,0.45)] hover:scale-[1.03] hover:-translate-y-[1px] active:scale-95 hover:brightness-105 group overflow-hidden ${className}`}
+    className={`relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-[0_0_25px_rgba(168,85,247,0.3),0_15px_30px_rgba(168,85,247,0.22),inset_0_1px_1.5px_rgba(255,255,255,0.35)] border border-white/12 transition-all duration-500 hover:shadow-[0_0_35px_rgba(168,85,247,0.45),0_20px_45px_rgba(168,85,247,0.35),inset_0_1px_2px_rgba(255,255,255,0.45)] hover:scale-[1.03] hover:-translate-y-[1.5px] active:scale-95 hover:brightness-105 group overflow-hidden ${className}`}
     {...rest}
   >
     {/* High-fidelity sweeping gloss sheen */}
@@ -63,7 +63,7 @@ export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElem
   ...rest
 }) => (
   <button
-    className={`inline-flex items-center justify-center gap-2 rounded-full border-[0.5px] border-white/[0.08] bg-white/[0.04] px-5 py-3 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-xl transition-all duration-500 hover:border-white/18 hover:bg-white/[0.08] hover:-translate-y-[1px] hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] active:scale-95 ${className}`}
+    className={`inline-flex items-center justify-center gap-2 rounded-full border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.01] px-5 py-3 text-sm font-bold uppercase tracking-wider text-white backdrop-blur-xl transition-all duration-500 hover:border-white/20 hover:bg-white/[0.09] hover:-translate-y-[1px] hover:shadow-[0_15px_35px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)] active:scale-95 ${className}`}
     {...rest}
   >
     {children}
@@ -76,8 +76,8 @@ export const IconButton: React.FC<
   <button
     className={`inline-flex h-12 w-12 items-center justify-center rounded-full border transition-all duration-500 backdrop-blur-lg ${
       active
-        ? 'border-purple-400/40 bg-gradient-to-br from-purple-500/20 to-purple-500/5 text-purple-100 shadow-[0_0_25px_-5px_rgba(176,38,255,0.35)]'
-        : 'border-white/[0.08] bg-white/[0.03] text-white/80 hover:border-white/18 hover:bg-white/[0.08] hover:scale-105'
+        ? 'border-purple-400/40 bg-gradient-to-br from-purple-500/25 to-purple-500/5 text-purple-100 shadow-[0_0_25px_rgba(176,38,255,0.45),inset_0_1.5px_2px_rgba(255,255,255,0.25)]'
+        : 'border-white/10 bg-white/[0.04] text-white/80 hover:border-white/18 hover:bg-white/[0.08] hover:scale-105 hover:shadow-[0_8px_20px_rgba(0,0,0,0.4)]'
     } active:scale-95 ${className}`}
     {...rest}
   >
@@ -116,8 +116,8 @@ export const Chip: React.FC<{
     onClick={onClick}
     className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border-[0.5px] px-5 py-2.5 text-xs font-black uppercase tracking-wider transition-all duration-300 ${
       selected
-        ? 'border-purple-500 bg-purple-500/15 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]'
-        : 'border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.01] text-white/75 hover:border-white/20 hover:bg-white/[0.05]'
+        ? 'border-purple-400 bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-cyan-500/10 text-white shadow-[0_0_25px_rgba(168,85,247,0.35),inset_0_1px_1px_rgba(255,255,255,0.15)]'
+        : 'border-white/10 bg-gradient-to-br from-white/[0.08] to-white/[0.01] text-white/75 hover:border-white/20 hover:bg-white/[0.06] hover:text-white hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]'
     }`}
   >
     {icon}
@@ -198,19 +198,29 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
 );
 
 // ─── WAVEFORM ────────────────────────────────────────────
-export const Waveform: React.FC<{ className?: string; bars?: number; color?: string }> = ({
+export const Waveform: React.FC<{ className?: string; bars?: number; color?: string; animate?: boolean }> = ({
   className = '',
   bars = 28,
   color = 'from-fuchsia-400 to-purple-500',
+  animate = true,
 }) => (
-  <div className={`flex items-end gap-[2px] ${className}`}>
+  <div className={`flex items-end gap-[2.5px] ${className}`}>
     {Array.from({ length: bars }).map((_, i) => {
-      const h = 20 + Math.abs(Math.sin(i * 0.7)) * 80;
+      const h = 25 + Math.abs(Math.sin(i * 0.75)) * 75;
+      const duration = 0.8 + Math.abs(Math.sin(i * 0.45)) * 0.8;
+      const delay = -0.08 * i;
       return (
         <div
           key={i}
-          className={`w-[2px] rounded-full bg-gradient-to-t ${color}`}
-          style={{ height: `${h}%`, opacity: 0.4 + (i / bars) * 0.6 }}
+          className={`w-[2px] rounded-full bg-gradient-to-t ${color} origin-bottom ${
+            animate ? 'animate-[wave-bar_1s_ease-in-out_infinite]' : ''
+          }`}
+          style={{
+            height: `${h}%`,
+            opacity: 0.45 + (i / bars) * 0.55,
+            animationDuration: animate ? `${duration.toFixed(2)}s` : undefined,
+            animationDelay: animate ? `${delay.toFixed(2)}s` : undefined,
+          }}
         />
       );
     })}

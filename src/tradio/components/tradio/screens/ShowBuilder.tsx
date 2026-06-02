@@ -79,7 +79,10 @@ const CHAT_TEMPLATES: Record<string, string[]> = {
   closing: ["Nooo don't close yet!", "Replay will be on repeat", "Amazing session", "Goodnight y'all!", "Tradio AI did it again 🙌"],
 };
 
-export const ShowBuilder: React.FC = () => {
+export const ShowBuilder: React.FC<{
+  onGoLive?: (show: RadioShow) => void;
+  onBack?: () => void;
+}> = ({ onGoLive, onBack }) => {
   const [tab, setTab] = useState<ShowBuilderTab>('builder');
   const [form, setForm] = useState<ShowBuilderFormState>(emptyForm);
   const [generatedShow, setGeneratedShow] = useState<RadioShow | null>(null);
@@ -294,7 +297,7 @@ export const ShowBuilder: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-6 lg:space-y-10">
-      <TopBar title="AI Show Builder" />
+      <TopBar title="AI Show Builder" showBack={Boolean(onBack)} onBack={onBack} />
 
       {/* Hero Header Banner */}
       <div className="px-4 sm:px-6 lg:px-10">
@@ -540,17 +543,35 @@ export const ShowBuilder: React.FC = () => {
                     <div className="text-xs text-white/50">{activeShow.duration} min duration - {activeShow.mood}</div>
                   </div>
                   
-                  <button
-                    onClick={() => {
-                      setSimActiveIndex(0);
-                      setSimSecondsElapsed(0);
-                      setSimFeed([]);
-                      setIsSimulating(true);
-                    }}
-                    className="rounded-full bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 active:scale-95 transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse"
-                  >
-                    <Radio className="h-4 w-4" /> Go On Air (Sim)
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSimActiveIndex(0);
+                        setSimSecondsElapsed(0);
+                        setSimFeed([]);
+                        setIsSimulating(true);
+                      }}
+                      className="rounded-full bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all"
+                    >
+                      <Play className="h-3 w-3 fill-white" /> Simulate
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onGoLive) {
+                          onGoLive(activeShow);
+                        } else {
+                          toast.success("Going live with Show Plan!");
+                          setSimActiveIndex(0);
+                          setSimSecondsElapsed(0);
+                          setSimFeed([]);
+                          setIsSimulating(true);
+                        }
+                      }}
+                      className="rounded-full bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider flex items-center gap-2 active:scale-95 transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] animate-pulse"
+                    >
+                      <Radio className="h-4 w-4 animate-pulse" /> GO LIVE
+                    </button>
+                  </div>
                 </div>
 
                 {/* Show Segment Grid Meter Bar */}

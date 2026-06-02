@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { BarChart3, Users, MessageSquare, Music, TrendingUp, Clock, Volume2, Zap, Radio, Music2, Mic, Pause, Play } from 'lucide-react';
 import { GlassCard, Chip, PrimaryButton, SecondaryButton } from '../ui';
 import type { LiveRoomState } from '../useTradioLiveRoom';
-import type { LiveInteractionState } from '../useTradioLiveInteraction';
+import type { LiveInteraction } from '../useTradioLiveInteraction';
 
 type LiveShowDashboardProps = {
   live: LiveRoomState;
-  interaction: LiveInteractionState;
+  interaction: LiveInteraction;
   showTitle?: string;
   djName?: string;
 };
@@ -27,13 +27,6 @@ const MUSIC_BEDS = [
   { id: 'bed-under', label: 'Under Bed', duration: '∞' },
   { id: 'bed-transition', label: 'Transition', duration: '8s' },
 ];
-
-type LiveShowDashboardProps = {
-  live: LiveRoomState;
-  interaction: LiveInteractionState;
-  showTitle?: string;
-  djName?: string;
-};
 
 export const LiveShowDashboard: React.FC<LiveShowDashboardProps> = ({ live, interaction, showTitle, djName }) => {
   const [elapsedTime, setElapsedTime] = useState('00:00');

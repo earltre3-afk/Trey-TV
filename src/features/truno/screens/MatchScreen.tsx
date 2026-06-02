@@ -760,10 +760,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
-          <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className={`min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === 'draw' ? 'ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''}`}>
+          <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className={`min-h-14 rounded-2xl border border-purple-500/30 bg-zinc-950/80 py-3 text-purple-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 hover:border-purple-500/50 active:scale-95 transition-all duration-200 disabled:opacity-35 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === 'draw' ? 'ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''}`}>
             <Plus size={16} /> Draw
           </button>
-          <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
+          <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-xs sm:text-sm relative overflow-hidden group active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
             <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
             <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
             <div className="relative">
@@ -774,7 +774,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           <button
             onClick={handlePlay}
             disabled={!canPlaySelected || state.phase === 'ended'}
-            className={`min-h-14 rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/80 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.15)]' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
+            className={`min-h-14 rounded-2xl border py-3 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${canPlaySelected ? 'border-cyan-400 bg-cyan-950/20 text-cyan-200 hover:bg-cyan-900/25 shadow-[0_0_22px_rgba(34,211,238,0.45)] animate-pulse' : 'border-zinc-850 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
           >
             <Play size={15} /> Play Card
           </button>

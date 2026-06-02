@@ -1,22 +1,21 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { 
-  Radio, 
-  Sparkles, 
-  ChevronRight, 
-  Clock, 
-  Lock, 
-  CheckCircle, 
-  Send, 
-  User, 
-  Shield, 
-  Users, 
-  Music, 
-  Mic2, 
-  Disc, 
-  Calendar, 
-  Flame, 
-  UploadCloud, 
-  Layers, 
+import {
+  Radio,
+  Sparkles,
+  ChevronRight,
+  Lock,
+  CheckCircle,
+  Send,
+  User,
+  Shield,
+  Users,
+  Music,
+  Mic2,
+  Disc,
+  Calendar,
+  Flame,
+  UploadCloud,
+  Layers,
   AlertCircle,
   Megaphone,
   Play,
@@ -25,13 +24,16 @@ import {
   Plus,
   Globe,
   Settings,
-  X
+  X,
 } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, Waveform } from '../ui';
-import { ACTIVE_USER, IMG, TRACKS, ALL_STATIONS } from '../data';
-import { ShowBuilder } from './ShowBuilder'; // Import our over-hauled timeline/sim deck!
+import { ACTIVE_USER, IMG, TRACKS, ALL_STATIONS, type RadioShow } from '../data';
+import { ShowBuilder } from './ShowBuilder';
+import { LiveShowConsole } from './LiveShowConsole';
 import { AccessGate, PrescriptionRail } from '../auth/components';
 import { LegalAcceptanceGroup } from '../legal/LegalPrimitives';
+import { generateShowPlan } from '../showPlan';
+import { toast } from 'sonner';
 import {
   createLegalAcceptanceValues,
   isLegalFlowAccepted,
@@ -159,6 +161,7 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
   const [role, setRole] = useState<BroadcastRole>('artist');
   const [accessStatus, setAccessStatus] = useState<BroadcastAccessStatus>('Cleared');
   const [applied, setSavedApplied] = useState(false);
+  const [activeLiveShow, setActiveLiveShow] = useState<RadioShow | null>(null);
 
   // Stepper show builder flow states
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -360,321 +363,19 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
 
       <TopBar title="Tradio Broadcast Suite" showBack onBack={onBack} />
 
-      {isBuildingShow ? (
-        /* STEP-BY-STEP GUIDED BUILDER FLOW */
-        <div className="px-4 sm:px-6 lg:px-10 space-y-6">
-          <GlassCard glow className="p-6 border border-white/10 shadow-premium-lg">
-            
-            {/* Stepper Header */}
-            <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-6">
-              <div>
-                <span className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-widest">
-                  STUDIO PROGRAMMING SUITE • STEP {currentStep + 1} OF {steps.length}
-                </span>
-                <h2 className="text-xl font-black text-white mt-0.5">
-                  {steps[currentStep].title}
-                </h2>
-              </div>
-              <button onClick={() => setIsBuildingShow(false)} className="text-white/40 hover:text-white">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Stepper Progress bar */}
-            <div className="grid grid-cols-7 gap-1.5 mb-6">
-              {steps.map((step, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className={`h-1 rounded-full ${idx <= currentStep ? 'bg-gradient-to-r from-fuchsia-500 to-cyan-400' : 'bg-white/10'}`} />
-                  <span className={`hidden md:block text-[9px] font-black uppercase tracking-wider ${idx === currentStep ? 'text-cyan-300' : 'text-white/30'}`}>{step.title}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Step Content panels */}
-            <div className="min-h-[300px]">
-              
-              {/* Step 1: Choose Show Type */}
-              {currentStep === 0 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Choose what kind of premium radio experience you want to sequence:</p>
-                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                    {SHOW_TYPES.map((t) => (
-                      <button key={t.id} onClick={() => setSelectedShowType(t.id)} className="group text-left">
-                        <GlassCard className={`h-full p-4 hover:border-purple-500/20 transition-all ${selectedShowType === t.id ? 'border-purple-500 bg-purple-500/10' : ''}`}>
-                          <div className="flex justify-between">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10">
-                              {t.icon}
-                            </div>
-                            {selectedShowType === t.id && <CheckCircle className="h-5 w-5 text-purple-300" />}
-                          </div>
-                          <div className="mt-3 font-bold text-white text-base">{t.title}</div>
-                          <p className="text-xs text-white/50 mt-1 line-clamp-3 leading-relaxed">{t.description}</p>
-                          <div className="mt-3 flex items-center justify-between text-[9px] font-mono text-purple-300 font-bold uppercase tracking-wider">
-                            <span>{t.setupTime} setup</span>
-                            <span>{t.allowedRole}</span>
-                          </div>
-                        </GlassCard>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Define Show Identity */}
-              {currentStep === 1 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Configure the broadcast identity that listeners see on schedules and guide channels:</p>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <Field label="Show Name">
-                      <input className={inputClass} value={showName} onChange={(e) => setShowName(e.target.value)} placeholder="e.g. Midnight Beats & Soul Broadcast" />
-                    </Field>
-                    <Field label="Tagline / Description">
-                      <input className={inputClass} value={showTagline} onChange={(e) => setShowTagline(e.target.value)} placeholder="e.g. Melodics to vibe to after hours." />
-                    </Field>
-                    <Field label="Host Name">
-                      <input className={inputClass} value={showHost} onChange={(e) => setShowHost(e.target.value)} />
-                    </Field>
-                    <Field label="Target Station">
-                      <select className={inputClass} value={showStation} onChange={(e) => setShowStation(e.target.value)}>
-                        {ALL_STATIONS.map((station) => <option key={station.id} value={station.id}>{station.title}</option>)}
-                      </select>
-                    </Field>
-                    <Field label="Show Mood">
-                      <select className={inputClass} value={showMood} onChange={(e) => setShowMood(e.target.value)}>
-                        {['late-night', 'high-energy', 'chill soulful', 'focus', 'premiere-night'].map((m) => (
-                          <option key={m} value={m}>{m.toUpperCase()}</option>
-                        ))}
-                      </select>
-                    </Field>
-                    <Field label="Show Genre">
-                      <input className={inputClass} value={showGenre} onChange={(e) => setShowGenre(e.target.value)} />
-                    </Field>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Structure The Show */}
-              {currentStep === 2 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Sequence your audio timeline blocks. Toggle segments to insert into the lineup:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSegments.map((seg) => {
-                      const active = seqSegments.includes(seg.id);
-                      return (
-                        <button
-                          key={seg.id}
-                          onClick={() => toggleSelection(seqSegments, setSeqSegments, seg.id)}
-                          className={`rounded-2xl border p-3.5 flex items-center gap-2.5 transition-all text-xs font-bold ${
-                            active ? 'border-purple-500 bg-purple-500/10 text-white shadow-inner' : 'border-white/10 bg-white/[0.02] text-white/60'
-                          }`}
-                        >
-                          {seg.icon}
-                          <span>{seg.label}</span>
-                          {active && <Check className="h-3.5 w-3.5 text-purple-300" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 bg-black/30 border border-white/5 rounded-2xl p-4">
-                    <div className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-widest mb-3">Live Lineup Sequence</div>
-                    <div className="space-y-2">
-                      {seqSegments.map((segId, index) => {
-                        const target = availableSegments.find(s => s.id === segId);
-                        if (!target) return null;
-                        return (
-                          <div key={segId} className="flex items-center justify-between bg-white/[0.02] border border-white/5 px-4 py-2.5 rounded-xl text-xs">
-                            <div className="flex items-center gap-2 font-bold text-white">
-                              <span className="text-white/30 font-mono">{index + 1}.</span>
-                              {target.label}
-                            </div>
-                            <span className="text-cyan-300 font-mono text-[11px]">{Math.round(target.duration / 60)} min</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 4: Add Music */}
-              {currentStep === 3 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Queue initial tracks, loops, and premiere beats into your music blocks:</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {availableMusic.map((music) => {
-                      const active = addedMusic.includes(music);
-                      return (
-                        <button
-                          key={music}
-                          onClick={() => toggleSelection(addedMusic, setAddedMusic, music)}
-                          className={`rounded-xl border p-3 flex items-center justify-between text-xs font-bold text-left transition-all ${
-                            active ? 'border-cyan-400 bg-cyan-500/10 text-white' : 'border-white/5 bg-white/[0.01] text-white/50'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Music className="h-4 w-4 text-cyan-300" />
-                            <span>{music}</span>
-                          </div>
-                          {active && <Check className="h-4 w-4 text-cyan-300" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 5: Add Fan Interaction */}
-              {currentStep === 4 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Select broadcast interaction kits to engage live listeners and drive chat energy:</p>
-                  <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                    {availableInteractions.map((kit) => {
-                      const active = addedInteractions.includes(kit);
-                      return (
-                        <button
-                          key={kit}
-                          onClick={() => toggleSelection(addedInteractions, setAddedInteractions, kit)}
-                          className={`rounded-xl border p-3.5 flex items-center justify-between text-xs font-bold text-left transition-all ${
-                            active ? 'border-purple-400 bg-purple-500/10 text-white' : 'border-white/5 bg-white/[0.01] text-white/50'
-                          }`}
-                        >
-                          <span>{kit}</span>
-                          {active && <Check className="h-3.5 w-3.5 text-purple-300" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 6: Schedule / Publish */}
-              {currentStep === 5 && (
-                <div className="space-y-4 animate-fade-in">
-                  <p className="text-sm text-white/60">Choose broadcast timing configuration:</p>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      { id: 'live', title: 'Go Live Now', desc: 'Broadcast immediately to selected channel.', icon: <Radio className="h-5 w-5 text-red-400 animate-pulse" /> },
-                      { id: 'book', title: 'Schedule Later', desc: 'Reserve a slot in the public live guide schedule.', icon: <Calendar className="h-5 w-5 text-cyan-300" /> },
-                      { id: 'draft', title: 'Save As Draft', desc: 'Preserve configurations in your draft cards block.', icon: <Layers className="h-5 w-5 text-purple-300" /> }
-                    ].map((opt) => (
-                      <button key={opt.id} onClick={() => setScheduleOpt(opt.id)} className="group text-left">
-                        <GlassCard className={`h-full p-4 hover:border-purple-500/10 transition-all ${scheduleOpt === opt.id ? 'border-purple-500 bg-purple-500/5' : ''}`}>
-                          <div className="flex justify-between items-center">
-                            {opt.icon}
-                            {scheduleOpt === opt.id && <CheckCircle className="h-5 w-5 text-purple-300" />}
-                          </div>
-                          <div className="mt-3 font-bold text-white text-sm">{opt.title}</div>
-                          <p className="text-xs text-white/50 mt-1 leading-relaxed">{opt.desc}</p>
-                        </GlassCard>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Step 7: Review & Readiness Checklist */}
-              {currentStep === 6 && (
-                <div className="space-y-6 animate-fade-in">
-                  <div className="p-4 rounded-2xl border border-cyan-400/20 bg-cyan-500/10 flex items-start gap-3">
-                    <CheckCircle className="h-5 w-5 text-cyan-300 mt-0.5 shrink-0" />
-                    <div>
-                      <div className="text-sm font-bold text-white">Broadcast Configuration Verified</div>
-                      <p className="text-xs text-white/65 mt-0.5">Tradio AI has structured a balanced program based on your inputs. Ready for master air check.</p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {/* Rundown Summary */}
-                    <div className="space-y-3">
-                      <div className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-widest">Rundown Summary</div>
-                      <GlassCard className="p-4 space-y-2">
-                        <div className="text-sm font-bold text-white">{showName || 'Midnight Beats Broadcast'}</div>
-                        <div className="text-xs text-white/50">{showHost} • {showGenre}</div>
-                        <div className="text-xs text-cyan-300 font-mono font-bold mt-2">ESTIMATED RUNTIME: {Math.round(seqSegments.reduce((sum, s) => sum + (availableSegments.find(x => x.id === s)?.duration || 0), 0) / 60)} minutes</div>
-                        <div className="pt-2 border-t border-white/5 text-xs text-white/65">
-                          <span className="font-bold text-white">Queued Music:</span> {addedMusic.join(', ') || 'None'}
-                        </div>
-                        <div className="text-xs text-white/65">
-                          <span className="font-bold text-white">Fan Kits:</span> {addedInteractions.join(', ') || 'None'}
-                        </div>
-                      </GlassCard>
-                    </div>
-
-                    {/* Readiness Checklist */}
-                    <div className="space-y-3">
-                      <div className="text-[10px] font-mono text-purple-300 font-bold uppercase tracking-widest">Readiness Checklist</div>
-                      <GlassCard className="p-4 space-y-2.5">
-                        {[
-                          ['Show identity defined', showName.length > 0],
-                          ['Sequence items organized', seqSegments.length > 0],
-                          ['Tracks and stems queued', addedMusic.length > 0],
-                          ['Interaction widgets configured', addedInteractions.length > 0],
-                          ['Access clearance verified', accessStatus === 'Cleared'],
-                        ].map(([title, check]) => (
-                          <div key={title as string} className="flex items-center gap-2 text-xs">
-                            {check ? (
-                              <Check className="h-4 w-4 text-emerald-400" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-yellow-400 animate-pulse" />
-                            )}
-                            <span className={check ? 'text-white/70' : 'text-white/45'}>{title as string}</span>
-                          </div>
-                        ))}
-                      </GlassCard>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-
-            {currentStep === steps.length - 1 && (
-              <div className="mt-6">
-                <LegalAcceptanceGroup
-                  config={LEGAL_ACCEPTANCE_FLOWS.dj_broadcast_schedule}
-                  values={broadcastLegalValues}
-                  onChange={setBroadcastLegalValues}
-                  status={broadcastLegalStatus}
-                  statusMessage={broadcastLegalMessage}
-                  compact
-                />
-              </div>
-            )}
-
-            {/* Stepper Navigation buttons */}
-            <div className="flex justify-between items-center pt-6 border-t border-white/5 mt-6">
-              <button
-                onClick={handlePrevStep}
-                disabled={currentStep === 0}
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-xs font-bold text-white hover:bg-white/10 disabled:opacity-20 disabled:pointer-events-none active:scale-95 transition-all"
-              >
-                Back
-              </button>
-
-              {currentStep === steps.length - 1 ? (
-                <button
-                  onClick={handleCompleteShowBuild}
-                  disabled={!broadcastLegalAccepted || broadcastLegalStatus === 'saving'}
-                  className={`rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-wider active:scale-95 transition-all shadow-[0_0_25px_rgba(176,38,255,0.4)] ${
-                    broadcastLegalAccepted
-                      ? 'bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white'
-                      : 'border border-white/10 bg-white/5 text-white/25'
-                  }`}
-                >
-                  Schedule / Go Live
-                </button>
-              ) : (
-                <button
-                  onClick={handleNextStep}
-                  className="rounded-full bg-purple-500 hover:bg-purple-600 text-white px-6 py-2.5 text-xs font-black uppercase tracking-wider active:scale-95 transition-all"
-                >
-                  Continue
-                </button>
-              )}
-            </div>
-
-          </GlassCard>
-        </div>
+      {activeLiveShow ? (
+        <LiveShowConsole
+          show={activeLiveShow}
+          onEndLive={() => { setActiveLiveShow(null); setIsBuildingShow(false); }}
+        />
+      ) : isBuildingShow ? (
+        <ShowBuilder
+          onGoLive={(show) => {
+            setActiveLiveShow(show);
+            toast.success(`Broadcasting LIVE with "${show.title}"!`);
+          }}
+          onBack={() => setIsBuildingShow(false)}
+        />
       ) : (
         /* BROADCAST GATEWAY SCREEN */
         <div className="px-4 sm:px-6 lg:px-10 space-y-8">
@@ -905,7 +606,25 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
                     </div>
 
                     <button
-                      onClick={() => alert(`Broadcasting settings loaded. This live schedule slot is locked and ready for broadcast.`)}
+                      onClick={() => {
+                        const showFromTemplate = generateShowPlan({
+                          showName: s.title || s.type,
+                          showLength: 60,
+                          showMood: 'late-night',
+                          targetAudience: 'broad audience',
+                          hostTone: 'cinematic',
+                          musicSource: 'artist station plus Tradio catalog',
+                          selectedStation: 'station-trey-trizzy',
+                          commercialBreaks: 2,
+                          fanInteractionStyle: 'balanced',
+                          includeProducerBeatSpotlight: true,
+                          includeArtistPremiere: true,
+                          includeListenerRequests: true,
+                          saveAs: 'live show',
+                        });
+                        setActiveLiveShow(showFromTemplate);
+                        toast.success(`Connected to scheduled live broadcast desk!`);
+                      }}
                       className="rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-white/70 hover:text-white"
                     >
                       Manage

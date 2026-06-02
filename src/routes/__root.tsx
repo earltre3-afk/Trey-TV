@@ -167,6 +167,7 @@ function RootComponent() {
   const isImmersiveGameRoom = pathname.startsWith("/games");
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
   const isImmersiveTradio = pathname.startsWith("/tradio");
+  const isImmersiveTrance = pathname.startsWith("/trance");
   
   const [foldMode, setFoldMode] = useState<string>("standard");
 
@@ -205,6 +206,7 @@ function RootComponent() {
     isImmersiveGameRoom ||
     isFocusedAuthSurface ||
     isImmersiveTradio ||
+    isImmersiveTrance ||
     foldMode === "cover" ||
     foldMode === "unfolded" ||
     foldMode === "flex";

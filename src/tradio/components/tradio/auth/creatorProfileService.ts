@@ -108,6 +108,16 @@ function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): Cre
     studio_access: identity.roles.some((r) => ['admin', 'owner'].includes(r.role)),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+
+    // Spotify-style Pinned Pick & Socials mapping
+    artist_pick_type: localDraftData.artistPickType || 'track',
+    artist_pick_title: localDraftData.artistPickTitle || null,
+    artist_pick_message: localDraftData.artistPickMessage || null,
+    artist_pick_image: localDraftData.artistPickImage || null,
+    social_instagram: localDraftData.socialInstagram || null,
+    social_tiktok: localDraftData.socialTiktok || null,
+    social_youtube: localDraftData.socialYoutube || null,
+    social_twitter: localDraftData.socialTwitter || null,
   };
 
   if (role === 'artist') {

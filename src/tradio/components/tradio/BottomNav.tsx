@@ -158,8 +158,8 @@ export const BottomNav: React.FC<{
   };
 
   const hasProfileAccess = hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner']);
-  const leftTabs = TABS.slice(0, 3);
-  const rightTabs = TABS.slice(3).filter((t) => t.key !== 'profile' || hasProfileAccess);
+  const leftTabs = TABS.filter((t) => t.key === 'home' || t.key === 'stations');
+  const rightTabs = TABS.filter((t) => t.key === 'search' || (hasProfileAccess ? t.key === 'studio' : t.key === 'library'));
 
   const renderTabButton = ({ key, label, Icon }: typeof TABS[number]) => {
     const isActive = active === key;
@@ -167,23 +167,23 @@ export const BottomNav: React.FC<{
       <button
         key={key}
         onClick={() => onChange(key)}
-        className="relative flex flex-1 flex-col items-center gap-1.5 py-2 transition-all duration-300 group"
+        className="relative flex flex-1 flex-col items-center gap-1.5 py-2 transition-all duration-300 group active:scale-95"
       >
         {isActive && (
-          <span className="absolute -top-3 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(176,38,255,0.8)]" />
+          <span className="absolute -top-3 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-gradient-to-r from-fuchsia-400 via-purple-500 to-cyan-400 shadow-[0_0_20px_rgba(176,38,255,0.8)] animate-pulse" />
         )}
         <div className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
-          isActive ? 'bg-gradient-to-br from-purple-500/20 to-purple-500/3 border border-purple-500/20 shadow-[0_4px_15px_rgba(168,85,247,0.15)]' : 'group-hover:bg-white/5'
+          isActive ? 'bg-gradient-to-br from-purple-500/25 to-purple-500/5 border border-purple-500/25 shadow-[0_4px_15px_rgba(168,85,247,0.22)]' : 'group-hover:bg-white/5'
         }`}>
           <Icon
-            className={`h-5 w-5 transition-colors duration-300 ${
-              isActive ? 'text-purple-300' : 'text-white/60 group-hover:text-white/80'
+            className={`h-5 w-5 transition-transform duration-300 ${
+              isActive ? 'text-purple-300 scale-105' : 'text-white/60 group-hover:text-white/80 group-hover:scale-110'
             }`}
           />
         </div>
         <span
           className={`text-[10px] font-medium transition-colors duration-300 ${
-            isActive ? 'text-purple-300' : 'text-white/55 group-hover:text-white/75'
+            isActive ? 'text-purple-300 font-bold' : 'text-white/55 group-hover:text-white/75'
           }`}
         >
           {label}
@@ -208,7 +208,7 @@ export const BottomNav: React.FC<{
       )}
 
       {/* Main Nav Bar Grid */}
-      <div className="relative flex items-end justify-between rounded-3xl border border-white/[0.08] bg-[#08070d]/85 backdrop-blur-[32px] px-2 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.08)] sm:px-3 sm:py-3.5">
+      <div className="relative flex items-end justify-between rounded-3xl border-[0.5px] border-white/12 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08070d]/90 to-[#040409]/95 backdrop-blur-[34px] px-2 py-3 shadow-[0_30px_70px_rgba(0,0,0,0.9),inset_0_1.5px_2px_rgba(255,255,255,0.14),inset_0_-1px_12px_rgba(0,0,0,0.6)] sm:px-3 sm:py-3.5">
 
         {leftTabs.map(renderTabButton)}
 

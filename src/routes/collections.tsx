@@ -47,8 +47,14 @@ function Collections() {
             <button
               key={c.name}
               onClick={() => toast(`Opening "${c.name}"`)}
-              style={{ animationDelay: `${i * 60}ms` }}
-              className={`animate-rise relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 text-left p-3 bg-gradient-to-br ${c.tint} hover-lift`}
+              style={{
+                animationName: "rise",
+                animationDuration: "300ms",
+                animationTimingFunction: "ease-out",
+                animationFillMode: "both",
+                animationDelay: `${i * 60}ms`,
+              }}
+              className={`relative aspect-[4/3] rounded-2xl overflow-hidden border border-white/10 text-left p-3 bg-gradient-to-br ${c.tint} hover-lift`}
             >
               <Folder className="size-6 text-white/80" />
               <div className="absolute bottom-3 left-3 right-3">

@@ -85,8 +85,14 @@ function CreatorHub() {
           {kpis.map((k, i) => (
             <div
               key={k.label}
-              style={{ animationDelay: `${i * 80}ms` }}
-              className={`relative rounded-2xl p-4 glass ring-1 ${toneMap[k.tone]} bg-gradient-to-br animate-rise hover-lift overflow-hidden`}
+              style={{
+                animationName: "rise",
+                animationDuration: "300ms",
+                animationTimingFunction: "ease-out",
+                animationFillMode: "both",
+                animationDelay: `${i * 80}ms`,
+              }}
+              className={`relative rounded-2xl p-4 glass ring-1 ${toneMap[k.tone]} bg-gradient-to-br hover-lift overflow-hidden`}
             >
               <div className="shimmer-sweep absolute inset-0 rounded-2xl" />
               <div className="relative flex items-start justify-between">
@@ -124,8 +130,14 @@ function CreatorHub() {
                 <button
                   key={t.label}
                   onClick={onClick}
-                  style={{ animationDelay: `${i * 50}ms` }}
-                  className={`group relative rounded-2xl p-4 glass neon-border hover-lift tilt-press text-left animate-rise overflow-hidden ${isStudio ? "ring-1 ring-primary/40 glow-gold" : ""}`}
+                  style={{
+                    animationName: "rise",
+                    animationDuration: "300ms",
+                    animationTimingFunction: "ease-out",
+                    animationFillMode: "both",
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                  className={`group relative rounded-2xl p-4 glass neon-border hover-lift tilt-press text-left overflow-hidden ${isStudio ? "ring-1 ring-primary/40 glow-gold" : ""}`}
                 >
                   <div className="size-10 rounded-xl grid place-items-center bg-white/5 group-hover:scale-110 transition">
                     <t.icon className="size-5 text-primary" />
@@ -151,8 +163,14 @@ function CreatorHub() {
             {shows.map((s, i) => (
               <article
                 key={s.id}
-                style={{ animationDelay: `${i * 80}ms` }}
-                className="group relative rounded-3xl overflow-hidden glass neon-border hover-lift animate-rise"
+                style={{
+                  animationName: "rise",
+                  animationDuration: "300ms",
+                  animationTimingFunction: "ease-out",
+                  animationFillMode: "both",
+                  animationDelay: `${i * 80}ms`,
+                }}
+                className="group relative rounded-3xl overflow-hidden glass neon-border hover-lift"
               >
                 <div className="relative aspect-[16/10] shimmer-sweep">
                   <img src={s.media} className="absolute inset-0 size-full object-cover group-hover:scale-105 transition-transform duration-700" alt="" />

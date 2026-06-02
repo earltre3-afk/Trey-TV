@@ -97,23 +97,23 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Good evening, <span className="text-signature text-4xl sm:text-5xl text-fuchsia-300 font-normal tracking-wide drop-shadow-[0_0_12px_rgba(217,70,239,0.35)]">{greetingName}</span>
+              <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl flex items-baseline gap-2">
+                Good evening, <span className="text-signature text-3xl sm:text-4xl text-fuchsia-300 font-normal drop-shadow-[0_0_12px_rgba(217,70,239,0.55)] ml-1">{greetingName}</span>
               </h1>
-              <Waveform className="h-5 w-8 self-center" bars={6} />
+              <Waveform className="h-5 w-8 self-center" bars={6} animate={isPlaying} />
             </div>
             <p className="mt-1 text-sm text-white/60">Music that understands you.</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl focus-within:border-purple-500/50 focus-within:shadow-[0_0_20px_rgba(168,85,247,0.15)] focus-within:bg-white/[0.06] transition-all duration-300">
+        <div className="flex items-center gap-2 rounded-2xl border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.015] px-4 py-3 backdrop-blur-3xl focus-within:border-purple-400/55 focus-within:shadow-[0_0_25px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.12)] focus-within:bg-white/[0.08] transition-all duration-500">
           <SearchIcon className="h-5 w-5 text-white/50" />
           <input
             placeholder="Search artists, stations, moods..."
             className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
           />
           <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 active:scale-90 hover:scale-105 hover:shadow-[0_0_12px_rgba(217,70,239,0.5)] transition-all duration-300">
-            <Waveform className="h-4 w-4" bars={4} color="from-white to-white" />
+            <Waveform className="h-4 w-4" bars={4} color="from-white to-white" animate={isPlaying} />
           </button>
         </div>
       </div>
@@ -454,7 +454,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                   <img src={s.img} alt={s.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
                   <span className="absolute bottom-2.5 right-2.5 transform translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"><PlayCircle size={36} /></span>
-                  <Waveform className={`absolute bottom-2.5 left-2.5 h-3 w-12 ${playingThis ? 'opacity-100' : 'opacity-50'}`} bars={10} />
+                  <Waveform className={`absolute bottom-2.5 left-2.5 h-3 w-12 ${playingThis ? 'opacity-100' : 'opacity-50'}`} bars={10} animate={playingThis} />
                 </div>
                 <div className="mt-2.5 truncate text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">{s.title}</div>
                 <div className="truncate text-[11px] text-white/55">{s.tags}</div>
@@ -531,7 +531,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                 </div>
                 <div className="truncate text-[11px] text-white/55 group-hover:text-purple-300 transition-colors">{r.artist}</div>
                 <div className="mt-1.5 flex items-center gap-2">
-                  <Waveform className="h-2.5 w-16" bars={14} />
+                  <Waveform className={`h-2.5 w-16 ${currentTrack?.id === r.track.id && isPlaying ? 'opacity-100' : 'opacity-50'}`} bars={14} animate={currentTrack?.id === r.track.id && isPlaying} />
                   <span className="text-[10px] text-white/40">Released {r.released}</span>
                 </div>
               </div>

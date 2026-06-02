@@ -30,8 +30,12 @@ async function resolvePostAuthDestination(
     try {
       await saveOnboardingProfile({ data: { accessToken, fields: voiceProfile } });
       const { publicProfileUid } = await finalizeOnboarding({ data: { accessToken, method: "voice" } });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      nav({ to: `/u/${publicProfileUid}` as any });
+      // Mark that onboarding was just completed so auth provider knows to refresh
+      try { sessionStorage.setItem("treytv_onboarding_completed", "1"); } catch {}
+      // Force full page reload to refresh auth state and ensure onboarding_completed is loaded
+      setTimeout(() => {
+        window.location.href = `/u/${publicProfileUid}?_refresh=${Date.now()}`;
+      }, 200);
       return;
     } catch {
       // Fall through to normal routing

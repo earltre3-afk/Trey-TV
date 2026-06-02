@@ -2,7 +2,7 @@ import React from 'react';
 
 // Focusable button - TV-safe, large, with glowing neon focus state
 export const FocusButton: React.FC<{
-  children: React.ReactNode;
+  children?: React.ReactNode;
   onClick?: () => void;
   variant?: 'primary' | 'ghost' | 'gold' | 'outline';
   icon?: React.ReactNode;
@@ -30,7 +30,7 @@ export const FocusButton: React.FC<{
   return (
     <button autoFocus={autoFocus} onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>
       {icon}
-      <span>{children}</span>
+      {children && <span>{children}</span>}
     </button>
   );
 };

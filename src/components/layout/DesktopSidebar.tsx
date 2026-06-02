@@ -99,8 +99,14 @@ function Section({
             <Link
               key={i.label}
               to={i.to}
-              style={{ animationDelay: `${idx * 40}ms` }}
-              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl animate-rise transition-all duration-300 hover:translate-x-1 ${
+              style={{
+                animationName: "rise",
+                animationDuration: "300ms",
+                animationTimingFunction: "ease-out",
+                animationFillMode: "both",
+                animationDelay: `${idx * 40}ms`,
+              }}
+              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 hover:translate-x-1 ${
                 active
                   ? accent === "gold"
                     ? "bg-primary/10 ring-1 ring-primary/40 glow-gold"

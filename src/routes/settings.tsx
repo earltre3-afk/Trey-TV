@@ -140,8 +140,14 @@ function SettingsPage() {
                 <button
                   key={s.id}
                   onClick={() => setActive(s.id)}
-                  style={{ animationDelay: `${i * 50}ms` }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl animate-rise text-left transition-all duration-300 hover:translate-x-1 ${
+                  style={{
+                    animationName: "rise",
+                    animationDuration: "300ms",
+                    animationTimingFunction: "ease-out",
+                    animationFillMode: "both",
+                    animationDelay: `${i * 50}ms`,
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-300 hover:translate-x-1 ${
                     isActive ? "bg-white/10 ring-1 ring-white/15" : "hover:bg-white/5"
                   }`}
                 >

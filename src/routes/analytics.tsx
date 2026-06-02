@@ -86,8 +86,15 @@ function Analytics() {
           {stats.map((s, i) => (
             <div
               key={s.label}
-              style={{ animationDelay: `${i * 80}ms`, boxShadow: `0 18px 50px -25px ${s.color}` }}
-              className="relative rounded-2xl glass neon-border p-4 animate-rise hover-lift overflow-hidden"
+              style={{
+                animationName: "rise",
+                animationDuration: "300ms",
+                animationTimingFunction: "ease-out",
+                animationFillMode: "both",
+                animationDelay: `${i * 80}ms`,
+                boxShadow: `0 18px 50px -25px ${s.color}`,
+              }}
+              className="relative rounded-2xl glass neon-border p-4 hover-lift overflow-hidden"
             >
               <div className="flex items-start justify-between">
                 <div>

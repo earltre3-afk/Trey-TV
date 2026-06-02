@@ -407,6 +407,11 @@ Return ONLY a JSON object:
         const cardId = String(parsed.cardId);
         return { cardId: legal.includes(cardId) ? cardId : fallbackSpadesPlay(state, seat) };
       }
+
+      // ------------------------------
+      // Tradio AI Co-Pilot server fns
+      // ------------------------------
+      
     } catch (err) {
       console.error("[getGameSpadesDecision] fallback:", err);
       if (data.isBid) {
@@ -766,3 +771,109 @@ Return ONLY JSON: { "title": string, "segments": [ { "type", "title", "duration"
       return generateShowPlan(form);
     }
   });
+
+    // ------------------------------
+    // Tradio AI Co-Pilot server fns (top-level)
+    // ------------------------------
+
+    export const coPilotReadRoom = createServerFn({ method: "POST" })
+      .inputValidator((input: { recentChat?: string[]; recentChatLimit?: number }) => ({
+        recentChat: Array.isArray(input?.recentChat) ? input.recentChat.slice(-Math.max(0, Math.min(100, input.recentChat.length))) : [],
+        recentChatLimit: typeof input?.recentChatLimit === 'number' ? Math.max(1, Math.min(50, input.recentChatLimit)) : 20,
+      }))
+      .handler(async ({ data }) => {
+        try {
+          const messages = (data.recentChat || []).slice(-Math.min(20, data.recentChatLimit || 20));
+          const prompt = `You are Trey-I, a concise co-pilot for a live radio host. Given the recent chat messages (most recent last), summarize the room energy and surface short highlights and a suggested topic for the host to address.\n\nRecent chat messages:\n${JSON.stringify(messages)}`;
+
+          const parsed = await aiGenerateJson<any>({
+            prompt,
+            systemInstruction: "Return a JSON object matching the schema: { energy: 'low'|'building'|'hot', mood: string, highlights: string[], suggestedTopic: string }.",
+            temperature: 0.6,
+            maxTokens: 256,
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                energy: { type: "STRING", enum: ["low", "building", "hot"] },
+                mood: { type: "STRING" },
+                highlights: { type: "ARRAY", items: { type: "STRING" } },
+                suggestedTopic: { type: "STRING" },
+              },
+              required: ["energy", "mood", "highlights", "suggestedTopic"],
+            },
+          });
+
+          return {
+            energy: String(parsed.energy),
+            mood: String(parsed.mood || "neutral"),
+            highlights: Array.isArray(parsed.highlights) ? parsed.highlights.slice(0, 5).map(String) : [],
+            suggestedTopic: String(parsed.suggestedTopic || "Talk about what listeners are saying"),
+          };
+        } catch (err) {
+          console.error("[coPilotReadRoom]", err);
+          return {
+            energy: "low",
+            mood: "neutral",
+            highlights: [],
+            suggestedTopic: "Ask the audience what they're listening to",
+          };
+        }
+      });
+
+    export const coPilotSuggestLine = createServerFn({ method: "POST" })
+      .inputValidator((input: { showTitle?: string; segmentTitle?: string; hostTone?: string; recentChat?: string[] }) => ({
+        showTitle: String(input?.showTitle || "").slice(0, 200),
+        segmentTitle: String(input?.segmentTitle || "").slice(0, 200),
+        hostTone: String(input?.hostTone || "casual").slice(0, 50),
+        recentChat: Array.isArray(input?.recentChat) ? input.recentChat.slice(-20) : [],
+      }))
+      .handler(async ({ data }) => {
+        try {
+          const chatSnippet = (data.recentChat || []).slice(-20).join('\n');
+          const prompt = `You are Trey-I, a helpful live show co-pilot. Create ONE short host line (1-2 sentences) in the show's tone that fits the show "${data.showTitle}" and segment "${data.segmentTitle}". Host tone: ${data.hostTone}. Recent chat (most recent last):\n${chatSnippet}`;
+
+          const res = await aiGenerateText({
+            prompt,
+            systemInstruction: "Return a single short host line (1-2 sentences). Be concise and on-brand.",
+            temperature: 0.7,
+            maxTokens: 120,
+          });
+
+          const line = res.text?.trim() || "(Co-pilot unavailable)";
+          return { line };
+        } catch (err) {
+          console.error("[coPilotSuggestLine]", err);
+          return { line: "(Co-pilot unavailable)" };
+        }
+      });
+
+    export const coPilotSuggestSongs = createServerFn({ method: "POST" })
+      .inputValidator((input: { mood?: string; recentRequests?: string[] }) => ({
+        mood: String(input?.mood || "").slice(0, 100),
+        recentRequests: Array.isArray(input?.recentRequests) ? input.recentRequests.slice(-20) : [],
+      }))
+      .handler(async ({ data }) => {
+        try {
+          const prompt = `You are Trey-I, a live show music suggester. Given mood: "${data.mood}" and recent requests: ${JSON.stringify(data.recentRequests || [])}, return a JSON object: { picks: [{ title: string, artist: string, why: string }] } with 3 picks. These are free-text placeholders (no catalog).`;
+
+          const parsed = await aiGenerateJson<any>({
+            prompt,
+            systemInstruction: "Return JSON exactly matching { picks: [{ title:string, artist:string, why:string }] }.",
+            temperature: 0.7,
+            maxTokens: 256,
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                picks: { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "STRING" }, artist: { type: "STRING" }, why: { type: "STRING" } }, required: ["title","artist","why"] } },
+              },
+              required: ["picks"],
+            },
+          });
+
+          const picks = Array.isArray(parsed.picks) ? parsed.picks.slice(0, 5).map((p: any) => ({ title: String(p.title || "Untitled"), artist: String(p.artist || "Various"), why: String(p.why || "Fits the mood") })) : [];
+          return { picks };
+        } catch (err) {
+          console.error("[coPilotSuggestSongs]", err);
+          return { picks: [] };
+        }
+      });

@@ -388,62 +388,29 @@ export async function searchUsersForTopThree(query: string, limit: number = 20):
       return [];
     }
 
-    // Search users that the current user follows or who follow them
-    const { data: followData, error: followError } = await supabase
-      .from("follows")
-      .select(`
-        following_id,
-        follower_id,
-        following_profile:profiles!follows_following_id_fkey (
-          id,
-          public_profile_uid,
-          username,
-          display_name,
-          avatar_url
-        ),
-        follower_profile:profiles!follows_follower_id_fkey (
-          id,
-          public_profile_uid,
-          username,
-          display_name,
-          avatar_url
-        )
-      `)
-      .or(`follower_id.eq.${user.id},following_id.eq.${user.id}`)
-      .limit(limit * 2) as any;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(query.trim());
 
-    if (followError) {
-      console.error("Error searching users:", followError);
+    let dbQuery = supabase
+      .from("profiles")
+      .select("id, public_profile_uid, username, display_name, avatar_url")
+      .neq("id", user.id);
+
+    if (isUuid) {
+      dbQuery = dbQuery.eq("id", query.trim());
+    } else {
+      dbQuery = dbQuery.or(
+        `username.ilike.%${query}%,display_name.ilike.%${query}%,public_profile_uid.ilike.%${query}%`
+      );
+    }
+
+    const { data: profiles, error: searchError } = await dbQuery.limit(limit);
+
+    if (searchError) {
+      console.error("Error searching all profiles:", searchError);
       return [];
     }
 
-    // Extract unique profiles
-    const profilesMap = new Map();
-    
-    if (followData) {
-      for (const row of followData) {
-        // Add following profile
-        if ((row as any).following_profile && (row as any).following_profile.id !== user.id) {
-          const profile = (row as any).following_profile;
-          if (!profilesMap.has(profile.id)) {
-            profilesMap.set(profile.id, profile);
-          }
-        }
-        // Add follower profile
-        if ((row as any).follower_profile && (row as any).follower_profile.id !== user.id) {
-          const profile = (row as any).follower_profile;
-          if (!profilesMap.has(profile.id)) {
-            profilesMap.set(profile.id, profile);
-          }
-        }
-      }
-    }
-
-    // Filter by query and convert to array
-    const profiles = Array.from(profilesMap.values()).filter((profile: any) => {
-      const searchStr = `${profile.display_name || ''} ${profile.username || ''}`.toLowerCase();
-      return searchStr.includes(query.toLowerCase());
-    }).slice(0, limit);
+    if (!profiles) return [];
 
     const checked = await Promise.all(
       profiles.map(async (profile: any) => {

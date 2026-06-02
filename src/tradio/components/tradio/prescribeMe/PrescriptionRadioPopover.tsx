@@ -164,11 +164,11 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
       {/* Luxury Integrated Pop-out Cabinet */}
       <div
-        className="fixed bottom-[96px] left-1/2 w-[92vw] max-w-[390px] max-h-[calc(100vh-140px)] z-[101] rounded-[24px] sm:rounded-[32px] border border-white/12 bg-[#08060d]/95 backdrop-blur-3xl p-4 sm:p-5 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.25)] flex flex-col gap-3 sm:gap-4 overflow-y-auto scrollbar-none animate-emerge-from-button text-left glass-premium-deep luxury-grain sm:left-auto sm:right-6 sm:bottom-[105px] sm:w-[420px] sm:max-h-[calc(100vh-140px)] sm:animate-slide-up-modal sm:translate-x-0"
+        className="fixed bottom-[96px] left-1/2 w-[92vw] max-w-[390px] max-h-[calc(100vh-140px)] z-[101] rounded-[24px] sm:rounded-[32px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 backdrop-blur-3xl p-4 sm:p-5 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] flex flex-col gap-3 sm:gap-4 overflow-y-auto scrollbar-none animate-emerge-from-button text-left luxury-grain sm:left-auto sm:right-6 sm:bottom-[105px] sm:w-[420px] sm:max-h-[calc(100vh-140px)] sm:animate-slide-up-modal sm:translate-x-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Triangular Anchor Tail pointing to bottom nav center orb */}
-        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-white/12 bg-[#08060d]/95 backdrop-blur-3xl z-[-1] pointer-events-none sm:hidden" />
+        <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-white/12 bg-[#05050a]/92 backdrop-blur-3xl z-[-1] pointer-events-none sm:hidden" />
         {/* Glowing Background Neon Aura */}
         <div className="absolute -top-32 -left-16 h-48 w-46 bg-gradient-to-br from-purple-600/30 to-fuchsia-600/5 blur-[50px] pointer-events-none rounded-full" />
         <div className="absolute -bottom-32 -right-16 h-48 w-46 bg-gradient-to-tr from-cyan-500/25 to-purple-600/5 blur-[50px] pointer-events-none rounded-full" />

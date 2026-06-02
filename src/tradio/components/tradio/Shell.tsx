@@ -49,6 +49,7 @@ import RouteMePage from '../route-me/RouteMePage';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RoleProfilePage } from './screens/RoleProfilePage';
 import type { RoleProfileType } from './auth/roleProfile';
+import aiBallCutout from '@/tradio/assets/ai-ball.png';
 import { LegalCenter } from './legal/LegalCenter';
 import LegalAdminDashboard from './legal/LegalAdminDashboard';
 import { LegalFooterLinks } from './legal/LegalPrimitives';
@@ -137,6 +138,27 @@ const NAV_COLORS: Record<TabKey, string> = {
   library: 'text-[oklch(0.7_0.25_340)]', // Red/Pink
   studio: 'text-[#D946EF]', // Magenta
   profile: 'text-primary' // Gold
+};
+
+const SCREEN_COLORS: Record<ScreenKey, string> = {
+  home: 'text-primary',
+  stations: 'text-[#D946EF]',
+  build: 'text-primary',
+  artist: 'text-[oklch(0.7_0.25_340)]',
+  release: 'text-[oklch(0.82_0.15_215)]',
+  search: 'text-[oklch(0.65_0.22_300)]',
+  library: 'text-[oklch(0.65_0.22_300)]',
+  studio: 'text-primary',
+  community: 'text-[oklch(0.65_0.22_300)]',
+  schedule: 'text-[oklch(0.82_0.15_215)]',
+  artistHub: 'text-[oklch(0.7_0.25_340)]',
+  producerHub: 'text-[#00B7FF]',
+  djStudio: 'text-[#D946EF]',
+  showBuilder: 'text-[#00B7FF]',
+  analytics: 'text-primary',
+  songwars: 'text-[oklch(0.7_0.25_340)]',
+  routeMe: 'text-primary',
+  broadcastStudio: 'text-[#D946EF]',
 };
 
 const PRIMARY_NAV: { key: TabKey; label: string; hint: string; Icon: React.FC<{ className?: string }> }[] = [
@@ -776,9 +798,22 @@ export const TradioShellContent: React.FC = () => {
           {/* Universal Mobile Top Bar */}
           <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between border-b border-white/[0.06] bg-[#06050a]/80 px-4 backdrop-blur-xl lg:hidden">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/5">
-                <Waveform className="h-4 w-4" bars={3} color="from-fuchsia-400 to-cyan-400" />
-              </div>
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-tradio-nav'));
+                  document.dispatchEvent(new CustomEvent('open-tradio-nav'));
+                }}
+                className="group relative flex h-8 w-8 items-center justify-center select-none active:scale-95 transition-all duration-300"
+              >
+                <span className="absolute inset-0 rounded-full bg-purple-500/25 blur-md animate-pulse-orb-slow" />
+                <div className="relative h-8 w-8">
+                  <img
+                    alt="Prescription Radio"
+                    className="h-full w-full object-contain pointer-events-none [filter:drop-shadow(0_0_8px_rgba(176,38,255,0.55))] transition-transform duration-700 animate-slow-spin group-hover:scale-110 group-hover:animate-orb-spin"
+                    src={aiBallCutout}
+                  />
+                </div>
+              </button>
               <span className="text-sm font-black uppercase tracking-wider bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">Tradio</span>
             </div>
 
@@ -831,75 +866,90 @@ export const TradioShellContent: React.FC = () => {
                 onClick={(e) => e.stopPropagation()}
                 className="w-full rounded-t-[32px] border border-white/10 liquid-glass !bg-none p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-premium-lg animate-scale-in"
               >
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex items-start justify-between">
                   <div>
-                    <div className="text-xl font-bold text-white">All Screens</div>
-                    <div className="text-xs text-white/50">Jump to any Tradio module</div>
+                    <div className="text-xl font-bold bg-gradient-to-r from-fuchsia-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_6px_rgba(168,85,247,0.25)]">All Screens</div>
+                    <div className="text-xs text-white/50 mt-1">Jump to any Tradio module</div>
                   </div>
-                  <button onClick={() => setNavOpen(false)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-gradient-to-br from-white/8 to-white/2 hover:border-white/20 transition-all duration-300">
-                    <X className="h-4 w-4 text-white" />
+                  <button onClick={() => setNavOpen(false)} aria-label="Close" className="size-9 grid place-items-center rounded-full glass shrink-0 transition-transform active:scale-95">
+                    <X className="size-5 text-white" />
                   </button>
                 </div>
                 <div className="mb-4">
                   <Link
                     to="/"
                     onClick={() => setNavOpen(false)}
-                    className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold text-white/90 active:scale-95 transition-all"
+                    className="group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 hover:translate-x-1 hover:bg-white/5 border border-white/10 liquid-glass"
                   >
-                    <Home className="h-4 w-4 text-fuchsia-400" /> Back to Trey TV
+                    <div className="size-10 rounded-xl overflow-hidden grid place-items-center bg-white/5 transition-transform group-hover:scale-110">
+                      <Home className="size-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white">Back to Trey TV</div>
+                      <div className="text-xs text-muted-foreground truncate">Return to streaming home</div>
+                    </div>
+                    <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 max-h-[50vh] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1">
                   {SCREEN_LABELS.map((s) => {
                     const Icon = SCREEN_ICONS[s.key] || Radio;
                     const isCurrent = tab === s.key || (view.kind === s.key) || (view.kind === 'tab' && view.tab === s.key);
+                    const themeColor = SCREEN_COLORS[s.key] || 'text-white/70';
                     return (
                       <button
                         key={s.key}
                         onClick={() => setScreen(s.key)}
-                        className={`group relative rounded-2xl border p-3 sm:p-4 text-left transition-all duration-300 active:scale-95 flex flex-col gap-2 sm:gap-3 ${
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 hover:translate-x-1 text-left ${
                           isCurrent
-                            ? 'border-purple-500 bg-gradient-to-br from-purple-500/20 to-purple-500/5 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
-                            : 'border-white/8 bg-gradient-to-br from-white/[0.06] to-white/[0.01] hover:border-white/12 hover:bg-gradient-to-br hover:from-white/[0.08] hover:to-white/[0.02]'
+                            ? 'bg-primary/10 ring-1 ring-primary/40 glow-gold border border-primary/20'
+                            : 'hover:bg-white/5 border border-transparent'
                         }`}
                       >
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-300 ${
-                          isCurrent
-                            ? 'border-purple-500/30 bg-purple-500/20 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.2)]'
-                            : 'border-white/10 bg-white/5 text-white/70 group-hover:scale-105'
+                        <div className={`size-10 rounded-xl overflow-hidden grid place-items-center bg-white/5 transition-transform group-hover:scale-110 shrink-0 ${
+                          isCurrent ? 'shadow-[0_0_12px_var(--gold)]' : ''
                         }`}>
-                          <Icon className="h-4 w-4" />
+                          <Icon className={`size-5 ${themeColor}`} />
                         </div>
-                        <div>
-                          <span className={`block text-xs font-semibold ${isCurrent ? 'text-purple-200' : 'text-white'}`}>{s.label}</span>
-                          <span className="mt-0.5 block text-[10px] text-white/40">{s.group}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className={`text-sm font-semibold truncate ${isCurrent ? 'text-primary' : 'text-white'}`}>
+                            {s.label}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">{s.group} Module</div>
                         </div>
+                        {isCurrent ? (
+                          <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_var(--gold)] animate-glow-pulse" />
+                        ) : (
+                          <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
+                        )}
                       </button>
                     );
                   })}
                   <button
                     onClick={() => { setPlayerOpen(true); setNavOpen(false); }}
-                    className="group relative rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-500/20 to-purple-500/5 p-3 sm:p-4 text-left transition-all duration-300 active:scale-95 flex flex-col gap-2 sm:gap-3 hover:border-purple-400/50 hover:bg-purple-500/30"
+                    className="group flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 hover:translate-x-1 text-left border border-transparent hover:bg-white/5"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-purple-500/30 bg-purple-500/20 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.25)] group-hover:scale-105 transition-transform">
-                      <Disc className="h-4 w-4 animate-slow-spin" />
+                    <div className="size-10 rounded-xl overflow-hidden grid place-items-center bg-white/5 transition-transform group-hover:scale-110 shrink-0">
+                      <Disc className="size-5 text-[#D946EF] animate-slow-spin" />
                     </div>
-                    <div>
-                      <span className="block text-xs font-semibold text-purple-200">Now Playing</span>
-                      <span className="mt-0.5 block text-[10px] text-purple-300/60">Music Control</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white">Now Playing</div>
+                      <div className="text-xs text-muted-foreground truncate">Music Control</div>
                     </div>
+                    <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
                   </button>
                   <button
                     onClick={() => openLegal()}
-                    className="group relative rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/15 to-cyan-500/5 p-3 sm:p-4 text-left transition-all duration-300 active:scale-95 flex flex-col gap-2 sm:gap-3 hover:border-cyan-400/40 hover:bg-cyan-500/20"
+                    className="group flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 hover:translate-x-1 text-left border border-transparent hover:bg-white/5"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/20 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.2)] group-hover:scale-105 transition-transform">
-                      <BookOpen className="h-4 w-4" />
+                    <div className="size-10 rounded-xl overflow-hidden grid place-items-center bg-white/5 transition-transform group-hover:scale-110 shrink-0">
+                      <BookOpen className="size-5 text-[oklch(0.82_0.15_215)]" />
                     </div>
-                    <div>
-                      <span className="block text-xs font-semibold text-cyan-100">Legal Center</span>
-                      <span className="mt-0.5 block text-[10px] text-cyan-200/50">Policies & requests</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white">Legal Center</div>
+                      <div className="text-xs text-muted-foreground truncate">Policies & requests</div>
                     </div>
+                    <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
                   </button>
                 </div>
                 {/* Legal footer links */}

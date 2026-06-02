@@ -103,6 +103,14 @@ export function getCreatorProfileDraft(role: RoleProfileType, identity: TradioId
       region: '',
       bio: '',
       visibility: 'private' as const,
+      artistPickType: 'track' as const,
+      artistPickTitle: '',
+      artistPickMessage: '',
+      artistPickImage: '',
+      socialInstagram: '',
+      socialTiktok: '',
+      socialYoutube: '',
+      socialTwitter: '',
     },
   };
 
@@ -372,6 +380,24 @@ export function validateCreatorProfileDraft(role: RoleProfileType, draft: Creato
         fixedBy: 'setting a broadcast schedule goal',
       });
     }
+  }
+
+  // Shared Spotify-inspired Optional Checks (Artist Pick & Socials)
+  if (!data.artistPickTitle || data.artistPickTitle.trim().length === 0) {
+    optional.push({
+      field: 'artistPickTitle',
+      message: 'Feature an "Artist Pick" (pinned featured release or beat) on your profile page',
+      severity: 'warning',
+      fixedBy: 'pinning an Artist Pick',
+    });
+  }
+  if (!data.socialInstagram && !data.socialTiktok && !data.socialYoutube && !data.socialTwitter) {
+    optional.push({
+      field: 'socialInstagram',
+      message: 'Connect social handles (Instagram/TikTok/YouTube) to link your platforms',
+      severity: 'warning',
+      fixedBy: 'adding your social handles',
+    });
   }
 
   const totalChecks = required.length + optional.length;

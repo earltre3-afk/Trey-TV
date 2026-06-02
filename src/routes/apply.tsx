@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Logo } from "@/components/brand/Logo";
-import { ArrowLeft, ArrowRight, ChevronRight, Clock, Crown, Diamond, ShieldCheck, Star, Tv } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronRight, Clock, Crown, Diamond, ShieldCheck, Star, Tv, Radio } from "lucide-react";
 import creatorIcon from "@/assets/apply-creator-icon.jpg";
 import goldIcon from "@/assets/apply-gold-icon.jpg";
 
@@ -145,6 +145,16 @@ function ApplyHub() {
             time="3–5 minutes"
             to="/apply/go-verification"
           />
+          <DesktopPathCard
+            variant="tradio"
+            image="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=600&auto=format&fit=crop"
+            tag="Tradio Creative Position"
+            tagIcon={<Radio className="h-4 w-4" />}
+            desc="Apply to join Tradio as an approved Artist, Producer, or Radio Host/DJ to drop tracks and run live shows."
+            cta="Start Tradio Creator Application"
+            time="5–7 minutes"
+            to="/apply/tradio-creator"
+          />
 
           {/* Desktop small print */}
           <p className="hidden text-center text-xs text-white/30 lg:block">
@@ -167,7 +177,7 @@ function DesktopPathCard({
   time,
   to,
 }: {
-  variant: "creator" | "gold";
+  variant: "creator" | "gold" | "tradio";
   image: string;
   tag: string;
   tagIcon: React.ReactNode;
@@ -177,11 +187,14 @@ function DesktopPathCard({
   to: string;
 }) {
   const isGold = variant === "gold";
-  const outer = isGold ? "neon-gold" : "neon-blue";
-  const accent = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
-  const btn = isGold ? "neon-btn-gold" : "neon-btn-blue";
-  const ctaText = isGold ? "!text-white" : "";
-  const tagBg = isGold
+  const isTradio = variant === "tradio";
+  const outer = isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accent = isTradio ? "text-purple-300" : isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
+  const btn = isTradio ? "neon-btn-purple" : isGold ? "neon-btn-gold" : "neon-btn-blue";
+  const ctaText = isGold || isTradio ? "!text-white" : "";
+  const tagBg = isTradio
+    ? "bg-[oklch(0.13_0.05_292/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.5)]"
+    : isGold
     ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
     : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
 
@@ -219,10 +232,14 @@ function DesktopPathCard({
             className="overflow-hidden rounded-2xl"
             style={{
               padding: "3px",
-              background: isGold
+              background: isTradio
+                ? "linear-gradient(135deg, oklch(0.85 0.2 290 / 0.5), oklch(0.55 0.25 295 / 0.15))"
+                : isGold
                 ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
                 : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
-              boxShadow: isGold
+              boxShadow: isTradio
+                ? "0 0 30px oklch(0.6 0.3 295 / 0.3)"
+                : isGold
                 ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
                 : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
             }}

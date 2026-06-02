@@ -143,15 +143,18 @@ export function TopThreeEditor({ open, onClose, onSave }: Props) {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search people you follow..."
+                  placeholder="Search by stage name, username, or UID..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl glass border border-white/10 text-sm focus:outline-none focus:border-primary/50 transition"
                 />
               </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5 pl-1">
+                Search any creator or user on Trey TV by name or their unique UID number.
+              </p>
 
               {searchResults.length > 0 && (
-                <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
+                <div className="mt-3 space-y-1 max-h-48 overflow-y-auto">
                   {searchResults.map((user) => (
                     <button
                       key={user.id}
@@ -167,8 +170,13 @@ export function TopThreeEditor({ open, onClose, onSave }: Props) {
                         <div className="text-sm font-semibold truncate">
                           {user.display_name || user.username}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          @{user.username}
+                        <div className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                          <span>@{user.username}</span>
+                          {user.public_profile_uid && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono">
+                              UID: {user.public_profile_uid}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <Plus className="size-4 text-primary flex-shrink-0" />

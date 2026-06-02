@@ -265,9 +265,10 @@ export function ProfilePageNew({
 
   const navigate = useNavigate();
   const { topThree = [] } = useTopThree(profile.profileUserId || "");
-  const { user: authUser, isGuest } = useAuth();
+  const { user: authUser, isGuest, signOut } = useAuth();
   const myUid = authUser?.uid ?? "";
   const [noteOpen, setNoteOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [noteTab, setNoteTab] = useState<"note" | "gif">("note");
   const [note, setNote] = useState("");
   const [localFollowers, setLocalFollowers] = useState(Number(profile.stats.followers) || 0);
@@ -371,19 +372,6 @@ export function ProfilePageNew({
           <img src={bannerSrc} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/40 to-[#05070D]/10" />
 
-          {/* Back */}
-          <button type="button" aria-label="Go back" onClick={() => navigate({ to: "/" })} className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition z-20">
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="absolute top-3 right-3 flex gap-1.5 z-20">
-            <button type="button" aria-label="Share" onClick={onShare} className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition">
-              <Share className="w-4 h-4" />
-            </button>
-            <button type="button" aria-label="More" className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition">
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
-          </div>
-
           {/* Trey TV Logo */}
           <div className={`absolute left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300 ${isDefaultBanner ? "top-1/2 -translate-y-1/2" : "top-2"}`}>
             <div className={`relative logo-anim transition-all duration-300 ${isDefaultBanner ? "w-[240px] sm:w-[300px] md:w-[360px]" : "w-[160px] sm:w-[200px] md:w-[240px]"}`}>
@@ -396,6 +384,74 @@ export function ProfilePageNew({
             </div>
           </div>
           <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#05070D] to-transparent" />
+        </div>
+
+        {/* Floating Controls (Moved outside overflow-hidden banner div but kept absolute relative to the section) */}
+        {/* Back */}
+        <button type="button" aria-label="Go back" onClick={() => navigate({ to: "/" })} className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition z-40">
+          <ArrowLeft className="w-4 h-4 text-white" />
+        </button>
+        <div className="absolute top-3 right-3 flex gap-1.5 z-40">
+          <button type="button" aria-label="Share" onClick={onShare} className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition">
+            <Share className="w-4 h-4 text-white" />
+          </button>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="More"
+              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+              className={`w-9 h-9 rounded-full border flex items-center justify-center active:scale-95 transition-all duration-300 ${moreMenuOpen ? "bg-primary/25 border-primary/40 text-primary scale-110 shadow-[0_0_15px_rgba(255,200,87,0.35)]" : "bg-black/40 border-white/15 text-white hover:bg-black/60"}`}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {moreMenuOpen && (
+              <>
+                {/* Backdrop click interceptor */}
+                <div className="fixed inset-0 z-40" onClick={() => setMoreMenuOpen(false)} />
+
+                {/* Dropdown panel */}
+                <div className="absolute right-0 mt-2.5 w-52 rounded-2xl p-[1px] bg-gradient-to-br from-white/35 via-primary/25 to-cyan-500/30 shadow-[0_24px_50px_rgba(0,0,0,0.9),inset_0_1px_1px_rgba(255,255,255,0.2)] backdrop-blur-3xl z-50 animate-scale-in origin-top-right">
+                  <div className="rounded-[15px] bg-gradient-to-b from-[#0e1124]/88 to-[#05060f]/95 p-1.5 flex flex-col gap-0.5 shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.12),inset_0_-1px_12px_rgba(0,0,0,0.6)]">
+                    <div className="px-3.5 py-2 text-[8px] font-black uppercase tracking-[0.2em] text-slate-500 border-b border-white/10 mb-1 flex items-center justify-between">
+                      <span>Profile Console</span>
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    </div>
+
+                    {[
+                      { label: "Edit Profile", icon: Pencil, color: GOLD, to: "/edit-profile", onClick: () => setMoreMenuOpen(false) },
+                      { label: "Settings", icon: KeyRound, color: NEON_BLUE, to: "/admin/settings", onClick: () => setMoreMenuOpen(false) },
+                      { label: "Help Center", icon: ShieldCheck, color: PINK, to: "/guide", onClick: () => setMoreMenuOpen(false) },
+                      { label: "Sign Out", icon: X, color: RED, onClick: () => { setMoreMenuOpen(false); signOut(); toast.success("Signed out successfully"); } }
+                    ].map((item) => {
+                      const content = (
+                        <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_4px_12px_rgba(0,0,0,0.2)] active:bg-white/[0.1] transition duration-200 group text-left w-full cursor-pointer">
+                          <div className="size-7 rounded-lg flex items-center justify-center bg-white/[0.02] border border-white/10 group-hover:border-white/20 transition-all duration-300" style={{ color: item.color, boxShadow: `0 0 10px ${item.color}15` }}>
+                            <item.icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300 group-hover:text-white transition-colors">{item.label}</span>
+                        </div>
+                      );
+
+                      if (item.to) {
+                        return (
+                          <Link key={item.label} to={item.to as any} onClick={item.onClick} className="block w-full">
+                            {content}
+                          </Link>
+                        );
+                      }
+
+                      return (
+                        <button key={item.label} type="button" onClick={item.onClick} className="w-full block">
+                          {content}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Avatar overlapping banner */}

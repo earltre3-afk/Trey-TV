@@ -13,6 +13,8 @@ import PassScreen from './screens/PassScreen';
 import TutorialScreen from './screens/TutorialScreen';
 import VictoryScreen from './screens/VictoryScreen';
 import PlayScreen from './screens/PlayScreen';
+import TrunoHeader from './components/TrunoHeader';
+import TrunoBottomNav, { TrunoTab } from './components/TrunoBottomNav';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { createRoom, joinRoomByCode } from '@/features/games/lib/services/roomService';
 import { identityFromTreyUser } from '@/features/games/lib/services/identity';
@@ -85,6 +87,8 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
     navigate('room', { roomId: room.id });
   };
 
+  const isTabbedView = ['home', 'play', 'clubs', 'inbox', 'profile'].includes(view);
+
   return (
     <div className={SCREEN_BG}>
       {/* Ambient background shared across all screens */}
@@ -98,18 +102,36 @@ const TrunoModule: React.FC<Props> = ({ initialView = 'home', onExitToGames }) =
       </div>
 
       <div className="relative z-10">
-        {view === 'home'         && <HomeScreen         onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
-        {view === 'match'        && <MatchScreen         onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} mode={matchParams?.mode ?? 'quick'} />}
-        {view === 'room'         && <RoomScreen          onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} roomError={roomError} suppressActiveSession={!!matchParams?.suppressActiveSession} onJoinRoom={joinRoom} onRoomReady={(id) => setRoomId(id)} />}
-        {view === 'tournament'   && <TournamentScreen    onNavigate={navigate} />}
-        {view === 'leaderboard'  && <LeaderboardScreen />}
-        {view === 'clubs'        && <ClubsScreen         onNavigate={navigate} />}
-        {view === 'profile'      && <ProfileScreen />}
-        {view === 'inbox'        && <InboxScreen         onNavigate={navigate} />}
-        {view === 'pass'         && <PassScreen />}
-        {view === 'tutorial'     && <TutorialScreen      onNavigate={navigate} />}
-        {view === 'victory'      && <VictoryScreen       onNavigate={navigate} />}
-        {view === 'play'         && <PlayScreen          onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
+        {isTabbedView ? (
+          <div className="flex flex-col min-h-screen">
+            <TrunoHeader
+              showBack={view !== 'home'}
+              onBack={() => {
+                if (view === 'home') navigate('exit');
+                else setView('home');
+              }}
+              onHome={() => setView('home')}
+            />
+            <div className="flex-1 overflow-y-auto">
+              {view === 'home'    && <HomeScreen    onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
+              {view === 'play'    && <PlayScreen    onNavigate={navigate} onQuickPlay={() => startLocalMatch('quick')} onAiMatch={() => startLocalMatch('ai')} onPlayFriends={createPrivateRoom} />}
+              {view === 'clubs'   && <ClubsScreen   onNavigate={navigate} />}
+              {view === 'inbox'   && <InboxScreen   onNavigate={navigate} />}
+              {view === 'profile' && <ProfileScreen />}
+            </div>
+            <TrunoBottomNav active={view as TrunoTab} onChange={(tab) => setView(tab as TrunoView)} />
+          </div>
+        ) : (
+          <div className="min-h-screen">
+            {view === 'match'        && <MatchScreen         onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} mode={matchParams?.mode ?? 'quick'} />}
+            {view === 'room'         && <RoomScreen          onNavigate={navigate} identity={identity} roomId={matchParams?.roomId ?? roomId} roomError={roomError} suppressActiveSession={!!matchParams?.suppressActiveSession} onJoinRoom={joinRoom} onRoomReady={(id) => setRoomId(id)} />}
+            {view === 'tournament'   && <TournamentScreen    onNavigate={navigate} />}
+            {view === 'leaderboard'  && <LeaderboardScreen />}
+            {view === 'pass'         && <PassScreen />}
+            {view === 'tutorial'     && <TutorialScreen      onNavigate={navigate} />}
+            {view === 'victory'      && <VictoryScreen       onNavigate={navigate} />}
+          </div>
+        )}
       </div>
     </div>
   );

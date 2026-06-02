@@ -28,7 +28,7 @@ const PlayScreen: React.FC<{ onNavigate: (v: string) => void; onQuickPlay: () =>
 
   return (
     <div className="px-3 pb-24 space-y-4">
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center pt-2">
         <TrunoLogo size="md" subtitle="Choose your mode. Own the table." showParent={false} />
       </div>
 
@@ -37,32 +37,33 @@ const PlayScreen: React.FC<{ onNavigate: (v: string) => void; onQuickPlay: () =>
           <button
             key={m.key}
             onClick={() => handleMode(m.key, m.view)}
-            className={`relative rounded-2xl border ${m.border} bg-zinc-950/70 backdrop-blur-xl p-4 text-left hover:scale-[1.02] transition-all overflow-hidden group`}
+            className={`relative rounded-2xl border ${m.border} bg-zinc-950/40 backdrop-blur-xl p-4 text-left hover:-translate-y-1 hover:border-white/20 active:scale-95 transition-all duration-300 overflow-hidden group shadow-[0_4px_20px_rgba(0,0,0,0.4)]`}
           >
-            <div className={`absolute -inset-4 bg-gradient-to-br ${m.grad} opacity-0 group-hover:opacity-20 blur-2xl transition-opacity`} />
+            <div className={`absolute -inset-4 bg-gradient-to-br ${m.grad} opacity-0 group-hover:opacity-15 blur-xl transition-opacity duration-500`} />
             <div className="relative">
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${m.grad} bg-opacity-20 flex items-center justify-center mb-2`} style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6))' }}>
-                <m.Icon size={22} className={m.text} strokeWidth={2} />
+              <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${m.grad} flex items-center justify-center mb-2.5 shadow-[inset_0_1px_3px_rgba(255,255,255,0.15)] group-hover:scale-110 transition-transform duration-300`} style={{ background: 'linear-gradient(135deg, rgba(0,0,0,0.5), rgba(0,0,0,0.7))' }}>
+                <m.Icon size={20} className={m.text} strokeWidth={2} />
               </div>
               <h3 className={`font-black text-base ${m.text}`}>{m.title}</h3>
-              <p className="text-[11px] text-zinc-400 mt-0.5 leading-snug">{m.desc}</p>
+              <p className="text-[11px] text-zinc-400 mt-1 leading-snug group-hover:text-zinc-300 transition-colors">{m.desc}</p>
             </div>
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-current opacity-0 group-hover:opacity-30 transition-opacity" />
           </button>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3">
+      <div className="rounded-2xl border border-zinc-850 bg-zinc-950/40 p-3 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
         <h3 className="text-xs font-bold text-cyan-300 tracking-wider mb-2">QUICK AI MATCH — DIFFICULTY</h3>
         <div className="grid grid-cols-4 gap-2">
           {['Easy', 'Normal', 'Smart', 'Savage'].map((d, i) => (
             <button
               key={d}
               onClick={onAiMatch}
-              className={`py-2.5 rounded-xl border text-xs font-bold
-                ${i === 0 ? 'border-emerald-500/40 bg-emerald-500/5 text-emerald-300' : ''}
-                ${i === 1 ? 'border-cyan-500/40 bg-cyan-500/5 text-cyan-300' : ''}
-                ${i === 2 ? 'border-fuchsia-500/40 bg-fuchsia-500/5 text-fuchsia-300' : ''}
-                ${i === 3 ? 'border-red-500/40 bg-red-500/5 text-red-300' : ''}
+              className={`py-2.5 rounded-xl border text-xs font-bold transition-all duration-200 active:scale-95
+                ${i === 0 ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-400' : ''}
+                ${i === 1 ? 'border-cyan-500/30 bg-cyan-500/5 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400' : ''}
+                ${i === 2 ? 'border-fuchsia-500/30 bg-fuchsia-500/5 text-fuchsia-300 hover:bg-fuchsia-500/10 hover:border-fuchsia-400' : ''}
+                ${i === 3 ? 'border-red-500/30 bg-red-500/5 text-red-300 hover:bg-red-500/10 hover:border-red-400' : ''}
               `}
             >
               {d}

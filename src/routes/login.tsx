@@ -158,7 +158,16 @@ function LoginPage() {
         </div>
 
         {/* Google */}
-        <div className="mt-6 space-y-3 animate-rise" style={{ animationDelay: "60ms" }}>
+        <div
+          className="mt-6 space-y-3"
+          style={{
+            animationName: "rise",
+            animationDuration: "300ms",
+            animationTimingFunction: "ease-out",
+            animationFillMode: "both",
+            animationDelay: "60ms",
+          }}
+        >
           <button
             type="button"
             onClick={handleGoogle}
