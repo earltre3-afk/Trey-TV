@@ -160,8 +160,8 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 );
 
 export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) => {
-  // Exclusivity states
-  const [role, setRole] = useState<BroadcastRole>('artist');
+  // Inside the AccessGate the user is cleared; default to artist tooling.
+  const role: BroadcastRole = 'artist';
   const [accessStatus, setAccessStatus] = useState<BroadcastAccessStatus>('Cleared');
   const [applied, setSavedApplied] = useState(false);
   const [activeLiveShow, setActiveLiveShow] = useState<RadioShow | null>(null);
@@ -210,19 +210,12 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
   const [drafts, setDrafts] = useState<BroadcastDraft[]>(INITIAL_DRAFTS);
   const [scheduled, setScheduled] = useState<ScheduledBroadcast[]>(INITIAL_SCHEDULED);
 
-  // Dynamic access state matching
+  // Open the builder when deep-linked into it.
   useEffect(() => {
     if (initialTab === 'builder') {
       setIsBuildingShow(true);
     }
-    if (role === 'fan') {
-      setAccessStatus('Invite-Only');
-    } else if (role === 'admin') {
-      setAccessStatus('Cleared');
-    } else {
-      setAccessStatus('Cleared');
-    }
-  }, [initialTab, role]);
+  }, [initialTab]);
 
   // Stepper Steps list
   const steps = [
@@ -328,39 +321,8 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
       ctaType="broadcast"
     >
     <div className="space-y-8 pb-12 lg:space-y-10">
-      
-      {/* Dynamic role switch for QA preview */}
-      <div className="px-4 sm:px-6 lg:px-10 pt-[max(2rem,env(safe-area-inset-top))]">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-black/60 border-[0.5px] border-white/10 p-4 rounded-3xl shadow-premium backdrop-blur-2xl">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500"></span>
-            </span>
-            <div>
-              <span className="block text-[10px] font-black tracking-widest text-cyan-400 uppercase">Mock Gateway Portal Switcher</span>
-              <span className="hidden sm:block text-[10px] font-semibold text-white/35">Evaluate role-specific cleared studio tools</span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1 bg-black/40 border border-white/5 p-1 rounded-full">
-            {(['fan', 'artist', 'producer', 'dj', 'admin'] as BroadcastRole[]).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRole(r)}
-                className={`rounded-full px-3.5 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${
-                  role === r 
-                    ? 'bg-gradient-to-r from-purple-500 via-fuchsia-600 to-cyan-500 text-white shadow-[0_0_15px_rgba(176,38,255,0.4)]' 
-                    : 'text-white/40 hover:text-white'
-                }`}
-              >
-                {r === 'dj' ? 'DJ / HOST' : r}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      <div className="px-4 sm:px-6 lg:px-10">
+      <div className="px-4 sm:px-6 lg:px-10 pt-[max(2rem,env(safe-area-inset-top))]">
         <PrescriptionRail
           title="Prescribe show segments"
           subtitle="Mock broadcast prescriptions can later recommend show segments, music blocks, and fan interaction pacing."
