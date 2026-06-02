@@ -3,6 +3,7 @@
 // backend wiring (Supabase, AI pose tracking, scoring) should fulfill.
 
 export * from "./identity";
+export * from "./pose";
 
 export type RoutineDifficulty = "Beginner" | "Intermediate" | "Advanced" | "Elite";
 export type Difficulty = RoutineDifficulty; // alias for compatibility
@@ -194,6 +195,14 @@ export interface SessionScore {
   rank: string; // SSS, S, A...
   newPB: boolean;
   when: string;
+  // Optional AI-assisted provenance (present for AI sessions).
+  aiConfidence?: number;
+  trackedFrameCount?: number;
+  completedSections?: number;
+  missedCueCount?: number;
+  leaderboardEligible?: boolean;
+  leaderboardIneligibilityReason?: string | null;
+  poseProvider?: string;
 }
 
 export interface PoseFeedback {
@@ -201,20 +210,6 @@ export interface PoseFeedback {
   strengths: string[];
   missedSteps: { time: string; move: string }[];
   focusAreas: string[];
-}
-
-export interface PoseLandmarkFrame {
-  timestampMs: number;
-  landmarks: { x: number; y: number; z: number; visibility?: number }[];
-}
-
-export interface PoseComparisonResult {
-  frameIndex: number;
-  timestampMs: number;
-  overallScore: number;
-  jointAngles: Record<string, number>;
-  timingDeltaMs: number;
-  confidence: number;
 }
 
 export interface Badge {

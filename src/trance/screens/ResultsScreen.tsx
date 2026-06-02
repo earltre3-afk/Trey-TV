@@ -147,6 +147,64 @@ const ResultsScreen: React.FC = () => {
         </div>
       </TranceGlassCard>
 
+      {/* AI-assisted camera report */}
+      <TranceGlassCard glow="cyan" className="p-4 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-cyan-300" />
+            <h3 className="font-black text-white uppercase text-sm">AI-Assisted Feedback</h3>
+          </div>
+          <span className="text-[9px] text-white/40 uppercase">Coaching, not perfect judgment</span>
+        </div>
+        {score.aiConfidence != null ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+              {(
+                [
+                  ["Camera confidence", `${Math.round((score.aiConfidence || 0) * 100)}%`],
+                  ["Tracked frames", `${score.trackedFrameCount ?? 0}`],
+                  ["Completed sections", `${score.completedSections ?? 0}`],
+                  ["Missed cues", `${score.missedCueCount ?? 0}`],
+                ] as [string, string][]
+              ).map(([l, v]) => (
+                <div
+                  key={l}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-center"
+                >
+                  <div className="text-lg font-black text-white">{v}</div>
+                  <div className="text-[8px] text-white/50 uppercase">{l}</div>
+                </div>
+              ))}
+            </div>
+            <div
+              className={`rounded-xl border p-3 text-xs font-bold flex items-center gap-2 ${
+                score.leaderboardEligible
+                  ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-300"
+                  : "border-yellow-400/40 bg-yellow-500/10 text-yellow-300"
+              }`}
+            >
+              {score.leaderboardEligible ? (
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+              ) : (
+                <XCircle className="w-4 h-4 shrink-0" />
+              )}
+              {score.leaderboardEligible
+                ? "Performance score submitted to the leaderboard."
+                : `Not eligible for leaderboard${
+                    score.leaderboardIneligibilityReason
+                      ? ` — ${score.leaderboardIneligibilityReason.replace(/_/g, " ")}`
+                      : ""
+                  }.`}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-white/60">
+            Practice score saved using the standard (non-AI) flow. Enable camera coaching for
+            AI-assisted feedback and Performance leaderboard eligibility.
+          </p>
+        )}
+      </TranceGlassCard>
+
       {/* Pose comparison */}
       <TranceGlassCard glow="cyan" className="p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
