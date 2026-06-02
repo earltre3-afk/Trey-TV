@@ -219,7 +219,6 @@ export function ProfilePageNew({
         <div className="relative h-[220px] sm:h-[260px] md:h-[300px] w-full overflow-hidden">
           <img src={bannerSrc} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover" decoding="async" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/40 to-[#05070D]/10" />
-          <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 35%,${NEON_PURPLE}40,transparent 60%)` }} />
 
           {/* Back */}
           <button type="button" aria-label="Go back" onClick={() => navigate({ to: "/" })} className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition z-20">
