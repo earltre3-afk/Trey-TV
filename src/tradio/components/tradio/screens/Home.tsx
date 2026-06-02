@@ -118,117 +118,59 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
         </div>
       </div>
 
-      {/* Tradio Experience Selector Gateway */}
+      {/* Sleek Tradio Pathway Dock */}
       <div className="px-4 sm:px-6 lg:px-10">
-        <GlassCard glow className="p-5 sm:p-6 overflow-hidden relative">
-          {/* Subtle decorative glow overlays */}
-          <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 left-10 h-40 w-56 rounded-full bg-fuchsia-500/8 blur-3xl pointer-events-none" />
-
-          <div className="relative">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-fuchsia-300">Tradio Ecosystem Paths</span>
-              <span className="rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-300">
-                Current Mode: {currentRoleLabel}
-              </span>
+        <GlassCard className="p-4 bg-gradient-to-r from-purple-950/15 via-[#08060d]/85 to-cyan-950/15 border-white/8 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.015] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-fuchsia-300">Active Mode Selector</span>
+              <h2 className="text-base font-bold text-white tracking-tight">Select your Tradio Pathway</h2>
+              <p className="text-[11px] text-white/50 leading-relaxed mt-0.5">Switch modes to adapt available creator, broadcast, and community tools.</p>
             </div>
 
-            <h2 className="mt-2 text-xl font-black tracking-tight text-white sm:text-2xl">Choose your experience</h2>
-            <p className="mt-1 max-w-2xl text-xs text-white/55 leading-relaxed">
-              Tradio splits into four target lanes. Select a path below to switch your active experience mode, or request verified access to unlock creative tools.
-            </p>
-
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Horizontal Dock of 4 Experiences */}
+            <div className="grid grid-cols-2 lg:flex items-center gap-2">
               {experiences.map((exp) => {
                 const isActive = currentMode === exp.mode;
                 const { isApproved, requestStatus } = exp.mode !== 'listener' ? getRoleStatus(exp.mode as any) : { isApproved: true, requestStatus: 'approved' };
 
                 return (
-                  <div
+                  <button
                     key={exp.mode}
-                    className={`relative rounded-2xl border p-4 flex flex-col justify-between transition-all duration-300 h-full ${
+                    type="button"
+                    onClick={() => {
+                      if (isActive) return;
+                      if (isApproved) {
+                        setActiveMode(exp.mode as any);
+                        toast.success(`Switched Tradio to ${exp.title} Mode`);
+                      } else if (requestStatus === 'pending' || requestStatus === 'under_review') {
+                        toast.info(`Your ${exp.title} access request is currently under review.`);
+                      } else {
+                        access?.openFlow(exp.mode as any);
+                      }
+                    }}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all duration-300 relative ${
                       isActive
-                        ? 'bg-gradient-to-b from-purple-500/15 via-purple-500/5 to-transparent border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.15),inset_0_1px_1px_rgba(255,255,255,0.05)]'
-                        : 'bg-white/[0.01] border-white/5 hover:border-white/12 hover:bg-white/[0.02]'
+                        ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.12)] scale-[1.02]'
+                        : 'bg-white/[0.02] border-white/5 hover:border-white/12 text-white/60 hover:text-white'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                          isActive
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                            : 'bg-white/[0.03] text-white/60 border border-white/5'
-                        }`}>
-                          <exp.Icon className="h-4.5 w-4.5" />
-                        </div>
-
-                        {/* Status chip */}
-                        {exp.mode === 'listener' ? (
-                          <span className="text-[8px] font-mono uppercase font-black bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded">
-                            Always Active
-                          </span>
-                        ) : isApproved ? (
-                          <span className="text-[8px] font-mono uppercase font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" /> Approved
-                          </span>
-                        ) : requestStatus === 'pending' || requestStatus === 'under_review' ? (
-                          <span className="text-[8px] font-mono uppercase font-black bg-amber-500/10 border border-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Clock className="h-2.5 w-2.5 text-amber-400 animate-pulse" /> In Review
-                          </span>
-                        ) : (
-                          <span className="text-[8px] font-mono uppercase font-black bg-white/5 border border-white/10 text-white/40 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                            <Lock className="h-2.5 w-2.5 text-white/30" /> Locked
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="mt-3.5 text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg shrink-0 ${
+                      isActive ? 'bg-purple-500/20 text-purple-300' : 'bg-white/[0.03] text-white/55'
+                    }`}>
+                      <exp.Icon className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="min-w-0 pr-1">
+                      <div className="text-xs font-bold truncate leading-tight flex items-center gap-1">
                         {exp.title}
                         {isActive && <span className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />}
-                      </h3>
-                      <p className="mt-0.5 text-[10px] font-medium text-purple-300/80 uppercase font-mono">{exp.tagline}</p>
-                      <p className="mt-2 text-[11px] leading-relaxed text-white/50">{exp.description}</p>
+                      </div>
+                      <div className="text-[8px] font-mono tracking-wider text-white/40 leading-none mt-0.5 uppercase">
+                        {exp.mode === 'listener' ? 'Active' : isApproved ? 'Approved' : requestStatus === 'pending' ? 'Reviewing' : 'Locked'}
+                      </div>
                     </div>
-
-                    <div className="mt-4 pt-3 border-t border-white/[0.04]">
-                      {isActive ? (
-                        <button
-                          disabled
-                          className="w-full py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-200 text-[10px] font-black uppercase tracking-wider cursor-default flex items-center justify-center gap-1"
-                        >
-                          <CheckCircle2 className="h-3 w-3 text-purple-400" /> Active Experience
-                        </button>
-                      ) : isApproved ? (
-                        <button
-                          onClick={() => {
-                            setActiveMode(exp.mode as any);
-                            toast.success(`Switched Tradio to ${exp.title} Mode`);
-                          }}
-                          className="w-full py-2 rounded-xl bg-white/5 hover:bg-purple-500/10 border border-white/10 hover:border-purple-500/30 text-white hover:text-purple-200 text-[10px] font-bold uppercase tracking-wider transition-all duration-300 active:scale-95 flex items-center justify-center gap-1"
-                        >
-                          Switch Experience
-                        </button>
-                      ) : requestStatus === 'pending' || requestStatus === 'under_review' ? (
-                        <button
-                          onClick={() => {
-                            toast.info(`Your ${exp.title} access request is currently under review by our team.`);
-                          }}
-                          className="w-full py-2 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-300/70 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-500/10 transition-all"
-                        >
-                          Awaiting Review
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            access?.openFlow(exp.mode as any);
-                          }}
-                          className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-[0_4px_12px_rgba(168,85,247,0.2)] hover:shadow-[0_4px_18px_rgba(168,85,247,0.35)] flex items-center justify-center gap-1"
-                        >
-                          Request Access
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -243,149 +185,97 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
         />
       </div>
 
-      {onOpenRouteMe && (
-        <div className="px-4 sm:px-6 lg:px-10">
-          <GlassCard glow className="overflow-hidden">
-            <div className="relative p-5 sm:p-6">
-              <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-cyan-400/15 blur-3xl" />
-              <div className="absolute -bottom-16 left-1/3 h-40 w-56 rounded-full bg-fuchsia-500/12 blur-3xl" />
-              <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-                <div className="max-w-xl">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100">
-                    <Route className="h-3.5 w-3.5" /> Universe Router
-                  </span>
-                  <h2 className="mt-3 text-2xl font-black tracking-tight text-white">Route Me</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-white/62">
-                    Answer a short Prescribe Me flow and route into Trey TV, Tradio, FWD, Storybook, Games, Song Wars, or future Trance.
-                  </p>
-                </div>
-                <PrimaryButton onClick={onOpenRouteMe} className="shrink-0">
-                  <Sparkles className="h-4 w-4" /> Open Route Me
-                </PrimaryButton>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-      )}
-
-      {/* Live Music Review Card */}
+      {/* Premium Creative Action Hub (Minimalist and compact, replaces 3 bulky boxes) */}
       <div className="px-4 sm:px-6 lg:px-10">
-        <GlassCard glow className="overflow-hidden">
-          <Link to="/music-review" className="relative p-5 sm:p-6 block group">
-            <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-fuchsia-500/15 blur-3xl" />
-            <div className="absolute -bottom-16 left-1/3 h-40 w-56 rounded-full bg-purple-600/12 blur-3xl" />
-            <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="max-w-xl">
-                <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/25 bg-fuchsia-300/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-fuchsia-100">
-                  <Radio className="h-3.5 w-3.5 text-fuchsia-400 animate-pulse" /> Live Feature
-                </span>
-                <h2 className="mt-3 text-2xl font-black tracking-tight text-white flex items-center gap-2 group-hover:text-fuchsia-300 transition-colors">
-                  Live Music Review
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-white/60 font-medium">
-                  Submit your track and get reviewed live on-air by Trey Trizzy. Skip the line and prioritize your track with premium options.
-                </p>
-              </div>
-              <div className="relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-[0_15px_30px_rgba(168,85,247,0.3)] border border-white/10 transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_20px_45px_rgba(168,85,247,0.45)] active:scale-95 hover:brightness-105 group overflow-hidden shrink-0">
-                <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
-                <span className="relative flex items-center justify-center gap-2">
-                  <Sparkles className="h-4 w-4" /> Submit Song
-                </span>
-              </div>
-            </div>
-          </Link>
-        </GlassCard>
-      </div>
-
-      {/* Prescription Radio Hero */}
-      <div className="px-4 sm:px-6 lg:px-10">
-        <GlassCard glow className="overflow-hidden">
-          <div className="relative group">
-            {/* Pulsing neon backing glow behind the sphere ball */}
-            <div className="absolute right-[10%] top-1/2 -translate-y-1/2 h-36 w-36 rounded-full bg-gradient-to-br from-fuchsia-500/20 to-purple-600/15 blur-2xl opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000 pointer-events-none" />
-
-            <img
-              src={IMG.aiSphere}
-              alt=""
-              className="absolute right-0 top-0 h-full w-1/2 object-cover opacity-90 pointer-events-none transition-transform duration-700 group-hover:scale-102"
-            />
-
-            {/* Premium Spinning Neon Glow Streaks overlaid exactly along the lines of the sphere */}
-            <div className="absolute right-0 top-0 h-full w-1/2 overflow-hidden flex items-center justify-center pointer-events-none">
-              <div className="relative w-40 h-44 flex items-center justify-center">
-                {/* Outer Magenta Clockwise Glow Streak */}
-                <div
-                  className="absolute rounded-full border border-transparent border-t-fuchsia-500/90 border-r-fuchsia-400/20 animate-slow-spin"
-                  style={{
-                    width: '128px',
-                    height: '128px',
-                    animationDuration: '5s',
-                    filter: 'drop-shadow(0 0 8px #d946ef) drop-shadow(0 0 15px #d946ef)',
-                  }}
-                />
-                {/* Inner Cyan Counter-Clockwise Glow Streak */}
-                <div
-                  className="absolute rounded-full border border-transparent border-b-cyan-400 border-l-cyan-300/30 animate-spin-reverse"
-                  style={{
-                    width: '100px',
-                    height: '100px',
-                    animationDuration: '7s',
-                    filter: 'drop-shadow(0 0 6px #22d3ee) drop-shadow(0 0 12px #22d3ee)',
-                  }}
-                />
-                {/* Deep core glow overlay */}
-                <div
-                  className="absolute rounded-full bg-gradient-to-tr from-purple-500/10 to-cyan-400/10 animate-pulse"
-                  style={{
-                    width: '75px',
-                    height: '75px',
-                    animationDuration: '3s',
-                  }}
-                />
-              </div>
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-            <div className="relative p-5">
-              <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/40 bg-purple-500/15 px-2.5 py-1 text-[11px] font-semibold text-purple-200">
-                <Sparkles className="h-3 w-3" /> PRESCRIPTION RADIO
+        <div className="grid gap-4 md:grid-cols-3">
+          {/* Action 1: Universe Router */}
+          <GlassCard glow className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl group-hover:bg-cyan-400/15 transition-all duration-700 pointer-events-none" />
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-cyan-300">
+                <Route className="h-3 w-3" /> Universe Router
               </span>
-              <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">Prescription Radio For You</h2>
-              <p className="mt-2 max-w-[60%] text-sm leading-snug text-white/70">
+              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-cyan-300 transition-colors">Route Me</h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                Answer a short Prescribe Me flow and instantly route into Trey TV, Tradio, FWD, Storybook, Games, or Song Wars.
+              </p>
+            </div>
+            {onOpenRouteMe && (
+              <button
+                type="button"
+                onClick={onOpenRouteMe}
+                className="mt-4 w-full h-8 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/40 text-cyan-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95"
+              >
+                Launch Router
+              </button>
+            )}
+          </GlassCard>
+
+          {/* Action 2: Live Music Review */}
+          <GlassCard glow className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-2xl group-hover:bg-fuchsia-500/15 transition-all duration-700 pointer-events-none" />
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-fuchsia-300">
+                <Radio className="h-3 w-3 animate-pulse" /> Live Feature
+              </span>
+              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-fuchsia-300 transition-colors">Live Music Review</h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-white/50">
+                Submit your track and get reviewed live on-air by Trey Trizzy. Priority skip-the-line options available.
+              </p>
+            </div>
+            <Link
+              to="/music-review"
+              className="mt-4 w-full h-8 rounded-lg bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 text-fuchsia-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 flex items-center justify-center"
+            >
+              Submit Track
+            </Link>
+          </GlassCard>
+
+          {/* Action 3: Prescription Radio (Minimalist Hero) */}
+          <GlassCard glow className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]">
+            <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-purple-500/15 blur-2xl group-hover:bg-purple-500/25 transition-all duration-700 pointer-events-none" />
+            {/* Small glowing animated micro-sphere emblem at the top right corner */}
+            <div className="absolute top-4 right-4 h-12 w-12 rounded-full overflow-hidden flex items-center justify-center opacity-40 group-hover:opacity-80 transition-opacity pointer-events-none">
+              <div className="relative w-8 h-8 flex items-center justify-center scale-75">
+                <div className="absolute rounded-full border border-transparent border-t-fuchsia-500 animate-slow-spin w-8 h-8 filter drop-shadow-[0_0_4px_#d946ef]" />
+                <div className="absolute rounded-full border border-transparent border-b-cyan-400 animate-spin-reverse w-6 h-6 filter drop-shadow-[0_0_3px_#22d3ee]" />
+              </div>
+            </div>
+
+            <div>
+              <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-purple-300">
+                <Sparkles className="h-3 w-3" /> Live Synthetic Radio
+              </span>
+              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-purple-300 transition-colors">Prescription Radio</h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-white/50">
                 Continuously listening. Always perfect. Tradio mixes what you love with what you'll love next.
               </p>
-              <PrimaryButton
-                onClick={() =>
-                  playStation(TRACKS.aiRadio, [
-                    TRACKS.midnightVelvet,
-                    TRACKS.fallingForYou,
-                    TRACKS.cityLights,
-                  ], {
-                    id: 'ai-radio-for-you',
-                    type: 'station',
-                    label: 'AI Station',
-                    title: 'Prescription Radio For You',
-                    subtitle: 'Personal live mix',
-                    image: IMG.aiSphere,
-                    isLive: true,
-                    listenerCount: 18400,
-                  })
-                }
-                className="mt-5"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
-                  <Play className="h-3.5 w-3.5 fill-white" />
-                </span>
-                Play Your Station
-              </PrimaryButton>
-              <div className="mt-4 flex justify-end">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-purple-300">
-                  <Waveform className="h-3 w-4" bars={5} color="from-purple-300 to-purple-300" />
-                  LIVE MIX
-                </span>
-              </div>
             </div>
-          </div>
-        </GlassCard>
+
+            <button
+              type="button"
+              onClick={() =>
+                playStation(TRACKS.aiRadio, [
+                  TRACKS.midnightVelvet,
+                  TRACKS.fallingForYou,
+                  TRACKS.sixAmThoughts,
+                ], {
+                  id: 'ai-radio-for-you-live-signal',
+                  type: 'station',
+                  label: 'Prescription Radio',
+                  title: 'Prescription Radio',
+                  subtitle: 'Synthesized Live Formula',
+                  image: IMG.aiSphere,
+                  isLive: true,
+                  listenerCount: 18400,
+                })
+              }
+              className="mt-4 w-full h-8 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95"
+            >
+              Tune In Live
+            </button>
+          </GlassCard>
+        </div>
       </div>
 
       {/* Featured Song Wars PvP module */}
