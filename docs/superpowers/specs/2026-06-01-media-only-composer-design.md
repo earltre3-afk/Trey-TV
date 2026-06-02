@@ -21,9 +21,14 @@ Prescribe Me propagation is sub-project #3. This spec covers **only the composer
 pipeline + data model**.
 
 ### Sibling sub-projects (out of scope here)
-- **#2 Friends / Following news feed** — aggregate posts from followed users (RLS for
-  follower reads) into the For You "Following" tab + home. `useFeed` currently loads only
-  the current user's own posts (`.eq("user_id", me)`), so this is a real build.
+- **#2 Friends / Following news feed + post interactions** — aggregate posts from followed
+  users (RLS for follower reads) into the For You "Following" tab + home. `useFeed` currently
+  loads only the current user's own posts (`.eq("user_id", me)`), so this is a real build.
+  Also includes **viewing & interacting with another user's posts**: clicking a public post
+  on someone's profile opens a **post-detail popup** showing likes + comments and lets the
+  viewer add a comment or reaction. Requires cross-user read RLS on public posts and
+  cross-user comment/reaction writes (building on the existing `comments-store` +
+  `use-supabase-reactions` infra).
 - **#3 AI mood assessment + Prescribe Me** — Gemini 2.5 vision (`aiGenerateVisionJson`)
   scans each post's media + caption for mood; the moods of people you follow are aggregated
   into a social signal feeding their Prescribe Me. Each post row from this spec already
