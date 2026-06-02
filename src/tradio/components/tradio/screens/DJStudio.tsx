@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
+import type { RadioShow } from '../data';
+import { listMyShows } from '../radioShowService';
 import { usePlayer } from '@/tradio/contexts/PlayerContext';
 import { djMixToPlaybackItem } from '../playbackAdapters';
 import { AccessGate } from '../auth/components';
@@ -21,6 +23,8 @@ type DJStudioTab = 'broadcast' | 'shows' | 'mixes' | 'requests' | 'archive';
 export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) => void; onViewPublicProfile?: () => void; onEditProfile?: () => void }> = ({ onOpenBroadcastStudio, onViewPublicProfile, onEditProfile }) => {
   const [tab, setTab] = useState<DJStudioTab>('broadcast');
   const [isLive, setIsLive] = useState(BROADCAST_STATUS.isLive);
+  const [myShows, setMyShows] = useState<RadioShow[] | null>(null);
+  useEffect(() => { void (async () => { const r = await listMyShows(); if (r.source === 'supabase') setMyShows(r.data ?? []); })(); }, []);
   const currentDJ = DJS[0];
   const featuredShow = RADIO_SHOWS[0];
   const showContentFeel = useContentFeelAnalysis({
@@ -231,7 +235,7 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
 
       {tab === 'shows' && (
         <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-2 lg:px-10">
-          {RADIO_SHOWS.map((show) => (
+          {(myShows ?? RADIO_SHOWS).map((show) => (
             <GlassCard key={show.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
