@@ -712,7 +712,11 @@ export function ProfilePageNew({
                         style={{
                           height: isPlaying ? `${Math.sin(Date.now() / 150 + i) * 6 + 10}px` : "3px",
                           backgroundColor: isPlaying ? (i % 2 === 0 ? NEON_BLUE : "var(--profile-accent)") : "rgba(255,255,255,0.15)",
-                          animation: isPlaying ? `visualizer-bounce 0.8s ease-in-out infinite alternate` : "none",
+                          animationName: isPlaying ? "visualizer-bounce" : "none",
+                          animationDuration: isPlaying ? "0.8s" : "0s",
+                          animationTimingFunction: isPlaying ? "ease-in-out" : "ease",
+                          animationIterationCount: isPlaying ? "infinite" : 1,
+                          animationDirection: isPlaying ? "alternate" : "normal",
                           animationDelay: `${i * 45}ms`
                         }}
                       />
