@@ -86,15 +86,16 @@ export const TranceRoutineCard: React.FC<{
 };
 
 /* Trending dance compact card */
-export const TrendingDanceCard: React.FC<{ routine: DanceRoutine; rank: number }> = ({
+export const TrendingDanceCard: React.FC<{ routine: DanceRoutine; rank: number; fill?: boolean }> = ({
   routine,
   rank,
+  fill,
 }) => {
   const navigate = useNavigate();
   return (
     <div
       onClick={() => navigate(TRANCE_ROUTES.routine(routine.id))}
-      className="shrink-0 w-36 cursor-pointer group"
+      className={cn("shrink-0 cursor-pointer group", fill ? "w-36 lg:w-full" : "w-36")}
     >
       <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/10 transition-all duration-300 group-hover:border-cyan-400/50 group-hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]">
         <img
@@ -127,13 +128,13 @@ export const TrendingDanceCard: React.FC<{ routine: DanceRoutine; rank: number }
 };
 
 /* ChoreographerCard */
-export const ChoreographerCard: React.FC<{ c: ChoreographerProfile }> = ({ c }) => {
+export const ChoreographerCard: React.FC<{ c: ChoreographerProfile; fill?: boolean }> = ({ c, fill }) => {
   const navigate = useNavigate();
   return (
     <TranceGlassCard
       glow="magenta"
       onClick={() => navigate(TRANCE_ROUTES.choreographer(c.id))}
-      className="shrink-0 w-40 overflow-hidden group"
+      className={cn("shrink-0 overflow-hidden group", fill ? "w-40 lg:w-full" : "w-40")}
     >
       <div className="relative aspect-[4/5] overflow-hidden">
         <img

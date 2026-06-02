@@ -310,9 +310,9 @@ const HomeScreen: React.FC = () => {
         title="Featured Choreographers"
         onMore={() => navigate(TRANCE_ROUTES.choreographer("c001"))}
       />
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-4 lg:overflow-visible">
         {choreographers.map((c) => (
-          <ChoreographerCard key={c.id} c={c} />
+          <ChoreographerCard key={c.id} c={c} fill />
         ))}
       </div>
 
@@ -321,9 +321,9 @@ const HomeScreen: React.FC = () => {
         onMore={() => navigate(TRANCE_ROUTES.explore)}
         gradient
       />
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-4 xl:grid-cols-5 lg:gap-4 lg:overflow-visible">
         {routines.slice(1, 6).map((r, i) => (
-          <TrendingDanceCard key={r.id} routine={r} rank={i + 1} />
+          <TrendingDanceCard key={r.id} routine={r} rank={i + 1} fill />
         ))}
       </div>
 
