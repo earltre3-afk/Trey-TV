@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { goLive, endLive } from '../tradioLiveService';
-import { useTradioLiveRoom } from '../useTradioLiveRoom';
-import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
-import CoPilotPanel from '../CoPilotPanel';
-import { LiveShowDashboard } from './LiveShowDashboard';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
 import type { RadioShow } from '../data';
 import { listMyShows } from '../radioShowService';
 import { usePlayer } from '@/tradio/contexts/PlayerContext';
 import { djMixToPlaybackItem } from '../playbackAdapters';
-import { talkSegmentsWithScript } from '../aiVoiceHost';
 import { AccessGate } from '../auth/components';
 import { ContentFeelAnalysisPanel } from '../../content-feel/ContentFeelComponents';
 import { useContentFeelAnalysis } from '../../content-feel/useContentFeelAnalysis';
@@ -28,15 +22,10 @@ type DJStudioTab = 'broadcast' | 'shows' | 'mixes' | 'requests' | 'archive';
 
 export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) => void; onViewPublicProfile?: () => void; onEditProfile?: () => void }> = ({ onOpenBroadcastStudio, onViewPublicProfile, onEditProfile }) => {
   const [tab, setTab] = useState<DJStudioTab>('broadcast');
-  const [isLive, setIsLive] = useState(BROADCAST_STATUS.isLive);
+  const isLive = BROADCAST_STATUS.isLive;
   const [myShows, setMyShows] = useState<RadioShow[] | null>(null);
   useEffect(() => { void (async () => { const r = await listMyShows(); if (r.source === 'supabase') setMyShows(r.data ?? []); })(); }, []);
   const currentDJ = DJS[0];
-  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
-  const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
-  const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState('Yes\nNo');
   const featuredShow = RADIO_SHOWS[0];
   const showContentFeel = useContentFeelAnalysis({
     contentId: `draft-show-${featuredShow?.id ?? 'new'}`,
@@ -51,7 +40,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
   const [legalStatus, setLegalStatus] = useState<'idle' | 'saving' | 'saved' | 'fallback' | 'error'>('idle');
   const [legalMessage, setLegalMessage] = useState<string | null>(null);
   const legalAccepted = isLegalFlowAccepted('dj_broadcast_schedule', legalValues);
-  const [onAirShowId, setOnAirShowId] = useState<string>('');
 
   const recordBroadcastLegal = async (action: string) => {
     if (!legalAccepted || legalStatus === 'saving') return false;
@@ -64,22 +52,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
     setLegalStatus(result.source === 'supabase' ? 'saved' : 'fallback');
     setLegalMessage(result.source === 'supabase' ? 'Broadcast acknowledgement saved.' : result.warning);
     return true;
-  };
-
-  const handleGoLive = async () => {
-    const accepted = await recordBroadcastLegal(isLive ? 'end_broadcast' : 'go_live');
-    if (!accepted) return;
-    if (!isLive) {
-      const { session, error } = await goLive({ showId: null, title: 'Live Desk', hostName: currentDJ.name });
-      if (error || !session) { setIsLive(false); return; }
-      setLiveSessionId(session.id);
-      setIsLive(true);
-    } else {
-      if (liveSessionId) await endLive({ sessionId: liveSessionId, showId: null, peakListeners: live.listenerCount });
-      live.leave();
-      setLiveSessionId(null);
-      setIsLive(false);
-    }
   };
 
   return (
@@ -116,11 +88,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
                       <span className={`h-1.5 w-1.5 rounded-full ${isLive ? 'animate-pulse bg-red-400' : 'bg-white/30'}`} />
                       {isLive ? 'LIVE NOW' : 'STANDBY'}
                     </span>
-                    {isLive && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-white/70">
-                        {live.listenerCount} listening{live.connection === 'connecting' ? ' · connecting…' : ''}
-                      </span>
-                    )}
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-white/70">{currentDJ.bio}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -129,8 +96,8 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
                 </div>
               </div>
               <div className="mt-6 flex flex-wrap gap-2">
-                <PrimaryButton disabled={!legalAccepted || legalStatus === 'saving'} onClick={handleGoLive} className={legalAccepted ? '' : 'pointer-events-none opacity-40'}>
-                  <Radio className="h-4 w-4" /> {isLive ? 'End Broadcast' : 'Go Live'}
+                <PrimaryButton onClick={() => onOpenBroadcastStudio?.('golive')}>
+                  <Radio className="h-4 w-4" /> Go Live
                 </PrimaryButton>
                 <SecondaryButton onClick={() => onOpenBroadcastStudio?.('builder')}><Radio className="h-4 w-4 animate-pulse text-purple-300" /> Open Broadcast Studio</SecondaryButton>
                 <SecondaryButton onClick={() => onOpenBroadcastStudio?.('builder')}><Sparkles className="h-4 w-4 text-cyan-300" /> Build Show With AI</SecondaryButton>
@@ -185,12 +152,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
 
       {tab === 'broadcast' && (
         <div className="space-y-3">
-          {liveSessionId && (
-            <div className="px-4 sm:px-6 lg:px-10">
-              <LiveShowDashboard live={live} interaction={interaction} showTitle={onAirShowId ? (myShows?.find(s => s.id === onAirShowId)?.title || 'Live Show') : 'Live Desk'} djName={currentDJ.name} />
-            </div>
-          )}
-
           <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-10">
             <GlassCard className="p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -230,120 +191,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
               </div>
             </GlassCard>
           </div>
-          {liveSessionId && (
-            <div className="px-4 sm:px-6 lg:px-10">
-              <GlassCard className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-white">AI Voice Host</div>
-                  {live.aiSpeaking && (
-                    <button onClick={() => live.stopAi()} className="rounded-full border border-red-400/40 bg-red-500/15 px-3 py-1 text-[11px] font-bold text-red-200">
-                      ■ Stop · {live.aiSegmentLabel ?? 'AI speaking'}
-                    </button>
-                  )}
-                </div>
-                <select
-                  value={onAirShowId}
-                  onChange={(e) => setOnAirShowId(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none"
-                >
-                  <option value="">Select a show to read…</option>
-                  {(myShows ?? []).map((s) => <option key={s.id} value={s.id}>{s.title}</option>)}
-                </select>
-                {(() => {
-                  const show = (myShows ?? []).find((s) => s.id === onAirShowId) ?? null;
-                  const segs = talkSegmentsWithScript(show);
-                  if (!onAirShowId) return <div className="text-xs text-white/40">Pick a show to read its host scripts on air.</div>;
-                  if (segs.length === 0) return <div className="text-xs text-white/40">This show has no AI host scripts.</div>;
-                  return (
-                    <div className="space-y-2">
-                      {segs.map((seg) => (
-                        <div key={seg.id} className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] p-2.5">
-                          <div className="min-w-0 flex-1">
-                            <div className="truncate text-sm font-semibold text-white">{seg.title}</div>
-                            <div className="truncate text-[11px] text-white/45">{seg.script}</div>
-                          </div>
-                          <button
-                            onClick={() => live.aiSpeak(seg.script!, seg.title)}
-                            disabled={live.aiSpeaking}
-                            className="shrink-0 rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-bold text-cyan-200 disabled:opacity-40"
-                          >
-                            ▶ AI read
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </GlassCard>
-            </div>
-          )}
-
-          {liveSessionId && (
-            <div className="px-4 sm:px-6 lg:px-10">
-              {/* Co-Pilot panel: host-only controls that call server fns */}
-              <CoPilotPanel live={live} interaction={interaction} showId={onAirShowId} myShows={myShows} />
-            </div>
-          )}
-
-          {liveSessionId && (
-            <div className="px-4 sm:px-6 lg:px-10">
-              <GlassCard className="p-4 space-y-4">
-                <div className="text-sm font-semibold text-white">Live Room</div>
-                {/* Chat */}
-                <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-2xl border border-white/8 bg-white/[0.02] p-3">
-                  {interaction.chat.length === 0 ? <div className="py-4 text-center text-xs text-white/40">No chat yet.</div> : interaction.chat.map((c) => (
-                    <div key={c.id} className="text-xs"><span className="font-bold text-cyan-300">{c.authorName || 'Listener'}</span> <span className="text-white/80">{c.body}</span></div>
-                  ))}
-                </div>
-                {/* Request queue */}
-                <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wider text-white/50">Request Queue</div>
-                  <div className="space-y-2">
-                    {interaction.requests.filter((r) => r.status !== 'declined').map((r) => (
-                      <div key={r.id} className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] p-2.5">
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-white">{r.songTitle}{r.artist ? ` — ${r.artist}` : ''}</div>
-                          <div className="truncate text-[11px] text-white/45">{r.requesterName || 'Listener'} · {r.status}</div>
-                        </div>
-                        {r.status === 'pending' && <button onClick={() => interaction.setRequestStatus(r.id, 'queued')} className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 py-1 text-[11px] font-bold text-cyan-200">Queue</button>}
-                        {r.status === 'queued' && <button onClick={() => interaction.setRequestStatus(r.id, 'played')} className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-bold text-emerald-200">Played</button>}
-                        <button onClick={() => interaction.setRequestStatus(r.id, 'declined')} className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-white/60">Decline</button>
-                      </div>
-                    ))}
-                    {interaction.requests.filter((r) => r.status !== 'declined').length === 0 && <div className="text-xs text-white/40">No requests yet.</div>}
-                  </div>
-                </div>
-                {/* Poll */}
-                <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wider text-white/50">Poll</div>
-                  {interaction.activePoll ? (
-                    <div className="space-y-1.5">
-                      <div className="text-sm font-semibold text-white">{interaction.activePoll.question}</div>
-                      {interaction.tallies.map((t) => (
-                        <div key={t.optionId} className="relative overflow-hidden rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white">
-                          <span className="absolute inset-y-0 left-0 bg-purple-500/25" style={{ width: `${t.pct}%` }} />
-                          <span className="relative flex justify-between"><span>{t.label}</span><span className="tabular-nums text-white/70">{t.count} · {t.pct}%</span></span>
-                        </div>
-                      ))}
-                      <button onClick={() => interaction.closePoll()} className="mt-1 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold text-white/70">Close poll</button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <input value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="Poll question" className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none" />
-                      <textarea value={pollOptions} onChange={(e) => setPollOptions(e.target.value)} placeholder="One option per line" className="h-16 w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none" />
-                      <button
-                        onClick={() => {
-                          const opts = pollOptions.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 4).map((label, i) => ({ id: `o${i}`, label }));
-                          if (pollQuestion.trim() && opts.length >= 2) { interaction.createPoll(pollQuestion.trim(), opts); setPollQuestion(''); setPollOptions('Yes\nNo'); }
-                        }}
-                        className="rounded-lg border border-purple-400/40 bg-purple-500/15 px-3 py-1.5 text-xs font-bold text-purple-100"
-                      >Launch poll</button>
-                    </div>
-                  )}
-                </div>
-              </GlassCard>
-            </div>
-          )}
         </div>
       )}
 

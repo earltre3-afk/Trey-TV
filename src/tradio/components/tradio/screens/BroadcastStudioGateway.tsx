@@ -210,9 +210,11 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
   const [drafts, setDrafts] = useState<BroadcastDraft[]>(INITIAL_DRAFTS);
   const [scheduled, setScheduled] = useState<ScheduledBroadcast[]>(INITIAL_SCHEDULED);
 
-  // Open the builder when deep-linked into it.
+  // Open the builder when deep-linked into it (incl. the 'golive' shortcut,
+  // which lands on the builder with GO LIVE ready since ShowBuilder always
+  // seeds a default plan).
   useEffect(() => {
-    if (initialTab === 'builder') {
+    if (initialTab === 'builder' || initialTab === 'golive') {
       setIsBuildingShow(true);
     }
   }, [initialTab]);
