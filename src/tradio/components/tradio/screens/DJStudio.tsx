@@ -4,6 +4,7 @@ import { useTradioLiveRoom } from '../useTradioLiveRoom';
 import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
+import CoPilotPanel from '../CoPilotPanel';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
 import type { RadioShow } from '../data';
 import { listMyShows } from '../radioShowService';
@@ -269,6 +270,17 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
               </GlassCard>
             </div>
           )}
+            </div>
+          )}
+
+          {liveSessionId && (
+            <div className="px-4 sm:px-6 lg:px-10">
+              {/* Co-Pilot panel: host-only controls that call server fns */}
+              <CoPilotPanel live={live} interaction={interaction} showId={onAirShowId} myShows={myShows} />
+            </div>
+          )}
+
+          {liveSessionId && (
           {liveSessionId && (
             <div className="px-4 sm:px-6 lg:px-10">
               <GlassCard className="p-4 space-y-4">
