@@ -124,12 +124,12 @@ const ChoreographerScreen: React.FC = () => {
       <p className="text-[11px] text-white/50 mb-3">
         Your exclusive routines. Practice. Perfect. Perform.
       </p>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-3 xl:grid-cols-4 lg:gap-4 lg:overflow-visible">
         {routines.slice(0, 3).map((r) => (
           <div
             key={r.id}
             onClick={() => navigate(TRANCE_ROUTES.routine(r.id))}
-            className="shrink-0 w-44 relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer"
+            className="shrink-0 w-44 lg:w-full relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer"
           >
             <img src={r.cover} className="w-full h-32 object-cover" alt={r.title} />
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
@@ -149,12 +149,12 @@ const ChoreographerScreen: React.FC = () => {
         <Globe className="w-4 h-4 text-fuchsia-300" />
         <h3 className="font-black text-white uppercase text-sm">Trend Setter Routines</h3>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-4 xl:grid-cols-5 lg:gap-4 lg:overflow-visible">
         {routines.slice(1, 5).map((r) => (
           <div
             key={r.id}
             onClick={() => navigate(TRANCE_ROUTES.routine(r.id))}
-            className="shrink-0 w-40 relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer"
+            className="shrink-0 w-40 lg:w-full relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer"
           >
             <img src={r.cover} className="w-full h-28 object-cover" alt={r.title} />
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />

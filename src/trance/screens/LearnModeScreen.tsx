@@ -198,7 +198,7 @@ const LearnModeScreen: React.FC = () => {
         className="relative mx-4 mt-3 rounded-2xl overflow-hidden border border-fuchsia-400/30"
         style={{ minHeight: 360 }}
       >
-        <img src={IMG.maleB} className="w-full h-[360px] object-cover" alt="practice" />
+        <img src={IMG.maleB} className="w-full h-[360px] lg:h-[62vh] object-cover" alt="practice" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40" />
         {/* Pose skeleton overlay placeholder */}
         <svg

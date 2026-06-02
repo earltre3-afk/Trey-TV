@@ -165,6 +165,8 @@ const LeaderboardScreen: React.FC = () => {
         </button>
       </div>
 
+      <div className="lg:grid lg:grid-cols-[1.6fr_1fr] lg:gap-6 lg:items-start">
+      <div>
       {/* Ranked list */}
       {entries.length === 0 ? (
         <EmptyState
@@ -173,16 +175,17 @@ const LeaderboardScreen: React.FC = () => {
           icon={<Users className="w-7 h-7" />}
         />
       ) : (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2">
           {entries.map((e, index) => (
             <LeaderboardRow key={e.user?.id || index} e={{ ...e, rank: index + 1 }} />
           ))}
         </div>
       )}
+      </div>
 
-      {/* Top performance + weekly winners */}
+      {/* Top performance + weekly winners (side rail on desktop) */}
       {topScoreEntry && (
-        <div className="grid md:grid-cols-2 gap-3 mt-6">
+        <div className="space-y-3 mt-6 lg:mt-0">
           <TranceGlassCard glow="purple" className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Crown className="w-4 h-4 text-yellow-300" />
@@ -270,6 +273,7 @@ const LeaderboardScreen: React.FC = () => {
           </TranceGlassCard>
         </div>
       )}
+      </div>
     </TranceShell>
   );
 };
