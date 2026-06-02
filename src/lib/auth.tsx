@@ -22,7 +22,10 @@ export type SessionUser = {
   verified?: "creator" | "user";
   role: Role;
   stats: { posts: number; followers: string; following: number; prescriptions: string };
-  rewards?: { points: number; tier: "WHITE" | "GREEN" | "RED" | "GOLD" | "BRONZE" | "SILVER" | "DIAMOND" };
+  rewards?: {
+    points: number;
+    tier: "WHITE" | "GREEN" | "RED" | "GOLD" | "BRONZE" | "SILVER" | "DIAMOND";
+  };
   tagline?: string;
   pronouns?: string;
   birthday?: string;
@@ -92,10 +95,18 @@ const buildUser = (role: Exclude<Role, "guest">): SessionUser => ({
   onboarding_completed: true,
 });
 
-const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "guest"> = "user"): SessionUser => {
+const mapProfileToSessionUser = (
+  profile: any,
+  fallbackRole: Exclude<Role, "guest"> = "user",
+): SessionUser => {
   const publicUid = profile?.public_profile_uid || profile?.id || "";
-  const handle = profile?.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member");
-  const isCreator = Boolean(profile?.verified_creator || profile?.verification_type === "creator" || profile?.creator_status === "approved");
+  const handle =
+    profile?.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member");
+  const isCreator = Boolean(
+    profile?.verified_creator ||
+    profile?.verification_type === "creator" ||
+    profile?.creator_status === "approved",
+  );
 
   return {
     ...defaultUser,
@@ -111,7 +122,9 @@ const mapProfileToSessionUser = (profile: any, fallbackRole: Exclude<Role, "gues
     accent: profile?.profile_accent_color || "#FFC857",
     verified: isCreator ? "creator" : profile?.is_verified ? "user" : undefined,
     role: (profile?.role as Role) || fallbackRole,
-    creatorStatus: profile?.creator_status ?? (fallbackRole === "creator" || fallbackRole === "admin" ? "approved" : "not_applied"),
+    creatorStatus:
+      profile?.creator_status ??
+      (fallbackRole === "creator" || fallbackRole === "admin" ? "approved" : "not_applied"),
     tagline: profile?.tagline ?? "",
     pronouns: profile?.pronouns ?? "",
     birthday: profile?.birthday ?? "",
@@ -143,7 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileReady, setProfileReady] = useState(false);
   const [authorizationStatus, setAuthorizationStatus] = useState<AuthorizationStatus>("checking");
   const [authError, setAuthError] = useState<string | null>(null);
-  const hydrateAbortRef = { current: false } as { current: boolean };
+
+  // Scoped hydration tracking to prevent aborting active requests on re-renders
+  const activeHydrationKeyRef = useRef<string | null>(null);
+
   // Tracks which (supaUser, owner/admin) we've already hydrated for, so the
   // hydration effect doesn't loop when it updates its own user/role outputs.
   const hydratedKeyRef = useRef<string | null>(null);
@@ -164,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // If there's no Supabase session, honor any local tester/mock auth session
     if (!supaUser) {
       hydratedKeyRef.current = null;
+      activeHydrationKeyRef.current = null;
       if (user && role !== "guest") {
         if (debug) console.debug("auth: local session restored", role, user.uid);
         setProfileReady(true);
@@ -181,33 +198,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Skip redundant re-hydration. This effect lists user/role in its deps (for
-    // the mock-session branch above) but also writes user/role below — so a
-    // completed hydrate would otherwise retrigger the effect endlessly, pinning
-    // authorizationStatus on "checking". Only (re)hydrate when the session or
-    // owner/admin flags actually change.
+    // Skip redundant re-hydration. Only (re)hydrate when the session or owner/admin flags actually change.
     const hydrationKey = `${supaUser.id}:${isOwner ? 1 : 0}:${isRealAdmin ? 1 : 0}`;
     if (hydratedKeyRef.current === hydrationKey) return;
     hydratedKeyRef.current = hydrationKey;
+    activeHydrationKeyRef.current = hydrationKey;
 
     // Begin profile hydration
-    hydrateAbortRef.current = false;
     setProfileReady(false);
     setAuthReady(false);
     setAuthorizationStatus("checking");
     setAuthError(null);
 
+    let to: any = null;
+
     const hydrateProfile = async () => {
       if (debug) console.debug("auth: profile fetch started for", supaUser.id);
-      const fallbackRole: Exclude<Role, "guest"> = isOwner ? "admin" : isRealAdmin ? "creator" : "user";
+      const fallbackRole: Exclude<Role, "guest"> = isOwner
+        ? "admin"
+        : isRealAdmin
+          ? "creator"
+          : "user";
       const supabase = createBrowserClient();
 
       // timeout fail-safe
       let timedOut = false;
-      const timeoutMs = 8000;
-      const to = setTimeout(() => {
+      const timeoutMs = 4000;
+      to = setTimeout(() => {
         timedOut = true;
-        hydrateAbortRef.current = true;
+        if (activeHydrationKeyRef.current !== hydrationKey) return;
         setAuthError("Timed out while loading profile");
         setAuthorizationStatus("error");
         setProfileReady(true);
@@ -217,17 +236,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data, error } = await (supabase as any)
           .from("profiles")
-          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed")
+          .select(
+            "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed",
+          )
           .eq("id", supaUser.id)
           .maybeSingle();
 
-        clearTimeout(to);
-        if (hydrateAbortRef.current) return;
+        if (to) clearTimeout(to);
+        if (activeHydrationKeyRef.current !== hydrationKey) return;
 
         if (error) {
           setAuthError(String(error.message ?? error));
           setAuthorizationStatus("error");
-          // fallback but mark ready so guards stop blocking
           const u = buildUser(fallbackRole);
           setUser(u);
           setRoleState(fallbackRole);
@@ -237,7 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const mapped = mapProfileToSessionUser(data ?? null, fallbackRole);
-        if (debug) console.debug("auth: profile fetch resolved", mapped.uid, mapped.onboarding_completed);
+        if (debug)
+          console.debug("auth: profile fetch resolved", mapped.uid, mapped.onboarding_completed);
         const effectiveRole: Role = isOwner ? "admin" : isRealAdmin ? "creator" : mapped.role;
         const finalUser = { ...mapped, role: effectiveRole };
         setUser(finalUser);
@@ -255,8 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileReady(true);
         setAuthReady(true);
       } catch (err: any) {
-        clearTimeout(to);
-        if (timedOut || hydrateAbortRef.current) return;
+        if (to) clearTimeout(to);
+        if (timedOut || activeHydrationKeyRef.current !== hydrationKey) return;
         console.error("Failed to hydrate UID profile:", err);
         if (debug) console.debug("auth: profile fetch failed", err);
         setAuthError(String(err?.message ?? err));
@@ -271,11 +292,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     hydrateProfile();
     return () => {
-      hydrateAbortRef.current = true;
+      if (to) clearTimeout(to);
     };
   }, [supaUser?.id, isRealAdmin, isOwner, user, role]);
   useEffect(() => {
-    try { localStorage.setItem(KEY, JSON.stringify({ role, user })); } catch {}
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ role, user }));
+    } catch {}
   }, [role, user]);
 
   const retryHydrate = () => {
@@ -311,10 +334,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfileReady(true);
     setAuthReady(true);
     setAuthorizationStatus(u.onboarding_completed ? "authorized" : "needs_onboarding");
-    recordUserTrace({ userUid: u.uid, action: "auth.sign_in", targetType: "session", details: { role: r } });
+    recordUserTrace({
+      userUid: u.uid,
+      action: "auth.sign_in",
+      targetType: "session",
+      details: { role: r },
+    });
   };
   const signOut = () => {
-    recordUserTrace({ userUid: user?.uid ?? "", action: "auth.sign_out", targetType: "session", details: { role } });
+    recordUserTrace({
+      userUid: user?.uid ?? "",
+      action: "auth.sign_out",
+      targetType: "session",
+      details: { role },
+    });
     try {
       localStorage.removeItem(KEY);
       sessionStorage.removeItem("treytv_post_auth_redirect");
@@ -326,7 +359,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setRole = (r: Role) => {
     setRoleState(r);
     if (r === "guest") setUser(null);
-    else setUser((prev) => prev ? { ...prev, role: r } : buildUser(r));
+    else setUser((prev) => (prev ? { ...prev, role: r } : buildUser(r)));
   };
   const updateUser = (patch: Partial<SessionUser>) => {
     setUser((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -347,21 +380,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (patch.tagline !== undefined) profilePatch.tagline = patch.tagline;
           if (patch.pronouns !== undefined) profilePatch.pronouns = patch.pronouns;
           if (patch.birthday !== undefined) profilePatch.birthday = patch.birthday;
-          if (patch.favoriteGenres !== undefined) profilePatch.favorite_genres = patch.favoriteGenres;
-          if (patch.favoriteCreators !== undefined) profilePatch.favorite_creators = patch.favoriteCreators;
-          if (patch.socialInstagram !== undefined) profilePatch.social_instagram = patch.socialInstagram;
+          if (patch.favoriteGenres !== undefined)
+            profilePatch.favorite_genres = patch.favoriteGenres;
+          if (patch.favoriteCreators !== undefined)
+            profilePatch.favorite_creators = patch.favoriteCreators;
+          if (patch.socialInstagram !== undefined)
+            profilePatch.social_instagram = patch.socialInstagram;
           if (patch.socialTikTok !== undefined) profilePatch.social_tiktok = patch.socialTikTok;
           if (patch.socialYouTube !== undefined) profilePatch.social_youtube = patch.socialYouTube;
-          if (patch.profileVisibility !== undefined) profilePatch.profile_visibility = patch.profileVisibility;
+          if (patch.profileVisibility !== undefined)
+            profilePatch.profile_visibility = patch.profileVisibility;
           if (patch.showLocation !== undefined) profilePatch.show_location = patch.showLocation;
           if (patch.showBirthday !== undefined) profilePatch.show_birthday = patch.showBirthday;
           if (patch.gifOfDayId !== undefined) profilePatch.gif_of_day_id = patch.gifOfDayId;
           if (patch.gifOfDayUrl !== undefined) profilePatch.gif_of_day_url = patch.gifOfDayUrl;
-          if (patch.gifOfDayPosterUrl !== undefined) profilePatch.gif_of_day_poster_url = patch.gifOfDayPosterUrl;
-          if (patch.gifOfDayProvider !== undefined) profilePatch.gif_of_day_provider = patch.gifOfDayProvider;
-          if (patch.gifOfDayCaption !== undefined) profilePatch.gif_of_day_caption = patch.gifOfDayCaption;
-          if (patch.gifOfDaySetAt !== undefined) profilePatch.gif_of_day_set_at = patch.gifOfDaySetAt;
-          if (patch.showFwdGifsOnProfile !== undefined) profilePatch.show_fwd_gifs_on_profile = patch.showFwdGifsOnProfile;
+          if (patch.gifOfDayPosterUrl !== undefined)
+            profilePatch.gif_of_day_poster_url = patch.gifOfDayPosterUrl;
+          if (patch.gifOfDayProvider !== undefined)
+            profilePatch.gif_of_day_provider = patch.gifOfDayProvider;
+          if (patch.gifOfDayCaption !== undefined)
+            profilePatch.gif_of_day_caption = patch.gifOfDayCaption;
+          if (patch.gifOfDaySetAt !== undefined)
+            profilePatch.gif_of_day_set_at = patch.gifOfDaySetAt;
+          if (patch.showFwdGifsOnProfile !== undefined)
+            profilePatch.show_fwd_gifs_on_profile = patch.showFwdGifsOnProfile;
           if (Object.keys(profilePatch).length === 0) return;
 
           const { error } = await (supabase as any)
@@ -398,23 +440,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authReady, profileReady, authorizationStatus, authError, role, user, supaUser?.id]);
 
   return (
-    <Ctx.Provider value={{
-      role,
-      user,
-      isGuest: role === "guest" && !supaUser,
-      isCreator: effectiveIsCreator,
-      isAdmin: effectiveIsAdmin,
-      creatorStatus: user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied"),
-      isApprovedCreator: (user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied")) === "approved" && effectiveIsCreator,
-      setCreatorStatus: (s) => setUser((prev) => prev ? { ...prev, creatorStatus: s } : prev),
-      signIn, signOut, setRole, updateUser,
-      // new fields
-      authReady,
-      profileReady,
-      authorizationStatus,
-      authError,
-      retryHydrate,
-    }}>
+    <Ctx.Provider
+      value={{
+        role,
+        user,
+        isGuest: role === "guest" && !supaUser,
+        isCreator: effectiveIsCreator,
+        isAdmin: effectiveIsAdmin,
+        creatorStatus: user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied"),
+        isApprovedCreator:
+          (user?.creatorStatus ?? (effectiveIsCreator ? "approved" : "not_applied")) ===
+            "approved" && effectiveIsCreator,
+        setCreatorStatus: (s) => setUser((prev) => (prev ? { ...prev, creatorStatus: s } : prev)),
+        signIn,
+        signOut,
+        setRole,
+        updateUser,
+        // new fields
+        authReady,
+        profileReady,
+        authorizationStatus,
+        authError,
+        retryHydrate,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

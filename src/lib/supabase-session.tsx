@@ -36,7 +36,9 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   // Used both by boot auto-login and the Trey-I chat access code.
   const signInAsTesterAdmin = useCallback(async (): Promise<{ error: Error | null }> => {
     if (!TESTER_ADMIN_PASSWORD) {
-      return { error: new Error("Tester admin password is not configured (VITE_TESTER_ADMIN_PASSWORD).") };
+      return {
+        error: new Error("Tester admin password is not configured (VITE_TESTER_ADMIN_PASSWORD)."),
+      };
     }
     const { data, error } = await supabase.auth.signInWithPassword({
       email: TESTER_ADMIN_EMAIL,
@@ -68,31 +70,42 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     }
 
     // Then check existing session
+    const safetyTimeout = setTimeout(() => {
+      console.warn("[Supabase] Safety timeout reached! Forcing session loading to false.");
+      setLoading(false);
+    }, 3500);
+
     try {
-      supabase.auth.getSession().then(async ({ data }) => {
-        if (data.session?.user) {
-          setSession(data.session);
-          loadAdmin(data.session.user.id, data.session.user.email);
-          setLoading(false);
-          return;
-        }
+      supabase.auth
+        .getSession()
+        .then(async ({ data }) => {
+          clearTimeout(safetyTimeout);
+          if (data.session?.user) {
+            setSession(data.session);
+            loadAdmin(data.session.user.id, data.session.user.email);
+            setLoading(false);
+            return;
+          }
 
-        // No session: tester builds sign in as the CaliforniaTrey admin.
-        if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
-          const { error } = await signInAsTesterAdmin();
-          if (error) console.error("Tester admin auto-login failed:", error.message);
-          setLoading(false);
-          return;
-        }
+          // No session: tester builds sign in as the CaliforniaTrey admin.
+          if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
+            const { error } = await signInAsTesterAdmin();
+            if (error) console.error("Tester admin auto-login failed:", error.message);
+            setLoading(false);
+            return;
+          }
 
-        setSession(null);
-        setLoading(false);
-      }).catch((err) => {
-        console.error("Failed to get Supabase session on init:", err);
-        setSession(null);
-        setLoading(false);
-      });
+          setSession(null);
+          setLoading(false);
+        })
+        .catch((err) => {
+          clearTimeout(safetyTimeout);
+          console.error("Failed to get Supabase session on init:", err);
+          setSession(null);
+          setLoading(false);
+        });
     } catch (err) {
+      clearTimeout(safetyTimeout);
       console.error("Critical error in getSession setup:", err);
       setSession(null);
       setLoading(false);
@@ -111,7 +124,11 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
 
   async function loadAdmin(uid: string, email?: string | null) {
     try {
-      const { data, error } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("role")
+        .eq("user_id", uid)
+        .maybeSingle();
       if (error) throw error;
       if (data?.role === "owner") {
         setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
@@ -135,7 +152,9 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     isRealAdmin: !!adminRole,
     isOwner: adminRole === "owner",
     loading,
-    signOutSupabase: async () => { await supabase.auth.signOut(); },
+    signOutSupabase: async () => {
+      await supabase.auth.signOut();
+    },
     signInAsTesterAdmin,
   };
 
