@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, Music, Calendar, Zap, Image as ImageIcon, Radio, Globe, Send, Lock, Heart, Share2, Music2, ListMusic, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Upload, Music, Calendar, Zap, Image as ImageIcon, Radio, Globe, Send, Lock, Heart, Share2, Music2, ListMusic, Check, Sparkles } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, Toggle, PlayCircle, Waveform } from '../ui';
 import { IMG } from '../data';
 import { AccessGate } from '../auth/components';
 import { ContentFeelAnalysisPanel } from '../../content-feel/ContentFeelComponents';
 import { useContentFeelAnalysis } from '../../content-feel/useContentFeelAnalysis';
 import { LegalAcceptanceGroup } from '../legal/LegalPrimitives';
+import { FwdGifPicker } from '@/components/fwd/FwdGifPicker';
 import {
   createLegalAcceptanceValues,
   isLegalFlowAccepted,
@@ -46,6 +48,9 @@ export const InstantReleaseScreen: React.FC = () => {
   const [notify, setNotify] = useState(true);
   const [date, setDate] = useState<ReleaseDate>('tomorrow');
   const [scope, setScope] = useState<ReleaseScope>('first');
+  const [coverSource, setCoverSource] = useState<'upload' | 'fwd'>('upload');
+  const [fwdCoverGif, setFwdCoverGif] = useState<any>(null);
+  const [showFwdPicker, setShowFwdPicker] = useState(false);
   const [legalValues, setLegalValues] = useState<LegalAcceptanceValues>(() => createLegalAcceptanceValues('instant_release_submit'));
   const [legalStatus, setLegalStatus] = useState<'idle' | 'saving' | 'saved' | 'fallback' | 'error'>('idle');
   const [legalMessage, setLegalMessage] = useState<string | null>(null);
@@ -158,16 +163,53 @@ export const InstantReleaseScreen: React.FC = () => {
 
           <Step
             n="5"
-            title="Cover Art"
-            sub="Upload album or single artwork"
+            title="Cover Art / Moving Loops"
+            sub="Choose a static photo or select an animated loop from FWD"
             right={
-              <button className="inline-flex items-center gap-1.5 rounded-xl border border-purple-400/40 bg-purple-500/10 px-3 py-2 text-xs font-semibold text-purple-200">
-                <ImageIcon className="h-4 w-4" /> Upload Image
-              </button>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCoverSource('upload')}
+                  className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase transition ${
+                    coverSource === 'upload' ? 'border-purple-400 bg-purple-500/10 text-purple-200' : 'border-white/10 bg-white/[0.03] text-white/55'
+                  }`}
+                >
+                  Upload Image
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoverSource('fwd');
+                    setShowFwdPicker(true);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-bold uppercase transition flex items-center gap-1 ${
+                    coverSource === 'fwd' ? 'border-purple-400 bg-purple-500/10 text-purple-200' : 'border-white/10 bg-white/[0.03] text-white/55'
+                  }`}
+                >
+                  <Sparkles className="h-3 w-3 text-fuchsia-400" /> FWD Loop
+                </button>
+              </div>
             }
           >
             <div className="mt-1 flex items-center gap-3">
-              <img src={IMG.flowers} alt="" className="h-16 w-16 rounded-lg object-cover" />
+              <img
+                src={coverSource === 'fwd' && fwdCoverGif ? fwdCoverGif.url : IMG.flowers}
+                alt=""
+                className="h-16 w-16 rounded-lg object-cover border border-white/10"
+              />
+              <div className="flex-1">
+                {coverSource === 'fwd' && fwdCoverGif ? (
+                  <div>
+                    <div className="text-xs font-semibold text-white">FWD Animated Loop Selected</div>
+                    <div className="text-[10px] text-fuchsia-300 font-mono">ID: {fwdCoverGif.gif_id}</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-xs font-semibold text-white">album-cover-photo.jpg</div>
+                    <div className="text-[10px] text-white/50">Static JPG • 1400x1400</div>
+                  </div>
+                )}
+              </div>
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500"><Check className="h-3.5 w-3.5 text-white" /></div>
             </div>
           </Step>
@@ -242,7 +284,7 @@ export const InstantReleaseScreen: React.FC = () => {
             <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/40 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
               PREMIERE
             </span>
-            <img src={IMG.flowers} alt="" className="mx-auto mt-3 h-40 w-40 rounded-xl object-cover" />
+            <img src={coverSource === 'fwd' && fwdCoverGif ? fwdCoverGif.url : IMG.flowers} alt="" className="mx-auto mt-3 h-40 w-40 rounded-xl object-cover" />
             <div className="mt-3 text-center">
               <div className="text-base font-bold text-white">Falling For You</div>
               <div className="flex items-center justify-center gap-1 text-sm text-white/70">
@@ -280,6 +322,17 @@ export const InstantReleaseScreen: React.FC = () => {
         </GlassCard>
       </div>
     </div>
+
+    {showFwdPicker && (
+      <FwdGifPicker
+        onSelect={(gif) => {
+          setFwdCoverGif(gif);
+          setCoverSource('fwd');
+          setShowFwdPicker(false);
+        }}
+        onClose={() => setShowFwdPicker(false)}
+      />
+    )}
     </AccessGate>
   );
 };

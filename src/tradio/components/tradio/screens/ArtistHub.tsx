@@ -1,8 +1,9 @@
 import React from 'react';
-import { Bell, CalendarDays, Heart, ListMusic, Music, Radio, Send, Sparkles, UploadCloud, Users, Mic2 } from 'lucide-react';
+import { Bell, CalendarDays, Heart, ListMusic, Music, Radio, Send, Sparkles, UploadCloud, Users, Mic2, Headphones, Sliders, CheckCircle2, Clock, Lock, BarChart3 } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, VerifiedBadge, Waveform, ReleaseCard } from '../ui';
 import { ALL_STATIONS, ARTIST_PLAYLISTS, ARTIST_PROFILES, RELEASES, STATION_COMMUNITIES, TRACKS, VOICE_DROPS } from '../data';
 import { AccessGate } from '../auth/components';
+import { toast } from 'sonner';
 
 const fanReactions = STATION_COMMUNITIES['station-trey-trizzy'].messages.slice(0, 3);
 const artist = ARTIST_PROFILES[0];
@@ -220,6 +221,154 @@ export const ArtistHub: React.FC<{
         <div className="mt-3 grid grid-cols-2 gap-2">
           <SecondaryButton onClick={() => onOpenBroadcastStudio?.('builder')} className="text-[10px] font-black uppercase tracking-wider py-2.5"><Mic2 className="h-3.5 w-3.5 text-purple-300" /> Create Artist Show</SecondaryButton>
           <SecondaryButton onClick={() => onOpenBroadcastStudio?.('builder')} className="text-[10px] font-black uppercase tracking-wider py-2.5"><Radio className="h-3.5 w-3.5 text-cyan-300" /> Schedule Premiere</SecondaryButton>
+        </div>
+      </GlassCard>
+    </div>
+
+    <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-2 lg:px-10">
+      {/* Artist Music Analytics */}
+      <GlassCard className="p-5 overflow-hidden relative">
+        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-cyan-500/5 blur-2xl pointer-events-none" />
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold text-white">Music Analytics</div>
+            <div className="text-[11px] text-white/50">Performance metrics for your catalog</div>
+          </div>
+          <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1">
+            <BarChart3 className="h-2.5 w-2.5" /> Live Pulse
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/45">Total Streams</div>
+            <div className="mt-1 text-xl font-black text-white">142.8K</div>
+            <div className="text-[9px] text-emerald-400 mt-0.5 flex items-center justify-center gap-0.5">
+              <span>+18.3%</span> this week
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/45">Station Adds</div>
+            <div className="mt-1 text-xl font-black text-white">12,482</div>
+            <div className="text-[9px] text-emerald-400 mt-0.5 flex items-center justify-center gap-0.5">
+              <span>+24.5%</span> this week
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/45">Fan Saves</div>
+            <div className="mt-1 text-xl font-black text-white">8,934</div>
+            <div className="text-[9px] text-emerald-400 mt-0.5 flex items-center justify-center gap-0.5">
+              <span>+12.1%</span> this week
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/45">Audience Reach</div>
+            <div className="mt-1 text-xl font-black text-white">86.3K</div>
+            <div className="text-[9px] text-purple-300 mt-0.5">
+              Across 40+ countries
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.01] p-3">
+          <div className="flex justify-between text-[10px] font-bold text-white/40 mb-1">
+            <span>FALLING FOR YOU STREAM GROWTH</span>
+            <span>7-DAY TREND</span>
+          </div>
+          {/* Simple mock graphic trend bars */}
+          <div className="h-10 flex items-end gap-1 px-1">
+            {[25, 45, 35, 65, 80, 70, 95].map((h, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-t-sm bg-gradient-to-t from-cyan-500 to-purple-500 hover:opacity-80 transition-opacity"
+                style={{ height: `${h}%` }}
+                title={`Day ${i+1}: ${h}%`}
+              />
+            ))}
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Creative Connections Hub */}
+      <GlassCard className="p-5 overflow-hidden relative">
+        <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-purple-500/5 blur-2xl pointer-events-none" />
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold text-white">Creative Connections</div>
+            <div className="text-[11px] text-white/50">Connect with Radio Hosts & Producers</div>
+          </div>
+          <span className="rounded-full border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-300">
+            Network
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {/* Radio Hosts */}
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/55">Active Radio DJs / Hosts</span>
+              </div>
+              <span className="text-[9px] text-white/40 font-mono">DJs live: 3</span>
+            </div>
+
+            <div className="mt-2.5 space-y-2">
+              {[
+                { name: 'Jordan', show: 'Midnight Therapy', reach: '45K' },
+                { name: 'DJ Hyped', show: 'Tradio Electro Hours', reach: '28K' },
+              ].map((host) => (
+                <div key={host.name} className="flex items-center justify-between rounded-lg bg-black/25 p-2 text-xs">
+                  <div>
+                    <span className="font-bold text-white">{host.name}</span>
+                    <span className="text-white/45 ml-1.5">• Host of {host.show}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toast.success(`Pitched 'Falling For You' directly to ${host.name}'s show queue!`)}
+                    className="rounded-lg border border-purple-400/40 hover:border-purple-400 bg-purple-500/10 hover:bg-purple-500/20 px-2.5 py-1 text-[10px] font-bold text-purple-200 transition-colors"
+                  >
+                    Pitch Track
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Beat Producers */}
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/55">Active Beat Producers</span>
+              </div>
+              <span className="text-[9px] text-white/40 font-mono">Producers: 12</span>
+            </div>
+
+            <div className="mt-2.5 space-y-2">
+              {[
+                { name: 'Apex Beats', style: 'Trap / Melodic', bpm: '140 BPM' },
+                { name: 'Soundwave', style: 'Boom Bap / Soul', bpm: '90 BPM' },
+              ].map((producer) => (
+                <div key={producer.name} className="flex items-center justify-between rounded-lg bg-black/25 p-2 text-xs">
+                  <div>
+                    <span className="font-bold text-white">{producer.name}</span>
+                    <span className="text-white/45 ml-1.5">• {producer.style} ({producer.bpm})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => toast.success(`Collaboration request sent to ${producer.name}! Reviewing beat packs.`)}
+                    className="rounded-lg border border-cyan-400/40 hover:border-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 px-2.5 py-1 text-[10px] font-bold text-cyan-200 transition-colors"
+                  >
+                    Collab
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </GlassCard>
     </div>
