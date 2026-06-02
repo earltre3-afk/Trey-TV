@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { goLive, endLive } from '../tradioLiveService';
 import { useTradioLiveRoom } from '../useTradioLiveRoom';
+import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
@@ -30,6 +31,9 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
   const currentDJ = DJS[0];
   const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
+  const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollOptions, setPollOptions] = useState('Yes\nNo');
   const featuredShow = RADIO_SHOWS[0];
   const showContentFeel = useContentFeelAnalysis({
     contentId: `draft-show-${featuredShow?.id ?? 'new'}`,
@@ -176,44 +180,105 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
       </div>
 
       {tab === 'broadcast' && (
-        <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-10">
-          <GlassCard className="p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-white">Active Broadcast Desk</div>
-                <div className="text-xs text-white/50">Music blocks, talk breaks, ads, and live controls</div>
-              </div>
-              <Waveform className="h-5 w-10" bars={8} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ['Mic', Mic, 'Ready'],
-                ['Music Bed', Volume2, 'Loaded'],
-                ['Voice Drops', Upload, `${VOICE_DROPS.length} clips`],
-                ['Ad Slots', Radio, `${AD_SLOTS.length} placeholders`],
-              ].map(([label, Icon, status]) => (
-                <button key={label as string} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-left">
-                  <Icon className="h-5 w-5 text-cyan-300" />
-                  <div className="mt-2 text-sm font-semibold text-white">{label as string}</div>
-                  <div className="text-xs text-white/50">{status as string}</div>
-                </button>
-              ))}
-            </div>
-          </GlassCard>
-          <GlassCard className="p-4">
-            <div className="mb-3 text-sm font-semibold text-white">Broadcast Blocks</div>
-            <div className="space-y-2">
-              {BROADCAST_BLOCKS.map((block) => (
-                <div key={block.id} className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{block.title}</div>
-                    <div className="text-xs text-white/50">{block.type} - {block.duration} min</div>
-                  </div>
-                  <span className="rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-1 text-[10px] font-semibold text-purple-200">{block.status}</span>
+        <div className="space-y-3">
+          <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-10">
+            <GlassCard className="p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-semibold text-white">Active Broadcast Desk</div>
+                  <div className="text-xs text-white/50">Music blocks, talk breaks, ads, and live controls</div>
                 </div>
-              ))}
+                <Waveform className="h-5 w-10" bars={8} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  ['Mic', Mic, 'Ready'],
+                  ['Music Bed', Volume2, 'Loaded'],
+                  ['Voice Drops', Upload, `${VOICE_DROPS.length} clips`],
+                  ['Ad Slots', Radio, `${AD_SLOTS.length} placeholders`],
+                ].map(([label, Icon, status]) => (
+                  <button key={label as string} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 text-left">
+                    <Icon className="h-5 w-5 text-cyan-300" />
+                    <div className="mt-2 text-sm font-semibold text-white">{label as string}</div>
+                    <div className="text-xs text-white/50">{status as string}</div>
+                  </button>
+                ))}
+              </div>
+            </GlassCard>
+            <GlassCard className="p-4">
+              <div className="mb-3 text-sm font-semibold text-white">Broadcast Blocks</div>
+              <div className="space-y-2">
+                {BROADCAST_BLOCKS.map((block) => (
+                  <div key={block.id} className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white">{block.title}</div>
+                      <div className="text-xs text-white/50">{block.type} - {block.duration} min</div>
+                    </div>
+                    <span className="rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-1 text-[10px] font-semibold text-purple-200">{block.status}</span>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          </div>
+          {liveSessionId && (
+            <div className="px-4 sm:px-6 lg:px-10">
+              <GlassCard className="p-4 space-y-4">
+                <div className="text-sm font-semibold text-white">Live Room</div>
+                {/* Chat */}
+                <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-2xl border border-white/8 bg-white/[0.02] p-3">
+                  {interaction.chat.length === 0 ? <div className="py-4 text-center text-xs text-white/40">No chat yet.</div> : interaction.chat.map((c) => (
+                    <div key={c.id} className="text-xs"><span className="font-bold text-cyan-300">{c.authorName || 'Listener'}</span> <span className="text-white/80">{c.body}</span></div>
+                  ))}
+                </div>
+                {/* Request queue */}
+                <div>
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wider text-white/50">Request Queue</div>
+                  <div className="space-y-2">
+                    {interaction.requests.filter((r) => r.status !== 'declined').map((r) => (
+                      <div key={r.id} className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.03] p-2.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-white">{r.songTitle}{r.artist ? ` — ${r.artist}` : ''}</div>
+                          <div className="truncate text-[11px] text-white/45">{r.requesterName || 'Listener'} · {r.status}</div>
+                        </div>
+                        {r.status === 'pending' && <button onClick={() => interaction.setRequestStatus(r.id, 'queued')} className="rounded-lg border border-cyan-400/30 bg-cyan-500/10 px-2 py-1 text-[11px] font-bold text-cyan-200">Queue</button>}
+                        {r.status === 'queued' && <button onClick={() => interaction.setRequestStatus(r.id, 'played')} className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-bold text-emerald-200">Played</button>}
+                        <button onClick={() => interaction.setRequestStatus(r.id, 'declined')} className="rounded-lg border border-white/10 px-2 py-1 text-[11px] text-white/60">Decline</button>
+                      </div>
+                    ))}
+                    {interaction.requests.filter((r) => r.status !== 'declined').length === 0 && <div className="text-xs text-white/40">No requests yet.</div>}
+                  </div>
+                </div>
+                {/* Poll */}
+                <div>
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wider text-white/50">Poll</div>
+                  {interaction.activePoll ? (
+                    <div className="space-y-1.5">
+                      <div className="text-sm font-semibold text-white">{interaction.activePoll.question}</div>
+                      {interaction.tallies.map((t) => (
+                        <div key={t.optionId} className="relative overflow-hidden rounded-xl border border-white/10 px-3 py-1.5 text-xs text-white">
+                          <span className="absolute inset-y-0 left-0 bg-purple-500/25" style={{ width: `${t.pct}%` }} />
+                          <span className="relative flex justify-between"><span>{t.label}</span><span className="tabular-nums text-white/70">{t.count} · {t.pct}%</span></span>
+                        </div>
+                      ))}
+                      <button onClick={() => interaction.closePoll()} className="mt-1 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-bold text-white/70">Close poll</button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <input value={pollQuestion} onChange={(e) => setPollQuestion(e.target.value)} placeholder="Poll question" className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none" />
+                      <textarea value={pollOptions} onChange={(e) => setPollOptions(e.target.value)} placeholder="One option per line" className="h-16 w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none" />
+                      <button
+                        onClick={() => {
+                          const opts = pollOptions.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 4).map((label, i) => ({ id: `o${i}`, label }));
+                          if (pollQuestion.trim() && opts.length >= 2) { interaction.createPoll(pollQuestion.trim(), opts); setPollQuestion(''); setPollOptions('Yes\nNo'); }
+                        }}
+                        className="rounded-lg border border-purple-400/40 bg-purple-500/15 px-3 py-1.5 text-xs font-bold text-purple-100"
+                      >Launch poll</button>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
             </div>
-          </GlassCard>
+          )}
         </div>
       )}
 
