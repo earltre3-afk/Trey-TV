@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search as SearchIcon, Sparkles, TrendingUp, Play, Flame, Calendar, RotateCcw, Radio, Route, Home } from 'lucide-react';
+import { Search as SearchIcon, Sparkles, TrendingUp, Play, Flame, Calendar, RotateCcw, Radio, Route, Home, Headphones, Music, Sliders, CheckCircle2, Lock, Clock, AlertCircle } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { TopBar, GlassCard, PrimaryButton, SectionHeader, VerifiedBadge, PlayCircle, Waveform } from '../ui';
 import { IMG, FEATURED_STATIONS, ARTIST_STATIONS, INSTANT_RELEASES, TRENDING, TRACKS } from '../data';
@@ -7,6 +7,9 @@ import { usePlayer, type PlaybackSource, type Track } from '@/tradio/contexts/Pl
 import { PrescriptionRail } from '../auth/components';
 import { useAuth } from '@/lib/auth';
 import { useSupabaseSession } from '@/lib/supabase-session';
+import { useTradioIdentity } from '../auth/useTradioIdentity';
+import { useAccessRequests } from '../auth/AccessRequestsContext';
+import { toast } from 'sonner';
 
 interface Props {
   onOpenPlayer: () => void;
@@ -19,6 +22,8 @@ interface Props {
 
 export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpenBuild, onOpenSongWars, onOpenProfile, onOpenRouteMe }) => {
   const { play, playQueue, playStation: startStation, currentTrack, isPlaying } = usePlayer();
+  const { identity, currentMode, setActiveMode, currentRoleLabel } = useTradioIdentity();
+  const access = useAccessRequests();
 
   // Tradio reads the logged-in Trey TV identity (parent is the identity source).
   // Display priority: Trey TV username → display name → email prefix → fallback.
@@ -30,6 +35,45 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
     treyUser?.name?.trim() ||
     emailPrefix.trim() ||
     'Tradio Listener';
+
+  const getRoleStatus = (role: 'artist' | 'producer' | 'dj') => {
+    const grant = identity?.roles?.find((g) => g.role === role);
+    const request = access?.getRequestFor(role);
+    const isApproved = grant ? (grant.role_status === 'active' || grant.role_status === 'approved') : false;
+    const requestStatus = request?.status ?? 'not_started';
+    return { isApproved, requestStatus, request };
+  };
+
+  const experiences = [
+    {
+      mode: 'listener',
+      title: 'Listener',
+      tagline: 'Be Entertained',
+      description: 'Explore high-fidelity AI-curated stations, customize mood mixes, and participate in interactive song wars.',
+      Icon: Headphones,
+    },
+    {
+      mode: 'artist',
+      title: 'Tradio Artist',
+      tagline: 'Music Catalog',
+      description: 'Distribute your music catalog on the app, launch custom artist stations, and host exclusive premieres.',
+      Icon: Music,
+    },
+    {
+      mode: 'producer',
+      title: 'Beat Producer',
+      tagline: 'Promote Beats',
+      description: 'Promote your beat catalog, organize beat packs, secure host slots, and collaborate with approved Tradio artists.',
+      Icon: Sliders,
+    },
+    {
+      mode: 'dj',
+      title: 'Radio Host / DJ',
+      tagline: 'Host a Show',
+      description: 'Schedule live radio shows, broadcast DJ mixes, handle requests, and host interactive PVP sessions.',
+      Icon: Radio,
+    },
+  ];
 
   const playStation = (track: Track, queue?: Track[], source?: PlaybackSource) => {
     const playbackTrack = {
@@ -62,16 +106,134 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl focus-within:border-purple-500/50 focus-within:shadow-[0_0_20px_rgba(168,85,247,0.15)] focus-within:bg-white/[0.06] transition-all duration-300">
           <SearchIcon className="h-5 w-5 text-white/50" />
           <input
             placeholder="Search artists, stations, moods..."
             className="flex-1 bg-transparent text-sm text-white placeholder:text-white/40 focus:outline-none"
           />
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600">
+          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-purple-600 active:scale-90 hover:scale-105 hover:shadow-[0_0_12px_rgba(217,70,239,0.5)] transition-all duration-300">
             <Waveform className="h-4 w-4" bars={4} color="from-white to-white" />
           </button>
         </div>
+      </div>
+
+      {/* Tradio Experience Selector Gateway */}
+      <div className="px-4 sm:px-6 lg:px-10">
+        <GlassCard glow className="p-5 sm:p-6 overflow-hidden relative">
+          {/* Subtle decorative glow overlays */}
+          <div className="absolute -right-12 -top-16 h-44 w-44 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 left-10 h-40 w-56 rounded-full bg-fuchsia-500/8 blur-3xl pointer-events-none" />
+
+          <div className="relative">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-fuchsia-300">Tradio Ecosystem Paths</span>
+              <span className="rounded-full border border-purple-500/25 bg-purple-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-purple-300">
+                Current Mode: {currentRoleLabel}
+              </span>
+            </div>
+
+            <h2 className="mt-2 text-xl font-black tracking-tight text-white sm:text-2xl">Choose your experience</h2>
+            <p className="mt-1 max-w-2xl text-xs text-white/55 leading-relaxed">
+              Tradio splits into four target lanes. Select a path below to switch your active experience mode, or request verified access to unlock creative tools.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {experiences.map((exp) => {
+                const isActive = currentMode === exp.mode;
+                const { isApproved, requestStatus } = exp.mode !== 'listener' ? getRoleStatus(exp.mode as any) : { isApproved: true, requestStatus: 'approved' };
+
+                return (
+                  <div
+                    key={exp.mode}
+                    className={`relative rounded-2xl border p-4 flex flex-col justify-between transition-all duration-300 h-full ${
+                      isActive
+                        ? 'bg-gradient-to-b from-purple-500/15 via-purple-500/5 to-transparent border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.15),inset_0_1px_1px_rgba(255,255,255,0.05)]'
+                        : 'bg-white/[0.01] border-white/5 hover:border-white/12 hover:bg-white/[0.02]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                          isActive
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                            : 'bg-white/[0.03] text-white/60 border border-white/5'
+                        }`}>
+                          <exp.Icon className="h-4.5 w-4.5" />
+                        </div>
+
+                        {/* Status chip */}
+                        {exp.mode === 'listener' ? (
+                          <span className="text-[8px] font-mono uppercase font-black bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded">
+                            Always Active
+                          </span>
+                        ) : isApproved ? (
+                          <span className="text-[8px] font-mono uppercase font-black bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <CheckCircle2 className="h-2.5 w-2.5 text-emerald-400" /> Approved
+                          </span>
+                        ) : requestStatus === 'pending' || requestStatus === 'under_review' ? (
+                          <span className="text-[8px] font-mono uppercase font-black bg-amber-500/10 border border-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5 text-amber-400 animate-pulse" /> In Review
+                          </span>
+                        ) : (
+                          <span className="text-[8px] font-mono uppercase font-black bg-white/5 border border-white/10 text-white/40 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                            <Lock className="h-2.5 w-2.5 text-white/30" /> Locked
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="mt-3.5 text-sm font-bold text-white tracking-tight flex items-center gap-1.5">
+                        {exp.title}
+                        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />}
+                      </h3>
+                      <p className="mt-0.5 text-[10px] font-medium text-purple-300/80 uppercase font-mono">{exp.tagline}</p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-white/50">{exp.description}</p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-white/[0.04]">
+                      {isActive ? (
+                        <button
+                          disabled
+                          className="w-full py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-200 text-[10px] font-black uppercase tracking-wider cursor-default flex items-center justify-center gap-1"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-purple-400" /> Active Experience
+                        </button>
+                      ) : isApproved ? (
+                        <button
+                          onClick={() => {
+                            setActiveMode(exp.mode as any);
+                            toast.success(`Switched Tradio to ${exp.title} Mode`);
+                          }}
+                          className="w-full py-2 rounded-xl bg-white/5 hover:bg-purple-500/10 border border-white/10 hover:border-purple-500/30 text-white hover:text-purple-200 text-[10px] font-bold uppercase tracking-wider transition-all duration-300 active:scale-95 flex items-center justify-center gap-1"
+                        >
+                          Switch Experience
+                        </button>
+                      ) : requestStatus === 'pending' || requestStatus === 'under_review' ? (
+                        <button
+                          onClick={() => {
+                            toast.info(`Your ${exp.title} access request is currently under review by our team.`);
+                          }}
+                          className="w-full py-2 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-300/70 text-[10px] font-bold uppercase tracking-wider hover:bg-amber-500/10 transition-all"
+                        >
+                          Awaiting Review
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            access?.openFlow(exp.mode as any);
+                          }}
+                          className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-95 shadow-[0_4px_12px_rgba(168,85,247,0.2)] hover:shadow-[0_4px_18px_rgba(168,85,247,0.35)] flex items-center justify-center gap-1"
+                        >
+                          Request Access
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </GlassCard>
       </div>
 
       <div className="px-4 sm:px-6 lg:px-10">
@@ -124,7 +286,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                   Submit your track and get reviewed live on-air by Trey Trizzy. Skip the line and prioritize your track with premium options.
                 </p>
               </div>
-              <div className="relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-[0_15px_30px_rgba(168,85,247,0.3)] border border-white/10 transition-all duration-500 hover:shadow-[0_20px_45px_rgba(168,85,247,0.45)] hover:scale-[1.03] hover:-translate-y-[1px] active:scale-95 hover:brightness-105 group overflow-hidden shrink-0">
+              <div className="relative inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-cyan-400 px-6 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-[0_15px_30px_rgba(168,85,247,0.3)] border border-white/10 transition-all duration-500 group-hover:scale-105 group-hover:shadow-[0_20px_45px_rgba(168,85,247,0.45)] active:scale-95 hover:brightness-105 group overflow-hidden shrink-0">
                 <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out pointer-events-none" />
                 <span className="relative flex items-center justify-center gap-2">
                   <Sparkles className="h-4 w-4" /> Submit Song
@@ -396,15 +558,15 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                   image: s.img,
                   isLive: true,
                 })}
-                className="group w-[160px] shrink-0 text-left"
+                className="group w-[160px] shrink-0 text-left hover:-translate-y-1 transition-all duration-300 active:scale-[0.98]"
               >
-                <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10">
-                  <img src={s.img} alt={s.title} className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  <span className="absolute bottom-2 right-2"><PlayCircle size={36} /></span>
-                  <Waveform className={`absolute bottom-2 left-2 h-3 w-12 ${playingThis ? 'opacity-100' : 'opacity-50'}`} bars={10} />
+                <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 shadow-[0_8px_20px_rgba(0,0,0,0.35)] group-hover:border-purple-500/30 group-hover:shadow-[0_12px_30px_rgba(168,85,247,0.15)] transition-all duration-300">
+                  <img src={s.img} alt={s.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-108" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
+                  <span className="absolute bottom-2.5 right-2.5 transform translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10"><PlayCircle size={36} /></span>
+                  <Waveform className={`absolute bottom-2.5 left-2.5 h-3 w-12 ${playingThis ? 'opacity-100' : 'opacity-50'}`} bars={10} />
                 </div>
-                <div className="mt-2 truncate text-sm font-semibold text-white">{s.title}</div>
+                <div className="mt-2.5 truncate text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">{s.title}</div>
                 <div className="truncate text-[11px] text-white/55">{s.tags}</div>
               </button>
             );
@@ -417,7 +579,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
         <SectionHeader title="Artist-Owned Stations" onSeeAll={() => {}} />
         <div className="flex gap-3 overflow-x-auto px-4 pb-1 sm:px-6 lg:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {ARTIST_STATIONS.map((a) => (
-            <GlassCard key={a.id} className="flex w-[210px] shrink-0 items-center gap-3 p-2.5 pr-3">
+            <GlassCard key={a.id} className="flex w-[210px] shrink-0 items-center gap-3 p-2.5 pr-3 hover:-translate-y-1 hover:border-cyan-500/20 active:scale-98 transition-all duration-300 group">
               <img
                 src={a.img}
                 alt={a.name}
@@ -428,7 +590,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                     onOpenArtist();
                   }
                 }}
-                className="h-12 w-12 rounded-full border border-purple-400/40 object-cover cursor-pointer transition-transform active:scale-95 hover:scale-105 shrink-0"
+                className="h-12 w-12 rounded-full border border-purple-400/40 object-cover cursor-pointer transition-transform active:scale-95 hover:scale-110 shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <button
@@ -445,15 +607,17 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                 </button>
                 <div className="text-[11px] text-white/55">Station</div>
               </div>
-              <PlayCircle size={32} onClick={() => playStation(a.track, undefined, {
-                id: a.id,
-                type: 'artist_station',
-                label: 'Artist Station',
-                title: `${a.name} Radio`,
-                subtitle: a.name,
-                image: a.img,
-                isLive: true,
-              })} />
+              <div className="transition-transform duration-300 group-hover:scale-105 active:scale-90 shrink-0">
+                <PlayCircle size={32} onClick={() => playStation(a.track, undefined, {
+                  id: a.id,
+                  type: 'artist_station',
+                  label: 'Artist Station',
+                  title: `${a.name} Radio`,
+                  subtitle: a.name,
+                  image: a.img,
+                  isLive: true,
+                })} />
+              </div>
             </GlassCard>
           ))}
         </div>
@@ -464,8 +628,10 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
         <SectionHeader title="Instant Releases" onSeeAll={() => {}} />
         <div className="flex gap-3 overflow-x-auto px-4 pb-1 sm:px-6 lg:px-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {INSTANT_RELEASES.map((r) => (
-            <GlassCard key={r.id} className="flex w-[270px] shrink-0 items-center gap-3 p-2.5">
-              <img src={r.img} alt={r.title} className="h-14 w-14 rounded-lg object-cover" />
+            <GlassCard key={r.id} className="flex w-[270px] shrink-0 items-center gap-3 p-2.5 hover:-translate-y-1 hover:border-purple-500/20 active:scale-98 transition-all duration-300 group">
+              <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 border border-white/5">
+                <img src={r.img} alt={r.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+              </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                   {r.title}
@@ -473,21 +639,23 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                     NEW
                   </span>
                 </div>
-                <div className="truncate text-[11px] text-white/55">{r.artist}</div>
-                <div className="mt-1 flex items-center gap-2">
+                <div className="truncate text-[11px] text-white/55 group-hover:text-purple-300 transition-colors">{r.artist}</div>
+                <div className="mt-1.5 flex items-center gap-2">
                   <Waveform className="h-2.5 w-16" bars={14} />
                   <span className="text-[10px] text-white/40">Released {r.released}</span>
                 </div>
               </div>
-              <PlayCircle size={32} onClick={() => playStation({ ...r.track, sourceType: 'instant_release', sourceLabel: 'Release', isLive: false }, undefined, {
-                id: r.id,
-                type: 'instant_release',
-                label: 'Release',
-                title: r.title,
-                subtitle: r.artist,
-                image: r.img,
-                isLive: false,
-              })} />
+              <div className="transition-transform duration-300 group-hover:scale-105 active:scale-90 shrink-0">
+                <PlayCircle size={32} onClick={() => playStation({ ...r.track, sourceType: 'instant_release', sourceLabel: 'Release', isLive: false }, undefined, {
+                  id: r.id,
+                  type: 'instant_release',
+                  label: 'Release',
+                  title: r.title,
+                  subtitle: r.artist,
+                  image: r.img,
+                  isLive: false,
+                })} />
+              </div>
             </GlassCard>
           ))}
         </div>

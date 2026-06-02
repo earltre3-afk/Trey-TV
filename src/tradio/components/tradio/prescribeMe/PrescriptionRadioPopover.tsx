@@ -164,7 +164,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
       {/* Luxury Integrated Pop-out Cabinet */}
       <div
-        className="fixed bottom-[96px] left-1/2 w-[92vw] max-w-[390px] max-h-[calc(100vh-140px)] z-[101] rounded-[32px] border border-white/12 bg-[#08060d]/95 backdrop-blur-3xl p-5 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.25)] flex flex-col gap-4 overflow-y-auto scrollbar-none animate-emerge-from-button text-left glass-premium-deep luxury-grain sm:left-auto sm:right-6 sm:bottom-[105px] sm:w-[420px] sm:max-h-[calc(100vh-140px)] sm:animate-slide-up-modal sm:translate-x-0"
+        className="fixed bottom-[96px] left-1/2 w-[92vw] max-w-[390px] max-h-[calc(100vh-140px)] z-[101] rounded-[24px] sm:rounded-[32px] border border-white/12 bg-[#08060d]/95 backdrop-blur-3xl p-4 sm:p-5 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.25)] flex flex-col gap-3 sm:gap-4 overflow-y-auto scrollbar-none animate-emerge-from-button text-left glass-premium-deep luxury-grain sm:left-auto sm:right-6 sm:bottom-[105px] sm:w-[420px] sm:max-h-[calc(100vh-140px)] sm:animate-slide-up-modal sm:translate-x-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Triangular Anchor Tail pointing to bottom nav center orb */}
@@ -268,20 +268,20 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
             </div>
 
             {/* Parent/Child Relationship Explanation banner */}
-            <div className="relative rounded-2xl border border-purple-500/10 bg-purple-950/10 p-3.5 space-y-2">
-              <div className="flex items-start gap-2.5">
-                <div className="h-5 w-5 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shrink-0 mt-0.5">
+            <div className="relative rounded-2xl border border-purple-500/10 bg-purple-950/10 p-2.5 sm:p-3.5 space-y-1.5 sm:space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="h-4 w-4 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/20 shrink-0 mt-0.5">
                   <Info className="h-3 w-3 text-purple-300" />
                 </div>
-                <div className="text-[10px] leading-relaxed text-purple-200/70">
+                <div className="text-[9.5px] sm:text-[10px] leading-snug sm:leading-relaxed text-purple-200/70">
                   <strong className="text-purple-100 font-bold font-mono">Universe Route Me Bridge:</strong> <br />
                   <span className="text-white/45">Trey TV Prescribe Me</span> routes the whole creative universe. <br />
-                  <span className="text-purple-300 font-semibold">Tradio Prescribe Me</span> routes the music/sound side of your moment.
+                  <span className="text-purple-300 font-semibold">Tradio Prescribe Me</span> routes the music/sound side.
                 </div>
               </div>
 
               {/* Conceptual Toggles */}
-              <div className="border-t border-white/5 pt-2.5 space-y-1.5">
+              <div className="border-t border-white/5 pt-2 sm:pt-2.5 space-y-1 sm:space-y-1.5">
                 <button
                   onClick={() => setSources(prev => ({ ...prev, useTradioSignals: !prev.useTradioSignals }))}
                   className="w-full flex items-center justify-between text-left text-[9px] font-mono font-medium text-white/60 hover:text-white transition-colors"
@@ -306,29 +306,29 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                   </div>
                 </button>
               </div>
-              <div className="flex flex-wrap gap-1.5 border-t border-white/5 pt-2.5">
+              <div className="flex flex-wrap gap-1 sm:gap-1.5 border-t border-white/5 pt-2 sm:pt-2.5">
                 <PolicyLinkInline target="prescribe-me">AI / Prescribe Me Explanation</PolicyLinkInline>
                 <PolicyLinkInline target="privacy-choices">Privacy Choices</PolicyLinkInline>
               </div>
             </div>
 
             {/* Daily limit counters display */}
-            <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-4 text-center space-y-3">
+            <div className="rounded-2xl border border-white/5 bg-white/[0.01] p-3 sm:p-4 text-center space-y-2 sm:space-y-3">
               {dailyUsage.prescriptionsLeftToday > 0 ? (
                 <>
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-xs font-bold text-white font-mono">
+                    <span className="text-[11px] sm:text-xs font-bold text-white font-mono">
                       {dailyUsage.prescriptionsLeftToday} {dailyUsage.prescriptionsLeftToday === 1 ? 'prescription' : 'prescriptions'} left today
                     </span>
                   </div>
-                  <p className="text-[11px] text-white/50 leading-relaxed max-w-sm mx-auto">
+                  <p className="text-[10.5px] sm:text-[11px] text-white/50 leading-normal sm:leading-relaxed max-w-sm mx-auto">
                     Start a guided, question-based AI diagnosis flow to map your psychological need, emotional energy, and desired shift to the perfect content route.
                   </p>
 
                   <button
                     onClick={handleStartFlow}
-                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-500 text-white font-mono font-black text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.45)] hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 mt-2"
+                    className="w-full h-9 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-500 text-white font-mono font-black text-[10px] sm:text-xs uppercase tracking-widest shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.45)] hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2 mt-1 sm:mt-2"
                   >
                     <Sparkles className="h-4 w-4" /> Start AI Routing Flow
                   </button>
@@ -337,18 +337,18 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                 <>
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="flex h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
-                    <span className="text-xs font-bold text-white font-mono uppercase">
+                    <span className="text-[11px] sm:text-xs font-bold text-white font-mono uppercase">
                       Daily Limit Exceeded
                     </span>
                   </div>
-                  <p className="text-[11px] text-white/50 leading-relaxed max-w-sm mx-auto">
+                  <p className="text-[10.5px] sm:text-[11px] text-white/50 leading-normal sm:leading-relaxed max-w-sm mx-auto">
                     You've used both of today's sound prescriptions. Come back tomorrow for a new diagnosis! Your limit ensures prescriptions remain highly valuable and focused.
                   </p>
 
-                  <div className="pt-2">
+                  <div className="pt-1.5 sm:pt-2">
                     <button
                       disabled
-                      className="w-full h-11 rounded-2xl bg-white/5 border border-white/10 text-white/30 font-mono font-black text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full h-9 sm:h-11 rounded-xl sm:rounded-2xl bg-white/5 border border-white/10 text-white/30 font-mono font-black text-[10px] sm:text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       Locked For Today
                     </button>
@@ -360,7 +360,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
               {dailyUsage.lastPrescription && (
                 <button
                   onClick={handleViewLastPrescription}
-                  className="w-full h-10 rounded-xl border border-white/10 hover:border-purple-500/30 bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                  className="w-full h-9 sm:h-10 rounded-xl border border-white/10 hover:border-purple-500/30 bg-white/5 hover:bg-white/10 text-purple-200 hover:text-white font-bold text-[9px] sm:text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                 >
                   <Compass className="h-3.5 w-3.5 text-purple-400" />
                   View Today's Active Prescription

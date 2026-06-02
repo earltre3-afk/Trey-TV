@@ -43,6 +43,8 @@ import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { recordUserTrace } from "@/lib/user-trace";
 import { isPublicProfileUid } from "@/lib/profile-links";
 import bannerFallback from "@/assets/edit-profile-banner-cosmic.jpg";
+import staticBanner from "@/assets/lovable-hero-bg.jpg";
+import treyTvLogo from "@/assets/trey-tv-logo.png";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
@@ -350,37 +352,48 @@ function EditProfile() {
   };
 
   const accentVar = accentVariableFor(draft.accent);
-  const bannerSrc = draft.banner || "";
+  const isDefaultBanner = !draft.banner ||
+                          draft.banner === "/profile-banner" ||
+                          draft.banner.includes("profile-banner");
+  const bannerSrc = isDefaultBanner ? staticBanner : draft.banner;
 
   return (
     <AppShell wide>
       <div className="edit-profile-redesign min-h-screen text-foreground pb-36 lg:pb-10">
         <section className="relative -mx-0 overflow-hidden rounded-b-[2rem] lg:rounded-[2rem]">
           <div className="relative h-56 w-full sm:h-64 lg:h-72">
-            {bannerSrc ? (
-              <AnimatedBanner src={bannerSrc} fallback={bannerFallback} alt="Profile banner" className="absolute inset-0 size-full object-cover" />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_50%_20%,rgba(var(--profile-accent-rgb),0.2),transparent_35%),linear-gradient(135deg,#090b17,#171024_45%,#05070d)]">
-                <div className="rounded-2xl border border-dashed border-white/20 px-5 py-4 text-center backdrop-blur-md">
-                  <UploadCloud className="mx-auto mb-2 size-7 text-muted-foreground" />
-                  <div className="text-sm font-semibold">Upload Banner</div>
-                  <div className="text-xs text-muted-foreground">JPG, PNG, GIF, MP4</div>
+            <AnimatedBanner src={bannerSrc} fallback={bannerFallback} alt="Profile banner" className="absolute inset-0 size-full object-cover" />
+
+            {isDefaultBanner && (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/40 to-[#05070D]/10 z-10" />
+                {/* Trey TV Logo */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 pointer-events-none transition-all duration-300">
+                  <div className="relative logo-anim transition-all duration-300 w-[180px] sm:w-[220px] lg:w-[260px]">
+                    <div aria-hidden className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[70%] rounded-[50%] blur-3xl opacity-60 logo-halo-pulse" style={{ background: `radial-gradient(ellipse at center,#A855F755 0%,#22D3EE33 45%,transparent 70%)` }} />
+                    <img src={treyTvLogo} alt="Trey TV" className="relative w-full h-auto object-contain" style={{ filter: "drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 10px rgba(168,85,247,0.35))" }} />
+                    <div aria-hidden className="absolute inset-0 mix-blend-screen opacity-70" style={{ WebkitMaskImage: `url(${treyTvLogo})`, maskImage: `url(${treyTvLogo})`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center", background: "linear-gradient(to bottom,rgba(255,255,255,0.6) 0%,rgba(255,255,255,0.18) 38%,rgba(255,255,255,0) 55%)" }} />
+                    <div aria-hidden className="absolute inset-0 overflow-hidden" style={{ WebkitMaskImage: `url(${treyTvLogo})`, maskImage: `url(${treyTvLogo})`, WebkitMaskSize: "contain", maskSize: "contain", WebkitMaskRepeat: "no-repeat", maskRepeat: "no-repeat", WebkitMaskPosition: "center", maskPosition: "center" }}>
+                      <div className="absolute -inset-y-6 -left-1/3 w-1/3 animate-scan-sweep" style={{ background: "linear-gradient(115deg,transparent 35%,rgba(255,255,255,0.9) 50%,transparent 65%)", filter: "blur(2px)" }} />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background" />
-            <button className="absolute left-4 top-4 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 backdrop-blur-md" aria-label="Help">
+
+            <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-background z-10" />
+            <button className="absolute left-4 top-4 grid size-9 place-items-center rounded-full border border-white/15 bg-black/45 backdrop-blur-md z-20" aria-label="Help">
               <HelpCircle className="size-4 text-muted-foreground" />
             </button>
             <button
               type="button"
               onClick={() => pickFile(bannerFile)}
-              className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/20 bg-black/45 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-gold/60 hover:text-gold"
+              className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/20 bg-black/45 px-3 py-2 text-xs font-medium text-foreground backdrop-blur-md transition hover:border-gold/60 hover:text-gold z-20"
             >
               <UploadCloud className="size-4" /> Change banner
             </button>
-            {isAnimatedBanner && (
-              <span className="absolute bottom-4 left-4 rounded-full border border-magenta/40 bg-magenta/15 px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-magenta backdrop-blur-md">
+            {isAnimatedBanner && !isDefaultBanner && (
+              <span className="absolute bottom-4 left-4 rounded-full border border-magenta/40 bg-magenta/15 px-3 py-1 text-[10px] font-bold tracking-[0.2em] text-magenta backdrop-blur-md z-20">
                 LOOPING
               </span>
             )}

@@ -61,31 +61,31 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in select-none relative z-10">
-      
+    <div className="flex flex-col gap-3 sm:gap-4 animate-fade-in select-none relative z-10">
+
       {/* Active RX card container */}
-      <div className="relative rounded-3xl border border-white/12 bg-gradient-to-br from-white/[0.06] via-white/[0.015] to-transparent p-4 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+      <div className="relative rounded-3xl border border-white/12 bg-gradient-to-br from-white/[0.06] via-white/[0.015] to-transparent p-3.5 sm:p-4 overflow-hidden shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
         {/* Colorful left indicator band */}
         <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-fuchsia-500 via-purple-500 to-cyan-400 shadow-[0_0_15px_rgba(168,85,247,0.7)]" />
-        
+
         {/* Header line */}
         <div className="flex justify-between items-start">
           <div className="min-w-0 flex-1 pr-3">
             <div className="text-[8px] font-mono tracking-[0.2em] text-fuchsia-300 uppercase font-black">Synthesized RX Blueprint</div>
             <h3 className="text-base font-black text-white mt-1 tracking-tight truncate">{prescription.title}</h3>
           </div>
-          
+
           <div className="flex items-center gap-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/25 px-2.5 py-0.5 text-[8px] font-bold text-cyan-300 font-mono shrink-0">
             {mode === 'fan' && (
               <div className="flex items-end gap-[1.5px] h-2 w-2.5 mr-0.5">
                 {[1, 2, 3].map((bar) => (
-                  <span 
-                    key={bar} 
-                    className="w-[1px] bg-cyan-400 rounded-full animate-eq-bounce" 
-                    style={{ 
+                  <span
+                    key={bar}
+                    className="w-[1px] bg-cyan-400 rounded-full animate-eq-bounce"
+                    style={{
                       height: `${30 + Math.random() * 70}%`,
-                      animationDuration: `${0.3 + Math.random() * 0.5}s` 
-                    }} 
+                      animationDuration: `${0.3 + Math.random() * 0.5}s`
+                    }}
                   />
                 ))}
               </div>
@@ -104,18 +104,18 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
         </div>
 
         {/* Content Description */}
-        <p className="text-[11px] text-white/70 mt-3 leading-relaxed">
+        <p className="text-[11px] text-white/70 mt-2 sm:mt-3 leading-relaxed">
           {prescription.description}
         </p>
 
         {/* Privacy-safedynamic reasoning based on answers */}
-        <div className="mt-3.5 border-t border-white/5 pt-2.5 text-[10px] text-white/50 italic bg-[#0d0914]/40 p-2.5 rounded-xl border border-white/[0.04]">
+        <div className="mt-2.5 sm:mt-3.5 border-t border-white/5 pt-2 sm:pt-2.5 text-[10px] text-white/50 italic bg-[#0d0914]/40 p-2 sm:p-2.5 rounded-xl border border-white/[0.04]">
           <strong className="text-purple-300/80 not-italic font-bold font-mono text-[9px] uppercase tracking-wider block mb-0.5">Diagnostic Sound Source:</strong>
           “{prescription.reason}”
         </div>
 
         {/* User ratings and quick CTA */}
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+        <div className="mt-3 sm:mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-2 sm:pt-3">
           <div className="flex items-center gap-1.5 shrink-0">
             <button 
               onClick={() => handleFeedbackAction('like')}
@@ -164,7 +164,7 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
       </div>
 
       {/* Controlled In-Session Refinement Console */}
-      <div className="border-t border-white/5 pt-3">
+      <div className="border-t border-white/5 pt-2 sm:pt-3">
         <button
           onClick={() => setShowRefinements(!showRefinements)}
           className="w-full flex items-center justify-between text-[9px] font-mono font-black text-purple-300/80 uppercase tracking-widest pl-1 hover:text-white transition-colors"
@@ -177,7 +177,7 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
         </button>
 
         {showRefinements && (
-          <div className="mt-2.5 p-3 rounded-2xl bg-black/50 border border-white/5 space-y-2 animate-fade-in max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
+          <div className="mt-2.5 p-2 sm:p-3 rounded-2xl bg-black/50 border border-white/5 space-y-1 sm:space-y-2 animate-fade-in max-h-[160px] overflow-y-auto pr-1 scrollbar-thin">
             <p className="text-[10px] text-white/40 leading-relaxed font-mono pl-1">
               Refining adjusts parameter filters within this session without costing another full daily limit prescription.
             </p>
@@ -205,21 +205,21 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
       </div>
 
       {/* Secondary CTAs */}
-      <div className="grid grid-cols-2 gap-2 pt-1">
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1">
         {onOpenForge && (
           <button
             onClick={onOpenForge}
-            className="h-10 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 text-white font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
+            className="h-9 sm:h-10 rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-purple-500/30 text-white font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95"
           >
             <Sliders className="h-3.5 w-3.5 text-purple-300" />
             Playlist Forge
           </button>
         )}
-        
+
         <button
           onClick={onRestart}
           disabled={dailyCount <= 0}
-          className={`h-10 rounded-2xl border font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
+          className={`h-9 sm:h-10 rounded-xl sm:rounded-2xl border font-bold text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
             dailyCount > 0
               ? 'border-purple-500/25 hover:border-purple-500/50 text-purple-200 bg-purple-500/10 hover:bg-purple-500/15'
               : 'border-white/5 text-white/20 cursor-not-allowed bg-transparent'

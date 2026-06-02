@@ -47,17 +47,17 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
   const percentProgress = Math.round(((currentStep + 1) / PRESCRIBE_ME_QUESTIONS.length) * 100);
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in relative z-10 select-none">
-      
+    <div className="flex flex-col gap-3 sm:gap-4 animate-fade-in relative z-10 select-none">
+
       {/* Question Header & Nav */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 sm:pb-3">
         <button
           onClick={handleBack}
           className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/70 hover:text-white transition-all active:scale-90"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        
+
         <div className="text-center">
           <span className="text-[9px] font-mono font-black text-purple-300 uppercase tracking-widest block">Question {currentStep + 1} of 5</span>
           <span className="text-[10px] text-white/40 font-mono mt-0.5">{question.category.replace(/([A-Z])/g, ' $1').toUpperCase()}</span>
@@ -92,7 +92,7 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
             <button
               key={opt.value}
               onClick={() => handleSelectOption(opt.value)}
-              className={`w-full text-left py-3 px-4 rounded-2xl border text-xs font-bold transition-all flex items-center justify-between active:scale-[0.99] ${
+              className={`w-full text-left py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl border text-xs font-bold transition-all flex items-center justify-between active:scale-[0.99] ${
                 isSelected
                   ? 'bg-gradient-to-r from-purple-500/25 to-cyan-500/15 border-purple-500/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.25)] font-black'
                   : 'bg-white/[0.02] border-white/8 text-white/70 hover:text-white hover:border-white/15'
@@ -110,7 +110,7 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
       </div>
 
       {/* Footer support */}
-      <div className="border-t border-white/5 pt-3 flex items-center justify-between text-[9px] font-mono text-white/30">
+      <div className="border-t border-white/5 pt-2 sm:pt-3 flex items-center justify-between text-[9px] font-mono text-white/30">
         <span className="flex items-center gap-1">
           <Activity className="h-3 w-3 text-purple-400 animate-pulse" />
           Intent-based algorithmic routing
