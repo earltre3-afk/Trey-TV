@@ -9,18 +9,34 @@ with target as (
   where p.public_profile_uid = '4236868965602895'
 )
 
-insert into public.admin_users (user_id, email, role)
-select user_id, email, 'owner'
-from target
-on conflict (user_id) do update
+-- Update existing admin_users rows for the target user(s)
+update public.admin_users au
 set role = 'owner',
-    email = excluded.email;
+    email = t.email
+from target t
+where au.user_id = t.user_id;
 
-insert into public.tradio_user_roles (user_id, role, role_status, granted_by, role_metadata)
-select user_id, 'owner', 'active', user_id, jsonb_build_object('granted_via','migration')
-from target
-on conflict (user_id, role) do update
+-- Insert admin_users rows if they do not exist
+insert into public.admin_users (user_id, email, role)
+select t.user_id, t.email, 'owner'
+from target t
+where not exists (
+  select 1 from public.admin_users au where au.user_id = t.user_id
+);
+
+-- Update existing tradio_user_roles to active owner for the target user(s)
+update public.tradio_user_roles tur
 set role_status = 'active',
     granted_at = now(),
-    granted_by = excluded.granted_by,
-    role_metadata = excluded.role_metadata;
+    granted_by = t.user_id,
+    role_metadata = jsonb_build_object('granted_via','migration')
+from target t
+where tur.user_id = t.user_id and tur.role = 'owner';
+
+-- Insert tradio_user_roles owner role if missing
+insert into public.tradio_user_roles (user_id, role, role_status, granted_by, role_metadata, granted_at)
+select t.user_id, 'owner', 'active', t.user_id, jsonb_build_object('granted_via','migration'), now()
+from target t
+where not exists (
+  select 1 from public.tradio_user_roles tur where tur.user_id = t.user_id and tur.role = 'owner'
+);
