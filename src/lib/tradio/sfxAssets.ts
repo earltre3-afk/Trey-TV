@@ -12,22 +12,22 @@ export interface BedAsset {
 }
 
 export const SFX_ASSETS: SfxAsset[] = [
-  { id: "airhorn", label: "Airhorn", src: "/tradio-sfx/airhorn.mp3" },
-  { id: "scratch", label: "Scratch", src: "/tradio-sfx/scratch.mp3" },
-  { id: "crowd", label: "Crowd Cheer", src: "/tradio-sfx/crowd-cheer.mp3" },
-  { id: "drop", label: "Bass Drop", src: "/tradio-sfx/bass-drop.mp3" },
-  { id: "reverb", label: "Reverb Out", src: "/tradio-sfx/reverb-out.mp3" },
-  { id: "ai-drop", label: "AI Drop", src: "/tradio-sfx/ai-drop.mp3" },
+  { id: "airhorn", label: "Airhorn", src: "/tradio-sfx/airhorn.wav" },
+  { id: "scratch", label: "Scratch", src: "/tradio-sfx/scratch.wav" },
+  { id: "crowd", label: "Crowd Cheer", src: "/tradio-sfx/crowd-cheer.wav" },
+  { id: "drop", label: "Bass Drop", src: "/tradio-sfx/bass-drop.wav" },
+  { id: "reverb", label: "Reverb Out", src: "/tradio-sfx/reverb-out.wav" },
+  { id: "ai-drop", label: "AI Drop", src: "/tradio-sfx/ai-drop.wav" },
 ];
 
 export const BED_ASSETS: BedAsset[] = [
-  { id: "intro", label: "Intro Bed", src: "/tradio-beds/intro.mp3", durationLabel: "30s" },
-  { id: "outro", label: "Outro Bed", src: "/tradio-beds/outro.mp3", durationLabel: "45s" },
-  { id: "under", label: "Under Bed", src: "/tradio-beds/under.mp3", durationLabel: "∞" },
+  { id: "intro", label: "Intro Bed", src: "/tradio-beds/intro.wav", durationLabel: "30s" },
+  { id: "outro", label: "Outro Bed", src: "/tradio-beds/outro.wav", durationLabel: "45s" },
+  { id: "under", label: "Under Bed", src: "/tradio-beds/under.wav", durationLabel: "∞" },
   {
     id: "transition",
     label: "Transition",
-    src: "/tradio-beds/transition.mp3",
+    src: "/tradio-beds/transition.wav",
     durationLabel: "8s",
   },
 ];
