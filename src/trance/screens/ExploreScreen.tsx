@@ -91,23 +91,24 @@ const ExploreScreen: React.FC = () => {
           View All <ChevronRight className="w-3 h-3" />
         </button>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-        {filtered.map((r, i) => (
-          <TranceRoutineCard key={r.id} routine={r} rank={query ? undefined : i + 1} />
-        ))}
-        {filtered.length === 0 && (
-          <p className="text-sm text-white/40 py-8">No routines match “{query}”.</p>
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <p className="text-sm text-white/40 py-8">No routines match “{query}”.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 lg:gap-4">
+          {filtered.map((r, i) => (
+            <TranceRoutineCard key={r.id} routine={r} rank={query ? undefined : i + 1} wide />
+          ))}
+        </div>
+      )}
 
       {/* Browse by Style */}
       <h3 className="font-black text-white uppercase mt-6 mb-3">Browse by Style</h3>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
         {styleCategories.map((s) => (
           <button
             key={s.style}
             onClick={() => navigate(TRANCE_ROUTES.explore)}
-            className="shrink-0 w-28"
+            className="w-full"
           >
             <div className="relative h-32 rounded-2xl overflow-hidden border border-white/10">
               <img src={s.img} className="w-full h-full object-cover" alt={s.style} />
@@ -123,10 +124,10 @@ const ExploreScreen: React.FC = () => {
 
       {/* Beginner Friendly */}
       <h3 className="font-black text-white uppercase mt-6 mb-3">Beginner Friendly</h3>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-3 xl:grid-cols-5 lg:gap-4 lg:overflow-visible">
         <TranceGlassCard
           glow="cyan"
-          className="shrink-0 w-40 p-4 flex flex-col justify-center"
+          className="shrink-0 w-40 lg:w-full p-4 flex flex-col justify-center"
           onClick={() => {}}
         >
           <div className="font-black text-white">NEW TO DANCE?</div>
@@ -137,7 +138,7 @@ const ExploreScreen: React.FC = () => {
           <div
             key={r.id}
             onClick={() => navigate(TRANCE_ROUTES.routine(r.id))}
-            className="shrink-0 w-36 cursor-pointer"
+            className="shrink-0 w-36 lg:w-full cursor-pointer"
           >
             <div className="relative h-28 rounded-xl overflow-hidden border border-white/10">
               <img src={r.cover} className="w-full h-full object-cover" alt={r.title} />
@@ -162,13 +163,13 @@ const ExploreScreen: React.FC = () => {
 
       {/* Instructor Picks */}
       <h3 className="font-black text-white uppercase mt-6 mb-3">Instructor Picks</h3>
-      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 lg:gap-4 lg:overflow-visible">
         {choreographers.map((c) => (
           <TranceGlassCard
             key={c.id}
             glow="gold"
             onClick={() => navigate(TRANCE_ROUTES.choreographer(c.id))}
-            className="shrink-0 w-52 p-3 flex items-center gap-3"
+            className="shrink-0 w-52 lg:w-full p-3 flex items-center gap-3"
           >
             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-yellow-400/60">
               <img src={c.avatar} className="w-full h-full object-cover" alt={c.displayName} />
