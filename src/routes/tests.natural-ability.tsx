@@ -32,7 +32,8 @@ export const Route = createFileRoute('/tests/natural-ability')({
 
 function NaturalAbilityTestPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, authReady } = useAuth();
+  const loading = !authReady;
   const { user: supaUser } = useSupabaseSession();
   const currentUser = useCurrentUser();
 
@@ -78,7 +79,7 @@ function NaturalAbilityTestPage() {
     } else if (justAnswered >= total) {
       setStage('reveal');
       // Call Gemini asynchronously
-      judgeSignalTest({ answers: next, scenarios: SCENARIOS })
+      judgeSignalTest({ data: { answers: next, scenarios: SCENARIOS } })
         .then((aiResult) => {
           setResult(aiResult);
         })

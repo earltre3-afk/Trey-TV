@@ -229,11 +229,11 @@ function EditProfile() {
       if (supabaseUser) {
         const supabase = createBrowserClient();
         if (avatarUpload) {
-          const uploaded = await uploadProfileMedia(supabaseUser.id, avatarUpload, "avatar");
+          const uploaded = await uploadProfileMedia(supabaseUser.id!, avatarUpload, "avatar");
           persistedAvatar = uploaded.url;
         }
         if (bannerUpload) {
-          const uploaded = await uploadProfileMedia(supabaseUser.id, bannerUpload, "banner");
+          const uploaded = await uploadProfileMedia(supabaseUser.id!, bannerUpload, "banner");
           persistedBanner = uploaded.url;
         }
 
@@ -408,7 +408,7 @@ function EditProfile() {
         </section>
 
         <main className="mx-auto w-full max-w-2xl px-4 pt-2">
-          <div className="relative -mt-16 flex items-end gap-4">
+          <div className="relative -mt-16 flex items-end gap-4 z-20">
             <div className="relative">
               <span
                 className="absolute -inset-4 -z-10 rounded-full blur-2xl opacity-60"

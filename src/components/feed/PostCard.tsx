@@ -31,6 +31,7 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
   const { saves, toggleSave, logShare } = useActivity();
 
   const [authorSignal, setAuthorSignal] = useState<{ symbol: string; ability: string } | null>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
 
   useEffect(() => {
     if (!post.ownerId) return;
@@ -44,11 +45,11 @@ export function PostCard({ post, index = 0 }: { post: any; index?: number }) {
     });
   }, [post.ownerId]);
   const { addPost, updatePost, removePost } = useFeed();
-  const { isSignedIn, user } = useAuth();
+  const { isGuest, user } = useAuth();
   const currentProfile = useCurrentUser();
   const fwdStatus = useFwdConnectionStatus();
   const markUsed = useMarkFwdGifUsed();
-  const isGuest = !isSignedIn;
+  const isSignedIn = !isGuest;
   const nav = useNavigate();
 
   const { reaction, toggleReaction, likeCount, pending: reactionPending } = useSupabaseReactions(post.id, post.likes);

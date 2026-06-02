@@ -61,7 +61,7 @@ async function getSpadesDecisionWithFallback(state: SpadesState, seat: number, i
     }, 1800);
   });
 
-  const apiPromise = getGameSpadesDecision({ state, seat, isBid })
+  const apiPromise = getGameSpadesDecision({ data: { state, seat, isBid } })
     .then((res) => {
       clearTimeout(timeoutId);
       return res;

@@ -324,6 +324,7 @@ export const InstantReleaseScreen: React.FC = () => {
 
     {showFwdPicker && (
       <FwdGifPicker
+        open={showFwdPicker}
         onSelect={(gif) => {
           setFwdCoverGif(gif);
           setCoverSource('fwd');

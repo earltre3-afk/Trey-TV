@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Bell, ChevronRight, Play, Pause, MoreHorizontal, Check, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Sparkles, Bell, ChevronRight, Play, Pause, MoreHorizontal, Check, TrendingUp, TrendingDown, Clock, Menu } from 'lucide-react';
 import { IMG } from './data';
 import { TradioImage } from './NoCoverVisualizer';
 import aiBallCutout from '@/tradio/assets/ai-ball.png';
@@ -133,11 +133,11 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
   title,
   onProfileClick,
 }) => (
-  <div className="flex items-center justify-between px-4 pt-[max(2rem,env(safe-area-inset-top))] pb-3 animate-fade-in sm:px-6 lg:px-10">
+  <div className="flex items-center justify-between px-4 pt-[max(2rem,env(safe-area-inset-top))] lg:pt-8 pb-3 lg:pb-1 animate-fade-in sm:px-6 lg:px-10">
     {showBack ? (
       <button
         onClick={onBack}
-        className="flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-gradient-to-br from-white/10 to-white/3 text-white backdrop-blur-lg hover:border-white/20 transition-all duration-300"
+        className="flex h-12 w-12 items-center justify-center rounded-full border border-white/12 bg-gradient-to-br from-white/10 to-white/3 text-white backdrop-blur-lg hover:border-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
         aria-label="Back"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -145,15 +145,45 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
         </svg>
       </button>
     ) : (
-      <TradioLogo />
+      <div className="flex items-center gap-3">
+        {/* Mobile Hamburger Menu Button */}
+        <button
+          onClick={() => {
+            window.dispatchEvent(new CustomEvent('open-tradio-nav'));
+            document.dispatchEvent(new CustomEvent('open-tradio-nav'));
+          }}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/85 backdrop-blur-md active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
+          title="All Screens"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Desktop Logo or Mobile Logo next to Menu if no title */}
+        <div className={title ? "hidden" : "block lg:hidden"}>
+          <TradioLogo />
+        </div>
+      </div>
     )}
     {centerLogo && <TradioLogo size="sm" />}
     {title && !centerLogo && (
-      <div className="min-w-0 flex-1 px-4 text-center">
-        <div className="truncate text-sm font-bold uppercase tracking-[0.18em] text-white/70">{title}</div>
+      <div className="min-w-0 flex-1 px-4 text-center lg:text-left">
+        <div className="truncate text-base font-black tracking-[0.18em] bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.15)] sm:text-lg">{title}</div>
       </div>
     )}
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2.5 sm:gap-3">
+      {/* Mobile Messenger Bell Button */}
+      <button
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent('open-tradio-messenger'));
+          document.dispatchEvent(new CustomEvent('open-tradio-messenger'));
+        }}
+        className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/80 active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
+        title="Trey TV Messenger"
+      >
+        <Bell className="h-5 w-5" />
+        <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-400 to-pink-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] animate-pulse" />
+      </button>
+
       <AIPill />
       <img
         onClick={onProfileClick}

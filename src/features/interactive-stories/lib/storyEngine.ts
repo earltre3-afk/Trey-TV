@@ -172,10 +172,12 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
   const tone = choice.tone || 'Bold';
 
   const data = await generateStoryChapterWithGemini({
-    context,
-    choice,
-    premise,
-    tone,
+    data: {
+      context,
+      choice,
+      premise,
+      tone,
+    }
   });
   return data as AIResult;
 }
@@ -251,5 +253,3 @@ export function createCustomStoryBranch(prompt: string, tone: Tone): Branch {
   saveBranches(all);
   return branch;
 }
-
-

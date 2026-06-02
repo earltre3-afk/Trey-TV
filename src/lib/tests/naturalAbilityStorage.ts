@@ -112,7 +112,7 @@ export async function fetchSignalRecord(userId: string): Promise<StoredSignalRow
   if (!isSupabaseAvailable()) return readLocalRow(userId);
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(TABLE)
       .select('*')
       .eq('user_id', userId)
@@ -162,7 +162,7 @@ export async function saveNaturalAbilityVisibility(params: {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(TABLE)
       .upsert(row, { onConflict: 'user_id' })
       .select('*')
@@ -213,7 +213,7 @@ export async function saveNaturalAbilityResultOnce(params: {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from(TABLE)
       .upsert(row, { onConflict: 'user_id' })
       .select('*')

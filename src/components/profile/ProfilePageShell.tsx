@@ -207,7 +207,19 @@ function PixelLinkButton({
   );
 }
 
-function SocialIcon({ icon: Icon, color }: { icon: any; color: string }) {
+function SocialIcon({ icon: Icon, color, href }: { icon: any; color: string; href?: string }) {
+  const content = (
+    <span className="p-1 transition-transform active:scale-90 inline-block" style={{ color, filter: `drop-shadow(0 0 6px ${color})` }}>
+      <Icon className="size-4" />
+    </span>
+  );
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition-transform">
+        {content}
+      </a>
+    );
+  }
   return (
     <button className="p-1 transition-transform active:scale-90" style={{ color, filter: `drop-shadow(0 0 6px ${color})` }}>
       <Icon className="size-4" />
@@ -605,13 +617,51 @@ export function ProfilePageShell({
               </div>
             )}
 
-            {(profile.socialInstagram || profile.socialYouTube || profile.socialTikTok) && (
-              <div className="mt-3 flex items-center justify-center gap-3.5">
-                {profile.socialInstagram && <SocialIcon icon={Instagram} color="#EC4899" />}
-                {profile.socialTikTok && <SocialIcon icon={Music2} color="#FFFFFF" />}
-                {profile.socialYouTube && <SocialIcon icon={Youtube} color="#EF4444" />}
-              </div>
-            )}
+            {(() => {
+              const instagram = profile.socialInstagram;
+              const tiktok = profile.socialTikTok;
+              const youtube = profile.socialYouTube;
+              if (!instagram && !tiktok && !youtube) return null;
+              return (
+                <div className="mt-3 flex items-center justify-center gap-3.5">
+                  {instagram && (
+                    <SocialIcon
+                      icon={Instagram}
+                      color="#EC4899"
+                      href={
+                        instagram!.startsWith("http")
+                          ? instagram!
+                          : `https://instagram.com/${instagram!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                  {tiktok && (
+                    <SocialIcon
+                      icon={Music2}
+                      color="#FFFFFF"
+                      href={
+                        tiktok!.startsWith("http")
+                          ? tiktok!
+                          : `https://tiktok.com/@${tiktok!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                  {youtube && (
+                    <SocialIcon
+                      icon={Youtube}
+                      color="#EF4444"
+                      href={
+                        youtube!.startsWith("http")
+                          ? youtube!
+                          : youtube!.includes("youtube.com")
+                            ? (youtube!.startsWith("http") ? youtube! : `https://${youtube!}`)
+                            : `https://youtube.com/@${youtube!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                </div>
+              );
+            })()}
           </section>
 
           {canShowOwnerBadges && (

@@ -166,6 +166,7 @@ function RootComponent() {
   const isImmersivePrescribeMe = pathname.startsWith("/prescribe-me");
   const isImmersiveGameRoom = pathname.startsWith("/games");
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
+  const isImmersiveTradio = pathname.startsWith("/tradio");
   
   const [foldMode, setFoldMode] = useState<string>("standard");
 
@@ -199,12 +200,13 @@ function RootComponent() {
     };
   }, []);
 
-  const hideGlobalMobileChrome = 
-    isImmersivePrescribeMe || 
-    isImmersiveGameRoom || 
-    isFocusedAuthSurface || 
-    foldMode === "cover" || 
-    foldMode === "unfolded" || 
+  const hideGlobalMobileChrome =
+    isImmersivePrescribeMe ||
+    isImmersiveGameRoom ||
+    isFocusedAuthSurface ||
+    isImmersiveTradio ||
+    foldMode === "cover" ||
+    foldMode === "unfolded" ||
     foldMode === "flex";
 
   // Apply user's profile accent color globally
@@ -344,7 +346,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
             location.pathname + onboardingRedirectSearch
           );
           try {
-            const supabase = createBrowserClient();
+            const supabase = createBrowserClient() as any;
             const { data: onboarding } = await supabase
               .from("user_onboarding")
               .select("selected_path, current_step, completed")

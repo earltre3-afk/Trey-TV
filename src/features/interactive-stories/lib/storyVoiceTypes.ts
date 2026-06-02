@@ -5,7 +5,7 @@ export interface StoryVoiceConfig {
   voiceId: string | null;
   voiceName: string | null;
   audioStyle: string | null;
-  settings: Record<string, unknown> | null;
+  settings: Record<string, any> | null;
 }
 
 export interface StoryCharacterVoices {

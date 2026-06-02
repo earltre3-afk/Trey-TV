@@ -6,9 +6,9 @@ if (typeof window !== "undefined" && window.parent !== window) {
   let cachedFetch: typeof fetch | undefined;
   const originalFetch = window.fetch;
 
-  window.fetch = function(...args) {
+  window.fetch = function(...args: any[]) {
     if (cachedFetch) {
-      return cachedFetch(...args);
+      return (cachedFetch as any)(...args);
     }
     if (document.body) {
       try {
@@ -19,13 +19,13 @@ if (typeof window !== "undefined" && window.parent !== window) {
         document.body.removeChild(iframe);
         if (nativeFetch) {
           cachedFetch = nativeFetch.bind(window);
-          return cachedFetch(...args);
+          return (cachedFetch as any)(...args);
         }
       } catch (e) {
         console.warn("Failed to load iframe fetch, falling back:", e);
       }
     }
-    return originalFetch(...args);
+    return (originalFetch as any)(...args);
   } as any;
 }
 

@@ -153,13 +153,13 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
       mergedBase.display_name = currentUser.name || mergedBase.display_name;
       mergedBase.username = currentUser.handle || mergedBase.username;
       mergedBase.avatar_url = currentUser.avatar || mergedBase.avatar_url;
-      mergedBase.banner_url = currentUser.banner || mergedBase.banner_url;
+      (mergedBase as any).banner_url = currentUser.banner || (mergedBase as any).banner_url;
       mergedBase.public_profile_uid = currentUser.uid || mergedBase.public_profile_uid;
       mergedBase.trey_tv_uid = currentUser.uid || mergedBase.trey_tv_uid;
       mergedBase.user_id = currentUser.uid || mergedBase.user_id;
 
       // Handle Trey TV Admin/Owner role propagation
-      if (currentUser.role === 'admin' || currentUser.role === 'owner') {
+      if (currentUser.role === 'admin' || (currentUser.role as string) === 'owner') {
         const adminRole: TradioRoleGrant = { id: `${currentUser.uid}-admin`, role: 'admin', role_status: 'active' };
         if (!mergedBase.roles.some(r => r.role === 'admin')) {
           mergedBase.roles = [...mergedBase.roles, adminRole];

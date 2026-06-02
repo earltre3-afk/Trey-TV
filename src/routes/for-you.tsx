@@ -34,7 +34,7 @@ function Home() {
   const [ranking, setRanking] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !user.id) return;
     fetchSignalRecord(user.id).then((row) => {
       if (row) {
         setBadge(row.primary_ability);
@@ -49,7 +49,7 @@ function Home() {
       return;
     }
     setRanking(true);
-    reRankFeedWithAI({ posts: rawList, userBadge: badge, query: "" })
+    reRankFeedWithAI({ data: { posts: rawList, userBadge: badge, query: "" } })
       .then((res) => {
         if (res?.rankedIds && res.rankedIds.length > 0) {
           const map = new Map(rawList.map((p) => [String(p.id), p]));

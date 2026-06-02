@@ -14,6 +14,7 @@ import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
 import { PixiBullshitTableLazy } from '../pixi/PixiGameTables';
 import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
 import { getGameBullshitDecision } from '@/lib/trey-i/vertex.server';
+import type { Rank } from '@/features/games/lib/cards/cardManifest';
 
 
 interface Props { onBack: () => void; onLegend: () => void; roomId?: string; identity?: PlayerIdentity; }
@@ -50,7 +51,7 @@ async function getBSDecisionWithFallback(state: BSState, seat: number, isClaim: 
     }, 1800);
   });
 
-  const apiPromise = getGameBullshitDecision({ state, seat, isClaim })
+  const apiPromise = getGameBullshitDecision({ data: { state, seat, isClaim } })
     .then((res) => {
       clearTimeout(timeoutId);
       return res;
@@ -87,7 +88,7 @@ const LocalBS: React.FC<Props> = ({ onBack, onLegend }) => {
           const decision = await getBSDecisionWithFallback(state, seat, true);
           setState(s => {
             if (s.phase === 'playing' && s.currentSeat === seat) {
-              return makeClaim(s, seat, decision.cardIds ?? botClaim(s, seat).cardIds, decision.rank ?? s.expectedRank);
+              return makeClaim(s, seat, decision.cardIds ?? botClaim(s, seat).cardIds, (decision.rank ?? s.expectedRank) as Rank);
             }
             return s;
           });
@@ -159,7 +160,7 @@ const ServerBS: React.FC<Props & { roomId: string; identity: PlayerIdentity }> =
       const t = setTimeout(async () => {
         if (isBot) {
           const decision = await getBSDecisionWithFallback(activeState, seat, true);
-          room.setHostState(makeClaim(activeState, seat, decision.cardIds ?? botClaim(activeState, seat).cardIds, decision.rank ?? activeState.expectedRank));
+          room.setHostState(makeClaim(activeState, seat, decision.cardIds ?? botClaim(activeState, seat).cardIds, (decision.rank ?? activeState.expectedRank) as Rank));
         } else {
           const { cardIds, rank } = botClaim(activeState, seat);
           room.setHostState(makeClaim(activeState, seat, cardIds, rank));

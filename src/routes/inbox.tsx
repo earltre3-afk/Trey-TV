@@ -538,7 +538,7 @@ function Inbox() {
               from: m.from === "me" ? "Me" : open.peer.name,
               text: m.text || ""
             }));
-            const res = await summarizeInboxThread({ messages: payload, peerName: open.peer.name });
+            const res = await summarizeInboxThread({ data: { messages: payload, peerName: open.peer.name } });
             if (res.summary) {
               setDraft(res.summary);
               return res.summary;
@@ -1379,7 +1379,7 @@ function AiReplyPanel({
       text: m.text || ""
     }));
 
-    generateSmartReplies({ messages: payload, peerName })
+    generateSmartReplies({ data: { messages: payload, peerName } })
       .then((res) => {
         if (res?.replies && res.replies.length > 0) {
           setChips(res.replies);

@@ -26,7 +26,8 @@ const emptyPreferences: UserPreferences = {
 const KEY = "treytv_user_preferences_v1";
 
 export function useUserPreferences() {
-  const { user: supabaseUser, loading } = useAuth();
+  const { user: supabaseUser, authReady } = useAuth();
+  const loading = !authReady;
   const currentUser = useCurrentUser();
   const [preferences, setPreferences] = useState<UserPreferences>(emptyPreferences);
   const [isLoading, setIsLoading] = useState(false);

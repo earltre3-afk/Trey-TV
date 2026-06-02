@@ -65,7 +65,7 @@ function SettingsPage() {
       setLoadingAbility(false);
       return;
     }
-    fetchSignalRecord(user.id).then((row) => {
+    fetchSignalRecord(user.id!).then((row) => {
       if (row) {
         setNaturalAbility(row);
         setVisibility(row.privacy_mode as PrivacyMode);
@@ -78,7 +78,7 @@ function SettingsPage() {
     if (!user || !naturalAbility) return;
     setSavingVisibility(true);
     const res = await saveNaturalAbilityVisibility({
-      userId: user.id,
+      userId: user.id!,
       privacyMode: visibility,
     });
     setSavingVisibility(false);
@@ -274,17 +274,17 @@ function SettingsPage() {
                         <div
                           className="w-14 h-14 rounded-full border-2 flex items-center justify-center text-3xl shrink-0"
                           style={{
-                            borderColor: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24',
-                            color: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24',
-                            background: `${ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24'}15`,
-                            boxShadow: `0 0 15px ${ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24'}44`
+                            borderColor: (ABILITY_RESULTS as any)[naturalAbility.primary_ability]?.glow || '#fbbf24',
+                            color: (ABILITY_RESULTS as any)[naturalAbility.primary_ability]?.glow || '#fbbf24',
+                            background: `${(ABILITY_RESULTS as any)[naturalAbility.primary_ability]?.glow || '#fbbf24'}15`,
+                            boxShadow: `0 0 15px ${(ABILITY_RESULTS as any)[naturalAbility.primary_ability]?.glow || '#fbbf24'}44`
                           }}
                         >
                           {naturalAbility.badge_symbol}
                         </div>
                         <div>
                           <p className="text-[10px] tracking-[0.25em] text-primary font-bold">NATURAL ABILITY Archetype</p>
-                          <h2 className="text-xl font-extrabold" style={{ color: ABILITY_RESULTS[naturalAbility.primary_ability as any]?.glow || '#fbbf24' }}>
+                          <h2 className="text-xl font-extrabold" style={{ color: (ABILITY_RESULTS as any)[naturalAbility.primary_ability]?.glow || '#fbbf24' }}>
                             {naturalAbility.primary_ability}
                           </h2>
                           <p className="text-xs text-muted-foreground mt-0.5">{naturalAbility.badge_label}</p>

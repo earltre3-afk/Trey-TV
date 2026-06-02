@@ -5,7 +5,8 @@ import { UserAnswer, Scenario, SignalResult, NaturalAbility, SignalStrength } fr
 import { calculateResult } from "../tests/naturalAbilityScoring";
 import { SpadesState, botBid as fallbackSpadesBid, botPlay as fallbackSpadesPlay } from "../../features/games/lib/spades/spadesEngine";
 import { BSState, botClaim as fallbackBSClaim, botShouldCall as fallbackBSShouldCall } from "../../features/games/lib/bullshit/bullshitEngine";
-import { Branch, Choice, AIResult, Tone } from "../../features/interactive-stories/lib/storyTypes";
+import { Branch, Choice, Tone } from "../../features/interactive-stories/lib/storyTypes";
+import { AIResult } from "../../features/interactive-stories/lib/storyEngine";
 import { PrescriptionAnswers, CONTENT_LIBRARY, scoreContent, generatePrescriptionTitle } from "../../features/prescribe-me/components/data";
 import { getSignalBlend } from "../tests/naturalAbilityResults";
 import { aiGenerateText, aiGenerateJson } from "./aiProvider.server";
@@ -439,7 +440,7 @@ Return ONLY a JSON object:
         });
 
         const cardIds = Array.isArray(parsed.cardIds) ? parsed.cardIds.map(String) : [];
-        const validIds = cardIds.filter(id => me.hand.includes(id));
+        const validIds = cardIds.filter((id: string) => me.hand.includes(id));
         if (validIds.length > 0) {
           return { cardIds: validIds, rank: state.expectedRank };
         }

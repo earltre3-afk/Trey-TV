@@ -166,7 +166,8 @@ function mapTransaction(row: EventRow): RewardTransaction {
 }
 
 export function useRewards(): UseRewardsReturn {
-  const { user, loading: authLoading } = useAuth();
+  const { user, authReady } = useAuth();
+  const authLoading = !authReady;
   const [rewards, setRewards] = useState<UseRewardsReturn>(fallbackRewards);
   const [loading, setLoading] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
