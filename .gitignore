@@ -69,3 +69,11 @@ keystore.properties
 # Vite TV shell build artifacts
 apps/trey-tv-web/dist/
 apps/trey-tv-web/node_modules/
+
+# ── Claude Agent / Local Backups / Playwright ─────────────────────────────────
+.claude/worktrees/
+.claude/settings.local.json
+.playwright-mcp/
+.vercel-pass*-backup-*/
+tmp-*
+*.png
