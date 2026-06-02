@@ -11,6 +11,7 @@ import {
 } from './tradioProfileBootstrap';
 import type { TradioBroadcastAccessState, TradioIdentity, TradioMode, TradioRole, TradioRoleGrant, TradioVerificationState } from './types';
 import { useSupabaseSession } from './useSupabaseSession';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 /**
  * Local-only overlay applied on top of the active identity to SIMULATE the
@@ -69,6 +70,7 @@ const TradioIdentityContext = createContext<TradioIdentityContextValue | null>(n
 
 export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supabaseSession = useSupabaseSession();
+  const currentUser = useCurrentUser();
   const [mockIdentityKey, setMockIdentityKeyState] = useState<MockIdentityKey>(DEFAULT_MOCK_IDENTITY_KEY);
   const [modeOverrides, setModeOverrides] = useState<Partial<Record<MockIdentityKey, TradioMode>>>({});
   const [supabaseIdentity, setSupabaseIdentity] = useState<TradioIdentity | null>(null);
@@ -144,20 +146,68 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
           return { ...mock, active_mode: modeOverrides[mockIdentityKey] || mock.active_mode };
         })();
 
+    const mergedBase = { ...base };
+
+    // Overlay real Trey TV User Persona if logged in
+    if (currentUser && currentUser.uid) {
+      mergedBase.display_name = currentUser.name || mergedBase.display_name;
+      mergedBase.username = currentUser.handle || mergedBase.username;
+      mergedBase.avatar_url = currentUser.avatar || mergedBase.avatar_url;
+      mergedBase.banner_url = currentUser.banner || mergedBase.banner_url;
+      mergedBase.public_profile_uid = currentUser.uid || mergedBase.public_profile_uid;
+      mergedBase.trey_tv_uid = currentUser.uid || mergedBase.trey_tv_uid;
+      mergedBase.user_id = currentUser.uid || mergedBase.user_id;
+
+      // Handle Trey TV Admin/Owner role propagation
+      if (currentUser.role === 'admin' || currentUser.role === 'owner') {
+        const adminRole: TradioRoleGrant = { id: `${currentUser.uid}-admin`, role: 'admin', role_status: 'active' };
+        if (!mergedBase.roles.some(r => r.role === 'admin')) {
+          mergedBase.roles = [...mergedBase.roles, adminRole];
+        }
+      }
+
+      // Handle Trey TV Creator role propagation - approved by admin panel to load artist & producer roles
+      if (currentUser.role === 'creator') {
+        const artistRole: TradioRoleGrant = { id: `${currentUser.uid}-artist`, role: 'artist', role_status: 'active' };
+        const producerRole: TradioRoleGrant = { id: `${currentUser.uid}-producer`, role: 'producer', role_status: 'active' };
+        if (!mergedBase.roles.some(r => r.role === 'artist')) {
+          mergedBase.roles = [...mergedBase.roles, artistRole];
+        }
+        if (!mergedBase.roles.some(r => r.role === 'producer')) {
+          mergedBase.roles = [...mergedBase.roles, producerRole];
+        }
+        // Grant broadcast access for approved creators
+        mergedBase.broadcast_access_status = 'cleared';
+      }
+
+      // Handle Verification Badge mappings
+      if (currentUser.verified === 'creator') {
+        mergedBase.verification_status = 'verified';
+        if (!mergedBase.badges.some(b => b.id === 'verified-artist' || b.id === 'verified-creator')) {
+          mergedBase.badges = [...mergedBase.badges, { id: 'verified-creator', label: 'Verified Creator', tone: 'gold' }];
+        }
+      } else if (currentUser.verified === 'user') {
+        mergedBase.verification_status = 'verified';
+        if (!mergedBase.badges.some(b => b.id === 'verified-member')) {
+          mergedBase.badges = [...mergedBase.badges, { id: 'verified-member', label: 'Verified Member', tone: 'cyan' }];
+        }
+      }
+    }
+
     // Overlay any locally-simulated admin grants (mock review prototype, Pass 4H).
-    if (!mockGrants.roles.length && !mockGrants.verification && !mockGrants.broadcast) return base;
+    if (!mockGrants.roles.length && !mockGrants.verification && !mockGrants.broadcast) return mergedBase;
 
     const extraRoles: TradioRoleGrant[] = mockGrants.roles
-      .filter((role) => !base.roles.some((grant) => grant.role === role))
-      .map((role) => ({ id: `${base.user_id}-${role}-granted`, role, role_status: 'active', role_metadata: { source: 'mock_review' } }));
+      .filter((role) => !mergedBase.roles.some((grant) => grant.role === role))
+      .map((role) => ({ id: `${mergedBase.user_id}-${role}-granted`, role, role_status: 'active', role_metadata: { source: 'mock_review' } }));
 
     return {
-      ...base,
-      roles: [...base.roles, ...extraRoles],
-      verification_status: mockGrants.verification ?? base.verification_status,
-      broadcast_access_status: mockGrants.broadcast ?? base.broadcast_access_status,
+      ...mergedBase,
+      roles: [...mergedBase.roles, ...extraRoles],
+      verification_status: mockGrants.verification ?? mergedBase.verification_status,
+      broadcast_access_status: mockGrants.broadcast ?? mergedBase.broadcast_access_status,
     };
-  }, [identitySource, supabaseIdentity, supabaseModeOverride, mockIdentityKey, modeOverrides, mockGrants]);
+  }, [identitySource, supabaseIdentity, supabaseModeOverride, mockIdentityKey, modeOverrides, mockGrants, currentUser]);
 
   const availableModes = useMemo(() => availableModesFor(identity), [identity]);
 
