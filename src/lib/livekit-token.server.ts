@@ -10,11 +10,12 @@ import { RoomAgentDispatch, RoomConfiguration } from "@livekit/protocol";
 import { AccessToken, RoomServiceClient } from "livekit-server-sdk";
 import { getTreyIServiceClient } from "./trey-i/onboarding.server";
 import { loadLiveKitConfig, getLiveKitConfigDiagnostics } from "./livekit-config.server";
+import { resolveTradioShowPublish, tradioShowRoomName } from "./tradio/liveSessionPolicy";
 
 const AGENT_NAME = "Hayden-1f01";
 const TOKEN_TTL = "15m";
 
-type RoomKind = "interactive-story" | "story-maker" | "game" | "inbox" | "watch-party";
+type RoomKind = "interactive-story" | "story-maker" | "game" | "inbox" | "watch-party" | "tradio-show";
 
 type ParticipantProfile = {
   identity: string;
@@ -172,6 +173,7 @@ function roomKindFrom(body: Record<string, unknown>): RoomKind {
   if (raw === "game" || raw === "game-room") return "game";
   if (raw === "inbox" || raw === "inbox-call" || raw === "private-call") return "inbox";
   if (raw === "watch-party" || raw === "wp") return "watch-party";
+  if (raw === "tradio-show" || raw === "tradio_show" || raw === "radio") return "tradio-show";
   return "interactive-story";
 }
 
@@ -227,6 +229,16 @@ function resolveRoom(body: Record<string, unknown>, participant: ParticipantProf
         projectId: null,
         userUid: participant.userUid,
       },
+    };
+  }
+
+  if (kind === "tradio-show") {
+    const sessionId = cleanPart(body.sessionId, "session");
+    return {
+      kind,
+      roomName: tradioShowRoomName(sessionId),
+      dispatchAgent: false,
+      metadata: { mode: "voice-room", storyId: null, beatId: null, pageId: null, projectId: null, userUid: participant.userUid },
     };
   }
 
@@ -390,6 +402,29 @@ export async function handleLiveKitToken(request: Request, env: unknown): Promis
       } catch (err) {
         console.warn("[LiveKit] watch-party permission check failed:", err);
         // Fail open for now — host can still mute via UI if needed.
+      }
+    }
+
+    if (room.kind === "tradio-show") {
+      canPublish = false; // default to listener; only the host publishes
+      try {
+        const supabase = getTreyIServiceClient();
+        const sessionId = String(body.sessionId || "").trim();
+        if (sessionId) {
+          const { data: session } = await (supabase as any)
+            .from("tradio_live_sessions")
+            .select("host_user_id, status")
+            .eq("id", sessionId)
+            .maybeSingle();
+          const resolution = resolveTradioShowPublish({ session: session ?? null, userId: participant.userUid });
+          if (!resolution.allowed) {
+            return json({ error: "This live show isn't on air." }, 403);
+          }
+          canPublish = resolution.canPublish;
+        }
+      } catch (err) {
+        console.warn("[LiveKit] tradio-show permission check failed:", err);
+        canPublish = false; // fail safe: listener only
       }
     }
 
