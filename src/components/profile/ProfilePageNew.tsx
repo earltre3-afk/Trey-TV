@@ -1528,7 +1528,7 @@ export function ProfilePageNew({
                   <div className="min-w-0 text-left">
                     <div className="text-[11px] md:text-xs font-black text-white truncate flex items-center gap-0.5">
                       {profile.displayName}
-                      <BadgeCheck className="w-3 h-3 text-primary shrink-0" />
+                      {showVerifiedBadge && <GoldCheck size={12} className="shrink-0" />}
                     </div>
                     <div className="text-[8px] md:text-[9px] text-muted-foreground">@{profile.handle}</div>
                   </div>
