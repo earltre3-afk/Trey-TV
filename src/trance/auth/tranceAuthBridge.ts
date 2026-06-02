@@ -214,6 +214,14 @@ export const tranceAuthBridge = {
       } = await supabase.auth.getUser();
       if (!user) return null;
 
+      // Vertical slice: sign in → TRANCE profile is created/mapped. Ensure the
+      // row exists even when the user reaches TRANCE via an existing Trey TV
+      // session (rather than tranceAuthBridge.signIn).
+      await ensureProfile(user.id, {
+        display_name: user.user_metadata?.display_name,
+        handle: user.user_metadata?.handle,
+      });
+
       const { data: profile } = await supabase
         .from("trance_profiles")
         .select("*")
