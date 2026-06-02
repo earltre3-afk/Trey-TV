@@ -5,6 +5,7 @@ import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
 import CoPilotPanel from '../CoPilotPanel';
+import { LiveShowDashboard } from './LiveShowDashboard';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
 import type { RadioShow } from '../data';
 import { listMyShows } from '../radioShowService';
@@ -184,6 +185,12 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
 
       {tab === 'broadcast' && (
         <div className="space-y-3">
+          {liveSessionId && (
+            <div className="px-4 sm:px-6 lg:px-10">
+              <LiveShowDashboard live={live} interaction={interaction} showTitle={onAirShowId ? (myShows?.find(s => s.id === onAirShowId)?.title || 'Live Show') : 'Live Desk'} djName={currentDJ.name} />
+            </div>
+          )}
+
           <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-10">
             <GlassCard className="p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -270,8 +277,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
               </GlassCard>
             </div>
           )}
-            </div>
-          )}
 
           {liveSessionId && (
             <div className="px-4 sm:px-6 lg:px-10">
@@ -280,7 +285,6 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
             </div>
           )}
 
-          {liveSessionId && (
           {liveSessionId && (
             <div className="px-4 sm:px-6 lg:px-10">
               <GlassCard className="p-4 space-y-4">
