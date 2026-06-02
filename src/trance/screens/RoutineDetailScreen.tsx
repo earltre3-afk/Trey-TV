@@ -97,8 +97,11 @@ const RoutineDetailScreen: React.FC = () => {
         }
       />
 
+      {/* Stage + info: 2-column hero on desktop */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] lg:gap-6 lg:items-start mb-4 lg:mb-6">
+      <div>
       {/* Video preview */}
-      <TranceGlassCard glow="magenta" className="overflow-hidden mb-4">
+      <TranceGlassCard glow="magenta" className="overflow-hidden mb-4 lg:mb-0">
         <div className="relative aspect-video">
           <img
             src={r.cover}
@@ -128,7 +131,9 @@ const RoutineDetailScreen: React.FC = () => {
           </div>
         </div>
       </TranceGlassCard>
+      </div>
 
+      <div className="space-y-4">
       {/* Title + difficulty */}
       <div className="flex items-end justify-between gap-3 mb-3">
         <div>
@@ -211,8 +216,10 @@ const RoutineDetailScreen: React.FC = () => {
           onClick={() => navigate(TRANCE_ROUTES.performance(r.id))}
         />
       </div>
+      </div>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="grid md:grid-cols-2 gap-3 lg:gap-4">
         <TranceGlassCard glow="purple" className="p-4">
           <h3 className="font-black text-white uppercase mb-3">Move Breakdown</h3>
           <div className="space-y-2">
@@ -267,12 +274,12 @@ const RoutineDetailScreen: React.FC = () => {
           View All <ChevronRight className="w-3 h-3" />
         </button>
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-3 sm:overflow-visible">
         {dbLeaderboard.slice(0, 4).map((e) => (
           <div
             key={e.rank}
             className={cn(
-              "shrink-0 w-44 flex items-center gap-2 p-2 rounded-xl border",
+              "shrink-0 w-44 sm:w-full flex items-center gap-2 p-2 rounded-xl border",
               e.rank === 1
                 ? "border-yellow-400/50 bg-yellow-500/10"
                 : "border-white/10 bg-white/[0.03]",
