@@ -133,7 +133,7 @@ export const TopBar: React.FC<{ showBack?: boolean; onBack?: () => void; centerL
   title,
   onProfileClick,
 }) => (
-  <div className="flex items-center justify-between px-4 pt-[max(2rem,env(safe-area-inset-top))] lg:pt-8 pb-3 lg:pb-1 animate-fade-in sm:px-6 lg:px-10">
+  <div className="flex items-center justify-between px-4 pt-[max(2rem,env(safe-area-inset-top))] lg:pt-6 pb-3 lg:pb-0 animate-fade-in sm:px-6 lg:px-10">
     {showBack ? (
       <button
         onClick={onBack}

@@ -89,7 +89,7 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
   };
 
   return (
-    <div className="space-y-8 pb-6 lg:space-y-10">
+    <div className="space-y-8 pb-6 lg:space-y-6">
       <TopBar onProfileClick={() => onOpenProfile?.('host', 'Jordan')} />
 
       {/* Greeting & Search Group */}
@@ -119,8 +119,8 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
       </div>
 
       {/* Sleek Tradio Pathway Dock */}
-      <div className="px-4 sm:px-6 lg:px-10">
-        <GlassCard className="p-4 bg-gradient-to-r from-purple-950/15 via-[#08060d]/85 to-cyan-950/15 border-white/8 relative overflow-hidden">
+      <div className="px-4 sm:px-6 lg:px-10 animate-fade-in">
+        <GlassCard className="p-4 liquid-glass border-white/10 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.015] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -150,21 +150,21 @@ export const HomeScreen: React.FC<Props> = ({ onOpenPlayer, onOpenArtist, onOpen
                         access?.openFlow(exp.mode as any);
                       }
                     }}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all duration-300 relative ${
+                    className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl border text-left transition-all duration-300 relative ${
                       isActive
-                        ? 'bg-purple-500/15 border-purple-500/40 text-purple-200 shadow-[0_0_15px_rgba(168,85,247,0.12)] scale-[1.02]'
-                        : 'bg-white/[0.02] border-white/5 hover:border-white/12 text-white/60 hover:text-white'
+                        ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(245,158,11,0.15)] scale-[1.02]'
+                        : 'bg-white/[0.02] border-white/5 hover:border-white/12 text-white/60 hover:text-white hover:bg-white/5 hover:translate-y-[-1px]'
                     }`}
                   >
-                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg shrink-0 ${
-                      isActive ? 'bg-purple-500/20 text-purple-300' : 'bg-white/[0.03] text-white/55'
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg shrink-0 transition-transform group-hover:scale-105 ${
+                      isActive ? 'bg-primary/20 text-primary shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'bg-white/[0.03] text-white/55'
                     }`}>
                       <exp.Icon className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 pr-1">
-                      <div className="text-xs font-bold truncate leading-tight flex items-center gap-1">
+                      <div className={`text-xs font-bold truncate leading-tight flex items-center gap-1 ${isActive ? 'text-primary' : ''}`}>
                         {exp.title}
-                        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />}
+                        {isActive && <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--gold)] animate-glow-pulse" />}
                       </div>
                       <div className="text-[8px] font-mono tracking-wider text-white/40 leading-none mt-0.5 uppercase">
                         {exp.mode === 'listener' ? 'Active' : isApproved ? 'Approved' : requestStatus === 'pending' ? 'Reviewing' : 'Locked'}
