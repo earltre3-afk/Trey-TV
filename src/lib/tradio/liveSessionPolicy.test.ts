@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveTradioShowPublish, tradioShowRoomName } from './liveSessionPolicy';
+import { resolveTradioShowPublish, tradioShowRoomName } from './liveSessionPolicy.ts';
 
 test('host of a live session can publish + subscribe', () => {
   const r = resolveTradioShowPublish({ session: { host_user_id: 'u1', status: 'live' }, userId: 'u1' });
