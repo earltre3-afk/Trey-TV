@@ -8,6 +8,7 @@ export { tranceStudioService } from "./tranceStudioService";
 export { tranceRoutineService } from "./tranceRoutineService";
 export { tranceSessionService } from "./tranceSessionService";
 export { trancePoseTrackingService } from "./trancePoseTrackingService";
+export { tranceVideoAnalyzerService } from "./tranceVideoAnalyzerService";
 export { tranceVideoUploadService } from "./tranceVideoUploadService";
 export { tranceScoringService } from "./tranceScoringService";
 export { tranceLeaderboardService } from "./tranceLeaderboardService";

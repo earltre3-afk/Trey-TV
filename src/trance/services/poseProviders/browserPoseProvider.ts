@@ -1,43 +1,57 @@
-// TRANCE — Real client-side pose provider (adaptor).
-//
-// The pose MODEL itself (e.g. MediaPipe Tasks Vision PoseLandmarker or
-// TensorFlow MoveNet) is intentionally NOT bundled in this phase. This keeps the
-// production build light and dependency-free while the full pipeline is wired.
-//
-// There is exactly ONE integration point — `initialize()` — where a real model
-// is loaded. Until that is done, `estimateFrame()` returns null (we NEVER
-// fabricate the dancer's movement) and `isReady()` is false, so sessions
-// gracefully fall back to the existing non-AI controlled scoring flow.
+// TRANCE — Real client-side pose provider backed by MediaPipe Tasks Vision
+// Pose Landmarker (VIDEO mode). All MediaPipe specifics live in ./mediapipeLoader
+// so the rest of the app stays model-agnostic. Fails safe: if the device/browser
+// can't run the model, initialize() returns ok:false and sessions fall back to
+// the non-AI controlled flow. Never fabricates movement.
 import type { PoseProvider } from "./basePoseProvider";
 import type { PoseLandmarkFrame } from "../../types";
+import type { PoseLandmarker } from "@mediapipe/tasks-vision";
+import {
+  createPoseLandmarker,
+  mapResultToFrame,
+  POSE_MODEL_VERSION,
+  POSE_PROVIDER_NAME,
+} from "./mediapipeLoader";
 
 export class BrowserPoseProvider implements PoseProvider {
-  readonly name = "browser-client";
-  readonly modelVersion = "unwired-0";
+  readonly name = POSE_PROVIDER_NAME;
+  readonly modelVersion = POSE_MODEL_VERSION;
 
   private video: HTMLVideoElement | null = null;
+  private landmarker: PoseLandmarker | null = null;
   private ready = false;
+  private lastTimestampMs = -1;
 
   async initialize(): Promise<{ ok: boolean; error?: string }> {
-    // ── INTEGRATION POINT ──────────────────────────────────────────────
-    // Load a real client-side pose model here, e.g.:
-    //   const vision = await import("@mediapipe/tasks-vision");
-    //   this.landmarker = await vision.PoseLandmarker.createFromOptions(...);
-    //   this.ready = true;
-    // Keep all model/library code inside this file only.
-    this.ready = false;
-    return { ok: false, error: "No client-side pose model is wired yet." };
+    const landmarker = await createPoseLandmarker("VIDEO");
+    if (!landmarker) {
+      this.ready = false;
+      return { ok: false, error: "Pose Landmarker is unavailable on this device/browser." };
+    }
+    this.landmarker = landmarker;
+    this.ready = true;
+    return { ok: true };
   }
 
   attachVideoElement(video: HTMLVideoElement | null): void {
     this.video = video;
   }
 
-  estimateFrame(_timestampMs: number): PoseLandmarkFrame | null {
-    if (!this.ready || !this.video) return null;
-    // With a real model wired, run detection on this.video and map results to
-    // PoseLandmark[] here. No model → no landmarks (never fabricated).
-    return null;
+  estimateFrame(timestampMs: number): PoseLandmarkFrame | null {
+    if (!this.ready || !this.landmarker || !this.video) return null;
+    const v = this.video;
+    // Need a decoded frame with real dimensions.
+    if (v.readyState < 2 || v.videoWidth === 0) return null;
+    // detectForVideo requires strictly increasing timestamps.
+    const ts = timestampMs <= this.lastTimestampMs ? this.lastTimestampMs + 1 : timestampMs;
+    this.lastTimestampMs = ts;
+    try {
+      const result = this.landmarker.detectForVideo(v, ts);
+      return mapResultToFrame(result, ts);
+    } catch (err) {
+      console.warn("[MediaPipe] detectForVideo failed:", err);
+      return null;
+    }
   }
 
   isReady(): boolean {
@@ -45,7 +59,14 @@ export class BrowserPoseProvider implements PoseProvider {
   }
 
   dispose(): void {
+    try {
+      this.landmarker?.close();
+    } catch {
+      /* ignore */
+    }
+    this.landmarker = null;
     this.video = null;
     this.ready = false;
+    this.lastTimestampMs = -1;
   }
 }

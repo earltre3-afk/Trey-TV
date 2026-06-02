@@ -190,3 +190,45 @@ export interface LeaderboardEligibilityStatus {
   reason?: LeaderboardIneligibilityReason;
   message: string;
 }
+
+// ── Choreographer video analysis (AI-suggested target choreography) ─────────
+
+export type CueDirection = "up" | "down" | "left" | "right" | "up-right" | "up-left";
+
+export interface ChoreographyTargetFrame {
+  timestampMs: number;
+  landmarks: PoseLandmark[];
+}
+
+export interface SuggestedCountSection {
+  index: number;
+  label: string;
+  counts: string;
+}
+
+export interface SuggestedDirectionCue {
+  timestamp: string; // mm:ss
+  direction: CueDirection;
+  facing: string;
+}
+
+export interface SuggestedMoveHint {
+  timestamp: string; // mm:ss
+  label: string;
+  description: string;
+}
+
+export interface ChoreographyAnalysis {
+  routineId?: string;
+  durationMs: number;
+  sampledFrameCount: number;
+  /** Per-sample target pose timeline (the choreographer's reference movement). */
+  targetTimeline: ChoreographyTargetFrame[];
+  suggestedCountSections: SuggestedCountSection[];
+  suggestedDirectionCues: SuggestedDirectionCue[];
+  suggestedMoveHints: SuggestedMoveHint[];
+  /** AI output is a SUGGESTION — the choreographer reviews/edits before publishing. */
+  suggested: true;
+  poseProvider: string;
+  poseModelVersion: string;
+}
