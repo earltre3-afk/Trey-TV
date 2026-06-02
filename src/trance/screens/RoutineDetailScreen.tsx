@@ -121,8 +121,8 @@ const RoutineDetailScreen: React.FC = () => {
       {/* Mode CTAs */}
       <div className="flex gap-2 mb-6">
         <SessionModeCard mode="Learn" subtitle="Follow along step-by-step" onClick={() => navigate(TRANCE_ROUTES.learn(r.id))} />
-        <SessionModeCard mode="Practice" subtitle="Drill. Refine. Perfect." onClick={() => navigate(TRANCE_ROUTES.learn(r.id))} />
-        <SessionModeCard mode="Performance" subtitle="Show out. Get scored." onClick={() => navigate(TRANCE_ROUTES.learn(r.id))} />
+        <SessionModeCard mode="Practice" subtitle="Drill. Refine. Perfect." onClick={() => navigate(TRANCE_ROUTES.practice(r.id))} />
+        <SessionModeCard mode="Performance" subtitle="Show out. Get scored." onClick={() => navigate(TRANCE_ROUTES.performance(r.id))} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-3">

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useState } from 'react';
 import { X, Spade, Layers, Sparkles, Lock, Globe, Loader2 } from 'lucide-react';
 import { GameType } from '@/features/games/lib/services/roomService';

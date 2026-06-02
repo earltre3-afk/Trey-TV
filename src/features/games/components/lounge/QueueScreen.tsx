@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Loader2, Users, Sparkles, CheckCircle2, X, UserPlus,

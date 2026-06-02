@@ -5,6 +5,33 @@
 import { supabase } from '@/lib/supabase';
 import { TranceIdentity, DancerProfile, TranceRole, TrancePermission } from '../types';
 
+export interface TranceCapabilities {
+  canCreateRoutine: boolean;
+  canApproveContent: boolean;
+  canManageStudio: boolean;
+}
+
+export const getTranceCapabilities = (identity: TranceIdentity | null): TranceCapabilities => {
+  if (!identity) {
+    return {
+      canCreateRoutine: false,
+      canApproveContent: false,
+      canManageStudio: false
+    };
+  }
+
+  const roles = identity.activeRoles || [];
+  const isAdmin = roles.includes('admin') || roles.includes('owner');
+  const isChoreographer = roles.includes('choreographer');
+  const isStudioOwnerOrAdmin = roles.includes('studio_owner') || roles.includes('studio_admin');
+
+  return {
+    canCreateRoutine: isAdmin || isChoreographer || isStudioOwnerOrAdmin,
+    canApproveContent: isAdmin,
+    canManageStudio: isAdmin || isStudioOwnerOrAdmin
+  };
+};
+
 // Raw DB row to TranceIdentity interface
 export const rowToIdentity = (row: Record<string, unknown>): TranceIdentity => {
   const treyTvRoles = Array.isArray(row.trey_tv_roles) 

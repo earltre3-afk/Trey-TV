@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Copy, Check, Bot, Users, Loader2, Play, Crown } from 'lucide-react';
 import {

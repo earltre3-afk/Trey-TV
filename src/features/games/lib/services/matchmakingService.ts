@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // Trey TV Matchmaking & Queue service.
 // Polling-based to match the rest of the room sync model.
 //

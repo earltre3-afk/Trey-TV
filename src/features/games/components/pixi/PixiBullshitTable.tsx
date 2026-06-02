@@ -357,7 +357,7 @@ const PixiBullshitTable: React.FC<PixiBullshitProps> = (props) => {
       sceneRef.current = null;
       if (s) destroyTableScene(s.table);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   return (

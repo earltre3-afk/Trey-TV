@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Star, Flame, TrendingUp, Sparkles, Radio, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Composer } from "@/components/feed/Composer";
+import { FeedComposer } from "@/components/feed/FeedComposer";
 import { CreatorRail } from "@/components/feed/CreatorRail";
 import { PostCard } from "@/components/feed/PostCard";
 import { posts, creators, prescribed } from "@/lib/mock-data";
@@ -133,8 +133,8 @@ function Home() {
               <Link to="/explore" className="text-[11px] text-primary hover:underline">All</Link>
             </div>
             <ul className="space-y-2.5">
-              {creators.filter((c) => c.live).concat(creators.slice(0, 3)).slice(0, 4).map((c) => (
-                <li key={c.id + Math.random()} className="flex items-center gap-3">
+              {creators.filter((c) => c.live).concat(creators.slice(0, 3)).slice(0, 4).map((c, i) => (
+                <li key={`${c.id}-${i}`} className="flex items-center gap-3">
                   <div className="relative size-10 rounded-full conic-ring shrink-0">
                     <img src={c.avatar} alt="" className="size-10 rounded-full object-cover" />
                     {c.live && <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[oklch(0.65_0.24_15)] ring-2 ring-background animate-glow-pulse" />}
@@ -174,7 +174,7 @@ function Home() {
 
         {/* CENTER — feed */}
         <div className="space-y-5 min-w-0">
-          <Composer />
+          <FeedComposer />
           <div className="lg:hidden"><CreatorRail /></div>
 
           <div className="flex items-center justify-between px-1">

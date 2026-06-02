@@ -1,9 +1,14 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranceIdentity } from './useTranceIdentity';
 import { TrancePermission, TranceRole } from '../types';
+import { getTranceCapabilities } from '../auth/tranceAuthBridge';
 
 export const useTrancePermissions = () => {
   const { identity, loading } = useTranceIdentity();
+
+  const capabilities = useMemo(() => {
+    return getTranceCapabilities(identity);
+  }, [identity]);
 
   const hasPermission = useCallback(
     (permission: TrancePermission): boolean => {
@@ -43,6 +48,7 @@ export const useTrancePermissions = () => {
     isStudioAdmin,
     isStudioMember,
     isAdmin,
+    capabilities,
     loading,
   };
 };

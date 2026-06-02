@@ -2,6 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { DanceRoutine, DanceStyle, RoutineDifficulty, EnergyLevel, RoutineVisibility } from '../types';
 import { routines as devRoutines } from '../data/devFixtures';
 import { assertConfigured, shouldUseFixtures } from './config';
+import { getTranceCapabilities, rowToIdentity } from '../auth/tranceAuthBridge';
+
 
 const genRandomUuid = () => {
   return typeof crypto !== 'undefined' && crypto.randomUUID 
@@ -188,13 +190,23 @@ export const tranceRoutineService = {
         // Get user profile details
         const { data: profile } = await supabase
           .from('trance_profiles')
-          .select('display_name, verified')
+          .select('*')
           .eq('id', user.id)
           .maybeSingle();
           
-        if (profile) {
-          finalChoreographerName = profile.display_name;
-          finalChoreographerVerified = !!profile.verified;
+        if (!profile) {
+          throw new Error('User profile not found in database.');
+        }
+
+        finalChoreographerName = profile.display_name;
+        finalChoreographerVerified = !!profile.verified;
+
+        // Verify capabilities
+        const identity = rowToIdentity(profile);
+        const capabilities = getTranceCapabilities(identity);
+
+        if (!capabilities.canCreateRoutine) {
+          throw new Error('Unauthorized: You are not authorized to create routine drafts on TRANCE.');
         }
 
         // Ensure choreographer profile exists in the DB

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   newBullshitGame, makeClaim, callBullshit, passChallenge, botClaim, botShouldCall, BSState,

@@ -86,7 +86,7 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
       {/* Option Selection Panel */}
       <div className="grid gap-2 max-h-[250px] overflow-y-auto pr-1 scrollbar-thin">
         {question.options.map((opt) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           const isSelected = (answers as any)[question.category] === opt.value;
           return (
             <button

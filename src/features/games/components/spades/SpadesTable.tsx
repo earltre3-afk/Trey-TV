@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   newSpadesGame, placeBid, playCard, legalCards, botBid, botPlay, startNextRound,

@@ -87,6 +87,7 @@ export function DesktopTopNav() {
               <Link
                 key={l.to}
                 to={l.to}
+                preload="intent"
                 className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition ${
                   active
                     ? "text-foreground font-semibold bg-white/5 ring-1 ring-white/10"
@@ -156,6 +157,7 @@ export function DesktopTopNav() {
                         <Link
                           key={l.to}
                           to={l.to}
+                          preload="intent"
                           onClick={() => setMoreOpen(false)}
                           className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition"
                         >
@@ -204,12 +206,14 @@ export function DesktopTopNav() {
             <>
               <Link
                 to="/login"
+                preload="intent"
                 className="px-3 py-2 rounded-xl text-sm font-semibold liquid-glass border border-white/15 hover:bg-white/5 transition"
               >
                 Log in
               </Link>
               <Link
                 to="/signup"
+                preload="intent"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-primary text-primary-foreground glow-gold hover-scale"
               >
                 <LogIn className="size-4" /> Sign up
@@ -220,6 +224,7 @@ export function DesktopTopNav() {
               <Link
                 to="/u/$uid"
                 params={{ uid: profileUid }}
+                preload="intent"
                 className="relative size-10 rounded-full conic-ring shrink-0"
                 aria-label="Profile"
               >

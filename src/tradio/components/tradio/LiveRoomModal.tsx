@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { X, Send, Radio, Music2 } from 'lucide-react';
+import { X, Send, Radio, Music2, Phone } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTradioLiveInteraction } from './useTradioLiveInteraction';
+import { requestCall } from './tradioCallerService';
+import { supabase } from '@/tradio/lib/supabaseClient';
 
 /** Full-screen listener room layered over the bar's existing audio connection. */
 export function LiveRoomModal({ sessionId, title, hostName, listenerCount, onClose }: {
@@ -13,6 +16,17 @@ export function LiveRoomModal({ sessionId, title, hostName, listenerCount, onClo
 
   const send = async () => { if (!chatBody.trim()) return; const r = await live.sendChat(chatBody); if (!r.error) setChatBody(''); };
   const request = async () => { if (!song.trim()) return; const r = await live.submitRequest({ songTitle: song, artist }); if (!r.error) { setSong(''); setArtist(''); } };
+  const callIn = async () => {
+    if (!supabase) { toast.error('Calling in needs Supabase.'); return; }
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+    if (!user) { toast.error('Sign in to call in.'); return; }
+    const { data: prof } = await supabase.from('profiles').select('public_profile_uid, display_name').eq('id', user.id).maybeSingle();
+    const identity = (prof?.public_profile_uid as string) || user.id;
+    const name = (prof?.display_name as string) || user.email?.split('@')[0] || 'Listener';
+    const { error } = await requestCall({ sessionId, callerIdentity: identity, callerName: name });
+    toast[error ? 'error' : 'success'](error ?? 'You raised your hand — waiting for the host.');
+  };
 
   return (
     <div className="fixed inset-0 z-[60] overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in">
@@ -25,7 +39,10 @@ export function LiveRoomModal({ sessionId, title, hostName, listenerCount, onClo
               <div className="truncate text-[11px] text-white/55">{hostName} · ON AIR · {listenerCount} listening</div>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full border border-white/15 text-white/80 hover:bg-white/5"><X className="size-4" /></button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button onClick={callIn} className="flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-100 hover:bg-emerald-500/25"><Phone className="size-3.5" /> Call in</button>
+            <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full border border-white/15 text-white/80 hover:bg-white/5"><X className="size-4" /></button>
+          </div>
         </div>
 
         {live.activePoll && (

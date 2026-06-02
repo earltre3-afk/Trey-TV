@@ -43,7 +43,7 @@ async function resolvePostAuthDestination(
   }
 
   // Check onboarding completion
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const { data: profile } = await (supabase as any)
     .from("profiles")
     .select("onboarding_completed, public_profile_uid")
@@ -61,7 +61,7 @@ async function resolvePostAuthDestination(
     sessionStorage.removeItem("treytv_post_auth_redirect");
   } catch {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   nav({ to: (next as any) ?? (profile.public_profile_uid ? `/u/${profile.public_profile_uid}` : "/") });
 }
 
@@ -94,7 +94,7 @@ function AuthCallback() {
 
       if (tokenHash && otpType) {
         // Magic link / email OTP path
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const { data, error: verifyError } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType as any });
         if (!verifyError && data.session) {
           userId = data.session.user.id;

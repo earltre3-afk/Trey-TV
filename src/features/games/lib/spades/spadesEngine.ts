@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { getCard, shuffledDeck, Suit } from '@/features/games/lib/cards/cardManifest';
 
 export type SpadesPhase = 'bidding' | 'playing' | 'round-end' | 'game-over';

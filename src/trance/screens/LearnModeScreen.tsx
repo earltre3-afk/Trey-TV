@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate } from '../hooks/router-compat';
+import { useParams, useNavigate, useLocation } from '../hooks/router-compat';
 import { LogOut, Pause, RotateCcw, Camera, Crosshair, Link as LinkIcon } from 'lucide-react';
 import { TranceShell } from '../components/shell';
 import { TranceStatRing, cn } from '../components/primitives';
@@ -19,7 +19,14 @@ import { shouldUseFixtures } from '../services/config';
 const LearnModeScreen: React.FC = () => {
   const { routineId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { identity, loading: authLoading } = useTranceIdentity();
+
+  const mode = React.useMemo(() => {
+    if (location.pathname.includes('/practice')) return 'Practice' as const;
+    if (location.pathname.includes('/performance')) return 'Performance' as const;
+    return 'Learn' as const;
+  }, [location.pathname]);
 
   const [r, setR] = React.useState<any>(null);
   const [attempt, setAttempt] = React.useState<any>(null);
@@ -55,7 +62,7 @@ const LearnModeScreen: React.FC = () => {
 
     async function startAttempt() {
       try {
-        const att = await tranceSessionService.createSessionAttempt(r.id, userId as string, 'Learn');
+        const att = await tranceSessionService.createSessionAttempt(r.id, userId as string, mode);
         if (active) {
           setAttempt(att);
         }
@@ -68,7 +75,7 @@ const LearnModeScreen: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [authLoading, identity, r]);
+  }, [authLoading, identity, r, mode]);
 
   // Placeholder pose session lifecycle — wire real AI later
   React.useEffect(() => {
@@ -87,37 +94,23 @@ const LearnModeScreen: React.FC = () => {
     }
     try {
       // Create a controlled verification test score payload
-      const sessionScore = {
-        routineId: r.id,
-        routineTitle: r.title,
-        cover: r.cover,
-        difficulty: r.difficulty,
-        total: 92, // overall score
+      const scoreData = {
         accuracy: 94,
         timing: 90,
         energy: 92,
         sync: 94,
+        total: 92, // overall score
         rank: 'S',
-        newPB: true,
       };
 
-      // Save score row in database
-      const saved = await tranceScoringService.saveScore(sessionScore, attempt.id, identity.authUserId);
-
-      // Update session attempt status
-      await tranceSessionService.updateAttemptStatus(attempt.id, 'ready');
-
-      // Submit score to choreographer leaderboard (overall score * 1000)
-      await tranceLeaderboardService.submitScoreToLeaderboard({
-        routineId: r.id,
-        userId: identity.authUserId,
-        score: Math.round(saved.total * 1000),
-        accuracy: saved.accuracy,
-        streak: 1,
-      });
-
-      // Unlock a badge for completing their first TRANCE session
-      await tranceBadgeService.unlockBadge(identity.authUserId, 'first_session');
+      // Save score, update attempt, submit to leaderboard, award badges, and update user profile metrics
+      await tranceScoringService.submitSessionScore(
+        identity.authUserId,
+        r.id,
+        attempt.id,
+        mode,
+        scoreData
+      );
 
       // Navigate to results page with dynamic parameters
       navigate(TRANCE_ROUTES.results(r.id, attempt.id));

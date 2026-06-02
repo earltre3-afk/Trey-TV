@@ -30,7 +30,7 @@ type DbRow = {
 };
 
 // Cast to any for tables not in generated Database types
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const db = supabase as any;
 
 const KIND_MAP: Record<string, NotificationItem["kind"]> = {

@@ -546,7 +546,7 @@ export const treyICheckUsername = createServerFn({ method: "POST" })
 
     try {
       const supabase = getTreyIServiceClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const { data: existing } = await (supabase as any)
         .from("profiles").select("id").ilike("username", raw).maybeSingle();
       if (existing) return { username: raw, available: false, reason: "taken" };

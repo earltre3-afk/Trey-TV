@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { supabase } from '@/lib/supabase';
 import { generateRoomCode, PlayerIdentity } from './identity';
 import { newSpadesGame } from '@/features/games/lib/spades/spadesEngine';

@@ -294,6 +294,7 @@
     animation: conic-spin 6s linear infinite;
     z-index: -1;
     filter: drop-shadow(0 0 8px oklch(0.7 0.22 320 / 0.45));
+    will-change: transform, filter;
   }
   .conic-ring::after {
     content: "";
@@ -307,6 +308,7 @@
     z-index: -2;
     animation: conic-spin 6s linear infinite reverse;
     opacity: 0.7;
+    will-change: transform, opacity;
   }
 
   /* Animated gradient border (cards) */
@@ -331,6 +333,7 @@
             mask-composite: exclude;
     animation: aurora 8s ease-in-out infinite;
     pointer-events: none;
+    will-change: background-position;
   }
 
   /* Sweeping shimmer overlay */
@@ -346,6 +349,7 @@
     transform: translateX(-100%);
     animation: shimmer 3.5s ease-in-out infinite;
     pointer-events: none;
+    will-change: transform;
   }
 
   .hover-lift { transition: transform 0.3s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.3s ease; }

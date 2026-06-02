@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 // Trey TV friends + game requests (inbox) service.
 
 import { supabase } from '@/lib/supabase';

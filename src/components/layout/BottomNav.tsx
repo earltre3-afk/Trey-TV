@@ -51,13 +51,12 @@ export function BottomNav() {
             <NavItem to="/signup" icon={LogIn} label="Sign up" active={isActive("/login") || isActive("/signup")} />
           </div>
         ) : (
-          <div className="grid grid-cols-8 items-center px-2 pt-2 pb-1 relative overflow-visible">
+          <div className="grid grid-cols-7 items-center px-2 pt-2 pb-1 relative overflow-visible">
             <NavItem to="/" icon={Home} label="Home" active={isActive("/")} />
             <NavItem to="/for-you" icon={Sparkles} label="For You" active={isActive("/for-you")} />
             <NavItem to="/explore" icon={Compass} label="Discover" active={isActive("/explore")} />
             <div className="flex justify-center"><CreateWheel /></div>
             <NavItem to="/guide" icon={CalendarDays} label="Guide" active={isActive("/guide")} />
-            <NavItem to="/tradio" icon={Music} label="Tradio" active={isActive("/tradio")} />
             <NavItem to="/inbox" icon={Inbox} label="Inbox" active={isActive("/inbox")} badge={8} />
             <ProfileItem active={onProfile} uid={profileUid} avatar={profileAvatar} />
           </div>
@@ -83,6 +82,7 @@ function NavItem({
   return (
     <Link
       to={to}
+      preload="intent"
       onPointerDown={() => haptic(active ? "light" : "selection")}
       className="group relative flex flex-col items-center justify-center gap-1 min-w-0 -my-2 py-3 px-1 rounded-2xl touch-manipulation select-none active:scale-[0.96] transition-transform"
       style={{ WebkitTapHighlightColor: "transparent", minHeight: 56 }}
@@ -118,6 +118,7 @@ function ProfileItem({ active, uid, avatar }: { active: boolean; uid: string; av
     <Link
       to="/u/$uid"
       params={{ uid }}
+      preload="intent"
       onPointerDown={() => haptic(active ? "light" : "selection")}
       className="group relative flex flex-col items-center justify-center gap-1 min-w-0 -my-2 py-3 px-1 rounded-2xl touch-manipulation select-none active:scale-[0.96] transition-transform"
       style={{ WebkitTapHighlightColor: "transparent", minHeight: 56 }}

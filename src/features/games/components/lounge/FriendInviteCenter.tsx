@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useEffect, useState } from 'react';
 import {
   ArrowLeft, UserPlus, Send, X, Check, Search, Users, Trash2,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase-browser';
 import { updatePeakListeners } from './tradioLiveService';
 import { treyITts } from '@/lib/trey-i/tts.server';
+import { createHostMix, type HostMix } from '@/lib/tradio/tradioHostMix';
 
 type TokenResponse = { ok?: true; token?: string; livekitUrl?: string; roomName?: string; error?: string };
 type Role = 'host' | 'listener';
@@ -17,9 +18,18 @@ export interface LiveRoomState {
   aiSegmentLabel: string | null;
   aiSpeak: (text: string, label?: string) => Promise<void>;
   stopAi: () => void;
+  // Host broadcast-bus controls (no-ops for listeners / before connect).
+  playSfx: (id: string) => void;
+  playBed: (id: string) => void;
+  stopBed: () => void;
+  setMasterVolume: (v: number) => void;
+  setBedVolume: (v: number) => void;
+  getAnalyser: () => AnalyserNode | null;
 }
 
-/** Connects to a tradio-show LiveKit room. Host publishes mic; listener subscribes to audio. */
+const MASTER_LIVE = 0.85;
+
+/** Connects to a tradio-show LiveKit room. Host publishes one mixed track; listener subscribes to audio. */
 export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId: string | null }): LiveRoomState {
   const { active, role, sessionId } = opts;
   const [connection, setConnection] = useState<LiveRoomState['connection']>('idle');
@@ -30,9 +40,9 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
   const audioElsRef = useRef<HTMLAudioElement[]>([]);
   const [aiSpeaking, setAiSpeaking] = useState(false);
   const [aiSegmentLabel, setAiSegmentLabel] = useState<string | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const destRef = useRef<MediaStreamAudioDestinationNode | null>(null);
-  const aiTrackRef = useRef<any | null>(null);
+  const mixRef = useRef<HostMix | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const publishedTrackRef = useRef<any | null>(null);
   const aiSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   useEffect(() => {
@@ -55,12 +65,11 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
           throw new Error(payload.error || `token failed (${res.status})`);
         }
 
-        const { Room, RoomEvent, Track } = await import('livekit-client');
+        const { Room, RoomEvent, Track, LocalAudioTrack } = await import('livekit-client');
         const room = new Room({ adaptiveStream: true, dynacast: true });
         roomRef.current = room;
 
         const recount = () => {
-          // For a listener, audience = remote (host + others) ; for the host, audience = remote listeners.
           const count = room.remoteParticipants.size;
           setListenerCount(count);
           if (role === 'host' && sessionId) void updatePeakListeners(sessionId, count);
@@ -79,11 +88,32 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
         });
         room.on(RoomEvent.TrackUnsubscribed, (track: any) => { try { track.detach().forEach((el: HTMLMediaElement) => el.remove()); } catch { /* ignore */ } });
 
+        // A listener promoted to caller gains canPublish at runtime — enable their mic.
+        if (role === 'listener') {
+          room.on(RoomEvent.ParticipantPermissionsChanged, () => {
+            const canPub = room.localParticipant.permissions?.canPublish;
+            void room.localParticipant.setMicrophoneEnabled(Boolean(canPub));
+          });
+        }
+
         await room.connect(payload.livekitUrl, payload.token);
         if (cancelled) { room.disconnect(); return; }
 
         if (role === 'host') {
-          await room.localParticipant.setMicrophoneEnabled(true);
+          // Build the host mix and publish it as the single broadcast track.
+          const mix = await createHostMix();
+          mixRef.current = mix;
+          try {
+            const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            micStreamRef.current = micStream;
+            mix.setMicStream(micStream);
+          } catch {
+            // No mic permission — still publish the (silent until SFX/AI) mix bus.
+          }
+          const track = new LocalAudioTrack(mix.stream.getAudioTracks()[0]);
+          publishedTrackRef.current = track;
+          await room.localParticipant.publishTrack(track);
+          mix.setMasterVolume(MASTER_LIVE);
           setMicOn(true);
         }
         recount();
@@ -95,31 +125,33 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
 
     return () => {
       cancelled = true;
-      try { roomRef.current?.disconnect(); } catch { /* ignore */ }
+      const room = roomRef.current;
+      try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
+      aiSourceRef.current = null;
+      try { if (publishedTrackRef.current && room) room.localParticipant.unpublishTrack(publishedTrackRef.current); publishedTrackRef.current?.stop?.(); } catch { /* ignore */ }
+      publishedTrackRef.current = null;
+      try { micStreamRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      micStreamRef.current = null;
+      try { void mixRef.current?.close(); } catch { /* ignore */ }
+      mixRef.current = null;
+      try { room?.disconnect(); } catch { /* ignore */ }
       audioElsRef.current.forEach((el) => el.remove());
       audioElsRef.current = [];
       roomRef.current = null;
       setConnection('idle');
       setListenerCount(0);
-      try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
-      aiSourceRef.current = null;
-      try { if (aiTrackRef.current && roomRef.current) roomRef.current.localParticipant.unpublishTrack(aiTrackRef.current); aiTrackRef.current?.stop?.(); } catch { /* ignore */ }
-      aiTrackRef.current = null;
-      try { void audioCtxRef.current?.close(); } catch { /* ignore */ }
-      audioCtxRef.current = null; destRef.current = null;
       setAiSpeaking(false); setAiSegmentLabel(null);
       setMicOn(false);
     };
   }, [active, role, sessionId]);
 
+  // Mute/unmute the host by muting the master bus (the published track is the mix).
   const toggleMic = async () => {
-    const room = roomRef.current;
-    if (!room || role !== 'host') return;
-    try {
-      const next = !micOn;
-      await room.localParticipant.setMicrophoneEnabled(next);
-      setMicOn(next);
-    } catch (err) { setError((err as Error).message); }
+    const mix = mixRef.current;
+    if (role !== 'host' || !mix) return;
+    const next = !micOn;
+    mix.setMasterVolume(next ? MASTER_LIVE : 0);
+    setMicOn(next);
   };
 
   const leave = () => {
@@ -127,43 +159,19 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
   };
 
   const aiSpeak = async (text: string, label?: string) => {
-    const room = roomRef.current;
-    if (!room || role !== 'host' || !text.trim()) return;
+    const mix = mixRef.current;
+    if (role !== 'host' || !mix || !text.trim()) return;
     try {
       const res = await treyITts({ data: { text } });
       if (!res.audioBase64) { setError("AI voice isn't available right now."); return; }
-
-      if (!audioCtxRef.current) {
-        const Ctx: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
-        const ctx = new Ctx();
-        const dest = ctx.createMediaStreamDestination();
-        audioCtxRef.current = ctx;
-        destRef.current = dest;
-        const { LocalAudioTrack } = await import('livekit-client');
-        const track = new LocalAudioTrack(dest.stream.getAudioTracks()[0]);
-        aiTrackRef.current = track;
-        await room.localParticipant.publishTrack(track);
-      }
-
-      const ctx = audioCtxRef.current!;
-      const dest = destRef.current!;
-      if (ctx.state === 'suspended') await ctx.resume();
-
       const bytes = Uint8Array.from(atob(res.audioBase64), (c) => c.charCodeAt(0));
-      const buffer = await ctx.decodeAudioData(bytes.buffer);
-
       try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      src.connect(dest);
-      aiSourceRef.current = src;
-
-      await room.localParticipant.setMicrophoneEnabled(false);
-      setMicOn(false);
       setAiSpeaking(true);
       setAiSegmentLabel(label ?? null);
+      const src = await mix.playAiBuffer(bytes.buffer);
+      aiSourceRef.current = src;
+      if (!src) { setAiSpeaking(false); setAiSegmentLabel(null); return; }
       src.onended = () => { setAiSpeaking(false); setAiSegmentLabel(null); aiSourceRef.current = null; };
-      src.start();
     } catch (err) {
       setAiSpeaking(false); setAiSegmentLabel(null);
       setError((err as Error).message);
@@ -177,5 +185,16 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
     setAiSegmentLabel(null);
   };
 
-  return { connection, listenerCount, micOn, error, toggleMic, leave, aiSpeaking, aiSegmentLabel, aiSpeak, stopAi };
+  const playSfx = (id: string) => { void mixRef.current?.playSfx(id); };
+  const playBed = (id: string) => { void mixRef.current?.playBed(id); };
+  const stopBed = () => mixRef.current?.stopBed();
+  const setMasterVolume = (v: number) => mixRef.current?.setMasterVolume(v);
+  const setBedVolume = (v: number) => mixRef.current?.setBedVolume(v);
+  const getAnalyser = () => mixRef.current?.analyser ?? null;
+
+  return {
+    connection, listenerCount, micOn, error, toggleMic, leave,
+    aiSpeaking, aiSegmentLabel, aiSpeak, stopAi,
+    playSfx, playBed, stopBed, setMasterVolume, setBedVolume, getAnalyser,
+  };
 }

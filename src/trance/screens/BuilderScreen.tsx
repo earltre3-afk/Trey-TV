@@ -8,6 +8,8 @@ import { routines, IMG } from '../data/devFixtures';
 import { tranceVideoUploadService, tranceRoutineService, shouldUseFixtures } from '../services';
 import { TRANCE_ROUTES } from '../routes/manifest';
 import { TranceAccountButton } from '../auth/TranceAccountButton';
+import { useTranceIdentity } from '../hooks/useTranceIdentity';
+import { useTrancePermissions } from '../hooks/useTrancePermissions';
 
 const StepCard: React.FC<{ n: number; title: string; sub: string; right?: React.ReactNode; children: React.ReactNode }> = ({ n, title, sub, right, children }) => (
   <TranceGlassCard glow="purple" className="p-4">
@@ -21,6 +23,10 @@ const StepCard: React.FC<{ n: number; title: string; sub: string; right?: React.
 
 const BuilderScreen: React.FC = () => {
   const navigate = useNavigate();
+  const { identity, loading: authLoading } = useTranceIdentity();
+  const { capabilities } = useTrancePermissions();
+  const canCreate = capabilities.canCreateRoutine;
+
   const [active, setActive] = React.useState(1);
   const [uploaded, setUploaded] = React.useState(true); // mock upload state
   const [vis, setVis] = React.useState<'Public' | 'Private'>('Public');
@@ -67,6 +73,45 @@ const BuilderScreen: React.FC = () => {
       setPublishing(false);
     }
   };
+ 
+  if (authLoading) {
+    return (
+      <TranceShell>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <span className="w-8 h-8 rounded-full border-4 border-fuchsia-500 border-t-transparent animate-spin" />
+        </div>
+      </TranceShell>
+    );
+  }
+
+  if (!canCreate) {
+    return (
+      <TranceShell>
+        <TranceTopBar
+          title={<div><TranceLogo size="sm" /></div>}
+          right={<TranceAccountButton />}
+        />
+        <div className="max-w-md mx-auto mt-12 text-center px-4">
+          <TranceGlassCard glow="magenta" className="p-8 flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/40 flex items-center justify-center mb-6">
+              <Lock className="w-8 h-8 text-fuchsia-400 animate-pulse" />
+            </div>
+            <span className="text-[10px] font-black text-yellow-300 uppercase tracking-[0.35em] mb-2">Choreographer Mode</span>
+            <h2 className="text-2xl font-black text-white mb-3">Choreographer Access Required</h2>
+            <p className="text-xs text-white/60 leading-relaxed mb-6">
+              To create and publish dance routines on TRANCE, you must be registered as an approved Choreographer, Studio Owner, or Administrator.
+            </p>
+            <GradientButton 
+              onClick={() => navigate(TRANCE_ROUTES.home)}
+              className="w-full py-3 text-sm font-bold uppercase tracking-wider"
+            >
+              Back to Home
+            </GradientButton>
+          </TranceGlassCard>
+        </div>
+      </TranceShell>
+    );
+  }
 
   return (
     <TranceShell>

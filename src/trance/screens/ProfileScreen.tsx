@@ -3,19 +3,57 @@ import { useNavigate } from '../hooks/router-compat';
 import { Crown, Flame, Trophy, Zap, ChevronRight, Heart, Star, Globe, ArrowUp, Share2, Settings } from 'lucide-react';
 import { TranceShell, TranceTopBar, TranceLogo } from '../components/shell';
 import { TranceGlassCard, TranceStatRing, TranceBadge, GradientButton, cn, VerifiedTick } from '../components/primitives';
-import { badges, recentScores, IMG } from '../data/devFixtures';
+import { badges as fixtureBadges, recentScores as fixtureScores, IMG } from '../data/devFixtures';
 import { TRANCE_ROUTES } from '../routes/manifest';
 import { useAuth } from '../auth/AuthContext';
 import { TranceAccountButton } from '../auth/TranceAccountButton';
+import { tranceBadgeService, tranceScoringService } from '../services';
+import { shouldUseFixtures } from '../services/config';
 
 const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
   const { effectiveProfile: dancer, isAuthed } = useAuth();
+  
+  const [profileBadges, setProfileBadges] = React.useState<any[]>([]);
+  const [profileScores, setProfileScores] = React.useState<any[]>([]);
+  const [loadingDb, setLoadingDb] = React.useState(true);
+
   const favorites = [
     { title: 'No Limit', status: 'MASTERED', img: IMG.r2, color: 'text-cyan-300' },
     { title: 'Elevate', status: 'MASTERED', img: IMG.r4, color: 'text-cyan-300' },
     { title: 'Different Mode', status: 'IN PROGRESS', img: IMG.r3, color: 'text-yellow-300' },
   ];
+
+  React.useEffect(() => {
+    let active = true;
+    if (shouldUseFixtures()) {
+      setProfileBadges(fixtureBadges);
+      setProfileScores(fixtureScores);
+      setLoadingDb(false);
+      return;
+    }
+
+    async function loadDbData() {
+      if (!dancer?.id) return;
+      try {
+        setLoadingDb(true);
+        const [userBadges, userScores] = await Promise.all([
+          tranceBadgeService.getBadges(dancer.id),
+          tranceScoringService.getRecentScores(dancer.id)
+        ]);
+        if (active) {
+          setProfileBadges(userBadges);
+          setProfileScores(userScores);
+        }
+      } catch (err) {
+        console.error('Failed to load profile DB data:', err);
+      } finally {
+        if (active) setLoadingDb(false);
+      }
+    }
+    loadDbData();
+    return () => { active = false; };
+  }, [dancer?.id]);
 
   return (
     <TranceShell>
@@ -63,8 +101,20 @@ const ProfileScreen: React.FC = () => {
       {/* Badges + favorites */}
       <div className="grid md:grid-cols-2 gap-3 mb-3">
         <TranceGlassCard glow="gold" className="p-4">
-          <div className="flex items-center justify-between mb-3"><h3 className="font-black text-yellow-300 uppercase text-sm">Badges Earned</h3><span className="text-xs text-white/50">12/18</span></div>
-          <div className="grid grid-cols-4 gap-2">{badges.slice(0, 8).map((b) => <TranceBadge key={b.id} badge={b} size="sm" />)}</div>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-black text-yellow-300 uppercase text-sm">Badges Earned</h3>
+            <span className="text-xs text-white/50 font-bold">
+              {profileBadges.filter((b) => b.earned).length}/{profileBadges.length || 18}
+            </span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {profileBadges.slice(0, 8).map((b) => (
+              <TranceBadge key={b.id} badge={b} size="sm" />
+            ))}
+            {profileBadges.length === 0 && (
+              <div className="col-span-4 text-center py-4 text-xs text-white/40 font-bold">No badges unlocked yet. Keep training!</div>
+            )}
+          </div>
           <button className="w-full text-center text-xs font-bold text-fuchsia-400 mt-3 flex items-center justify-center gap-1">VIEW ALL BADGES <ChevronRight className="w-3 h-3" /></button>
         </TranceGlassCard>
 
@@ -85,14 +135,19 @@ const ProfileScreen: React.FC = () => {
       <div className="grid md:grid-cols-2 gap-3 mb-4">
         <TranceGlassCard glow="purple" className="p-4">
           <div className="flex items-center justify-between mb-3"><h3 className="font-black text-purple-300 uppercase text-sm">Recent Session Scores</h3><span className="text-xs text-white/50">VIEW ALL</span></div>
-          <div className="space-y-2">{recentScores.map((s) => (
-            <div key={s.id} className="flex items-center gap-3 p-2 rounded-xl border border-white/10 bg-white/[0.03]">
-              <img src={s.cover} className="w-9 h-9 rounded-lg object-cover" alt={s.routineTitle} />
-              <div className="flex-1"><div className="font-bold text-white text-sm">{s.routineTitle}</div><div className="text-[10px] text-white/50">{s.difficulty}</div></div>
-              <div className="text-right"><div className="text-[8px] text-white/50 uppercase">Score</div><div className="font-black text-white">{s.total}</div></div>
-              <div className="text-right w-16"><div className="text-[10px] text-white/50">{s.when}</div>{s.newPB && <div className="text-[9px] font-black text-cyan-300">NEW PB</div>}</div>
-            </div>
-          ))}</div>
+          <div className="space-y-2">
+            {profileScores.slice(0, 5).map((s) => (
+              <div key={s.id} className="flex items-center gap-3 p-2 rounded-xl border border-white/10 bg-white/[0.03]">
+                <img src={s.cover || IMG.r1} className="w-9 h-9 rounded-lg object-cover" alt={s.routineTitle} />
+                <div className="flex-1"><div className="font-bold text-white text-sm truncate">{s.routineTitle}</div><div className="text-[10px] text-white/50">{s.difficulty}</div></div>
+                <div className="text-right"><div className="text-[8px] text-white/50 uppercase">Score</div><div className="font-black text-white">{s.total}%</div></div>
+                <div className="text-right w-16"><div className="text-[10px] text-white/50 truncate">{s.when}</div>{s.newPB && <div className="text-[9px] font-black text-cyan-300">NEW PB</div>}</div>
+              </div>
+            ))}
+            {profileScores.length === 0 && (
+              <div className="text-center py-6 text-xs text-white/40 font-bold">No sessions completed yet. Let's dance!</div>
+            )}
+          </div>
         </TranceGlassCard>
 
         <TranceGlassCard glow="gold" className="p-4 relative overflow-hidden">
@@ -110,7 +165,7 @@ const ProfileScreen: React.FC = () => {
       {/* Entry points */}
       <div className="grid grid-cols-3 gap-2">
         {[['Crew', '#22d3ee'], ['Challenges', '#d946ef'], ['Rewards', '#facc15']].map(([l, c]) => (
-          <button key={l} onClick={() => navigate(TRANCE_ROUTES.leaderboard('rt001'))} className="rounded-2xl border border-white/10 bg-white/[0.03] py-4 font-black uppercase text-sm" style={{ color: c }}>{l}</button>
+          <button key={l} onClick={() => navigate(TRANCE_ROUTES.explore)} className="rounded-2xl border border-white/10 bg-white/[0.03] py-4 font-black uppercase text-sm" style={{ color: c }}>{l}</button>
         ))}
       </div>
     </TranceShell>

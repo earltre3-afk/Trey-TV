@@ -152,7 +152,7 @@ export const RoleProfilePage: React.FC<{
   });
 
   const baseOwner = getRoleProfileOwnerContext(identity, role);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const profileRecord: any = ownerView ? profileResult?.profile : serviceResult?.profile;
 
   const owner = {

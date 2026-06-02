@@ -77,13 +77,13 @@ export const RoleProfileEditor: React.FC<RoleProfileEditorProps> = ({ role, iden
     setValidation(validateCreatorProfileDraft(role, draft));
   }, [draft, role]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const updateField = (key: string, value: any) => {
     setDraft(prev => updateCreatorProfileDraftLocal(prev, { [key]: value }));
   };
 
   const toggleArrayItem = (key: 'genres' | 'moods' | 'specialties' | 'showTypes', item: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const currentArray = (draft.data as any)[key] || [];
     const isSelected = currentArray.includes(item);
     const updatedArray = isSelected

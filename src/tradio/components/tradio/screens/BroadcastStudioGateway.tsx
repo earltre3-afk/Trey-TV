@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import { goLive, endLive } from '../tradioLiveService';
 import { useTradioLiveRoom } from '../useTradioLiveRoom';
 import { useTradioLiveInteraction } from '../useTradioLiveInteraction';
+import { useTradioCallers } from '../useTradioCallers';
 import {
   createLegalAcceptanceValues,
   isLegalFlowAccepted,
@@ -161,13 +162,14 @@ const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, 
 
 export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) => {
   // Inside the AccessGate the user is cleared; default to artist tooling.
-  const role: BroadcastRole = 'artist';
+  const role = 'artist' as BroadcastRole;
   const [accessStatus, setAccessStatus] = useState<BroadcastAccessStatus>('Cleared');
   const [applied, setSavedApplied] = useState(false);
   const [activeLiveShow, setActiveLiveShow] = useState<RadioShow | null>(null);
   const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
   const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
   const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
+  const callers = useTradioCallers({ sessionId: liveSessionId });
 
   // Stepper show builder flow states
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -338,6 +340,8 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
           show={activeLiveShow}
           live={live}
           interaction={interaction}
+          callers={callers.calls}
+          sessionId={liveSessionId}
           onEndLive={async () => {
             if (liveSessionId) await endLive({ sessionId: liveSessionId, showId: activeLiveShow.id ?? null, peakListeners: live.listenerCount });
             live.leave();

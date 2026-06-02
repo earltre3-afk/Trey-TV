@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import {
   BarChart3,
   CalendarDays,
@@ -29,29 +29,30 @@ import { hasAnyRole } from './auth/roleUtils';
 import BottomNav, { TabKey } from './BottomNav';
 import MiniPlayer from './MiniPlayer';
 import HomeScreen from './screens/Home';
-import BuildStationScreen from './screens/BuildStation';
-import ArtistStationScreen from './screens/ArtistStation';
-import InstantReleaseScreen from './screens/InstantRelease';
 import SearchScreen from './screens/Search';
-import NowPlayingScreen from './screens/NowPlaying';
 import LibraryScreen from './screens/Library';
 import StudioScreen from './screens/Studio';
-import CommunityScreen from './screens/Community';
-import ScheduleScreen from './screens/Schedule';
 import StationsHub, { type StationsDestination } from './screens/StationsHub';
-import ArtistHubScreen from './screens/ArtistHub';
-import ProducerHubScreen from './screens/ProducerHub';
-import DJStudioScreen from './screens/DJStudio';
 import { TradioLiveNowBar } from './TradioLiveNowBar';
-import ShowBuilderScreen from './screens/ShowBuilder';
-import BroadcastStudioGateway from './screens/BroadcastStudioGateway';
 import RouteMePage from '../route-me/RouteMePage';
-import { ProfileScreen } from './screens/ProfileScreen';
-import { RoleProfilePage } from './screens/RoleProfilePage';
 import type { RoleProfileType } from './auth/roleProfile';
 import aiBallCutout from '@/tradio/assets/ai-ball.png';
-import { LegalCenter } from './legal/LegalCenter';
-import LegalAdminDashboard from './legal/LegalAdminDashboard';
+
+const BuildStationScreen = lazy(() => import('./screens/BuildStation'));
+const ArtistStationScreen = lazy(() => import('./screens/ArtistStation'));
+const InstantReleaseScreen = lazy(() => import('./screens/InstantRelease'));
+const NowPlayingScreen = lazy(() => import('./screens/NowPlaying'));
+const CommunityScreen = lazy(() => import('./screens/Community'));
+const ScheduleScreen = lazy(() => import('./screens/Schedule'));
+const ArtistHubScreen = lazy(() => import('./screens/ArtistHub'));
+const ProducerHubScreen = lazy(() => import('./screens/ProducerHub'));
+const DJStudioScreen = lazy(() => import('./screens/DJStudio'));
+const ShowBuilderScreen = lazy(() => import('./screens/ShowBuilder'));
+const BroadcastStudioGateway = lazy(() => import('./screens/BroadcastStudioGateway'));
+const ProfileScreen = lazy(() => import('./screens/ProfileScreen').then(m => ({ default: m.ProfileScreen })));
+const RoleProfilePage = lazy(() => import('./screens/RoleProfilePage').then(m => ({ default: m.RoleProfilePage })));
+const LegalCenter = lazy(() => import('./legal/LegalCenter').then(m => ({ default: m.LegalCenter })));
+const LegalAdminDashboard = lazy(() => import('./legal/LegalAdminDashboard'));
 import { LegalFooterLinks } from './legal/LegalPrimitives';
 import { PlayerProvider } from '@/tradio/contexts/PlayerContext';
 import { AIPill, GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from './ui';
@@ -62,11 +63,11 @@ import { MessengerBridgeProvider } from '../universe/MessengerBridgeProvider';
 import { useMessengerBridge } from '../universe/MessengerBridgeContext';
 import { TradioMessengerBell } from '../universe/TradioMessengerBridge';
 import type { StudioDestination } from './screens/Studio';
-import { SongWarsHub } from './songwars/views/SongWarsHub';
-import { BattleSetupForm } from './songwars/views/BattleSetupForm';
-import { BattleStage } from './songwars/views/BattleStage';
-import { BattleResults } from './songwars/views/BattleResults';
-import { BattleReplayScreen } from './songwars/views/BattleReplayScreen';
+const SongWarsHub = lazy(() => import('./songwars/views/SongWarsHub').then(m => ({ default: m.SongWarsHub })));
+const BattleSetupForm = lazy(() => import('./songwars/views/BattleSetupForm').then(m => ({ default: m.BattleSetupForm })));
+const BattleStage = lazy(() => import('./songwars/views/BattleStage').then(m => ({ default: m.BattleStage })));
+const BattleResults = lazy(() => import('./songwars/views/BattleResults').then(m => ({ default: m.BattleResults })));
+const BattleReplayScreen = lazy(() => import('./songwars/views/BattleReplayScreen').then(m => ({ default: m.BattleReplayScreen })));
 import type { SongWarRole } from './songwars/types';
 import { MOCK_BATTLES, MOCK_REPLAYS } from './songwars/data';
 
@@ -828,7 +829,17 @@ export const TradioShellContent: React.FC = () => {
 
           <div ref={mainScrollRef} className="tradio-responsive-main flex-1 overflow-y-auto pb-[calc(13rem_+_env(safe-area-inset-bottom))] lg:pb-12">
             <TradioLiveNowBar />
-            {renderScreen()}
+            <Suspense fallback={
+              <div className="flex flex-col items-center justify-center p-16 min-h-[320px] text-center animate-pulse">
+                <div className="relative mb-4">
+                  <span aria-hidden="true" className="absolute -inset-3 rounded-full bg-fuchsia-500/15 blur-lg animate-pulse" />
+                  <div className="size-12 rounded-full border-2 border-fuchsia-500/20 border-t-fuchsia-500 animate-spin" />
+                </div>
+                <p className="text-[10px] text-fuchsia-400 font-mono tracking-[0.25em] uppercase">Tuning Signal...</p>
+              </div>
+            }>
+              {renderScreen()}
+            </Suspense>
           </div>
 
           {/* Mobile mini player + bottom nav stack */}
@@ -843,7 +854,7 @@ export const TradioShellContent: React.FC = () => {
               onOpenForge={() => setView({ kind: 'build' })}
               onOpenScreens={() => setNavOpen(true)}
               onSetScreen={(key) => setScreen(key as ScreenKey)}
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+               
               currentMode={currentMode as any}
               currentRoleLabel={currentRoleLabel}
             />

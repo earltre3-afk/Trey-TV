@@ -39,7 +39,7 @@ export async function postAuthRedirect(
   userId?: string,
 ) {
   if (userId) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("onboarding_completed, public_profile_uid")
@@ -56,7 +56,7 @@ export async function postAuthRedirect(
       next = sessionStorage.getItem("treytv_post_auth_redirect");
       sessionStorage.removeItem("treytv_post_auth_redirect");
     } catch {}
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     nav({ to: (next as any) ?? (profile.public_profile_uid ? `/u/${profile.public_profile_uid}` : "/") });
     return;
   }
@@ -66,7 +66,7 @@ export async function postAuthRedirect(
     next = sessionStorage.getItem("treytv_post_auth_redirect");
     sessionStorage.removeItem("treytv_post_auth_redirect");
   } catch {}
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   nav({ to: (next as any) ?? "/" });
 }
 

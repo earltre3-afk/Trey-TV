@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { ArrowLeft, Gamepad2, Spade, Layers, Sparkles, Users, KeyRound, Bot, ShieldCheck, Crown, Settings, Info, Heart, Diamond, Club, ChevronRight, Zap, Trophy, Wifi, Inbox, UserPlus, BookOpen, Shuffle } from 'lucide-react';

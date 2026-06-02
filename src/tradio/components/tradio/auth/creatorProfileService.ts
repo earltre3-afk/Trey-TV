@@ -81,7 +81,7 @@ export function getServiceConfig(): CreatorProfileServiceConfig {
  */
 function deriveMockProfile(identity: TradioIdentity, role: RoleProfileType): CreatorProfileRecord | null {
   // Read local draft if available
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let localDraftData: any = {};
   try {
     const stored = localStorage.getItem(`tradio_draft_${role}_${identity.user_id}`);
