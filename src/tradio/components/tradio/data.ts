@@ -262,6 +262,7 @@ export interface ShowSegment {
   description?: string;
   tracks?: Track[];
   hostNotes?: string;
+  script?: string;
   timestamp?: number;
   aiGenerated?: boolean;
 }
