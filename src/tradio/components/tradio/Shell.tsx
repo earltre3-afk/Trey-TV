@@ -646,36 +646,42 @@ export const TradioShellContent: React.FC = () => {
                 <button
                   key={key}
                   onClick={() => handleTab(key)}
-                  className={`group flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-300 w-full text-left hover:translate-x-1 border border-transparent ${
+                  className={`group relative flex items-center gap-3.5 pl-5 pr-3.5 py-3 rounded-2xl transition-all duration-300 w-full text-left hover:translate-x-1.5 border ${
                     isActive
-                      ? 'bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                      : 'hover:bg-white/5'
+                      ? 'bg-gradient-to-r from-primary/12 to-primary/4 border-primary/25 ring-1 ring-primary/15 shadow-[0_10px_25px_-5px_rgba(245,158,11,0.12)]'
+                      : 'border-transparent hover:bg-white/[0.04] hover:border-white/[0.03]'
                   }`}
                 >
-                  <div className={`size-10 rounded-xl grid place-items-center bg-white/5 transition-transform group-hover:scale-110 shrink-0 ${
-                    isActive ? 'shadow-[0_0_18px_rgba(245,158,11,0.35)]' : ''
+                  {/* Active glowing indicator pill */}
+                  {isActive && (
+                    <div className="absolute left-1.5 top-3.5 bottom-3.5 w-[3px] rounded-full bg-primary shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-pulse" />
+                  )}
+                  <div className={`size-10 rounded-xl grid place-items-center transition-all duration-500 group-hover:scale-105 shrink-0 ${
+                    isActive
+                      ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                      : 'bg-white/[0.03] border border-white/[0.04] text-white/70 group-hover:bg-white/[0.07] group-hover:border-white/10 group-hover:text-white'
                   }`}>
-                    <Icon className={`size-5 ${iconColor}`} />
+                    <Icon className={`size-5 transition-colors duration-300 ${isActive ? 'text-primary' : 'text-white/60 group-hover:text-white'}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-semibold ${isActive ? 'text-primary' : 'text-white/90'}`}>{label}</div>
-                    <div className="text-[11px] text-white/55 truncate leading-tight mt-0.5">{hint}</div>
+                    <div className={`text-sm font-bold tracking-wide transition-colors duration-300 ${isActive ? 'text-primary drop-shadow-[0_0_6px_rgba(245,158,11,0.25)]' : 'text-white/80 group-hover:text-white'}`}>{label}</div>
+                    <div className="text-[10px] text-white/40 group-hover:text-white/55 truncate leading-tight mt-0.5 transition-colors duration-300">{hint}</div>
                   </div>
                   {isActive ? (
-                    <span className="size-2 rounded-full bg-primary shadow-[0_0_8px_var(--gold)] animate-glow-pulse shrink-0" />
+                    <span className="size-2 rounded-full bg-primary shadow-[0_0_10px_var(--gold)] animate-pulse shrink-0 mr-1" />
                   ) : (
-                    <ChevronRight className="size-4 text-white/40 transition-transform group-hover:translate-x-1 shrink-0" />
+                    <ChevronRight className="size-4 text-white/30 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white/60 shrink-0" />
                   )}
                 </button>
               );
             })}
           </nav>
 
-          <div className="group mt-5 flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2.5 hover:border-white/15 hover:bg-white/5 transition-all duration-300">
+          <div className="group mt-5 flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.04] to-transparent px-3.5 py-3.5 hover:border-fuchsia-500/20 hover:bg-fuchsia-500/[0.02] hover:shadow-[0_10px_20px_-10px_rgba(217,70,239,0.1)] transition-all duration-500">
             <TradioMessengerBell unreadCount={messengerBridge?.unreadCount ?? 0} onClick={() => messengerBridge?.openPreview()} />
             <button onClick={() => messengerBridge?.openPreview()} className="min-w-0 flex-1 text-left">
-              <div className="text-sm font-bold text-white group-hover:text-primary transition-colors">Trey TV Messenger</div>
-              <div className="truncate text-[10px] text-white/45 mt-0.5">Messages live in Trey TV · preview only</div>
+              <div className="text-xs font-bold text-white/95 group-hover:text-fuchsia-300 transition-colors duration-300">Trey TV Messenger</div>
+              <div className="truncate text-[10px] text-white/40 mt-0.5 group-hover:text-white/55 transition-colors duration-300">Messages live in Trey TV · preview only</div>
             </button>
           </div>
 
@@ -689,14 +695,14 @@ export const TradioShellContent: React.FC = () => {
               <button
                 key={key}
                 onClick={() => setScreen(key)}
-                className="group flex w-full items-start gap-3.5 rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.04] via-white/[0.01] to-transparent p-3.5 text-left transition-all duration-300 hover:translate-x-1 hover:border-purple-500/20 hover:bg-white/5"
+                className="group flex w-full items-start gap-3.5 rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-transparent p-3.5 text-left transition-all duration-500 hover:translate-x-1.5 hover:border-purple-500/25 hover:bg-purple-500/[0.03] hover:shadow-[0_10px_20px_-10px_rgba(168,85,247,0.15)]"
               >
-                <div className="size-9 rounded-xl grid place-items-center bg-white/5 transition-transform group-hover:scale-105 shrink-0">
-                  <Icon className="size-4.5 text-purple-300" />
+                <div className="size-9 rounded-xl grid place-items-center bg-white/[0.03] border border-white/[0.04] text-purple-300/80 transition-all duration-500 group-hover:scale-105 group-hover:bg-purple-500/15 group-hover:border-purple-500/25 group-hover:text-purple-200 shrink-0">
+                  <Icon className="size-4.5 transition-transform duration-500 group-hover:rotate-6" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <span className="block text-xs font-semibold text-white group-hover:text-purple-200 transition-colors">{label}</span>
-                  <span className="block text-[10px] leading-snug text-white/45 mt-0.5">{sub}</span>
+                  <span className="block text-xs font-bold text-white/85 group-hover:text-purple-200 transition-colors duration-300">{label}</span>
+                  <span className="block text-[10px] leading-normal text-white/40 mt-0.5 group-hover:text-white/50 transition-colors duration-300">{sub}</span>
                 </div>
               </button>
             ))}
@@ -734,12 +740,12 @@ export const TradioShellContent: React.FC = () => {
 
           <GlassCard className="p-5">
             <div className="mb-4 text-sm font-semibold text-white">Screen Map</div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               {SCREEN_LABELS.map((s) => (
                 <button
                   key={s.key}
                   onClick={() => setScreen(s.key)}
-                  className="rounded-2xl border border-white/[0.05] bg-gradient-to-b from-white/[0.04] to-transparent p-4 text-left transition-all duration-500 hover:border-purple-500/25 hover:bg-gradient-to-b hover:from-purple-500/8 hover:to-transparent hover:translate-y-[-1px]"
+                  className="rounded-2xl border border-white/[0.04] bg-gradient-to-b from-white/[0.04] to-transparent p-3.5 text-left transition-all duration-500 hover:border-purple-500/25 hover:bg-purple-500/[0.04] hover:shadow-[0_8px_20px_-8px_rgba(168,85,247,0.25)] hover:-translate-y-[1px]"
                 >
                   <span className="block text-xs font-semibold text-white">{s.label}</span>
                   <span className="mt-1 block text-[10px] text-white/45">{s.group}</span>
@@ -756,7 +762,7 @@ export const TradioShellContent: React.FC = () => {
                 ['Instant drops', '47', '+9%'],
                 ['Fan saves', '92.1K', '+31%'],
               ].map(([label, value, delta]) => (
-                <div key={label} className="flex items-center justify-between rounded-2xl border border-white/[0.05] bg-gradient-to-b from-white/[0.04] to-transparent p-4 hover:border-white/15 transition-all duration-500 hover:translate-y-[-1px]">
+                <div key={label} className="flex items-center justify-between rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.03] to-transparent p-3.5 hover:border-white/12 hover:bg-white/[0.05] hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-500 hover:-translate-y-[1px]">
                   <div>
                     <div className="text-[11px] text-white/50">{label}</div>
                     <div className="text-xl font-bold text-white mt-1">{value}</div>
