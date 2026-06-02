@@ -53,7 +53,7 @@ import { LegalCenter } from './legal/LegalCenter';
 import LegalAdminDashboard from './legal/LegalAdminDashboard';
 import { LegalFooterLinks } from './legal/LegalPrimitives';
 import { PlayerProvider } from '@/tradio/contexts/PlayerContext';
-import { GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from './ui';
+import { AIPill, GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from './ui';
 import { ModeSwitcher } from './auth/components';
 import { TradioIdentityProvider, useTradioIdentity } from './auth/useTradioIdentity';
 import { AccessRequestsProvider } from './auth/AccessRequestsContext';
@@ -623,9 +623,7 @@ export const TradioShellContent: React.FC = () => {
               <TradioLogo />
               <div className="mt-1.5 text-xs text-white/55 font-medium leading-relaxed">AI music network for the Trey TV universe</div>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/5 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-              <Waveform className="h-5 w-5" bars={5} color="from-fuchsia-400 to-cyan-400" />
-            </div>
+            <AIPill />
           </div>
 
           <div className="mb-6 px-1 animate-fade-in">
