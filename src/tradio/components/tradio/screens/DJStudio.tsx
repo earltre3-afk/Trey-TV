@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { goLive, endLive } from '../tradioLiveService';
+import { useTradioLiveRoom } from '../useTradioLiveRoom';
 import { Archive, CalendarDays, ListMusic, Mic, Radio, RadioTower, Sparkles, Upload, Users, Volume2, type LucideIcon } from 'lucide-react';
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, SegmentedTabs, Waveform, VerifiedBadge } from '../ui';
 import { AD_SLOTS, BROADCAST_BLOCKS, BROADCAST_STATUS, DJS, DJ_MIXES, LISTENER_REQUESTS, RADIO_SHOWS, REPLAY_ITEMS, VOICE_DROPS } from '../data';
@@ -26,6 +28,8 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
   const [myShows, setMyShows] = useState<RadioShow[] | null>(null);
   useEffect(() => { void (async () => { const r = await listMyShows(); if (r.source === 'supabase') setMyShows(r.data ?? []); })(); }, []);
   const currentDJ = DJS[0];
+  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
+  const live = useTradioLiveRoom({ active: Boolean(liveSessionId), role: 'host', sessionId: liveSessionId });
   const featuredShow = RADIO_SHOWS[0];
   const showContentFeel = useContentFeelAnalysis({
     contentId: `draft-show-${featuredShow?.id ?? 'new'}`,
@@ -57,36 +61,17 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
   const handleGoLive = async () => {
     const accepted = await recordBroadcastLegal(isLive ? 'end_broadcast' : 'go_live');
     if (!accepted) return;
-    setIsLive((value) => !value);
-    playItem({
-      id: 'dj-live-midnight-spin',
-      title: 'Midnight Spin Live Desk',
-      artist: currentDJ.name,
-      art: currentDJ.avatar,
-      sourceType: 'live_show',
-      sourceLabel: 'Live Show',
-      isLive: true,
-      context: {
-        liveShow: {
-          showTitle: 'Midnight Spin Live Desk',
-          hostName: currentDJ.name,
-          stationName: 'Late Night Radio',
-          listenerCount: BROADCAST_STATUS.listeners,
-        },
-      },
-    }, {
-      isLive: true,
-      source: {
-        id: 'dj-live-midnight-spin',
-        type: 'live_show',
-        label: 'Live Show',
-        title: 'Midnight Spin Live Desk',
-        subtitle: currentDJ.name,
-        image: currentDJ.avatar,
-        isLive: true,
-        listenerCount: BROADCAST_STATUS.listeners,
-      },
-    });
+    if (!isLive) {
+      const { session, error } = await goLive({ showId: null, title: 'Live Desk', hostName: currentDJ.name });
+      if (error || !session) { setIsLive(false); return; }
+      setLiveSessionId(session.id);
+      setIsLive(true);
+    } else {
+      if (liveSessionId) await endLive({ sessionId: liveSessionId, showId: null, peakListeners: live.listenerCount });
+      live.leave();
+      setLiveSessionId(null);
+      setIsLive(false);
+    }
   };
 
   return (
@@ -123,6 +108,11 @@ export const DJStudio: React.FC<{ onOpenBroadcastStudio?: (initialTab?: string) 
                       <span className={`h-1.5 w-1.5 rounded-full ${isLive ? 'animate-pulse bg-red-400' : 'bg-white/30'}`} />
                       {isLive ? 'LIVE NOW' : 'STANDBY'}
                     </span>
+                    {isLive && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-white/70">
+                        {live.listenerCount} listening{live.connection === 'connecting' ? ' · connecting…' : ''}
+                      </span>
+                    )}
                   </div>
                   <p className="mt-2 text-sm leading-relaxed text-white/70">{currentDJ.bio}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
