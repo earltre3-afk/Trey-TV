@@ -175,10 +175,12 @@ export const TranceShell: React.FC<{
 
     <div
       className={cn(
-        "relative mx-auto w-full max-w-md md:max-w-2xl lg:max-w-6xl xl:max-w-7xl",
-        "lg:flex lg:gap-8 lg:items-start",
-        pad && "px-4 pt-4 lg:py-6 lg:px-6",
-        !hideNav && "pb-28 lg:pb-6",
+        // Full-bleed on mobile, fluid wide canvas on desktop (capped only on
+        // ultra-wide for readability) so every screen feels full-screen.
+        "relative mx-auto w-full 2xl:max-w-[1800px]",
+        "lg:flex lg:gap-8 xl:gap-12 lg:items-start",
+        pad && "px-4 sm:px-6 lg:px-10 xl:px-14 pt-4 lg:py-8",
+        !hideNav && "pb-28 lg:pb-10",
       )}
     >
       {/* Sticky Desktop Sidebar Nav */}
