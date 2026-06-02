@@ -58,13 +58,23 @@ export const canReleaseMusic = (identity: TradioIdentity | null | undefined) =>
 export const canUploadBeat = (identity: TradioIdentity | null | undefined) =>
   hasAnyRole(identity, ['producer', 'admin', 'owner']) && (isCurrentMode(identity, 'producer') || isCurrentMode(identity, 'admin'));
 
-export const canCreateBroadcast = (identity: TradioIdentity | null | undefined) =>
-  hasAnyRole(identity, ['artist', 'producer', 'dj', 'admin', 'owner']) &&
-  identity?.broadcast_access_status === 'cleared' &&
-  ['artist', 'producer', 'dj', 'admin'].includes(identity.active_mode);
+export const canCreateBroadcast = (identity: TradioIdentity | null | undefined) => {
+  // Admin/owner can create broadcasts regardless of status or mode
+  if (hasAnyRole(identity, ['admin', 'owner']) && isCurrentMode(identity, 'admin')) return true;
+  // Other roles require cleared status and appropriate mode
+  return (
+    hasAnyRole(identity, ['artist', 'producer', 'dj']) &&
+    identity?.broadcast_access_status === 'cleared' &&
+    ['artist', 'producer', 'dj'].includes(identity.active_mode)
+  );
+};
 
-export const canHostSongWar = (identity: TradioIdentity | null | undefined) =>
-  hasAnyRole(identity, ['dj', 'moderator', 'admin', 'owner']) && (isCurrentMode(identity, 'dj') || isCurrentMode(identity, 'admin'));
+export const canHostSongWar = (identity: TradioIdentity | null | undefined) => {
+  // Admin/owner can host song wars regardless of mode (admin mode access)
+  if (hasAnyRole(identity, ['admin', 'owner']) && isCurrentMode(identity, 'admin')) return true;
+  // DJ/moderator must be in DJ or admin mode
+  return hasAnyRole(identity, ['dj', 'moderator']) && (isCurrentMode(identity, 'dj') || isCurrentMode(identity, 'admin'));
+};
 
 export const canModerateSession = (identity: TradioIdentity | null | undefined) =>
   hasAnyRole(identity, ['moderator', 'admin', 'owner']);
@@ -75,8 +85,12 @@ export const canAdminPlatform = (identity: TradioIdentity | null | undefined) =>
 export const canUseBroadcastStudio = (identity: TradioIdentity | null | undefined) =>
   canCreateBroadcast(identity) || canAdminPlatform(identity);
 
-export const canRequestBroadcastAccess = (identity: TradioIdentity | null | undefined) =>
-  Boolean(identity && !['cleared', 'pending', 'under_review', 'submitted'].includes(identity.broadcast_access_status));
+export const canRequestBroadcastAccess = (identity: TradioIdentity | null | undefined) => {
+  // Admin/owner can always access broadcast features (don't need to request)
+  if (hasAnyRole(identity, ['admin', 'owner'])) return true;
+  // DJ and other roles can request if not already in progress or cleared
+  return Boolean(identity && !['cleared', 'pending', 'under_review', 'submitted'].includes(identity.broadcast_access_status));
+};
 
 export const canRequestVerification = (identity: TradioIdentity | null | undefined) =>
   Boolean(identity && ['unverified', 'rejected'].includes(identity.verification_status) && hasAnyRole(identity, ['artist', 'producer', 'dj']));
