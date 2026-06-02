@@ -235,7 +235,7 @@ export const ReadingScreen: React.FC<Props> = ({
 }) => {
   const chapter = branch.chapters[branch.chapters.length - 1];
   const [railOpen, setRailOpen] = useState(false);
-  const [autoNarrate, setAutoNarrate] = useState(false);
+  const [autoNarrate, setAutoNarrate] = useState(true);
   const [narratorStatus, setNarratorStatus] = useState<NarrationStatusUpdate>({
     message: "Not connected",
   });
@@ -283,14 +283,6 @@ export const ReadingScreen: React.FC<Props> = ({
       setNarratorMessage("The narrator could not receive the new beat cue.");
     });
   }, [autoNarrate, chapter.sceneId, chapter.number, connectionStatus]);
-
-  useEffect(
-    () => () => {
-      sessionRef.current?.disconnect();
-      sessionRef.current = null;
-    },
-    [],
-  );
 
   const settings = loadVoiceSettings();
   const playbackSceneId = chapter.sceneId || `chapter_${chapter.number}`;
@@ -358,6 +350,15 @@ export const ReadingScreen: React.FC<Props> = ({
       sessionRef.current = null;
     }
   };
+
+  useEffect(() => {
+    startNarrator();
+    return () => {
+      sessionRef.current?.disconnect();
+      sessionRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const testCurrentPageRpc = () => {
     if (!sessionRef.current) {

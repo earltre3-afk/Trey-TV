@@ -423,6 +423,8 @@ export function NeonCheckList({
   variant?: Variant;
 }) {
   const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   return (
     <div className="space-y-2.5">
       {items.map((labelText, i) => {
