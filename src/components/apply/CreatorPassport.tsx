@@ -1,6 +1,6 @@
 import { MapPin, ShieldCheck } from "lucide-react";
 
-type Variant = "creator" | "gold" | "tradio";
+type Variant = "creator" | "gold" | "tradio" | "trance";
 
 export function CreatorPassport({
   variant,
@@ -23,29 +23,34 @@ export function CreatorPassport({
 }) {
   const isGold = variant === "gold";
   const isTradio = variant === "tradio";
-  const accent = isTradio
-    ? "text-purple-300"
-    : isGold
-      ? "text-[oklch(0.92_0.18_88)]"
-      : "text-[oklch(0.82_0.2_235)]";
-  const accentRing = isTradio
-    ? "shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.6),0_0_24px_oklch(0.65_0.3_295/0.35)]"
-    : isGold
-      ? "shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.6),0_0_24px_oklch(0.65_0.3_85/0.35)]"
-      : "shadow-[inset_0_0_0_1px_oklch(0.82_0.2_235/0.6),0_0_24px_oklch(0.65_0.3_245/0.35)]";
+  const isTrance = variant === "trance";
+  const accent = isTrance
+    ? "text-fuchsia-300"
+    : isTradio
+      ? "text-purple-300"
+      : isGold
+        ? "text-[oklch(0.92_0.18_88)]"
+        : "text-[oklch(0.82_0.2_235)]";
+  const accentRing = isTrance
+    ? "shadow-[inset_0_0_0_1px_oklch(0.85_0.2_320/0.6),0_0_24px_oklch(0.7_0.25_340/0.35)]"
+    : isTradio
+      ? "shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.6),0_0_24px_oklch(0.65_0.3_295/0.35)]"
+      : isGold
+        ? "shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.6),0_0_24px_oklch(0.65_0.3_85/0.35)]"
+        : "shadow-[inset_0_0_0_1px_oklch(0.82_0.2_235/0.6),0_0_24px_oklch(0.65_0.3_245/0.35)]";
   const progress = Math.round((step / totalSteps) * 100);
   const monogram = (displayName || handle || "T").trim().charAt(0).toUpperCase();
 
   return (
     <div
-      className={`relative ${isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue"} p-5 md:p-6`}
+      className={`relative ${isTrance || isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue"} p-5 md:p-6`}
     >
       <div className="liquid-sheen" />
       <div className="relative">
         <div className={`flex items-center gap-2 text-sm font-semibold ${accent}`}>
           <ShieldCheck className="h-4 w-4" />
           <span>
-            {isTradio ? "Tradio Creative Pass" : isGold ? "Verification Pass" : "Creator Passport"}
+            {isTrance ? "Trance Pro Dance Pass" : isTradio ? "Tradio Creative Pass" : isGold ? "Verification Pass" : "Creator Passport"}
           </span>
         </div>
 
@@ -61,7 +66,7 @@ export function CreatorPassport({
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span
-                className={`font-display text-7xl tracking-tight ${isTradio ? "title-split-purple text-purple-300" : isGold ? "title-split-gold" : "title-split-blue"}`}
+                className={`font-display text-7xl tracking-tight ${isTrance ? "title-split-purple text-fuchsia-300" : isTradio ? "title-split-purple text-purple-300" : isGold ? "title-split-gold" : "title-split-blue"}`}
               >
                 {monogram}
               </span>
@@ -84,7 +89,7 @@ export function CreatorPassport({
         <div className="my-4 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            {isTradio ? "Tradio Applicant UID" : isGold ? "Request UID" : "Creator UID"}
+            {isTrance ? "Trance Applicant UID" : isTradio ? "Tradio Applicant UID" : isGold ? "Request UID" : "Creator UID"}
           </p>
           <p className={`mt-1 font-mono text-base ${accent}`}>{uid || "-"}</p>
         </div>
@@ -120,24 +125,30 @@ function CircularProgress({
   const c = 2 * Math.PI * r;
   const offset = c - (Math.max(0, Math.min(100, value)) / 100) * c;
   const ringColor =
-    variant === "tradio"
-      ? "oklch(0.85 0.2 290)"
-      : variant === "gold"
-        ? "oklch(0.92 0.18 88)"
-        : "oklch(0.82 0.2 235)";
+    variant === "trance"
+      ? "oklch(0.82 0.2 330)"
+      : variant === "tradio"
+        ? "oklch(0.85 0.2 290)"
+        : variant === "gold"
+          ? "oklch(0.92 0.18 88)"
+          : "oklch(0.82 0.2 235)";
   const trackColor = "oklch(1 0 0 / 0.07)";
   const innerStroke =
-    variant === "tradio"
-      ? "oklch(0.85 0.2 290 / 0.45)"
-      : variant === "gold"
-        ? "oklch(0.92 0.18 88 / 0.45)"
-        : "oklch(0.82 0.2 235 / 0.45)";
+    variant === "trance"
+      ? "oklch(0.82 0.2 330 / 0.45)"
+      : variant === "tradio"
+        ? "oklch(0.85 0.2 290 / 0.45)"
+        : variant === "gold"
+          ? "oklch(0.92 0.18 88 / 0.45)"
+          : "oklch(0.82 0.2 235 / 0.45)";
   const accent =
-    variant === "tradio"
-      ? "text-purple-300"
-      : variant === "gold"
-        ? "text-[oklch(0.92_0.18_88)]"
-        : "text-[oklch(0.82_0.2_235)]";
+    variant === "trance"
+      ? "text-fuchsia-300"
+      : variant === "tradio"
+        ? "text-purple-300"
+        : variant === "gold"
+          ? "text-[oklch(0.92_0.18_88)]"
+          : "text-[oklch(0.82_0.2_235)]";
 
   return (
     <div

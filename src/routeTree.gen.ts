@@ -94,6 +94,7 @@ import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApplyVerificationRouteImport } from './routes/apply.verification'
+import { Route as ApplyTranceCreatorRouteImport } from './routes/apply.trance-creator'
 import { Route as ApplyTradioCreatorRouteImport } from './routes/apply.tradio-creator'
 import { Route as ApplyGoVerificationRouteImport } from './routes/apply.go-verification'
 import { Route as ApplyCreatorRouteImport } from './routes/apply.creator'
@@ -568,6 +569,11 @@ const ApplyVerificationRoute = ApplyVerificationRouteImport.update({
   path: '/verification',
   getParentRoute: () => ApplyRoute,
 } as any)
+const ApplyTranceCreatorRoute = ApplyTranceCreatorRouteImport.update({
+  id: '/trance-creator',
+  path: '/trance-creator',
+  getParentRoute: () => ApplyRoute,
+} as any)
 const ApplyTradioCreatorRoute = ApplyTradioCreatorRouteImport.update({
   id: '/tradio-creator',
   path: '/tradio-creator',
@@ -867,6 +873,7 @@ export interface FileRoutesByFullPath {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -996,6 +1003,7 @@ export interface FileRoutesByTo {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -1128,6 +1136,7 @@ export interface FileRoutesById {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -1262,6 +1271,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1391,6 +1401,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1522,6 +1533,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -2250,6 +2262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyVerificationRouteImport
       parentRoute: typeof ApplyRoute
     }
+    '/apply/trance-creator': {
+      id: '/apply/trance-creator'
+      path: '/trance-creator'
+      fullPath: '/apply/trance-creator'
+      preLoaderRoute: typeof ApplyTranceCreatorRouteImport
+      parentRoute: typeof ApplyRoute
+    }
     '/apply/tradio-creator': {
       id: '/apply/tradio-creator'
       path: '/tradio-creator'
@@ -2628,6 +2647,7 @@ interface ApplyRouteChildren {
   ApplyCreatorRoute: typeof ApplyCreatorRoute
   ApplyGoVerificationRoute: typeof ApplyGoVerificationRoute
   ApplyTradioCreatorRoute: typeof ApplyTradioCreatorRoute
+  ApplyTranceCreatorRoute: typeof ApplyTranceCreatorRoute
   ApplyVerificationRoute: typeof ApplyVerificationRoute
 }
 
@@ -2636,6 +2656,7 @@ const ApplyRouteChildren: ApplyRouteChildren = {
   ApplyCreatorRoute: ApplyCreatorRoute,
   ApplyGoVerificationRoute: ApplyGoVerificationRoute,
   ApplyTradioCreatorRoute: ApplyTradioCreatorRoute,
+  ApplyTranceCreatorRoute: ApplyTranceCreatorRoute,
   ApplyVerificationRoute: ApplyVerificationRoute,
 }
 

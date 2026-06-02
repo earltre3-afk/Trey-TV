@@ -8,7 +8,7 @@ import type {
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
-type Variant = "creator" | "gold" | "tradio";
+type Variant = "creator" | "gold" | "tradio" | "trance";
 
 export function ApplicationWizardChrome({
   variant,
@@ -37,27 +37,34 @@ export function ApplicationWizardChrome({
 }) {
   const isGold = variant === "gold";
   const isTradio = variant === "tradio";
-  const outer = isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
-  const accentText = isTradio
-    ? "text-purple-300"
-    : isGold
-      ? "text-[oklch(0.92_0.18_88)]"
-      : "text-[oklch(0.85_0.2_240)]";
-  const titleSplit = isTradio
-    ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold"
-    : isGold
-      ? "title-split-gold"
-      : "title-split-blue";
-  const stepActive = isTradio
-    ? "is-active-purple bg-purple-500 text-white border-purple-400"
-    : isGold
-      ? "is-active-gold"
-      : "is-active-blue";
+  const isTrance = variant === "trance";
+  const outer = isTrance || isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accentText = isTrance
+    ? "text-fuchsia-300"
+    : isTradio
+      ? "text-purple-300"
+      : isGold
+        ? "text-[oklch(0.92_0.18_88)]"
+        : "text-[oklch(0.85_0.2_240)]";
+  const titleSplit = isTrance
+    ? "text-fuchsia-400 drop-shadow-[0_0_8px_rgba(240,79,255,0.4)] font-bold"
+    : isTradio
+      ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold"
+      : isGold
+        ? "title-split-gold"
+        : "title-split-blue";
+  const stepActive = isTrance
+    ? "is-active-purple bg-fuchsia-500 text-white border-fuchsia-400"
+    : isTradio
+      ? "is-active-purple bg-purple-500 text-white border-purple-400"
+      : isGold
+        ? "is-active-gold"
+        : "is-active-blue";
   const pct = Math.round(((current - 1) / (steps.length - 1)) * 100);
 
   return (
     <div
-      className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTradio ? "purple" : ""}`}
+      className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTrance || isTradio ? "purple" : ""}`}
     >
       <div className="grid-veil" aria-hidden />
       <div className="orb-extra" aria-hidden />
@@ -71,7 +78,7 @@ export function ApplicationWizardChrome({
           {/* Back */}
           <Link
             to="/apply"
-            className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+            className={`neon-btn-ghost ${isGold ? "gold" : isTrance ? "purple text-fuchsia-300 hover:text-white" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
           >
             <ChevronLeft className="h-4 w-4" /> Back
           </Link>
@@ -88,7 +95,7 @@ export function ApplicationWizardChrome({
           {onSaveDraft && (
             <button
               onClick={onSaveDraft}
-              className={`neon-btn-ghost ${isGold ? "gold" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+              className={`neon-btn-ghost ${isGold ? "gold" : isTrance ? "purple text-fuchsia-300 hover:text-white" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
             >
               <Save className="h-4 w-4" />
               <span>{draftSaved ? "Saved ✓" : "Save Draft"}</span>
@@ -100,14 +107,16 @@ export function ApplicationWizardChrome({
         {/* Progress bar */}
         <div className="h-[2px] w-full bg-white/[0.05]">
           <div
-            className={`h-full transition-all duration-500 ease-out ${isTradio ? "bg-purple-500" : isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
+            className={`h-full transition-all duration-500 ease-out ${isTrance ? "bg-fuchsia-500" : isTradio ? "bg-purple-500" : isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
             style={{
               width: `${pct}%`,
-              boxShadow: isTradio
-                ? "0 0 12px rgba(168,85,247,0.8)"
-                : isGold
-                  ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
-                  : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
+              boxShadow: isTrance
+                ? "0 0 12px rgba(240,79,255,0.8)"
+                : isTradio
+                  ? "0 0 12px rgba(168,85,247,0.8)"
+                  : isGold
+                    ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
+                    : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
             }}
           />
         </div>
@@ -207,6 +216,8 @@ export function WizardNav({
   submitting?: boolean;
 }) {
   const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   return (
     <div className="wizard-cta-bar mx-auto mt-5 grid max-w-7xl grid-cols-[auto_1fr] items-center gap-2 px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] md:gap-3 md:px-6">
       <button
@@ -219,7 +230,7 @@ export function WizardNav({
       <button
         onClick={onNext}
         disabled={submitting}
-        className={`${isGold ? "neon-btn-gold" : "neon-btn-blue"} w-full text-base disabled:opacity-60`}
+        className={`${isGold ? "neon-btn-gold" : isTrance || isTradio ? "neon-btn-purple" : "neon-btn-blue"} w-full text-base disabled:opacity-60`}
       >
         {submitting ? "Submitting…" : nextLabel}
         <ChevronRight className="h-5 w-5" />
@@ -314,7 +325,16 @@ export function TileChoice<T extends string>({
   onChange: (v: T) => void;
   variant?: Variant;
 }) {
-  const activeClass = variant === "gold" ? "active-gold" : "active-blue";
+  const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
+  const activeClass = isGold
+    ? "active-gold"
+    : isTrance
+      ? "border-fuchsia-500 bg-fuchsia-500/10 text-white shadow-[0_0_15px_rgba(240,79,255,0.3)] font-semibold"
+      : isTradio
+        ? "border-purple-500 bg-purple-500/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] font-semibold"
+        : "active-blue";
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
       {options.map((o) => {
@@ -362,10 +382,16 @@ export function ChipPicker<T extends string>({
       onChange(v);
     }
   };
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   const activeClass =
     variant === "gold"
       ? "bg-[oklch(0.13_0.05_80/0.85)] text-[oklch(0.95_0.05_90)] shadow-[inset_0_0_0_1px_oklch(0.95_0.2_88),0_0_18px_oklch(0.85_0.2_85/0.4)]"
-      : "bg-[oklch(0.13_0.07_252/0.85)] text-[oklch(0.95_0.02_250)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240),0_0_18px_oklch(0.65_0.3_245/0.45)]";
+      : isTrance
+        ? "bg-[oklch(0.13_0.07_320/0.85)] text-fuchsia-200 shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320),0_0_18px_oklch(0.7_0.25_340/0.45)]"
+        : isTradio
+          ? "bg-[oklch(0.13_0.07_292/0.85)] text-purple-200 shadow-[inset_0_0_0_1px_oklch(0.8_0.22_292),0_0_18px_oklch(0.65_0.3_295/0.45)]"
+          : "bg-[oklch(0.13_0.07_252/0.85)] text-[oklch(0.95_0.02_250)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240),0_0_18px_oklch(0.65_0.3_245/0.45)]";
   const baseClass =
     "bg-[oklch(0.09_0.03_262/0.6)] text-muted-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08),0_0_0_1px_oklch(0.5_0.05_260/0.15)]";
 
@@ -408,7 +434,11 @@ export function NeonCheckList({
               active
                 ? isGold
                   ? "bg-[oklch(0.13_0.05_80/0.6)] shadow-[inset_0_0_0_1px_oklch(0.95_0.2_88/0.8),0_0_18px_oklch(0.85_0.2_85/0.35)]"
-                  : "bg-[oklch(0.13_0.07_252/0.6)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.8),0_0_18px_oklch(0.65_0.3_245/0.4)]"
+                  : isTrance
+                    ? "bg-[oklch(0.13_0.07_320/0.6)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320/0.8),0_0_18px_oklch(0.7_0.25_340/0.4)]"
+                    : isTradio
+                      ? "bg-[oklch(0.13_0.07_292/0.6)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_292/0.8),0_0_18px_oklch(0.65_0.3_295/0.4)]"
+                      : "bg-[oklch(0.13_0.07_252/0.6)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.8),0_0_18px_oklch(0.65_0.3_245/0.4)"
                 : "bg-[oklch(0.09_0.03_262/0.55)] shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08)]"
             }`}
           >
@@ -423,7 +453,11 @@ export function NeonCheckList({
                 active
                   ? isGold
                     ? "bg-[oklch(0.85_0.2_85)] text-[oklch(0.18_0.04_70)] shadow-[0_0_12px_oklch(0.85_0.2_85/0.7)]"
-                    : "bg-[oklch(0.7_0.22_245)] text-[oklch(0.05_0.02_265)] shadow-[0_0_12px_oklch(0.7_0.3_245/0.7)]"
+                    : isTrance
+                      ? "bg-fuchsia-500 text-white shadow-[0_0_12px_rgba(240,79,255,0.7)]"
+                      : isTradio
+                        ? "bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.7)]"
+                        : "bg-[oklch(0.7_0.22_245)] text-[oklch(0.05_0.02_265)] shadow-[0_0_12px_oklch(0.7_0.3_245/0.7)]"
                   : "bg-transparent shadow-[inset_0_0_0_1.5px_oklch(0.5_0.05_260/0.6)]"
               }`}
             >

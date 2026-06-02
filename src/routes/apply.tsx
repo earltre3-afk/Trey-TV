@@ -11,6 +11,7 @@ import {
   Star,
   Tv,
   Radio,
+  Zap,
 } from "lucide-react";
 import creatorIcon from "@/assets/apply-creator-icon.jpg";
 import goldIcon from "@/assets/apply-gold-icon.jpg";
@@ -170,6 +171,16 @@ function ApplyHub() {
             time="5–7 minutes"
             to="/apply/tradio-creator"
           />
+          <DesktopPathCard
+            variant="trance"
+            image="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=600&auto=format&fit=crop"
+            tag="Trance Pro Position"
+            tagIcon={<Zap className="h-4 w-4" />}
+            desc="Apply to join Trance as an approved Choreographer, Instructor, or Professional Dancer to publish routines, teach steps, or perform."
+            cta="Start Trance Creator Application"
+            time="5–7 minutes"
+            to="/apply/trance-creator"
+          />
 
           {/* Desktop small print */}
           <p className="hidden text-center text-xs text-white/30 lg:block">
@@ -192,7 +203,7 @@ function DesktopPathCard({
   time,
   to,
 }: {
-  variant: "creator" | "gold" | "tradio";
+  variant: "creator" | "gold" | "tradio" | "trance";
   image: string;
   tag: string;
   tagIcon: React.ReactNode;
@@ -203,19 +214,24 @@ function DesktopPathCard({
 }) {
   const isGold = variant === "gold";
   const isTradio = variant === "tradio";
-  const outer = isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
-  const accent = isTradio
-    ? "text-purple-300"
-    : isGold
-      ? "text-[oklch(0.92_0.18_88)]"
-      : "text-[oklch(0.85_0.2_240)]";
-  const btn = isTradio ? "neon-btn-purple" : isGold ? "neon-btn-gold" : "neon-btn-blue";
-  const ctaText = isGold || isTradio ? "!text-white" : "";
-  const tagBg = isTradio
-    ? "bg-[oklch(0.13_0.05_292/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.5)]"
-    : isGold
-      ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
-      : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
+  const isTrance = variant === "trance";
+  const outer = isTrance || isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accent = isTrance
+    ? "text-fuchsia-300"
+    : isTradio
+      ? "text-purple-300"
+      : isGold
+        ? "text-[oklch(0.92_0.18_88)]"
+        : "text-[oklch(0.85_0.2_240)]";
+  const btn = isTrance || isTradio ? "neon-btn-purple" : isGold ? "neon-btn-gold" : "neon-btn-blue";
+  const ctaText = isGold || isTradio || isTrance ? "!text-white" : "";
+  const tagBg = isTrance
+    ? "bg-[oklch(0.13_0.07_320/0.7)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320/0.5)]"
+    : isTradio
+      ? "bg-[oklch(0.13_0.05_292/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.5)]"
+      : isGold
+        ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
+        : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
 
   return (
     <div
@@ -258,16 +274,20 @@ function DesktopPathCard({
             className="overflow-hidden rounded-2xl"
             style={{
               padding: "3px",
-              background: isTradio
-                ? "linear-gradient(135deg, oklch(0.85 0.2 290 / 0.5), oklch(0.55 0.25 295 / 0.15))"
-                : isGold
-                  ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
-                  : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
-              boxShadow: isTradio
-                ? "0 0 30px oklch(0.6 0.3 295 / 0.3)"
-                : isGold
-                  ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
-                  : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
+              background: isTrance
+                ? "linear-gradient(135deg, oklch(0.85 0.25 325 / 0.5), oklch(0.55 0.25 330 / 0.15))"
+                : isTradio
+                  ? "linear-gradient(135deg, oklch(0.85 0.2 290 / 0.5), oklch(0.55 0.25 295 / 0.15))"
+                  : isGold
+                    ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
+                    : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
+              boxShadow: isTrance
+                ? "0 0 30px oklch(0.6 0.3 325 / 0.3)"
+                : isTradio
+                  ? "0 0 30px oklch(0.6 0.3 295 / 0.3)"
+                  : isGold
+                    ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
+                    : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
             }}
           >
             <img
