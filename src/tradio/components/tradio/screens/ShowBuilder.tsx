@@ -32,6 +32,8 @@ import { ContentFeelAnalysisPanel } from '../../content-feel/ContentFeelComponen
 import { useContentFeelAnalysis } from '../../content-feel/useContentFeelAnalysis';
 import { ALL_STATIONS, RADIO_SHOWS, SHOW_TEMPLATES, type RadioShow, type ShowSegment } from '../data';
 import { generateShowPlan, emptyForm, type ShowBuilderFormState, type SaveTarget } from '../showPlan';
+import { generateShow, saveShow, listMyShows, listTemplates } from '../radioShowService';
+import { toast } from 'sonner';
 import { LegalAcceptanceGroup } from '../legal/LegalPrimitives';
 import {
   createLegalAcceptanceValues,
@@ -90,6 +92,9 @@ export const ShowBuilder: React.FC = () => {
     creatorTags: [form.showMood, form.fanInteractionStyle],
   });
   const [saved, setSaved] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [dbShows, setDbShows] = useState<RadioShow[] | null>(null);
+  const [dbTemplates, setDbTemplates] = useState<RadioShow[] | null>(null);
 
   // Simulation states
   const [isSimulating, setIsSimulating] = useState(false);
@@ -180,16 +185,38 @@ export const ShowBuilder: React.FC = () => {
     return () => clearInterval(idleInterval);
   }, [isSimulating, simPlaying]);
 
-  const generate = () => {
-    setGeneratedShow(generateShowPlan(form));
-    setSaved(false);
-    setIsSimulating(false);
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const res = await generateShow(form);
+      if (res.data) {
+        setGeneratedShow(res.data);
+        setSaved(false);
+        setIsSimulating(false);
+        if (res.source === 'local') toast('Used the offline builder (AI unavailable).');
+      }
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const save = () => {
-    if (!generatedShow) setGeneratedShow(generateShowPlan(form));
+  const save = async () => {
+    const show = generatedShow ?? generateShowPlan(form);
+    if (!generatedShow) setGeneratedShow(show);
+    const res = await saveShow(show);
     setSaved(true);
+    toast[res.source === 'supabase' ? 'success' : 'message'](
+      res.source === 'supabase' ? 'Show saved to your library' : (res.warning ?? 'Saved locally'),
+    );
+    if (res.source === 'supabase') void refreshShows();
   };
+
+  const refreshShows = async () => {
+    const [mine, tmpl] = await Promise.all([listMyShows(), listTemplates()]);
+    if (mine.source === 'supabase') setDbShows(mine.data ?? []);
+    if (tmpl.source === 'supabase') setDbTemplates(tmpl.data ?? []);
+  };
+  useEffect(() => { void refreshShows(); }, []);
 
   // Sound effect triggers
   const triggerSFX = (sfx: string) => {
@@ -325,6 +352,7 @@ export const ShowBuilder: React.FC = () => {
               onGenerate={generate}
               onSave={save}
               generated={Boolean(generatedShow)}
+              generating={generating}
             />
           </div>
 
@@ -594,6 +622,7 @@ export const ShowBuilder: React.FC = () => {
                                   <div className="mt-0.5 text-xs text-cyan-300 font-semibold font-mono">{Math.round(segment.duration / 60)} min ({segment.duration}s)</div>
                                   {segment.description && <p className="mt-1.5 text-xs leading-relaxed text-white/50">{segment.description}</p>}
                                   {segment.hostNotes && <p className="mt-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2 text-[11px] italic leading-relaxed text-white/45">{segment.hostNotes}</p>}
+                                  {segment.script && <p className="mt-1.5 rounded-xl border border-cyan-400/15 bg-cyan-500/[0.04] p-2 text-[11px] leading-relaxed text-cyan-100/80"><span className="font-bold uppercase tracking-wider text-cyan-300/70 text-[9px] mr-1">Script</span>{segment.script}</p>}
                                 </div>
 
                                 {/* Reordering & Action panel inside card */}
@@ -689,7 +718,7 @@ export const ShowBuilder: React.FC = () => {
 
       {tab === 'templates' && (
         <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-2 lg:px-10">
-          {SHOW_TEMPLATES.map((template) => (
+          {(dbTemplates ?? SHOW_TEMPLATES).map((template) => (
             <ShowTemplateCard key={template.id} show={template} onUse={() => {
               setForm((current) => ({ ...current, showName: template.title, showLength: template.duration, showMood: template.mood }));
               setTab('builder');
@@ -700,7 +729,7 @@ export const ShowBuilder: React.FC = () => {
 
       {tab === 'saved' && (
         <div className="grid gap-3 px-4 sm:px-6 lg:grid-cols-2 lg:px-10">
-          {RADIO_SHOWS.map((show) => <ShowTemplateCard key={show.id} show={show} />)}
+          {(dbShows ?? RADIO_SHOWS).map((show) => <ShowTemplateCard key={show.id} show={show} />)}
           {generatedShow && <ShowTemplateCard show={generatedShow} />}
         </div>
       )}
@@ -714,7 +743,8 @@ const ShowBuilderForm: React.FC<{
   onGenerate: () => void;
   onSave: () => void;
   generated: boolean;
-}> = ({ form, onChange, onGenerate, onSave, generated }) => {
+  generating?: boolean;
+}> = ({ form, onChange, onGenerate, onSave, generated, generating }) => {
   const [legalValues, setLegalValues] = useState<LegalAcceptanceValues>(() => createLegalAcceptanceValues('dj_broadcast_schedule'));
   const [legalStatus, setLegalStatus] = useState<'idle' | 'saving' | 'saved' | 'fallback' | 'error'>('idle');
   const [legalMessage, setLegalMessage] = useState<string | null>(null);
@@ -775,8 +805,8 @@ const ShowBuilderForm: React.FC<{
         compact
       />
       <div className="flex flex-wrap gap-2 pt-1">
-        <PrimaryButton disabled={!legalAccepted || legalStatus === 'saving'} onClick={() => recordAndRun('generate')} className={legalAccepted ? '' : 'pointer-events-none opacity-40'}>
-          <Sparkles className="h-4 w-4" /> Generate Plan
+        <PrimaryButton disabled={!legalAccepted || legalStatus === 'saving' || generating} onClick={() => recordAndRun('generate')} className={legalAccepted ? '' : 'pointer-events-none opacity-40'}>
+          <Sparkles className="h-4 w-4" /> {generating ? 'Generating…' : 'Generate Plan'}
         </PrimaryButton>
         <SecondaryButton disabled={!generated || !legalAccepted || legalStatus === 'saving'} onClick={() => recordAndRun('save')} className={generated && legalAccepted ? '' : 'pointer-events-none opacity-40'}>
           <Save className="h-4 w-4" /> Save Show
