@@ -140,8 +140,8 @@ export function ProfilePageNew({
           .select("profile_accent_color")
           .or("public_profile_uid.eq.4234118205271678,username.eq.trey")
           .limit(1)
-          .maybeSingle();
-        if (!error && data && data.profile_accent_color) {
+          .maybeSingle<{ profile_accent_color?: string }>();
+        if (!error && data?.profile_accent_color) {
           if (mounted) {
             setTreyAccentColor(data.profile_accent_color);
           }
