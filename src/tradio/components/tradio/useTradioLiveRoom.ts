@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createBrowserClient } from '@/lib/supabase-browser';
 import { updatePeakListeners } from './tradioLiveService';
+import { treyITts } from '@/lib/trey-i/tts.server';
 
 type TokenResponse = { ok?: true; token?: string; livekitUrl?: string; roomName?: string; error?: string };
 type Role = 'host' | 'listener';
@@ -12,6 +13,10 @@ export interface LiveRoomState {
   error: string | null;
   toggleMic: () => Promise<void>;
   leave: () => void;
+  aiSpeaking: boolean;
+  aiSegmentLabel: string | null;
+  aiSpeak: (text: string, label?: string) => Promise<void>;
+  stopAi: () => void;
 }
 
 /** Connects to a tradio-show LiveKit room. Host publishes mic; listener subscribes to audio. */
@@ -23,6 +28,12 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
   const [error, setError] = useState<string | null>(null);
   const roomRef = useRef<any | null>(null);
   const audioElsRef = useRef<HTMLAudioElement[]>([]);
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [aiSegmentLabel, setAiSegmentLabel] = useState<string | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const destRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const aiTrackRef = useRef<any | null>(null);
+  const aiSourceRef = useRef<AudioBufferSourceNode | null>(null);
 
   useEffect(() => {
     if (!active || !sessionId) return;
@@ -90,6 +101,13 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
       roomRef.current = null;
       setConnection('idle');
       setListenerCount(0);
+      try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
+      aiSourceRef.current = null;
+      try { if (aiTrackRef.current && roomRef.current) roomRef.current.localParticipant.unpublishTrack(aiTrackRef.current); aiTrackRef.current?.stop?.(); } catch { /* ignore */ }
+      aiTrackRef.current = null;
+      try { void audioCtxRef.current?.close(); } catch { /* ignore */ }
+      audioCtxRef.current = null; destRef.current = null;
+      setAiSpeaking(false); setAiSegmentLabel(null);
       setMicOn(false);
     };
   }, [active, role, sessionId]);
@@ -108,5 +126,56 @@ export function useTradioLiveRoom(opts: { active: boolean; role: Role; sessionId
     try { roomRef.current?.disconnect(); } catch { /* ignore */ }
   };
 
-  return { connection, listenerCount, micOn, error, toggleMic, leave };
+  const aiSpeak = async (text: string, label?: string) => {
+    const room = roomRef.current;
+    if (!room || role !== 'host' || !text.trim()) return;
+    try {
+      const res = await treyITts({ data: { text } });
+      if (!res.audioBase64) { setError("AI voice isn't available right now."); return; }
+
+      if (!audioCtxRef.current) {
+        const Ctx: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+        const ctx = new Ctx();
+        const dest = ctx.createMediaStreamDestination();
+        audioCtxRef.current = ctx;
+        destRef.current = dest;
+        const { LocalAudioTrack } = await import('livekit-client');
+        const track = new LocalAudioTrack(dest.stream.getAudioTracks()[0]);
+        aiTrackRef.current = track;
+        await room.localParticipant.publishTrack(track);
+      }
+
+      const ctx = audioCtxRef.current!;
+      const dest = destRef.current!;
+      if (ctx.state === 'suspended') await ctx.resume();
+
+      const bytes = Uint8Array.from(atob(res.audioBase64), (c) => c.charCodeAt(0));
+      const buffer = await ctx.decodeAudioData(bytes.buffer);
+
+      try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(dest);
+      aiSourceRef.current = src;
+
+      await room.localParticipant.setMicrophoneEnabled(false);
+      setMicOn(false);
+      setAiSpeaking(true);
+      setAiSegmentLabel(label ?? null);
+      src.onended = () => { setAiSpeaking(false); setAiSegmentLabel(null); aiSourceRef.current = null; };
+      src.start();
+    } catch (err) {
+      setAiSpeaking(false); setAiSegmentLabel(null);
+      setError((err as Error).message);
+    }
+  };
+
+  const stopAi = () => {
+    try { aiSourceRef.current?.stop(); } catch { /* ignore */ }
+    aiSourceRef.current = null;
+    setAiSpeaking(false);
+    setAiSegmentLabel(null);
+  };
+
+  return { connection, listenerCount, micOn, error, toggleMic, leave, aiSpeaking, aiSegmentLabel, aiSpeak, stopAi };
 }
