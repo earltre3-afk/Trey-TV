@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Radio, X } from 'lucide-react';
 import { listLiveNow, type LiveSession } from './tradioLiveService';
 import { useTradioLiveRoom } from './useTradioLiveRoom';
+import { LiveRoomModal } from './LiveRoomModal';
 
 /** Shows a LIVE banner when a Tradio show is on air and lets the user tune in as a listener. */
 export function TradioLiveNowBar() {
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [tunedSessionId, setTunedSessionId] = useState<string | null>(null);
+  const [roomOpen, setRoomOpen] = useState(false);
   const live = useTradioLiveRoom({ active: Boolean(tunedSessionId), role: 'listener', sessionId: tunedSessionId });
 
   useEffect(() => {
@@ -37,15 +39,24 @@ export function TradioLiveNowBar() {
           </div>
         </div>
         {tunedSessionId ? (
-          <button onClick={() => { live.leave(); setTunedSessionId(null); }} className="flex items-center gap-1 rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/5">
+          <button onClick={() => { live.leave(); setTunedSessionId(null); setRoomOpen(false); }} className="flex items-center gap-1 rounded-full border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/5">
             <X className="h-3.5 w-3.5" /> Leave
           </button>
         ) : (
-          <button onClick={() => top && setTunedSessionId(top.id)} className="rounded-full border border-pink-400/40 bg-pink-500/15 px-3 py-1.5 text-xs font-bold text-pink-100 hover:bg-pink-500/25">
+          <button onClick={() => { if (top) { setTunedSessionId(top.id); setRoomOpen(true); } }} className="rounded-full border border-pink-400/40 bg-pink-500/15 px-3 py-1.5 text-xs font-bold text-pink-100 hover:bg-pink-500/25">
             Listen Live
           </button>
         )}
       </div>
+      {roomOpen && tunedSessionId && (
+        <LiveRoomModal
+          sessionId={tunedSessionId}
+          title={(tuned ?? top)?.title || 'Live on Tradio'}
+          hostName={(tuned ?? top)?.hostName || 'Host'}
+          listenerCount={live.listenerCount}
+          onClose={() => setRoomOpen(false)}
+        />
+      )}
     </div>
   );
 }
