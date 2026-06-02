@@ -18,12 +18,16 @@ import {
 import { GlassCard, Chip, Waveform } from '../ui';
 import { IMG, type RadioShow } from '../data';
 import { toast } from 'sonner';
+import type { LiveRoomState } from '../useTradioLiveRoom';
+import type { LiveInteraction } from '../useTradioLiveInteraction';
 
 // ─── LIVE SHOW DIRECTOR CONSOLE ──────────────────────────
 export const LiveShowConsole: React.FC<{
   show: RadioShow;
+  live: LiveRoomState;
+  interaction: LiveInteraction;
   onEndLive: () => void;
-}> = ({ show, onEndLive }) => {
+}> = ({ show, live, interaction, onEndLive }) => {
   const [elapsed, setElapsed] = useState('00:00');
 
   // Callers waitlist
@@ -44,12 +48,14 @@ export const LiveShowConsole: React.FC<{
   // Active segments Timeline
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(0);
 
-  // Chat feeds
-  const [chats, setChats] = useState<{ id: number; author: string; body: string }[]>([
-    { id: 1, author: 'TrapSoulSis', body: 'This live set is absolute magic!' },
-    { id: 2, author: 'Darius_Cole', body: 'The vocal corrections are so clean.' },
-    { id: 3, author: 'JAYE.', body: 'Wait, is that Jordan on Line 1? 🔥' },
-  ]);
+  // Local system/FX notices (merged above real chat)
+  const [notices, setNotices] = useState<{ id: number; author: string; body: string }[]>([]);
+
+  // Peak listener tracker
+  const [peakListeners, setPeakListeners] = useState(0);
+  useEffect(() => {
+    setPeakListeners(p => Math.max(p, live.listenerCount));
+  }, [live.listenerCount]);
 
   // Sound effects spike meters
   const [activeSFX, setActiveSFX] = useState<string | null>(null);
@@ -57,12 +63,12 @@ export const LiveShowConsole: React.FC<{
   const [vuRight, setVuRight] = useState([35, 55, 65, 40, 25, 15]);
 
   // Master Levels
-  const [micMuted, setMicMuted] = useState(false);
   const [masterVol, setMasterVol] = useState(85);
   const [bedVol, setBedVol] = useState(30);
 
   // Time counting & VU spikes
   useEffect(() => {
+    // fewer updates to reduce re-render churn in live environments
     const timer = setInterval(() => {
       setElapsed((prev) => {
         const [mins, secs] = prev.split(':').map(Number);
@@ -70,37 +76,18 @@ export const LiveShowConsole: React.FC<{
         return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
       });
 
-      // VU meter updates
+      // VU meter updates (reduced frequency)
       setVuLeft(Array.from({ length: 12 }, () => Math.floor(Math.random() * 45) + (activeSFX ? 50 : 25)));
       setVuRight(Array.from({ length: 12 }, () => Math.floor(Math.random() * 45) + (activeSFX ? 50 : 25)));
-    }, 1000);
+    }, 1500);
     return () => clearInterval(timer);
   }, [activeSFX]);
-
-  // Chat simulator
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const users = ['Noel', 'Kiana', 'Zaylen', 'BeatManiac', 'TreyGroupie', 'LiveRider'];
-      const comments = [
-        'Holy cow! The sound effects are perfectly timed!',
-        'Is that a caller on line? Let them speak!',
-        'Host is staying perfectly on key! 🔥',
-        'Loving the transition guides',
-        'Unbelievable nighttime vibe in here.',
-        'This is expensive-level broadcasting!'
-      ];
-      const author = users[Math.floor(Math.random() * users.length)];
-      const body = comments[Math.floor(Math.random() * comments.length)];
-      setChats((prev) => [{ id: Date.now(), author, body }, ...prev.slice(0, 10)]);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
 
   const triggerSFX = (sfx: string) => {
     setActiveSFX(sfx);
     setVuLeft(Array.from({ length: 12 }, () => Math.floor(Math.random() * 20) + 80));
     setVuRight(Array.from({ length: 12 }, () => Math.floor(Math.random() * 20) + 80));
-    setChats((prev) => [
+    setNotices((prev) => [
       { id: Date.now(), author: 'FX FEED', body: `Triggered SFX: [${sfx.toUpperCase()}] 🔊` },
       ...prev
     ]);
@@ -115,7 +102,7 @@ export const LiveShowConsole: React.FC<{
     setCallers(callers.filter(c => c.id !== callerId));
     toast.success(`Caller ${target.name} is now ON AIR!`);
 
-    setChats((prev) => [
+    setNotices((prev) => [
       { id: Date.now(), author: 'SYSTEM', body: `🎙️ Accepted live call from @${target.name}` },
       ...prev
     ]);
@@ -193,6 +180,7 @@ export const LiveShowConsole: React.FC<{
         </div>
         <div className="flex items-center gap-2.5">
           <Chip label={`${elapsed} ON AIR`} icon={<Clock className="h-3.5 w-3.5" />} selected />
+          <Chip label={`${live.listenerCount} listeners`} icon={<Users className="h-3.5 w-3.5" />} />
           <button
             onClick={onEndLive}
             className="rounded-full bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)]"
@@ -248,6 +236,19 @@ export const LiveShowConsole: React.FC<{
                 <p className="mt-3 text-sm italic leading-relaxed text-purple-100 font-medium">
                   "{currentSegment.hostNotes}"
                 </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => live.aiSpeak(currentSegment.script ?? currentSegment.hostNotes ?? '', currentSegment.title)}
+                    disabled={live.aiSpeaking}
+                    className="rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-200 hover:bg-purple-500/30 disabled:opacity-40 disabled:pointer-events-none px-3 py-1.5 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {live.aiSpeaking ? 'AI Speaking...' : '▶ AI Read'}
+                  </button>
+                  {live.aiSpeaking && live.aiSegmentLabel && (
+                    <span className="text-[9px] font-mono text-cyan-300 animate-pulse">{live.aiSegmentLabel}</span>
+                  )}
+                </div>
                 <Waveform className="h-4 w-full opacity-35 mt-4" bars={36} color="from-cyan-300 to-purple-400" />
               </div>
             )}
@@ -312,8 +313,8 @@ export const LiveShowConsole: React.FC<{
                 <div>
                   <div className="flex justify-between text-xs text-white/50 mb-1">
                     <span className="flex items-center gap-1"><Mic2 className="h-3.5 w-3.5 text-cyan-400" /> Host Mic</span>
-                    <button onClick={() => setMicMuted(!micMuted)} className={`text-[10px] font-black rounded px-1.5 py-0.5 ${micMuted ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                      {micMuted ? 'MUTED' : 'LIVE'}
+                    <button onClick={() => live.toggleMic()} className={`text-[10px] font-black rounded px-1.5 py-0.5 ${!live.micOn ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                      {!live.micOn ? 'MUTED' : 'LIVE'}
                     </button>
                   </div>
                   <input type="range" min="0" max="100" value={masterVol} onChange={(e) => setMasterVol(Number(e.target.value))} className="h-1.5 w-full cursor-pointer bg-white/10 rounded-full accent-cyan-400" />
@@ -510,9 +511,15 @@ export const LiveShowConsole: React.FC<{
             </div>
 
             <div className="space-y-3 max-h-[220px] overflow-y-auto scrollbar-none flex flex-col gap-2">
-              {chats.map((c) => (
+              {notices.map((c) => (
                 <div key={c.id} className="flex gap-2 text-xs">
-                  <span className="font-bold text-cyan-300">@{c.author}:</span>
+                  <span className="font-bold text-fuchsia-300">@{c.author}:</span>
+                  <span className="text-white/80 leading-normal">{c.body}</span>
+                </div>
+              ))}
+              {interaction.chat.map((c) => (
+                <div key={c.id} className="flex gap-2 text-xs">
+                  <span className="font-bold text-cyan-300">@{c.authorName || 'Listener'}:</span>
                   <span className="text-white/80 leading-normal">{c.body}</span>
                 </div>
               ))}

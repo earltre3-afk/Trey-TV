@@ -230,6 +230,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [history, setHistory] = useState<PlaybackItem[]>([]);
   const [status, setStatus] = useState<PlaybackStatus>('idle');
   const [currentTime, setCurrentTime] = useState(0);
+  const currentTimeRef = useRef<number>(0);
+  const lastPushedTimeRef = useRef<number>(0);
   const [duration, setDuration] = useState(0);
   const [repeatMode, setRepeatMode] = useState<PlaybackMode>('normal');
   const [shuffleMode, setShuffleMode] = useState(false);
@@ -424,21 +426,32 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleMute = useCallback(() => setMuted((value) => !value), []);
   const toggleShuffle = useCallback(() => setShuffleMode((value) => !value), []);
 
+  // Track playhead with a ref and push updates to React state less often
   useEffect(() => {
     if (status !== 'playing') return;
+    currentTimeRef.current = currentTime;
     const timer = window.setInterval(() => {
-      setCurrentTime((time) => {
-        if (isLive || duration <= 0) return time + 1;
-        if (time + 1 >= duration) {
+      const newTime = (function (prev: number) {
+        if (isLive || duration <= 0) return prev + 1;
+        if (prev + 1 >= duration) {
+          // schedule next track change
           window.setTimeout(next, 0);
           return duration;
         }
-        return time + 1;
-      });
+        return prev + 1;
+      })(currentTimeRef.current);
+
+      currentTimeRef.current = newTime;
+
+      // Only update React state every ~2 seconds to reduce re-renders for consumers
+      if (Math.abs(newTime - lastPushedTimeRef.current) >= 2 || isLive) {
+        lastPushedTimeRef.current = newTime;
+        setCurrentTime(newTime);
+      }
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [duration, isLive, next, status]);
+  }, [duration, isLive, next, status, currentTime]);
 
   useEffect(() => () => {
     if (bufferTimer.current) window.clearTimeout(bufferTimer.current);
@@ -455,7 +468,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     startedAt: currentItem ? Date.now() : undefined,
   }), [currentItem, currentSource, history, playbackQueue, repeatMode, status]);
 
-  const value: PlaybackContext = {
+  // Memoize provider value to avoid recreating the object on every render
+  const value = useMemo<PlaybackContext>(() => ({
     session,
     currentItem,
     currentTrack: currentItem,
@@ -505,7 +519,54 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     toggleShuffle,
     setVolume,
     toggleMute,
-  };
+  }), [
+    session,
+    currentItem,
+    currentSource,
+    playbackQueue,
+    queue,
+    upNext,
+    history,
+    isPlaying,
+    isBuffering,
+    isLive,
+    status,
+    progress,
+    currentTime,
+    duration,
+    repeatMode,
+    shuffleMode,
+    volume,
+    muted,
+    liked,
+    saved,
+    isCasting,
+    activeCastDevice,
+    startCast,
+    stopCast,
+    playItem,
+    playStation,
+    playQueue,
+    play,
+    pause,
+    resume,
+    toggle,
+    next,
+    previous,
+    seek,
+    seekPct,
+    toggleLike,
+    toggleSave,
+    addToQueue,
+    playNext,
+    removeFromQueue,
+    clearQueue,
+    setPlaybackSource,
+    setRepeatMode,
+    toggleShuffle,
+    setVolume,
+    toggleMute,
+  ]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 };
