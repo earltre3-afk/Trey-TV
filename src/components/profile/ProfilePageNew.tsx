@@ -5,7 +5,7 @@
  * wired to real ProfileData.
  */
 
-import { useId, useState, useMemo, useEffect } from "react";
+import { useId, useState, useMemo, useEffect, useRef } from "react";
 import { fetchSignalRecord } from "@/lib/tests/naturalAbilityStorage";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
@@ -13,13 +13,14 @@ import {
   ArrowLeft, Share, MoreHorizontal, BadgeCheck, MapPin, Link2,
   Instagram, Twitter, Youtube, Music2, FileText, Users, UserPlus,
   Sparkles, Eye, Star, Clock, Bookmark, Heart, User, Trophy,
-  ChevronRight, Globe, Mail, ShoppingBag, Play, Home, Compass,
+  ChevronRight, Globe, Mail, ShoppingBag, Play, Pause, Home, Compass,
   Plus, BookOpen, Inbox, Sparkle, Pin, Disc3, ExternalLink,
   ShieldCheck, Fingerprint, KeyRound, X, ImageIcon, StickyNote,
   Pencil, Crown, Flame, Rocket, Zap, TrendingUp, Stethoscope,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProfileData } from "./ProfileTypes";
+import { useTopThree } from "@/hooks/use-profile";
 import { useFollowState, useSubscribeState } from "@/lib/profile-identity";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
@@ -44,6 +45,17 @@ const GREEN = "#22C55E";
 const RED = "#EF4444";
 
 const FALL_POSTS = [fallPost1, fallPost2, fallPost3, fallPost4, fallPost5];
+
+import aiBallCutout from "@/tradio/assets/ai-ball.png";
+
+const SELECTABLE_SONGS = [
+  { id: 'midnight-velvet', title: 'Midnight Velvet', artist: 'Trey Trizzy', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986727359_90668e12.png', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', duration: '3:45', streams: '1.2M' },
+  { id: '6am-thoughts', title: '6AM Thoughts', artist: 'Trey Trizzy', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986727359_90668e12.png', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3', duration: '2:50', streams: '840K' },
+  { id: 'city-lights', title: 'City Lights', artist: 'JAYE.', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986809175_9fd3c540.png', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3', duration: '3:15', streams: '420K' },
+  { id: 'neon-heartbreak', title: 'Neon Heartbreak', artist: 'Trey Trizzy', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986750809_4e57f6ad.jpg', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', duration: '4:10', streams: '950K' },
+  { id: 'falling-for-you', title: 'Falling For You', artist: 'Mila Rain', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986787354_65419cd8.png', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', duration: '3:30', streams: '2.4M' },
+  { id: 'after-hours', title: 'After Hours', artist: 'Giveon', art: 'https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986683829_2c697ab7.png', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3', duration: '3:28', streams: '1.8M' },
+];
 
 import { GoldCheck } from "@/components/brand/Badge";
 
@@ -84,11 +96,11 @@ function Medallion({ icon: Icon, label, color, accent }: { icon: React.Component
   );
 }
 
-function LinkRow({ icon: Icon, color, accent, title, sub }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string; accent?: string; title: string; sub: string }) {
+function LinkRow({ icon: Icon, color, accent, title, sub, href }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; color: string; accent?: string; title: string; sub: string; href?: string }) {
   const c2 = accent ?? color;
   const grad = `linear-gradient(135deg,${color},${c2})`;
   return (
-    <a href="#" className="group relative panel px-2.5 py-2 flex items-center gap-2 hover-lift cursor-pointer overflow-hidden" style={{ background: `linear-gradient(135deg,${color}1F,${c2}14 70%)`, borderColor: `${color}55` }}>
+    <a href={href || "#"} target={href ? "_blank" : undefined} rel={href ? "noopener noreferrer" : undefined} className="group relative panel px-2.5 py-2 flex items-center gap-2 hover-lift cursor-pointer overflow-hidden" style={{ background: `linear-gradient(135deg,${color}1F,${c2}14 70%)`, borderColor: `${color}55` }}>
       <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" style={{ background: `linear-gradient(110deg,transparent 40%,${c2}40 50%,transparent 60%)` }} />
       <span className="absolute -left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full blur-xl opacity-50 group-hover:opacity-90 transition" style={{ background: grad }} />
       <div className="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform text-white" style={{ background: grad, border: `1px solid ${color}88`, boxShadow: `0 0 14px ${color}66,0 0 20px ${c2}40,inset 0 1px 0 rgba(255,255,255,0.35)` }}>
@@ -113,7 +125,146 @@ export function ProfilePageNew({
   profile: ProfileData;
   variant?: ProfileVariant;
 }) {
+  // Audio state for profile theme song / Tradio top songs
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [treyAccentColor, setTreyAccentColor] = useState<string>("#FFC857");
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchTreyAccent() {
+      try {
+        const supabase = createBrowserClient();
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("profile_accent_color")
+          .or("public_profile_uid.eq.4234118205271678,username.eq.trey")
+          .limit(1)
+          .maybeSingle();
+        if (!error && data && data.profile_accent_color) {
+          if (mounted) {
+            setTreyAccentColor(data.profile_accent_color);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching Trey accent:", err);
+      }
+    }
+    fetchTreyAccent();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const resolvedAccent = useMemo(() => {
+    const isTrey = profile.uid === "4234118205271678" || profile.handle === "trey";
+    const rawColor = profile.accentColor || "#FFC857";
+    if (isTrey) {
+      return rawColor;
+    }
+    if (rawColor !== "#FFC857") {
+      return rawColor;
+    }
+    return treyAccentColor || "#FFC857";
+  }, [profile, treyAccentColor]);
+
+  const profileAccentStyle = useMemo(() => {
+    const accent = resolvedAccent;
+    let r = 255, g = 200, b = 87;
+    const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(accent);
+    if (match) {
+      r = parseInt(match[1], 16);
+      g = parseInt(match[2], 16);
+      b = parseInt(match[3], 16);
+    }
+    return {
+      "--profile-accent": accent,
+      "--profile-accent-rgb": `${r}, ${g}, ${b}`,
+      "--primary": accent,
+    } as React.CSSProperties;
+  }, [resolvedAccent]);
+  const autoplayStorageKey = `tradio_autoplay_${profile.uid}`;
+  const [autoplaySong, setAutoplaySong] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(autoplayStorageKey);
+      if (saved) {
+        try { return JSON.parse(saved); } catch (_) {}
+      }
+    }
+    return SELECTABLE_SONGS[0]; // Default: Midnight Velvet
+  });
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [showSongPicker, setShowSongPicker] = useState(false);
+
+  // Attempt to autoplay or handle change in chosen song
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.src = autoplaySong.src;
+      const timer = setTimeout(() => {
+        audioRef.current?.play()
+          .then(() => setIsPlaying(true))
+          .catch(() => {
+            setIsPlaying(false);
+          });
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoplaySong]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch((e) => {
+          console.error(e);
+          toast.error("Playback blocked. Please click again.");
+        });
+    }
+  };
+
+  const playTrack = (track: any) => {
+    if (!audioRef.current) return;
+    if (autoplaySong.id === track.id) {
+      togglePlay();
+    } else {
+      setAutoplaySong(track);
+      setIsPlaying(false);
+      setTimeout(() => {
+        audioRef.current?.play()
+          .then(() => setIsPlaying(true))
+          .catch(() => setIsPlaying(false));
+      }, 50);
+    }
+  };
+
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [showCommentGifPicker, setShowCommentGifPicker] = useState(false);
+  const [postComments, setPostComments] = useState<Record<string, Array<{ author: string; avatar: string; text: string; time: string; gifUrl?: string }>>>({
+    "post-0": [
+      { author: "Jaylen K.", avatar: fallPost2, text: "This goes crazy! 🔥", time: "2h ago" },
+      { author: "Mira S.", avatar: fallPost3, text: "Love the visuals on this one!", time: "4h ago" }
+    ],
+    "post-1": [
+      { author: "Devon R.", avatar: fallPost4, text: "Siiiick flow!", time: "1d ago" }
+    ],
+    "like-0": [
+      { author: "Trey Trizzy", avatar: profile.avatarUrl || fallPost1, text: "Banger absolute banger!", time: "3d ago" }
+    ]
+  });
+  const [postReactions, setPostReactions] = useState<Record<string, Record<string, number>>>({
+    "post-0": { "🔥": 42, "❤️": 28, "👑": 12 },
+    "post-1": { "🔥": 19, "❤️": 15, "🙌": 8 },
+    "like-0": { "🔥": 150, "❤️": 98 }
+  });
+  const [myReactions, setMyReactions] = useState<Record<string, string[]>>({});
+
   const navigate = useNavigate();
+  const { topThree = [] } = useTopThree(profile.profileUserId || "");
   const { user: authUser, isGuest } = useAuth();
   const myUid = authUser?.uid ?? "";
   const [noteOpen, setNoteOpen] = useState(false);
@@ -206,10 +357,10 @@ export function ProfilePageNew({
   const channelLink = `/channel/${profile.handle}` as const;
 
   return (
-    <div className="profile-refr">
+    <div className="profile-refr" style={profileAccentStyle}>
       {/* Ambient blobs */}
       <div aria-hidden className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -left-20 w-[420px] h-[420px] rounded-full blur-3xl opacity-30" style={{ background: `radial-gradient(circle,${NEON_PURPLE},transparent 60%)` }} />
+        <div className="absolute -top-32 -left-20 w-[420px] h-[420px] rounded-full blur-3xl opacity-30" style={{ background: `radial-gradient(circle,var(--profile-accent),transparent 60%)` }} />
         <div className="absolute top-1/3 -right-24 w-[360px] h-[360px] rounded-full blur-3xl opacity-25" style={{ background: `radial-gradient(circle,${NEON_BLUE},transparent 60%)` }} />
         <div className="absolute bottom-0 left-1/3 w-[300px] h-[300px] rounded-full blur-3xl opacity-20" style={{ background: `radial-gradient(circle,${PINK},transparent 60%)` }} />
       </div>
@@ -250,7 +401,7 @@ export function ProfilePageNew({
         {/* Avatar overlapping banner */}
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-[60px] md:-bottom-[75px] z-30">
           <div className="relative w-[120px] h-[120px] md:w-[150px] md:h-[150px]">
-            <div className="absolute -inset-10 rounded-full opacity-25 blur-3xl" style={{ background: NEON_PURPLE }} />
+            <div className="absolute -inset-10 rounded-full opacity-25 blur-3xl" style={{ background: "var(--profile-accent)" }} />
             <div className="absolute -inset-[5px] rounded-full ring-gradient animate-spin-slow opacity-80" style={{ filter: "blur(0.5px)" }} />
             <div className="absolute -inset-[2px] rounded-full ring-pulse opacity-90" />
             <div className="absolute inset-0 rounded-full bg-[#05070D] overflow-hidden border border-white/10">
@@ -366,7 +517,7 @@ export function ProfilePageNew({
             {showOwnerControls && (
               <div className="mt-2 flex justify-center items-center gap-2">
                 <Link to="/edit-profile" className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08),0 6px 18px rgba(0,0,0,0.45)" }}>
-                  <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                  <Pencil className="w-3.5 h-3.5" style={{ color: "var(--profile-accent)" }} />
                   <span>Edit Profile</span>
                 </Link>
               </div>
@@ -376,7 +527,7 @@ export function ProfilePageNew({
             {showCreatorControls && (
               <div className="mt-2 flex justify-center items-center gap-2">
                 <Link to="/edit-profile" className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition" style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08),0 6px 18px rgba(0,0,0,0.45)" }}>
-                  <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                  <Pencil className="w-3.5 h-3.5" style={{ color: "var(--profile-accent)" }} />
                   <span>Edit Profile</span>
                 </Link>
               </div>
@@ -494,6 +645,91 @@ export function ProfilePageNew({
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Tradio Profile Theme Song Player */}
+            <div className="panel neon-border p-4 reveal relative overflow-hidden bg-[#0A0518]/80 backdrop-blur-xl animate-fade-in" style={{ animationDelay: ".06s" }}>
+              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-500/10 via-cyan-500/5 to-transparent" />
+
+              <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.7)]" />
+                  <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-300">Profile Theme Song</h3>
+                </div>
+                {variant === "owner" && (
+                  <button
+                    onClick={() => setShowSongPicker(true)}
+                    className="text-[10px] text-purple-300 hover:text-white flex items-center gap-1 transition"
+                  >
+                    <Pencil className="w-3 h-3" /> Change
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 rounded-full bg-[#121214] border-2 border-zinc-800 shadow-[0_0_15px_rgba(0,0,0,0.8)] flex items-center justify-center overflow-hidden"
+                    style={{
+                      animation: isPlaying ? "spin 4s linear infinite" : "none",
+                    }}
+                  >
+                    <div className="absolute inset-1 rounded-full border border-zinc-900 opacity-60" />
+                    <div className="absolute inset-2.5 rounded-full border border-zinc-900 opacity-60" />
+                    <div className="absolute inset-4 rounded-full border border-zinc-900 opacity-60" />
+                    <div className="absolute inset-5 rounded-full overflow-hidden border-2 border-zinc-700 bg-zinc-900">
+                      <img src={autoplaySong.art} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute w-2 h-2 rounded-full bg-black border border-white/30 z-10" />
+                  </div>
+
+                  <div
+                    className="absolute -top-1 -right-1 w-6 h-10 pointer-events-none z-20 origin-[top_right]"
+                    style={{
+                      transform: isPlaying ? "rotate(18deg)" : "rotate(-12deg)",
+                      transition: "transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)",
+                    }}
+                  >
+                    <svg viewBox="0 0 24 40" fill="none" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                      <circle cx="18" cy="8" r="4" fill="#52525b" />
+                      <circle cx="18" cy="8" r="1.5" fill="#a1a1aa" />
+                      <path d="M18 8 L10 28 L6 34" stroke="#a1a1aa" strokeWidth="1.5" strokeLinecap="round" />
+                      <rect x="3" y="32" width="6" height="3" rx="0.5" transform="rotate(-15 6 33)" fill="#3f3f46" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0 text-left">
+                  <h4 className="text-xs font-bold text-white truncate leading-tight">{autoplaySong.title}</h4>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{autoplaySong.artist}</p>
+
+                  <div className="mt-2.5 h-4 flex items-end gap-[2px]">
+                    {[6, 14, 10, 18, 12, 8, 16, 12, 10, 6, 14, 8, 12, 4, 10, 6, 12, 8].map((h, i) => (
+                      <span
+                        key={i}
+                        className="w-[2px] bg-purple-500 rounded-full transition-all duration-300"
+                        style={{
+                          height: isPlaying ? `${Math.sin(Date.now() / 150 + i) * 6 + 10}px` : "3px",
+                          backgroundColor: isPlaying ? (i % 2 === 0 ? NEON_BLUE : "var(--profile-accent)") : "rgba(255,255,255,0.15)",
+                          animation: isPlaying ? `visualizer-bounce 0.8s ease-in-out infinite alternate` : "none",
+                          animationDelay: `${i * 45}ms`
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={togglePlay}
+                  className="w-9 h-9 rounded-full bg-purple-500 hover:bg-purple-400 text-black flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:scale-105 active:scale-95 transition"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-4 h-4 fill-current" />
+                  ) : (
+                    <Play className="w-4 h-4 fill-current ml-0.5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -719,6 +955,115 @@ export function ProfilePageNew({
           {/* RIGHT COLUMN */}
           <div className="space-y-3">
 
+            {/* Tradio Artist Top Hits Section */}
+            {profile.isCreator && (
+              <div className="panel neon-border p-4 reveal relative overflow-hidden bg-[#05070D]/90 animate-fade-in" style={{ animationDelay: ".12s" }}>
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/5 to-cyan-500/5" />
+
+                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                  <div className="flex items-center gap-1.5">
+                    <img
+                      src={aiBallCutout}
+                      alt=""
+                      className="size-4.5 object-contain animate-spin-slow [filter:drop-shadow(0_0_3px_rgba(168,85,247,0.5))]"
+                      style={{ animationDuration: '12s' }}
+                    />
+                    <h3 className="font-extrabold text-[12px] uppercase tracking-wider text-white">Tradio Top 5 Hits</h3>
+                  </div>
+
+                  {/* Tradio Logo Link Button */}
+                  <a
+                    href={`/tradio?artistUid=${profile.uid}`}
+                    className="group flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 text-slate-300 hover:text-white hover:border-purple-500/40 hover:bg-purple-500/10 active:scale-95 transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  >
+                    <div className="relative size-3.5 flex items-center justify-center shrink-0">
+                      <span className="absolute inset-0 rounded-full bg-purple-500/30 blur-[1px] animate-pulse" />
+                      <img
+                        src={aiBallCutout}
+                        alt="Tradio"
+                        className="relative size-3.5 object-contain [filter:drop-shadow(0_0_2px_rgba(176,38,255,0.6))]"
+                        style={{ animation: "spin 15s linear infinite" }}
+                      />
+                    </div>
+                    <span>Tradio Station</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </a>
+                </div>
+
+                {/* Song List */}
+                <div className="space-y-1.5">
+                  {SELECTABLE_SONGS.slice(0, 5).map((song, index) => {
+                    const isActive = autoplaySong.id === song.id;
+                    const isSongPlaying = isActive && isPlaying;
+                    return (
+                      <div
+                        key={song.id}
+                        className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${
+                          isActive
+                            ? "bg-purple-500/10 border-purple-500/30 text-white"
+                            : "bg-white/[0.01] border-white/5 text-slate-300 hover:bg-white/[0.03] hover:border-white/10"
+                        }`}
+                      >
+                        <div className="w-5 text-center shrink-0 flex items-center justify-center">
+                          {isSongPlaying ? (
+                            <div className="flex gap-[1.5px] items-end h-3">
+                              <span className="w-[1.5px] h-3 rounded-full animate-[visualizer-bounce_0.6s_ease-in-out_infinite_alternate]" style={{ backgroundColor: "var(--profile-accent)" }} />
+                              <span className="w-[1.5px] h-2.5 rounded-full animate-[visualizer-bounce_0.6s_ease-in-out_infinite_alternate_0.2s]" style={{ backgroundColor: "var(--profile-accent)" }} />
+                              <span className="w-[1.5px] h-2 rounded-full animate-[visualizer-bounce_0.6s_ease-in-out_infinite_alternate_0.4s]" style={{ backgroundColor: "var(--profile-accent)" }} />
+                            </div>
+                          ) : (
+                            <span className="text-xs font-bold text-slate-500">{index + 1}</span>
+                          )}
+                        </div>
+
+                        <div className="relative size-10 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                          <img src={song.art} alt="" className="size-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition">
+                            <button onClick={() => playTrack(song)} className="text-white hover:scale-110 active:scale-90 transition">
+                              {isSongPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 min-w-0 text-left">
+                          <h4 className="text-[11px] font-bold truncate">{song.title}</h4>
+                          <p className="text-[9px] text-slate-400 mt-0.5 truncate">{song.artist}</p>
+                        </div>
+
+                        <div className="hidden sm:block text-right text-[10px] text-slate-500 tabular-nums font-semibold shrink-0">
+                          {song.streams} plays
+                        </div>
+
+                        <div className="text-[10px] text-slate-500 font-mono shrink-0">
+                          {song.duration}
+                        </div>
+
+                        <button
+                          onClick={() => playTrack(song)}
+                          className={`size-7 rounded-full flex items-center justify-center border transition ${
+                            isActive
+                              ? "text-black"
+                              : "bg-white/5 border-white/10 hover:border-white/25 text-white"
+                          }`}
+                          style={isActive ? {
+                            backgroundColor: "var(--profile-accent)",
+                            borderColor: "var(--profile-accent)",
+                            boxShadow: "0 0 10px var(--profile-accent)"
+                          } : {}}
+                        >
+                          {isSongPlaying ? (
+                            <Pause className="w-3.5 h-3.5 fill-current" />
+                          ) : (
+                            <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Unified Content Panel (Tabs + Content) */}
             <div className="panel neon-border reveal flex flex-col overflow-hidden" style={{ animationDelay: ".15s" }}>
               {/* Integrated Header Tabs */}
@@ -730,7 +1075,7 @@ export function ProfilePageNew({
                     className={`relative py-3.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-[0.08em] transition active:scale-95 ${activeTab === t ? "text-white bg-white/[0.02]" : "text-muted-foreground hover:text-white hover:bg-white/[0.01]"}`}
                   >
                     {t}
-                    {activeTab === t && <span className="absolute bottom-0 inset-x-0 h-[2px]" style={{ background: `linear-gradient(90deg,transparent,${GOLD},transparent)`, boxShadow: `0 0 10px ${GOLD}` }} />}
+                    {activeTab === t && <span className="absolute bottom-0 inset-x-0 h-[2px]" style={{ background: `linear-gradient(90deg,transparent,var(--profile-accent),transparent)`, boxShadow: `0 0 10px var(--profile-accent)` }} />}
                   </button>
                 ))}
               </div>
@@ -751,7 +1096,17 @@ export function ProfilePageNew({
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
                       {FALL_POSTS.map((img, i) => (
-                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                        <div
+                          key={i}
+                          onClick={() => setSelectedPost({
+                            id: `post-${i}`,
+                            img,
+                            title: `Recent Release #${i + 1}`,
+                            views: ["34.2K","52.6K","12.1K","18.7K","24.3K"][i],
+                            duration: ["1:24","2:08","0:58","1:45","2:12"][i]
+                          })}
+                          className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.98]"
+                        >
                           <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           {i === 0 && (
@@ -780,7 +1135,17 @@ export function ProfilePageNew({
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
                       {[fallPost3, fallPost4, fallPost5, fallPost1, fallPost2].map((img, i) => (
-                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                        <div
+                          key={i}
+                          onClick={() => setSelectedPost({
+                            id: `like-${i}`,
+                            img,
+                            title: `Liked Release #${i + 1}`,
+                            views: ["12.4K","18.1K","9.5K","4.2K","21.0K"][i],
+                            duration: ["1:02","1:55","0:45","2:10","1:32"][i]
+                          })}
+                          className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.98]"
+                        >
                           <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[8px] font-bold tracking-wide text-white">
@@ -804,7 +1169,17 @@ export function ProfilePageNew({
                     </div>
                     <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
                       {[fallPost5, fallPost2, fallPost1, fallPost3, fallPost4].map((img, i) => (
-                        <div key={i} className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300">
+                        <div
+                          key={i}
+                          onClick={() => setSelectedPost({
+                            id: `saved-${i}`,
+                            img,
+                            title: `Saved Release #${i + 1}`,
+                            views: ["44.1K","19.2K","32.0K","8.7K","14.5K"][i],
+                            duration: ["2:12","1:48","0:35","1:15","2:05"][i]
+                          })}
+                          className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/25 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)] transition duration-300 cursor-pointer hover:scale-[1.01] active:scale-[0.98]"
+                        >
                           <img src={img} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                           <div className="absolute bottom-1.5 left-1.5 right-1.5 flex items-center justify-between text-[8px] font-bold tracking-wide text-white">
@@ -866,64 +1241,117 @@ export function ProfilePageNew({
             </div>
 
             {/* Top 3 Friends */}
-            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>
-              <div className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Top 3 Friends</h3>
-                  <span className="text-[9px] text-muted-foreground">· inner circle</span>
-                </div>
-                <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
-                  View all <ChevronRight className="w-2.5 h-2.5" />
-                </a>
-              </div>
-              <div className="grid grid-cols-3 gap-3 md:gap-5 place-items-center pt-2 pb-1">
-                {[
-                  { name: "Jaylen K.", handle: "@jayk", img: fallPost2, rank: 1, color: GOLD, accent: "#FFE066", badge: "BFF" },
-                  { name: "Mira S.", handle: "@mira", img: fallPost3, rank: 2, color: NEON_PURPLE, accent: "#E0E0E0", badge: "Day 1" },
-                  { name: "Devon R.", handle: "@dev", img: fallPost4, rank: 3, color: NEON_BLUE, accent: "#FF8A3D", badge: "Squad" },
-                ].map((f) => (
-                  <div key={f.handle} className="relative group flex flex-col items-center gap-1.5">
-                    <div className="relative w-20 h-20 md:w-24 md:h-24">
-                      <div aria-hidden className="absolute -inset-1 rounded-full animate-spin-slow opacity-90" style={{ background: `conic-gradient(from 0deg,${f.color},${f.accent},${f.color},transparent 70%,${f.color})` }} />
-                      <div aria-hidden className="absolute -inset-3 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition" style={{ background: `radial-gradient(circle,${f.color}77,transparent 70%)` }} />
-                      <div className="absolute inset-0 rounded-full bg-[#05070D] p-[3px]">
-                        <div className="w-full h-full rounded-full overflow-hidden border border-white/20">
-                          <img src={f.img} alt={f.name} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                        </div>
-                      </div>
-                      <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 flex items-center justify-center" style={{ color: f.color }}>
-                        <div className="absolute inset-0 rounded-full blur-md opacity-70" style={{ background: f.color }} />
-                        <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: f.color, background: `radial-gradient(circle at 35% 30%,${f.color}66,#0a0418 85%)`, backdropFilter: "blur(4px)", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4),0 0 10px ${f.color}99` }} />
-                        <span className="relative z-10 text-[14px] font-black leading-none" style={{ color: "#fff", textShadow: `0 1px 0 rgba(0,0,0,0.85),0 0 6px ${f.color}` }}>{f.rank}</span>
-                      </div>
-                    </div>
-                    <div className="text-center max-w-[88px]">
-                      <div className="text-[11px] font-bold text-white leading-tight truncate">{f.name}</div>
-                      <div className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5 text-black" style={{ background: f.color, boxShadow: `0 0 8px ${f.color}90` }}>{f.badge}</div>
-                    </div>
+            {(topThree.length > 0 || variant === "owner" || profile.uid === myUid) && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }} />
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Top 3 Friends</h3>
+                    <span className="text-[9px] text-muted-foreground">· inner circle</span>
                   </div>
-                ))}
+                  {topThree.length > 0 && (
+                    <a className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white" href="#">
+                      View all <ChevronRight className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
+                {topThree.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-3 md:gap-5 place-items-center pt-2 pb-1">
+                    {topThree.slice(0, 3).map((entry, index) => {
+                      const rankColors = [
+                        { color: GOLD, accent: "#FFE066", defaultBadge: "BFF" },
+                        { color: NEON_PURPLE, accent: "#E0E0E0", defaultBadge: "Day 1" },
+                        { color: NEON_BLUE, accent: "#FF8A3D", defaultBadge: "Squad" }
+                      ];
+                      const style = rankColors[index] || rankColors[0];
+                      return (
+                        <div key={entry.id || entry.featured_user_id} className="relative group flex flex-col items-center gap-1.5">
+                          <div className="relative w-20 h-20 md:w-24 md:h-24">
+                            <div aria-hidden className="absolute -inset-1 rounded-full animate-spin-slow opacity-90" style={{ background: `conic-gradient(from 0deg,${style.color},${style.accent},${style.color},transparent 70%,${style.color})` }} />
+                            <div aria-hidden className="absolute -inset-3 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition" style={{ background: `radial-gradient(circle,${style.color}77,transparent 70%)` }} />
+                            <div className="absolute inset-0 rounded-full bg-[#05070D] p-[3px]">
+                              <div className="w-full h-full rounded-full overflow-hidden border border-white/20">
+                                <img src={entry.featured_avatar_url || fallPost2} alt={entry.featured_display_name || entry.featured_username || ""} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
+                              </div>
+                            </div>
+                            <div className="absolute -bottom-1.5 -right-1.5 w-8 h-8 flex items-center justify-center" style={{ color: style.color }}>
+                              <div className="absolute inset-0 rounded-full blur-md opacity-70" style={{ background: style.color }} />
+                              <div className="absolute inset-0 rounded-full border-2" style={{ borderColor: style.color, background: `radial-gradient(circle at 35% 30%,${style.color}66,#0a0418 85%)`, backdropFilter: "blur(4px)", boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4),0 0 10px ${style.color}99` }} />
+                              <span className="relative z-10 text-[14px] font-black leading-none" style={{ color: "#fff", textShadow: `0 1px 0 rgba(0,0,0,0.85),0 0 6px ${style.color}` }}>{entry.position || index + 1}</span>
+                            </div>
+                          </div>
+                          <div className="text-center max-w-[88px]">
+                            <div className="text-[11px] font-bold text-white leading-tight truncate">{entry.featured_display_name || entry.featured_username}</div>
+                            <div className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5 text-black" style={{ background: style.color, boxShadow: `0 0 8px ${style.color}90` }}>
+                              {entry.is_mutual_top_three ? "Mutual" : style.defaultBadge}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center">
+                    <p className="text-xs text-muted-foreground mb-3">You haven't selected your Top 3 Friends yet.</p>
+                    <Link to="/edit-profile" className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/40 hover:bg-primary/25 transition">
+                      <Plus className="w-3 h-3" /> Add Top 3 Friends
+                    </Link>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* Connect links */}
-            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".25s" }}>
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Connect</h3>
+            {(profile.socialInstagram || profile.websiteLink || profile.socialTikTok || profile.socialYouTube) && (
+              <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".25s" }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }} />
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-200">Connect</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
+                  {profile.socialInstagram && (
+                    <LinkRow
+                      icon={Instagram}
+                      color="#EC4899"
+                      accent="#A855F7"
+                      title="Instagram"
+                      sub={`@${profile.socialInstagram.replace(/^@/, "")}`}
+                      href={profile.socialInstagram.startsWith("http") ? profile.socialInstagram : `https://instagram.com/${profile.socialInstagram.replace(/^@/, "")}`}
+                    />
+                  )}
+                  {profile.websiteLink && (
+                    <LinkRow
+                      icon={Globe}
+                      color="#22D3EE"
+                      accent="#3B82F6"
+                      title="Website"
+                      sub={profile.websiteLink}
+                      href={profile.websiteLink.startsWith("http") ? profile.websiteLink : `https://${profile.websiteLink}`}
+                    />
+                  )}
+                  {profile.socialTikTok && (
+                    <LinkRow
+                      icon={Music2}
+                      color="#22D3EE"
+                      accent="#EC4899"
+                      title="TikTok"
+                      sub={`@${profile.socialTikTok.replace(/^@/, "")}`}
+                      href={profile.socialTikTok.startsWith("http") ? profile.socialTikTok : `https://tiktok.com/@${profile.socialTikTok.replace(/^@/, "")}`}
+                    />
+                  )}
+                  {profile.socialYouTube && (
+                    <LinkRow
+                      icon={Youtube}
+                      color="#EF4444"
+                      accent="#FF7700"
+                      title="YouTube"
+                      sub={profile.socialYouTube.includes("youtube.com") ? "Channel" : `@${profile.socialYouTube.replace(/^@/, "")}`}
+                      href={profile.socialYouTube.startsWith("http") ? profile.socialYouTube : profile.socialYouTube.includes("youtube.com") ? `https://${profile.socialYouTube}` : `https://youtube.com/@${profile.socialYouTube.replace(/^@/, "")}`}
+                    />
+                  )}
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
-                <LinkRow icon={Instagram} color="#EC4899" accent="#A855F7" title="Instagram" sub={`@${profile.handle}`} />
-                <LinkRow icon={Globe} color="#22D3EE" accent="#3B82F6" title="Website" sub={profile.websiteLink || "trey.tv"} />
-                <LinkRow icon={Twitter} color="#E2E8F0" accent="#A855F7" title="X" sub={`@${profile.handle}`} />
-                <LinkRow icon={Mail} color="#F59E0B" accent="#EC4899" title="Booking" sub={`booking@trey.tv`} />
-                <LinkRow icon={Music2} color="#22D3EE" accent="#EC4899" title="TikTok" sub={`@${profile.handle}`} />
-                <LinkRow icon={Youtube} color="#EF4444" accent="#FF7700" title="YouTube" sub={`@${profile.handle}`} />
-                <LinkRow icon={ShoppingBag} color="#10B981" accent="#22D3EE" title="Merch" sub="treytv.store" />
-                <LinkRow icon={Disc3} color="#FF7700" accent="#FFC857" title="SoundCloud" sub={`@${profile.handle}`} />
-              </div>
-            </div>
+            )}
 
             {/* Badges */}
             <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".3s" }}>
@@ -1024,6 +1452,323 @@ export function ProfilePageNew({
           toast.success("FWD GIF selected. Use Edit Profile to feature it as GIF of the Day.");
         }}
       />
+
+      <FwdGifPicker
+        open={showCommentGifPicker}
+        context="profile"
+        treyTvUid={myUid || null}
+        onClose={() => setShowCommentGifPicker(false)}
+        onSelect={(gif) => {
+          if (selectedPost) {
+            const gifUrl = getAnimatedFwdGifUrl(gif) || gif.url;
+            const newComment = {
+              author: authUser?.name || "You",
+              avatar: authUser?.avatar || fallPost2,
+              text: commentText.trim() || "Sent a FWD GIF 🎬",
+              time: "Just now",
+              gifUrl
+            };
+            setPostComments((prev) => ({
+              ...prev,
+              [selectedPost.id]: [...(prev[selectedPost.id] || []), newComment]
+            }));
+            setCommentText("");
+            toast.success("FWD GIF comment posted!");
+          }
+          setShowCommentGifPicker(false);
+        }}
+      />
+
+      {/* ── INTERACTIVE POST DETAIL MODAL ────────────────── */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md bg-black/85 animate-fade-in">
+          <button aria-label="Close" onClick={() => setSelectedPost(null)} className="absolute inset-0 cursor-default bg-transparent" />
+
+          <div className="relative w-full max-w-4xl h-[85vh] md:h-[580px] flex flex-col md:grid md:grid-cols-5 panel neon-border overflow-hidden rounded-[24px] sm:rounded-[32px] bg-[#05070D]/95 pop-in shadow-[0_0_60px_rgba(34,183,255,0.18)]">
+
+            {/* Global floating Close Button for maximum screen space efficiency */}
+            <button
+              onClick={() => setSelectedPost(null)}
+              className="absolute top-3 right-3 z-50 size-8 rounded-full bg-black/60 hover:bg-black/80 border border-white/15 flex items-center justify-center backdrop-blur-md active:scale-90 transition shadow-lg text-white/90 hover:text-white"
+              aria-label="Close modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Left media col */}
+            <div className="relative w-full h-[40%] md:h-full md:col-span-3 bg-black/60 flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 group overflow-hidden shrink-0">
+              <img src={selectedPost.img} alt={selectedPost.title} className="absolute inset-0 size-full object-cover transition-transform duration-700 group-hover:scale-102" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/15 to-transparent" />
+
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center backdrop-blur-md hover:scale-110 active:scale-90 transition cursor-pointer shadow-[0_0_20px_rgba(255,200,87,0.35)]">
+                  <Play className="w-5 h-5 md:w-6 md:h-6 fill-current text-white ml-0.5" />
+                </div>
+              </div>
+
+              {/* Title, views, duration */}
+              <div className="absolute bottom-3 left-4 right-4 text-left">
+                <div className="text-[9px] uppercase font-bold tracking-[0.25em] text-cyan-400 mb-0.5">Streaming Now</div>
+                <h4 className="text-sm md:text-base font-extrabold text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate sm:whitespace-normal">{selectedPost.title}</h4>
+                <div className="mt-1 md:mt-2 flex items-center gap-3 text-[9px] md:text-[10px] font-bold text-white/80">
+                  <span className="inline-flex items-center gap-0.5"><Play className="w-2.5 h-2.5 fill-current" /> {selectedPost.views} views</span>
+                  <span>·</span>
+                  <span>{selectedPost.duration} length</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right details / comments col */}
+            <div className="relative w-full h-[60%] md:h-full md:col-span-2 flex flex-col p-3 sm:p-4 bg-[#08080E]/95 overflow-hidden flex-1">
+
+              {/* Creator Header (More compact) */}
+              <div className="flex items-center justify-between pb-2 border-b border-white/5 shrink-0 pr-8">
+                <div className="flex items-center gap-2">
+                  <img src={profile.avatarUrl || fallPost2} alt="" className="size-8 rounded-full object-cover ring-2 ring-primary/25" />
+                  <div className="min-w-0 text-left">
+                    <div className="text-[11px] md:text-xs font-black text-white truncate flex items-center gap-0.5">
+                      {profile.displayName}
+                      <BadgeCheck className="w-3 h-3 text-primary shrink-0" />
+                    </div>
+                    <div className="text-[8px] md:text-[9px] text-muted-foreground">@{profile.handle}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments Feed (Compact list, responsive spacing) */}
+              <div className="flex-1 overflow-y-auto space-y-2.5 py-2.5 pr-1 my-1 border-b border-white/5 scrollbar-thin scrollbar-thumb-white/10">
+                {(postComments[selectedPost.id] || []).length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-3">
+                    <div className="text-muted-foreground text-[11px] font-bold mb-0.5">No comments yet</div>
+                    <div className="text-[9px] text-muted-foreground/60 leading-tight">Be the first to share your thoughts on this drop!</div>
+                  </div>
+                ) : (
+                  (postComments[selectedPost.id] || []).map((c, idx) => (
+                    <div key={idx} className="flex gap-2 items-start text-xs text-left animate-fade-in">
+                      <img src={c.avatar} alt="" className="size-6 sm:size-7 rounded-full object-cover ring-1 ring-white/10 shrink-0" />
+                      <div className="flex-1 min-w-0 bg-white/[0.015] border border-white/5 px-2.5 py-1.5 rounded-xl">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="font-extrabold text-white truncate text-[10px] sm:text-[11px]">{c.author}</span>
+                          <span className="text-[8px] text-muted-foreground shrink-0">{c.time}</span>
+                        </div>
+                        <p className="text-white/90 leading-snug text-[10px] sm:text-[11px]">{c.text}</p>
+                        {c.gifUrl && (
+                          <div className="mt-1 rounded-lg overflow-hidden border border-white/10 max-w-[120px] aspect-video">
+                            <img src={c.gifUrl} alt="gif comment" className="size-full object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Reactions Row (Ultra-compact, neat wrap) */}
+              <div className="pt-1.5 shrink-0 text-left">
+                <div className="text-[8px] md:text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-1 pl-0.5">Reactions</div>
+                <div className="flex flex-wrap gap-1">
+                  {Object.entries(postReactions[selectedPost.id] || { "🔥": 0, "❤️": 0, "👑": 0, "🙌": 0 }).map(([emoji, count]) => {
+                    const active = myReactions[selectedPost.id]?.includes(emoji);
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          if (isGuest) {
+                            toast.error("Please sign in to react to posts!");
+                            return;
+                          }
+                          const postId = selectedPost.id;
+                          const hasReacted = myReactions[postId]?.includes(emoji);
+
+                          setPostReactions((prev) => {
+                            const cur = prev[postId] || {};
+                            return {
+                              ...prev,
+                              [postId]: {
+                                ...cur,
+                                [emoji]: Math.max(0, (cur[emoji] || 0) + (hasReacted ? -1 : 1))
+                              }
+                            };
+                          });
+
+                          setMyReactions((prev) => {
+                            const cur = prev[postId] || [];
+                            return {
+                              ...prev,
+                              [postId]: hasReacted ? cur.filter(e => e !== emoji) : [...cur, emoji]
+                            };
+                          });
+                        }}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-bold transition duration-300 ${
+                          active
+                            ? "bg-primary/20 border-primary/40 text-white shadow-[0_0_8px_rgba(255,200,87,0.25)] scale-105"
+                            : "bg-white/[0.02] border-white/10 text-white/70 hover:border-white/15 hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        <span>{emoji}</span>
+                        <span className="text-[9px] font-bold tabular-nums">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Text comment and FWD input */}
+              <div className="pt-2 border-t border-white/5 mt-2 shrink-0">
+                {isGuest ? (
+                  <div className="text-center py-2 rounded-lg border border-white/10 bg-white/[0.01]">
+                    <p className="text-[9px] text-muted-foreground">Sign in to leave comments or send FWD GIFs.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="relative flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Drop a comment..."
+                        value={commentText}
+                        onChange={(e) => setCommentText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (!commentText.trim()) return;
+                            const postId = selectedPost.id;
+                            const newComment = {
+                              author: authUser?.name || "You",
+                              avatar: authUser?.avatar || fallPost2,
+                              text: commentText.trim(),
+                              time: "Just now"
+                            };
+                            setPostComments((prev) => ({
+                              ...prev,
+                              [postId]: [...(prev[postId] || []), newComment]
+                            }));
+                            setCommentText("");
+                          }
+                        }}
+                        className="flex-1 pl-3.5 pr-9 py-2 rounded-full bg-white/[0.02] border border-white/10 text-[11px] text-white focus:outline-none focus:border-cyan-400/30 focus:ring-1 focus:ring-cyan-400/10 transition text-left"
+                      />
+
+                      <button
+                        onClick={() => setShowCommentGifPicker(true)}
+                        className="absolute right-3 p-1 text-muted-foreground hover:text-cyan-400 transition"
+                        title="Send a FWD GIF"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[8px] text-muted-foreground/60 px-1 leading-none">
+                      <span>Press Enter to comment</span>
+                      <span>Or send a FWD GIF</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SONG PICKER MODAL (owner only) ────────────────── */}
+      {showSongPicker && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in">
+          <button aria-label="Close" onClick={() => setShowSongPicker(false)} className="absolute inset-0 bg-black/85 backdrop-blur-md" />
+          <div className="relative w-full max-w-sm panel neon-border p-4 rounded-3xl bg-[#090518]/95 pop-in shadow-[0_0_40px_rgba(168,85,247,0.3)]">
+            <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-purple-500/15 border border-purple-500/30">
+                  <Music2 className="w-4 h-4 text-purple-400 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-white text-left">Select Profile Theme Song</h3>
+                  <p className="text-[9px] text-slate-400 mt-0.5 text-left">Choose a track to autoplay on your profile</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSongPicker(false)}
+                className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition active:scale-90"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10">
+              {SELECTABLE_SONGS.map((song) => {
+                const isSelected = autoplaySong.id === song.id;
+                return (
+                  <div
+                    key={song.id}
+                    className={`flex items-center gap-3 p-2 rounded-xl border transition-all ${
+                      isSelected
+                        ? "text-white"
+                        : "bg-white/[0.01] border-white/5 text-slate-300 hover:bg-white/[0.03] hover:border-white/10"
+                    }`}
+                    style={isSelected ? {
+                      backgroundColor: "rgba(var(--profile-accent-rgb), 0.1)",
+                      borderColor: "rgba(var(--profile-accent-rgb), 0.3)"
+                    } : {}}
+                  >
+                    <img src={song.art} alt="" className="size-9 rounded-lg object-cover border border-white/10 shrink-0" />
+                    <div className="flex-1 min-w-0 text-left">
+                      <h4 className="text-[10px] font-bold truncate">{song.title}</h4>
+                      <p className="text-[9px] text-slate-400 mt-0.5 truncate">{song.artist}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAutoplaySong(song);
+                        localStorage.setItem(autoplayStorageKey, JSON.stringify(song));
+                        setShowSongPicker(false);
+                        setIsPlaying(false);
+                        setTimeout(() => {
+                          if (audioRef.current) {
+                            audioRef.current.src = song.src;
+                            audioRef.current.play()
+                              .then(() => setIsPlaying(true))
+                              .catch(() => setIsPlaying(false));
+                          }
+                        }, 50);
+                        toast.success(`Theme song set to: ${song.title}`);
+                      }}
+                      className={`text-[9px] font-bold px-2.5 py-1 rounded-full transition-all ${
+                        isSelected
+                          ? "text-black"
+                          : "bg-white/5 border-white/10 hover:border-white/20 text-white"
+                      }`}
+                      style={isSelected ? {
+                        backgroundColor: "var(--profile-accent)",
+                        boxShadow: "0 0 8px var(--profile-accent)"
+                      } : {}}
+                    >
+                      {isSelected ? "Active" : "Select"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HTML5 Audio Player for Background Theme Music */}
+      <audio
+        ref={audioRef}
+        src={autoplaySong.src}
+        loop
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
+
+      {/* Inline styles for custom animations */}
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes visualizer-bounce {
+          0% { transform: scaleY(0.3); }
+          100% { transform: scaleY(1.3); }
+        }
+      `}</style>
     </div>
   );
 }
