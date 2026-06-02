@@ -616,7 +616,8 @@ export const TradioShellContent: React.FC = () => {
         </div>
 
         {/* Desktop sidebar */}
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[300px] flex-col overflow-y-auto liquid-glass px-6 py-8 lg:flex !border-r border-white/10 shadow-lg">
+        <aside className="!fixed inset-y-0 left-0 z-40 hidden w-[300px] flex-col overflow-y-auto px-6 py-8 lg:flex !border-r border-white/10 shadow-lg">
+          <div className="absolute inset-0 -z-10 liquid-glass" />
           <div className="mb-8 flex items-center justify-between rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.06] to-white/[0.01] p-5 shadow-[0_15px_35px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/15 transition-all duration-500">
             <div>
               <TradioLogo />
@@ -718,7 +719,8 @@ export const TradioShellContent: React.FC = () => {
         </aside>
 
         {/* Desktop right utility rail */}
-        <aside className="fixed inset-y-0 right-0 z-30 hidden w-[360px] flex-col gap-5 overflow-y-auto liquid-glass p-6 xl:flex !border-l border-white/10 shadow-lg">
+        <aside className="!fixed inset-y-0 right-0 z-30 hidden w-[360px] flex-col gap-5 overflow-y-auto p-6 xl:flex !border-l border-white/10 shadow-lg">
+          <div className="absolute inset-0 -z-10 liquid-glass" />
           <GlassCard glow className="p-5">
             <div className="mb-4 flex items-center justify-between">
               <div>
