@@ -5,10 +5,8 @@
   Production posture: HTTPS only. No cleartext fallback. Default trust anchors
   (system CAs) are explicitly opted in.
 
-  Debug-overrides: allow cleartext to LAN IPs and 10.0.2.2 so the dev build
-  can talk to a developer's local web server during testing. These overrides
-  are stripped from release builds automatically because of the
-  cleartextTrafficPermitted=false in <base-config>.
+  Dev cleartext domains must be top-level domain-config siblings. Android does
+  not allow domain-config inside debug-overrides.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
@@ -17,17 +15,17 @@
         </trust-anchors>
     </base-config>
 
+    <!-- Dev-only cleartext to local Android/WebView test hosts. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+
     <debug-overrides>
         <trust-anchors>
             <certificates src="system" />
             <certificates src="user" />
         </trust-anchors>
-        <!-- Dev-only cleartext to the Android emulator host loopback and LAN ranges. -->
-        <domain-config cleartextTrafficPermitted="true">
-            <domain includeSubdomains="false">10.0.2.2</domain>
-            <domain includeSubdomains="false">localhost</domain>
-            <domain includeSubdomains="true">192.168.0.0/16</domain>
-            <domain includeSubdomains="true">10.0.0.0/8</domain>
-        </domain-config>
     </debug-overrides>
 </network-security-config>

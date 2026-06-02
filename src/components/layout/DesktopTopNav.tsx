@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   Home, Compass, CalendarDays, Inbox, Sparkles, Heart, Gem, Bell, Search,
   Crown, BarChart3, Settings, Bookmark, Radio, Users, ChevronDown, LogIn, LogOut, Award,
+  Music,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
@@ -19,6 +20,7 @@ const guestLinks: readonly NavLink[] = [
   { to: "/explore", icon: Compass, label: "Discover" },
   { to: "/guide", icon: CalendarDays, label: "Guide" },
   { to: "/games", label: "Games" },
+  // Tradio requires a signed-in Trey TV account — hidden for guests.
 ];
 
 const signedInLinks: readonly NavLink[] = [
@@ -28,6 +30,7 @@ const signedInLinks: readonly NavLink[] = [
   { to: "/guide", icon: CalendarDays, label: "Guide" },
   { to: "/prescribe-me", icon: Heart, label: "Prescribe" },
   { to: "/games", label: "Games" },
+  { to: "/tradio", icon: Music, label: "Tradio" },
   { to: "/inbox", icon: Inbox, label: "Inbox" },
 ];
 
@@ -191,7 +194,7 @@ export function DesktopTopNav() {
                 className="relative size-10 rounded-full conic-ring shrink-0"
                 aria-label="Profile"
               >
-                <img src={profileAvatar} alt="" className="size-full rounded-full object-cover" loading="lazy" />
+                <img src={profileAvatar || undefined} alt="" className="size-full rounded-full object-cover" loading="lazy" />
               </Link>
               <button
                 onClick={() => void handleSignOut()}

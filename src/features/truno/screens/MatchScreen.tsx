@@ -56,7 +56,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       { id: identity.userId, name: identity.displayName, isBot: false },
       { id: 'local-bot-1', name: 'Aaliyah', isBot: true },
       { id: 'local-bot-2', name: 'Marcus', isBot: true },
-      ...(mode === 'ai' ? [] : [{ id: 'local-bot-3', name: 'Nova', isBot: true }]),
+      ...(mode === 'ai' ? [] : [{ id: 'local-bot-3', name: 'Tre Earl', isBot: true }]),
     ])
   ));
   const [selected, setSelected] = useState<string | null>(null);
@@ -452,7 +452,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   useTvRemoteInput((action) => {
     if (action === 'BACK') {
-      handleLeaveMatch();
+      clearSequencer();
+      onNavigate('exit');
       return;
     }
     if (action === 'MENU') {
@@ -522,9 +523,9 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         @keyframes truno-thinking { 0%, 100% { opacity: 0.35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
       `}</style>
 
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={handleLeaveMatch} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+          <button onClick={() => { clearSequencer(); onNavigate('exit'); }} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center" aria-label="Back to Trey TV Games">
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
           </button>
           <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">
@@ -535,16 +536,38 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
             <span className="text-sm font-bold text-white">{roomCode}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={handleLeaveMatch}
-            className="min-h-10 px-3 sm:px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-500/10"
-          >
-            Leave Match
-          </button>
-          <button onClick={() => setNotice('Table menu is coming soon.')} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
-            <MoreVertical size={16} className="text-zinc-300" />
-          </button>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLeaveMatch}
+              className="min-h-10 px-3 sm:px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-500/10"
+            >
+              Leave Match
+            </button>
+            <button onClick={() => setNotice('Table menu is coming soon.')} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+              <MoreVertical size={16} className="text-zinc-300" />
+            </button>
+          </div>
+
+          {actionLog.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-zinc-950/80 border border-zinc-800 rounded-full p-1 shadow-md max-w-[260px] sm:max-w-xs animate-[truno-pop_0.35s_ease-out]">
+              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider px-1 shrink-0">Moves:</span>
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                {actionLog.slice(0, 2).map((item, i) => {
+                  const dotColor = item.tone === 'effect' ? 'bg-fuchsia-400' : item.tone === 'draw' || item.tone === 'keep' ? 'bg-purple-400' : item.tone === 'play' ? 'bg-cyan-400' : 'bg-zinc-400';
+                  return (
+                    <div key={item.id} className="flex items-center gap-1 shrink-0 text-[10px]">
+                      {i > 0 && <span className="text-zinc-800 font-bold">|</span>}
+                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                      <span className="text-zinc-300 max-w-[90px] truncate" title={item.text}>
+                        {item.text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -652,22 +675,6 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </span>
       </div>
 
-      {actionLog.length > 0 && (
-        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/65 p-2.5">
-          <div className="flex items-center justify-between mb-1.5">
-            <div className="text-[10px] font-black tracking-wider text-zinc-500">RECENT MOVES</div>
-            <div className="text-[10px] text-zinc-600">real table actions</div>
-          </div>
-          <div className="grid gap-1">
-            {actionLog.slice(0, 3).map((item) => (
-              <div key={item.id} className={`grid grid-cols-[3.25rem_1fr] items-center gap-2 text-[11px] rounded-lg px-2 py-1.5 border ${logClass(item.tone)}`}>
-                <span className="text-[9px] font-black tracking-wider opacity-80">{item.label}</span>
-                <span className="truncate">{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {state.phase === 'ended' && (
         <div className="mt-3 rounded-3xl border border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-zinc-950 p-4 text-center shadow-[0_0_34px_rgba(251,191,36,0.14)]">

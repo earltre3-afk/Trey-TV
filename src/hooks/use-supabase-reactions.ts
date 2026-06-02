@@ -43,7 +43,8 @@ function userPostReactionsTable(supabase: ReturnType<typeof createBrowserClient>
 }
 
 export function useSupabaseReactions(postId: string, initialLikesCount: number = 0) {
-  const { user, isSignedIn } = useAuth();
+  const { user, isGuest } = useAuth();
+  const isSignedIn = !isGuest;
   const [reaction, setReaction] = useState<ReactionKey | null>(null);
   const [likeCount, setLikeCount] = useState(initialLikesCount);
   const [pending, setPending] = useState(false);

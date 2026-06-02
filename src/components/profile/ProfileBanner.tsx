@@ -19,6 +19,7 @@ import type { ProfileContext } from "./ProfileTypes";
 import { AnimatedBanner } from "./AnimatedBanner";
 import { toggleFollow } from "@/lib/social-relationships";
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
+import bannerFallback from "@/assets/profile-banner.jpg";
 
 interface ProfileBannerProps extends ProfileContext {
   onBack: () => void;
@@ -51,7 +52,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
         {/* Banner media — supports static images, looping GIFs, and short looping videos */}
         <AnimatedBanner
           src={profile.bannerUrl}
-          fallback="/profile-banner"
+          fallback={bannerFallback}
           alt=""
           className={`w-full ${bannerHeight} object-cover`}
         />
@@ -120,11 +121,12 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
                       className="hidden"
                       onChange={async (event) => {
                         const file = event.target.files?.[0];
+                        event.target.value = "";
                         if (!file) return;
                         const preview = URL.createObjectURL(file);
                         updateUser({ banner: preview });
                         try {
-                          if (!supabaseUser) throw new Error("Sign in required");
+                          if (!supabaseUser?.id) throw new Error("Sign in required");
                           const uploaded = await uploadProfileMedia(supabaseUser.id, file, "banner");
                           updateUser({ banner: uploaded.url });
                           recordUserTrace({ userUid: profile.uid, action: "profile.banner_update", targetType: "profile", targetId: profile.uid, details: { fileType: file.type } });

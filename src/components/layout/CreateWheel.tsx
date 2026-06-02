@@ -25,16 +25,20 @@ export function CreateWheel() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<number | null>(null);
+  const [animated, setAnimated] = useState(false);
   const holdTimer = useRef<number | null>(null);
   const didOpen = useRef(false);
   const pressOrigin = useRef<{ x: number; y: number } | null>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
 
   const close = () => {
-    setOpen(false);
-    setHovered(null);
-    didOpen.current = false;
-    pressOrigin.current = null;
+    setAnimated(false);
+    setTimeout(() => {
+      setOpen(false);
+      setHovered(null);
+      didOpen.current = false;
+      pressOrigin.current = null;
+    }, 150);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -44,6 +48,7 @@ export function CreateWheel() {
     holdTimer.current = window.setTimeout(() => {
       didOpen.current = true;
       setOpen(true);
+      setTimeout(() => setAnimated(true), 25);
       if (navigator.vibrate) navigator.vibrate(8);
     }, HOLD_MS);
   };
@@ -64,6 +69,8 @@ export function CreateWheel() {
       didOpen.current = false;
       if (hovered !== null) {
         navigate({ to: ITEMS[hovered].to });
+        close();
+      } else {
         close();
       }
     } else {
@@ -93,7 +100,10 @@ export function CreateWheel() {
   }, [open]);
 
   useEffect(() => {
-    close();
+    setOpen(false);
+    setAnimated(false);
+    setHovered(null);
+    didOpen.current = false;
   }, [pathname]);
 
   return (
@@ -109,36 +119,85 @@ export function CreateWheel() {
       <div className="flex-1 flex justify-center" style={{ overflow: "visible" }}>
         <div className="relative" style={{ marginTop: "-1.75rem" }}>
           {open && (
-            <div
-              className="fixed left-1/2 z-[10000] w-[min(92vw,380px)] -translate-x-1/2 rounded-[28px] border border-white/15 bg-[#05070D]/95 p-3 shadow-[0_24px_80px_-24px_oklch(0.65_0.22_300_/_0.9)] backdrop-blur-2xl animate-scale-in"
-              style={{ bottom: "calc(5.75rem + env(safe-area-inset-bottom))" }}
-              onClick={(event) => event.stopPropagation()}
+            <div 
+              className="absolute z-[10000] pointer-events-none"
+              style={{
+                left: "32px", // center of size-16 button (64px / 2 = 32px)
+                top: "32px",  // center of size-16 button
+                width: 0,
+                height: 0,
+              }}
             >
-              <div className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.26em] text-muted-foreground">Create</div>
-              <div className="grid grid-cols-2 gap-2">
-                {ITEMS.map((item, i) => {
-                  const Icon = item.icon;
-                  const isHover = hovered === i;
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      data-create-menu-index={i}
-                      onClick={() => {
-                        navigate({ to: item.to });
-                        close();
+              {ITEMS.map((item, i) => {
+                const Icon = item.icon;
+                const isHover = hovered === i;
+                
+                // Card fan mathematics
+                const radius = animated ? 132 : 0; 
+                const startAngle = 165; // degrees (left)
+                const endAngle = 15; // degrees (right)
+                const angleStep = (startAngle - endAngle) / (ITEMS.length - 1);
+                const angleDeg = startAngle - i * angleStep;
+                const angleRad = (angleDeg * Math.PI) / 180;
+                
+                const x = Math.cos(angleRad) * radius;
+                const y = Math.sin(angleRad) * radius; // goes upwards
+                
+                // Tilt the card to point outward/inward like fanning cards in a hand
+                const rotation = (90 - angleDeg) * 0.55; 
+                
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    data-create-menu-index={i}
+                    onClick={() => {
+                      navigate({ to: item.to });
+                      close();
+                    }}
+                    className="absolute pointer-events-auto flex flex-col items-center justify-between rounded-2xl border bg-[#05070D]/90 p-2 text-center transition-all duration-300 ease-out select-none active:scale-95"
+                    style={{
+                      width: "82px",
+                      height: "110px",
+                      left: "-41px", // -width / 2 to center
+                      top: "-55px",  // -height / 2 to center
+                      transform: `translate(${x}px, ${-y}px) rotate(${rotation}deg) scale(${isHover ? 1.15 : 1})`,
+                      borderColor: isHover ? item.color : "rgba(255, 255, 255, 0.12)",
+                      boxShadow: isHover 
+                        ? `0 10px 25px -5px ${item.color}66, 0 0 15px ${item.color}44, inset 0 1px 0 rgba(255,255,255,0.15)`
+                        : "0 4px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+                      zIndex: isHover ? 10002 : 10000 + i,
+                      backdropFilter: "blur(16px)",
+                      willChange: "transform, box-shadow",
+                    }}
+                  >
+                    {/* Top corner suit indicator (mini icon + color dot) */}
+                    <div className="w-full flex justify-between items-center px-0.5 text-[8px] text-white/40 font-mono">
+                      <Icon className="size-2.5" style={{ color: item.color }} />
+                      <span style={{ color: item.color }}>•</span>
+                    </div>
+
+                    {/* Central main icon */}
+                    <div 
+                      className="size-10 rounded-xl flex items-center justify-center transition-transform duration-200"
+                      style={{
+                        background: `${item.color}15`,
+                        color: item.color,
+                        border: `1px solid ${item.color}33`,
+                        transform: isHover ? "scale(1.1) rotate(5deg)" : "scale(1)",
+                        boxShadow: isHover ? `0 0 12px ${item.color}33` : "none"
                       }}
-                      className="flex min-h-12 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-left active:scale-[0.98]"
-                      style={{ boxShadow: isHover ? `0 0 20px ${item.color}55` : undefined }}
                     >
-                      <span className="grid size-9 shrink-0 place-items-center rounded-xl" style={{ background: `${item.color}22`, color: item.color, border: `1px solid ${item.color}66` }}>
-                        <Icon className="size-4" />
-                      </span>
-                      <span className="min-w-0 text-sm font-bold text-white">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                      <Icon className="size-5" />
+                    </div>
+
+                    {/* Bottom label */}
+                    <div className="text-[10px] font-bold text-white tracking-wide truncate w-full">
+                      {item.label}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
 

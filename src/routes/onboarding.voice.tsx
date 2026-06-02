@@ -9,6 +9,7 @@ import { treyIElevenLabsOnboardingSession } from "@/lib/trey-i/elevenlabs-sessio
 import { treyITts } from "@/lib/trey-i/tts.server";
 import { saveOnboardingProfile, finalizeOnboarding, treyICheckUsername } from "@/lib/trey-i/onboarding.server";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding/voice")({
   component: VoiceOnboarding,
@@ -1019,7 +1020,7 @@ function VoiceOnboardingInner() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("user_onboarding")
           .select("current_step, selected_path, answers")
           .eq("user_id", user.id)
@@ -1035,7 +1036,7 @@ function VoiceOnboardingInner() {
           }
           toast.success("Resumed Trey-I voice onboarding from where you left off.");
         } else {
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "voice",
             current_step: 0,
@@ -1060,7 +1061,7 @@ function VoiceOnboardingInner() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const stepCount = SETUP_STEPS.filter((s) => stepDone(fields, s.key)).length;
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "voice",
             current_step: stepCount,

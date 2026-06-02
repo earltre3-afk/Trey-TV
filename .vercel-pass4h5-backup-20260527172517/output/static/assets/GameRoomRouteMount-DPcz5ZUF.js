@@ -1,0 +1,1 @@
+import{j as a}from"./vendor-react-C2yuukvA.js";import{G as u}from"./GameRoomModule-LcF1prPi.js";import{a as s}from"./index-CA-4MvaF.js";function n({initialView:r="home"}){const{user:e,isGuest:o}=s();return a.jsx(u,{initialView:r,currentUser:!o&&e?{id:e.uid,userId:e.uid,displayName:e.name,username:e.handle,publicProfileUid:e.uid,avatarUrl:e.avatar}:null})}export{n as G};

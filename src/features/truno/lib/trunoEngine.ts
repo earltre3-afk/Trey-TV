@@ -43,7 +43,7 @@ export interface TrunoGameState {
 }
 
 const COLORS: Exclude<TrunoCard['color'], 'black' | 'purple'>[] = ['red', 'blue', 'green', 'yellow'];
-const BOT_NAMES = ['Aaliyah', 'Marcus', 'Jamal', 'Zion', 'Nova', 'Drei', 'Lyric', 'Sage'];
+const BOT_NAMES = ['Aaliyah', 'Marcus', 'Jamal', 'Zion', 'Tre Earl', 'Drei', 'Lyric', 'Sage'];
 
 export function createTrunoGame(players: Array<{ id: string; name: string; isBot?: boolean }> = defaultPlayers()): TrunoGameState {
   const deck = shuffle(createDeck());

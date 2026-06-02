@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GoogleGenAI } from "@google/genai";
 import { verifyTreyIUser, getTreyIServiceClient, saveProfileFieldsForUser } from "./onboarding.server";
+import { aiGenerateVisionJson } from "./aiProvider.server";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,36 +69,7 @@ function validateApproveInput(input: {
 
 // ─── Gemini vision extraction ──────────────────────────────────────────────────
 
-function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
-  const project =
-    process.env.VERTEX_PROJECT?.trim() || process.env.GOOGLE_CLOUD_PROJECT?.trim();
-  const location =
-    process.env.VERTEX_LOCATION?.trim() ||
-    process.env.GOOGLE_CLOUD_LOCATION?.trim() ||
-    "us-central1";
-
-  if (project) {
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      genai: new GoogleGenAI({ vertexai: true, project, location } as any),
-      model: "gemini-2.5-flash",
-    };
-  }
-
-  const apiKey =
-    process.env.GOOGLE_GENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim();
-
-  if (!apiKey) return { genai: null as unknown as GoogleGenAI, model: "" };
-
-  return { genai: new GoogleGenAI({ apiKey }), model: "gemini-2.0-flash" };
-}
-
 async function extractFromImage(imageBase64: string, mimeType: string): Promise<ExtractedProfile> {
-  const { genai, model } = buildGeminiClient();
-  if (!genai || !model) return {};
-
   const systemPrompt = `You are a profile extraction assistant for Trey TV.
 Analyze the screenshot image provided and extract structured profile data.
 Return a single JSON object with these optional fields (only include what is clearly visible):
@@ -122,43 +93,27 @@ CRITICAL RULES:
 - If a field is not clearly visible, omit it
 - Return ONLY the JSON object, no markdown, no explanation`;
 
-  const result = await genai.models.generateContent({
-    model,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType, data: imageBase64 } },
-          { text: "Extract the profile information from this screenshot as JSON." },
-        ],
-      },
-    ],
-    config: {
+  try {
+    const parsed = await aiGenerateVisionJson<ExtractedProfile>({
+      imageBase64,
+      mimeType,
+      prompt: "Extract the profile information from this screenshot as JSON.",
       systemInstruction: systemPrompt,
       temperature: 0.2,
-      maxOutputTokens: 1024,
-    } as Record<string, unknown>,
-  });
+      maxTokens: 1024,
+    });
 
-  const raw =
-    (result as unknown as { text?: string }).text ??
-    (
-      result as unknown as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      }
-    ).candidates?.[0]?.content?.parts?.[0]?.text ??
-    "";
+    // Strip any dob or private fields that might have sneaked through
+    delete (parsed as Record<string, unknown>).date_of_birth;
+    delete (parsed as Record<string, unknown>).age;
+    delete (parsed as Record<string, unknown>).phone;
+    delete (parsed as Record<string, unknown>).email;
 
-  const clean = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-  const parsed: ExtractedProfile = JSON.parse(clean);
-
-  // Strip any dob or private fields that might have sneaked through
-  delete (parsed as Record<string, unknown>).date_of_birth;
-  delete (parsed as Record<string, unknown>).age;
-  delete (parsed as Record<string, unknown>).phone;
-  delete (parsed as Record<string, unknown>).email;
-
-  return parsed;
+    return parsed;
+  } catch (err) {
+    console.error("[extractFromImage] vision extraction error:", err);
+    return {};
+  }
 }
 
 // ─── Server functions ──────────────────────────────────────────────────────────
@@ -238,8 +193,11 @@ export const extractScreenshot = createServerFn({ method: "POST" })
 
         if (!data.imageBase64) throw new Error("No image data");
         extracted = await extractFromImage(data.imageBase64, safeMime);
+        if (!extracted || Object.keys(extracted).length === 0) {
+          fallback = true;
+        }
       } catch (err) {
-        console.error("[extractScreenshot] AI extraction failed:", err);
+        console.error("[extractScreenshot] vision extraction failed:", err);
         fallback = true;
         extracted = {};
       }
@@ -248,9 +206,9 @@ export const extractScreenshot = createServerFn({ method: "POST" })
       await (supabase as any)
         .from("profile_import_jobs")
         .update({
-          status: fallback ? "extracted" : "extracted",
+          status: "extracted",
           extracted_json: extracted,
-          error_message: fallback ? "AI extraction failed; manual review mode." : null,
+          error_message: fallback ? "Vision extraction failed; manual review mode." : null,
           updated_at: now,
         })
         .eq("id", data.jobId);

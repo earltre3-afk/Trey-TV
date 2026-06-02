@@ -1,15 +1,84 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TreyLogo } from '../components/Logo';
 import { GlassPanel } from '../components/Primitives';
-import { Smartphone, Monitor, User, Tv, Gem, Cloud, Shield, Loader2 } from 'lucide-react';
+import { Smartphone, Monitor, User, Tv, Gem, Cloud, Shield, Loader2, CheckCircle2, RefreshCw } from 'lucide-react';
 import { useTV } from '../TVContext';
 
-// Replace QR with real one from /api/tv/device/start
-const QR_PLACEHOLDER =
-  'https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=000000&color=FF2BD6&data=https://tv.treytrizzy.com/activate?code=X9M2K7B4';
+// The TV app loads this shell from file://; API calls must be absolute.
+const API_BASE = 'https://tv.treytrizzy.com';
+
+type ActStatus = 'loading' | 'pending' | 'approved' | 'expired' | 'error';
+
+function qrUrl(userCode: string) {
+  const target = `${API_BASE}/tv/activate?code=${encodeURIComponent(userCode.replace(/[^A-Za-z0-9]/g, ''))}`;
+  return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=000000&color=FF2BD6&data=${encodeURIComponent(target)}`;
+}
 
 export const ActivationScreen: React.FC = () => {
   const { navigate } = useTV();
+  const [status, setStatus] = useState<ActStatus>('loading');
+  const [userCode, setUserCode] = useState('');
+  const [deviceCode, setDeviceCode] = useState('');
+  const [expiresAt, setExpiresAt] = useState<number>(0);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = useCallback(async () => {
+    setStatus('loading');
+    setUserCode('');
+    try {
+      const r = await fetch(`${API_BASE}/api/tv/device/start`, { method: 'POST' });
+      const d = await r.json();
+      if (!r.ok || !d.device_code) { setStatus('error'); return; }
+      setDeviceCode(d.device_code);
+      setUserCode(String(d.user_code || ''));
+      setExpiresAt(d.expires_at ? new Date(d.expires_at).getTime() : Date.now() + 10 * 60 * 1000);
+      setStatus('pending');
+    } catch {
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => { start(); }, [start]);
+
+  // Poll for approval while pending.
+  useEffect(() => {
+    if (status !== 'pending' || !deviceCode) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/tv/device/status?device_code=${encodeURIComponent(deviceCode)}`);
+        const d = await r.json();
+        if (d.status === 'approved' && d.access_token) {
+          try { localStorage.setItem('trey_tv_token', d.access_token); } catch {}
+          (window as unknown as { TreyTvNative?: { saveToken?: (t: string) => void } }).TreyTvNative?.saveToken?.(d.access_token);
+          setStatus('approved');
+          if (pollRef.current) clearInterval(pollRef.current);
+          setTimeout(() => navigate('home'), 1500);
+        } else if (d.status === 'expired' || d.status === 'denied') {
+          setStatus('expired');
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch { /* keep polling */ }
+    }, 5000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [status, deviceCode, navigate]);
+
+  // Countdown.
+  useEffect(() => {
+    if (status !== 'pending' || !expiresAt) return;
+    const tick = () => {
+      const left = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setSecondsLeft(left);
+      if (left <= 0) setStatus('expired');
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [status, expiresAt]);
+
+  const mmss = `${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`;
+  const spacedCode = userCode.replace(/[^A-Za-z0-9]/g, '').split('').join(' ');
+
   return (
     <div className="relative min-h-screen w-full bg-[#05050A] text-white overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
@@ -33,8 +102,10 @@ export const ActivationScreen: React.FC = () => {
             <div>
               <div className="flex items-center gap-2 mb-2"><Smartphone className="w-5 h-5 text-fuchsia-400" /><div className="text-xl font-bold">Scan to Activate</div></div>
               <p className="text-sm text-white/65 mb-4">Open your phone camera <u>and</u> scan this QR code</p>
-              <div className="relative w-[260px] h-[260px] rounded-2xl border-2 border-fuchsia-400/70 shadow-[0_0_36px_rgba(255,43,214,0.5)] overflow-hidden bg-white">
-                <img src={QR_PLACEHOLDER} alt="QR" className="w-full h-full object-cover" />
+              <div className="relative w-[260px] h-[260px] rounded-2xl border-2 border-fuchsia-400/70 shadow-[0_0_36px_rgba(255,43,214,0.5)] overflow-hidden bg-white grid place-items-center">
+                {userCode
+                  ? <img src={qrUrl(userCode)} alt="Activation QR code" className="w-full h-full object-cover" />
+                  : <Loader2 className="w-10 h-10 text-black/40 animate-spin" />}
               </div>
             </div>
 
@@ -43,13 +114,15 @@ export const ActivationScreen: React.FC = () => {
               <p className="text-sm text-white/65 mb-4">
                 Visit <span className="text-fuchsia-300">tv.treytrizzy.com/tv/activate</span> and enter this code
               </p>
-              <div className="rounded-2xl border border-fuchsia-500/40 bg-black/50 px-6 py-7 text-center shadow-[0_0_30px_rgba(255,43,214,0.3)_inset]">
-                <div className="text-5xl font-black tracking-[0.2em] bg-gradient-to-r from-white to-fuchsia-200 bg-clip-text text-transparent">
-                  X9 M2 K7 B4
-                </div>
+              <div className="rounded-2xl border border-fuchsia-500/40 bg-black/50 px-6 py-7 text-center shadow-[0_0_30px_rgba(255,43,214,0.3)_inset] min-h-[96px] grid place-items-center">
+                {userCode
+                  ? <div className="text-5xl font-black tracking-[0.18em] bg-gradient-to-r from-white to-fuchsia-200 bg-clip-text text-transparent">{spacedCode}</div>
+                  : <Loader2 className="w-8 h-8 text-fuchsia-300 animate-spin" />}
               </div>
               <div className="mt-4 text-sm text-white/65 text-center">
-                Code expires in <span className="text-fuchsia-300 font-bold">14:55</span>
+                {status === 'pending'
+                  ? <>Code expires in <span className="text-fuchsia-300 font-bold">{mmss}</span></>
+                  : status === 'expired' ? <span className="text-amber-300 font-bold">Code expired</span> : <>&nbsp;</>}
               </div>
             </div>
           </div>
@@ -57,14 +130,37 @@ export const ActivationScreen: React.FC = () => {
 
         {/* Status bar */}
         <GlassPanel className="col-span-2 p-6 flex items-center gap-5">
-          <Loader2 className="w-10 h-10 text-fuchsia-400 animate-spin" />
-          <div>
-            <div className="text-xl font-bold">Waiting for approval</div>
-            <div className="text-sm text-white/60">Don't see your activation? Check your internet connection or try again in a moment.</div>
-          </div>
-          <button onClick={() => navigate('home')} className="ml-auto px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(255,43,214,0.5)]">
-            Skip (Demo) →
-          </button>
+          {status === 'approved' ? (
+            <>
+              <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+              <div>
+                <div className="text-xl font-bold">You're signed in!</div>
+                <div className="text-sm text-white/60">Taking you to Trey TV…</div>
+              </div>
+            </>
+          ) : status === 'expired' || status === 'error' ? (
+            <>
+              <RefreshCw className="w-10 h-10 text-fuchsia-400" />
+              <div>
+                <div className="text-xl font-bold">{status === 'error' ? "Couldn't reach Trey TV" : 'This code expired'}</div>
+                <div className="text-sm text-white/60">Generate a new code to try again.</div>
+              </div>
+              <button autoFocus onClick={() => start()} className="ml-auto px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold outline-none focus:scale-[1.05] focus:ring-2 focus:ring-fuchsia-400">
+                New Code
+              </button>
+            </>
+          ) : (
+            <>
+              <Loader2 className="w-10 h-10 text-fuchsia-400 animate-spin" />
+              <div>
+                <div className="text-xl font-bold">Waiting for approval</div>
+                <div className="text-sm text-white/60">Approve this TV on your phone or computer to finish signing in.</div>
+              </div>
+              <button onClick={() => navigate('home')} className="ml-auto px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 outline-none focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(255,43,214,0.5)]">
+                Browse without signing in →
+              </button>
+            </>
+          )}
         </GlassPanel>
 
         {/* Benefits */}

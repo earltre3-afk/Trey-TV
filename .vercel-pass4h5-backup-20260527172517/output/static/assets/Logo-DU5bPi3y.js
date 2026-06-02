@@ -1,0 +1,1 @@
+import{j as r}from"./vendor-react-C2yuukvA.js";import{t as a}from"./trey-tv-logo-CUbU5wB2.js";function e({className:o="h-9"}){return r.jsx("img",{src:a,alt:"Trey TV",draggable:!1,className:`${o} aspect-square object-contain drop-shadow-[0_0_18px_rgba(244,194,74,0.45)]`})}export{e as L};

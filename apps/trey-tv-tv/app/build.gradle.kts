@@ -45,7 +45,7 @@ android {
     buildToolsVersion = "35.0.0"
 
     defaultConfig {
-        applicationId = "com.treytv.tv"
+        applicationId = "com.treytv.streamingbox"
         minSdk = 23
         targetSdk = 35
         versionCode = 2
@@ -77,7 +77,6 @@ android {
             // Debug builds keep the auto-generated debug keystore. Useful for
             // sideloading during development.
             isMinifyEnabled = false
-            applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         release {

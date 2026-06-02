@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export type Screen =
   | 'home' | 'activate' | 'guide' | 'detail' | 'player'
-  | 'games' | 'spades' | 'stories' | 'creator' | 'profile' | 'settings';
+  | 'games' | 'spades' | 'stories' | 'creator' | 'profile' | 'settings'
+  | 'search' | 'browse' | 'my-list' | 'music' | 'premium' | 'watch-parties' | 'source-hub';
 
 type TVCtx = {
   screen: Screen;

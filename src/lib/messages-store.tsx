@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef, type ReactNode } from "react";
 import { creators } from "@/lib/mock-data";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -31,6 +31,18 @@ export type Message = {
   gifFwdId?: string;
   gifPosterUrl?: string;
   gifTitle?: string;
+  // Collaboration proposals
+  isCollabProposal?: boolean;
+  collabType?: "Remix" | "Vocal Feature" | "Collab Track" | "Beat Production";
+  collabPitch?: string;
+  collabSplit?: number;
+  collabBeatName?: string;
+  collabStatus?: "pending" | "accepted" | "declined";
+  // Scheduled replies
+  isScheduledReply?: boolean;
+  scheduledTime?: number;
+  scheduledText?: string;
+  scheduledStatus?: "pending" | "sent" | "cancelled";
 };
 
 export type Peer = {
@@ -64,6 +76,15 @@ type Ctx = {
   openThread: (peer: Peer) => string;
   markRead: (threadId: string) => void;
   ensureFromHandle: (handle: string) => string | null;
+  sendCollabProposal: (threadId: string, input: {
+    collabType: "Remix" | "Vocal Feature" | "Collab Track" | "Beat Production";
+    pitch: string;
+    split: number;
+    beatName?: string;
+  }) => void;
+  sendScheduledReply: (threadId: string, text: string, timeLabel: string, delayMs: number) => void;
+  respondToCollab: (messageId: string, status: "accepted" | "declined") => void;
+  cancelScheduledReply: (messageId: string) => void;
 };
 
 const C = createContext<Ctx | null>(null);
@@ -101,6 +122,66 @@ function uid() {
 
 const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 
+function parseCollabProposal(body: string) {
+  const isCollab = body.startsWith("[COLLAB_PROPOSAL]") ||
+                  body.startsWith("[COLLAB_PROPOSAL_ACCEPTED]") ||
+                  body.startsWith("[COLLAB_PROPOSAL_DECLINED]");
+  if (!isCollab) return null;
+
+  let collabStatus: "pending" | "accepted" | "declined" = "pending";
+  if (body.startsWith("[COLLAB_PROPOSAL_ACCEPTED]")) collabStatus = "accepted";
+  if (body.startsWith("[COLLAB_PROPOSAL_DECLINED]")) collabStatus = "declined";
+
+  // Parse collabType
+  const typeMatch = body.match(/proposal for a (.*?)(!| Pitch:)/);
+  const collabType = typeMatch ? typeMatch[1] : "song";
+
+  // Parse pitch
+  const pitchMatch = body.match(/Pitch: "(.*?)"/);
+  const collabPitch = pitchMatch ? pitchMatch[1] : "";
+
+  // Parse splits
+  const splitMatch = body.match(/Splits: (.*?)(%| \|)/);
+  const collabSplit = splitMatch ? Number(splitMatch[1]) : 50;
+
+  // Parse beatName
+  const beatMatch = body.match(/Beat: (.*?)$/);
+  const collabBeatName = beatMatch ? beatMatch[1] : undefined;
+
+  return {
+    isCollabProposal: true,
+    collabStatus,
+    collabType: collabType as any,
+    collabPitch,
+    collabSplit,
+    collabBeatName,
+  };
+}
+
+function parseScheduledReply(body: string) {
+  const isScheduled = body.startsWith("[SCHEDULED_REPLY]") ||
+                      body.startsWith("[SCHEDULED_REPLY_SENT]") ||
+                      body.startsWith("[SCHEDULED_REPLY_CANCELLED]");
+  if (!isScheduled) return null;
+
+  let scheduledStatus: "pending" | "sent" | "cancelled" = "pending";
+  if (body.startsWith("[SCHEDULED_REPLY_SENT]")) scheduledStatus = "sent";
+  if (body.startsWith("[SCHEDULED_REPLY_CANCELLED]")) scheduledStatus = "cancelled";
+
+  const timeMatch = body.match(/\[time:\s*(\d+)\]/);
+  const scheduledTime = timeMatch ? Number(timeMatch[1]) : Date.now();
+
+  const textMatch = body.match(/:\s*"(.*?)"$/);
+  const scheduledText = textMatch ? textMatch[1] : "";
+
+  return {
+    isScheduledReply: true,
+    scheduledStatus,
+    scheduledTime,
+    scheduledText,
+  };
+}
+
 export function MessagesProvider({ children }: { children: ReactNode }) {
   const [threads, setThreads] = useState<ThreadMeta[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -108,6 +189,44 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const { user: supabaseUser } = useSupabaseAuth();
   const currentProfile = useCurrentUser();
   const storageKey = `${KEY}:${currentProfile.uid}`;
+
+  const setupScheduledTimeout = useCallback((msgId: string, threadId: string, text: string, delayMs: number) => {
+    setTimeout(() => {
+      setMessages((currentMsgs) => {
+        const item = currentMsgs.find(m => m.id === msgId);
+        if (item && item.scheduledStatus === "pending") {
+          const updated = currentMsgs.map(m => m.id === msgId ? { ...m, scheduledStatus: "sent" as const } : m);
+          const realId = uid();
+
+          if (isUUID(threadId) && supabaseUser) {
+            const supabase = createBrowserClient() as any;
+            const updatedBody = item.text.replace("[SCHEDULED_REPLY]", "[SCHEDULED_REPLY_SENT]");
+            void supabase.from("direct_messages").update({ body: updatedBody }).eq("id", msgId);
+
+            void supabase.from("direct_messages").insert({
+              sender_id: supabaseUser.id,
+              recipient_id: threadId,
+              body: text,
+              message_type: "text"
+            });
+          }
+
+          return [
+            ...updated,
+            {
+              id: realId,
+              threadId,
+              from: "me",
+              text,
+              ts: Date.now(),
+              status: "sent",
+            }
+          ];
+        }
+        return currentMsgs;
+      });
+    }, delayMs);
+  }, [supabaseUser]);
 
   // Ghost message reaper — prune expired unread ghost messages every 5s
   useEffect(() => {
@@ -149,10 +268,9 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    try { 
-      const localThreads = threads.filter(t => !isUUID(t.id));
-      const localMsgs = messages.filter(m => !isUUID(m.threadId));
-      localStorage.setItem(storageKey, JSON.stringify({ threads: localThreads, messages: localMsgs }));
+    try {
+      const localMsgs = messages.filter(m => !isUUID(m.id));
+      localStorage.setItem(storageKey, JSON.stringify({ threads, messages: localMsgs }));
     } catch {}
   }, [threads, messages, hydrated, storageKey]);
 
@@ -212,6 +330,10 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
           const isGifMsg = row.message_type === "gif" || (row.gif_fwd_id != null && row.media_url);
           const resolvedMediaUrl = await createMessageMediaUrl(row.media_url);
+
+          const collabProps = parseCollabProposal(row.body ?? "");
+          const scheduledProps = parseScheduledReply(row.body ?? "");
+
           dbMsgs.push({
             id: row.id,
             threadId: peerId,
@@ -229,23 +351,41 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             gifFwdId: row.gif_fwd_id ?? undefined,
             gifPosterUrl: row.gif_poster_url ?? undefined,
             gifTitle: row.gif_title ?? undefined,
+            ...collabProps,
+            ...scheduledProps,
           });
         }
 
         setThreads(prev => {
-          const locals = prev.filter(t => !isUUID(t.id));
-          return [...Array.from(peerThreads.values()), ...locals];
+          const merged = new Map<string, ThreadMeta>();
+          for (const t of Array.from(peerThreads.values())) merged.set(t.id, t);
+          for (const t of prev) {
+            if (!merged.has(t.id)) merged.set(t.id, t);
+          }
+          return Array.from(merged.values());
         });
         setMessages(prev => {
-          const locals = prev.filter(m => !isUUID(m.threadId));
-          return [...dbMsgs.sort((a,b) => a.ts - b.ts), ...locals];
+          const localMsgs = prev.filter(m => !isUUID(m.id));
+          return [...dbMsgs.sort((a,b) => a.ts - b.ts), ...localMsgs];
+        });
+
+        // Resume loaded pending scheduled reply timeouts
+        dbMsgs.forEach((m) => {
+          if (m.isScheduledReply && m.scheduledStatus === "pending" && m.scheduledTime) {
+            const delay = m.scheduledTime - Date.now();
+            if (delay > 0) {
+              setupScheduledTimeout(m.id, m.threadId, m.scheduledText || "", delay);
+            } else {
+              m.scheduledStatus = "sent";
+            }
+          }
         });
       }
     };
 
     fetchConversations();
     return () => { mounted = false; };
-  }, [supabaseUser?.id]);
+  }, [supabaseUser?.id, setupScheduledTimeout]);
 
   useEffect(() => {
     if (!supabaseUser) return;
@@ -528,7 +668,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     if (isUUID(threadId)) {
       try {
-        const mediaPath = await uploadMessageMedia(supabaseUser.id, file, "media");
+        const mediaPath = await uploadMessageMedia(supabaseUser.id!, file, "media");
         const supabase = createBrowserClient() as any;
         const { data, error } = await supabase
           .from("direct_messages")
@@ -626,7 +766,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     if (isUUID(threadId)) {
       try {
-        const voicePath = await uploadMessageMedia(supabaseUser.id, blob, "voice");
+        const voicePath = await uploadMessageMedia(supabaseUser.id!, blob, "voice");
         const supabase = createBrowserClient() as any;
         const { data, error } = await supabase
           .from("direct_messages")
@@ -656,8 +796,116 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     toast.success("Voice note sent");
   };
 
+  const sendCollabProposal: Ctx["sendCollabProposal"] = async (threadId, input) => {
+    if (!supabaseUser) {
+      toast.error("Please sign in to send collaboration proposals");
+      return;
+    }
+
+    const localId = uid();
+    const ts = Date.now();
+    const body = `[COLLAB_PROPOSAL] I've sent a proposal for a ${input.collabType}! Pitch: "${input.pitch}" | Splits: ${input.split}% | Beat: ${input.beatName || "None"}`;
+    const newMsg: Message = {
+      id: localId,
+      threadId,
+      from: "me",
+      text: body,
+      ts,
+      status: "sent",
+      isCollabProposal: true,
+      collabType: input.collabType,
+      collabPitch: input.pitch,
+      collabSplit: input.split,
+      collabBeatName: input.beatName,
+      collabStatus: "pending",
+    };
+
+    setMessages((s) => [...s, newMsg]);
+    toast.success("Collaboration proposal sent!");
+
+    if (isUUID(threadId)) {
+      try {
+        const supabase = createBrowserClient() as any;
+        const { data, error } = await supabase
+          .from("direct_messages")
+          .insert({
+            sender_id: supabaseUser.id,
+            recipient_id: threadId,
+            body,
+            message_type: "text",
+          })
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        if (data?.id) {
+          setMessages((s) => s.map((m) => (m.id === localId ? { ...m, id: (data as any).id, status: "delivered" } : m)));
+        }
+      } catch (err) {
+        console.error("Failed to persist collab proposal:", err);
+        toast.error("Could not save collab proposal");
+      }
+    }
+  };
+
+  const respondToCollab: Ctx["respondToCollab"] = (messageId, status) => {
+    setMessages((s) =>
+      s.map((m) => (m.id === messageId ? { ...m, collabStatus: status } : m))
+    );
+    if (status === "accepted") {
+      toast.success("Proposal accepted! Collaboration room started.");
+      setTimeout(() => {
+        const replyId = uid();
+        const responseMsg: Message = {
+          id: replyId,
+          threadId: messages.find(m => m.id === messageId)?.threadId || "",
+          from: "them",
+          text: "Let's do it! That sounds like an awesome plan. Collab room is initialized!",
+          ts: Date.now(),
+          status: "delivered",
+        };
+        setMessages((s) => [...s, responseMsg]);
+      }, 1500);
+    } else {
+      toast.error("Proposal declined.");
+    }
+  };
+
+  const sendScheduledReply: Ctx["sendScheduledReply"] = (threadId, text, timeLabel, delayMs) => {
+    if (!supabaseUser) {
+      toast.error("Please sign in to schedule a reply");
+      return;
+    }
+
+    const localId = uid();
+    const scheduledTime = Date.now() + delayMs;
+    const newMsg: Message = {
+      id: localId,
+      threadId,
+      from: "me",
+      text: `[SCHEDULED_REPLY] Scheduled to send in ${timeLabel}: "${text}"`,
+      ts: Date.now(),
+      status: "sent",
+      isScheduledReply: true,
+      scheduledTime,
+      scheduledText: text,
+      scheduledStatus: "pending",
+    };
+    setMessages((s) => [...s, newMsg]);
+    toast.success(`Reply scheduled for ${timeLabel}`);
+
+    setupScheduledTimeout(localId, threadId, text, delayMs);
+  };
+
+  const cancelScheduledReply: Ctx["cancelScheduledReply"] = (messageId) => {
+    setMessages((s) =>
+      s.map((m) => (m.id === messageId ? { ...m, scheduledStatus: "cancelled" } : m))
+    );
+    toast.error("Scheduled reply cancelled");
+  };
+
   return (
-    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, sendGhost, sendMedia, sendFwdGif, sendVoice, openThread, markRead, ensureFromHandle }}>
+    <C.Provider value={{ threads: outThreads, messagesOf, unreadOf, totalUnread, send, sendGhost, sendMedia, sendFwdGif, sendVoice, openThread, markRead, ensureFromHandle, sendCollabProposal, respondToCollab, sendScheduledReply, cancelScheduledReply }}>
       {children}
     </C.Provider>
   );

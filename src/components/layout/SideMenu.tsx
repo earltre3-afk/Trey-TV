@@ -1,4 +1,4 @@
-import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays, Award, Dices } from "lucide-react";
+import { X, Home, Sparkles, Search, Users, Heart, Bookmark, Radio, Crown, BarChart3, Settings, Gem, ChevronRight, Pencil, Activity, ShieldCheck, LogIn, LogOut, Upload, CalendarDays, Award, Dices, Music } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useNavigate } from "@tanstack/react-router";
 
@@ -20,6 +20,7 @@ const items: Item[] = [
   { icon: Activity, label: "Activity", sub: "Your interactions", to: "/activity", color: "text-[oklch(0.82_0.15_215)]" },
   { icon: Gem, label: "Rewards", sub: "Points · Gifts · Perks", to: "/rewards", color: "text-primary" },
   { icon: Dices, label: "Games", sub: "Lounge · Cards · Coming Soon", to: "/games", color: "text-[#00B7FF]" },
+  { icon: Music, label: "Tradio", sub: "The Native Music World", to: "/tradio", color: "text-[#D946EF]" },
   { icon: Radio, label: "Go Live", sub: "Broadcast to the World", to: "/go-live", color: "text-[oklch(0.7_0.25_340)]" },
   { icon: Award, label: "Apply", sub: "Become a creator", to: "/apply", color: "text-primary" },
 ];
@@ -45,6 +46,8 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
     nav({ to: "/login" });
   };
   const visibleCreatorItems = isCreator ? creatorItems : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
+  // Tradio requires a signed-in Trey TV account — hide it from guests.
+  const visibleItems = isGuest ? items.filter((i) => i.to !== "/tradio") : items;
 
   return (
     <>
@@ -74,7 +77,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           </div>
 
           <div className="px-3 space-y-1">
-            {items.map((i, idx) => (
+            {visibleItems.map((i, idx) => (
               <Link
                 key={i.label}
                 to={i.to}
@@ -174,4 +177,3 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
     </>
   );
 }
-

@@ -1,10 +1,11 @@
 import { Ghost, Image as ImageIcon, Sparkles, X } from "lucide-react";
 
 interface PlusMenuProps {
-  onGhostMessage: () => void;
+  onGhostMessage?: () => void;
   onPhoto: () => void;
   onFwd: () => void;
   onClose: () => void;
+  excludeGhost?: boolean;
 }
 
 const MENU_ITEMS = [
@@ -40,13 +41,15 @@ const MENU_ITEMS = [
   },
 ];
 
-export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose }: PlusMenuProps) {
+export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost }: PlusMenuProps) {
   const handleAction = (id: string) => {
-    if (id === "ghost") onGhostMessage();
+    if (id === "ghost") onGhostMessage?.();
     else if (id === "fwd") onFwd();
     else if (id === "photo") onPhoto();
     onClose();
   };
+
+  const items = excludeGhost ? MENU_ITEMS.filter((item) => item.id !== "ghost") : MENU_ITEMS;
 
   return (
     <div
@@ -68,7 +71,7 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose }: PlusMenuPr
         </div>
 
         <div className="space-y-2.5">
-          {MENU_ITEMS.map((item) => {
+          {items.map((item) => {
             const Icon = item.icon;
             return (
               <button

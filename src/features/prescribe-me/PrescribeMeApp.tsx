@@ -16,6 +16,7 @@ import {
   type Mood, type Energy, type ContentType, type MomentNeed, type SavedPrescription, type PrescriptionAnswers,
 } from './components/data';
 import './components/no-scroll.css';
+import { curatePrescriptionWithAI } from '@/lib/trey-i/vertex.server';
 
 type Step = 'landing' | 'mood' | 'energy' | 'content' | 'moment' | 'analyzing' | 'results' | 'history';
 
@@ -34,6 +35,33 @@ const PrescribeMeApp: React.FC = () => {
   const { user } = useAuth();
   const syncedForUserRef = useRef<string | null>(null);
 
+  const [aiResult, setAiResult] = useState<{ title: string; explanation: string; rankedIds: string[] } | null>(null);
+
+  const answers: PrescriptionAnswers = useMemo(() => ({
+    moods, energy, contentTypes, momentNeeds,
+  }), [moods, energy, contentTypes, momentNeeds]);
+
+  const scored = useMemo(() => scoreContent(answers), [answers]);
+
+  useEffect(() => {
+    if (step === 'analyzing') {
+      setAiResult(null);
+      curatePrescriptionWithAI({ data: { answers } })
+        .then((res) => {
+          setAiResult(res);
+        })
+        .catch((err) => {
+          console.error("AI curation failed, falling back to local scoring:", err);
+          const scoredLocal = scoreContent(answers);
+          setAiResult({
+            title: generatePrescriptionTitle(answers),
+            explanation: `Curated based on your active choices for ${answers.moods.slice(0, 2).join(" & ")}.`,
+            rankedIds: scoredLocal.slice(0, 6).map((x) => x.id),
+          });
+        });
+    }
+  }, [step, answers]);
+
   useEffect(() => { setPrescriptions(loadPrescriptions()); }, []);
 
   // When a user signs in, sync local prescriptions to DB and merge in remote ones.
@@ -47,12 +75,6 @@ const PrescribeMeApp: React.FC = () => {
       savePrescriptions(merged);
     });
   }, [user]);
-
-  const answers: PrescriptionAnswers = useMemo(() => ({
-    moods, energy, contentTypes, momentNeeds,
-  }), [moods, energy, contentTypes, momentNeeds]);
-
-  const scored = useMemo(() => scoreContent(answers), [answers]);
 
   const currentPrescription = useMemo(
     () => prescriptions.find((p) => p.id === currentPrescriptionId) || null,
@@ -72,20 +94,23 @@ const PrescribeMeApp: React.FC = () => {
     void upsertPrescription(user.id, p);
   };
 
-  const createPrescription = (saved = false): SavedPrescription => {
-    const title = generatePrescriptionTitle(answers);
-    const top = scored[0];
+  const createPrescription = (saved = false, aiData?: { title: string; explanation: string; rankedIds: string[] }): SavedPrescription => {
+    const title = aiData?.title || generatePrescriptionTitle(answers);
+    const explanation = aiData?.explanation || `Curated based on your active choices for ${answers.moods.slice(0, 2).join(" & ")}.`;
+    const recIds = aiData?.rankedIds || scored.slice(0, 6).map((x) => x.id);
+    const topId = recIds[0] || '';
     const matchScore = Math.round(scored.slice(0, 5).reduce((s, x) => s + x.score, 0) / Math.max(1, Math.min(5, scored.length)));
     const p: SavedPrescription = {
       id: `rx_${Date.now()}`,
       title,
       answers,
-      topId: top?.id || '',
-      recIds: scored.slice(0, 6).map((x) => x.id),
+      topId,
+      recIds,
       matchScore,
       createdAt: Date.now(),
       isSaved: saved,
       isFavorite: false,
+      explanation,
     };
     updatePrescriptions((prev) => [p, ...prev].slice(0, 50));
     setCurrentPrescriptionId(p.id);
@@ -100,8 +125,20 @@ const PrescribeMeApp: React.FC = () => {
   };
 
   const onAnalyzeDone = () => {
-    createPrescription(false);
-    setStep('results');
+    if (aiResult) {
+      createPrescription(false, aiResult);
+      setStep('results');
+    } else {
+      console.warn("AI result not ready yet on done. Calculating local fallback.");
+      const scoredLocal = scoreContent(answers);
+      const fallback = {
+        title: generatePrescriptionTitle(answers),
+        explanation: `Curated based on your active choices for ${answers.moods.slice(0, 2).join(" & ")}.`,
+        rankedIds: scoredLocal.slice(0, 6).map((x) => x.id),
+      };
+      createPrescription(false, fallback);
+      setStep('results');
+    }
   };
 
   const onSaveToggle = () => {
@@ -218,6 +255,7 @@ const PrescribeMeApp: React.FC = () => {
             onOpenHistory={() => setStep('history')}
             onGoWatch={onGoWatch}
             isSaved={!!currentPrescription?.isSaved}
+            explanation={currentPrescription?.explanation}
           />
         )}
         {step === 'history' && (

@@ -105,6 +105,11 @@ export const GameRow: React.FC<{ title: string; items: Game[]; onSelect?: (g: Ga
           <div className="relative h-[150px] w-full overflow-hidden">
             <ArtworkFrame item={g} className="" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+            {g.status && (
+              <span className="absolute top-2 right-2 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-black text-amber-200">
+                {g.status}
+              </span>
+            )}
             <div className="absolute bottom-2 left-3 right-3">
               <div className="font-bold text-white text-base">{g.title}</div>
               <div className="flex items-center justify-between text-xs text-white/70">

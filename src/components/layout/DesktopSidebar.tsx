@@ -66,7 +66,7 @@ export function DesktopSidebar() {
 
         <Link to="/u/$uid" params={{ uid: profileUid }} className="flex items-center gap-3 p-2 rounded-2xl glass neon-border hover-lift">
           <div className="relative size-11 rounded-full conic-ring shrink-0">
-            <img src={profileAvatar} className="size-11 rounded-full object-cover" alt="" />
+            <img src={profileAvatar || undefined} className="size-11 rounded-full object-cover" alt="" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-semibold flex items-center gap-1 truncate">

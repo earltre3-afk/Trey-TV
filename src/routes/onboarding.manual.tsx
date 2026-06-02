@@ -134,7 +134,7 @@ function ManualOnboarding() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("user_onboarding")
           .select("current_step, selected_path, answers")
           .eq("user_id", user.id)
@@ -152,7 +152,7 @@ function ManualOnboarding() {
           }
           toast.success("Resumed manual onboarding from where you left off.");
         } else {
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "manual",
             current_step: 0,
@@ -215,7 +215,7 @@ function ManualOnboarding() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "manual",
             current_step: stepIdx + 1,
@@ -237,7 +237,7 @@ function ManualOnboarding() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "manual",
             current_step: stepIdx - 1,

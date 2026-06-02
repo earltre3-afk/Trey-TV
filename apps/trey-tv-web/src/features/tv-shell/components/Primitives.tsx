@@ -68,7 +68,15 @@ export const RowHeader: React.FC<{ title: string; viewAll?: boolean }> = ({ titl
   <div className="flex items-end justify-between mb-3">
     <h2 className="text-2xl font-bold text-white tracking-tight">{title}</h2>
     {viewAll && (
-      <button className="text-sm text-fuchsia-300 hover:text-fuchsia-200 focus:text-white focus:underline outline-none">
+      // Not a D-pad focus stop: these sit on their own line above each row, so
+      // making them focusable made Down land on a far-right "View All" between
+      // every card row. Down now goes card-row -> card-row; the row itself is
+      // browsed with Left/Right.
+      <button
+        tabIndex={-1}
+        data-focusable="false"
+        className="text-sm text-fuchsia-300 hover:text-fuchsia-200 outline-none"
+      >
         View All ›
       </button>
     )}

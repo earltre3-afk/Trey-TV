@@ -17,6 +17,7 @@ import { useChat } from '@/features/games/hooks/useChat';
 import { GameChatDrawer, ChatHeaderButton } from '../shared/GameChatDrawer';
 import treyTvLogo from '@/assets/trey-tv-logo.png';
 import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
+import { getGameSpadesDecision } from '@/lib/trey-i/vertex.server';
 
 interface Props {
   onBack: () => void;
@@ -47,6 +48,37 @@ function spadesExtract(s: SpadesState) {
   return { currentSeat: s.currentSeat, phase: s.phase, round: s.round, ended: s.phase === 'game-over' };
 }
 
+async function getSpadesDecisionWithFallback(state: SpadesState, seat: number, isBid: boolean): Promise<{ bid?: number; cardId?: string }> {
+  let timeoutId: any;
+  const timeoutPromise = new Promise<{ bid?: number; cardId?: string }>((resolve) => {
+    timeoutId = setTimeout(() => {
+      console.warn("Spades AI decision timed out. Falling back to local engine.");
+      if (isBid) {
+        resolve({ bid: botBid(state, seat) });
+      } else {
+        resolve({ cardId: botPlay(state, seat) });
+      }
+    }, 1800);
+  });
+
+  const apiPromise = getGameSpadesDecision({ data: { state, seat, isBid } })
+    .then((res) => {
+      clearTimeout(timeoutId);
+      return res;
+    })
+    .catch((err) => {
+      console.error("Spades AI decision failed:", err);
+      clearTimeout(timeoutId);
+      if (isBid) {
+        return { bid: botBid(state, seat) };
+      } else {
+        return { cardId: botPlay(state, seat) };
+      }
+    });
+
+  return Promise.race([apiPromise, timeoutPromise]);
+}
+
 export const SpadesTable: React.FC<Props> = (props) => {
   if (props.roomId && props.identity) return <ServerSpades {...props} roomId={props.roomId!} identity={props.identity!} />;
   return <LocalSpades {...props} />;
@@ -62,16 +94,42 @@ const LocalSpades: React.FC<Props> = ({ onBack, onLegend, targetScore = 500 }) =
   useEffect(() => {
     if (state.phase === 'bidding') {
       const seat = state.currentSeat;
-      const delay = state.players[seat].isBot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
-      const t = setTimeout(() => setState(s => placeBid(s, seat, botBid(s, seat))), delay);
+      const isBot = state.players[seat].isBot;
+      const delay = isBot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getSpadesDecisionWithFallback(state, seat, true);
+          setState(s => {
+            if (s.phase === 'bidding' && s.currentSeat === seat) {
+              return placeBid(s, seat, decision.bid ?? botBid(s, seat));
+            }
+            return s;
+          });
+        } else {
+          setState(s => placeBid(s, seat, botBid(s, seat)));
+        }
+      }, delay);
       return () => clearTimeout(t);
     }
     if (state.phase === 'playing') {
       const seat = state.currentSeat;
-      const delay = state.players[seat].isBot
+      const isBot = state.players[seat].isBot;
+      const delay = isBot
         ? (state.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS)
         : HUMAN_TURN_TIMEOUT_MS;
-      const t = setTimeout(() => setState(s => playCard(s, seat, botPlay(s, seat))), delay);
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getSpadesDecisionWithFallback(state, seat, false);
+          setState(s => {
+            if (s.phase === 'playing' && s.currentSeat === seat) {
+              return playCard(s, seat, decision.cardId ?? botPlay(s, seat));
+            }
+            return s;
+          });
+        } else {
+          setState(s => playCard(s, seat, botPlay(s, seat)));
+        }
+      }, delay);
       return () => clearTimeout(t);
     }
   }, [state.phase, state.currentSeat, state.trick.length]);
@@ -113,16 +171,32 @@ const ServerSpades: React.FC<Props & { roomId: string; identity: PlayerIdentity 
     const seatPlayer = room.players.find(p => p.seat_index === activeState.currentSeat);
     if (activeState.phase === 'bidding') {
       const seat = activeState.currentSeat;
-      const delay = seatPlayer?.is_bot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
-      const t = setTimeout(() => room.setHostState(placeBid(activeState, seat, botBid(activeState, seat))), delay);
+      const isBot = seatPlayer?.is_bot;
+      const delay = isBot ? BOT_BID_DELAY_MS : HUMAN_TURN_TIMEOUT_MS;
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getSpadesDecisionWithFallback(activeState, seat, true);
+          room.setHostState(placeBid(activeState, seat, decision.bid ?? botBid(activeState, seat)));
+        } else {
+          room.setHostState(placeBid(activeState, seat, botBid(activeState, seat)));
+        }
+      }, delay);
       return () => clearTimeout(t);
     }
     if (activeState.phase === 'playing') {
       const seat = activeState.currentSeat;
-      const delay = seatPlayer?.is_bot
+      const isBot = seatPlayer?.is_bot;
+      const delay = isBot
         ? (activeState.trick.length === 3 ? BOT_TRICK_CLOSE_DELAY_MS : BOT_CARD_DELAY_MS)
         : HUMAN_TURN_TIMEOUT_MS;
-      const t = setTimeout(() => room.setHostState(playCard(activeState, seat, botPlay(activeState, seat))), delay);
+      const t = setTimeout(async () => {
+        if (isBot) {
+          const decision = await getSpadesDecisionWithFallback(activeState, seat, false);
+          room.setHostState(playCard(activeState, seat, decision.cardId ?? botPlay(activeState, seat)));
+        } else {
+          room.setHostState(playCard(activeState, seat, botPlay(activeState, seat)));
+        }
+      }, delay);
       return () => clearTimeout(t);
     }
   }, [room.isHost, state?.phase, state?.currentSeat, state?.trick.length, roomPlayersKey]);

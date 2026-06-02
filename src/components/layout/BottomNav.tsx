@@ -13,7 +13,7 @@ export function BottomNav() {
   const profileAvatar = user?.avatar ?? currentUser.avatar;
   const onProfile = pathname.startsWith("/u/");
 
-  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/music-review");
+  const hideNav = pathname.startsWith("/apply/") || pathname.startsWith("/onboarding/") || pathname.startsWith("/music-review") || pathname.startsWith("/tradio");
   if (hideNav) return null;
 
   return (
@@ -125,7 +125,7 @@ function ProfileItem({ active, uid, avatar }: { active: boolean; uid: string; av
             : "0 0 0 1px oklch(1 0 0 / 15%)",
         }}
       >
-        <img src={avatar} alt="" className="size-full rounded-full object-cover" />
+        <img src={avatar || undefined} alt="" className="size-full rounded-full object-cover" />
       </div>
       <span
         className="text-[10px] leading-none"

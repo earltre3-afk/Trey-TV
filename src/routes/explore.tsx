@@ -161,7 +161,15 @@ function Explore() {
             {filters.map((f) => (
               <button
                 key={f}
-                onClick={() => setActive(f)}
+                onClick={() => {
+                  if (f === "Music") {
+                    nav({ to: "/tradio" });
+                  } else if (f === "Gaming") {
+                    nav({ to: "/games" });
+                  } else {
+                    setActive(f);
+                  }
+                }}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-xs lg:text-sm font-semibold transition ${
                   active === f
                     ? "bg-primary text-primary-foreground glow-gold"
@@ -298,51 +306,24 @@ function Explore() {
         {/* ── Default browse content (hidden during search) ──────────── */}
         {!isSearchActive && (
           <>
-            {/* Live Music Review entry */}
-            <Link
-              to="/music-review"
-              className="group relative block overflow-hidden rounded-3xl liquid-glass neon-border p-5 lg:p-7"
-            >
-              <div className="absolute inset-0 bg-[radial-gradient(80%_80%_at_20%_20%,oklch(0.7_0.25_340/0.22),transparent),radial-gradient(80%_80%_at_85%_80%,oklch(0.82_0.15_215/0.22),transparent)]" />
-              <div className="absolute -top-16 -right-10 size-56 rounded-full bg-[oklch(0.65_0.24_15/0.2)] blur-3xl" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[oklch(0.82_0.16_85/0.6)] to-transparent" />
-              <div className="relative flex items-center gap-4 lg:gap-6">
-                <div className="shrink-0 size-14 lg:size-16 rounded-2xl bg-gradient-to-br from-[oklch(0.82_0.16_85)] via-[oklch(0.7_0.25_340)] to-[oklch(0.82_0.15_215)] grid place-items-center text-primary-foreground glow-gold">
-                  <Radio className="size-6 lg:size-7" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[oklch(0.65_0.24_15/0.15)] border border-[oklch(0.65_0.24_15/0.4)] text-[9px] lg:text-[10px] tracking-[0.22em] text-[oklch(0.85_0.18_15)]">
-                      <span className="size-1.5 rounded-full bg-[oklch(0.65_0.24_15)] animate-glow-pulse" /> LIVE
-                    </span>
-                    <span className="text-[9px] lg:text-[10px] tracking-[0.22em] text-muted-foreground">NEW</span>
-                  </div>
-                  <h3 className="text-lg lg:text-2xl font-black tracking-tight">Live Music Review</h3>
-                  <p className="text-xs lg:text-sm text-muted-foreground mt-0.5 line-clamp-2">Submit your track, get reviewed live on TikTok. Skip the line with Cash App.</p>
-                </div>
-                <div className="shrink-0 hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs lg:text-sm font-bold glow-gold tilt-press">
-                  Submit <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                </div>
-                <ArrowRight className="sm:hidden size-5 text-primary transition-transform group-hover:translate-x-0.5" />
-              </div>
-            </Link>
-
             <section>
               <h2 className="text-sm lg:text-base font-semibold mb-3 flex items-center gap-2"><TrendingUp className="size-4 text-primary" /> Trending categories</h2>
               <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
-                {categoryChips.map((c) => (
-                  <Link
-                    key={c.label}
-                    to="/category/$slug"
-                    params={{ slug: c.slug }}
-                    className="group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift"
-                  >
-                    <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
-                      <c.icon className="size-5 lg:size-6" />
-                    </div>
-                    <span className="text-xs lg:text-sm font-medium">{c.label}</span>
-                  </Link>
-                ))}
+                {categoryChips.map((c) => {
+                  const toHref = c.slug === "music" ? "/tradio" : c.slug === "gaming" ? "/games" : `/category/${c.slug}`;
+                  return (
+                    <Link
+                      key={c.label}
+                      to={toHref as any}
+                      className="group p-4 lg:p-5 rounded-2xl glass border border-white/10 flex flex-col items-center gap-2 lg:gap-3 hover:bg-white/5 hover-lift"
+                    >
+                      <div className={`size-10 lg:size-12 rounded-xl grid place-items-center ${c.bg} ${c.color} transition group-hover:scale-110`}>
+                        <c.icon className="size-5 lg:size-6" />
+                      </div>
+                      <span className="text-xs lg:text-sm font-medium">{c.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             </section>
 
@@ -541,4 +522,3 @@ function LiveTvRail() {
     </section>
   );
 }
-

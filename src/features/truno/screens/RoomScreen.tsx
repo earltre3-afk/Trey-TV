@@ -39,15 +39,19 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
 
   const loadRoom = async () => {
     if (!roomId) return;
-    const [{ data: roomRow }, seated, session] = await Promise.all([
-      supabase.from('game_rooms').select('*').eq('id', roomId).maybeSingle(),
-      getRoomPlayers(roomId),
-      getActiveSession(roomId),
-    ]);
-    const nextRoom = roomRow as RoomRow | null;
-    setRoom(nextRoom);
-    setPlayers(seated);
-    if (session && !suppressActiveSession) onNavigate('match', { roomId });
+    try {
+      const [{ data: roomRow }, seated, session] = await Promise.all([
+        supabase.from('game_rooms').select('*').eq('id', roomId).maybeSingle(),
+        getRoomPlayers(roomId),
+        getActiveSession(roomId),
+      ]);
+      const nextRoom = roomRow as RoomRow | null;
+      setRoom(nextRoom);
+      setPlayers(seated);
+      if (session && !suppressActiveSession) onNavigate('match', { roomId });
+    } catch (err) {
+      console.error("Failed to load room data in Truno RoomScreen:", err);
+    }
   };
 
   useEffect(() => {

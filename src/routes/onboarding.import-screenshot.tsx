@@ -118,7 +118,7 @@ function ImportScreenshot() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("user_onboarding")
           .select("current_step, selected_path, answers")
           .eq("user_id", user.id)
@@ -134,7 +134,7 @@ function ImportScreenshot() {
           }
           toast.success("Resumed screenshot onboarding from where you left off.");
         } else {
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "import_screenshot",
             current_step: 0,
@@ -159,7 +159,7 @@ function ImportScreenshot() {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const stepNum = step === "upload" ? 0 : step === "review" ? 1 : 2;
-          await supabase.from("user_onboarding").upsert({
+          await (supabase as any).from("user_onboarding").upsert({
             user_id: user.id,
             selected_path: "import_screenshot",
             current_step: stepNum,
@@ -233,6 +233,7 @@ function ImportScreenshot() {
 
   const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {

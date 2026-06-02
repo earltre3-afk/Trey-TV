@@ -31,6 +31,7 @@ export type UserPost = {
   timeAgo: string;
   text: string;
   media?: string;
+  mediaType?: "image" | "video" | "gif";
   sourceType?: "trey" | "fwd" | string;
   gifFwdId?: string | null;
   gifPosterUrl?: string | null;
@@ -52,6 +53,8 @@ type Ctx = {
     audience?: UserPost["audience"];
     tags?: string[];
     media?: string;
+    mediaType?: UserPost["mediaType"];
+    durationMs?: number;
     sourceType?: UserPost["sourceType"];
     gifFwdId?: string | null;
     gifPosterUrl?: string | null;
@@ -121,7 +124,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         const supabase = createBrowserClient();
         const { data, error } = await (supabase as any)
           .from("user_feed_posts")
-          .select("id, user_id, body, media_url, audience, tags, metrics, created_at, source_type, gif_fwd_id, gif_poster_url, gif_title")
+          .select("id, user_id, body, media_url, audience, tags, metrics, created_at, source_type, gif_fwd_id, gif_poster_url, gif_title, media_type, media_duration_ms")
           .eq("user_id", supabaseUser.id)
           .order("created_at", { ascending: false })
           .limit(100);
@@ -136,6 +139,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
           timeAgo: timeAgo(new Date(row.created_at).getTime()),
           text: row.body,
           media: row.media_url ?? undefined,
+          mediaType: row.media_type ?? undefined,
           sourceType: row.source_type ?? "trey",
           gifFwdId: row.gif_fwd_id ?? null,
           gifPosterUrl: row.gif_poster_url ?? null,
@@ -167,6 +171,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     audience = "Everyone",
     tags = [],
     media,
+    mediaType,
+    durationMs,
     sourceType = "trey",
     gifFwdId = null,
     gifPosterUrl = null,
@@ -175,7 +181,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
     const id = (typeof crypto !== "undefined" && crypto.randomUUID?.()) || `p-${Date.now()}`;
     const post: UserPost = {
       id, ownerId: supabaseUser?.id ?? null, creator: meAsCreator, timeAgo: "now",
-      text, media, sourceType, gifFwdId, gifPosterUrl, gifTitle, duration: undefined,
+      text, media, mediaType, sourceType, gifFwdId, gifPosterUrl, gifTitle, duration: undefined,
       likes: 0, comments: 0, reshares: 0, saves: 0,
       audience, tags, createdAt: Date.now(),
     };
@@ -198,6 +204,8 @@ export function FeedProvider({ children }: { children: ReactNode }) {
               audience,
               tags,
               metrics: { likes: 0, comments: 0, reshares: 0, saves: 0 },
+              media_type: mediaType ?? null,
+              media_duration_ms: durationMs ?? null,
             })
             .select("id, created_at")
             .single();
@@ -278,7 +286,5 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
 export function useFeed() {
   const ctx = useContext(C);
-  if (!ctx && typeof window === "undefined") return SERVER_FALLBACK_CTX;
-  if (!ctx) throw new Error("useFeed must be inside <FeedProvider>");
-  return ctx;
+  return ctx || SERVER_FALLBACK_CTX;
 }

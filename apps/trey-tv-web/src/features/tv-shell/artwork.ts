@@ -9,6 +9,15 @@ export type ArtworkCandidate = {
   image?: string;
 };
 
+export const TV_ARTWORK = {
+  kingmakerHero: '/tv-artwork/kingmaker-the-change-hero-4k.jpg',
+  lifeOfCreatorCard: '/tv-artwork/life-of-a-creator-card-4k.jpg',
+  afterHoursCard: '/tv-artwork/after-hours-card-4k.jpg',
+  lateNightGamingGuide: '/tv-artwork/late-night-gaming-guide-4k.jpg',
+  spadesGameCard: '/tv-artwork/spades-game-card-4k.jpg',
+  profileCreatorLifestyle: '/tv-artwork/profile-creator-lifestyle-4k.jpg',
+} as const;
+
 const unsafeArtworkMarkers = [
   'watch-hours',
   'watch_history',
@@ -18,9 +27,14 @@ const unsafeArtworkMarkers = [
   'dashboard',
   'concept',
   'mockup',
+  'mock-ui',
   'ui-screenshot',
+  'screenshot',
   'streamingbox-concept',
   'generated-concept-art',
+  'watch-hours',
+  'manage-profile',
+  'watch-history',
   '1779633005531_44794775',
   '1779633006285_7bc84eb2',
   '1779633007094_15ae4417',
@@ -37,7 +51,47 @@ export function isUnsafeHeroArtwork(urlOrLabel?: string | null) {
   return unsafeArtworkMarkers.some((marker) => normalized.includes(marker));
 }
 
+function normalizeTitle(title?: string | null) {
+  return title?.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim() ?? '';
+}
+
+export function selectCardArtwork(content: ArtworkCandidate) {
+  const title = normalizeTitle(content.title || content.label);
+
+  if (title === 'kingmaker the change' || title.includes('kingmaker')) {
+    return TV_ARTWORK.kingmakerHero;
+  }
+
+  if (title === 'life of a creator') {
+    return TV_ARTWORK.lifeOfCreatorCard;
+  }
+
+  if (title === 'after hours' || title.includes('after hours w trizzy')) {
+    return TV_ARTWORK.afterHoursCard;
+  }
+
+  if (title === 'late night gaming') {
+    return TV_ARTWORK.lateNightGamingGuide;
+  }
+
+  if (title === 'spades') {
+    return TV_ARTWORK.spadesGameCard;
+  }
+
+  const candidates = [
+    content.backdropUrl,
+    content.posterUrl,
+    content.thumbnailUrl,
+    content.image,
+  ];
+
+  return candidates.find((candidate) => candidate && !isUnsafeHeroArtwork(candidate)) ?? null;
+}
+
 export function selectHeroArtwork(content: ArtworkCandidate) {
+  const designatedArtwork = selectCardArtwork(content);
+  if (designatedArtwork) return designatedArtwork;
+
   const candidates = [
     content.backdropUrl,
     content.posterUrl,

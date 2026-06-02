@@ -98,6 +98,7 @@ import { PublicProfileControls } from "./PublicProfileControls";
 import { ProfileTopThree } from "./ProfileTopThree";
 
 import type { ProfileData, ViewerRole, ProfileType, RelationshipStatus, TopThreeEntry } from "./ProfileTypes";
+import { GoldCheck } from "@/components/brand/Badge";
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
 import { ProfilePage as LovableProfilePage } from "./lovable/LovableProfilePage";
 import { toggleFollow } from "@/lib/social-relationships";
@@ -206,7 +207,19 @@ function PixelLinkButton({
   );
 }
 
-function SocialIcon({ icon: Icon, color }: { icon: any; color: string }) {
+function SocialIcon({ icon: Icon, color, href }: { icon: any; color: string; href?: string }) {
+  const content = (
+    <span className="p-1 transition-transform active:scale-90 inline-block" style={{ color, filter: `drop-shadow(0 0 6px ${color})` }}>
+      <Icon className="size-4" />
+    </span>
+  );
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="hover:scale-110 transition-transform">
+        {content}
+      </a>
+    );
+  }
   return (
     <button className="p-1 transition-transform active:scale-90" style={{ color, filter: `drop-shadow(0 0 6px ${color})` }}>
       <Icon className="size-4" />
@@ -307,6 +320,12 @@ export function ProfilePageShell({
   const isPublicUser = viewerRole === "user";
 
   const profileType: ProfileType = profile.profileType;
+
+  const isDefaultBanner = !profile.bannerUrl ||
+                          profile.bannerUrl === "/profile-banner" ||
+                          profile.bannerUrl.includes("profile-banner");
+
+  const bannerSrc = isDefaultBanner ? heroFallback : profile.bannerUrl;
 
   const followingThis = Boolean(liveRelationship?.is_following);
 
@@ -486,7 +505,7 @@ export function ProfilePageShell({
 
         <section className="relative w-full pixel-reveal">
           <div className="relative h-[220px] w-full overflow-hidden sm:h-[260px] md:h-[300px]">
-            <img src={profile.bannerUrl || heroFallback} alt="" className="absolute inset-0 size-full object-cover" />
+            <img src={bannerSrc} alt="" className="absolute inset-0 size-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/45 to-[#05070D]/10" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(168,85,247,0.25),transparent_62%)]" />
 
@@ -502,7 +521,7 @@ export function ProfilePageShell({
               </button>
             </div>
 
-            <div className="pointer-events-none absolute left-1/2 top-2 z-20 w-[160px] -translate-x-1/2 sm:w-[200px] md:w-[240px]">
+            <div className={`pointer-events-none absolute left-1/2 z-20 w-[160px] -translate-x-1/2 sm:w-[200px] md:w-[240px] transition-all duration-300 ${isDefaultBanner ? "top-1/2 -translate-y-1/2" : "top-2"}`}>
               <div className="relative animate-float-slow">
                 <div aria-hidden className="absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,200,87,0.42),transparent_68%)] blur-2xl" />
                 <img src={treyTvLogo} alt="Trey TV" className="relative h-auto w-full object-contain drop-shadow-[0_0_18px_rgba(255,200,87,0.55)]" />
@@ -521,9 +540,9 @@ export function ProfilePageShell({
                 <AvatarWithFallback src={profile.avatarUrl} alt={profile.displayName} name={profile.displayName} uid={profile.uid} size="2xl" className="size-full" />
               </div>
 
-              {canShowOwnerBadges && (
+              {profile.isVerified && (
                 <div className="absolute -bottom-1 -right-1">
-                  <GoldProfileCheck size={42} />
+                  <GoldCheck size={42} />
                 </div>
               )}
 
@@ -544,8 +563,7 @@ export function ProfilePageShell({
           <section className="text-center pixel-reveal">
             <div className="flex items-center justify-center gap-1.5">
               <h1 className="text-2xl font-extrabold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:text-3xl">{profile.displayName}</h1>
-              {canShowOwnerBadges && <GoldProfileCheck size={22} />}
-              {!canShowOwnerBadges && canShowCreatorBadge && <BadgeCheck className="size-5 fill-[#A855F7] text-black drop-shadow-[0_0_10px_rgba(168,85,247,0.75)]" />}
+              {profile.isVerified && <GoldCheck size={22} />}
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground">@{profile.handle}</div>
 
@@ -599,13 +617,51 @@ export function ProfilePageShell({
               </div>
             )}
 
-            {(profile.socialInstagram || profile.socialYouTube || profile.socialTikTok) && (
-              <div className="mt-3 flex items-center justify-center gap-3.5">
-                {profile.socialInstagram && <SocialIcon icon={Instagram} color="#EC4899" />}
-                {profile.socialTikTok && <SocialIcon icon={Music2} color="#FFFFFF" />}
-                {profile.socialYouTube && <SocialIcon icon={Youtube} color="#EF4444" />}
-              </div>
-            )}
+            {(() => {
+              const instagram = profile.socialInstagram;
+              const tiktok = profile.socialTikTok;
+              const youtube = profile.socialYouTube;
+              if (!instagram && !tiktok && !youtube) return null;
+              return (
+                <div className="mt-3 flex items-center justify-center gap-3.5">
+                  {instagram && (
+                    <SocialIcon
+                      icon={Instagram}
+                      color="#EC4899"
+                      href={
+                        instagram!.startsWith("http")
+                          ? instagram!
+                          : `https://instagram.com/${instagram!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                  {tiktok && (
+                    <SocialIcon
+                      icon={Music2}
+                      color="#FFFFFF"
+                      href={
+                        tiktok!.startsWith("http")
+                          ? tiktok!
+                          : `https://tiktok.com/@${tiktok!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                  {youtube && (
+                    <SocialIcon
+                      icon={Youtube}
+                      color="#EF4444"
+                      href={
+                        youtube!.startsWith("http")
+                          ? youtube!
+                          : youtube!.includes("youtube.com")
+                            ? (youtube!.startsWith("http") ? youtube! : `https://${youtube!}`)
+                            : `https://youtube.com/@${youtube!.replace(/^@/, "")}`
+                      }
+                    />
+                  )}
+                </div>
+              );
+            })()}
           </section>
 
           {canShowOwnerBadges && (
@@ -892,4 +948,3 @@ export function ProfilePageShell({
   );
 
 }
-

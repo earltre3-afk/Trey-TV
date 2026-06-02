@@ -1,0 +1,38 @@
+{
+  "filename": "02_featured_life_of_a_creator_card_4k.jpg",
+  "title": "Life of a Creator",
+  "designated_location": "Featured row card / creator documentary tile",
+  "screen": "Watch Now / Featured",
+  "component_target": "Row card artwork",
+  "route_context": "/ or /tv/watch",
+  "usage": "Featured content tile for creator-life/docuseries programming",
+  "recommended_app_path": "public/tv-shell/artwork/cards/life-of-a-creator-4k.jpg",
+  "target_id": "life-of-a-creator.card",
+  "safe_zone": "Darker lower-left and lower band support title overlays.",
+  "object_fit": "cover",
+  "object_position": "center center",
+  "notes": "No text, no logo, no UI labels. Premium creator studio mood.",
+  "source_filename": "futuristic_content_creator_studio_setup.png",
+  "output_filename": "02_featured_life_of_a_creator_card_4k.jpg",
+  "output_dimensions": {
+    "width": 3840,
+    "height": 2160
+  },
+  "aspect_ratio": "16:9",
+  "file_format": "JPEG",
+  "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+  "recommended_css": {
+    "objectFit": "cover",
+    "objectPosition": "center center",
+    "backgroundSize": "cover",
+    "backgroundPosition": "center center"
+  },
+  "alt_text": "Life of a Creator premium cinematic artwork for Featured row card / creator documentary tile.",
+  "safety": {
+    "contains_app_ui_text": false,
+    "contains_logo": false,
+    "contains_dashboard_mockup": false,
+    "approved_for_title_art": true
+  },
+  "sha256": "2f481a88af391002b092163ba324ba3a868832767ca360603d677cd6dbc8cb70"
+}

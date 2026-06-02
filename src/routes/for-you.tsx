@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Flame, TrendingUp, Sparkles, Radio, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Composer } from "@/components/feed/Composer";
@@ -9,6 +9,9 @@ import { posts, creators, prescribed } from "@/lib/mock-data";
 import { useFeed } from "@/lib/feed-store";
 import { toast } from "sonner";
 import { useFollow } from "@/lib/follow-store";
+import { useAuth } from "@/hooks/use-auth";
+import { fetchSignalRecord } from "@/lib/tests/naturalAbilityStorage";
+import { reRankFeedWithAI } from "@/lib/trey-i/vertex.server";
 
 export const Route = createFileRoute("/for-you")({
   component: Home,
@@ -25,7 +28,55 @@ function Home() {
   const { posts: userPosts } = useFeed();
   const { isFollowing } = useFollow();
 
-  const merged = [...userPosts, ...posts];
+  const { user } = useAuth();
+  const [badge, setBadge] = useState<string | null>(null);
+  const [rankedPosts, setRankedPosts] = useState<any[]>([]);
+  const [ranking, setRanking] = useState(false);
+
+  useEffect(() => {
+    if (!user || !user.id) return;
+    fetchSignalRecord(user.id).then((row) => {
+      if (row) {
+        setBadge(row.primary_ability);
+      }
+    });
+  }, [user]);
+
+  useEffect(() => {
+    const rawList = [...userPosts, ...posts];
+    if (!badge) {
+      setRankedPosts(rawList);
+      return;
+    }
+    setRanking(true);
+    reRankFeedWithAI({ data: { posts: rawList, userBadge: badge, query: "" } })
+      .then((res) => {
+        if (res?.rankedIds && res.rankedIds.length > 0) {
+          const map = new Map(rawList.map((p) => [String(p.id), p]));
+          const ordered = res.rankedIds
+            .map((id) => map.get(String(id)))
+            .filter(Boolean) as any[];
+          const seen = new Set(ordered.map((p) => p.id));
+          for (const p of rawList) {
+            if (!seen.has(p.id)) {
+              ordered.push(p);
+            }
+          }
+          setRankedPosts(ordered);
+        } else {
+          setRankedPosts(rawList);
+        }
+      })
+      .catch((err) => {
+        console.error("AI feed ranking failed, falling back:", err);
+        setRankedPosts(rawList);
+      })
+      .finally(() => {
+        setRanking(false);
+      });
+  }, [badge, userPosts]);
+
+  const merged = tab === "for-you" ? (rankedPosts.length > 0 ? rankedPosts : [...userPosts, ...posts]) : [...userPosts, ...posts];
   const filtered =
     tab === "following"
       ? merged.filter((p) => {
@@ -129,8 +180,19 @@ function Home() {
           <div className="flex items-center justify-between px-1">
             <h2 className="text-base lg:text-lg font-semibold flex items-center gap-2">
               <Star className="size-4 text-primary" /> {heading}
+              {tab === "for-you" && badge && (
+                <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300 ml-2 border border-amber-300/30 px-2 py-0.5 rounded-full bg-amber-500/10">
+                  {badge} Vibe
+                </span>
+              )}
             </h2>
-            <button onClick={() => toast("Loading more…")} className="text-sm text-primary hover:underline">See all</button>
+            {ranking ? (
+              <span className="text-xs text-cyan-300 flex items-center gap-1.5 animate-pulse">
+                <Sparkles className="size-3.5" /> Trey-I tuning...
+              </span>
+            ) : (
+              <button onClick={() => toast("Loading more…")} className="text-sm text-primary hover:underline">See all</button>
+            )}
           </div>
 
           <div className="space-y-5">

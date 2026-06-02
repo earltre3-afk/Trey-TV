@@ -5,6 +5,7 @@ import { guideCategories, guideChannels, guideTimes, IMG } from '../mockData';
 import { useFreeTvGuide } from '../data/useFreeTvGuide';
 import { Play, Filter, Calendar } from 'lucide-react';
 import { useTV } from '../TVContext';
+import { selectCardArtwork } from '../artwork';
 
 export const GuideScreen: React.FC = () => {
   const [cat, setCat] = useState('All Channels');
@@ -17,7 +18,7 @@ export const GuideScreen: React.FC = () => {
   const program = channel?.programs[selectedProgramIndex];
   const todayLabel = useMemo(() => new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(new Date()), []);
   const previewTags = program?.genres && program.genres.length > 0 ? program.genres.slice(0, 3) : ['Gaming', 'Live', 'Multiplayer'];
-  const previewImage = program?.imageUrl || channel?.logoUrl || IMG(2);
+  const previewImage = selectCardArtwork({ title: program?.title, image: program?.imageUrl || channel?.logoUrl }) || IMG(2);
 
   return (
     <TVFrame activeRail="Live TV">

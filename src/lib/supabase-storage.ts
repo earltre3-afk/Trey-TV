@@ -51,3 +51,15 @@ export async function createMessageMediaUrl(pathOrUrl?: string | null) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+export async function uploadFeedMedia(userId: string, file: File) {
+  const supabase = createBrowserClient();
+  const ext = extFromFile(file, file.type.startsWith("video/") ? "mp4" : "jpg");
+  const path = `${userId}/${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}.${ext}`;
+  const { error } = await supabase.storage.from("feed-media").upload(path, file, {
+    cacheControl: "3600", contentType: file.type || undefined, upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("feed-media").getPublicUrl(path);
+  return { path, url: data.publicUrl };
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Zap, Users, Bot, Trophy, Flame, ChevronRight, Crown } from 'lucide-react';
+import { Zap, Users, Bot, Trophy, Flame, ChevronRight, Crown, ArrowLeft } from 'lucide-react';
 import TrunoLogo from '../components/TrunoLogo';
 import TrunoCardFan from '../components/TrunoCardFan';
 import { TrunoCard as TCard } from '../lib/cards';
@@ -43,10 +43,17 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const rows = await listActiveRooms();
-      if (!cancelled) {
-        setTables(rows.filter((room) => room.game_type === 'truno' && !room.is_private).slice(0, 12));
-        setLoadingTables(false);
+      try {
+        const rows = await listActiveRooms();
+        if (!cancelled) {
+          setTables((rows || []).filter((room) => room && room.game_type === 'truno' && !room.is_private).slice(0, 12));
+        }
+      } catch (err) {
+        console.error("Failed to load active Truno tables:", err);
+      } finally {
+        if (!cancelled) {
+          setLoadingTables(false);
+        }
       }
     };
     load();
@@ -63,7 +70,16 @@ const HomeScreen: React.FC<Props> = ({ onNavigate, onQuickPlay, onAiMatch, onPla
 
   return (
     <div className="px-4 pb-24 space-y-6">
-      <div className="flex flex-col items-center pt-2">
+      <div className="flex items-center justify-between pt-3">
+        <button
+          onClick={() => onNavigate('exit')}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900/80 text-xs font-bold text-zinc-300 hover:text-white transition-all duration-300 active:scale-95 shadow-sm animate-fade-in"
+        >
+          <ArrowLeft size={14} className="text-fuchsia-400" /> Back to Games
+        </button>
+      </div>
+
+      <div className="flex flex-col items-center">
         <TrunoLogo size="lg" subtitle="Match colors. Play action. Own the table." showParent={false} />
         <div className="mt-4 relative w-full max-w-md">
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

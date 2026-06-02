@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { creators } from "@/lib/mock-data";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { recordUserTrace } from "@/lib/user-trace";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -48,7 +49,9 @@ export function FollowProvider({ children }: { children: ReactNode }) {
   const [localFollowed, setLocalFollowed] = useState<FollowedCreator[]>(SEED);
   const [dbFollowed, setDbFollowed] = useState<Map<string, FollowedCreator>>(new Map());
   const [ownPublicProfileUid, setOwnPublicProfileUid] = useState<string | null>(null);
-  const { user: supabaseUser, isSignedIn } = useSupabaseAuth();
+  const { user: supabaseUser } = useSupabaseAuth();
+  const { user: supaUser } = useSupabaseSession();
+  const isSignedIn = !!supaUser;
   const currentProfile = useCurrentUser();
   const navigate = useNavigate();
   const storageKey = `${KEY}:${currentProfile.uid}`;
@@ -68,7 +71,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const loadDbFollows = async () => {
-      if (!supabaseUser) {
+      if (!supaUser) {
         setDbFollowed(new Map());
         setOwnPublicProfileUid(null);
         return;
@@ -80,7 +83,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
           supabase
             .from("profiles")
             .select("public_profile_uid")
-            .eq("id", supabaseUser.id)
+            .eq("id", supaUser.id)
             .maybeSingle(),
           supabase
             .from("follows")
@@ -92,7 +95,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
                 avatar_url
               )
             `)
-            .eq("follower_id", supabaseUser.id),
+            .eq("follower_id", supaUser.id),
         ]);
 
         if (cancelled) return;
@@ -136,7 +139,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [supabaseUser]);
+  }, [supaUser]);
 
   const followed = useMemo(() => {
     const merged = new Map<string, FollowedCreator>();
@@ -164,7 +167,7 @@ export function FollowProvider({ children }: { children: ReactNode }) {
       return !isFollowing(c.handle);
     }
 
-    if (!isSignedIn || !supabaseUser) {
+    if (!isSignedIn || !supaUser) {
       toast("Sign up to follow");
       navigate({ to: "/signup" });
       return false;
@@ -220,18 +223,18 @@ export function FollowProvider({ children }: { children: ReactNode }) {
 
         const followingId = (profile as { id?: string } | null)?.id;
         if (!followingId) throw new Error("Follow target profile was not found.");
-        if (followingId === supabaseUser.id) {
+        if (followingId === supaUser.id) {
           rollbackOptimistic();
           toast("You cannot follow yourself");
           return;
         }
 
-        const followRow: any = { follower_id: supabaseUser.id, following_id: followingId };
+        const followRow: any = { follower_id: supaUser.id, following_id: followingId };
         const { error } = wasFollowing
           ? await supabase
               .from("follows")
               .delete()
-              .eq("follower_id", supabaseUser.id)
+              .eq("follower_id", supaUser.id)
               .eq("following_id", followingId)
           : await supabase
               .from("follows")

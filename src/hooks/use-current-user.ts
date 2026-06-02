@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { SessionUser } from "@/lib/auth";
 import { currentUser as fallbackUser } from "@/lib/mock-data";
 import { pointsToRewardTier } from "@/hooks/use-rewards";
 
 export function useCurrentUser(): SessionUser {
-  const { user, loading } = useSupabaseAuth();
+  const { user, authReady } = useSupabaseAuth();
+  const loading = !authReady;
+  const { user: supaUser } = useSupabaseSession();
   const [profile, setProfile] = useState<SessionUser | null>(null);
   const [isFetching, setIsFetching] = useState(false);
 
@@ -14,11 +17,11 @@ export function useCurrentUser(): SessionUser {
     let mounted = true;
 
     async function fetchProfile() {
-      if (!user) {
+      if (!supaUser?.id) {
         if (mounted) setProfile(null);
         return;
       }
-      
+
       setIsFetching(true);
       const supabase = createBrowserClient();
       try {
@@ -26,12 +29,12 @@ export function useCurrentUser(): SessionUser {
           supabase
             .from("profiles")
             .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, created_at, role, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday")
-            .eq("id", user.id)
+            .eq("id", supaUser.id)
             .single(),
           (supabase as any)
             .from("community_credit_balances")
             .select("current_balance, lifetime_earned")
-            .eq("user_id", user.id)
+            .eq("user_id", supaUser.id)
             .maybeSingle(),
         ]);
 
@@ -97,7 +100,7 @@ export function useCurrentUser(): SessionUser {
     return () => {
       mounted = false;
     };
-  }, [user, loading]);
+  }, [user, loading, supaUser]);
 
   const defaultSessionUser: SessionUser = {
     name: "Trey TV Member",

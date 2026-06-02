@@ -32,6 +32,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LovableChannelPage } from "@/components/profile/lovable/LovableChannelPage";
 import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
+import { GoldCheck } from "@/components/brand/Badge";
 import { useGoBack } from "@/hooks/use-go-back";
 import { useProfile, useRelationshipStatus } from "@/hooks/use-profile";
 import { useAuth } from "@/lib/auth";
@@ -246,7 +247,7 @@ function CreatorChannelRoute() {
                   <div className="min-w-0">
                     <h1 className="flex flex-wrap items-center gap-2 text-5xl font-black leading-none tracking-tight sm:text-6xl lg:text-7xl">
                       {normalized.name}
-                      {normalized.verified && <BadgeCheck className="size-7 shrink-0 fill-[#FFC857] text-black" />}
+                      {normalized.verified && <GoldCheck size={28} className="shrink-0" />}
                     </h1>
                     <p className="mt-2 text-sm font-semibold" style={{ color: PURPLE }}>@{normalized.handle}</p>
                     <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">{normalized.bio}</p>

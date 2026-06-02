@@ -7,11 +7,13 @@ import android.os.Build
 import android.util.Log
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
+import android.webkit.JavascriptInterface
 import android.webkit.JsResult
 import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -29,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +71,53 @@ private const val LOG_TAG = "TreyTvWebShell"
 private const val DEFAULT_INDEX = "file:///android_asset/trey-tv-web/index.html"
 private const val USER_AGENT_SUFFIX = " TreyTvNative/${BuildConfig.VERSION_NAME}"
 
+// The bundled web shell lives under assets/trey-tv-web/. It uses ROOT-ABSOLUTE
+// asset paths (e.g. "/tv-artwork/kingmaker-the-change-hero-4k.jpg",
+// "/placeholder.svg") which, over file://, resolve to the device filesystem
+// root and 404. We intercept those and serve them from the bundled asset dir.
+private const val ASSET_ROOT = "trey-tv-web"
+
+private fun mimeFor(path: String): String = when {
+    path.endsWith(".html") -> "text/html"
+    path.endsWith(".js") || path.endsWith(".mjs") -> "text/javascript"
+    path.endsWith(".css") -> "text/css"
+    path.endsWith(".json") -> "application/json"
+    path.endsWith(".svg") -> "image/svg+xml"
+    path.endsWith(".png") -> "image/png"
+    path.endsWith(".jpg") || path.endsWith(".jpeg") -> "image/jpeg"
+    path.endsWith(".webp") -> "image/webp"
+    path.endsWith(".gif") -> "image/gif"
+    path.endsWith(".ico") -> "image/x-icon"
+    path.endsWith(".woff2") -> "font/woff2"
+    path.endsWith(".woff") -> "font/woff"
+    path.endsWith(".ttf") -> "font/ttf"
+    path.endsWith(".txt") -> "text/plain"
+    else -> "application/octet-stream"
+}
+
+/**
+ * Serve a root-absolute file:// asset request from the bundled trey-tv-web/
+ * folder. Returns null if the request isn't a redirectable root-absolute path
+ * (so normal file:///android_asset/ loads pass through unchanged).
+ */
+private fun interceptBundledAsset(
+    ctx: android.content.Context,
+    request: WebResourceRequest,
+): WebResourceResponse? {
+    val url = request.url
+    if (url.scheme != "file") return null
+    val path = url.path ?: return null
+    // Leave the real /android_asset/ loads (index.html + ./assets/* bundle) alone.
+    if (path.startsWith("/android_asset/")) return null
+    val assetPath = "$ASSET_ROOT/${path.trimStart('/')}"
+    return try {
+        val stream = ctx.assets.open(assetPath)
+        WebResourceResponse(mimeFor(assetPath), null, stream)
+    } catch (e: java.io.IOException) {
+        null
+    }
+}
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun WebShellScreen(
@@ -75,6 +125,8 @@ fun WebShellScreen(
     onExit: () -> Unit = {},
 ) {
     val webViewRef = remember { mutableStateOf<WebView?>(null) }
+    // Latest onExit, so the JS "Sign in" bridge always calls the current handler.
+    val currentOnExit by rememberUpdatedState(onExit)
     var isLoading by remember { mutableStateOf(true) }
     var loadError by remember { mutableStateOf<String?>(null) }
     var reloadTrigger by remember { mutableIntStateOf(0) }
@@ -114,15 +166,28 @@ fun WebShellScreen(
                         domStorageEnabled = true
                         mediaPlaybackRequiresUserGesture = false
 
-                        // file:///android_asset/ remains accessible even with
-                        // allowFileAccess=false (Android documents this as an
-                        // exemption). We want NO general file-system access.
-                        allowFileAccess = false
+                        // TV scaling: the shell declares a fixed 1920px viewport
+                        // (see web index.html). useWideViewPort makes the WebView
+                        // honor that width; loadWithOverviewMode zooms the 1920px
+                        // canvas to fit the screen (1:1 on a 1080p TV). Without
+                        // this the page used the ~960px device-width and rendered
+                        // oversized, overlapping, and clipped at the edges.
+                        useWideViewPort = true
+                        loadWithOverviewMode = true
+
+                        // The shell is bundled under file:///android_asset/.
+                        // The Vite build loads an ES-module entry (<script
+                        // type="module">) plus CSS/asset fetches over file://.
+                        // Module + same-origin fetch from a file:// origin is
+                        // blocked unless file-URL access is allowed, which left
+                        // the React app unmounted (black screen). Enable it for
+                        // the bundled local assets.
+                        allowFileAccess = true
                         allowContentAccess = false
                         @Suppress("DEPRECATION")
-                        allowFileAccessFromFileURLs = false
+                        allowFileAccessFromFileURLs = true
                         @Suppress("DEPRECATION")
-                        allowUniversalAccessFromFileURLs = false
+                        allowUniversalAccessFromFileURLs = true
 
                         // No mixing http content into https pages.
                         mixedContentMode =
@@ -154,6 +219,13 @@ fun WebShellScreen(
                     requestFocus()
 
                     webViewClient = object : WebViewClient() {
+                        override fun shouldInterceptRequest(
+                            view: WebView, request: WebResourceRequest,
+                        ): WebResourceResponse? {
+                            return interceptBundledAsset(view.context, request)
+                                ?: super.shouldInterceptRequest(view, request)
+                        }
+
                         override fun shouldOverrideUrlLoading(
                             view: WebView, request: WebResourceRequest,
                         ): Boolean {
@@ -230,6 +302,20 @@ fun WebShellScreen(
                             return true
                         }
                     }
+
+                    // Bridge: lets the web shell open the native device-login
+                    // screen. The web "Sign in" button calls
+                    // window.TreyTvNative.signIn(). Runs on a binder thread, so
+                    // hop back to the UI thread before navigating.
+                    addJavascriptInterface(
+                        object {
+                            @JavascriptInterface
+                            fun signIn() {
+                                post { currentOnExit() }
+                            }
+                        },
+                        "TreyTvNative",
+                    )
 
                     loadUrl(indexUrl)
                     webViewRef.value = this

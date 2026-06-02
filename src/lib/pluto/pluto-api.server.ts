@@ -63,6 +63,14 @@ type PlutoRawVodItem = {
 };
 
 const CATALOG_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+// The legacy "service-stitcher.clusters.pluto.tv/v1/stitch/embed/..." path now
+// returns a "ptv_takedownslates_all" slate for EVERY channel. The web app moved
+// to the regional stitcher host advertised by boot under servers.stitcher, using
+// the "/v2/stitch/hls/channel/{id}/master.m3u8" path with the session jwt. We
+// read the host from boot at runtime and fall back to the us-east-1 host.
+const DEFAULT_STITCHER_BASE = "https://cfd-v4-service-channel-stitcher-use1-1.prd.pluto.tv";
+
 const PLUTO_HOST_ALLOWLIST = new Set([
   "service-stitcher.clusters.pluto.tv",
   "siloh-fkp.prd.fovea.cbsi.video",
@@ -72,30 +80,57 @@ const PLUTO_HOST_ALLOWLIST = new Set([
   "api.pluto.tv",
 ]);
 
+// boot's servers.stitcher is region-specific (e.g. ...-use1-1, ...-usw2-1).
+// Allow any of Pluto's prd stitcher clusters rather than enumerating each.
+function isAllowedManifestHost(hostname: string): boolean {
+  if (PLUTO_HOST_ALLOWLIST.has(hostname)) return true;
+  return /\.prd\.pluto\.tv$/.test(hostname);
+}
+
 const channelCache: { ts: number; items: PlutoChannel[] } = { ts: 0, items: [] };
 const vodCache: { ts: number; items: PlutoVodItem[] } = { ts: 0, items: [] };
-const bootCache: { ts: number; stitcherParams: string; sessionID: string; sessionToken: string } = {
+const bootCache: {
+  ts: number;
+  stitcherParams: string;
+  sessionID: string;
+  sessionToken: string;
+  stitcherBase: string;
+} = {
   ts: 0,
   stitcherParams: "",
   sessionID: "",
   sessionToken: "",
+  stitcherBase: DEFAULT_STITCHER_BASE,
 };
 
 // ── On-disk slate cache ─────────────────────────────────────────────────────
 // HMR resets module-level state in dev. Persisting to .cache/pluto-slates.json
 // (gitignored) means we don't re-probe known-bad channels on every reload.
 const SLATE_CACHE_PATH = join(process.cwd(), ".cache", "pluto-slates.json");
+// Bump when the streaming recipe changes — slate markings made against an old
+// endpoint are meaningless once the URL/host/path changes. v2: switched live
+// channels to the boot-advertised /v2/stitch/hls/channel host (was v1 /embed,
+// which slated every channel).
+const SLATE_CACHE_VERSION = 2;
 let slatePersistTimer: NodeJS.Timeout | null = null;
 
-function loadSlateCacheFromDisk(): Set<string> {
+function loadSlateCacheFromDisk(): { slates: Set<string>; playable: Set<string> } {
+  const empty = { slates: new Set<string>(), playable: new Set<string>() };
   try {
     const raw = readFileSync(SLATE_CACHE_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as { channels?: string[] };
-    const set = new Set(parsed.channels ?? []);
-    if (set.size) console.log(`[pluto] loaded ${set.size} slate channels from disk`);
-    return set;
+    const parsed = JSON.parse(raw) as { version?: number; channels?: string[]; playable?: string[] };
+    if (parsed.version !== SLATE_CACHE_VERSION) {
+      console.log("[pluto] slate cache version changed; ignoring stale markings");
+      return empty;
+    }
+    const slates = new Set(parsed.channels ?? []);
+    const playable = new Set(parsed.playable ?? []);
+    if (slates.size || playable.size) {
+      console.log(`[pluto] loaded ${slates.size} unplayable + ${playable.size} playable channels from disk`);
+    }
+    return { slates, playable };
   } catch {
-    return new Set();
+    return empty;
   }
 }
 
@@ -107,7 +142,16 @@ function schedulePersistSlate() {
       mkdirSync(dirname(SLATE_CACHE_PATH), { recursive: true });
       writeFileSync(
         SLATE_CACHE_PATH,
-        JSON.stringify({ channels: [...slateChannels], updatedAt: new Date().toISOString() }, null, 2),
+        JSON.stringify(
+          {
+            version: SLATE_CACHE_VERSION,
+            channels: [...slateChannels],
+            playable: [...playableChannels],
+            updatedAt: new Date().toISOString(),
+          },
+          null,
+          2,
+        ),
       );
     } catch (err) {
       console.warn("[pluto] could not persist slate cache", err);
@@ -139,6 +183,7 @@ async function ensureBoot(): Promise<void> {
     if (!res.ok) {
       console.warn(`[pluto] boot HTTP ${res.status}; falling back to synthesized params`);
       bootCache.stitcherParams = synthesizedParams();
+      bootCache.stitcherBase = DEFAULT_STITCHER_BASE;
       bootCache.ts = Date.now();
       return;
     }
@@ -146,19 +191,27 @@ async function ensureBoot(): Promise<void> {
       stitcherParams?: string;
       sessionToken?: string;
       session?: { sessionID?: string; activeRegion?: string };
+      servers?: { stitcher?: string };
     };
     bootCache.ts = Date.now();
     bootCache.stitcherParams = data.stitcherParams ?? synthesizedParams();
     bootCache.sessionID = data.session?.sessionID ?? "";
     bootCache.sessionToken = data.sessionToken ?? "";
+    bootCache.stitcherBase = data.servers?.stitcher?.replace(/\/$/, "") || DEFAULT_STITCHER_BASE;
     console.log(
-      `[pluto] boot ok; region=${data.session?.activeRegion} sessionID=${bootCache.sessionID.slice(0, 8)}… token=${bootCache.sessionToken ? "yes" : "no"}`,
+      `[pluto] boot ok; region=${data.session?.activeRegion} sessionID=${bootCache.sessionID.slice(0, 8)}… token=${bootCache.sessionToken ? "yes" : "no"} stitcher=${new URL(bootCache.stitcherBase).hostname}`,
     );
   } catch (err) {
     console.error("[pluto] boot failed", err);
     bootCache.stitcherParams = synthesizedParams();
+    bootCache.stitcherBase = DEFAULT_STITCHER_BASE;
     bootCache.ts = Date.now();
   }
+}
+
+async function getStitcherBase(): Promise<string> {
+  await ensureBoot();
+  return bootCache.stitcherBase || DEFAULT_STITCHER_BASE;
 }
 
 async function getStitcherParams(): Promise<string> {
@@ -193,16 +246,22 @@ function synthesizedParams(): string {
 }
 
 async function buildChannelStreamUrl(channelId: string): Promise<string> {
+  const base = await getStitcherBase();
   const params = await getStitcherParams();
-  return `https://service-stitcher.clusters.pluto.tv/v1/stitch/embed/hls/channel/${channelId}/master.m3u8?${params}`;
+  const token = await getSessionToken();
+  // The v2 channel stitcher requires the boot-issued JWT; without it (and on the
+  // old v1 /embed path) every channel returns the "takedownslates_all" slate.
+  const tokenSuffix = token ? `&jwt=${encodeURIComponent(token)}` : "";
+  return `${base}/v2/stitch/hls/channel/${channelId}/master.m3u8?${params}${tokenSuffix}`;
 }
 
 async function buildVodStreamUrl(episodeId: string): Promise<string> {
+  const base = await getStitcherBase();
   const params = await getStitcherParams();
   const token = await getSessionToken();
   // VOD stitcher requires the boot-issued JWT or returns 401.
   const tokenSuffix = token ? `&jwt=${encodeURIComponent(token)}` : "";
-  return `https://service-stitcher.clusters.pluto.tv/v2/stitch/hls/episode/${episodeId}/master.m3u8?${params}${tokenSuffix}`;
+  return `${base}/v2/stitch/hls/episode/${episodeId}/master.m3u8?${params}${tokenSuffix}`;
 }
 
 // Channels in non-US categories return regional takedown slates ("Encerramos
@@ -323,23 +382,35 @@ function hashString(input: string): number {
   return h >>> 0;
 }
 
-// Channels Pluto returns a regional-takedown slate for. Detected at runtime by
-// probing the master manifest and remembered so we never pick them again.
-// Hydrated from disk so HMR doesn't reset it.
-const slateChannels: Set<string> = loadSlateCacheFromDisk();
+// Channels that don't play: regional-takedown slates OR empty playlists (no
+// segments). Detected at runtime by probing the manifest and remembered so we
+// never pick them again. The complementary `playableChannels` set lets
+// pickChannelFor fall back to a known-good channel instead of an unprobed one.
+// Both are hydrated from disk so HMR doesn't reset them.
+const { slates: slateChannels, playable: playableChannels } = loadSlateCacheFromDisk();
 
 function markSlate(channelId: string, channelName: string): void {
+  playableChannels.delete(channelId);
   if (slateChannels.has(channelId)) return;
   slateChannels.add(channelId);
-  console.log(`[pluto] marked slate channel: ${channelName}`);
+  console.log(`[pluto] marked unplayable channel: ${channelName}`);
+  schedulePersistSlate();
+}
+
+function markPlayable(channelId: string): void {
+  slateChannels.delete(channelId);
+  if (playableChannels.has(channelId)) return;
+  playableChannels.add(channelId);
   schedulePersistSlate();
 }
 
 // ── Pre-warm ────────────────────────────────────────────────────────────────
-// On first run after enable, walk the first ~100 channels in the background
-// and probe them. Populates slateChannels so first user clicks aren't slow.
-// Runs once per server process (after which the disk cache carries the result
-// across restarts).
+// On first run after enable, probe every channel in the background and record
+// which are playable vs unplayable. Only ~12% of the global channels.json is
+// actually streamable via the web stitcher (the rest return empty playlists),
+// so probing the full list is what makes the channel lists and pickChannelFor
+// reliable. Runs once per server process; the disk cache carries the result
+// across restarts.
 let prewarmStarted = false;
 
 async function maybePrewarmSlateCache(): Promise<void> {
@@ -350,23 +421,24 @@ async function maybePrewarmSlateCache(): Promise<void> {
     prewarmStarted = false; // allow retry once channels are loaded
     return;
   }
-  // Skip already-cached. Probe up to 100 with limited concurrency.
-  const targets = channels.slice(0, 100).filter((c) => !slateChannels.has(c._id));
+  // Skip channels we've already classified (playable or unplayable).
+  const targets = channels.filter((c) => !slateChannels.has(c._id) && !playableChannels.has(c._id));
   if (!targets.length) {
-    console.log(`[pluto] pre-warm skipped — ${slateChannels.size} channels already cached`);
+    console.log(`[pluto] pre-warm skipped — ${playableChannels.size} playable / ${slateChannels.size} unplayable cached`);
     return;
   }
-  console.log(`[pluto] pre-warming: probing ${targets.length} channels (concurrency 4)…`);
+  console.log(`[pluto] pre-warming: probing ${targets.length} channels (concurrency 6)…`);
   let playable = 0;
   let slates = 0;
-  const concurrency = 4;
+  const concurrency = 6;
   let cursor = 0;
   async function worker(): Promise<void> {
     while (cursor < targets.length) {
       const c = targets[cursor++];
-      if (slateChannels.has(c._id)) continue;
+      if (slateChannels.has(c._id) || playableChannels.has(c._id)) continue;
       try {
         if (await probeChannelPlayable(c._id)) {
+          markPlayable(c._id);
           playable++;
         } else {
           markSlate(c._id, c.name);
@@ -378,7 +450,7 @@ async function maybePrewarmSlateCache(): Promise<void> {
     }
   }
   await Promise.all(Array.from({ length: concurrency }, () => worker()));
-  console.log(`[pluto] pre-warm done: ${playable} playable, ${slates} new slates, ${slateChannels.size} total slates cached`);
+  console.log(`[pluto] pre-warm done: ${playableChannels.size} playable, ${slateChannels.size} unplayable cached`);
 }
 
 async function probeChannelPlayable(channelId: string): Promise<boolean> {
@@ -396,11 +468,23 @@ async function probeChannelPlayable(channelId: string): Promise<boolean> {
     // playlist and look for the slate clip in segment URIs.
     const variantUriMatch = masterBody.split(/\r?\n/).find((line) => line && !line.startsWith("#") && /\.m3u8/.test(line));
     if (!variantUriMatch) return true; // odd shape; accept by default
-    const variantUrl = new URL(variantUriMatch, url).toString();
+    const variant = new URL(variantUriMatch, url);
+    // v2 variant playlists don't inherit the master's jwt and 401 without it,
+    // which would otherwise make every channel look like a slate.
+    if (!variant.searchParams.has("jwt")) {
+      const token = await getSessionToken();
+      if (token) variant.searchParams.set("jwt", token);
+    }
+    const variantUrl = variant.toString();
     const variantRes = await fetch(variantUrl, { headers: { "User-Agent": "Mozilla/5.0", Accept: "application/vnd.apple.mpegurl" } });
     if (!variantRes.ok) return false;
     const variantBody = await variantRes.text();
     if (/takedownslates|where-watch|geo[-_]?block/i.test(variantBody)) return false;
+    // Some channels return a valid-but-empty playlist (headers + EXT-X-ENDLIST,
+    // no #EXTINF segments). hls.js fails these with "No Segments found in
+    // Playlist" → the player shows "try a different channel". Reject them so
+    // pickChannelFor skips them and they're filtered from the channel list.
+    if (!/#EXTINF/.test(variantBody)) return false;
     return true;
   } catch {
     return false;
@@ -411,22 +495,40 @@ async function pickChannelFor(trayChannelId: string): Promise<PlutoChannel | nul
   const channels = await fetchPlutoChannels();
   if (!channels.length) return null;
   const start = hashString(trayChannelId) % channels.length;
-  // Walk the ring; skip slate-cached, probe each candidate. Up to 30 attempts
-  // per request (channels already marked across previous requests are free).
+
+  // Fast path: if we already know a channel at/after the hash anchor is
+  // playable, use it without probing (deterministic per trayChannelId).
+  for (let offset = 0; offset < channels.length; offset++) {
+    const candidate = channels[(start + offset) % channels.length];
+    if (playableChannels.has(candidate._id)) {
+      return candidate;
+    }
+    if (!slateChannels.has(candidate._id)) break; // hit an unknown — probe below
+  }
+
+  // Walk the ring; skip already-classified, probe each unknown candidate. Up to
+  // 30 probes per request (already-classified channels are free to skip).
   const max = Math.min(channels.length, 30);
   for (let offset = 0; offset < max; offset++) {
     const candidate = channels[(start + offset) % channels.length];
     if (slateChannels.has(candidate._id)) continue;
+    if (playableChannels.has(candidate._id)) {
+      return candidate;
+    }
     if (await probeChannelPlayable(candidate._id)) {
+      markPlayable(candidate._id);
       console.log(`[pluto] playable channel for "${trayChannelId}": ${candidate.name}`);
       return candidate;
     }
     markSlate(candidate._id, candidate.name);
   }
-  // No clean candidate after `max` tries — return first non-cached if any,
-  // otherwise the hash-anchored fallback.
-  for (const c of channels) if (!slateChannels.has(c._id)) return c;
-  return channels[start];
+  // No clean candidate after `max` probes — fall back to any known-playable
+  // channel (deterministic by hash) so the player never loads a dead stream.
+  const playableIds = channels.filter((c) => playableChannels.has(c._id));
+  if (playableIds.length) {
+    return playableIds[hashString(trayChannelId) % playableIds.length];
+  }
+  return null;
 }
 
 async function pickVodFor(episodeId: string): Promise<PlutoVodItem | null> {
@@ -469,14 +571,14 @@ async function handleManifestProxy(request: Request): Promise<Response> {
 
   let target: URL;
   try { target = new URL(src); } catch { return new Response("bad src", { status: 400 }); }
-  if (!PLUTO_HOST_ALLOWLIST.has(target.hostname)) {
+  if (!isAllowedManifestHost(target.hostname)) {
     return new Response("host not allowed", { status: 400 });
   }
 
-  // Pluto's VOD stitcher requires the JWT on every sub-playlist + audio +
-  // subtitle request, not just the master. Inject it here so the iframe
-  // doesn't need to know about auth.
-  if (target.hostname === "service-stitcher.clusters.pluto.tv" && !target.searchParams.has("jwt")) {
+  // Pluto's stitcher requires the JWT on every sub-playlist + audio + subtitle
+  // request, not just the master (v2 variant playlists 401 without it). Inject
+  // it here so the iframe doesn't need to know about auth.
+  if (target.pathname.includes("/stitch/hls/") && !target.searchParams.has("jwt")) {
     const token = await getSessionToken();
     if (token) target.searchParams.set("jwt", token);
   }
@@ -763,7 +865,14 @@ export async function handlePlutoApiRequest(request: Request): Promise<Response 
     }
 
     if (trayChannelId) {
-      const picked = await pickChannelFor(trayChannelId);
+      // A "pluto:<id>" handle (used by watch parties started from /live/$id)
+      // names a specific Pluto channel — play that exact channel so the party
+      // mirrors the host. Anything else is a Trey TV handle that we hash-map to
+      // a playable Pluto channel.
+      const picked = trayChannelId.startsWith("pluto:")
+        ? (await fetchPlutoChannels()).find((c) => c._id === trayChannelId.slice("pluto:".length))
+          ?? (await pickChannelFor(trayChannelId))
+        : await pickChannelFor(trayChannelId);
       if (!picked) {
         return new Response("No Pluto channels available", { status: 503 });
       }

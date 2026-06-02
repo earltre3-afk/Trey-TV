@@ -13,6 +13,7 @@ type FwdGifPickerProps = {
   treyTvUid?: string | null;
   context?: "message" | "comment" | "profile";
   draft?: string;
+  restrictTab?: FwdGifLibraryTab;
 };
 
 const TABS: { key: FwdGifLibraryTab | "discover"; label: string }[] = [
@@ -23,8 +24,9 @@ const TABS: { key: FwdGifLibraryTab | "discover"; label: string }[] = [
   { key: "discover", label: "Discover" },
 ];
 
-export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "message", draft }: FwdGifPickerProps) {
-  const [tab, setTab] = useState<FwdGifLibraryTab | "discover">("saved");
+export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "message", draft, restrictTab }: FwdGifPickerProps) {
+  const [tab, setTab] = useState<FwdGifLibraryTab | "discover">(restrictTab ?? "saved");
+  const visibleTabs = restrictTab ? TABS.filter((t) => t.key === restrictTab) : TABS;
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const markUsed = useMarkFwdGifUsed();
@@ -105,7 +107,7 @@ export function FwdGifPicker({ open, onClose, onSelect, treyTvUid, context = "me
 
         {/* Tabs */}
         <div className="flex gap-1 overflow-x-auto border-b border-white/10 px-4 py-2 shrink-0 scrollbar-none">
-          {TABS.map((t) => (
+          {visibleTabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}

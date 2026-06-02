@@ -1,0 +1,38 @@
+{
+  "filename": "04_guide_late_night_gaming_panel_4k.jpg",
+  "title": "Late Night Gaming",
+  "designated_location": "TV Guide side/detail panel or Games hero support",
+  "screen": "TV Guide / Games",
+  "component_target": "Program detail artwork / gaming panel background",
+  "route_context": "/tv/guide, /tv/games",
+  "usage": "Artwork for Late Night Gaming guide selection or gaming lounge hero panels",
+  "recommended_app_path": "public/tv-shell/artwork/panels/late-night-gaming-4k.jpg",
+  "target_id": "late-night-gaming.panel",
+  "safe_zone": "Left half has clean negative space for guide/program metadata; gaming setup sits on the right.",
+  "object_fit": "cover",
+  "object_position": "center center",
+  "notes": "No text, no logo, no UI labels. Purple neon gaming room.",
+  "source_filename": "futuristic_gaming_lounge_with_neon_accents.png",
+  "output_filename": "04_guide_late_night_gaming_panel_4k.jpg",
+  "output_dimensions": {
+    "width": 3840,
+    "height": 2160
+  },
+  "aspect_ratio": "16:9",
+  "file_format": "JPEG",
+  "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+  "recommended_css": {
+    "objectFit": "cover",
+    "objectPosition": "center center",
+    "backgroundSize": "cover",
+    "backgroundPosition": "center center"
+  },
+  "alt_text": "Late Night Gaming premium cinematic artwork for TV Guide side/detail panel or Games hero support.",
+  "safety": {
+    "contains_app_ui_text": false,
+    "contains_logo": false,
+    "contains_dashboard_mockup": false,
+    "approved_for_title_art": true
+  },
+  "sha256": "3e201ba33f1924db503efdf60c33166de57a92c635163eba43083c89ff55fd07"
+}

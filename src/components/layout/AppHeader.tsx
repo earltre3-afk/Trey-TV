@@ -16,6 +16,7 @@ const tabs = [
   { id: "prescribe", label: "Prescribe Me" },
   { id: "rewards", label: "Rewards" },
   { id: "games", label: "Games" },
+  { id: "tradio", label: "Tradio" },
 ] as const;
 
 export function AppHeader({
@@ -34,6 +35,8 @@ export function AppHeader({
   const { isGuest, user } = useAuth();
   const profileUid = user?.uid ?? currentUser.uid;
   const profileAvatar = user?.avatar ?? currentUser.avatar;
+  // Tradio requires a signed-in Trey TV account — hide its tab for guests.
+  const visibleTabs = isGuest ? tabs.filter((t) => t.id !== "tradio") : tabs;
   const computed =
     location.pathname === "/" ? "watch-now"
     : location.pathname.startsWith("/for-you") ? "for-you"
@@ -42,6 +45,7 @@ export function AppHeader({
     : location.pathname.startsWith("/prescribe-me") ? "prescribe"
     : location.pathname.startsWith("/rewards") ? "rewards"
     : location.pathname.startsWith("/games") ? "games"
+    : location.pathname.startsWith("/tradio") ? "tradio"
     : activeTab;
 
   return (
@@ -92,7 +96,7 @@ export function AppHeader({
             </Link>
           ) : (
             <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring shrink-0" aria-label="Profile">
-              <img src={profileAvatar} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
+              <img src={profileAvatar || undefined} alt="profile" className="size-full rounded-full object-cover" loading="lazy" />
             </Link>
           )}
         </div>
@@ -105,7 +109,7 @@ export function AppHeader({
         onTouchMove={(e) => e.stopPropagation()}
         onTouchEnd={(e) => e.stopPropagation()}
       >
-        {tabs.map((t) => {
+        {visibleTabs.map((t) => {
           const active = computed === t.id;
           const handleClick = () => {
             if (t.id === "watch-now") navigate({ to: "/" });
@@ -115,6 +119,7 @@ export function AppHeader({
             if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
             if (t.id === "rewards") navigate({ to: "/rewards" });
             if (t.id === "games") navigate({ to: "/games" });
+            if (t.id === "tradio") navigate({ to: "/tradio" });
             onTabChange?.(t.id);
           };
           return (

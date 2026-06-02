@@ -1,0 +1,239 @@
+{
+  "pack_name": "Trey TV 4K UI Artwork Pack",
+  "created_at": "2026-05-27T18:41:16.017072+00:00",
+  "output_resolution": "3840x2160",
+  "aspect_ratio": "16:9",
+  "format": "JPEG",
+  "quality_note": "Upscaled to 4K UHD using high-quality Lanczos resampling; saved as high-quality JPEG at quality 96 with 4:4:4 chroma.",
+  "placement_policy": "Each asset includes a sidecar JSON metadata file plus a full manifest and placement map.",
+  "assets": [
+    {
+      "filename": "01_home_watch_now_kingmaker_hero_4k.jpg",
+      "title": "Kingmaker: The Change",
+      "designated_location": "Watch Now / Home hero background",
+      "screen": "HomeScreen / Watch Now",
+      "component_target": "Hero banner backdrop",
+      "route_context": "/ or /tv/watch depending shell routing",
+      "usage": "Wide hero artwork behind the Kingmaker title and Watch Now CTA",
+      "recommended_app_path": "public/tv-shell/artwork/heroes/kingmaker-the-change-hero-4k.jpg",
+      "target_id": "kingmaker-the-change.hero",
+      "safe_zone": "Left side has dark negative space for white title copy and gold CTA; throne/city energy sits mostly center-right.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No text, no logo, no UI labels. Safe replacement for the old concept screenshot hero.",
+      "source_filename": "a_dramatic_cinematic_scene_a_dark_grand_throne_r_1_batch_1.png",
+      "output_filename": "01_home_watch_now_kingmaker_hero_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "Kingmaker: The Change premium cinematic artwork for Watch Now / Home hero background.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "801f2830cfd6b33b5643390063095663e8fb8c7770544183b35ea9d249f7790a"
+    },
+    {
+      "filename": "02_featured_life_of_a_creator_card_4k.jpg",
+      "title": "Life of a Creator",
+      "designated_location": "Featured row card / creator documentary tile",
+      "screen": "Watch Now / Featured",
+      "component_target": "Row card artwork",
+      "route_context": "/ or /tv/watch",
+      "usage": "Featured content tile for creator-life/docuseries programming",
+      "recommended_app_path": "public/tv-shell/artwork/cards/life-of-a-creator-4k.jpg",
+      "target_id": "life-of-a-creator.card",
+      "safe_zone": "Darker lower-left and lower band support title overlays.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No text, no logo, no UI labels. Premium creator studio mood.",
+      "source_filename": "futuristic_content_creator_studio_setup.png",
+      "output_filename": "02_featured_life_of_a_creator_card_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "Life of a Creator premium cinematic artwork for Featured row card / creator documentary tile.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "2f481a88af391002b092163ba324ba3a868832767ca360603d677cd6dbc8cb70"
+    },
+    {
+      "filename": "03_featured_after_hours_late_night_card_4k.jpg",
+      "title": "After Hours",
+      "designated_location": "Featured row card / late-night show tile",
+      "screen": "Watch Now / Featured or TV Guide detail art",
+      "component_target": "Row card artwork or show-detail backdrop",
+      "route_context": "/tv/watch, /tv/guide",
+      "usage": "Late-night talk/music/lounge artwork for After Hours or late-night programming",
+      "recommended_app_path": "public/tv-shell/artwork/cards/after-hours-late-night-4k.jpg",
+      "target_id": "after-hours.card",
+      "safe_zone": "Lower-left darker table area supports title overlays; right chair adds depth.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No text, no logo, no UI labels. Purple late-night lounge energy.",
+      "source_filename": "elegant_late_night_lounge_with_neon_glow.png",
+      "output_filename": "03_featured_after_hours_late_night_card_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "After Hours premium cinematic artwork for Featured row card / late-night show tile.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "490c1a38085ae54c0014db7fdd10dc043e6887afc594d5d923e5c3d9beee525b"
+    },
+    {
+      "filename": "04_guide_late_night_gaming_panel_4k.jpg",
+      "title": "Late Night Gaming",
+      "designated_location": "TV Guide side/detail panel or Games hero support",
+      "screen": "TV Guide / Games",
+      "component_target": "Program detail artwork / gaming panel background",
+      "route_context": "/tv/guide, /tv/games",
+      "usage": "Artwork for Late Night Gaming guide selection or gaming lounge hero panels",
+      "recommended_app_path": "public/tv-shell/artwork/panels/late-night-gaming-4k.jpg",
+      "target_id": "late-night-gaming.panel",
+      "safe_zone": "Left half has clean negative space for guide/program metadata; gaming setup sits on the right.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No text, no logo, no UI labels. Purple neon gaming room.",
+      "source_filename": "futuristic_gaming_lounge_with_neon_accents.png",
+      "output_filename": "04_guide_late_night_gaming_panel_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "Late Night Gaming premium cinematic artwork for TV Guide side/detail panel or Games hero support.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "3e201ba33f1924db503efdf60c33166de57a92c635163eba43083c89ff55fd07"
+    },
+    {
+      "filename": "05_games_spades_tile_4k.jpg",
+      "title": "Spades",
+      "designated_location": "Games Lounge featured game tile",
+      "screen": "Games",
+      "component_target": "Game tile artwork",
+      "route_context": "/tv/games",
+      "usage": "Premium tile artwork for Spades / card games",
+      "recommended_app_path": "public/tv-shell/artwork/games/spades-4k.jpg",
+      "target_id": "spades.game-card",
+      "safe_zone": "Center card is focal; lower band and edges can support small badges if needed.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No Trey TV logo and no UI text. Contains playing-card markings only as part of the visual theme.",
+      "source_filename": "high_stakes_casino_ambiance_at_night.png",
+      "output_filename": "05_games_spades_tile_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "Spades premium cinematic artwork for Games Lounge featured game tile.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "c04709e788cecc1a6d7aaffcf1d611b0b05ee5081c0510fbd5e1f671945111ca"
+    },
+    {
+      "filename": "06_profile_creator_hub_decorative_4k.jpg",
+      "title": "Creator Profile / Premium Member Identity",
+      "designated_location": "Profile dashboard decorative modules / empty card backdrop",
+      "screen": "My Profile",
+      "component_target": "Profile hero/supporting card artwork",
+      "route_context": "/tv/profile",
+      "usage": "Decorative premium background for profile, creator hub, badge modules, or empty-state cards",
+      "recommended_app_path": "public/tv-shell/artwork/profile/profile-creator-hub-decorative-4k.jpg",
+      "target_id": "profile.creator-hub.decorative",
+      "safe_zone": "Large center-left dark framed area is intentionally empty for overlays; right side has creator silhouette.",
+      "object_fit": "cover",
+      "object_position": "center center",
+      "notes": "No app UI labels, no screen text. Has luxury purple/gold identity mood.",
+      "source_filename": "futuristic_streaming_studio_with_luxe_accents.png",
+      "output_filename": "06_profile_creator_hub_decorative_4k.jpg",
+      "output_dimensions": {
+        "width": 3840,
+        "height": 2160
+      },
+      "aspect_ratio": "16:9",
+      "file_format": "JPEG",
+      "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+      "recommended_css": {
+        "objectFit": "cover",
+        "objectPosition": "center center",
+        "backgroundSize": "cover",
+        "backgroundPosition": "center center"
+      },
+      "alt_text": "Creator Profile / Premium Member Identity premium cinematic artwork for Profile dashboard decorative modules / empty card backdrop.",
+      "safety": {
+        "contains_app_ui_text": false,
+        "contains_logo": false,
+        "contains_dashboard_mockup": false,
+        "approved_for_title_art": true
+      },
+      "sha256": "8559b8eaa710926d95b2891f64c8447fd7125e19f46a7fe1ed96ffa3db492ccd"
+    }
+  ]
+}

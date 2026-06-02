@@ -14,6 +14,7 @@ import {
   Ghost,
   Image as ImageIcon,
   Inbox as InboxIcon,
+  Loader2,
   MessageCirclePlus,
   MessageCircle,
   Mic,
@@ -55,6 +56,7 @@ import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import { buildFwdGifDetailUrl, type FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
 import { getMutualFollows } from "@/lib/social-relationships";
+import { generateSmartReplies, summarizeInboxThread } from "@/lib/trey-i/vertex.server";
 
 export const Route = createFileRoute("/inbox")({
   component: Inbox,
@@ -157,6 +159,8 @@ function Inbox() {
     sendVoice,
     markRead,
     ensureFromHandle,
+    sendCollabProposal,
+    sendScheduledReply,
   } = useMessages();
 
   const [tab, setTab] = useState<Tab>("all");
@@ -169,6 +173,8 @@ function Inbox() {
   const [focusMode, setFocusMode] = useState(false);
   const [aiDismissed, setAiDismissed] = useState<Record<string, boolean>>({});
   const [collabDismissed, setCollabDismissed] = useState<Record<string, boolean>>({});
+  const [showCollabModal, setShowCollabModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [showPlusMenu, setShowPlusMenu] = useState(false);
@@ -479,6 +485,7 @@ function Inbox() {
       mediaRecorderRef.current = mr;
       setRecorderMs(0);
       setRecording(true);
+      toast.success("Recording voice note — tap again to stop");
       recorderTimerRef.current = setInterval(() => {
         setRecorderMs((prev) => {
           if (prev >= MAX_VOICE_SECS * 1000 - 500) {
@@ -512,9 +519,63 @@ function Inbox() {
   }, [openId, sendMedia]);
 
   const quickActions = [
-    { label: "AI Summary", icon: Bot, onClick: () => toast("Trey-I is summarizing this inbox") },
-    { label: "Schedule Reply", icon: CalendarClock, onClick: () => toast("Reply scheduler ready") },
-    { label: "Create Collab", icon: UserPlus, onClick: () => toast.success("Collab room draft created") },
+    {
+      label: "AI Summary",
+      icon: Bot,
+      onClick: () => {
+        if (!open) {
+          toast.error("Select a conversation to summarize");
+          return;
+        }
+        const threadMsgs = messagesOf(open.id);
+        if (threadMsgs.length === 0) {
+          toast("No messages to summarize yet.");
+          return;
+        }
+        toast.promise(
+          (async () => {
+            const payload = threadMsgs.map(m => ({
+              from: m.from === "me" ? "Me" : open.peer.name,
+              text: m.text || ""
+            }));
+            const res = await summarizeInboxThread({ data: { messages: payload, peerName: open.peer.name } });
+            if (res.summary) {
+              setDraft(res.summary);
+              return res.summary;
+            }
+            throw new Error("Could not generate summary");
+          })(),
+          {
+            loading: "Trey-I is reading the vibe...",
+            success: (summary) => (
+              <div className="flex flex-col gap-1 p-1">
+                <div className="flex items-center gap-2 text-xs font-black tracking-widest text-[oklch(0.82_0.15_215)]">
+                  <Bot className="size-4 animate-pulse" />
+                  TREY-I THREAD SUMMARY
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed italic">"{summary}"</p>
+                <p className="text-[10px] text-muted-foreground">Summary added to your composer.</p>
+              </div>
+            ),
+            error: "Failed to generate thread summary.",
+          }
+        );
+      }
+    },
+    { label: "Schedule Reply", icon: CalendarClock, onClick: () => {
+      if (!openId) {
+        toast.error("Please select a conversation to schedule a reply.");
+        return;
+      }
+      setShowScheduleModal(true);
+    }},
+    { label: "Create Collab", icon: UserPlus, onClick: () => {
+      if (!openId) {
+        toast.error("Please select a conversation to propose a collab.");
+        return;
+      }
+      setShowCollabModal(true);
+    }},
     { label: "Voice Note", icon: Mic, onClick: startRecording },
   ];
 
@@ -680,6 +741,8 @@ function Inbox() {
 
                 {shouldShowAi && (
                   <AiReplyPanel
+                    messages={thread}
+                    peerName={open.peer.name}
                     onClose={() => setAiDismissed((s) => ({ ...s, [open.id]: true }))}
                     onSend={(text) => setDraft(text)}
                   />
@@ -689,6 +752,7 @@ function Inbox() {
                   <CollabPanel
                     open={open}
                     onClose={() => setCollabDismissed((s) => ({ ...s, [open.id]: true }))}
+                    onStart={() => setShowCollabModal(true)}
                   />
                 )}
 
@@ -747,6 +811,24 @@ function Inbox() {
         }}
       />
       <ChatOnboarding />
+
+      <CollabProposalModal
+        isOpen={showCollabModal}
+        onClose={() => setShowCollabModal(false)}
+        peerName={open?.peer.name || ""}
+        onSend={(input) => {
+          if (openId) sendCollabProposal(openId, input);
+        }}
+      />
+
+      <ScheduleReplyModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        peerName={open?.peer.name || ""}
+        onSend={(text, timeLabel, delayMs) => {
+          if (openId) sendScheduledReply(openId, text, timeLabel, delayMs);
+        }}
+      />
     </AppShell>
   );
 }
@@ -769,7 +851,7 @@ function InboxTopRail({ unread, online, profileUid, profileAvatar, onSearch }: {
           {unread > 0 && <span className="absolute right-2 top-2 size-2 rounded-full bg-[oklch(0.7_0.25_340)] shadow-[0_0_12px_oklch(0.7_0.25_340)]" />}
         </button>
         <Link to="/u/$uid" params={{ uid: profileUid }} className="relative size-10 rounded-full conic-ring" aria-label="Profile">
-          <img src={profileAvatar} className="size-full rounded-full object-cover" alt="" />
+          <img src={profileAvatar || undefined} className="size-full rounded-full object-cover" alt="" />
         </Link>
       </div>
     </div>
@@ -1024,6 +1106,7 @@ function PinnedMessageBar({ open, last }: { open: any; last: any }) {
 }
 
 function MessageRow({ message, open, previousFrom, index }: { message: any; open: any; previousFrom?: string; index: number }) {
+  const { respondToCollab, cancelScheduledReply } = useMessages();
   const mine = message.from === "me";
   const prevSameSide = previousFrom === message.from;
   const isGhost = !!message.ghostExpiresAt;
@@ -1072,6 +1155,95 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
       )}
       {!mine && prevSameSide && <div className="w-7 shrink-0" />}
       <div className={`relative flex max-w-[72%] flex-col ${mine ? "items-end" : "items-start"}`}>
+        {message.isCollabProposal && (
+          <div className="rounded-2xl border border-[oklch(0.65_0.22_300)] bg-[oklch(0.65_0.22_300_/_0.06)] p-4 shadow-xl max-w-[280px] space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="size-4 text-[oklch(0.78_0.22_300)]" />
+              <div className="text-xs font-black tracking-wide text-[oklch(0.78_0.22_300)] uppercase">COLLAB PROPOSAL</div>
+            </div>
+            <div className="space-y-1 text-left">
+              <div className="text-sm font-black text-white">{message.collabType}</div>
+              <p className="text-xs text-slate-300 leading-relaxed italic">"{message.collabPitch}"</p>
+            </div>
+            <div className="flex justify-between border-t border-white/5 pt-2.5 text-[11px] gap-2">
+              <div>
+                <span className="text-zinc-500">Proposed Split:</span>{" "}
+                <span className="font-bold text-white">{message.collabSplit}% / {100 - message.collabSplit}%</span>
+              </div>
+              {message.collabBeatName && (
+                <div>
+                  <span className="text-zinc-500">Beat:</span>{" "}
+                  <span className="font-bold text-primary">{message.collabBeatName}</span>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-white/5 pt-3">
+              {message.collabStatus === "pending" ? (
+                message.from === "me" ? (
+                  <div className="text-center text-xs font-bold text-zinc-500 italic">Waiting for response...</div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => respondToCollab(message.id, "declined")}
+                      className="flex-1 rounded-lg border border-white/10 bg-white/[0.04] py-1.5 text-xs font-bold hover:bg-white/[0.08]"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={() => respondToCollab(message.id, "accepted")}
+                      className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-black text-primary-foreground hover:opacity-90"
+                    >
+                      Accept
+                    </button>
+                  </div>
+                )
+              ) : message.collabStatus === "accepted" ? (
+                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-400">
+                  <Check className="size-4" /> Accepted
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-rose-400">
+                  <X className="size-4" /> Declined
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {message.isScheduledReply && (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 shadow-xl max-w-[280px] space-y-3">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="size-4 text-primary" />
+              <div className="text-xs font-black tracking-wide text-primary uppercase">SCHEDULED REPLY</div>
+            </div>
+            <div className="space-y-1 text-left">
+              <div className="text-xs font-bold text-zinc-400">To be sent:</div>
+              <p className="text-sm font-medium text-slate-200">"{message.scheduledText}"</p>
+            </div>
+            <div className="border-t border-white/5 pt-2.5">
+              {message.scheduledStatus === "pending" ? (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-[11px] font-bold text-zinc-500 italic flex items-center gap-1">
+                    <Loader2 className="size-3 animate-spin" /> Pending queue...
+                  </div>
+                  <button
+                    onClick={() => cancelScheduledReply(message.id)}
+                    className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-[11px] font-bold text-rose-300 hover:bg-rose-500/20"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : message.scheduledStatus === "sent" ? (
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-400">
+                  <Check className="size-3.5" /> Automatically Sent
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 text-[11px] font-bold text-rose-400">
+                  <X className="size-3.5" /> Cancelled
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {isGhost && (
           <div className="ghost-bubble">
             <Ghost className="size-4 text-primary" />
@@ -1099,7 +1271,7 @@ function MessageRow({ message, open, previousFrom, index }: { message: any; open
             <audio src={message.voiceUrl} controls className="voice-audio" />
           </div>
         )}
-        {!isGhost && (!hasMedia || message.isGif) && !hasVoice && message.text?.trim() && (
+        {!message.isCollabProposal && !message.isScheduledReply && !isGhost && (!hasMedia || message.isGif) && !hasVoice && message.text?.trim() && (
           isShare && shareData ? (
             <Link
               to="/watch/$id"
@@ -1185,13 +1357,54 @@ function GifMessageCard({ gifUrl, posterUrl, title, fwdGifId }: { gifUrl: string
   );
 }
 
-function AiReplyPanel({ onClose, onSend }: { onClose: () => void; onSend: (text: string) => void }) {
-  const chips = ["Send the cut", "I am in", "Let's lock a time"];
+function AiReplyPanel({
+  messages,
+  peerName,
+  onClose,
+  onSend,
+}: {
+  messages: any[];
+  peerName: string;
+  onClose: () => void;
+  onSend: (text: string) => void;
+}) {
+  const [chips, setChips] = useState<string[]>(["Send the cut", "I am in", "Let's lock a time"]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    setLoading(true);
+    const payload = messages.map(m => ({
+      from: m.from === "me" ? "Me" : peerName,
+      text: m.text || ""
+    }));
+
+    generateSmartReplies({ data: { messages: payload, peerName } })
+      .then((res) => {
+        if (res?.replies && res.replies.length > 0) {
+          setChips(res.replies);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to generate smart replies:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [messages?.length, peerName]);
+
   return (
     <div className="border-t border-white/10 px-3 py-2">
       <div className="rounded-2xl border border-[oklch(0.82_0.15_215_/_0.35)] bg-[linear-gradient(135deg,oklch(0.82_0.15_215_/_0.12),oklch(0.7_0.25_340_/_0.10))] p-3">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[oklch(0.82_0.15_215)]"><Bot className="size-3.5" /> AI Suggested Reply</div>
+          <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-[oklch(0.82_0.15_215)]">
+            {loading ? (
+              <Loader2 className="size-3.5 animate-spin text-[oklch(0.82_0.15_215)]" />
+            ) : (
+              <Bot className="size-3.5" />
+            )}
+            AI Suggested Reply
+          </div>
           <button onClick={onClose} className="size-7 grid place-items-center rounded-full hover:bg-white/10" aria-label="Close AI panel"><X className="size-3.5" /></button>
         </div>
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -1203,7 +1416,7 @@ function AiReplyPanel({ onClose, onSend }: { onClose: () => void; onSend: (text:
   );
 }
 
-function CollabPanel({ open, onClose }: { open: any; onClose: () => void }) {
+function CollabPanel({ open, onClose, onStart }: { open: any; onClose: () => void; onStart: () => void }) {
   return (
     <div className="border-t border-white/10 px-3 py-2">
       <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/[0.08] p-3">
@@ -1214,7 +1427,7 @@ function CollabPanel({ open, onClose }: { open: any; onClose: () => void }) {
           <div className="text-sm font-black">Ready to collab?</div>
           <div className="truncate text-[11px] text-muted-foreground">Start a room with creator context attached.</div>
         </div>
-        <button onClick={() => toast.success("Collab room started")} className="h-9 rounded-xl bg-primary px-3 text-xs font-black text-primary-foreground">Start</button>
+        <button onClick={onStart} className="h-9 rounded-xl bg-primary px-3 text-xs font-black text-primary-foreground">Start</button>
         <button onClick={onClose} className="size-9 grid place-items-center rounded-xl border border-white/10 bg-white/[0.04]" aria-label="Dismiss collab"><X className="size-3.5" /></button>
       </div>
     </div>
@@ -1678,6 +1891,220 @@ function EmptyState({ onNew }: { onNew: () => void }) {
           </button>
           <p className="text-[10px] text-muted-foreground">or select a thread from the left panel</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CollabProposalModal({
+  isOpen,
+  onClose,
+  peerName,
+  onSend,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  peerName: string;
+  onSend: (input: {
+    collabType: "Remix" | "Vocal Feature" | "Collab Track" | "Beat Production";
+    pitch: string;
+    split: number;
+    beatName?: string;
+  }) => void;
+}) {
+  const [collabType, setCollabType] = useState<"Remix" | "Vocal Feature" | "Collab Track" | "Beat Production">("Collab Track");
+  const [pitch, setPitch] = useState("");
+  const [split, setSplit] = useState(50);
+  const [beatName, setBeatName] = useState("None");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pitch.trim()) {
+      toast.error("Please enter a short pitch message!");
+      return;
+    }
+    onSend({ collabType, pitch, split, beatName: beatName === "None" ? undefined : beatName });
+    onClose();
+    setPitch("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl animate-scale-in">
+        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+          <div className="flex items-center gap-2">
+            <UserPlus className="size-5 text-primary" />
+            <h3 className="text-lg font-black tracking-tight">Propose Collaboration</h3>
+          </div>
+          <button onClick={onClose} className="rounded-full p-1 hover:bg-white/5" type="button"><X className="size-5 text-zinc-400" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-zinc-400">Collaboration Type</label>
+            <select
+              value={collabType}
+              onChange={(e) => setCollabType(e.target.value as any)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="Collab Track">Collab Track</option>
+              <option value="Vocal Feature">Vocal Feature</option>
+              <option value="Remix">Remix</option>
+              <option value="Beat Production">Beat Production</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-zinc-400">Pitch / Proposal message</label>
+            <textarea
+              value={pitch}
+              onChange={(e) => setPitch(e.target.value)}
+              placeholder={`Pitch your collab idea to ${peerName}...`}
+              className="mt-1 h-20 w-full rounded-xl border border-white/10 bg-zinc-900 p-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-zinc-400">Your Split (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={split}
+                onChange={(e) => setSplit(Math.min(100, Math.max(0, Number(e.target.value))))}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-zinc-400">Reference Beat</label>
+              <select
+                value={beatName}
+                onChange={(e) => setBeatName(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-zinc-900 p-2.5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="None">No beat attached</option>
+                <option value="Midnight Dream">Midnight Dream (120 BPM)</option>
+                <option value="Neon Shadows">Neon Shadows (92 BPM)</option>
+                <option value="Sunset Lullaby">Sunset Lullaby (84 BPM)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-white/10 bg-transparent py-2.5 text-sm font-bold hover:bg-white/5"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-black text-primary-foreground hover:opacity-90"
+            >
+              Send Proposal
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function ScheduleReplyModal({
+  isOpen,
+  onClose,
+  peerName,
+  onSend,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  peerName: string;
+  onSend: (text: string, timeLabel: string, delayMs: number) => void;
+}) {
+  const [text, setText] = useState("");
+  const [timeOption, setTimeOption] = useState<"10s" | "30s" | "1m" | "5m">("10s");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) {
+      toast.error("Please enter a reply message!");
+      return;
+    }
+
+    const delayMap = {
+      "10s": 10000,
+      "30s": 30000,
+      "1m": 60000,
+      "5m": 300000,
+    };
+
+    onSend(text, timeOption, delayMap[timeOption]);
+    onClose();
+    setText("");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-zinc-950 p-6 shadow-2xl animate-scale-in">
+        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="size-5 text-primary" />
+            <h3 className="text-lg font-black tracking-tight">Schedule Automated Reply</h3>
+          </div>
+          <button onClick={onClose} className="rounded-full p-1 hover:bg-white/5" type="button"><X className="size-5 text-zinc-400" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-zinc-400">Delay Time</label>
+            <div className="mt-1.5 grid grid-cols-4 gap-2">
+              {(["10s", "30s", "1m", "5m"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setTimeOption(opt)}
+                  className={`rounded-xl border py-2 text-xs font-bold transition-all ${
+                    timeOption === opt
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-white/10 bg-zinc-900 text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-zinc-400">Reply Message</label>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={`Type automated message to send to ${peerName}...`}
+              className="mt-1 h-24 w-full rounded-xl border border-white/10 bg-zinc-900 p-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-white/10 bg-transparent py-2.5 text-sm font-bold hover:bg-white/5"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 rounded-xl bg-primary py-2.5 text-sm font-black text-primary-foreground hover:opacity-90"
+            >
+              Schedule
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

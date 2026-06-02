@@ -40,6 +40,7 @@ $NativeApp  = Join-Path $RepoRoot "apps\trey-tv-tv"
 $AssetsDir  = Join-Path $NativeApp "app\src\main\assets\trey-tv-web"
 $ApkSrc     = Join-Path $NativeApp "app\build\outputs\apk\debug\app-debug.apk"
 $ApkDst     = Join-Path $RepoRoot "public\downloads\trey-tv-box-debug.apk"
+$StreamingApkDst = Join-Path $RepoRoot "public\downloads\trey-tv-streamingbox-debug.apk"
 
 function Say($message) {
   Write-Host "[build-tv-skin] $message" -ForegroundColor Cyan
@@ -108,7 +109,9 @@ if (-not (Test-Path $DownloadsDir)) {
   New-Item -ItemType Directory -Force -Path $DownloadsDir | Out-Null
 }
 Copy-Item -Force $ApkSrc $ApkDst
+Copy-Item -Force $ApkSrc $StreamingApkDst
 
 $size = (Get-Item $ApkDst).Length
 Say "Done. APK ready at $ApkDst ($([math]::Round($size / 1MB, 2)) MB)."
+Say "StreamingBox download refreshed at $StreamingApkDst."
 Say "Sideload: adb install -r `"$ApkDst`""

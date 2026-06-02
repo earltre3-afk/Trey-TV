@@ -3,7 +3,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Fixed 1920px logical canvas for the 10-foot TV shell. The native
+         WebView (useWideViewPort + loadWithOverviewMode) scales this to fit the
+         screen 1:1, so the responsive layout renders at its intended size
+         instead of a cramped ~960px device-width that oversizes/overlaps it. -->
+    <meta name="viewport" content="width=1920" />
     <title>Trey TV Streaming Shell</title>
     <meta name="description" content="A premium TV app shell for Trey TV, designed to deliver a cinematic and engaging streaming experience on various smart TV platforms." />
     <link rel="icon" type="image/svg+xml" href="/placeholder.svg" />

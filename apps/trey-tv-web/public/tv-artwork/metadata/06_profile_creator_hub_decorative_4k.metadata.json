@@ -1,0 +1,38 @@
+{
+  "filename": "06_profile_creator_hub_decorative_4k.jpg",
+  "title": "Creator Profile / Premium Member Identity",
+  "designated_location": "Profile dashboard decorative modules / empty card backdrop",
+  "screen": "My Profile",
+  "component_target": "Profile hero/supporting card artwork",
+  "route_context": "/tv/profile",
+  "usage": "Decorative premium background for profile, creator hub, badge modules, or empty-state cards",
+  "recommended_app_path": "public/tv-shell/artwork/profile/profile-creator-hub-decorative-4k.jpg",
+  "target_id": "profile.creator-hub.decorative",
+  "safe_zone": "Large center-left dark framed area is intentionally empty for overlays; right side has creator silhouette.",
+  "object_fit": "cover",
+  "object_position": "center center",
+  "notes": "No app UI labels, no screen text. Has luxury purple/gold identity mood.",
+  "source_filename": "futuristic_streaming_studio_with_luxe_accents.png",
+  "output_filename": "06_profile_creator_hub_decorative_4k.jpg",
+  "output_dimensions": {
+    "width": 3840,
+    "height": 2160
+  },
+  "aspect_ratio": "16:9",
+  "file_format": "JPEG",
+  "quality": "4K UHD, quality 96, 4:4:4 chroma, progressive JPEG",
+  "recommended_css": {
+    "objectFit": "cover",
+    "objectPosition": "center center",
+    "backgroundSize": "cover",
+    "backgroundPosition": "center center"
+  },
+  "alt_text": "Creator Profile / Premium Member Identity premium cinematic artwork for Profile dashboard decorative modules / empty card backdrop.",
+  "safety": {
+    "contains_app_ui_text": false,
+    "contains_logo": false,
+    "contains_dashboard_mockup": false,
+    "approved_for_title_art": true
+  },
+  "sha256": "8559b8eaa710926d95b2891f64c8447fd7125e19f46a7fe1ed96ffa3db492ccd"
+}

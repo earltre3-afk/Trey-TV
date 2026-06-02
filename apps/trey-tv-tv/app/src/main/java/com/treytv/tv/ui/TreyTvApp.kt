@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import com.treytv.tv.data.PlaceholderTreyTvApiService
 import com.treytv.tv.data.PlutoChannel
 import com.treytv.tv.data.TreySessionStore
@@ -23,7 +24,6 @@ import com.treytv.tv.data.TreyVideo
 import com.treytv.tv.data.WatchNowContent
 import com.treytv.tv.ui.screens.GameHostScreen
 import com.treytv.tv.ui.screens.HomeShell
-import com.treytv.tv.ui.screens.SignInScreen
 import com.treytv.tv.ui.screens.SplashScreen
 import com.treytv.tv.ui.screens.VideoDetailScreen
 import com.treytv.tv.ui.screens.VideoPlayerScreen
@@ -33,7 +33,6 @@ import kotlinx.coroutines.launch
 
 sealed interface AppScreen {
     data object Splash : AppScreen
-    data object SignIn : AppScreen
     /** Default modern UI — bundled React/Vite cinematic skin rendered in a WebView. */
     data object WebShell : AppScreen
     /** Legacy native Compose home shell — kept reachable for diagnostics / fallback. */
@@ -50,6 +49,7 @@ fun TreyTvApp(
 ) {
     val backStack = remember { mutableStateListOf<AppScreen>(AppScreen.Splash) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var profile by remember { mutableStateOf<TreyProfile?>(null) }
     var watchNow by remember { mutableStateOf<WatchNowContent?>(null) }
     var games by remember { mutableStateOf(PlaceholderTreyTvApiService.sampleGames) }
@@ -106,23 +106,17 @@ fun TreyTvApp(
         when (val screen = backStack.last()) {
             AppScreen.Splash -> SplashScreen(
                 onFinished = {
-                    replace(if (sessionStore?.accessToken().isNullOrBlank()) AppScreen.SignIn else AppScreen.WebShell)
-                },
-            )
-            AppScreen.SignIn -> SignInScreen(
-                api = api,
-                onSignedIn = {
-                    profile = it
-                    refreshHome()
+                    // Boot directly into the cinematic web shell. The app must
+                    // never gate boot on auth; sign-in stays reachable from the
+                    // shell (onExit) but is not the launch screen.
                     replace(AppScreen.WebShell)
                 },
-                onSkip = { replace(AppScreen.WebShell) },
             )
             AppScreen.WebShell -> WebShellScreen(
                 onExit = {
-                    scope.launch { api.signOut() }
-                    profile = null
-                    replace(AppScreen.SignIn)
+                    // Back at the top of the shell exits the app to the launcher.
+                    // (Sign-in now lives inside the shell's Activation screen.)
+                    (context as? android.app.Activity)?.finish()
                 },
             )
             AppScreen.Home -> HomeShell(
@@ -161,7 +155,7 @@ fun TreyTvApp(
                 onSignOut = {
                     scope.launch { api.signOut() }
                     profile = null
-                    replace(AppScreen.SignIn)
+                    replace(AppScreen.WebShell)
                 },
             )
             is AppScreen.VideoDetail -> VideoDetailScreen(

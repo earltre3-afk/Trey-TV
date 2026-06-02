@@ -2,6 +2,39 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+let cachedFetch: typeof fetch | undefined;
+
+function getSafeFetch(): typeof fetch {
+  if (typeof window === 'undefined') {
+    return fetch;
+  }
+
+  if (cachedFetch) {
+    return cachedFetch;
+  }
+
+  if (!document.body) {
+    return window.fetch;
+  }
+
+  try {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+    const nativeFetch = iframe.contentWindow?.fetch;
+    document.body.removeChild(iframe);
+    if (nativeFetch) {
+      cachedFetch = nativeFetch.bind(window);
+      return cachedFetch;
+    }
+  } catch (e) {
+    console.warn('[Supabase] Failed to retrieve native fetch from iframe, falling back to window.fetch:', e);
+  }
+
+  cachedFetch = window.fetch;
+  return cachedFetch;
+}
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -31,6 +64,9 @@ function createSupabaseClient() {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+    },
+    global: {
+      fetch: (...args) => getSafeFetch()(...args),
     }
   });
 }
@@ -45,4 +81,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
     return Reflect.get(_supabase, prop, receiver);
   },
 });
-
