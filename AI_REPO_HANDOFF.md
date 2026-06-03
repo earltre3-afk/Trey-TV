@@ -130,4 +130,3 @@ Known normal warning:
 
 - Vite chunk-size warnings can appear and have not blocked production deploys.
 - Some third-party packages print ignored `"use client"` directive warnings during Vercel builds.
-

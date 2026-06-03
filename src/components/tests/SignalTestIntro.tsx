@@ -1,6 +1,6 @@
-import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import TreyTVLogo from './TreyTVLogo';
+import React from "react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import TreyTVLogo from "./TreyTVLogo";
 
 interface Props {
   onStart: () => void;
@@ -33,7 +33,9 @@ const SignalTestIntro: React.FC<Props> = ({ onStart }) => {
               className="drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]"
             />
           </svg>
-          <p className="absolute bottom-2 text-[10px] tracking-[0.3em] text-cyan-300/80">SCANNING YOUR SIGNAL</p>
+          <p className="absolute bottom-2 text-[10px] tracking-[0.3em] text-cyan-300/80">
+            SCANNING YOUR SIGNAL
+          </p>
         </div>
 
         <div className="relative rounded-[28px] p-[1.5px] bg-gradient-to-b from-violet-500/60 via-fuchsia-500/30 to-cyan-500/40">
@@ -63,7 +65,7 @@ const SignalTestIntro: React.FC<Props> = ({ onStart }) => {
                 <p>No fake deep stuff.</p>
               </div>
               <p className="pt-2">
-                Your reactions reveal your{' '}
+                Your reactions reveal your{" "}
                 <span className="bg-gradient-to-r from-fuchsia-300 to-cyan-300 bg-clip-text text-transparent font-semibold">
                   Natural Ability.
                 </span>

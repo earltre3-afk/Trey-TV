@@ -14,14 +14,17 @@ Task 1 (add dependency) → Task 2 (tts.server.ts) → Task 3 (wire onboarding.v
 can import `GoogleGenAI` and `Modality`.
 
 **Files involved:**
+
 - `package.json`
 
 **Steps:**
+
 1. Add `"@google/genai": "^1.50.1"` to the `dependencies` section of `package.json`.
    (Same version as RESTORE-599. Do not use a newer major without testing.)
 2. Run `pnpm install` to update `pnpm-lock.yaml`.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - `import { GoogleGenAI, Modality } from "@google/genai"` resolves without error.
@@ -31,6 +34,7 @@ can import `GoogleGenAI` and `Modality`.
 **Visual preservation:** No UI change.
 
 **Terminal validation:**
+
 ```
 pnpm install
 pnpm tsc --noEmit
@@ -47,10 +51,12 @@ pnpm build
 base64-encoded WAV audio, or `{ audioBase64: null }` on any failure.
 
 **Files involved:**
+
 - `src/lib/trey-i/tts.server.ts` (new)
 - Reference: `C:\Users\info\TREY-TV-RESTORE-599\app\api\trey-i\tts\route.ts`
 
 **Steps:**
+
 1. Create `src/lib/trey-i/tts.server.ts`.
 2. Implement `treyITts` with input `{ text: string }` and return type
    `{ audioBase64: string; mimeType: "audio/wav" } | { audioBase64: null }`.
@@ -70,6 +76,7 @@ base64-encoded WAV audio, or `{ audioBase64: null }` on any failure.
 11. Do NOT log or expose the API key value anywhere.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - No Google API key appears in any `VITE_`-prefixed variable or in browser-accessible code.
@@ -77,6 +84,7 @@ base64-encoded WAV audio, or `{ audioBase64: null }` on any failure.
 - Return type is always `{ audioBase64: string | null; mimeType?: "audio/wav" }` — never throws to caller.
 
 **Security boundary:**
+
 - `GOOGLE_GENAI_API_KEY` / `GEMINI_API_KEY` / `GOOGLE_API_KEY` read from `process.env` server-side only.
 - Browser receives only base64 audio bytes.
 - No user credentials passed to Gemini.
@@ -84,6 +92,7 @@ base64-encoded WAV audio, or `{ audioBase64: null }` on any failure.
 **Visual preservation:** No UI change in this task.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -99,35 +108,38 @@ pnpm build
 fire-and-forget and play the returned audio. Text flow must be unaffected if TTS fails.
 
 **Files involved:**
+
 - `src/routes/onboarding.voice.tsx` (modify)
 - `src/lib/trey-i/tts.server.ts` (import)
 
 **Steps:**
+
 1. Import `treyITts` from `@/lib/trey-i/tts.server`.
 2. Add a `playTts(message: string): void` helper function (not async in the call site):
    ```typescript
    function playTts(message: string): void {
      treyITts({ data: { text: message } })
        .then((result) => {
-         if (!result.audioBase64) return
-         const bytes = Uint8Array.from(atob(result.audioBase64), (c) => c.charCodeAt(0))
-         const blob = new Blob([bytes], { type: "audio/wav" })
-         const url = URL.createObjectURL(blob)
-         const audio = new Audio(url)
-         audio.onended = () => URL.revokeObjectURL(url)
-         audio.play().catch(() => {})
+         if (!result.audioBase64) return;
+         const bytes = Uint8Array.from(atob(result.audioBase64), (c) => c.charCodeAt(0));
+         const blob = new Blob([bytes], { type: "audio/wav" });
+         const url = URL.createObjectURL(blob);
+         const audio = new Audio(url);
+         audio.onended = () => URL.revokeObjectURL(url);
+         audio.play().catch(() => {});
        })
-       .catch(() => {})
+       .catch(() => {});
    }
    ```
 3. In `submit()`, after `setAssistantMessage(result.assistant.message)`, add:
    ```typescript
-   playTts(result.assistant.message)
+   playTts(result.assistant.message);
    ```
    This is a fire-and-forget call — no `await`, no error surfacing.
 4. No other changes to `onboarding.voice.tsx`. All existing JSX, state, and logic preserved.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - `submit()` does not `await` `playTts` — text renders immediately.
@@ -135,14 +147,17 @@ fire-and-forget and play the returned audio. Text flow must be unaffected if TTS
 - All existing Lovable visual elements (orb, progress chips, backdrop, input) are unchanged.
 
 **Security boundary:**
+
 - `treyITts` is a server function — API key never reaches the browser.
 - `playTts` only handles the returned base64 bytes client-side.
 
 **Visual preservation:**
+
 - No JSX changes. No new UI elements. Audio is purely additive.
 - Orb, progress chips, input field, backdrop, error display — all unchanged.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -158,10 +173,12 @@ is otherwise unchanged.
 **Goal:** Record Phase 2 TTS completion in migration-map.md and file-map.md.
 
 **Files involved:**
+
 - `.kiro/steering/migration-map.md`
 - `.kiro/steering/file-map.md`
 
 **Steps:**
+
 1. In `migration-map.md`, update the Trey-I Phase 1 row or add a new row for Phase 2:
    note that `treyITts` is wired, `@google/genai` added, TTS is non-fatal, no ElevenLabs/Live.
 2. In `file-map.md`, add `trey-i/tts.server.ts` to the Lib section.

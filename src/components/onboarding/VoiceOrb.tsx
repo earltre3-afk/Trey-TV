@@ -12,11 +12,15 @@ export type VoiceState =
 export function VoiceOrb({ state, size = 192 }: { state: VoiceState; size?: number }) {
   const spin = state === "listening" || state === "speaking" || state === "processing";
   const Icon =
-    state === "processing" ? Loader2
-    : state === "speaking" ? Volume2
-    : state === "listening" ? Mic
-    : state === "captured" || state === "completed" ? CheckCircle2
-    : Sparkles;
+    state === "processing"
+      ? Loader2
+      : state === "speaking"
+        ? Volume2
+        : state === "listening"
+          ? Mic
+          : state === "captured" || state === "completed"
+            ? CheckCircle2
+            : Sparkles;
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -31,14 +35,19 @@ export function VoiceOrb({ state, size = 192 }: { state: VoiceState; size?: numb
       <div className="absolute inset-2 rounded-full bg-background grid place-items-center liquid-glass border border-white/10">
         <Icon
           className={`size-12 ${
-            state === "processing" ? "text-primary animate-spin" :
-            state === "captured" || state === "completed" ? "text-[oklch(0.78_0.18_150)]" :
-            "text-primary"
+            state === "processing"
+              ? "text-primary animate-spin"
+              : state === "captured" || state === "completed"
+                ? "text-[oklch(0.78_0.18_150)]"
+                : "text-primary"
           } ${state === "listening" ? "animate-glow-pulse" : ""}`}
         />
       </div>
       {/* halo */}
-      <div aria-hidden className="absolute inset-0 rounded-full bg-primary/20 blur-2xl animate-glow-pulse" />
+      <div
+        aria-hidden
+        className="absolute inset-0 rounded-full bg-primary/20 blur-2xl animate-glow-pulse"
+      />
 
       {/* listening waveform ring */}
       {state === "listening" && (

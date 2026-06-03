@@ -1,12 +1,12 @@
-import React from 'react';
-import { TREY_TV_LOGO } from '../mockData';
+import React from "react";
+import { TREY_TV_LOGO } from "../mockData";
 
 // Official Trey TV logo (silver + gold). DO NOT redraw or substitute.
-export const TreyLogo: React.FC<{ size?: 'sm' | 'md' | 'lg' | 'xl'; className?: string }> = ({
-  size = 'md',
-  className = '',
+export const TreyLogo: React.FC<{ size?: "sm" | "md" | "lg" | "xl"; className?: string }> = ({
+  size = "md",
+  className = "",
 }) => {
-  const heights = { sm: 'h-10', md: 'h-14', lg: 'h-24', xl: 'h-40' };
+  const heights = { sm: "h-10", md: "h-14", lg: "h-24", xl: "h-40" };
   return (
     <img
       src={TREY_TV_LOGO}

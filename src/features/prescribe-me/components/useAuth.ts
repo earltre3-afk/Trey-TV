@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
-import { supabase, hasSupabaseConfig } from '@/lib/supabase';
-import { useSupabaseSession } from '@/lib/supabase-session';
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import { useCallback } from "react";
+import { supabase, hasSupabaseConfig } from "@/lib/supabase";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 export interface AuthState {
   user: User | null;
@@ -16,7 +16,10 @@ export function useAuth(): AuthState & {
 
   const sendMagicLink = useCallback(async (email: string) => {
     if (!hasSupabaseConfig || !supabase) {
-      return { ok: false, error: 'Supabase is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.' };
+      return {
+        ok: false,
+        error: "Supabase is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+      };
     }
 
     try {
@@ -28,7 +31,7 @@ export function useAuth(): AuthState & {
       if (error) return { ok: false, error: error.message };
       return { ok: true };
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong. Try again.';
+      const msg = e instanceof Error ? e.message : "Something went wrong. Try again.";
       return { ok: false, error: msg };
     }
   }, []);

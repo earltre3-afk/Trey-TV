@@ -35,7 +35,9 @@ export function GiftPickerSheet({
       return;
     }
     triggerCoinGift(tier, recipient);
-    toast.success(`${tier.name} sent${recipient ? ` to @${recipient}` : ""} · −${tier.cost.toLocaleString()} pts`);
+    toast.success(
+      `${tier.name} sent${recipient ? ` to @${recipient}` : ""} · −${tier.cost.toLocaleString()} pts`,
+    );
     onClose();
   };
 
@@ -80,7 +82,13 @@ export function GiftPickerSheet({
               <Sparkles className="size-3" /> SEND A GIFT
             </div>
             <h2 className="text-lg font-bold mt-0.5">
-              {recipient ? <>To <span className="text-gradient-gold">@{recipient}</span></> : <span className="text-gradient-gold">Pick a gift</span>}
+              {recipient ? (
+                <>
+                  To <span className="text-gradient-gold">@{recipient}</span>
+                </>
+              ) : (
+                <span className="text-gradient-gold">Pick a gift</span>
+              )}
             </h2>
           </div>
           <button
@@ -133,11 +141,15 @@ export function GiftPickerSheet({
                   <div className="text-sm font-bold leading-tight">{tier.name}</div>
                   <div className="text-[10px] text-muted-foreground line-clamp-1">{tier.blurb}</div>
                   <div className="mt-1.5 flex items-center justify-between">
-                    <span className={`text-xs font-bold tabular-nums ${affordable ? "text-primary" : "text-muted-foreground"}`}>
+                    <span
+                      className={`text-xs font-bold tabular-nums ${affordable ? "text-primary" : "text-muted-foreground"}`}
+                    >
                       {tier.cost.toLocaleString()} pts
                     </span>
                     {!affordable && short > 0 && (
-                      <span className="text-[9px] text-muted-foreground">−{short.toLocaleString()} short</span>
+                      <span className="text-[9px] text-muted-foreground">
+                        −{short.toLocaleString()} short
+                      </span>
                     )}
                   </div>
                 </div>
@@ -151,6 +163,6 @@ export function GiftPickerSheet({
         </p>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

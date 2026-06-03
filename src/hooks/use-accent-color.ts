@@ -28,7 +28,9 @@ export function useAccentColor(userId?: string) {
     async function loadAccentColor() {
       try {
         const supabase = createBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (!user) {
           // Not authenticated, use default
@@ -39,11 +41,11 @@ export function useAccentColor(userId?: string) {
         }
 
         // Load the user's profile accent color
-        const { data, error } = await supabase
+        const { data, error } = (await supabase
           .from("profiles")
           .select("profile_accent_color")
           .eq("id", user.id)
-          .single() as any;
+          .single()) as any;
 
         if (error || !data) {
           console.error("Error loading accent color:", error);
@@ -79,7 +81,10 @@ export function applyAccentColor(hexColor: string) {
 
   // Apply CSS variables to the root
   document.documentElement.style.setProperty("--profile-accent", safeHex);
-  document.documentElement.style.setProperty("--profile-accent-rgb", `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+  document.documentElement.style.setProperty(
+    "--profile-accent-rgb",
+    `${rgb.r}, ${rgb.g}, ${rgb.b}`,
+  );
 }
 
 export function applyProfileAccentColor(hexColor: string, element: HTMLElement) {

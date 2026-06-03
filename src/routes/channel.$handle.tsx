@@ -1,9 +1,25 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Home, Compass, Inbox, Bookmark, Plus,
-  Play, Share2, UserPlus, UserCheck, BadgeCheck, Crown,
-  Camera, Mic, Film, User, Check, Bell, Gift, MessageSquare,
+  Home,
+  Compass,
+  Inbox,
+  Bookmark,
+  Plus,
+  Play,
+  Share2,
+  UserPlus,
+  UserCheck,
+  BadgeCheck,
+  Crown,
+  Camera,
+  Mic,
+  Film,
+  User,
+  Check,
+  Bell,
+  Gift,
+  MessageSquare,
   ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -17,7 +33,11 @@ import { useSupabaseSession } from "@/lib/supabase-session";
 import { createWatchParty } from "@/lib/watch-party/party.server";
 import { Users } from "lucide-react";
 import { isTreyOwnerHandle } from "@/lib/trey-owner";
-import { toggleFollow as doToggleFollow, getSocialCounts, type SocialCounts } from "@/lib/social-relationships";
+import {
+  toggleFollow as doToggleFollow,
+  getSocialCounts,
+  type SocialCounts,
+} from "@/lib/social-relationships";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import staticHeroBg from "@/assets/lovable-hero-bg.jpg";
@@ -32,7 +52,10 @@ export const Route = createFileRoute("/channel/$handle")({
   head: ({ params }) => ({
     meta: [
       { title: `@${params.handle} — Trey TV Creator Channel` },
-      { name: "description", content: `Watch shows, episodes, and live moments from @${params.handle} on Trey TV.` },
+      {
+        name: "description",
+        content: `Watch shows, episodes, and live moments from @${params.handle} on Trey TV.`,
+      },
       { property: "og:title", content: `@${params.handle} on Trey TV` },
     ],
   }),
@@ -59,8 +82,18 @@ const FALLBACK_SEASONS = [
 ];
 
 const FALLBACK_POPULAR = [
-  { id: "p1", duration: "12:45", title: "I Bought My Dream Car… Here's How It Went", img: fallPost5 },
-  { id: "p2", duration: "15:32", title: "SURPRISING My Little Brother With His Dream…", img: fallPost2 },
+  {
+    id: "p1",
+    duration: "12:45",
+    title: "I Bought My Dream Car… Here's How It Went",
+    img: fallPost5,
+  },
+  {
+    id: "p2",
+    duration: "15:32",
+    title: "SURPRISING My Little Brother With His Dream…",
+    img: fallPost2,
+  },
   { id: "p3", duration: "18:20", title: "The Truth About Content Creation", img: fallPost3 },
   { id: "p4", duration: "22:17", title: "RAW CONVERSATION (No Filter)", img: fallPost4 },
 ];
@@ -76,14 +109,15 @@ function ChannelPage() {
 
   const publicEpisodes = useMemo<Submission[]>(() => {
     const visible = store.submissions.filter(
-      (s) => s.status === "approved" || s.status === "published" || s.status === "scheduled"
+      (s) => s.status === "approved" || s.status === "published" || s.status === "scheduled",
     );
     const byThem = visible.filter((s) => s.creator_handle === handle);
     return byThem.length ? byThem : visible.slice(0, 6);
   }, [store.submissions, handle]);
 
   const featured = publicEpisodes[0];
-  const trailer = publicEpisodes.find((s) => s.is_trailer || s.episode_type === "Trailer") ?? featured;
+  const trailer =
+    publicEpisodes.find((s) => s.is_trailer || s.episode_type === "Trailer") ?? featured;
 
   const shows = useMemo(() => {
     const map = new Map<string, { id: string; title: string; episodes: Submission[] }>();
@@ -122,7 +156,9 @@ function ChannelPage() {
         if (dbId) {
           const counts = await getSocialCounts(dbId);
           if (mounted) setSocialCounts(counts);
-          const { data: { user: authUser } } = await supabase.auth.getUser();
+          const {
+            data: { user: authUser },
+          } = await supabase.auth.getUser();
           if (authUser && authUser.id !== dbId) {
             const { data: followRow } = await (supabase as any)
               .from("follows")
@@ -138,17 +174,24 @@ function ChannelPage() {
       }
     }
     load();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [handle]);
 
   const fmt = (n: number) =>
-    n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` :
-    n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` :
-    String(n);
+    n >= 1_000_000
+      ? `${(n / 1_000_000).toFixed(1)}M`
+      : n >= 1_000
+        ? `${(n / 1_000).toFixed(1)}K`
+        : String(n);
 
   const handleFollowToggle = async () => {
     if (!creatorDbId) return;
-    if (!user) { toast.error("Sign in to follow"); return; }
+    if (!user) {
+      toast.error("Sign in to follow");
+      return;
+    }
     const prev = following;
     setFollowing(!prev);
     setSocialCounts((c) => ({ ...c, followers: Math.max(0, c.followers + (prev ? -1 : 1)) }));
@@ -164,15 +207,24 @@ function ChannelPage() {
   const toggleWatch = (id: string, title?: string) => {
     setWatchlist((prev) => {
       const n = new Set(prev);
-      if (n.has(id)) { n.delete(id); toast("Removed from Watchlist"); }
-      else { n.add(id); toast(`Added${title ? ` "${title}"` : ""} to Watchlist`); }
+      if (n.has(id)) {
+        n.delete(id);
+        toast("Removed from Watchlist");
+      } else {
+        n.add(id);
+        toast(`Added${title ? ` "${title}"` : ""} to Watchlist`);
+      }
       return n;
     });
   };
 
   const onShare = async () => {
-    try { await navigator.share?.({ title: `@${handle} on Trey TV`, url: location.href }); }
-    catch { await navigator.clipboard?.writeText(location.href); toast.success("Channel link copied"); }
+    try {
+      await navigator.share?.({ title: `@${handle} on Trey TV`, url: location.href });
+    } catch {
+      await navigator.clipboard?.writeText(location.href);
+      toast.success("Channel link copied");
+    }
   };
 
   const heroBg = trailer?.thumbnail_url || staticHeroBg;
@@ -205,12 +257,14 @@ function ChannelPage() {
             />
           </Link>
           <nav className="flex flex-col items-center gap-1 w-full">
-            {([
-              { I: Home, label: "Home", to: "/" },
-              { I: Compass, label: "Discover", to: "/explore" },
-              { I: Inbox, label: "Inbox", to: "/inbox" },
-              { I: Bookmark, label: "Watchlist", to: "/" },
-            ] as const).map(({ I, label, to }) => (
+            {(
+              [
+                { I: Home, label: "Home", to: "/" },
+                { I: Compass, label: "Discover", to: "/explore" },
+                { I: Inbox, label: "Inbox", to: "/inbox" },
+                { I: Bookmark, label: "Watchlist", to: "/" },
+              ] as const
+            ).map(({ I, label, to }) => (
               <Link
                 key={label}
                 to={to}
@@ -424,9 +478,13 @@ function ChannelPage() {
                           }`}
                         >
                           {following ? (
-                            <><UserCheck className="w-4 h-4" /> Following</>
+                            <>
+                              <UserCheck className="w-4 h-4" /> Following
+                            </>
                           ) : (
-                            <><UserPlus className="w-4 h-4" /> Follow</>
+                            <>
+                              <UserPlus className="w-4 h-4" /> Follow
+                            </>
                           )}
                         </button>
                       )}
@@ -513,7 +571,6 @@ function ChannelPage() {
 
           {/* ── TAB CONTENT ──────────────────────────────── */}
           <div className="px-5 md:px-10 lg:px-14">
-
             {/* HOME */}
             {tab === "Home" && (
               <>
@@ -539,11 +596,17 @@ function ChannelPage() {
                         TREY <span className="text-white/85">ORIGINAL</span>
                       </div>
                       <h3 className="font-display font-extrabold text-3xl md:text-4xl lg:text-5xl leading-[0.95] mb-2">
-                        {(featured?.show_title || featured?.title || "LATEST RELEASE").toUpperCase()}
+                        {(
+                          featured?.show_title ||
+                          featured?.title ||
+                          "LATEST RELEASE"
+                        ).toUpperCase()}
                       </h3>
                       {featured && (
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm text-white/85 font-medium">{featured.title}</span>
+                          <span className="text-sm text-white/85 font-medium">
+                            {featured.title}
+                          </span>
                           <span
                             className="px-1.5 py-0.5 rounded text-[10px] font-extrabold tracking-wider"
                             style={{ background: PURPLE, color: "#fff" }}
@@ -584,7 +647,9 @@ function ChannelPage() {
                             onClick={() => setSlide(i)}
                             aria-label={`Slide ${i + 1}`}
                             className={`h-1.5 rounded-full transition-all ${
-                              i === slide ? "w-6 bg-[#A855F7]" : "w-1.5 bg-white/35 hover:bg-white/60"
+                              i === slide
+                                ? "w-6 bg-[#A855F7]"
+                                : "w-1.5 bg-white/35 hover:bg-white/60"
                             }`}
                           />
                         ))}
@@ -694,7 +759,10 @@ function ChannelPage() {
                             </div>
                           )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); toggleWatch(v.id, v.title); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleWatch(v.id, v.title);
+                            }}
                             className={`absolute top-1.5 right-1.5 size-7 rounded-full border flex items-center justify-center backdrop-blur transition active:scale-90 ${
                               watchlist.has(v.id)
                                 ? "border-[#A855F7] bg-[#A855F7]/30"
@@ -702,7 +770,11 @@ function ChannelPage() {
                             }`}
                             aria-label="Watchlist"
                           >
-                            {watchlist.has(v.id) ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
+                            {watchlist.has(v.id) ? (
+                              <Check className="size-3.5" />
+                            ) : (
+                              <Plus className="size-3.5" />
+                            )}
                           </button>
                         </div>
                         <h3 className="mt-2 text-[13px] font-semibold leading-snug line-clamp-2">
@@ -738,7 +810,10 @@ function ChannelPage() {
                       >
                         <span
                           className="w-11 h-11 rounded-lg flex items-center justify-center"
-                          style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.4)" }}
+                          style={{
+                            background: "rgba(168,85,247,0.18)",
+                            border: "1px solid rgba(168,85,247,0.4)",
+                          }}
                         >
                           <p.I className="size-5" style={{ color: PURPLE }} />
                         </span>
@@ -766,7 +841,11 @@ function ChannelPage() {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     {publicEpisodes.map((e, idx) => (
-                      <div key={e.content_id} className="group cursor-pointer" onClick={() => toast(`▶ ${e.title}`)}>
+                      <div
+                        key={e.content_id}
+                        className="group cursor-pointer"
+                        onClick={() => toast(`▶ ${e.title}`)}
+                      >
                         <div className="relative rounded-xl overflow-hidden border border-white/10 aspect-video">
                           <img
                             src={e.thumbnail_url || FALL_POSTS[idx % 5]}
@@ -785,7 +864,10 @@ function ChannelPage() {
                             </div>
                           )}
                           <button
-                            onClick={(ev) => { ev.stopPropagation(); toggleWatch(e.content_id, e.title); }}
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              toggleWatch(e.content_id, e.title);
+                            }}
                             className={`absolute top-1.5 right-1.5 size-7 rounded-full border flex items-center justify-center backdrop-blur transition active:scale-90 ${
                               watchlist.has(e.content_id)
                                 ? "border-[#A855F7] bg-[#A855F7]/30"
@@ -793,7 +875,11 @@ function ChannelPage() {
                             }`}
                             aria-label="Watchlist"
                           >
-                            {watchlist.has(e.content_id) ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
+                            {watchlist.has(e.content_id) ? (
+                              <Check className="size-3.5" />
+                            ) : (
+                              <Plus className="size-3.5" />
+                            )}
                           </button>
                         </div>
                         <h3 className="mt-2 text-[13px] font-semibold leading-snug line-clamp-2">
@@ -870,7 +956,10 @@ function ChannelPage() {
                     >
                       <span
                         className="w-11 h-11 rounded-lg flex items-center justify-center"
-                        style={{ background: "rgba(168,85,247,0.18)", border: "1px solid rgba(168,85,247,0.4)" }}
+                        style={{
+                          background: "rgba(168,85,247,0.18)",
+                          border: "1px solid rgba(168,85,247,0.4)",
+                        }}
                       >
                         <p.I className="size-5" style={{ color: PURPLE }} />
                       </span>
@@ -903,12 +992,20 @@ function ChannelPage() {
                   </div>
                   <div className="flex gap-8 pt-2 border-t border-white/8">
                     <div>
-                      <div className="font-display font-extrabold text-2xl">{fmt(socialCounts.followers)}</div>
-                      <div className="text-[11px] uppercase tracking-wider text-white/60">Followers</div>
+                      <div className="font-display font-extrabold text-2xl">
+                        {fmt(socialCounts.followers)}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-wider text-white/60">
+                        Followers
+                      </div>
                     </div>
                     <div>
-                      <div className="font-display font-extrabold text-2xl">{publicEpisodes.length}</div>
-                      <div className="text-[11px] uppercase tracking-wider text-white/60">Videos</div>
+                      <div className="font-display font-extrabold text-2xl">
+                        {publicEpisodes.length}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-wider text-white/60">
+                        Videos
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -924,7 +1021,13 @@ function ChannelPage() {
 }
 
 // "Start watch party" CTA next to LIVE NOW header. Authed users only.
-function StartWatchPartyButton({ channelId, className }: { channelId: string; className?: string }) {
+function StartWatchPartyButton({
+  channelId,
+  className,
+}: {
+  channelId: string;
+  className?: string;
+}) {
   const { session } = useSupabaseSession();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -945,7 +1048,9 @@ function StartWatchPartyButton({ channelId, className }: { channelId: string; cl
     if (busy) return;
     setBusy(true);
     try {
-      const res = await createWatchParty({ data: { accessToken: session.access_token, channelId } });
+      const res = await createWatchParty({
+        data: { accessToken: session.access_token, channelId },
+      });
       if (!res.ok) {
         toast.error(`Couldn't create party: ${res.error}`);
         return;

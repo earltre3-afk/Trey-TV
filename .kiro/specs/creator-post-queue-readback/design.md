@@ -17,6 +17,7 @@ creator-studio.submissions.tsx
 ```
 
 Two changes total:
+
 1. New file: `src/hooks/use-creator-post-queue.ts`
 2. Targeted edit: `src/routes/creator-studio.submissions.tsx` — import hook, add merge `useMemo`
 
@@ -27,9 +28,9 @@ No new UI components. No new status labels. No new badge styles.
 ## 2. New File: `src/hooks/use-creator-post-queue.ts`
 
 ```ts
-import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@/lib/supabase-browser';
-import { useCreatorStudio } from '@/hooks/use-creator-studio';
+import { useEffect, useState } from "react";
+import { createBrowserClient } from "@/lib/supabase-browser";
+import { useCreatorStudio } from "@/hooks/use-creator-studio";
 
 export type QueueRow = {
   id: string;
@@ -40,7 +41,7 @@ export type QueueRow = {
   episode_number: number | null;
   stream_uid: string;
   visibility: string;
-  approval_status: 'pending' | 'approved' | 'rejected' | 'needs_changes';
+  approval_status: "pending" | "approved" | "rejected" | "needs_changes";
   created_at: string;
   updated_at: string;
 };
@@ -64,14 +65,18 @@ export function useCreatorPostQueue(): UseCreatorPostQueueReturn {
     async function load() {
       try {
         const supabase = createBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         const { data } = await (supabase as any)
-          .from('creator_post_queue')
-          .select('id, edit_project_id, title, description, thumbnail_url, episode_number, stream_uid, visibility, approval_status, created_at, updated_at')
-          .eq('creator_id', user.id)
-          .order('created_at', { ascending: false })
+          .from("creator_post_queue")
+          .select(
+            "id, edit_project_id, title, description, thumbnail_url, episode_number, stream_uid, visibility, approval_status, created_at, updated_at",
+          )
+          .eq("creator_id", user.id)
+          .order("created_at", { ascending: false })
           .limit(50);
 
         if (mounted) setQueueRows((data as QueueRow[]) ?? []);
@@ -83,7 +88,9 @@ export function useCreatorPostQueue(): UseCreatorPostQueueReturn {
     }
 
     load();
-    return () => { mounted = true; };
+    return () => {
+      mounted = true;
+    };
   }, [isApprovedCreator]);
 
   return { queueRows, loading };
@@ -91,6 +98,7 @@ export function useCreatorPostQueue(): UseCreatorPostQueueReturn {
 ```
 
 **Key properties:**
+
 - `admin_notes` is not in the SELECT — never fetched, never displayed.
 - Gated on `isApprovedCreator` from `useCreatorStudio()` — same access gate already in use.
 - Non-fatal on error — returns empty array.
@@ -106,42 +114,42 @@ Pure module-level function in `creator-studio.submissions.tsx` (not exported):
 function queueRowToSubmission(row: QueueRow): Submission {
   return {
     content_id: row.id,
-    creator_id: '',
-    creator_name: '',
-    creator_handle: '',
-    creator_avatar: '',
+    creator_id: "",
+    creator_name: "",
+    creator_handle: "",
+    creator_avatar: "",
     title: row.title,
-    short_description: row.description ?? '',
-    full_description: '',
-    viewer_context: '',
-    what_to_know: '',
-    why_it_matters: '',
-    creator_note: '',
-    show_id: '',
-    show_title: '',
+    short_description: row.description ?? "",
+    full_description: "",
+    viewer_context: "",
+    what_to_know: "",
+    why_it_matters: "",
+    creator_note: "",
+    show_id: "",
+    show_title: "",
     season_number: 1,
     episode_number: row.episode_number ?? 1,
-    episode_type: 'Full Episode',
+    episode_type: "Full Episode",
     category: [],
     tags: [],
     mood_tags: [],
-    thumbnail_url: row.thumbnail_url ?? '',
-    poster_url: '',
-    video_url: '',
-    duration: '',
-    quality: '',
-    visibility: 'public',
-    access_type: 'free',
-    content_rating: '',
-    language: '',
+    thumbnail_url: row.thumbnail_url ?? "",
+    poster_url: "",
+    video_url: "",
+    duration: "",
+    quality: "",
+    visibility: "public",
+    access_type: "free",
+    content_rating: "",
+    language: "",
     explicit_content: false,
     is_trailer: false,
     is_bonus: false,
     is_finale: false,
     is_premiere: false,
     status: row.approval_status,
-    admin_feedback: '',
-    admin_internal_note: '',
+    admin_feedback: "",
+    admin_internal_note: "",
     policy_ack: true,
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -159,7 +167,7 @@ Replace the existing `const mine = submissions;` line with a `useMemo` that merg
 
 ```ts
 // Add import at top:
-import { useCreatorPostQueue, type QueueRow } from '@/hooks/use-creator-post-queue';
+import { useCreatorPostQueue, type QueueRow } from "@/hooks/use-creator-post-queue";
 
 // Add inside SubmissionsPage():
 const { queueRows } = useCreatorPostQueue();
@@ -170,14 +178,10 @@ const mine = useMemo(() => {
   const queueSubmissions = queueRows.map(queueRowToSubmission);
 
   // Build a set of edit_project_ids that have a queue row
-  const queuedEditProjectIds = new Set(
-    queueRows.map((r) => r.edit_project_id).filter(Boolean)
-  );
+  const queuedEditProjectIds = new Set(queueRows.map((r) => r.edit_project_id).filter(Boolean));
 
   // Keep episode-derived submissions that don't have a queue row
-  const episodeOnly = submissions.filter(
-    (s) => !queuedEditProjectIds.has(s.content_id)
-  );
+  const episodeOnly = submissions.filter((s) => !queuedEditProjectIds.has(s.content_id));
 
   return [...queueSubmissions, ...episodeOnly];
 }, [submissions, queueRows]);
@@ -210,6 +214,7 @@ SubmissionsPage mounts
 ## 6. Why No New UI Is Needed
 
 The submissions page already has:
+
 - `STATUS_LABEL` for all four `approval_status` values (`pending` → `"Pending Review"`, etc.)
 - `STATUS_TONE` badge classes for all four values
 - Filter chips for `pending`, `approved`, `rejected`, `needs_changes`
@@ -222,9 +227,9 @@ Queue rows slot directly into this existing structure with no visual changes.
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/hooks/use-creator-post-queue.ts` | New file — SELECT hook |
+| File                                        | Change                                                                                                    |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `src/hooks/use-creator-post-queue.ts`       | New file — SELECT hook                                                                                    |
 | `src/routes/creator-studio.submissions.tsx` | Import hook; add `queueRowToSubmission` function; replace `const mine = submissions` with merge `useMemo` |
 
 No other files modified.

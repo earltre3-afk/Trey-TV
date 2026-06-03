@@ -1,39 +1,54 @@
-import React, { useState, useMemo } from 'react';
-import { Search as SearchIcon, Sparkles, Moon, User, Calendar, Play, Route } from 'lucide-react';
-import { TopBar, GlassCard, PrimaryButton, Chip, PlayCircle, Waveform, SectionHeader } from '../ui';
-import { IMG, SEARCH_SONGS, TRACKS } from '../data';
-import { usePlayer } from '@/tradio/contexts/PlayerContext';
-import { TradioImage } from '../NoCoverVisualizer';
-import { PrescriptionRail } from '../auth/components';
+import React, { useState, useMemo } from "react";
+import { Search as SearchIcon, Sparkles, Moon, User, Calendar, Play, Route } from "lucide-react";
+import { TopBar, GlassCard, PrimaryButton, Chip, PlayCircle, Waveform, SectionHeader } from "../ui";
+import { IMG, SEARCH_SONGS, TRACKS } from "../data";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
+import { TradioImage } from "../NoCoverVisualizer";
+import { PrescriptionRail } from "../auth/components";
 
-const TABS = ['Songs', 'Stations', 'Artists', 'Albums', 'AI Suggestions'];
+const TABS = ["Songs", "Stations", "Artists", "Albums", "AI Suggestions"];
 
 const ARTISTS = [
-  { name: 'Bryson Tiller', img: IMG.dariusCole, track: TRACKS.persuasion },
-  { name: 'PARTYNEXTDOOR', img: IMG.treyTrizzy, track: TRACKS.midnightVelvet },
-  { name: 'Giveon', img: IMG.noahKade, track: TRACKS.afterHours },
-  { name: 'SZA', img: IMG.milaRain, track: TRACKS.dontCall },
-  { name: 'Brent Faiyaz', img: IMG.jordan, track: TRACKS.persuasion },
-  { name: 'Summer Walker', img: IMG.kianaLane, track: TRACKS.spinning },
+  { name: "Bryson Tiller", img: IMG.dariusCole, track: TRACKS.persuasion },
+  { name: "PARTYNEXTDOOR", img: IMG.treyTrizzy, track: TRACKS.midnightVelvet },
+  { name: "Giveon", img: IMG.noahKade, track: TRACKS.afterHours },
+  { name: "SZA", img: IMG.milaRain, track: TRACKS.dontCall },
+  { name: "Brent Faiyaz", img: IMG.jordan, track: TRACKS.persuasion },
+  { name: "Summer Walker", img: IMG.kianaLane, track: TRACKS.spinning },
 ];
 
 const PLAYLISTS = [
-  { title: 'Late Night R&B', sub: 'AI Station', img: IMG.lateNightSoul, track: TRACKS.lateNightSoul },
-  { title: 'After Dark R&B', sub: 'AI Station', img: IMG.memphisAfterDark, track: TRACKS.memphisAfterDark },
-  { title: 'Bedroom Vibes', sub: 'Playlist', img: IMG.flowers, track: TRACKS.noLookingBack },
-  { title: 'Down For You R&B', sub: 'AI Station', img: IMG.neonHeartbreak, track: TRACKS.neonHeartbreak },
+  {
+    title: "Late Night R&B",
+    sub: "AI Station",
+    img: IMG.lateNightSoul,
+    track: TRACKS.lateNightSoul,
+  },
+  {
+    title: "After Dark R&B",
+    sub: "AI Station",
+    img: IMG.memphisAfterDark,
+    track: TRACKS.memphisAfterDark,
+  },
+  { title: "Bedroom Vibes", sub: "Playlist", img: IMG.flowers, track: TRACKS.noLookingBack },
+  {
+    title: "Down For You R&B",
+    sub: "AI Station",
+    img: IMG.neonHeartbreak,
+    track: TRACKS.neonHeartbreak,
+  },
 ];
 
 export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenRouteMe }) => {
-  const [tab, setTab] = useState('Songs');
-  const [query, setQuery] = useState('late night r&b');
+  const [tab, setTab] = useState("Songs");
+  const [query, setQuery] = useState("late night r&b");
   const { play, playQueue, currentTrack, isPlaying, isBuffering } = usePlayer();
 
   const filteredSongs = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return SEARCH_SONGS;
     return SEARCH_SONGS.filter(
-      (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q)
+      (s) => s.title.toLowerCase().includes(q) || s.artist.toLowerCase().includes(q),
     );
   }, [query]);
 
@@ -43,7 +58,7 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
 
       {/* Search Input & Filters Group */}
       <div className="flex flex-col gap-4 px-4 sm:px-6 lg:px-10">
-        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">
+        <div className="flex items-center gap-2 rounded-2xl border-[0.5px] border-white/12 bg-gradient-to-b from-white/[0.06] to-white/[0.015] px-4 py-3 backdrop-blur-3xl focus-within:border-purple-400/55 focus-within:shadow-[0_0_25px_rgba(168,85,247,0.22),inset_0_1.5px_2px_rgba(255,255,255,0.12)] focus-within:bg-white/[0.08] transition-all duration-500">
           <SearchIcon className="h-5 w-5 text-white/50" />
           <input
             value={query}
@@ -51,7 +66,7 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
             className="flex-1 bg-transparent text-sm text-white focus:outline-none"
             placeholder="Search artists, stations, moods..."
           />
-          <button className="flex h-9 w-9 items-center justify-center rounded-full border border-purple-400/40 bg-purple-500/20">
+          <button className="flex h-9 w-9 items-center justify-center rounded-full border border-purple-400/30 bg-purple-500/20 hover:bg-purple-500/30 transition shadow-[0_0_12px_rgba(168,85,247,0.2)]">
             <Waveform className="h-4 w-4" bars={4} color="from-purple-300 to-purple-300" />
           </button>
         </div>
@@ -63,7 +78,7 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
               label={t}
               selected={tab === t}
               onClick={() => setTab(t)}
-              icon={t === 'AI Suggestions' ? <Sparkles className="h-3.5 w-3.5" /> : undefined}
+              icon={t === "AI Suggestions" ? <Sparkles className="h-3.5 w-3.5" /> : undefined}
             />
           ))}
         </div>
@@ -88,7 +103,8 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
                 <div>
                   <div className="text-sm font-black text-white">Route Me universe search</div>
                   <p className="mt-1 max-w-xl text-xs leading-relaxed text-white/55">
-                    Open the parent Prescribe Me prototype to route across Trey TV, Tradio, FWD, Storybook, Games, and future Trance.
+                    Open the parent Prescribe Me prototype to route across Trey TV, Tradio, FWD,
+                    Storybook, Games, and future Trance.
                   </p>
                 </div>
               </div>
@@ -107,7 +123,11 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
       <div className="px-4 sm:px-6 lg:px-10">
         <GlassCard glow className="overflow-hidden">
           <div className="relative">
-            <img src={IMG.aiSphere} className="absolute right-0 top-0 h-full w-1/2 object-cover" alt="" />
+            <img
+              src={IMG.aiSphere}
+              className="absolute right-0 top-0 h-full w-1/2 object-cover"
+              alt=""
+            />
             <div className="absolute inset-0 bg-gradient-to-r from-black/85 to-transparent" />
             <div className="relative p-4">
               <div className="flex items-start justify-between">
@@ -125,7 +145,14 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
               </p>
               <PrimaryButton
                 className="mt-4"
-                onClick={() => playQueue([TRACKS.afterHours, TRACKS.dontCall, TRACKS.persuasion, TRACKS.spinning])}
+                onClick={() =>
+                  playQueue([
+                    TRACKS.afterHours,
+                    TRACKS.dontCall,
+                    TRACKS.persuasion,
+                    TRACKS.spinning,
+                  ])
+                }
               >
                 <Play className="h-3.5 w-3.5 fill-white" /> Play Station
               </PrimaryButton>
@@ -158,15 +185,16 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
                   imgClassName="h-11 w-11 rounded-lg object-cover"
                 />
                 <div className="flex-1">
-                  <div className={`text-sm font-semibold ${live ? 'text-purple-300' : 'text-white'}`}>{s.title}</div>
+                  <div
+                    className={`text-sm font-semibold ${live ? "text-purple-300" : "text-white"}`}
+                  >
+                    {s.title}
+                  </div>
                   <div className="text-[11px] text-white/55">{s.artist}</div>
                 </div>
-                <Waveform className={`h-4 w-12 ${live ? 'opacity-100' : 'opacity-50'}`} bars={16} />
+                <Waveform className={`h-4 w-12 ${live ? "opacity-100" : "opacity-50"}`} bars={16} />
                 <span className="text-[11px] text-white/55">{s.dur}</span>
-                <PlayCircle
-                  size={32}
-                  onClick={() => playQueue(filteredSongs, i)}
-                />
+                <PlayCircle size={32} onClick={() => playQueue(filteredSongs, i)} />
               </GlassCard>
             );
           })}
@@ -180,7 +208,11 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
           {ARTISTS.map((a) => (
             <div key={a.name} className="flex shrink-0 flex-col items-center">
               <div className="relative">
-                <img src={a.img} className="h-16 w-16 rounded-full border border-purple-400/40 object-cover" alt="" />
+                <img
+                  src={a.img}
+                  className="h-16 w-16 rounded-full border border-purple-400/40 object-cover"
+                  alt=""
+                />
                 <span className="absolute -bottom-1 -right-1">
                   <PlayCircle size={26} onClick={() => play(a.track)} />
                 </span>
@@ -219,7 +251,9 @@ export const SearchScreen: React.FC<{ onOpenRouteMe?: () => void }> = ({ onOpenR
             </div>
             <div className="flex-1">
               <div className="text-sm font-semibold text-white">Refine your search with AI</div>
-              <p className="text-[11px] text-white/55">Get smarter results, mood matches, and personalized recommendations.</p>
+              <p className="text-[11px] text-white/55">
+                Get smarter results, mood matches, and personalized recommendations.
+              </p>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">

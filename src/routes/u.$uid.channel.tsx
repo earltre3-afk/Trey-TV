@@ -81,7 +81,11 @@ function CreatorChannelRoute() {
       return {
         id: "",
         uid,
-        name: isTreyProfile ? currentUser.name : loading ? "Loading channel" : "Creator channel unavailable",
+        name: isTreyProfile
+          ? currentUser.name
+          : loading
+            ? "Loading channel"
+            : "Creator channel unavailable",
         handle: isTreyProfile ? currentUser.handle : uid,
         avatar: isTreyProfile ? portraitFallback : "",
         banner: heroFallback,
@@ -129,7 +133,10 @@ function CreatorChannelRoute() {
   const publicEpisodes = useMemo(() => {
     if (!profile) return [];
     return submissions.submissions.filter((episode) => {
-      const visible = episode.status === "approved" || episode.status === "published" || episode.status === "scheduled";
+      const visible =
+        episode.status === "approved" ||
+        episode.status === "published" ||
+        episode.status === "scheduled";
       const sameCreator =
         episode.creator_id === profile.public_profile_uid ||
         episode.creator_id === profile.id ||
@@ -138,7 +145,9 @@ function CreatorChannelRoute() {
     });
   }, [profile, submissions.submissions]);
 
-  const trailer = publicEpisodes.find((episode) => episode.is_trailer || episode.episode_type === "Trailer") ?? publicEpisodes[0];
+  const trailer =
+    publicEpisodes.find((episode) => episode.is_trailer || episode.episode_type === "Trailer") ??
+    publicEpisodes[0];
   const featured = publicEpisodes.find((episode) => !episode.is_trailer) ?? publicEpisodes[0];
   const shows = useMemo(() => buildShows(publicEpisodes), [publicEpisodes]);
 
@@ -174,8 +183,14 @@ function CreatorChannelRoute() {
           <div className="channel-panel p-8">
             <Crown className="mx-auto size-10 text-white/40" />
             <h1 className="mt-4 text-2xl font-bold">Creator channel unavailable</h1>
-            <p className="mt-2 text-sm text-white/60">This profile is not an approved creator channel yet.</p>
-            <Link to="/u/$uid" params={{ uid }} className="mt-5 inline-flex rounded-full bg-white px-5 py-2 text-sm font-bold text-black">
+            <p className="mt-2 text-sm text-white/60">
+              This profile is not an approved creator channel yet.
+            </p>
+            <Link
+              to="/u/$uid"
+              params={{ uid }}
+              className="mt-5 inline-flex rounded-full bg-white px-5 py-2 text-sm font-bold text-black"
+            >
               View Profile
             </Link>
           </div>
@@ -211,17 +226,33 @@ function CreatorChannelRoute() {
     <AppShell wide>
       <main className="creator-channel-page -mx-4 -mt-4 min-h-screen pb-28 text-white sm:-mx-6 lg:-mx-8">
         <section className="relative min-h-[620px] overflow-hidden">
-          <img src={normalized.banner || heroFallback} alt="" className="absolute inset-0 size-full object-cover object-top" />
+          <img
+            src={normalized.banner || heroFallback}
+            alt=""
+            className="absolute inset-0 size-full object-cover object-top"
+          />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,13,0.05)_20%,rgba(5,7,13,0.70)_72%,#05070D_100%),linear-gradient(90deg,rgba(5,7,13,0.94)_0%,rgba(5,7,13,0.62)_38%,rgba(5,7,13,0.10)_70%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(800px_420px_at_80%_0%,rgba(168,85,247,0.26),transparent_60%),radial-gradient(520px_360px_at_15%_30%,rgba(0,183,255,0.18),transparent_60%)]" />
 
           <div className="relative z-10 flex min-h-[620px] flex-col px-5 pb-8 pt-5 md:px-10 lg:px-14">
             <div className="flex items-center justify-between">
-              <button onClick={goBack} className="grid size-10 place-items-center rounded-full border border-white/15 bg-black/40 backdrop-blur" aria-label="Back">
+              <button
+                onClick={goBack}
+                className="grid size-10 place-items-center rounded-full border border-white/15 bg-black/40 backdrop-blur"
+                aria-label="Back"
+              >
                 <ArrowLeft className="size-4" />
               </button>
-              <img src={treyTvLogo} alt="Trey TV" className="h-12 w-auto object-contain drop-shadow-[0_0_18px_rgba(255,200,87,0.55)]" />
-              <button onClick={onShare} className="grid size-10 place-items-center rounded-full border border-white/15 bg-black/40 backdrop-blur" aria-label="Share channel">
+              <img
+                src={treyTvLogo}
+                alt="Trey TV"
+                className="h-12 w-auto object-contain drop-shadow-[0_0_18px_rgba(255,200,87,0.55)]"
+              />
+              <button
+                onClick={onShare}
+                className="grid size-10 place-items-center rounded-full border border-white/15 bg-black/40 backdrop-blur"
+                aria-label="Share channel"
+              >
                 <Share className="size-4" />
               </button>
             </div>
@@ -249,31 +280,53 @@ function CreatorChannelRoute() {
                       {normalized.name}
                       {normalized.verified && <GoldCheck size={28} className="shrink-0" />}
                     </h1>
-                    <p className="mt-2 text-sm font-semibold" style={{ color: PURPLE }}>@{normalized.handle}</p>
-                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">{normalized.bio}</p>
+                    <p className="mt-2 text-sm font-semibold" style={{ color: PURPLE }}>
+                      @{normalized.handle}
+                    </p>
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
+                      {normalized.bio}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-3">
                   {featured ? (
-                    <Link to="/watch/$id" params={{ id: featured.content_id }} className="channel-primary-btn">
+                    <Link
+                      to="/watch/$id"
+                      params={{ id: featured.content_id }}
+                      className="channel-primary-btn"
+                    >
                       <Play className="size-4 fill-current" /> Play Latest Video
                     </Link>
                   ) : (
-                    <button className="channel-primary-btn" onClick={() => toast("First episode coming soon")}>
+                    <button
+                      className="channel-primary-btn"
+                      onClick={() => toast("First episode coming soon")}
+                    >
                       <Play className="size-4 fill-current" /> First Episode Coming Soon
                     </button>
                   )}
                   {!isOwnChannel && (
                     <button onClick={handleFollow} className="channel-secondary-btn">
-                      {isFollowing ? <UserCheck className="size-4" /> : <UserPlus className="size-4" />}
+                      {isFollowing ? (
+                        <UserCheck className="size-4" />
+                      ) : (
+                        <UserPlus className="size-4" />
+                      )}
                       {isFollowing ? "Following" : "Follow"}
                     </button>
                   )}
-                  <button onClick={() => setSubscribed((value) => !value)} className="channel-secondary-btn">
+                  <button
+                    onClick={() => setSubscribed((value) => !value)}
+                    className="channel-secondary-btn"
+                  >
                     <Sparkles className="size-4" /> {subscribed ? "Subscribed" : "Subscribe"}
                   </button>
-                  <button onClick={() => setGiftOpen(true)} className="channel-icon-btn" aria-label="Send gift">
+                  <button
+                    onClick={() => setGiftOpen(true)}
+                    className="channel-icon-btn"
+                    aria-label="Send gift"
+                  >
                     <Gift className="size-5" />
                   </button>
                 </div>
@@ -281,7 +334,9 @@ function CreatorChannelRoute() {
 
               <aside className="channel-panel p-5">
                 <div className="text-base font-bold">About {normalized.name}</div>
-                <p className="mt-2 text-sm leading-6 text-white/72">{normalized.bio || "Creator channel is being built."}</p>
+                <p className="mt-2 text-sm leading-6 text-white/72">
+                  {normalized.bio || "Creator channel is being built."}
+                </p>
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   <StatPill label="Followers" value={formatCount(normalized.followers)} />
                   <StatPill label="Posts" value={formatCount(normalized.posts)} />
@@ -296,7 +351,11 @@ function CreatorChannelRoute() {
         <section className="px-5 md:px-10 lg:px-14">
           <nav className="channel-tabs">
             {(["home", "videos", "series", "community", "about"] as const).map((item) => (
-              <button key={item} onClick={() => setTab(item)} className={tab === item ? "is-active" : ""}>
+              <button
+                key={item}
+                onClick={() => setTab(item)}
+                className={tab === item ? "is-active" : ""}
+              >
                 {item}
               </button>
             ))}
@@ -313,13 +372,19 @@ function CreatorChannelRoute() {
               <AboutPanel profile={normalized} />
             </>
           )}
-          {tab === "videos" && <EpisodeRail title="All Videos" episodes={publicEpisodes} expanded />}
+          {tab === "videos" && (
+            <EpisodeRail title="All Videos" episodes={publicEpisodes} expanded />
+          )}
           {tab === "series" && <SeriesGrid shows={shows} expanded />}
           {tab === "community" && <CommunityEmpty />}
           {tab === "about" && <AboutPanel profile={normalized} expanded />}
         </div>
 
-        <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={normalized.handle} />
+        <GiftPickerSheet
+          open={giftOpen}
+          onClose={() => setGiftOpen(false)}
+          recipient={normalized.handle}
+        />
       </main>
     </AppShell>
   );
@@ -328,15 +393,29 @@ function CreatorChannelRoute() {
 function PrescribePanel() {
   return (
     <section className="channel-panel relative overflow-hidden p-5">
-      <div className="absolute inset-0 opacity-60" style={{ background: `radial-gradient(circle at 20% 20%, ${PINK}33, transparent 55%), radial-gradient(circle at 80% 70%, ${CYAN}22, transparent 55%)` }} />
+      <div
+        className="absolute inset-0 opacity-60"
+        style={{
+          background: `radial-gradient(circle at 20% 20%, ${PINK}33, transparent 55%), radial-gradient(circle at 80% 70%, ${CYAN}22, transparent 55%)`,
+        }}
+      />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em]" style={{ color: GOLD }}>
+          <div
+            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em]"
+            style={{ color: GOLD }}
+          >
             <Sparkles className="size-4" /> Prescribe Me
           </div>
-          <p className="mt-2 max-w-2xl text-sm text-white/75">Mood match and compatibility tools can connect fans to this creator's best content as soon as channel uploads are available.</p>
+          <p className="mt-2 max-w-2xl text-sm text-white/75">
+            Mood match and compatibility tools can connect fans to this creator's best content as
+            soon as channel uploads are available.
+          </p>
         </div>
-        <button className="rounded-full px-5 py-2 text-sm font-black text-black" style={{ background: GOLD, boxShadow: `0 0 24px ${GOLD}66` }}>
+        <button
+          className="rounded-full px-5 py-2 text-sm font-black text-black"
+          style={{ background: GOLD, boxShadow: `0 0 24px ${GOLD}66` }}
+        >
           Prescribe Now
         </button>
       </div>
@@ -348,12 +427,22 @@ function FeaturedRelease({ episode }: { episode?: Submission }) {
   if (!episode) {
     return (
       <section className="channel-feature-card">
-        <img src={postsStrip} alt="" className="absolute inset-0 size-full object-cover opacity-45" />
+        <img
+          src={postsStrip}
+          alt=""
+          className="absolute inset-0 size-full object-cover opacity-45"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-[#05070D] via-[#05070D]/75 to-transparent" />
         <div className="relative max-w-lg p-6 md:p-8">
           <div className="channel-eyebrow">Trey Original</div>
-          <h2 className="mt-2 text-4xl font-black leading-none">First Episode<br />Coming Soon</h2>
-          <p className="mt-3 text-sm text-white/70">No uploads yet. This creator channel is being built.</p>
+          <h2 className="mt-2 text-4xl font-black leading-none">
+            First Episode
+            <br />
+            Coming Soon
+          </h2>
+          <p className="mt-3 text-sm text-white/70">
+            No uploads yet. This creator channel is being built.
+          </p>
         </div>
       </section>
     );
@@ -361,13 +450,25 @@ function FeaturedRelease({ episode }: { episode?: Submission }) {
 
   return (
     <section className="channel-feature-card">
-      <img src={episode.thumbnail_url || postFallback1} alt="" className="absolute inset-0 size-full object-cover" />
+      <img
+        src={episode.thumbnail_url || postFallback1}
+        alt=""
+        className="absolute inset-0 size-full object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-[#05070D] via-[#05070D]/70 to-transparent" />
       <div className="relative max-w-xl p-6 md:p-8">
         <div className="channel-eyebrow">Latest Release</div>
-        <h2 className="mt-2 text-4xl font-black leading-none md:text-5xl">{episode.title || "Untitled Episode"}</h2>
-        <p className="mt-3 text-sm text-white/75">{episode.short_description || episode.full_description || "New Trey TV creator upload."}</p>
-        <Link to="/watch/$id" params={{ id: episode.content_id }} className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-black">
+        <h2 className="mt-2 text-4xl font-black leading-none md:text-5xl">
+          {episode.title || "Untitled Episode"}
+        </h2>
+        <p className="mt-3 text-sm text-white/75">
+          {episode.short_description || episode.full_description || "New Trey TV creator upload."}
+        </p>
+        <Link
+          to="/watch/$id"
+          params={{ id: episode.content_id }}
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-black"
+        >
           <Play className="size-4 fill-current" /> Watch Now
         </Link>
       </div>
@@ -375,50 +476,110 @@ function FeaturedRelease({ episode }: { episode?: Submission }) {
   );
 }
 
-function EpisodeRail({ title, episodes, expanded = false }: { title: string; episodes: Submission[]; expanded?: boolean }) {
-  if (episodes.length === 0) return <EmptyState icon={Film} title="No uploads yet" body="First episode coming soon." />;
+function EpisodeRail({
+  title,
+  episodes,
+  expanded = false,
+}: {
+  title: string;
+  episodes: Submission[];
+  expanded?: boolean;
+}) {
+  if (episodes.length === 0)
+    return <EmptyState icon={Film} title="No uploads yet" body="First episode coming soon." />;
   return (
     <section>
       <SectionHeader icon={Film} title={title} />
-      <div className={expanded ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3" : "flex gap-4 overflow-x-auto pb-2"}>
+      <div
+        className={
+          expanded ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3" : "flex gap-4 overflow-x-auto pb-2"
+        }
+      >
         {episodes.map((episode, index) => (
-          <EpisodeCard key={episode.content_id} episode={episode} fallback={[postFallback1, postFallback2, postFallback3][index % 3]} expanded={expanded} />
+          <EpisodeCard
+            key={episode.content_id}
+            episode={episode}
+            fallback={[postFallback1, postFallback2, postFallback3][index % 3]}
+            expanded={expanded}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function EpisodeCard({ episode, fallback, expanded }: { episode: Submission; fallback: string; expanded: boolean }) {
+function EpisodeCard({
+  episode,
+  fallback,
+  expanded,
+}: {
+  episode: Submission;
+  fallback: string;
+  expanded: boolean;
+}) {
   return (
-    <Link to="/watch/$id" params={{ id: episode.content_id }} className={`group block ${expanded ? "" : "w-72 shrink-0"}`}>
+    <Link
+      to="/watch/$id"
+      params={{ id: episode.content_id }}
+      className={`group block ${expanded ? "" : "w-72 shrink-0"}`}
+    >
       <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-        <img src={episode.thumbnail_url || fallback} alt="" className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105" />
+        <img
+          src={episode.thumbnail_url || fallback}
+          alt=""
+          className="absolute inset-0 size-full object-cover transition duration-700 group-hover:scale-105"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-        <span className="absolute bottom-2 right-2 rounded bg-black/75 px-2 py-1 text-[10px] font-bold">{episode.duration || "0:00"}</span>
+        <span className="absolute bottom-2 right-2 rounded bg-black/75 px-2 py-1 text-[10px] font-bold">
+          {episode.duration || "0:00"}
+        </span>
         <span className="absolute inset-0 grid place-items-center opacity-0 transition group-hover:opacity-100">
-          <span className="grid size-12 place-items-center rounded-full bg-white text-black"><Play className="size-5 fill-current" /></span>
+          <span className="grid size-12 place-items-center rounded-full bg-white text-black">
+            <Play className="size-5 fill-current" />
+          </span>
         </span>
       </div>
       <h3 className="mt-2 line-clamp-2 text-sm font-bold">{episode.title || "Untitled Episode"}</h3>
-      <p className="mt-0.5 text-xs text-white/50">{episode.show_title || "Trey TV"} {episode.season_number ? `- S${episode.season_number} E${episode.episode_number || 1}` : ""}</p>
+      <p className="mt-0.5 text-xs text-white/50">
+        {episode.show_title || "Trey TV"}{" "}
+        {episode.season_number ? `- S${episode.season_number} E${episode.episode_number || 1}` : ""}
+      </p>
     </Link>
   );
 }
 
 function SeriesGrid({ shows, expanded = false }: { shows: ChannelShow[]; expanded?: boolean }) {
-  if (shows.length === 0) return <EmptyState icon={Tv} title="No series yet" body="Creator channel is being built." />;
+  if (shows.length === 0)
+    return <EmptyState icon={Tv} title="No series yet" body="Creator channel is being built." />;
   return (
     <section>
       <SectionHeader icon={Tv} title="Seasons and Series" />
-      <div className={expanded ? "grid grid-cols-2 gap-4 md:grid-cols-4" : "grid grid-cols-2 gap-4 md:grid-cols-4"}>
+      <div
+        className={
+          expanded
+            ? "grid grid-cols-2 gap-4 md:grid-cols-4"
+            : "grid grid-cols-2 gap-4 md:grid-cols-4"
+        }
+      >
         {shows.map((show, index) => (
           <div key={show.id} className="channel-poster-card">
-            <img src={show.episodes[0]?.thumbnail_url || [postFallback1, postFallback2, postFallback3][index % 3]} alt="" className="absolute inset-0 size-full object-cover" />
+            <img
+              src={
+                show.episodes[0]?.thumbnail_url ||
+                [postFallback1, postFallback2, postFallback3][index % 3]
+              }
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-4">
               <h3 className="text-lg font-black leading-none">{show.title}</h3>
-              <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: PURPLE }}>{show.episodes.length} episodes</p>
+              <p
+                className="mt-1 text-[10px] font-black uppercase tracking-[0.18em]"
+                style={{ color: PURPLE }}
+              >
+                {show.episodes.length} episodes
+              </p>
             </div>
           </div>
         ))}
@@ -427,7 +588,13 @@ function SeriesGrid({ shows, expanded = false }: { shows: ChannelShow[]; expande
   );
 }
 
-function AboutPanel({ profile, expanded = false }: { profile: ReturnType<typeof useProfileShape>; expanded?: boolean }) {
+function AboutPanel({
+  profile,
+  expanded = false,
+}: {
+  profile: ReturnType<typeof useProfileShape>;
+  expanded?: boolean;
+}) {
   const socials = [
     profile.instagram && { icon: Instagram, label: "Instagram", value: profile.instagram },
     profile.tiktok && { icon: Music2, label: "TikTok", value: profile.tiktok },
@@ -438,7 +605,9 @@ function AboutPanel({ profile, expanded = false }: { profile: ReturnType<typeof 
   return (
     <section className={`channel-panel p-5 ${expanded ? "max-w-4xl" : ""}`}>
       <SectionHeader icon={Users} title={`About ${profile.name}`} />
-      <p className="mt-3 text-sm leading-7 text-white/76">{profile.bio || "Creator channel is being built."}</p>
+      <p className="mt-3 text-sm leading-7 text-white/76">
+        {profile.bio || "Creator channel is being built."}
+      </p>
       <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {profile.location && <InfoPill icon={Calendar} label="Location" value={profile.location} />}
         <InfoPill icon={Film} label="Posts" value={formatCount(profile.posts)} />
@@ -448,7 +617,12 @@ function AboutPanel({ profile, expanded = false }: { profile: ReturnType<typeof 
       {socials.length > 0 && (
         <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {socials.map((social) => (
-            <InfoPill key={social.label} icon={social.icon} label={social.label} value={social.value} />
+            <InfoPill
+              key={social.label}
+              icon={social.icon}
+              label={social.label}
+              value={social.value}
+            />
           ))}
         </div>
       )}
@@ -459,8 +633,16 @@ function AboutPanel({ profile, expanded = false }: { profile: ReturnType<typeof 
 function CommunityEmpty() {
   return (
     <section className="grid gap-4 sm:grid-cols-2">
-      <EmptyState icon={MessageSquare} title="Community posts coming soon" body="This channel has not posted community updates yet." />
-      <EmptyState icon={Radio} title="No live show right now" body="Turn on notifications to know when this creator goes live." />
+      <EmptyState
+        icon={MessageSquare}
+        title="Community posts coming soon"
+        body="This channel has not posted community updates yet."
+      />
+      <EmptyState
+        icon={Radio}
+        title="No live show right now"
+        body="Turn on notifications to know when this creator goes live."
+      />
     </section>
   );
 }
@@ -476,7 +658,15 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof Film; title: string
   );
 }
 
-function EmptyState({ icon: Icon, title, body }: { icon: typeof Film; title: string; body: string }) {
+function EmptyState({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: typeof Film;
+  title: string;
+  body: string;
+}) {
   return (
     <div className="channel-panel p-8 text-center">
       <div className="mx-auto grid size-14 place-items-center rounded-2xl border border-white/10 bg-white/[0.04]">
@@ -491,17 +681,29 @@ function EmptyState({ icon: Icon, title, body }: { icon: typeof Film; title: str
 function StatPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">{label}</div>
+      <div className="text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+        {label}
+      </div>
       <div className="mt-1 text-lg font-black">{value}</div>
     </div>
   );
 }
 
-function InfoPill({ icon: Icon, label, value }: { icon: typeof Film; label: string; value: string }) {
+function InfoPill({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Film;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
       <Icon className="size-4" style={{ color: CYAN }} />
-      <div className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">{label}</div>
+      <div className="mt-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/45">
+        {label}
+      </div>
       <div className="mt-1 truncate text-sm font-bold">{value}</div>
     </div>
   );

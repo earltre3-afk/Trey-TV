@@ -17,6 +17,7 @@
 ## 2. Current WIP Status
 
 **Git status:**
+
 ```
 M  src/routes/u.$uid.tsx
 ?? src/components/profile/
@@ -37,6 +38,7 @@ Defines all shared types: `ViewerRole`, `ProfileType`, `ProfileStats`, `ProfileR
 ### 3.2 `src/components/profile/ProfilePageShell.tsx` ✅
 
 Master template. Accepts `{ profile: ProfileData; viewerRole: ViewerRole }`. Derives context, handles follow/subscribe state, renders:
+
 - `ProfileBanner` (hero)
 - `ProfileIdentityCard` (mobile identity)
 - `ProfileActionBar` (mobile non-owner actions)
@@ -50,6 +52,7 @@ No hardcoded profile data. All data flows through `ProfileData` prop. ✅
 ### 3.3 `src/routes/u.$uid.tsx` ✅ (with one fix required — see §4)
 
 Resolves `viewerRole` from auth state. Builds `ProfileData` from:
+
 1. Real Supabase profile via `useProfile(uid)` (primary)
 2. Auth session user fallback (loading state)
 3. Mock `currentUser` fallback (error state)
@@ -109,15 +112,18 @@ Clean barrel export. All components and types re-exported.
 **Problem:** `dbProfile.is_creator` is referenced in `u.$uid.tsx` line 95 and in the JSDoc comment at line 19. The `SupabaseProfile` type in `use-profile.ts` declares `is_creator: boolean` but the SELECT query does not include it (column does not exist in current schema). This is a stale type reference.
 
 **Fix in `src/routes/u.$uid.tsx`:**
+
 - Remove `dbProfile.is_creator ||` from the `isCreatorProfile` expression (line 95).
 - Remove the JSDoc comment line `*   - If dbProfile.is_creator === true → "creator"` (line 19).
 
 **Fix in `src/hooks/use-profile.ts`:**
+
 - Remove `is_creator: boolean;` from the `SupabaseProfile` interface.
 
 **Result:** `isCreatorProfile` becomes:
+
 ```ts
-const isCreatorProfile = isOwnProfile && (role === 'creator' || role === 'admin');
+const isCreatorProfile = isOwnProfile && (role === "creator" || role === "admin");
 ```
 
 This is the correct behavior — creator status is determined by the authenticated session role, not a non-existent DB column.

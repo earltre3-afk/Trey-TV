@@ -9,6 +9,7 @@ Do not start any task until the previous one is complete and its result is recor
 File: `src/hooks/use-supabase-reactions.ts`
 
 Verify:
+
 - [ ] Hook reads `user_post_reactions` for count (SELECT with `count: "exact"`)
 - [ ] Hook reads current user's reaction (SELECT filtered by `post_id` + `user_id`)
 - [ ] Toggle deletes all rows for `(post_id, user_id)` before inserting
@@ -25,6 +26,7 @@ Record: any TypeScript errors found, any logic gaps.
 File: `src/components/feed/PostCard.tsx`
 
 Verify:
+
 - [ ] `useSupabaseReactions(post.id, post.likes)` is called
 - [ ] `toggleReaction` is called on emoji tap with correct argument
 - [ ] `result.ok === false` paths show toast and do not crash
@@ -41,6 +43,7 @@ Record: whether `post.id` is a real UUID or a mock string — this is critical. 
 Source: `C:\Users\info\TREY-TV-RESTORE-599\supabase\migrations\20260501235000_user_social_posts.sql`
 
 Confirm:
+
 - [ ] Table columns: `id`, `post_id`, `user_id`, `reaction_type`, `created_at`
 - [ ] Unique constraint: `(post_id, user_id, reaction_type)` — NOT `(post_id, user_id)`
 - [ ] `reaction_type` check constraint: `('like','love','laugh','wow','sad','angry')`
@@ -134,12 +137,14 @@ If RLS blocks writes, the fix is a migration on the Supabase project — not a c
 Apply patches only for issues found in T-1 through T-8.
 
 Allowed patches:
+
 - Fix TypeScript errors in `use-supabase-reactions.ts` without restructuring the hook
 - Fix TypeScript errors in `PostCard.tsx` without changing JSX
 - Add a missing null guard if a crash path was found
 - Correct the reaction type mapping if a mismatch was found
 
 Not allowed:
+
 - Restructuring the hook
 - Changing PostCard layout or visual design
 - Adding new dependencies
@@ -165,6 +170,7 @@ pnpm build
 ## Definition of Done
 
 Reactions are confirmed real when ALL of the following are true:
+
 1. `pnpm tsc --noEmit` passes
 2. `pnpm build` passes
 3. Signed-out tap shows toast, no crash

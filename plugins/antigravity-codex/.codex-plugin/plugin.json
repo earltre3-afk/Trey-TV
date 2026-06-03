@@ -10,11 +10,7 @@
   "homepage": "[TODO: Antigravity Codex documentation URL]",
   "repository": "[TODO: Antigravity Codex repository URL]",
   "license": "[TODO: MIT]",
-  "keywords": [
-    "antigravity",
-    "codex",
-    "agent"
-  ],
+  "keywords": ["antigravity", "codex", "agent"],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "apps": "./.app.json",
@@ -24,10 +20,7 @@
     "longDescription": "Starter plugin for connecting Antigravity workflows to Codex. It includes a skill entry point and placeholders for future MCP or app integration surfaces.",
     "developerName": "[TODO: Developer name]",
     "category": "Productivity",
-    "capabilities": [
-      "Interactive",
-      "Write"
-    ],
+    "capabilities": ["Interactive", "Write"],
     "websiteURL": "[TODO: Plugin website URL]",
     "privacyPolicyURL": "[TODO: Privacy policy URL]",
     "termsOfServiceURL": "[TODO: Terms of service URL]",

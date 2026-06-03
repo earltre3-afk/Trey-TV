@@ -18,9 +18,7 @@ function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
     process.env.GEMINI_API_KEY?.trim() ||
     process.env.GOOGLE_API_KEY?.trim();
 
-  const project =
-    process.env.VERTEX_PROJECT?.trim() ||
-    process.env.GOOGLE_CLOUD_PROJECT?.trim();
+  const project = process.env.VERTEX_PROJECT?.trim() || process.env.GOOGLE_CLOUD_PROJECT?.trim();
   const location =
     process.env.VERTEX_LOCATION?.trim() ||
     process.env.GOOGLE_CLOUD_LOCATION?.trim() ||
@@ -73,16 +71,14 @@ function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
   }
 
   throw new Error(
-    "Gemini Configuration Error: Neither GEMINI_API_KEY nor a valid VERTEX_PROJECT (GOOGLE_CLOUD_PROJECT) with service account credentials is configured."
+    "Gemini Configuration Error: Neither GEMINI_API_KEY nor a valid VERTEX_PROJECT (GOOGLE_CLOUD_PROJECT) with service account credentials is configured.",
   );
 }
 
 // ─── Helper: sanitize responses ──────────────────────────────────────────────
 
 function sanitize(raw: string): string {
-  return raw
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-    .trim();
+  return raw.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "").trim();
 }
 
 // ─── Core Interface Options ──────────────────────────────────────────────────
@@ -116,12 +112,17 @@ export async function aiGenerateText(options: GenerateOptions): Promise<{ text: 
 
   if (provider === "mock") {
     console.log("[AI Provider] Mock generation prompt:", prompt.slice(0, 100));
-    return { text: `[Mock Response] Based on the system instruction: "${systemInstruction?.slice(0, 50)}...", this is a fallback placeholder.` };
+    return {
+      text: `[Mock Response] Based on the system instruction: "${systemInstruction?.slice(0, 50)}...", this is a fallback placeholder.`,
+    };
   }
 
   if (provider === "openai") {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) throw new Error("OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.",
+      );
     const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
     const messages = [];
@@ -156,7 +157,10 @@ export async function aiGenerateText(options: GenerateOptions): Promise<{ text: 
 
   if (provider === "anthropic") {
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (!apiKey) throw new Error("Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.",
+      );
     const model = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -199,8 +203,11 @@ export async function aiGenerateText(options: GenerateOptions): Promise<{ text: 
 
   const text =
     (result as unknown as { text?: string }).text ??
-    (result as unknown as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> })
-      .candidates?.[0]?.content?.parts?.[0]?.text ??
+    (
+      result as unknown as {
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      }
+    ).candidates?.[0]?.content?.parts?.[0]?.text ??
     "";
 
   return { text: sanitize(text) };
@@ -227,14 +234,23 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
       return { cardIds: [], rank: "A" } as unknown as T;
     }
     if (prompt.includes("answers")) {
-      return { primaryAbility: "Dreamer", secondaryAbility: "Charmer", signalStrength: "Strong", interpretation: "You navigate life through rich imagination and draw people to your energy." } as unknown as T;
+      return {
+        primaryAbility: "Dreamer",
+        secondaryAbility: "Charmer",
+        signalStrength: "Strong",
+        interpretation:
+          "You navigate life through rich imagination and draw people to your energy.",
+      } as unknown as T;
     }
     return {} as T;
   }
 
   if (provider === "openai") {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) throw new Error("OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.",
+      );
     const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
     const messages = [];
@@ -270,10 +286,13 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
 
   if (provider === "anthropic") {
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (!apiKey) throw new Error("Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.",
+      );
     const model = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
 
-    // Anthropic does not support json response format natively in all versions, 
+    // Anthropic does not support json response format natively in all versions,
     // but we prompt explicitly to return ONLY json in the prompt.
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -284,7 +303,9 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
       },
       body: JSON.stringify({
         model,
-        system: systemInstruction + "\nOutput strictly valid JSON only. Do not wrap in markdown or any other tags.",
+        system:
+          systemInstruction +
+          "\nOutput strictly valid JSON only. Do not wrap in markdown or any other tags.",
         messages: [{ role: "user", content: prompt }],
         temperature,
         max_tokens: maxTokens,
@@ -298,7 +319,10 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
 
     const data = await res.json();
     const text = (data?.content?.[0]?.text || "").trim();
-    const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
     return JSON.parse(sanitize(cleaned)) as T;
   }
 
@@ -317,9 +341,7 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
   });
 
   const text =
-    (result as any).text ??
-    (result as any).candidates?.[0]?.content?.parts?.[0]?.text ??
-    "";
+    (result as any).text ?? (result as any).candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
   return JSON.parse(sanitize(text)) as T;
 }
@@ -328,7 +350,14 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
 
 export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): Promise<T> {
   const provider = getAIProviderName();
-  const { imageBase64, mimeType, prompt, systemInstruction, temperature = 0.2, maxTokens = 1024 } = options;
+  const {
+    imageBase64,
+    mimeType,
+    prompt,
+    systemInstruction,
+    temperature = 0.2,
+    maxTokens = 1024,
+  } = options;
 
   if (provider === "mock") {
     console.log("[AI Provider] Mock Vision JSON generation");
@@ -342,7 +371,10 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
 
   if (provider === "openai") {
     const apiKey = process.env.OPENAI_API_KEY?.trim();
-    if (!apiKey) throw new Error("OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "OpenAI Configuration Error: OPENAI_API_KEY environment variable is not set.",
+      );
     const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
     const messages = [];
@@ -389,7 +421,10 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
 
   if (provider === "anthropic") {
     const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-    if (!apiKey) throw new Error("Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.");
+    if (!apiKey)
+      throw new Error(
+        "Anthropic Configuration Error: ANTHROPIC_API_KEY environment variable is not set.",
+      );
     const model = process.env.ANTHROPIC_MODEL || "claude-3-5-sonnet-20241022";
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -401,7 +436,9 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
       },
       body: JSON.stringify({
         model,
-        system: systemInstruction + "\nOutput strictly valid JSON only. Do not wrap in markdown or any other tags.",
+        system:
+          systemInstruction +
+          "\nOutput strictly valid JSON only. Do not wrap in markdown or any other tags.",
         messages: [
           {
             role: "user",
@@ -430,7 +467,10 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
 
     const data = await res.json();
     const text = (data?.content?.[0]?.text || "").trim();
-    const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    const cleaned = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
     return JSON.parse(sanitize(cleaned)) as T;
   }
 
@@ -441,10 +481,7 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
     contents: [
       {
         role: "user",
-        parts: [
-          { inlineData: { mimeType, data: imageBase64 } },
-          { text: prompt },
-        ],
+        parts: [{ inlineData: { mimeType, data: imageBase64 } }, { text: prompt }],
       },
     ],
     config: {
@@ -456,9 +493,7 @@ export async function aiGenerateVisionJson<T>(options: GenerateVisionOptions): P
   });
 
   const text =
-    (result as any).text ??
-    (result as any).candidates?.[0]?.content?.parts?.[0]?.text ??
-    "";
+    (result as any).text ?? (result as any).candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
   return JSON.parse(sanitize(text)) as T;
 }

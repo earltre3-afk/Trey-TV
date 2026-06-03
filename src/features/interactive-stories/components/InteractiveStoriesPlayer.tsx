@@ -2,9 +2,9 @@
 // inside Trey TV. Adapted from the standalone module's AppLayout.tsx.
 // Uses Trey TV's `useAuth()` from `@/lib/auth` instead of standalone auth context.
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { Sparkles, X, Wand2, RotateCcw } from 'lucide-react';
-import { Branch, Choice, Ending, Tone, StateDelta } from '../lib/storyTypes';
+import React, { useEffect, useMemo, useState } from "react";
+import { Sparkles, X, Wand2, RotateCcw } from "lucide-react";
+import { Branch, Choice, Ending, Tone, StateDelta } from "../lib/storyTypes";
 import {
   loadBranches,
   loadEndings,
@@ -16,10 +16,10 @@ import {
   generateNextChapter,
   pickChapterImage,
   saveEnding,
-} from '../lib/storyEngine';
-import { CHAPTER_1_CHOICES } from '../lib/storyData';
-import { useAuth } from '@/lib/auth';
-import { syncMetaFromBranch, recordChoiceEvent, replayFromChapter } from '../lib/playthroughs';
+} from "../lib/storyEngine";
+import { CHAPTER_1_CHOICES } from "../lib/storyData";
+import { useAuth } from "@/lib/auth";
+import { syncMetaFromBranch, recordChoiceEvent, replayFromChapter } from "../lib/playthroughs";
 import {
   createBranchFromStoryPackage,
   ensureBundledStoryPackagesInstalled,
@@ -28,48 +28,48 @@ import {
   loadInstalledStoryPackages,
   normalizeStorySlug,
   TreyStoryPackage,
-} from '../lib/treyStoryPackage';
+} from "../lib/treyStoryPackage";
 
-import { BottomNav, NavTab } from './BottomNav';
-import { StatusPanel } from './StatusPanel';
-import { WelcomeScreen } from './screens/WelcomeScreen';
-import { LibraryScreen } from './screens/LibraryScreen';
-import { LandingScreen } from './screens/LandingScreen';
-import { ReadingScreen } from './screens/ReadingScreen';
-import { StopPointScreen } from './screens/StopPointScreen';
-import { AILoadingScreen } from './screens/AILoadingScreen';
-import { ContinuationScreen } from './screens/ContinuationScreen';
-import { BranchMapScreen } from './screens/BranchMapScreen';
-import { CharactersScreen } from './screens/CharactersScreen';
-import { EndingsScreen } from './screens/EndingsScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { EndingScreen } from './screens/EndingScreen';
-import { ChapterArchiveScreen } from './screens/ChapterArchiveScreen';
-import { PlaythroughsScreen, SharedEndingScreen } from './screens/PlaythroughsScreen';
-import { useTvRemoteInput } from '@/lib/tv/useTvRemoteInput';
+import { BottomNav, NavTab } from "./BottomNav";
+import { StatusPanel } from "./StatusPanel";
+import { WelcomeScreen } from "./screens/WelcomeScreen";
+import { LibraryScreen } from "./screens/LibraryScreen";
+import { LandingScreen } from "./screens/LandingScreen";
+import { ReadingScreen } from "./screens/ReadingScreen";
+import { StopPointScreen } from "./screens/StopPointScreen";
+import { AILoadingScreen } from "./screens/AILoadingScreen";
+import { ContinuationScreen } from "./screens/ContinuationScreen";
+import { BranchMapScreen } from "./screens/BranchMapScreen";
+import { CharactersScreen } from "./screens/CharactersScreen";
+import { EndingsScreen } from "./screens/EndingsScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { EndingScreen } from "./screens/EndingScreen";
+import { ChapterArchiveScreen } from "./screens/ChapterArchiveScreen";
+import { PlaythroughsScreen, SharedEndingScreen } from "./screens/PlaythroughsScreen";
+import { useTvRemoteInput } from "@/lib/tv/useTvRemoteInput";
 
 type View =
-  | 'welcome'
-  | 'main'
-  | 'landing'
-  | 'reading'
-  | 'stop'
-  | 'loading'
-  | 'continuation'
-  | 'ending'
-  | 'archive'
-  | 'shared';
+  | "welcome"
+  | "main"
+  | "landing"
+  | "reading"
+  | "stop"
+  | "loading"
+  | "continuation"
+  | "ending"
+  | "archive"
+  | "shared";
 
 interface ContinuationData {
   chapterTitle: string;
   prose: string;
   delta: StateDelta;
   image?: string;
-  imageFit?: 'cover' | 'contain';
+  imageFit?: "cover" | "contain";
   imagePosition?: string;
 }
 
-const WELCOME_KEY = 'switchkicks_welcomed_v1';
+const WELCOME_KEY = "switchkicks_welcomed_v1";
 
 interface InteractiveStoriesPlayerProps {
   /** Pre-select a specific story by slug */
@@ -91,8 +91,8 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   const [branches, setBranches] = useState<Branch[]>([]);
   const [endings, setEndings] = useState<Ending[]>([]);
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
-  const [view, setView] = useState<View>(initialView || 'welcome');
-  const [tab, setTab] = useState<NavTab>(initialTab || 'library');
+  const [view, setView] = useState<View>(initialView || "welcome");
+  const [tab, setTab] = useState<NavTab>(initialTab || "library");
   const [statusOpen, setStatusOpen] = useState(false);
   const [continuation, setContinuation] = useState<ContinuationData | null>(null);
   const [showEndings, setShowEndings] = useState(false);
@@ -100,8 +100,8 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   const [installedStories, setInstalledStories] = useState<TreyStoryPackage[]>([]);
   const [remoteChoiceIndex, setRemoteChoiceIndex] = useState(0);
   const [showCraftingModal, setShowCraftingModal] = useState(false);
-  const [craftPremise, setCraftPremise] = useState('');
-  const [craftTone, setCraftTone] = useState<Tone>('Bold');
+  const [craftPremise, setCraftPremise] = useState("");
+  const [craftTone, setCraftTone] = useState<Tone>("Bold");
 
   // Wire into Trey TV's auth system
   const { user, isGuest, isAdmin } = useAuth();
@@ -120,10 +120,10 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   // Handle ?share=<slug> deep link
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const slug = params.get('share');
+    const slug = params.get("share");
     if (slug) {
       setShareSlug(slug);
-      setView('shared');
+      setView("shared");
     }
   }, []);
 
@@ -135,21 +135,21 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     ensureBundledStoryPackagesInstalled()
       .then(setInstalledStories)
       .catch((error) => {
-        console.error('Bundled Interactive Stories could not be loaded.', error);
+        console.error("Bundled Interactive Stories could not be loaded.", error);
       });
     // Hydrate playthrough metadata for any existing branches.
     for (const b of allBranches) syncMetaFromBranch(b, userUid);
     const welcomed = localStorage.getItem(WELCOME_KEY);
-    if (welcomed && !shareSlug) setView('main');
+    if (welcomed && !shareSlug) setView("main");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userUid]);
 
   // If a specific story slug is provided, auto-open it
   useEffect(() => {
-    if (storySlug && view === 'main') {
+    if (storySlug && view === "main") {
       const normalizedSlug = normalizeStorySlug(storySlug);
-      if (normalizedSlug === 'switch-kicks') {
-        setView('landing');
+      if (normalizedSlug === "switch-kicks") {
+        setView("landing");
       } else {
         const pkg = findInstalledStoryPackageBySlug(normalizedSlug);
         if (pkg) {
@@ -162,7 +162,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
 
   const activeBranch = useMemo(
     () => branches.find((b) => b.id === activeBranchId) || null,
-    [branches, activeBranchId]
+    [branches, activeBranchId],
   );
 
   const refresh = () => {
@@ -174,12 +174,12 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   };
 
   const enterApp = () => {
-    localStorage.setItem(WELCOME_KEY, '1');
-    setView('main');
-    setTab('library');
+    localStorage.setItem(WELCOME_KEY, "1");
+    setView("main");
+    setTab("library");
   };
 
-  const handleOpenStory = () => setView('landing');
+  const handleOpenStory = () => setView("landing");
 
   const handleInstallStoryFile = async (file: File) => {
     try {
@@ -187,14 +187,14 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
       setInstalledStories(next);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Could not install this .ttstory file.');
+      alert(error instanceof Error ? error.message : "Could not install this .ttstory file.");
     }
   };
 
   const handleStartInstalledStory = (storyId: string) => {
     const pkg = loadInstalledStoryPackages().find((story) => story.story.id === storyId);
     if (!pkg) {
-      alert('That installed story could not be found.');
+      alert("That installed story could not be found.");
       return;
     }
     const branch = createBranchFromStoryPackage(pkg);
@@ -202,28 +202,28 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     syncMetaFromBranch(branch, userUid);
     refresh();
     setActiveBranchId(branch.id);
-    setView('reading');
+    setView("reading");
   };
 
   const handleStartNew = () => {
     if (branches.filter((b) => !b.isComplete).length >= 5) {
-      alert('You have 5 active branches. Finish or delete one to start a new path.');
+      alert("You have 5 active branches. Finish or delete one to start a new path.");
       return;
     }
     const b = createNewBranch();
     syncMetaFromBranch(b, userUid);
     refresh();
     setActiveBranchId(b.id);
-    setView('reading');
+    setView("reading");
   };
 
   const handleLaunchCraftedStory = () => {
     if (!craftPremise.trim()) {
-      alert('Please enter a premise for your story.');
+      alert("Please enter a premise for your story.");
       return;
     }
     if (branches.filter((b) => !b.isComplete).length >= 5) {
-      alert('You have 5 active branches. Finish or delete one to start a new path.');
+      alert("You have 5 active branches. Finish or delete one to start a new path.");
       return;
     }
     const b = createCustomStoryBranch(craftPremise.trim(), craftTone);
@@ -231,15 +231,14 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     refresh();
     setActiveBranchId(b.id);
     setShowCraftingModal(false);
-    setCraftPremise('');
-    setView('reading');
+    setCraftPremise("");
+    setView("reading");
   };
-
 
   const handleContinueBranch = (b: Branch) => {
     setActiveBranchId(b.id);
-    if (b.isComplete && b.ending) setView('ending');
-    else setView('reading');
+    if (b.isComplete && b.ending) setView("ending");
+    else setView("reading");
   };
 
   const handleContinueById = (id: string) => {
@@ -254,43 +253,49 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
     const b = loadBranches().find((x) => x.id === id);
     if (b) {
       setActiveBranchId(b.id);
-      setView('reading');
+      setView("reading");
     }
   };
 
   const openReread = (b: Branch) => {
     setActiveBranchId(b.id);
-    requireAuth('reread', () => setView('archive'));
+    requireAuth("reread", () => setView("archive"));
   };
 
   const handleReadingContinue = () => {
     if (!activeBranch) return;
     if (activeBranch.isComplete && activeBranch.ending) {
-      setView('ending');
+      setView("ending");
       return;
     }
     if (activeBranch.pendingStopPoint) {
-      setView('stop');
+      setView("stop");
     } else {
       const updated: Branch = {
         ...activeBranch,
-        pendingStopPoint: { prompt: 'What happens next?', choices: CHAPTER_1_CHOICES },
+        pendingStopPoint: { prompt: "What happens next?", choices: CHAPTER_1_CHOICES },
       };
       updateBranch(updated);
       refresh();
-      setView('stop');
+      setView("stop");
     }
   };
 
   const runChoice = async (choice: Choice | { label?: string; text: string; tone?: Tone }) => {
     if (!activeBranch) return;
-    setView('loading');
+    setView("loading");
 
     try {
       const result = await generateNextChapter(activeBranch, choice);
       const newMeters = applyDelta(activeBranch.meters, result.state.state_delta);
       const newChapterNumber = activeBranch.chapters[activeBranch.chapters.length - 1].number + 1;
-      const chapterImage = result.image || pickChapterImage(result.state.tone_tag, newChapterNumber, `${result.state.chapter_title} ${result.state.chapter_summary} ${result.prose}`);
+      const chapterImage =
+        result.image ||
+        pickChapterImage(
+          result.state.tone_tag,
+          newChapterNumber,
+          `${result.state.chapter_title} ${result.state.chapter_summary} ${result.prose}`,
+        );
 
       const newChapter = {
         number: newChapterNumber,
@@ -306,11 +311,13 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
         summary: result.state.chapter_summary,
         toneTag: result.state.tone_tag,
         choiceMade: choice.tone
-          ? { label: choice.label || '?', text: choice.text, tone: choice.tone }
-          : { label: '✎', text: choice.text, tone: 'Bold' as Tone },
+          ? { label: choice.label || "?", text: choice.text, tone: choice.tone }
+          : { label: "✎", text: choice.text, tone: "Bold" as Tone },
       };
 
-      const newToneHistory: Tone[] = [...activeBranch.toneHistory, result.state.tone_tag].slice(-10);
+      const newToneHistory: Tone[] = [...activeBranch.toneHistory, result.state.tone_tag].slice(
+        -10,
+      );
 
       const updated: Branch = {
         ...activeBranch,
@@ -318,14 +325,17 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
         meters: newMeters,
         toneHistory: newToneHistory,
         pendingStopPoint: result.state.next_stop_point || undefined,
-        flags: { ...activeBranch.flags, current_scene_id: result.sceneId || activeBranch.flags.current_scene_id || '' },
+        flags: {
+          ...activeBranch.flags,
+          current_scene_id: result.sceneId || activeBranch.flags.current_scene_id || "",
+        },
         isComplete: !!result.state.is_ending,
       };
 
       if (result.state.is_ending && result.state.ending_unlocked) {
         const ending: Ending = {
           name: result.state.ending_unlocked,
-          tagline: result.state.ending_tagline || 'Your story has an ending.',
+          tagline: result.state.ending_tagline || "Your story has an ending.",
           unlockedAt: Date.now(),
           branchId: updated.id,
         };
@@ -344,7 +354,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
         choiceLabel: choice.label,
         choiceText: choice.text,
         toneLabel: choice.tone,
-        statChanges: (result.state.state_delta as unknown) as Record<string, number>,
+        statChanges: result.state.state_delta as unknown as Record<string, number>,
       }).catch(() => {});
 
       refresh();
@@ -357,18 +367,18 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
         imageFit: result.imageFit,
         imagePosition: result.imagePosition,
       });
-      setView('continuation');
+      setView("continuation");
     } catch (err) {
       console.error(err);
-      alert('The AI is having a moment. Try again.');
-      setView('stop');
+      alert("The AI is having a moment. Try again.");
+      setView("stop");
     }
   };
 
   const handleChoice = (choice: Choice | { label?: string; text: string; tone?: Tone }) => {
     if (!activeBranch) return;
     if (activeBranch.chapters.length >= 2) {
-      requireAuth('continue-ai', () => runChoice(choice));
+      requireAuth("continue-ai", () => runChoice(choice));
     } else {
       runChoice(choice);
     }
@@ -376,18 +386,18 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
 
   const handleContinuationDone = () => {
     setContinuation(null);
-    if (activeBranch?.isComplete && activeBranch.ending) setView('ending');
-    else setView('reading');
+    if (activeBranch?.isComplete && activeBranch.ending) setView("ending");
+    else setView("reading");
   };
 
   const handleResetAll = () => {
-    localStorage.removeItem('switchkicks_branches_v1');
-    localStorage.removeItem('switchkicks_endings_v1');
-    localStorage.removeItem('trey_playthroughs_meta_v1');
+    localStorage.removeItem("switchkicks_branches_v1");
+    localStorage.removeItem("switchkicks_endings_v1");
+    localStorage.removeItem("trey_playthroughs_meta_v1");
     setBranches([]);
     setEndings([]);
     setActiveBranchId(null);
-    alert('All progress reset.');
+    alert("All progress reset.");
   };
 
   const handleDeleteBranch = (id: string) => {
@@ -402,122 +412,146 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   };
 
   useTvRemoteInput((action) => {
-    if (action === 'BACK') {
-      if (view === 'stop') setView('reading');
-      else if (view === 'reading') setView('landing');
+    if (action === "BACK") {
+      if (view === "stop") setView("reading");
+      else if (view === "reading") setView("landing");
       else handleGoBack();
       return;
     }
-    if (action === 'MENU') {
+    if (action === "MENU") {
       setStatusOpen(true);
       return;
     }
-    if (view === 'reading' && action === 'SELECT') {
+    if (view === "reading" && action === "SELECT") {
       handleReadingContinue();
       return;
     }
     const choices = activeBranch?.pendingStopPoint?.choices ?? [];
-    if (view !== 'stop' || choices.length === 0) return;
-    if (action === 'UP' || action === 'LEFT') {
+    if (view !== "stop" || choices.length === 0) return;
+    if (action === "UP" || action === "LEFT") {
       setRemoteChoiceIndex((index) => (index - 1 + choices.length) % choices.length);
       return;
     }
-    if (action === 'DOWN' || action === 'RIGHT') {
+    if (action === "DOWN" || action === "RIGHT") {
       setRemoteChoiceIndex((index) => (index + 1) % choices.length);
       return;
     }
-    if (action === 'SELECT') {
+    if (action === "SELECT") {
       handleChoice(choices[remoteChoiceIndex % choices.length]);
     }
   });
 
   // === Render branches ===
 
-  if (view === 'shared' && shareSlug) {
+  if (view === "shared" && shareSlug) {
     return (
       <SharedEndingScreen
         slug={shareSlug}
         onBack={() => {
-          window.history.replaceState({}, '', window.location.pathname);
+          window.history.replaceState({}, "", window.location.pathname);
           setShareSlug(null);
-          setView('main');
-          setTab('library');
+          setView("main");
+          setTab("library");
         }}
       />
     );
   }
 
-  if (view === 'welcome') {
+  if (view === "welcome") {
     return <WelcomeScreen onEnter={enterApp} />;
   }
 
-  if (view === 'archive' && activeBranch) {
+  if (view === "archive" && activeBranch) {
     return (
       <>
         <ChapterArchiveScreen
           branch={activeBranch}
-          onBack={() => setView('reading')}
+          onBack={() => setView("reading")}
           onJumpToCurrent={() => {
-            if (activeBranch.isComplete && activeBranch.ending) setView('ending');
-            else setView('reading');
+            if (activeBranch.isComplete && activeBranch.ending) setView("ending");
+            else setView("reading");
           }}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
       </>
     );
   }
 
-  if (view === 'landing') {
+  if (view === "landing") {
     return (
       <>
         <LandingScreen
-          onBack={() => setView('main')}
+          onBack={() => setView("main")}
           onStartNew={handleStartNew}
           onContinue={handleContinueBranch}
-          branches={branches.filter((b) => b.storyId === 'switch_kicks')}
+          branches={branches.filter((b) => b.storyId === "switch_kicks")}
           onReread={openReread}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
         <StatusPanel branch={activeBranch} open={statusOpen} onClose={() => setStatusOpen(false)} />
       </>
     );
   }
 
-  if (view === 'reading' && activeBranch) {
+  if (view === "reading" && activeBranch) {
     return (
       <>
         <ReadingScreen
           branch={activeBranch}
-          onBack={() => setView('landing')}
+          onBack={() => setView("landing")}
           onContinue={handleReadingContinue}
           onOpenStatus={() => setStatusOpen(true)}
-          onReread={() => requireAuth('reread', () => setView('archive'))}
+          onReread={() => requireAuth("reread", () => setView("archive"))}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
         <StatusPanel branch={activeBranch} open={statusOpen} onClose={() => setStatusOpen(false)} />
       </>
     );
   }
 
-  if (view === 'stop' && activeBranch) {
+  if (view === "stop" && activeBranch) {
     return (
       <>
         <StopPointScreen
           branch={activeBranch}
-          onBack={() => setView('reading')}
+          onBack={() => setView("reading")}
           onSubmit={handleChoice}
           selectedChoiceIndex={remoteChoiceIndex}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
       </>
     );
   }
 
-  if (view === 'loading') {
+  if (view === "loading") {
     return <AILoadingScreen />;
   }
 
-  if (view === 'continuation' && continuation) {
+  if (view === "continuation" && continuation) {
     return (
       <>
         <ContinuationScreen
@@ -529,22 +563,37 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           imagePosition={continuation.imagePosition}
           onContinue={handleContinuationDone}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
       </>
     );
   }
 
-  if (view === 'ending' && activeBranch?.ending) {
+  if (view === "ending" && activeBranch?.ending) {
     return (
       <>
         <EndingScreen
           ending={activeBranch.ending}
           branch={activeBranch}
-          onNewBranch={() => setView('landing')}
-          onLibrary={() => { setTab('library'); setView('main'); }}
-          onReread={() => requireAuth('reread', () => setView('archive'))}
+          onNewBranch={() => setView("landing")}
+          onLibrary={() => {
+            setTab("library");
+            setView("main");
+          }}
+          onReread={() => requireAuth("reread", () => setView("archive"))}
         />
-        <BottomNav active={tab} onChange={(t) => { setTab(t); setView('main'); }} />
+        <BottomNav
+          active={tab}
+          onChange={(t) => {
+            setTab(t);
+            setView("main");
+          }}
+        />
       </>
     );
   }
@@ -554,7 +603,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
   // Main tabbed dashboard view
   return (
     <>
-      {tab === 'library' && (
+      {tab === "library" && (
         <LibraryScreen
           onOpenStory={handleOpenStory}
           onOpenEndings={() => setShowEndings(true)}
@@ -567,16 +616,16 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           onBack={handleGoBack}
         />
       )}
-      {tab === 'story' && (
+      {tab === "story" && (
         <LandingScreen
-          onBack={() => setTab('library')}
+          onBack={() => setTab("library")}
           onStartNew={handleStartNew}
           onContinue={handleContinueBranch}
-          branches={branches.filter((b) => b.storyId === 'switch_kicks')}
+          branches={branches.filter((b) => b.storyId === "switch_kicks")}
           onReread={openReread}
         />
       )}
-      {tab === 'saves' && (
+      {tab === "saves" && (
         <PlaythroughsScreen
           branches={branches}
           onContinue={handleContinueById}
@@ -586,12 +635,12 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
             const b = loadBranches().find((x) => x.id === id);
             if (b?.isComplete && b.ending) {
               setActiveBranchId(b.id);
-              setView('ending');
+              setView("ending");
             }
           }}
         />
       )}
-      {tab === 'branches' && (
+      {tab === "branches" && (
         <BranchMapScreen
           branches={branches}
           activeBranchId={activeBranchId}
@@ -600,8 +649,8 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
           onDelete={handleDeleteBranch}
         />
       )}
-      {tab === 'characters' && <CharactersScreen branch={activeBranch} />}
-      {tab === 'settings' && (
+      {tab === "characters" && <CharactersScreen branch={activeBranch} />}
+      {tab === "settings" && (
         <SettingsScreen
           onResetAll={handleResetAll}
           hasActiveBranch={!!lastActiveBranch}
@@ -631,7 +680,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
             <button
               onClick={() => {
                 setShowCraftingModal(false);
-                setCraftPremise('');
+                setCraftPremise("");
               }}
               className="absolute right-5 top-5 rounded-full border border-white/10 bg-white/5 p-2 text-white/70 hover:bg-white/10 hover:text-white"
             >
@@ -641,18 +690,25 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
             {/* Title Block */}
             <div className="flex items-center gap-3 text-cyan-400">
               <Sparkles className="h-5 w-5 text-cyan-300 animate-pulse" />
-              <span className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">AI Story Studio</span>
+              <span className="text-xs font-bold uppercase tracking-[0.25em] text-cyan-300">
+                AI Story Studio
+              </span>
             </div>
-            <h2 className="mt-2 font-display text-3xl font-black text-white leading-none">Craft Your Story</h2>
+            <h2 className="mt-2 font-display text-3xl font-black text-white leading-none">
+              Craft Your Story
+            </h2>
             <p className="mt-2 text-xs text-white/55">
-              Input your custom premise, pick a starting tone, and launch a fully customized AI interactive story journey.
+              Input your custom premise, pick a starting tone, and launch a fully customized AI
+              interactive story journey.
             </p>
 
             <div className="mt-6 space-y-4">
               {/* Premise Input */}
               <div>
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">Define Your Premise</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                    Define Your Premise
+                  </label>
                   <button
                     onClick={() => {
                       const pool = [
@@ -660,7 +716,7 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
                         "A legendary streetball wager where the stakes are clearing a sibling's major debt.",
                         "A dancer trying to keep their twin out of trouble by performing in their place for the finals.",
                         "An ambitious sneaker designer who discovers a secret high-society wager ring.",
-                        "A star athlete who gets swap-recruited into a mysterious underground sports guild."
+                        "A star athlete who gets swap-recruited into a mysterious underground sports guild.",
                       ];
                       const picked = pool[Math.floor(Math.random() * pool.length)];
                       setCraftPremise(picked);
@@ -680,16 +736,18 @@ const InteractiveStoriesPlayer: React.FC<InteractiveStoriesPlayerProps> = ({
 
               {/* Tone Selection */}
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">Starting Vibe / Tone</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+                  Starting Vibe / Tone
+                </label>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {(['Bold', 'Risky', 'Funny', 'Romantic', 'Safe'] as Tone[]).map((t) => (
+                  {(["Bold", "Risky", "Funny", "Romantic", "Safe"] as Tone[]).map((t) => (
                     <button
                       key={t}
                       onClick={() => setCraftTone(t)}
                       className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors border ${
                         craftTone === t
-                          ? 'border-cyan-400/40 bg-cyan-500/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.15)]'
-                          : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                          ? "border-cyan-400/40 bg-cyan-500/10 text-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.15)]"
+                          : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       {t}

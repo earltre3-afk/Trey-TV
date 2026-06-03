@@ -68,7 +68,8 @@ import com.treytv.tv.BuildConfig
  *     onReceivedError for the main frame or onReceivedHttpError with 5xx/4xx.
  */
 private const val LOG_TAG = "TreyTvWebShell"
-private const val DEFAULT_INDEX = "file:///android_asset/trey-tv-web/index.html"
+private const val DEFAULT_INDEX = "https://tv.treytrizzy.com/tv"
+private const val FALLBACK_INDEX = "file:///android_asset/trey-tv-web/index.html"
 private const val USER_AGENT_SUFFIX = " TreyTvNative/${BuildConfig.VERSION_NAME}"
 
 // The bundled web shell lives under assets/trey-tv-web/. It uses ROOT-ABSOLUTE
@@ -230,6 +231,19 @@ fun WebShellScreen(
                             view: WebView, request: WebResourceRequest,
                         ): Boolean {
                             val url = request.url.toString()
+
+                            // Check for APK download page or general download paths and block loading inside WebView
+                            if (url.contains("/apk") || url.contains("/download")) {
+                                Log.w(LOG_TAG, "Blocked opening APK download page inside the app: $url")
+                                try {
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, request.url)
+                                    view.context.startActivity(intent)
+                                } catch (e: Exception) {
+                                    Log.e(LOG_TAG, "Failed to open download link in system browser", e)
+                                }
+                                return true // Intercept and block loading in WebView
+                            }
+
                             // Allow our bundled assets and absolute https URLs the
                             // shell may load (API calls etc.). Refuse everything else.
                             val ok = url.startsWith("file:///android_asset/") ||
@@ -254,8 +268,23 @@ fun WebShellScreen(
                         ) {
                             // Only surface main-frame errors; resource errors are noisy.
                             if (request.isForMainFrame) {
+                                val urlStr = request.url.toString()
+                                val isRemote = urlStr.startsWith("http://") || urlStr.startsWith("https://")
                                 val reason = "${error.errorCode}: ${error.description}"
-                                Log.e(LOG_TAG, "onReceivedError main-frame: $reason")
+                                Log.e(LOG_TAG, "onReceivedError main-frame for $urlStr: $reason")
+
+                                if (isRemote && (
+                                    error.errorCode == ERROR_HOST_LOOKUP ||
+                                    error.errorCode == ERROR_CONNECT ||
+                                    error.errorCode == ERROR_TIMEOUT ||
+                                    error.errorCode == ERROR_IO ||
+                                    error.errorCode == ERROR_UNKNOWN
+                                )) {
+                                    Log.i(LOG_TAG, "Remote connection failed. Attempting local fallback: $FALLBACK_INDEX")
+                                    view.loadUrl(FALLBACK_INDEX)
+                                    return
+                                }
+
                                 loadError = reason
                                 isLoading = false
                             } else {

@@ -112,7 +112,9 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    try { localStorage.setItem(storageKey, JSON.stringify(raw)); } catch {}
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(raw));
+    } catch {}
   }, [raw, hydrated, storageKey]);
 
   useEffect(() => {
@@ -124,7 +126,9 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         const supabase = createBrowserClient();
         const { data, error } = await (supabase as any)
           .from("user_feed_posts")
-          .select("id, user_id, body, media_url, audience, tags, metrics, created_at, source_type, gif_fwd_id, gif_poster_url, gif_title, media_type, media_duration_ms")
+          .select(
+            "id, user_id, body, media_url, audience, tags, metrics, created_at, source_type, gif_fwd_id, gif_poster_url, gif_title, media_type, media_duration_ms",
+          )
           .eq("user_id", supabaseUser.id)
           .order("created_at", { ascending: false })
           .limit(100);
@@ -132,27 +136,29 @@ export function FeedProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
         if (cancelled) return;
 
-        setRaw(((data ?? []) as any[]).map((row) => ({
-          id: row.id,
-          ownerId: row.user_id,
-          creator: meAsCreator,
-          timeAgo: timeAgo(new Date(row.created_at).getTime()),
-          text: row.body,
-          media: row.media_url ?? undefined,
-          mediaType: row.media_type ?? undefined,
-          sourceType: row.source_type ?? "trey",
-          gifFwdId: row.gif_fwd_id ?? null,
-          gifPosterUrl: row.gif_poster_url ?? null,
-          gifTitle: row.gif_title ?? null,
-          duration: undefined,
-          likes: Number(row.metrics?.likes ?? 0),
-          comments: Number(row.metrics?.comments ?? 0),
-          reshares: Number(row.metrics?.reshares ?? 0),
-          saves: Number(row.metrics?.saves ?? 0),
-          audience: row.audience ?? "Everyone",
-          tags: Array.isArray(row.tags) ? row.tags : [],
-          createdAt: new Date(row.created_at).getTime(),
-        })));
+        setRaw(
+          ((data ?? []) as any[]).map((row) => ({
+            id: row.id,
+            ownerId: row.user_id,
+            creator: meAsCreator,
+            timeAgo: timeAgo(new Date(row.created_at).getTime()),
+            text: row.body,
+            media: row.media_url ?? undefined,
+            mediaType: row.media_type ?? undefined,
+            sourceType: row.source_type ?? "trey",
+            gifFwdId: row.gif_fwd_id ?? null,
+            gifPosterUrl: row.gif_poster_url ?? null,
+            gifTitle: row.gif_title ?? null,
+            duration: undefined,
+            likes: Number(row.metrics?.likes ?? 0),
+            comments: Number(row.metrics?.comments ?? 0),
+            reshares: Number(row.metrics?.reshares ?? 0),
+            saves: Number(row.metrics?.saves ?? 0),
+            audience: row.audience ?? "Everyone",
+            tags: Array.isArray(row.tags) ? row.tags : [],
+            createdAt: new Date(row.created_at).getTime(),
+          })),
+        );
       } catch (error) {
         console.error("Failed to load UID feed posts:", error);
       }
@@ -180,10 +186,25 @@ export function FeedProvider({ children }: { children: ReactNode }) {
   }) => {
     const id = (typeof crypto !== "undefined" && crypto.randomUUID?.()) || `p-${Date.now()}`;
     const post: UserPost = {
-      id, ownerId: supabaseUser?.id ?? null, creator: meAsCreator, timeAgo: "now",
-      text, media, mediaType, sourceType, gifFwdId, gifPosterUrl, gifTitle, duration: undefined,
-      likes: 0, comments: 0, reshares: 0, saves: 0,
-      audience, tags, createdAt: Date.now(),
+      id,
+      ownerId: supabaseUser?.id ?? null,
+      creator: meAsCreator,
+      timeAgo: "now",
+      text,
+      media,
+      mediaType,
+      sourceType,
+      gifFwdId,
+      gifPosterUrl,
+      gifTitle,
+      duration: undefined,
+      likes: 0,
+      comments: 0,
+      reshares: 0,
+      saves: 0,
+      audience,
+      tags,
+      createdAt: Date.now(),
     };
     setRaw((s) => [post, ...s].slice(0, 100));
     if (supabaseUser) {
@@ -212,8 +233,10 @@ export function FeedProvider({ children }: { children: ReactNode }) {
 
           if (error) throw error;
           if (data?.id) {
-            const createdAt = data.created_at ? new Date(data.created_at).getTime() : post.createdAt;
-            setRaw((s) => s.map((p) => p.id === id ? { ...p, id: data.id, createdAt } : p));
+            const createdAt = data.created_at
+              ? new Date(data.created_at).getTime()
+              : post.createdAt;
+            setRaw((s) => s.map((p) => (p.id === id ? { ...p, id: data.id, createdAt } : p)));
           }
         } catch (error) {
           console.error("Failed to save UID feed post:", error);
@@ -231,7 +254,7 @@ export function FeedProvider({ children }: { children: ReactNode }) {
       return { ok: false, reason: "Only the post owner can edit this." };
     }
 
-    setRaw((s) => s.map((p) => p.id === id ? { ...p, text } : p));
+    setRaw((s) => s.map((p) => (p.id === id ? { ...p, text } : p)));
     try {
       const supabase = createBrowserClient();
       const { data, error } = await (supabase as any)

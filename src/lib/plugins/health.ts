@@ -29,7 +29,14 @@ export function getPluginHealthStatus(): PluginHealthStatus {
 
   return {
     appName: "Trey TV",
-    appStack: ["TanStack Start", "TanStack Router", "Vite", "React", "Supabase", "Cloudflare-compatible server entry"],
+    appStack: [
+      "TanStack Start",
+      "TanStack Router",
+      "Vite",
+      "React",
+      "Supabase",
+      "Cloudflare-compatible server entry",
+    ],
     environmentLabel: environmentLabel(),
     timestamp: new Date().toISOString(),
     requiredEnv,

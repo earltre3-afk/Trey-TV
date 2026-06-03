@@ -27,6 +27,7 @@ import { useProfile, useRelationshipStatus, useTopThree } from "@/hooks/use-prof
 import { currentUser } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
 import { isTreyOwnerProfile } from "@/lib/trey-owner";
+import { resolveOwnerMusicOrder, resolveOwnerProfileSongId } from "@/lib/owner-music";
 import type { ProfileData, ViewerRole } from "@/components/profile";
 import { ProfilePageNew } from "@/components/profile/ProfilePageNew";
 import type { ProfileVariant } from "@/components/profile/ProfilePageNew";
@@ -69,7 +70,14 @@ function PublicProfileRoute() {
       const fallback = isSessionProfile ? authUser : isTreyProfile ? currentUser : null;
       const isFallbackCreator =
         isTreyProfile ||
-        (isSessionProfile && (fallback?.verified === "creator" || role === "creator" || role === "admin"));
+        (isSessionProfile &&
+          (fallback?.verified === "creator" || role === "creator" || role === "admin"));
+      const ownerProfileSongId = resolveOwnerProfileSongId(
+        uid,
+        (fallback as any)?.profileSongId ?? null,
+      );
+      const ownerMusicOrder = resolveOwnerMusicOrder(uid, (fallback as any)?.musicOrder ?? null);
+
       return {
         uid,
         displayName: fallback?.name ?? (loading ? "Loading profile" : "Profile unavailable"),
@@ -110,6 +118,8 @@ function PublicProfileRoute() {
         interests: [],
         creatorStatus: isSessionProfile ? authUser?.creatorStatus : undefined,
         accentColor: isSessionProfile ? ((authUser as any)?.accent ?? null) : null,
+        profileSongId: ownerProfileSongId,
+        musicOrder: ownerMusicOrder,
       };
     }
 
@@ -123,13 +133,21 @@ function PublicProfileRoute() {
       username: dbProfile.username,
       public_profile_uid: dbProfile.public_profile_uid,
     });
+    const ownerProfileSongId = resolveOwnerProfileSongId(uid, dbProfile.profile_song_id || null);
+    const ownerMusicOrder = resolveOwnerMusicOrder(
+      uid,
+      Array.isArray(dbProfile.profile_preferences?.music_order)
+        ? dbProfile.profile_preferences.music_order
+        : null,
+    );
 
     return {
       uid,
       displayName: dbProfile.display_name || dbProfile.username || "Anonymous",
       handle: dbProfile.username || "anonymous",
-      avatarUrl: isOwnProfile && authUser?.avatar ? authUser.avatar : (dbProfile.avatar_url || ""),
-      bannerUrl: isOwnProfile && authUser?.banner ? authUser.banner : (dbProfile.banner_url || banner),
+      avatarUrl: isOwnProfile && authUser?.avatar ? authUser.avatar : dbProfile.avatar_url || "",
+      bannerUrl:
+        isOwnProfile && authUser?.banner ? authUser.banner : dbProfile.banner_url || banner,
       bio: dbProfile.bio ?? undefined,
       location: dbProfile.location ?? undefined,
       websiteLink: dbProfile.link_url ?? undefined,
@@ -168,7 +186,8 @@ function PublicProfileRoute() {
         ? ((authUser as any)?.rewards ?? { points: 12480, tier: "GOLD" })
         : undefined,
       interests: [],
-      creatorStatus: (dbProfile.creator_status as any) ?? (isOwnProfile ? authUser?.creatorStatus : undefined),
+      creatorStatus:
+        (dbProfile.creator_status as any) ?? (isOwnProfile ? authUser?.creatorStatus : undefined),
       accentColor: dbProfile.profile_accent_color,
       gifOfDayUrl: (dbProfile as any).gif_of_day_url ?? null,
       gifOfDayPosterUrl: (dbProfile as any).gif_of_day_poster_url ?? null,
@@ -177,12 +196,17 @@ function PublicProfileRoute() {
       profileUserId: dbProfile.id,
       zodiacSunSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_sun_sign,
       zodiacMoonSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_moon_sign,
-      zodiacRisingSign: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_rising_sign,
+      zodiacRisingSign:
+        dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_rising_sign,
       zodiacIsCusp: dbProfile.zodiac_public_opt_in !== false && !!dbProfile.zodiac_is_cusp,
-      zodiacCuspLabel: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_cusp_label,
+      zodiacCuspLabel:
+        dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_cusp_label,
       zodiacBadgeKey: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.zodiac_badge_key,
       zodiacPublicOptIn: dbProfile.zodiac_public_opt_in !== false,
-      birthChartHighlights: dbProfile.zodiac_public_opt_in === false ? null : dbProfile.birth_chart_json,
+      birthChartHighlights:
+        dbProfile.zodiac_public_opt_in === false ? null : dbProfile.birth_chart_json,
+      profileSongId: ownerProfileSongId,
+      musicOrder: ownerMusicOrder,
     };
   }, [dbProfile, loading, uid, authUser, isGuest, isOwnProfile, role, isApprovedCreator]);
 

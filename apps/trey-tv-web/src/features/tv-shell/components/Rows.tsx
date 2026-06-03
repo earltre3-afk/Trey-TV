@@ -1,12 +1,18 @@
-import React from 'react';
-import { FocusCard, RowHeader } from './Primitives';
-import { VideoTile, Creator, Game } from '../mockData';
-import { getHeroFallbackStyle, selectHeroArtwork } from '../artwork';
+import React from "react";
+import { FocusCard, RowHeader } from "./Primitives";
+import { VideoTile, Creator, Game } from "../mockData";
+import { getHeroFallbackStyle, selectHeroArtwork } from "../artwork";
 
-const ArtworkFrame: React.FC<{ item: { title: string; image?: string; posterUrl?: string; thumbnailUrl?: string; backdropUrl?: string }; className: string }> = ({
-  item,
-  className,
-}) => {
+const ArtworkFrame: React.FC<{
+  item: {
+    title: string;
+    image?: string;
+    posterUrl?: string;
+    thumbnailUrl?: string;
+    backdropUrl?: string;
+  };
+  className: string;
+}> = ({ item, className }) => {
   const artwork = selectHeroArtwork(item);
   return (
     <div className={`absolute inset-0 ${className}`} style={getHeroFallbackStyle(item.title)}>
@@ -18,11 +24,11 @@ const ArtworkFrame: React.FC<{ item: { title: string; image?: string; posterUrl?
 export const ContentRow: React.FC<{
   title: string;
   items: VideoTile[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   onSelect?: (v: VideoTile) => void;
-}> = ({ title, items, size = 'md', onSelect }) => {
-  const w = { sm: 'w-[200px]', md: 'w-[280px]', lg: 'w-[320px]' }[size];
-  const h = { sm: 'h-[120px]', md: 'h-[160px]', lg: 'h-[180px]' }[size];
+}> = ({ title, items, size = "md", onSelect }) => {
+  const w = { sm: "w-[200px]", md: "w-[280px]", lg: "w-[320px]" }[size];
+  const h = { sm: "h-[120px]", md: "h-[160px]", lg: "h-[180px]" }[size];
   return (
     <section className="mb-8">
       <RowHeader title={title} viewAll />
@@ -38,10 +44,12 @@ export const ContentRow: React.FC<{
                 </span>
               )}
               <div className="absolute bottom-2 left-3 right-3">
-                <div className="font-bold text-white text-base leading-tight line-clamp-1">{it.title}</div>
+                <div className="font-bold text-white text-base leading-tight line-clamp-1">
+                  {it.title}
+                </div>
                 {it.meta && <div className="text-xs text-white/70 line-clamp-1">{it.meta}</div>}
               </div>
-              {typeof it.progress === 'number' && (
+              {typeof it.progress === "number" && (
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/15">
                   <div
                     className="h-full bg-gradient-to-r from-fuchsia-400 to-purple-500"
@@ -77,9 +85,7 @@ export const CreatorRow: React.FC<{ title: string; items: Creator[] }> = ({ titl
                   className="relative w-20 h-20 rounded-full object-cover border-2 border-fuchsia-400/70 group-focus:border-fuchsia-300"
                 />
               ) : (
-                <span
-                  className="relative grid w-20 h-20 place-items-center rounded-full border-2 border-fuchsia-400/70 bg-gradient-to-br from-[#20112d] to-[#07070d] text-xl font-black text-amber-200 group-focus:border-fuchsia-300"
-                >
+                <span className="relative grid w-20 h-20 place-items-center rounded-full border-2 border-fuchsia-400/70 bg-gradient-to-br from-[#20112d] to-[#07070d] text-xl font-black text-amber-200 group-focus:border-fuchsia-300">
                   {c.name.slice(0, 1)}
                 </span>
               )}

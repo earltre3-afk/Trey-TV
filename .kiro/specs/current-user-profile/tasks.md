@@ -9,11 +9,13 @@ Complete in order. Do not start a task until the previous one is recorded done.
 **Files:** `src/lib/mock-data.ts`, `src/lib/auth.tsx`
 
 **Work:**
+
 - Confirm every field read from `currentUser` across the 17 consuming files exists in `SessionUser`
 - Confirm `SessionUser` has `updateUser(patch: Partial<SessionUser>)` exposed via `useAuth()` from `@/lib/auth`
 - Confirm no consumer reads a banned field (`is_creator`, `age`, `date_of_birth`, `email`, `phone`)
 
 **Acceptance criteria:**
+
 - [ ] All consumed fields (`name`, `handle`, `uid`, `avatar`, `banner`, `bio`, `location`, `link`, `verified`, `stats`) exist in `SessionUser`
 - [ ] `updateUser` is in `AuthCtx` and callable from a child of `<AuthProvider>`
 - [ ] No banned field is read by any consumer
@@ -29,6 +31,7 @@ Complete in order. Do not start a task until the previous one is recorded done.
 **Files:** `src/hooks/use-current-user.ts` (new)
 
 **Work:** Implement per design.md:
+
 - Import `useAuth` from `@/hooks/use-auth` (Supabase) for `user.id` and `isSignedIn`
 - Import `createBrowserClient` from `@/lib/supabase-browser`
 - Import `currentUser` from `@/lib/mock-data` as fallback
@@ -41,6 +44,7 @@ Complete in order. Do not start a task until the previous one is recorded done.
 - Return type must be `SessionUser` — never `null`
 
 **Acceptance criteria:**
+
 - [ ] Return type is `SessionUser` (not nullable)
 - [ ] Signed-out path returns `currentUser` without any fetch
 - [ ] Loading and error paths return `currentUser`
@@ -58,6 +62,7 @@ Complete in order. Do not start a task until the previous one is recorded done.
 **Files:** `src/components/CurrentUserSync.tsx` (new)
 
 **Work:** Implement the zero-render bridge component:
+
 - Import `useCurrentUser` from `@/hooks/use-current-user`
 - Import `useAuth` from `@/lib/auth` (mock AuthProvider) for `updateUser`
 - Import `currentUser` from `@/lib/mock-data` for the guard check
@@ -65,6 +70,7 @@ Complete in order. Do not start a task until the previous one is recorded done.
 - Return `null`
 
 **Acceptance criteria:**
+
 - [ ] Component renders `null` — no DOM output
 - [ ] `updateUser` is only called when real profile data is present (guard on `uid`)
 - [ ] `updateUser` is never called with the mock fallback
@@ -81,21 +87,25 @@ Complete in order. Do not start a task until the previous one is recorded done.
 **Files:** `src/routes/__root.tsx`
 
 **Work:**
+
 - Add one import: `import { CurrentUserSync } from "@/components/CurrentUserSync"`
 - Add one JSX element: `<CurrentUserSync />` directly inside `<AuthProvider>` in `RootComponent`
 - Make no other changes to this file
 
 **Acceptance criteria:**
+
 - [ ] `<CurrentUserSync />` appears exactly once in `RootComponent`
 - [ ] No existing provider, component, or element is moved, wrapped, or removed
 - [ ] Diff is exactly: +1 import line, +1 JSX element
 
 **Visual preservation:** `CurrentUserSync` renders `null`. No visual change possible.
 **TypeScript/build:** Run both after this step — both must pass before proceeding:
+
 ```
 pnpm tsc --noEmit
 pnpm build
 ```
+
 **Rollback risk:** Low — remove the import and JSX element to fully revert.
 
 ---
@@ -108,6 +118,7 @@ pnpm build
 `is_creator`, `age`, `date_of_birth`, `email`, `phone`, `onboarding_answers`, or any column not in the safe list from requirements FR-5.
 
 **Acceptance criteria:**
+
 - [ ] `.select()` string contains only safe columns
 - [ ] No banned field name appears anywhere in the file
 
@@ -122,6 +133,7 @@ pnpm build
 **Files:** All files in `src/components/` and `src/routes/` except `__root.tsx` and the two new files
 
 **Work:** Confirm the git diff contains changes only to:
+
 - `src/hooks/use-current-user.ts` (new)
 - `src/components/CurrentUserSync.tsx` (new)
 - `src/routes/__root.tsx` (one import + one JSX element)
@@ -129,6 +141,7 @@ pnpm build
 No other file should appear in the diff.
 
 **Acceptance criteria:**
+
 - [ ] Exactly 3 files in the diff
 - [ ] None of the 17 `currentUser`-consuming files are modified
 - [ ] `src/lib/mock-data.ts` is unmodified
@@ -148,6 +161,7 @@ pnpm tsc --noEmit
 ```
 
 **Acceptance criteria:**
+
 - [ ] Zero errors
 - [ ] If errors exist: fix only in the two new files, re-run before proceeding
 
@@ -164,6 +178,7 @@ pnpm build
 ```
 
 **Acceptance criteria:**
+
 - [ ] Build completes with zero errors
 - [ ] If errors exist: fix only in the two new files, re-run before proceeding
 
@@ -184,6 +199,7 @@ layout components that use `user ?? currentUser` or `currentUser` directly:
 - `SideMenu` (`src/components/layout/SideMenu.tsx`) — name, handle, avatar in profile card
 
 **Acceptance criteria:**
+
 - [ ] BottomNav avatar shows real `avatar_url` (or mock if null in DB)
 - [ ] BottomNav profile link navigates to `/u/${real_public_profile_uid}`
 - [ ] AppHeader avatar shows real avatar
@@ -202,6 +218,7 @@ layout components that use `user ?? currentUser` or `currentUser` directly:
 **Dev server:** http://localhost:3000 in incognito (no session)
 
 **Acceptance criteria:**
+
 - [ ] Feed renders normally
 - [ ] BottomNav shows mock avatar, links to mock UID
 - [ ] AppHeader shows mock avatar
@@ -227,6 +244,7 @@ layout components that use `user ?? currentUser` or `currentUser` directly:
 ## Definition of Done
 
 All of the following must be true before this task is closed:
+
 1. `pnpm tsc --noEmit` passes
 2. `pnpm build` passes
 3. Signed-out: mock fallback renders, no crash, visually identical to today

@@ -22,25 +22,41 @@ export function ComingSoonPage({
   const goBack = useGoBack("/");
   const accentClass = {
     primary: "text-primary border-primary/40 bg-primary/10 glow-gold",
-    magenta: "text-[oklch(0.7_0.25_340)] border-[oklch(0.7_0.25_340_/_0.5)] bg-[oklch(0.7_0.25_340_/_0.1)] glow-magenta",
+    magenta:
+      "text-[oklch(0.7_0.25_340)] border-[oklch(0.7_0.25_340_/_0.5)] bg-[oklch(0.7_0.25_340_/_0.1)] glow-magenta",
     cyan: "text-[oklch(0.82_0.15_215)] border-[oklch(0.82_0.15_215_/_0.5)] bg-[oklch(0.82_0.15_215_/_0.1)]",
-    purple: "text-[oklch(0.65_0.22_300)] border-[oklch(0.65_0.22_300_/_0.5)] bg-[oklch(0.65_0.22_300_/_0.1)] glow-purple",
+    purple:
+      "text-[oklch(0.65_0.22_300)] border-[oklch(0.65_0.22_300_/_0.5)] bg-[oklch(0.65_0.22_300_/_0.1)] glow-purple",
   }[accent];
 
   return (
     <AppShell>
       <div className="space-y-6 -mt-2">
-        <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Back
         </button>
 
         <div className="relative overflow-hidden rounded-3xl border border-white/10 glass-strong p-6 lg:p-10">
-          <div aria-hidden className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/15 blur-3xl" />
-          <div aria-hidden className="absolute -bottom-16 -left-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.15)] blur-3xl" />
-          <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,oklch(0.82_0.16_85_/_0.6),transparent)]" />
+          <div
+            aria-hidden
+            className="absolute -top-16 -right-16 size-56 rounded-full bg-primary/15 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-16 -left-16 size-56 rounded-full bg-[oklch(0.7_0.25_340_/_0.15)] blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,oklch(0.82_0.16_85_/_0.6),transparent)]"
+          />
 
           <div className="relative flex items-start gap-4">
-            <div className={`size-14 grid place-items-center rounded-2xl border ${accentClass} animate-glow-pulse`}>
+            <div
+              className={`size-14 grid place-items-center rounded-2xl border ${accentClass} animate-glow-pulse`}
+            >
               <Icon className="size-7" />
             </div>
             <div className="flex-1">

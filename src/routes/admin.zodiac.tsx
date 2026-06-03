@@ -32,10 +32,13 @@ function AdminZodiac() {
     queryFn: async () => {
       let q = supabase
         .from("profiles")
-        .select("id, display_name, username, date_of_birth, location, zodiac_sun_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_locked_at, birth_location_label, birth_time_precision, birth_time_local, birth_timezone, birth_chart_json")
+        .select(
+          "id, display_name, username, date_of_birth, location, zodiac_sun_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_locked_at, birth_location_label, birth_time_precision, birth_time_local, birth_timezone, birth_chart_json",
+        )
         .order("updated_at", { ascending: false })
         .limit(100);
-      if (query.trim()) q = q.or(`username.ilike.%${query.trim()}%,display_name.ilike.%${query.trim()}%`);
+      if (query.trim())
+        q = q.or(`username.ilike.%${query.trim()}%,display_name.ilike.%${query.trim()}%`);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -94,7 +97,10 @@ function AdminZodiac() {
       updated_at: now,
     };
 
-    const { error } = await (supabase as any).from("profiles").update(corrected).eq("id", editing.id);
+    const { error } = await (supabase as any)
+      .from("profiles")
+      .update(corrected)
+      .eq("id", editing.id);
     if (error) return toast.error(error.message);
 
     await (supabase as any).from("zodiac_identity_corrections").insert({
@@ -117,7 +123,10 @@ function AdminZodiac() {
   };
 
   return (
-    <AdminShell title="Zodiac Support" subtitle="Correct locked zodiac identities without opening casual profile editing.">
+    <AdminShell
+      title="Zodiac Support"
+      subtitle="Correct locked zodiac identities without opening casual profile editing."
+    >
       <div className="rounded-3xl liquid-glass border border-white/10 p-4">
         <div className="flex items-center gap-3">
           <Sparkles className="size-5 text-primary" />
@@ -135,15 +144,29 @@ function AdminZodiac() {
           <div key={profile.id} className="rounded-2xl liquid-glass border border-white/10 p-4">
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-black">{profile.display_name || profile.username || profile.id}</div>
-                <div className="text-[11px] text-muted-foreground">@{profile.username ?? "no-handle"} · {profile.date_of_birth ? "DOB on file" : "No DOB"}</div>
+                <div className="text-sm font-black">
+                  {profile.display_name || profile.username || profile.id}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  @{profile.username ?? "no-handle"} ·{" "}
+                  {profile.date_of_birth ? "DOB on file" : "No DOB"}
+                </div>
               </div>
               {profile.zodiac_sun_sign ? (
-                <ZodiacBadge sign={profile.zodiac_sun_sign} isCusp={!!profile.zodiac_is_cusp} cuspLabel={profile.zodiac_cusp_label} size="sm" showName />
+                <ZodiacBadge
+                  sign={profile.zodiac_sun_sign}
+                  isCusp={!!profile.zodiac_is_cusp}
+                  cuspLabel={profile.zodiac_cusp_label}
+                  size="sm"
+                  showName
+                />
               ) : (
                 <span className="text-xs text-muted-foreground">No zodiac</span>
               )}
-              <button onClick={() => beginEdit(profile)} className="h-9 rounded-xl bg-primary px-3 text-xs font-black text-primary-foreground">
+              <button
+                onClick={() => beginEdit(profile)}
+                className="h-9 rounded-xl bg-primary px-3 text-xs font-black text-primary-foreground"
+              >
                 Correct
               </button>
             </div>
@@ -158,14 +181,32 @@ function AdminZodiac() {
               <ShieldCheck className="size-5 text-primary" />
               <div>
                 <h2 className="text-lg font-black">Support correction</h2>
-                <p className="text-xs text-muted-foreground">This writes an admin correction record and keeps zodiac locked.</p>
+                <p className="text-xs text-muted-foreground">
+                  This writes an admin correction record and keeps zodiac locked.
+                </p>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
-              <input value={birthLocation} onChange={(event) => setBirthLocation(event.target.value)} placeholder="Birth location label" className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none" />
-              <input value={birthTimezone} onChange={(event) => setBirthTimezone(event.target.value)} placeholder="Birth timezone, e.g. America/Chicago" className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none" />
+              <input
+                value={birthLocation}
+                onChange={(event) => setBirthLocation(event.target.value)}
+                placeholder="Birth location label"
+                className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none"
+              />
+              <input
+                value={birthTimezone}
+                onChange={(event) => setBirthTimezone(event.target.value)}
+                placeholder="Birth timezone, e.g. America/Chicago"
+                className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none"
+              />
               <div className="grid grid-cols-2 gap-3">
-                <select value={birthTimePrecision} onChange={(event) => setBirthTimePrecision(event.target.value as BirthTimePrecision)} className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none">
+                <select
+                  value={birthTimePrecision}
+                  onChange={(event) =>
+                    setBirthTimePrecision(event.target.value as BirthTimePrecision)
+                  }
+                  className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none"
+                >
                   <option value="unknown">I don't know</option>
                   <option value="morning">Morning</option>
                   <option value="afternoon">Afternoon</option>
@@ -173,19 +214,46 @@ function AdminZodiac() {
                   <option value="night">Night</option>
                   <option value="exact">Exact time</option>
                 </select>
-                <input type="time" value={birthTimeLocal} onChange={(event) => setBirthTimeLocal(event.target.value)} className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none" />
+                <input
+                  type="time"
+                  value={birthTimeLocal}
+                  onChange={(event) => setBirthTimeLocal(event.target.value)}
+                  className="h-10 rounded-xl border border-white/10 bg-white/5 px-3 text-sm outline-none"
+                />
               </div>
-              <textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Correction reason required" rows={3} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none" />
+              <textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Correction reason required"
+                rows={3}
+                className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none"
+              />
             </div>
             {preview && (
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-                <ZodiacBadge sign={preview.sunSign} isCusp={preview.isCusp} cuspLabel={preview.cuspLabel} showName />
-                <div className="mt-2 text-[11px] text-muted-foreground">{preview.calculationMethod.replaceAll("_", " ")} · {preview.confidence.replace("_", " ")}</div>
+                <ZodiacBadge
+                  sign={preview.sunSign}
+                  isCusp={preview.isCusp}
+                  cuspLabel={preview.cuspLabel}
+                  showName
+                />
+                <div className="mt-2 text-[11px] text-muted-foreground">
+                  {preview.calculationMethod.replaceAll("_", " ")} ·{" "}
+                  {preview.confidence.replace("_", " ")}
+                </div>
               </div>
             )}
             <div className="mt-5 flex gap-2">
-              <button onClick={() => setEditing(null)} className="h-10 flex-1 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold">Cancel</button>
-              <button onClick={saveCorrection} className="h-10 flex-1 rounded-xl bg-primary text-sm font-black text-primary-foreground inline-flex items-center justify-center gap-2">
+              <button
+                onClick={() => setEditing(null)}
+                className="h-10 flex-1 rounded-xl border border-white/10 bg-white/[0.04] text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveCorrection}
+                className="h-10 flex-1 rounded-xl bg-primary text-sm font-black text-primary-foreground inline-flex items-center justify-center gap-2"
+              >
                 <Save className="size-4" /> Save Correction
               </button>
             </div>

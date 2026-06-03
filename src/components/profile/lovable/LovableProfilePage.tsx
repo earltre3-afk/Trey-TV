@@ -1,4 +1,12 @@
-import { useEffect, useId, useMemo, useState, type ComponentType, type CSSProperties, type SVGProps } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type ComponentType,
+  type CSSProperties,
+  type SVGProps,
+} from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
@@ -53,7 +61,12 @@ import {
 import { AvatarWithFallback } from "@/components/brand/DefaultAvatar";
 import { GiftPickerSheet } from "@/components/gifts/GiftPickerSheet";
 import { ProfilePictureLink } from "@/components/profile/ProfileAvatarLink";
-import type { ProfileData, RelationshipStatus, TopThreeEntry, ViewerRole } from "@/components/profile/ProfileTypes";
+import type {
+  ProfileData,
+  RelationshipStatus,
+  TopThreeEntry,
+  ViewerRole,
+} from "@/components/profile/ProfileTypes";
 import { toggleFollow } from "@/lib/social-relationships";
 import portrait from "@/assets/lovable-profile-portrait.jpg";
 import heroBg from "@/assets/lovable-hero-bg.jpg";
@@ -74,7 +87,6 @@ const GREEN = "#22C55E";
 const RED = "#EF4444";
 
 import { GoldCheck } from "@/components/brand/Badge";
-
 
 /* ---------- helpers ---------- */
 function Spark({ color, data }: { color: string; data: number[] }) {
@@ -270,8 +282,7 @@ function Medallion({
           style={{
             padding: 1,
             background: grad,
-            WebkitMask:
-              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
             WebkitMaskComposite: "xor",
             maskComposite: "exclude",
           }}
@@ -300,7 +311,8 @@ export interface LovableProfilePageProps {
 
 function formatStat(value: number | string | undefined) {
   if (typeof value === "number") {
-    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
+    if (value >= 1_000_000)
+      return `${(value / 1_000_000).toFixed(value % 1_000_000 === 0 ? 0 : 1)}M`;
     if (value >= 1_000) return `${(value / 1_000).toFixed(value % 1_000 === 0 ? 0 : 1)}K`;
   }
   return value ?? "0";
@@ -352,7 +364,9 @@ export function ProfilePage({
   const channelUrl = `/u/${profile.uid}/channel`;
   const followers = useMemo(() => {
     const current = Number(profile.stats.followers);
-    return Number.isFinite(current) ? Math.max(0, current + followerDelta) : profile.stats.followers;
+    return Number.isFinite(current)
+      ? Math.max(0, current + followerDelta)
+      : profile.stats.followers;
   }, [profile.stats.followers, followerDelta]);
   const displayName = profile.displayName || "Trey TV Member";
   const handle = profile.handle || profile.uid;
@@ -362,11 +376,46 @@ export function ProfilePage({
   const zodiacLabel = profile.zodiacCuspLabel || profile.zodiacSunSign || "Taurus";
   const canFollow = viewerRole !== "owner" && relationshipStatus?.can_follow !== false;
   const socialLinks = [
-    profile.socialInstagram && { icon: Instagram, color: PINK, accent: NEON_PURPLE, title: "Instagram", sub: socialHandle(profile.socialInstagram), href: normalizeLink(`instagram.com/${profile.socialInstagram.replace(/^@/, "")}`) },
-    profile.websiteLink && { icon: Globe, color: NEON_BLUE, accent: "#3B82F6", title: "Website", sub: profile.websiteLink, href: normalizeLink(profile.websiteLink) },
-    profile.socialTikTok && { icon: Music2, color: "#fff", accent: PINK, title: "TikTok", sub: socialHandle(profile.socialTikTok), href: normalizeLink(`tiktok.com/@${profile.socialTikTok.replace(/^@/, "")}`) },
-    profile.socialYouTube && { icon: Youtube, color: RED, accent: "#FF7700", title: "YouTube", sub: socialHandle(profile.socialYouTube), href: normalizeLink(profile.socialYouTube) },
-  ].filter(Boolean) as { icon: IconType; color: string; accent: string; title: string; sub: string; href: string }[];
+    profile.socialInstagram && {
+      icon: Instagram,
+      color: PINK,
+      accent: NEON_PURPLE,
+      title: "Instagram",
+      sub: socialHandle(profile.socialInstagram),
+      href: normalizeLink(`instagram.com/${profile.socialInstagram.replace(/^@/, "")}`),
+    },
+    profile.websiteLink && {
+      icon: Globe,
+      color: NEON_BLUE,
+      accent: "#3B82F6",
+      title: "Website",
+      sub: profile.websiteLink,
+      href: normalizeLink(profile.websiteLink),
+    },
+    profile.socialTikTok && {
+      icon: Music2,
+      color: "#fff",
+      accent: PINK,
+      title: "TikTok",
+      sub: socialHandle(profile.socialTikTok),
+      href: normalizeLink(`tiktok.com/@${profile.socialTikTok.replace(/^@/, "")}`),
+    },
+    profile.socialYouTube && {
+      icon: Youtube,
+      color: RED,
+      accent: "#FF7700",
+      title: "YouTube",
+      sub: socialHandle(profile.socialYouTube),
+      href: normalizeLink(profile.socialYouTube),
+    },
+  ].filter(Boolean) as {
+    icon: IconType;
+    color: string;
+    accent: string;
+    title: string;
+    sub: string;
+    href: string;
+  }[];
   const topThreeCards = topThree
     .slice()
     .sort((a, b) => a.position - b.position)
@@ -385,7 +434,12 @@ export function ProfilePage({
     showOwnerBadge && { icon: Crown, label: "Owner", color: GOLD, accent: PINK },
     showAdminBadge && { icon: ShieldCheck, label: "Admin", color: PINK, accent: NEON_BLUE },
     showCreatorBadge && { icon: Sparkles, label: "Creator", color: GOLD, accent: NEON_PURPLE },
-    showVerifiedBadge && { icon: BadgeCheck, label: "Verified", color: profile.verifiedKind === "user" ? GREEN : GOLD, accent: NEON_BLUE },
+    showVerifiedBadge && {
+      icon: BadgeCheck,
+      label: "Verified",
+      color: profile.verifiedKind === "user" ? GREEN : GOLD,
+      accent: NEON_BLUE,
+    },
   ].filter(Boolean) as { icon: IconType; label: string; color: string; accent: string }[];
 
   const handleFollow = async () => {
@@ -445,7 +499,13 @@ export function ProfilePage({
       {/* ============ FULL-WIDTH BANNER ============ */}
       <section className="relative w-full reveal">
         <div className="relative h-[220px] sm:h-[260px] md:h-[300px] w-full overflow-hidden">
-          <img src={profile.bannerUrl || (isFounderDemo ? heroBg : "")} alt="" aria-hidden="true" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+          <img
+            src={profile.bannerUrl || (isFounderDemo ? heroBg : "")}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[#05070D] via-[#05070D]/40 to-[#05070D]/10" />
           <div
             className="absolute inset-0"
@@ -455,14 +515,28 @@ export function ProfilePage({
           />
 
           {/* top buttons */}
-          <button type="button" onClick={onBack} aria-label="Go back" className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition z-20">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Go back"
+            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition z-20"
+          >
             <ArrowLeft aria-hidden="true" className="w-4 h-4" />
           </button>
           <div className="absolute top-3 right-3 flex gap-1.5 z-20">
-            <button type="button" onClick={handleShare} aria-label="Share profile" className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition">
+            <button
+              type="button"
+              onClick={handleShare}
+              aria-label="Share profile"
+              className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition"
+            >
               <Share aria-hidden="true" className="w-4 h-4" />
             </button>
-            <button type="button" aria-label="More options" className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition">
+            <button
+              type="button"
+              aria-label="More options"
+              className="w-9 h-9 rounded-full bg-black/40 border border-white/15 backdrop-blur-md flex items-center justify-center active:scale-95 transition"
+            >
               <MoreHorizontal aria-hidden="true" className="w-4 h-4" />
             </button>
           </div>
@@ -602,652 +676,758 @@ export function ProfilePage({
       <div className="max-w-[1280px] mx-auto px-3 md:px-6 pt-[72px] md:pt-20">
         {/* ============ HERO IDENTITY (centered under avatar) ============ */}
         <div className="max-w-2xl mx-auto mb-5 md:mb-7">
-        {/* ============ IDENTITY ============ */}
-        <div className="text-center reveal">
-          <div className="flex items-center justify-center gap-1.5">
-            <h1 className="text-[26px] md:text-3xl font-extrabold metallic-chrome drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
-              {displayName}
-            </h1>
-            {showVerifiedBadge && <GoldCheck size={22} />}
-          </div>
-          <div className="mt-1 text-[11px] tracking-wide text-muted-foreground">@{handle}</div>
+          {/* ============ IDENTITY ============ */}
+          <div className="text-center reveal">
+            <div className="flex items-center justify-center gap-1.5">
+              <h1 className="text-[26px] md:text-3xl font-extrabold metallic-chrome drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+                {displayName}
+              </h1>
+              {showVerifiedBadge && <GoldCheck size={22} />}
+            </div>
+            <div className="mt-1 text-[11px] tracking-wide text-muted-foreground">@{handle}</div>
 
-          {/* ROLE PILLS — refined tonal glass with accent edge */}
-          <div className="mt-2.5 flex items-center justify-center flex-wrap sm:flex-nowrap gap-1.5 px-2">
-            {showOwnerBadge && (
-              <span
-                key="Owner"
-                className="owner-badge inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] whitespace-nowrap px-2.5 py-[4px] sm:px-3 sm:py-[5px] rounded-full"
-              >
-                <span aria-hidden className="owner-badge__shine" />
-                <span aria-hidden className="owner-badge__crown">
-                  <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+            {/* ROLE PILLS — refined tonal glass with accent edge */}
+            <div className="mt-2.5 flex items-center justify-center flex-wrap sm:flex-nowrap gap-1.5 px-2">
+              {showOwnerBadge && (
+                <span
+                  key="Owner"
+                  className="owner-badge inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.22em] whitespace-nowrap px-2.5 py-[4px] sm:px-3 sm:py-[5px] rounded-full"
+                >
+                  <span aria-hidden className="owner-badge__shine" />
+                  <span aria-hidden className="owner-badge__crown">
+                    <Crown className="w-2.5 h-2.5" strokeWidth={2.5} />
+                  </span>
+                  <span className="owner-badge__text">Owner</span>
                 </span>
-                <span className="owner-badge__text">Owner</span>
-              </span>
-            )}
-            {(
-              [
-                showVerifiedBadge && { I: GoldCheck as IconType, l: "Verified", c: GOLD, gold: true },
-                showCreatorBadge && { I: Sparkles, l: "Creator", c: NEON_PURPLE, gold: false },
-                showAdminBadge && { I: ShieldCheck, l: "Admin", c: PINK, gold: false },
-              ].filter(Boolean) as { I: IconType; l: string; c: string; gold: boolean }[]
-            ).map(({ I, l, c, gold }) => (
-              <span
-                key={l}
-                className="role-pill inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.16em] text-white/95 px-2 py-[3px] sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap"
-                style={{ "--pill-c": c } as CSSProperties}
-              >
-                <span aria-hidden className="role-pill__shine" />
-                <span aria-hidden className="role-pill__ring" />
-                {gold ? (
-                  <GoldCheck size={11} className="role-pill__icon" />
-                ) : (
-                  <I className="w-2.5 h-2.5 role-pill__icon" strokeWidth={2.5} style={{ color: c }} />
-                )}
-                <span className="role-pill__label" style={{ textShadow: `0 0 8px ${c}66` }}>{l}</span>
-              </span>
-            ))}
-          </div>
-
-          <p className="mt-2 text-[12px] text-foreground/85 leading-snug px-4">
-            {bio}
-          </p>
-          <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
-            <span className="inline-flex items-center gap-0.5">
-              <MapPin className="w-3 h-3" style={{ color: GOLD }} /> {profile.showLocation === false ? "Location hidden" : (profile.location || "Location not set")}
-            </span>
-            {profile.websiteLink && (
-              <span className="inline-flex items-center gap-0.5">
-                <Link2 className="w-3 h-3" style={{ color: NEON_BLUE }} /> {profile.websiteLink}
-              </span>
-            )}
-          </div>
-
-          {/* ACTION ROW — Follow / Subscribe / Message / Gift */}
-          <div className={`mt-3 grid gap-2 max-w-md mx-auto ${showGiftButton ? "grid-cols-4" : "grid-cols-3"} ${showSelfControls ? "hidden" : ""}`}>
-            {[
-              { l: following ? "Following" : "Follow", I: following ? BadgeCheck : UserPlus, c: NEON_PURPLE, primary: true, onClick: handleFollow },
-              ...(showCreatorBadge ? [{ l: "Subscribe", I: Sparkles, c: GOLD, primary: false, onClick: () => toast("Creator subscriptions are coming soon.") }] : []),
-              { l: "Message", I: Mail, c: NEON_BLUE, primary: false, onClick: () => { window.location.href = `/inbox?to=${encodeURIComponent(handle)}`; } },
-              ...(showGiftButton ? [{ l: "Gift", I: Heart, c: PINK, primary: false, onClick: () => setGiftOpen(true) }] : []),
-            ].map(({ l, I, c, primary, onClick }) => (
-              <button
-                key={l}
-                type="button"
-                onClick={onClick}
-                disabled={l === "Follow" && !canFollow}
-                className="cert-btn group"
-                data-primary={primary ? "true" : "false"}
-                style={{ "--btn-c": c } as CSSProperties}
-              >
-                <span aria-hidden className="cert-btn__border" />
-                <span aria-hidden className="cert-btn__surface" />
-
-                {/* tiny certified tick — top right */}
-                <span aria-hidden className="cert-btn__cert">
-                  <svg viewBox="0 0 12 12" className="w-2 h-2" fill="none">
-                    <path
-                      d="M2.5 6.2 L4.8 8.4 L9.5 3.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+              )}
+              {(
+                [
+                  showVerifiedBadge && {
+                    I: GoldCheck as IconType,
+                    l: "Verified",
+                    c: GOLD,
+                    gold: true,
+                  },
+                  showCreatorBadge && { I: Sparkles, l: "Creator", c: NEON_PURPLE, gold: false },
+                  showAdminBadge && { I: ShieldCheck, l: "Admin", c: PINK, gold: false },
+                ].filter(Boolean) as { I: IconType; l: string; c: string; gold: boolean }[]
+              ).map(({ I, l, c, gold }) => (
+                <span
+                  key={l}
+                  className="role-pill inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.16em] text-white/95 px-2 py-[3px] sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap"
+                  style={{ "--pill-c": c } as CSSProperties}
+                >
+                  <span aria-hidden className="role-pill__shine" />
+                  <span aria-hidden className="role-pill__ring" />
+                  {gold ? (
+                    <GoldCheck size={11} className="role-pill__icon" />
+                  ) : (
+                    <I
+                      className="w-2.5 h-2.5 role-pill__icon"
+                      strokeWidth={2.5}
+                      style={{ color: c }}
                     />
-                  </svg>
-                </span>
-
-                <span className="cert-btn__content">
-                  <span className="cert-btn__icon">
-                    <I className="w-3.5 h-3.5" strokeWidth={2.25} />
+                  )}
+                  <span className="role-pill__label" style={{ textShadow: `0 0 8px ${c}66` }}>
+                    {l}
                   </span>
-                  <span className="cert-btn__label">{l}</span>
                 </span>
-              </button>
-            ))}
-          </div>
-
-          {showChannelCTA && (
-            <div className="mt-3 flex justify-center">
-              <Link
-                to={channelUrl as any}
-                className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-extrabold text-[12px] uppercase tracking-[0.18em] text-black overflow-hidden active:scale-95 hover:scale-[1.04] transition-transform"
-                style={{
-                  background: `linear-gradient(135deg, #FFE9A8 0%, ${GOLD} 35%, #E9A917 60%, #FFF3C4 100%)`,
-                  boxShadow: `0 0 0 1px rgba(255,255,255,0.35) inset, 0 0 22px ${GOLD}99, 0 0 48px ${GOLD}66, 0 8px 30px rgba(0,0,0,0.55)`,
-                }}
-              >
-                <span
-                  aria-hidden
-                  className="absolute -inset-[2px] rounded-full opacity-90 animate-spin-slow -z-10"
-                  style={{
-                    background: `conic-gradient(from 0deg, ${GOLD}, ${PINK}, ${NEON_PURPLE}, ${NEON_BLUE}, ${GOLD})`,
-                    filter: "blur(6px)",
-                  }}
-                />
-                <span
-                  aria-hidden
-                  className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(110deg, transparent 38%, rgba(255,255,255,0.85) 50%, transparent 62%)",
-                  }}
-                />
-                <Play className="w-4 h-4 fill-black" strokeWidth={2.5} />
-                <span className="relative">View My Channel</span>
-                <ChevronRight className="w-4 h-4" strokeWidth={3} />
-              </Link>
-            </div>
-          )}
-
-          {/* ============ EDIT PROFILE + VIEW PUBLIC (owner only) ============ */}
-          {showSelfControls && (
-          <div className="mt-2 flex justify-center items-center gap-2">
-            <button
-              type="button"
-              onClick={() => { window.location.href = "/edit-profile"; }}
-              className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
-              style={{
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.45)",
-              }}
-            >
-              <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} />
-              <span>Edit Profile</span>
-            </button>
-
-            <Link
-              to={profileUrl as any}
-              aria-label="View public profile"
-              className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white overflow-hidden active:scale-95 hover:scale-[1.03] transition-transform"
-              style={{
-                background: "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(236,72,153,0.18) 50%, rgba(34,211,238,0.18))",
-                boxShadow:
-                  "inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 22px rgba(168,85,247,0.35), 0 6px 22px rgba(34,211,238,0.25)",
-              }}
-            >
-              {/* iridescent conic border */}
-              <span
-                aria-hidden
-                className="absolute inset-0 rounded-full p-[1px]"
-                style={{
-                  background: `conic-gradient(from 0deg, ${NEON_PURPLE}, ${PINK}, ${NEON_BLUE}, ${NEON_PURPLE})`,
-                  WebkitMask:
-                    "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
-                }}
-              />
-              {/* glass surface */}
-              <span
-                aria-hidden
-                className="absolute inset-[1px] rounded-full -z-0"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35))",
-                  backdropFilter: "blur(8px)",
-                }}
-              />
-              {/* shimmer sweep */}
-              <span
-                aria-hidden
-                className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.45) 50%, transparent 60%)",
-                }}
-              />
-              <Eye className="relative w-3.5 h-3.5" style={{ color: NEON_BLUE }} strokeWidth={2.5} />
-              <span className="relative">View Public Profile</span>
-              <ExternalLink className="relative w-3 h-3 opacity-80" strokeWidth={2.5} />
-            </Link>
-          </div>
-          )}
-
-          {isPublic && (
-            <div className="mt-2 flex justify-center">
-              <Link
-                to={profileUrl as any}
-                className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
-                style={{
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.45)",
-                }}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" style={{ color: NEON_PURPLE }} />
-                <span>Back to My View</span>
-              </Link>
-            </div>
-          )}
-          {socialLinks.length > 0 && (
-            <div className="mt-3.5 flex items-center justify-center gap-1">
-              {socialLinks.map(({ icon: I, color: c, title, href }) => (
-                <a
-                  key={title}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={title}
-                  className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 active:scale-90 transition"
-                  style={{ color: c }}
-                >
-                  <I aria-hidden="true" className="w-3.5 h-3.5" />
-                </a>
               ))}
             </div>
-          )}
-        </div>
-        </div>
 
-       <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:items-start space-y-3 lg:space-y-0">
-        {/* ============ LEFT COLUMN (sticky on desktop) ============ */}
-        <div className="space-y-3 lg:sticky lg:top-4">
-        {/* ============ OWNER CERTIFICATION STRIP ============ */}
-        {showOwnerBadge && (
-        <div className="panel neon-border p-2.5 reveal" style={{ animationDelay: ".05s" }}>
-          <div className="grid grid-cols-3 gap-1.5 text-center">
-            {[
-              { I: ShieldCheck, l: "Identity", s: "Confirmed", c: GOLD },
-              { I: Fingerprint, l: "Original", s: "Account", c: NEON_BLUE },
-              { I: KeyRound, l: "Owner", s: "Verified", c: NEON_PURPLE },
-            ].map(({ I, l, s, c }) => (
-              <div
-                key={l}
-                className="flex flex-col items-center gap-0.5 py-1 transition hover:-translate-y-0.5"
-              >
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center"
-                  style={{
-                    background: `${c}1A`,
-                    border: `1px solid ${c}66`,
-                    boxShadow: `0 0 12px ${c}55, inset 0 0 8px ${c}22`,
-                  }}
-                >
-                  <I className="w-3.5 h-3.5" style={{ color: c }} />
-                </div>
-                <div className="text-[10px] font-bold leading-none mt-0.5" style={{ color: c }}>
-                  {l}
-                </div>
-                <div className="text-[9px] text-muted-foreground leading-none">{s}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        )}
-
-        {/* ============ STAT BAR ============ */}
-        <div
-          className="panel neon-border grid grid-cols-4 divide-x divide-white/5 reveal"
-          style={{ animationDelay: ".08s" }}
-        >
-          {[
-            { I: FileText, c: NEON_BLUE, v: formatStat(profile.stats.posts), l: "Posts" },
-            { I: Users, c: NEON_PURPLE, v: formatStat(followers), l: "Followers" },
-            { I: UserPlus, c: PINK, v: formatStat(profile.stats.following), l: "Following" },
-            { I: Sparkles, c: GOLD, v: formatStat(profile.stats.prescriptions), l: "Rx" },
-          ].map(({ I, c, v, l }) => (
-            <button
-              key={l}
-              className="flex items-center justify-center gap-1.5 px-1 py-2.5 transition hover:bg-white/[0.03] active:scale-[0.98]"
-            >
-              <I
-                className="w-3.5 h-3.5"
-                style={{ color: c, filter: `drop-shadow(0 0 6px ${c})` }}
-              />
-              <div className="text-left">
-                <div className="text-sm font-bold leading-none tabular-nums">{v}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">{l}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* ============ BIO / ABOUT ============ */}
-        <div className="panel neon-border p-3 reveal relative" style={{ animationDelay: ".1s" }}>
-          {/* About header */}
-          <div className="mb-3">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }}
-              />
-              <h3 className="font-semibold text-xs">About {displayName.split(" ")[0] || displayName}</h3>
-            </div>
-            <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">
-              {bio}
-            </p>
-            <button className="rounded-full border border-white/15 px-2.5 py-1 text-[10px] font-semibold inline-flex items-center gap-0.5 hover:bg-white/5 transition">
-              Full bio <ChevronRight className="w-2.5 h-2.5" />
-            </button>
-          </div>
-
-          {/* Facts table — labels far LEFT (under "Full bio") | TAURUS center | values far RIGHT (under "3.2K") */}
-          <div className="grid grid-cols-[auto_1fr_auto] gap-x-2 md:gap-x-6 gap-y-1.5 items-center text-[10px] md:text-[11px] w-full">
-            {/* LEFT — labels pushed to far left */}
-            <ul className="space-y-1.5 justify-self-start">
-              {[
-                { I: Globe, l: "Member since" },
-                { I: Sparkle, l: "Profile type" },
-                { I: User, l: "Visibility" },
-                { I: BadgeCheck, l: "Verification" },
-                { I: Clock, l: "Location" },
-              ].map(({ I, l }) => (
-                <li key={l} className="flex items-center gap-2 text-left">
-                  <I className="w-3 h-3 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">{l}</span>
-                </li>
-              ))}
-            </ul>
-
-            {/* CENTER — Taurus zodiac badge */}
-            <div className="flex justify-center self-center">
-              {showZodiac ? (
-              <div className="relative w-[96px] h-[112px] md:w-[120px] md:h-[140px] flex items-center justify-center">
-                <div
-                  className="absolute inset-0 rounded-full blur-2xl opacity-60"
-                  style={{ background: `radial-gradient(circle, ${GOLD}66, transparent 70%)` }}
-                />
-                <div
-                  className="absolute inset-1 rounded-full animate-spin-slow"
-                  style={{
-                    background: `conic-gradient(${GOLD}, transparent 30%, ${NEON_PURPLE}, transparent 60%, ${GOLD})`,
-                    WebkitMask:
-                      "radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%)",
-                    mask: "radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%)",
-                    filter: `drop-shadow(0 0 8px ${GOLD})`,
-                  }}
-                />
-                <img
-                  src={taurusBull}
-                  alt={`${zodiacLabel} zodiac`}
-                  className="relative w-[64px] md:w-[80px] animate-float"
-                  style={{
-                    filter: `drop-shadow(0 0 12px ${GOLD}) drop-shadow(0 0 22px ${NEON_PURPLE}88)`,
-                  }}
-                />
-                <span
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold tracking-[0.22em] px-1.5 py-0.5 rounded-full border whitespace-nowrap"
-                  style={{
-                    color: GOLD,
-                    borderColor: `${GOLD}88`,
-                    background: "rgba(0,0,0,0.7)",
-                    boxShadow: `0 0 10px ${GOLD}55`,
-                  }}
-                >
-                  {zodiacLabel}
+            <p className="mt-2 text-[12px] text-foreground/85 leading-snug px-4">{bio}</p>
+            <div className="mt-1.5 flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-0.5">
+                <MapPin className="w-3 h-3" style={{ color: GOLD }} />{" "}
+                {profile.showLocation === false
+                  ? "Location hidden"
+                  : profile.location || "Location not set"}
+              </span>
+              {profile.websiteLink && (
+                <span className="inline-flex items-center gap-0.5">
+                  <Link2 className="w-3 h-3" style={{ color: NEON_BLUE }} /> {profile.websiteLink}
                 </span>
-              </div>
-              ) : (
-                <div className="panel flex h-[96px] w-[96px] items-center justify-center rounded-full text-center text-[10px] text-muted-foreground">
-                  Zodiac hidden
-                </div>
               )}
             </div>
 
-            {/* RIGHT — values pushed to far right */}
-            <ul className="space-y-1.5 justify-self-end text-right">
+            {/* ACTION ROW — Follow / Subscribe / Message / Gift */}
+            <div
+              className={`mt-3 grid gap-2 max-w-md mx-auto ${showGiftButton ? "grid-cols-4" : "grid-cols-3"} ${showSelfControls ? "hidden" : ""}`}
+            >
               {[
-                { v: profile.joinedDate || "-", c: "#fff" },
-                { v: profile.profileType === "creator" ? "Creator" : "Member", c: "#fff" },
-                { v: profile.profileVisibility?.replace("_", " ") || "public", c: GREEN },
-                { v: showVerifiedBadge ? "Verified" : "-", c: showVerifiedBadge ? NEON_BLUE : "#fff" },
-                { v: profile.location || "-", c: "#fff" },
-              ].map(({ v, c }, i) => (
-                <li key={i} className="font-medium" style={{ color: c }}>
-                  {v}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        </div>
-        {/* ============ RIGHT COLUMN ============ */}
-        <div className="space-y-3">
+                {
+                  l: following ? "Following" : "Follow",
+                  I: following ? BadgeCheck : UserPlus,
+                  c: NEON_PURPLE,
+                  primary: true,
+                  onClick: handleFollow,
+                },
+                ...(showCreatorBadge
+                  ? [
+                      {
+                        l: "Subscribe",
+                        I: Sparkles,
+                        c: GOLD,
+                        primary: false,
+                        onClick: () => toast("Creator subscriptions are coming soon."),
+                      },
+                    ]
+                  : []),
+                {
+                  l: "Message",
+                  I: Mail,
+                  c: NEON_BLUE,
+                  primary: false,
+                  onClick: () => {
+                    window.location.href = `/inbox?to=${encodeURIComponent(handle)}`;
+                  },
+                },
+                ...(showGiftButton
+                  ? [
+                      {
+                        l: "Gift",
+                        I: Heart,
+                        c: PINK,
+                        primary: false,
+                        onClick: () => setGiftOpen(true),
+                      },
+                    ]
+                  : []),
+              ].map(({ l, I, c, primary, onClick }) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={onClick}
+                  disabled={l === "Follow" && !canFollow}
+                  className="cert-btn group"
+                  data-primary={primary ? "true" : "false"}
+                  style={{ "--btn-c": c } as CSSProperties}
+                >
+                  <span aria-hidden className="cert-btn__border" />
+                  <span aria-hidden className="cert-btn__surface" />
 
-        {/* ============ TABS ============ */}
-        <div
-          className="panel neon-border grid grid-cols-4 reveal"
-          style={{ animationDelay: ".15s" }}
-        >
-          {["Posts", "Likes", "Saved", "About"].map((t, i) => (
-            <button
-              key={t}
-              className={`relative py-3 text-[12px] font-semibold transition active:scale-95 ${i === 0 ? "text-white" : "text-muted-foreground hover:text-white"}`}
-            >
-              {t}
-              {i === 0 && (
-                <span
-                  className="absolute bottom-0 left-1/3 right-1/3 h-[2px] rounded-full"
-                  style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* ============ POSTS ============ */}
-        <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }}
-              />
-              <h3 className="font-semibold text-xs">Recent Posts</h3>
-            </div>
-            <a
-              className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white"
-              href="#"
-            >
-              View all <ChevronRight className="w-2.5 h-2.5" />
-            </a>
-          </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
-            {posts.length > 0 ? posts.map((p, i) => (
-              <div
-                key={i}
-                className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition"
-              >
-                <img
-                  src={p.img}
-                  alt={`Post ${i + 1}`}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
-                {p.pinned && (
-                  <div
-                    className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center"
-                    style={{ background: GOLD }}
-                  >
-                    <Pin className="w-2 h-2 text-black" />
-                  </div>
-                )}
-                <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
-                  <span className="inline-flex items-center gap-0.5">
-                    <Play className="w-2 h-2 fill-current" /> {p.views}
+                  {/* tiny certified tick — top right */}
+                  <span aria-hidden className="cert-btn__cert">
+                    <svg viewBox="0 0 12 12" className="w-2 h-2" fill="none">
+                      <path
+                        d="M2.5 6.2 L4.8 8.4 L9.5 3.5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </span>
-                  <span className="text-white/70">{p.time}</span>
-                </div>
-              </div>
-            )) : (
-              <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-muted-foreground">
-                No public posts yet.
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* ============ TOP 3 FRIENDS ============ */}
-        <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
-              />
-              <h3 className="font-semibold text-xs">Top 3 Friends</h3>
-              <span className="text-[9px] text-muted-foreground">· inner circle</span>
+                  <span className="cert-btn__content">
+                    <span className="cert-btn__icon">
+                      <I className="w-3.5 h-3.5" strokeWidth={2.25} />
+                    </span>
+                    <span className="cert-btn__label">{l}</span>
+                  </span>
+                </button>
+              ))}
             </div>
-            <a
-              className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white"
-              href="#"
-            >
-              View all <ChevronRight className="w-2.5 h-2.5" />
-            </a>
-          </div>
-          <div className="grid grid-cols-3 gap-3 md:gap-5 place-items-center pt-2 pb-1">
-            {topThreeCards.length > 0 ? topThreeCards.map((f) => (
-              <div key={f.uid || f.handle || f.name} className="relative group flex flex-col items-center gap-1.5">
-                {/* Outer animated conic ring */}
-                <ProfilePictureLink publicProfileUid={f.uid} label={`Open ${f.name}'s public profile`} className="relative w-20 h-20 md:w-24 md:h-24">
-                  <div
+
+            {showChannelCTA && (
+              <div className="mt-3 flex justify-center">
+                <Link
+                  to={channelUrl as any}
+                  className="group relative inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-extrabold text-[12px] uppercase tracking-[0.18em] text-black overflow-hidden active:scale-95 hover:scale-[1.04] transition-transform"
+                  style={{
+                    background: `linear-gradient(135deg, #FFE9A8 0%, ${GOLD} 35%, #E9A917 60%, #FFF3C4 100%)`,
+                    boxShadow: `0 0 0 1px rgba(255,255,255,0.35) inset, 0 0 22px ${GOLD}99, 0 0 48px ${GOLD}66, 0 8px 30px rgba(0,0,0,0.55)`,
+                  }}
+                >
+                  <span
                     aria-hidden
-                    className="absolute -inset-1 rounded-full animate-spin-slow opacity-90"
+                    className="absolute -inset-[2px] rounded-full opacity-90 animate-spin-slow -z-10"
                     style={{
-                      background: `conic-gradient(from 0deg, ${f.color}, ${f.accent}, ${f.color}, transparent 70%, ${f.color})`,
+                      background: `conic-gradient(from 0deg, ${GOLD}, ${PINK}, ${NEON_PURPLE}, ${NEON_BLUE}, ${GOLD})`,
+                      filter: "blur(6px)",
                     }}
                   />
-                  {/* Glow halo */}
-                  <div
+                  <span
                     aria-hidden
-                    className="absolute -inset-3 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition"
-                    style={{ background: `radial-gradient(circle, ${f.color}77, transparent 70%)` }}
+                    className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(110deg, transparent 38%, rgba(255,255,255,0.85) 50%, transparent 62%)",
+                    }}
                   />
-                  {/* Inner dark gap */}
-                  <div className="absolute inset-0 rounded-full bg-[#05070D] p-[3px]">
-                    {/* Avatar */}
-                    <div className="w-full h-full rounded-full overflow-hidden border border-white/20">
-                      <AvatarWithFallback src={f.img} alt={f.name} name={f.name} uid={f.uid} size="lg" className="w-full h-full object-cover group-hover:scale-110 transition duration-700" />
-                    </div>
-                  </div>
-                  {/* Rank medal — matches Badges/Connect aesthetic */}
-                  <div
-                    className="absolute -bottom-1.5 -right-1.5 w-8 h-8 flex items-center justify-center"
-                    style={{ color: f.color }}
-                  >
-                    <div
-                      className="absolute inset-0 rounded-full blur-md opacity-70"
-                      style={{ background: f.color }}
-                    />
-                    <div
-                      className="absolute inset-0 rounded-full border-2"
-                      style={{
-                        borderColor: f.color,
-                        background: `radial-gradient(circle at 35% 30%, ${f.color}66, #0a0418 85%)`,
-                        backdropFilter: "blur(4px)",
-                        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px ${f.color}99`,
-                      }}
-                    />
-                    <span
-                      className="relative z-10 text-[14px] font-black leading-none"
-                      style={{
-                        color: "#ffffff",
-                        textShadow: `0 1px 0 rgba(0,0,0,0.85), 0 0 6px ${f.color}, 0 0 12px ${f.color}cc`,
-                        WebkitTextStroke: `0.5px rgba(0,0,0,0.6)`,
-                        fontFeatureSettings: '"tnum","ss01"',
-                      }}
-                    >
-                      {f.rank}
-                    </span>
-                  </div>
+                  <Play className="w-4 h-4 fill-black" strokeWidth={2.5} />
+                  <span className="relative">View My Channel</span>
+                  <ChevronRight className="w-4 h-4" strokeWidth={3} />
+                </Link>
+              </div>
+            )}
 
-                </ProfilePictureLink>
-                <div className="text-center max-w-[88px]">
-                  <div className="text-[11px] font-bold text-white leading-tight truncate">
-                    {f.name}
-                  </div>
-                  <div
-                    className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5 text-black"
-                    style={{ background: f.color, boxShadow: `0 0 8px ${f.color}90` }}
+            {/* ============ EDIT PROFILE + VIEW PUBLIC (owner only) ============ */}
+            {showSelfControls && (
+              <div className="mt-2 flex justify-center items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/edit-profile";
+                  }}
+                  className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
+                  style={{
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.45)",
+                  }}
+                >
+                  <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                  <span>Edit Profile</span>
+                </button>
+
+                <Link
+                  to={profileUrl as any}
+                  aria-label="View public profile"
+                  className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white overflow-hidden active:scale-95 hover:scale-[1.03] transition-transform"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(236,72,153,0.18) 50%, rgba(34,211,238,0.18))",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 22px rgba(168,85,247,0.35), 0 6px 22px rgba(34,211,238,0.25)",
+                  }}
+                >
+                  {/* iridescent conic border */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 rounded-full p-[1px]"
+                    style={{
+                      background: `conic-gradient(from 0deg, ${NEON_PURPLE}, ${PINK}, ${NEON_BLUE}, ${NEON_PURPLE})`,
+                      WebkitMask:
+                        "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+                      WebkitMaskComposite: "xor",
+                      maskComposite: "exclude",
+                    }}
+                  />
+                  {/* glass surface */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-[1px] rounded-full -z-0"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35))",
+                      backdropFilter: "blur(8px)",
+                    }}
+                  />
+                  {/* shimmer sweep */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-[1100ms] ease-out pointer-events-none"
+                    style={{
+                      background:
+                        "linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.45) 50%, transparent 60%)",
+                    }}
+                  />
+                  <Eye
+                    className="relative w-3.5 h-3.5"
+                    style={{ color: NEON_BLUE }}
+                    strokeWidth={2.5}
+                  />
+                  <span className="relative">View Public Profile</span>
+                  <ExternalLink className="relative w-3 h-3 opacity-80" strokeWidth={2.5} />
+                </Link>
+              </div>
+            )}
+
+            {isPublic && (
+              <div className="mt-2 flex justify-center">
+                <Link
+                  to={profileUrl as any}
+                  className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
+                  style={{
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.45)",
+                  }}
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" style={{ color: NEON_PURPLE }} />
+                  <span>Back to My View</span>
+                </Link>
+              </div>
+            )}
+            {socialLinks.length > 0 && (
+              <div className="mt-3.5 flex items-center justify-center gap-1">
+                {socialLinks.map(({ icon: I, color: c, title, href }) => (
+                  <a
+                    key={title}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={title}
+                    className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 active:scale-90 transition"
+                    style={{ color: c }}
                   >
-                    {f.badge}
+                    <I aria-hidden="true" className="w-3.5 h-3.5" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:items-start space-y-3 lg:space-y-0">
+          {/* ============ LEFT COLUMN (sticky on desktop) ============ */}
+          <div className="space-y-3 lg:sticky lg:top-4">
+            {/* ============ OWNER CERTIFICATION STRIP ============ */}
+            {showOwnerBadge && (
+              <div className="panel neon-border p-2.5 reveal" style={{ animationDelay: ".05s" }}>
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  {[
+                    { I: ShieldCheck, l: "Identity", s: "Confirmed", c: GOLD },
+                    { I: Fingerprint, l: "Original", s: "Account", c: NEON_BLUE },
+                    { I: KeyRound, l: "Owner", s: "Verified", c: NEON_PURPLE },
+                  ].map(({ I, l, s, c }) => (
+                    <div
+                      key={l}
+                      className="flex flex-col items-center gap-0.5 py-1 transition hover:-translate-y-0.5"
+                    >
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{
+                          background: `${c}1A`,
+                          border: `1px solid ${c}66`,
+                          boxShadow: `0 0 12px ${c}55, inset 0 0 8px ${c}22`,
+                        }}
+                      >
+                        <I className="w-3.5 h-3.5" style={{ color: c }} />
+                      </div>
+                      <div
+                        className="text-[10px] font-bold leading-none mt-0.5"
+                        style={{ color: c }}
+                      >
+                        {l}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground leading-none">{s}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ============ STAT BAR ============ */}
+            <div
+              className="panel neon-border grid grid-cols-4 divide-x divide-white/5 reveal"
+              style={{ animationDelay: ".08s" }}
+            >
+              {[
+                { I: FileText, c: NEON_BLUE, v: formatStat(profile.stats.posts), l: "Posts" },
+                { I: Users, c: NEON_PURPLE, v: formatStat(followers), l: "Followers" },
+                { I: UserPlus, c: PINK, v: formatStat(profile.stats.following), l: "Following" },
+                { I: Sparkles, c: GOLD, v: formatStat(profile.stats.prescriptions), l: "Rx" },
+              ].map(({ I, c, v, l }) => (
+                <button
+                  key={l}
+                  className="flex items-center justify-center gap-1.5 px-1 py-2.5 transition hover:bg-white/[0.03] active:scale-[0.98]"
+                >
+                  <I
+                    className="w-3.5 h-3.5"
+                    style={{ color: c, filter: `drop-shadow(0 0 6px ${c})` }}
+                  />
+                  <div className="text-left">
+                    <div className="text-sm font-bold leading-none tabular-nums">{v}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{l}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* ============ BIO / ABOUT ============ */}
+            <div
+              className="panel neon-border p-3 reveal relative"
+              style={{ animationDelay: ".1s" }}
+            >
+              {/* About header */}
+              <div className="mb-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: NEON_PURPLE, boxShadow: `0 0 8px ${NEON_PURPLE}` }}
+                  />
+                  <h3 className="font-semibold text-xs">
+                    About {displayName.split(" ")[0] || displayName}
+                  </h3>
+                </div>
+                <p className="text-[11px] text-foreground/80 leading-relaxed mb-2">{bio}</p>
+                <button className="rounded-full border border-white/15 px-2.5 py-1 text-[10px] font-semibold inline-flex items-center gap-0.5 hover:bg-white/5 transition">
+                  Full bio <ChevronRight className="w-2.5 h-2.5" />
+                </button>
+              </div>
+
+              {/* Facts table — labels far LEFT (under "Full bio") | TAURUS center | values far RIGHT (under "3.2K") */}
+              <div className="grid grid-cols-[auto_1fr_auto] gap-x-2 md:gap-x-6 gap-y-1.5 items-center text-[10px] md:text-[11px] w-full">
+                {/* LEFT — labels pushed to far left */}
+                <ul className="space-y-1.5 justify-self-start">
+                  {[
+                    { I: Globe, l: "Member since" },
+                    { I: Sparkle, l: "Profile type" },
+                    { I: User, l: "Visibility" },
+                    { I: BadgeCheck, l: "Verification" },
+                    { I: Clock, l: "Location" },
+                  ].map(({ I, l }) => (
+                    <li key={l} className="flex items-center gap-2 text-left">
+                      <I className="w-3 h-3 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">{l}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CENTER — Taurus zodiac badge */}
+                <div className="flex justify-center self-center">
+                  {showZodiac ? (
+                    <div className="relative w-[96px] h-[112px] md:w-[120px] md:h-[140px] flex items-center justify-center">
+                      <div
+                        className="absolute inset-0 rounded-full blur-2xl opacity-60"
+                        style={{
+                          background: `radial-gradient(circle, ${GOLD}66, transparent 70%)`,
+                        }}
+                      />
+                      <div
+                        className="absolute inset-1 rounded-full animate-spin-slow"
+                        style={{
+                          background: `conic-gradient(${GOLD}, transparent 30%, ${NEON_PURPLE}, transparent 60%, ${GOLD})`,
+                          WebkitMask:
+                            "radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%)",
+                          mask: "radial-gradient(circle, transparent 60%, #000 62%, #000 66%, transparent 68%)",
+                          filter: `drop-shadow(0 0 8px ${GOLD})`,
+                        }}
+                      />
+                      <img
+                        src={taurusBull}
+                        alt={`${zodiacLabel} zodiac`}
+                        className="relative w-[64px] md:w-[80px] animate-float"
+                        style={{
+                          filter: `drop-shadow(0 0 12px ${GOLD}) drop-shadow(0 0 22px ${NEON_PURPLE}88)`,
+                        }}
+                      />
+                      <span
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[7px] font-bold tracking-[0.22em] px-1.5 py-0.5 rounded-full border whitespace-nowrap"
+                        style={{
+                          color: GOLD,
+                          borderColor: `${GOLD}88`,
+                          background: "rgba(0,0,0,0.7)",
+                          boxShadow: `0 0 10px ${GOLD}55`,
+                        }}
+                      >
+                        {zodiacLabel}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="panel flex h-[96px] w-[96px] items-center justify-center rounded-full text-center text-[10px] text-muted-foreground">
+                      Zodiac hidden
+                    </div>
+                  )}
+                </div>
+
+                {/* RIGHT — values pushed to far right */}
+                <ul className="space-y-1.5 justify-self-end text-right">
+                  {[
+                    { v: profile.joinedDate || "-", c: "#fff" },
+                    { v: profile.profileType === "creator" ? "Creator" : "Member", c: "#fff" },
+                    { v: profile.profileVisibility?.replace("_", " ") || "public", c: GREEN },
+                    {
+                      v: showVerifiedBadge ? "Verified" : "-",
+                      c: showVerifiedBadge ? NEON_BLUE : "#fff",
+                    },
+                    { v: profile.location || "-", c: "#fff" },
+                  ].map(({ v, c }, i) => (
+                    <li key={i} className="font-medium" style={{ color: c }}>
+                      {v}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+          {/* ============ RIGHT COLUMN ============ */}
+          <div className="space-y-3">
+            {/* ============ TABS ============ */}
+            <div
+              className="panel neon-border grid grid-cols-4 reveal"
+              style={{ animationDelay: ".15s" }}
+            >
+              {["Posts", "Likes", "Saved", "About"].map((t, i) => (
+                <button
+                  key={t}
+                  className={`relative py-3 text-[12px] font-semibold transition active:scale-95 ${i === 0 ? "text-white" : "text-muted-foreground hover:text-white"}`}
+                >
+                  {t}
+                  {i === 0 && (
+                    <span
+                      className="absolute bottom-0 left-1/3 right-1/3 h-[2px] rounded-full"
+                      style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* ============ POSTS ============ */}
+            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".2s" }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: NEON_BLUE, boxShadow: `0 0 8px ${NEON_BLUE}` }}
+                  />
+                  <h3 className="font-semibold text-xs">Recent Posts</h3>
+                </div>
+                <a
+                  className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white"
+                  href="#"
+                >
+                  View all <ChevronRight className="w-2.5 h-2.5" />
+                </a>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                {posts.length > 0 ? (
+                  posts.map((p, i) => (
+                    <div
+                      key={i}
+                      className="relative aspect-[3/4] rounded-lg overflow-hidden border border-white/10 group hover:border-white/30 transition"
+                    >
+                      <img
+                        src={p.img}
+                        alt={`Post ${i + 1}`}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent" />
+                      {p.pinned && (
+                        <div
+                          className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ background: GOLD }}
+                        >
+                          <Pin className="w-2 h-2 text-black" />
+                        </div>
+                      )}
+                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-between text-[8px] font-medium text-white">
+                        <span className="inline-flex items-center gap-0.5">
+                          <Play className="w-2 h-2 fill-current" /> {p.views}
+                        </span>
+                        <span className="text-white/70">{p.time}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-muted-foreground">
+                    No public posts yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ============ TOP 3 FRIENDS ============ */}
+            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".22s" }}>
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
+                  />
+                  <h3 className="font-semibold text-xs">Top 3 Friends</h3>
+                  <span className="text-[9px] text-muted-foreground">· inner circle</span>
+                </div>
+                <a
+                  className="text-[9px] text-muted-foreground inline-flex items-center gap-0.5 hover:text-white"
+                  href="#"
+                >
+                  View all <ChevronRight className="w-2.5 h-2.5" />
+                </a>
+              </div>
+              <div className="grid grid-cols-3 gap-3 md:gap-5 place-items-center pt-2 pb-1">
+                {topThreeCards.length > 0 ? (
+                  topThreeCards.map((f) => (
+                    <div
+                      key={f.uid || f.handle || f.name}
+                      className="relative group flex flex-col items-center gap-1.5"
+                    >
+                      {/* Outer animated conic ring */}
+                      <ProfilePictureLink
+                        publicProfileUid={f.uid}
+                        label={`Open ${f.name}'s public profile`}
+                        className="relative w-20 h-20 md:w-24 md:h-24"
+                      >
+                        <div
+                          aria-hidden
+                          className="absolute -inset-1 rounded-full animate-spin-slow opacity-90"
+                          style={{
+                            background: `conic-gradient(from 0deg, ${f.color}, ${f.accent}, ${f.color}, transparent 70%, ${f.color})`,
+                          }}
+                        />
+                        {/* Glow halo */}
+                        <div
+                          aria-hidden
+                          className="absolute -inset-3 rounded-full blur-xl opacity-70 group-hover:opacity-100 transition"
+                          style={{
+                            background: `radial-gradient(circle, ${f.color}77, transparent 70%)`,
+                          }}
+                        />
+                        {/* Inner dark gap */}
+                        <div className="absolute inset-0 rounded-full bg-[#05070D] p-[3px]">
+                          {/* Avatar */}
+                          <div className="w-full h-full rounded-full overflow-hidden border border-white/20">
+                            <AvatarWithFallback
+                              src={f.img}
+                              alt={f.name}
+                              name={f.name}
+                              uid={f.uid}
+                              size="lg"
+                              className="w-full h-full object-cover group-hover:scale-110 transition duration-700"
+                            />
+                          </div>
+                        </div>
+                        {/* Rank medal — matches Badges/Connect aesthetic */}
+                        <div
+                          className="absolute -bottom-1.5 -right-1.5 w-8 h-8 flex items-center justify-center"
+                          style={{ color: f.color }}
+                        >
+                          <div
+                            className="absolute inset-0 rounded-full blur-md opacity-70"
+                            style={{ background: f.color }}
+                          />
+                          <div
+                            className="absolute inset-0 rounded-full border-2"
+                            style={{
+                              borderColor: f.color,
+                              background: `radial-gradient(circle at 35% 30%, ${f.color}66, #0a0418 85%)`,
+                              backdropFilter: "blur(4px)",
+                              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px ${f.color}99`,
+                            }}
+                          />
+                          <span
+                            className="relative z-10 text-[14px] font-black leading-none"
+                            style={{
+                              color: "#ffffff",
+                              textShadow: `0 1px 0 rgba(0,0,0,0.85), 0 0 6px ${f.color}, 0 0 12px ${f.color}cc`,
+                              WebkitTextStroke: `0.5px rgba(0,0,0,0.6)`,
+                              fontFeatureSettings: '"tnum","ss01"',
+                            }}
+                          >
+                            {f.rank}
+                          </span>
+                        </div>
+                      </ProfilePictureLink>
+                      <div className="text-center max-w-[88px]">
+                        <div className="text-[11px] font-bold text-white leading-tight truncate">
+                          {f.name}
+                        </div>
+                        <div
+                          className="text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full inline-block mt-0.5 text-black"
+                          style={{ background: f.color, boxShadow: `0 0 8px ${f.color}90` }}
+                        >
+                          {f.badge}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-3 py-8 text-center text-xs text-muted-foreground">
+                    No Top 3 friends yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ============ CONNECT ============ */}
+            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".25s" }}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span
+                  className="w-1.5 h-1.5 rounded-full"
+                  style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }}
+                />
+                <h3 className="font-semibold text-xs">Connect</h3>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
+                {socialLinks.length > 0 ? (
+                  socialLinks.map((link) => (
+                    <LinkRow
+                      key={link.title}
+                      icon={link.icon}
+                      color={link.color}
+                      accent={link.accent}
+                      title={link.title}
+                      sub={link.sub}
+                      href={link.href}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-xs text-muted-foreground">
+                    No public social links yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ============ BADGES ============ */}
+            <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".3s" }}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
+                  />
+                  <h3 className="font-semibold text-xs">Badges</h3>
+                </div>
+                <span className="text-[9px] text-muted-foreground">
+                  {earnedBadges.length} earned
+                </span>
+              </div>
+              <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-2.5">
+                {earnedBadges.length > 0 ? (
+                  earnedBadges.map((badge) => (
+                    <Medallion
+                      key={badge.label}
+                      icon={badge.icon}
+                      label={badge.label}
+                      color={badge.color}
+                      accent={badge.accent}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full py-5 text-center text-xs text-muted-foreground">
+                    No public badges assigned yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ============ PRESCRIBE ME ============ */}
+            {showPrescribePanel && (
+              <div
+                className="panel neon-border p-3 relative overflow-hidden reveal"
+                style={{ animationDelay: ".35s" }}
+              >
+                <div
+                  className="absolute inset-0 opacity-60"
+                  style={{
+                    background: `radial-gradient(circle at 50% 40%, ${PINK}33, transparent 60%)`,
+                  }}
+                />
+                <div className="relative flex items-center gap-3">
+                  <img
+                    src={prescribeLock}
+                    alt=""
+                    className="h-16 w-auto animate-float drop-shadow-[0_0_20px_rgba(255,80,200,0.7)] shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-xs mb-0.5">Prescribe Me</h3>
+                    <p className="text-[10px] text-foreground/80 mb-2 leading-snug">
+                      Unlock exclusive content & deeper access.
+                    </p>
+                    <button
+                      className="rounded-full px-3 py-1.5 text-[10px] font-bold transition hover:scale-[1.02]"
+                      style={{ background: GOLD, color: "#000", boxShadow: `0 0 16px ${GOLD}66` }}
+                    >
+                      Prescribe Now
+                    </button>
                   </div>
                 </div>
               </div>
-            )) : (
-              <div className="col-span-3 py-8 text-center text-xs text-muted-foreground">
-                No Top 3 friends yet.
-              </div>
             )}
           </div>
         </div>
-
-        {/* ============ CONNECT ============ */}
-        <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".25s" }}>
-          <div className="flex items-center gap-1.5 mb-2">
-            <span
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: PINK, boxShadow: `0 0 8px ${PINK}` }}
-            />
-            <h3 className="font-semibold text-xs">Connect</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5">
-            {socialLinks.length > 0 ? socialLinks.map((link) => (
-              <LinkRow key={link.title} icon={link.icon} color={link.color} accent={link.accent} title={link.title} sub={link.sub} href={link.href} />
-            )) : (
-              <div className="col-span-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center text-xs text-muted-foreground">
-                No public social links yet.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ============ BADGES ============ */}
-        <div className="panel neon-border p-3 reveal" style={{ animationDelay: ".3s" }}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: GOLD, boxShadow: `0 0 8px ${GOLD}` }}
-              />
-              <h3 className="font-semibold text-xs">Badges</h3>
-            </div>
-            <span className="text-[9px] text-muted-foreground">{earnedBadges.length} earned</span>
-          </div>
-          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-y-2.5">
-            {earnedBadges.length > 0 ? earnedBadges.map((badge) => (
-              <Medallion key={badge.label} icon={badge.icon} label={badge.label} color={badge.color} accent={badge.accent} />
-            )) : (
-              <div className="col-span-full py-5 text-center text-xs text-muted-foreground">
-                No public badges assigned yet.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ============ PRESCRIBE ME ============ */}
-        {showPrescribePanel && (
-          <div
-            className="panel neon-border p-3 relative overflow-hidden reveal"
-            style={{ animationDelay: ".35s" }}
-          >
-            <div
-              className="absolute inset-0 opacity-60"
-              style={{ background: `radial-gradient(circle at 50% 40%, ${PINK}33, transparent 60%)` }}
-            />
-            <div className="relative flex items-center gap-3">
-              <img
-                src={prescribeLock}
-                alt=""
-                className="h-16 w-auto animate-float drop-shadow-[0_0_20px_rgba(255,80,200,0.7)] shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-xs mb-0.5">Prescribe Me</h3>
-                <p className="text-[10px] text-foreground/80 mb-2 leading-snug">
-                  Unlock exclusive content & deeper access.
-                </p>
-                <button
-                  className="rounded-full px-3 py-1.5 text-[10px] font-bold transition hover:scale-[1.02]"
-                  style={{ background: GOLD, color: "#000", boxShadow: `0 0 16px ${GOLD}66` }}
-                >
-                  Prescribe Now
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        </div>
-       </div>
       </div>
 
       <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={handle} />

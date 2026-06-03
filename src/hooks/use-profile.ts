@@ -43,6 +43,15 @@ export interface SupabaseProfile {
   gif_of_day_url?: string | null;
   gif_of_day_poster_url?: string | null;
   gif_of_day_caption?: string | null;
+  profile_song_id?: string | null;
+  profile_preferences?: Record<string, any> | null;
+}
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value?: string | null): value is string {
+  return Boolean(value && UUID_PATTERN.test(value));
 }
 
 export function useProfile(publicUid: string) {
@@ -60,7 +69,9 @@ export function useProfile(publicUid: string) {
         const supabase = createBrowserClient();
         const { data, error } = await supabase
           .from("profiles")
-          .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile")
+          .select(
+            "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile, profile_song_id, profile_preferences",
+          )
           .eq("public_profile_uid", publicUid)
           .single();
 
@@ -68,12 +79,32 @@ export function useProfile(publicUid: string) {
           throw error;
         }
 
-        const [followersResult, followingResult, postsResult, subscribersResult] = await Promise.all([
-          supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", (data as any).id),
-          supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", (data as any).id),
-          supabase.from("user_feed_posts").select("id", { count: "exact", head: true }).eq("user_id", (data as any).id),
-          (supabase as any).from("creator_subscriptions").select("id", { count: "exact", head: true }).eq("subscribed_to_id", (data as any).id),
-        ]);
+        const profileId = (data as any).id as string | undefined;
+        const [followersResult, followingResult, postsResult, subscribersResult] = isUuid(profileId)
+          ? await Promise.all([
+              supabase
+                .from("follows")
+                .select("follower_id", { count: "exact", head: true })
+                .eq("following_id", profileId),
+              supabase
+                .from("follows")
+                .select("following_id", { count: "exact", head: true })
+                .eq("follower_id", profileId),
+              supabase
+                .from("user_feed_posts")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", profileId),
+              (supabase as any)
+                .from("creator_subscriptions")
+                .select("id", { count: "exact", head: true })
+                .eq("subscribed_to_id", profileId),
+            ])
+          : [
+              { count: 0 },
+              { count: 0 },
+              { count: 0 },
+              { count: 0 },
+            ];
 
         if (mounted) {
           setProfile({
@@ -126,8 +157,18 @@ export function useRelationshipStatus(targetUserId: string) {
     async function fetchStatus() {
       try {
         setLoading(true);
+        if (!isUuid(targetUserId)) {
+          if (mounted) {
+            setStatus(null);
+            setLoading(false);
+          }
+          return;
+        }
+
         const supabase = createBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (!user) {
           if (mounted) {
@@ -188,6 +229,11 @@ export function useTopThree(profileUserId: string) {
     async function fetchTopThree() {
       try {
         setLoading(true);
+        if (!isUuid(profileUserId)) {
+          if (mounted) setTopThree([]);
+          return;
+        }
+
         const supabase = createBrowserClient();
 
         const { data, error } = await supabase.rpc("get_profile_top_three", {

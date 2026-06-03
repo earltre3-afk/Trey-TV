@@ -7,7 +7,13 @@ export type Comment = {
   id: string;
   postId: string;
   parentId?: string;
-  author: { id?: string; publicProfileUid?: string | null; name: string; handle: string; avatar: string };
+  author: {
+    id?: string;
+    publicProfileUid?: string | null;
+    name: string;
+    handle: string;
+    avatar: string;
+  };
   text: string;
   likes: number;
   likedByMe: boolean;
@@ -21,7 +27,12 @@ export type Comment = {
 type Ctx = {
   byPost: (postId: string) => Comment[];
   loaded: (postId: string) => boolean;
-  add: (postId: string, text: string, parentId?: string, gif?: { gifUrl?: string | null; gifPosterUrl?: string | null; gifFwdId?: string | null }) => Promise<boolean>;
+  add: (
+    postId: string,
+    text: string,
+    parentId?: string,
+    gif?: { gifUrl?: string | null; gifPosterUrl?: string | null; gifFwdId?: string | null },
+  ) => Promise<boolean>;
   toggleLike: (id: string) => Promise<boolean>;
   remove: (id: string) => Promise<boolean>;
   edit: (id: string, text: string) => Promise<boolean>;
@@ -32,11 +43,28 @@ const C = createContext<Ctx | null>(null);
 const KEY = "treytv_comments_v1";
 
 const SEED: Comment[] = [
-  { id: "c-seed-1", postId: "p1", author: { name: "Aria Knox", handle: "ariaknox", avatar: "https://i.pravatar.cc/120?img=47" }, text: "This shot is unreal", likes: 12, likedByMe: false, createdAt: Date.now() - 1000 * 60 * 22 },
-  { id: "c-seed-2", postId: "p1", author: { name: "Miles Vega", handle: "milesvega", avatar: "https://i.pravatar.cc/120?img=12" }, text: "Drop the preset pls", likes: 4, likedByMe: false, createdAt: Date.now() - 1000 * 60 * 8 },
+  {
+    id: "c-seed-1",
+    postId: "p1",
+    author: { name: "Aria Knox", handle: "ariaknox", avatar: "https://i.pravatar.cc/120?img=47" },
+    text: "This shot is unreal",
+    likes: 12,
+    likedByMe: false,
+    createdAt: Date.now() - 1000 * 60 * 22,
+  },
+  {
+    id: "c-seed-2",
+    postId: "p1",
+    author: { name: "Miles Vega", handle: "milesvega", avatar: "https://i.pravatar.cc/120?img=12" },
+    text: "Drop the preset pls",
+    likes: 4,
+    likedByMe: false,
+    createdAt: Date.now() - 1000 * 60 * 8,
+  },
 ];
 
-const isUUID = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
+const isUUID = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 
 export function CommentsProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Comment[]>([]);
@@ -68,10 +96,16 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   }, [items, supabaseUser?.id]);
 
   const fetchCommentsForPost = async (postId: string) => {
+    if (!isUUID(postId)) {
+      setLoadedPosts((prev) => new Set(prev).add(postId));
+      return;
+    }
+
     const supabase = createBrowserClient();
     const { data, error } = await (supabase as any)
       .from("user_post_comments")
-      .select(`
+      .select(
+        `
         id,
         post_id,
         creator_id,
@@ -80,16 +114,25 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         gif_url,
         gif_poster_url,
         gif_fwd_id,
-        edited_at,
+        updated_at,
         created_at
-      `)
+      `,
+      )
       .eq("post_id", postId)
       .eq("moderation_status", "visible")
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
 
     if (error) {
-      console.error("Failed to fetch comments for post:", error);
+      console.error("Failed to fetch comments for post:", JSON.stringify(error, null, 2));
+      console.error(
+        "Error message:",
+        error.message,
+        "details:",
+        error.details,
+        "hint:",
+        error.hint,
+      );
       setLoadedPosts((prev) => new Set(prev).add(postId));
       return;
     }
@@ -120,7 +163,6 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       }
     });
 
-
     const likesByComment = new Map<string, number>();
     const likedByMe = new Set<string>();
     reactionRows.forEach((row) => {
@@ -148,13 +190,21 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
         likes: likesByComment.get(row.id) ?? 0,
         likedByMe: likedByMe.has(row.id),
         createdAt: new Date(row.created_at).getTime(),
-        editedAt: row.edited_at ? new Date(row.edited_at).getTime() : undefined,
+        editedAt:
+          row.updated_at &&
+          new Date(row.updated_at).getTime() - new Date(row.created_at).getTime() > 1000
+            ? new Date(row.updated_at).getTime()
+            : undefined,
       };
     });
 
     setItems((prev) => {
       const localOnly = supabaseUser ? [] : prev.filter((c) => !isUUID(c.id));
-      return [...localOnly, ...prev.filter((c) => c.postId !== postId && isUUID(c.id)), ...dbComments];
+      return [
+        ...localOnly,
+        ...prev.filter((c) => c.postId !== postId && isUUID(c.id)),
+        ...dbComments,
+      ];
     });
     setLoadedPosts((prev) => new Set(prev).add(postId));
   };
@@ -198,7 +248,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
 
     setItems((s) => [...s, newComment]);
 
-    if (!supabaseUser) return true;
+    if (!supabaseUser || !isUUID(postId)) return true;
 
     const supabase = createBrowserClient();
     const { data, error } = await (supabase as any)
@@ -222,11 +272,17 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     }
 
     if (data) {
-      setItems((s) => s.map((x) => x.id === localId ? {
-        ...x,
-        id: data.id,
-        createdAt: data.created_at ? new Date(data.created_at).getTime() : x.createdAt,
-      } : x));
+      setItems((s) =>
+        s.map((x) =>
+          x.id === localId
+            ? {
+                ...x,
+                id: data.id,
+                createdAt: data.created_at ? new Date(data.created_at).getTime() : x.createdAt,
+              }
+            : x,
+        ),
+      );
     }
     return true;
   };
@@ -236,22 +292,31 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     if (!comment) return false;
 
     const nextLiked = !comment.likedByMe;
-    setItems((s) => s.map((c) => c.id === id ? {
-      ...c,
-      likedByMe: nextLiked,
-      likes: Math.max(0, c.likes + (nextLiked ? 1 : -1)),
-    } : c));
+    setItems((s) =>
+      s.map((c) =>
+        c.id === id
+          ? {
+              ...c,
+              likedByMe: nextLiked,
+              likes: Math.max(0, c.likes + (nextLiked ? 1 : -1)),
+            }
+          : c,
+      ),
+    );
 
     if (!supabaseUser || !isUUID(id)) return true;
 
     try {
       const supabase = createBrowserClient();
       const result = nextLiked
-        ? await (supabase as any).from("user_comment_reactions").upsert({
-            comment_id: id,
-            user_id: supabaseUser.id,
-            reaction_type: "like",
-          }, { onConflict: "comment_id,user_id" })
+        ? await (supabase as any).from("user_comment_reactions").upsert(
+            {
+              comment_id: id,
+              user_id: supabaseUser.id,
+              reaction_type: "like",
+            },
+            { onConflict: "comment_id,user_id" },
+          )
         : await (supabase as any)
             .from("user_comment_reactions")
             .delete()
@@ -262,11 +327,17 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       return true;
     } catch (error) {
       console.error("Failed to persist comment reaction:", error);
-      setItems((s) => s.map((c) => c.id === id ? {
-        ...c,
-        likedByMe: !nextLiked,
-        likes: Math.max(0, c.likes + (nextLiked ? -1 : 1)),
-      } : c));
+      setItems((s) =>
+        s.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                likedByMe: !nextLiked,
+                likes: Math.max(0, c.likes + (nextLiked ? -1 : 1)),
+              }
+            : c,
+        ),
+      );
       return false;
     }
   };
@@ -300,7 +371,9 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
     const comment = items.find((c) => c.id === id);
     if (!comment) return false;
 
-    setItems((s) => s.map((c) => c.id === id ? { ...c, text: trimmed, editedAt: Date.now() } : c));
+    setItems((s) =>
+      s.map((c) => (c.id === id ? { ...c, text: trimmed, editedAt: Date.now() } : c)),
+    );
 
     if (!supabaseUser || !isUUID(id)) return true;
 
@@ -308,14 +381,14 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
       const supabase = createBrowserClient();
       const { error } = await (supabase as any)
         .from("user_post_comments")
-        .update({ body: trimmed, edited_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({ body: trimmed, updated_at: new Date().toISOString() })
         .eq("id", id)
         .eq("creator_id", supabaseUser.id);
       if (error) throw error;
       return true;
     } catch (error) {
       console.error("Failed to edit comment:", error);
-      setItems((s) => s.map((c) => c.id === id ? comment : c));
+      setItems((s) => s.map((c) => (c.id === id ? comment : c)));
       return false;
     }
   };
@@ -323,7 +396,11 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   const isMine: Ctx["isMine"] = (c) =>
     (!!supabaseUser && c.author.id === supabaseUser.id) || c.author.handle === currentUser.handle;
 
-  return <C.Provider value={{ byPost, loaded, add, toggleLike, remove, edit, isMine }}>{children}</C.Provider>;
+  return (
+    <C.Provider value={{ byPost, loaded, add, toggleLike, remove, edit, isMine }}>
+      {children}
+    </C.Provider>
+  );
 }
 
 export function useComments() {

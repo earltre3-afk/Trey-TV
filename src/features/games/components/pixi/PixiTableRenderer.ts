@@ -4,16 +4,17 @@
  * Game-specific scenes (Blackjack, Spades, Bullshit) add their card/chip
  * content on top of this base.
  */
-import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
-import type { TableLayout } from './pixiLayout';
+import { Application, Container, Graphics, Sprite, Texture } from "pixi.js";
+import type { TableLayout } from "./pixiLayout";
 
-export type TableStyle = 'blackjack' | 'spades' | 'bullshit';
+export type TableStyle = "blackjack" | "spades" | "bullshit";
 
-const STYLE_COLORS: Record<TableStyle, { felt: number; rim: number; spot: number; glow: number }> = {
-  blackjack: { felt: 0x0a1f1a, rim: 0x2a1a04, spot: 0xffc857, glow: 0xffc857 },
-  spades:    { felt: 0x071320, rim: 0x051828, spot: 0x00b7ff, glow: 0x00b7ff },
-  bullshit:  { felt: 0x12082a, rim: 0x0e0420, spot: 0xa855f7, glow: 0xa855f7 },
-};
+const STYLE_COLORS: Record<TableStyle, { felt: number; rim: number; spot: number; glow: number }> =
+  {
+    blackjack: { felt: 0x0a1f1a, rim: 0x2a1a04, spot: 0xffc857, glow: 0xffc857 },
+    spades: { felt: 0x071320, rim: 0x051828, spot: 0x00b7ff, glow: 0x00b7ff },
+    bullshit: { felt: 0x12082a, rim: 0x0e0420, spot: 0xa855f7, glow: 0xa855f7 },
+  };
 
 export interface TableScene {
   app: Application;
@@ -47,8 +48,8 @@ export function buildTableScene(
 ): TableScene {
   const root = new Container();
   const tableLayer = new Container();
-  const cardLayer  = new Container();
-  const fxLayer    = new Container();
+  const cardLayer = new Container();
+  const fxLayer = new Container();
   root.addChild(tableLayer, cardLayer, fxLayer);
   app.stage.addChild(root);
 
@@ -58,12 +59,12 @@ export function buildTableScene(
   // ── Outer rim / felt — transparent so CSS gradient background shows through ──
   const rim = new Graphics();
   const rimPad = Math.min(w, h) * 0.032;
-  rim.roundRect(0, 0, w, h, Math.min(28, w * 0.07))
-    .fill({ color: colors.rim, alpha: 0 });
+  rim.roundRect(0, 0, w, h, Math.min(28, w * 0.07)).fill({ color: colors.rim, alpha: 0 });
   tableLayer.addChild(rim);
 
   const felt = new Graphics();
-  felt.roundRect(rimPad, rimPad, w - rimPad * 2, h - rimPad * 2, Math.min(20, w * 0.05))
+  felt
+    .roundRect(rimPad, rimPad, w - rimPad * 2, h - rimPad * 2, Math.min(20, w * 0.05))
     .fill({ color: colors.felt, alpha: 0 });
   tableLayer.addChild(felt);
 
@@ -78,55 +79,69 @@ export function buildTableScene(
 
   // ── Spotlight A (top center — dealer zone for BJ, top opponent for Spades) ──
   const spotA = new Graphics();
-  spotA.ellipse(w / 2, h * 0.25, w * 0.38, h * 0.18)
-    .fill({ color: colors.spot, alpha: 0.055 });
+  spotA.ellipse(w / 2, h * 0.25, w * 0.38, h * 0.18).fill({ color: colors.spot, alpha: 0.055 });
   tableLayer.addChild(spotA);
 
   // ── Spotlight B (bottom center — player zone) ──
   const spotB = new Graphics();
-  spotB.ellipse(w / 2, h * 0.75, w * 0.38, h * 0.18)
-    .fill({ color: colors.spot, alpha: 0.04 });
+  spotB.ellipse(w / 2, h * 0.75, w * 0.38, h * 0.18).fill({ color: colors.spot, alpha: 0.04 });
   tableLayer.addChild(spotB);
 
   // ── Overhead center spotlight (diffuse round glow) ──────────
   const centerGlow = new Graphics();
-  centerGlow.circle(w / 2, h / 2, Math.min(w, h) * 0.35)
-    .fill({ color: 0xffffff, alpha: 0.025 });
+  centerGlow.circle(w / 2, h / 2, Math.min(w, h) * 0.35).fill({ color: 0xffffff, alpha: 0.025 });
   tableLayer.addChild(centerGlow);
 
   // ── Center ring (casino logo zone) ──────────────────────────
   const centerRing = new Graphics();
   const cr = Math.min(w, h) * 0.16;
-  centerRing.circle(w / 2, h / 2, cr)
+  centerRing
+    .circle(w / 2, h / 2, cr)
     .fill({ color: colors.glow, alpha: 0.025 })
     .stroke({ color: colors.glow, alpha: 0.28, width: 1.2 });
   // Inner ring
-  centerRing.circle(w / 2, h / 2, cr * 0.65)
-    .stroke({ color: 0xffffff, alpha: 0.06, width: 0.8 });
+  centerRing.circle(w / 2, h / 2, cr * 0.65).stroke({ color: 0xffffff, alpha: 0.06, width: 0.8 });
   tableLayer.addChild(centerRing);
 
   // ── Vignette (dark corners) ─────────────────────────────────
   const vig = new Graphics();
-  vig.roundRect(rimPad, rimPad, w - rimPad * 2, h - rimPad * 2, Math.min(20, w * 0.05))
+  vig
+    .roundRect(rimPad, rimPad, w - rimPad * 2, h - rimPad * 2, Math.min(20, w * 0.05))
     .fill({ color: 0x000000, alpha: 0 })
     .stroke({ color: 0x000000, alpha: 0.0 });
   // Shadow insets
-  vig.roundRect(rimPad + 4, rimPad + 4, w - rimPad * 2 - 8, h - rimPad * 2 - 8, Math.min(18, w * 0.04))
+  vig
+    .roundRect(
+      rimPad + 4,
+      rimPad + 4,
+      w - rimPad * 2 - 8,
+      h - rimPad * 2 - 8,
+      Math.min(18, w * 0.04),
+    )
     .fill({ color: 0x000000, alpha: 0 });
   tableLayer.addChild(vig);
 
   // ── Top highlight sheen (lens reflection) ──────────────────
   const sheen = new Graphics();
-  sheen.ellipse(w / 2, rimPad + h * 0.06, w * 0.48, h * 0.06)
+  sheen
+    .ellipse(w / 2, rimPad + h * 0.06, w * 0.48, h * 0.06)
     .fill({ color: 0xffffff, alpha: 0.045 });
   tableLayer.addChild(sheen);
 
   return {
-    app, root,
-    tableLayer, cardLayer, fxLayer,
-    layout, style, reducedMotion,
+    app,
+    root,
+    tableLayer,
+    cardLayer,
+    fxLayer,
+    layout,
+    style,
+    reducedMotion,
     time: 0,
-    rim, felt, spotA, spotB,
+    rim,
+    felt,
+    spotA,
+    spotB,
     centerRing,
   };
 }
@@ -148,7 +163,7 @@ export function tickTableScene(scene: TableScene, dt: number) {
 
   // Subtly pulse the spot lights
   scene.spotA.alpha = 0.85 + pulse * 0.15;
-  scene.spotB.alpha = 0.80 + pulse * 0.20;
+  scene.spotB.alpha = 0.8 + pulse * 0.2;
 }
 
 /**
@@ -173,8 +188,11 @@ export function emitBurst(
     g.y = y;
     scene.fxLayer.addChild(g);
     sparks.push({
-      g, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-      life: 0, ttl: 0.5 + Math.random() * 0.4,
+      g,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0,
+      ttl: 0.5 + Math.random() * 0.4,
     });
   }
   return sparks;
@@ -185,10 +203,10 @@ export function tickSparks(
   sparks: Array<{ g: Graphics; vx: number; vy: number; life: number; ttl: number }>,
   dt: number,
 ): Array<{ g: Graphics; vx: number; vy: number; life: number; ttl: number }> {
-  return sparks.filter(s => {
+  return sparks.filter((s) => {
     s.life += dt;
-    s.g.x = (s.g.x += s.vx * dt);
-    s.g.y = (s.g.y += s.vy * dt);
+    s.g.x = s.g.x += s.vx * dt;
+    s.g.y = s.g.y += s.vy * dt;
     s.vx *= 0.982;
     s.vy *= 0.982;
     s.g.alpha = Math.max(0, 1 - s.life / s.ttl);
@@ -203,5 +221,8 @@ export function tickSparks(
 
 /** Full teardown of the scene */
 export function destroyTableScene(scene: TableScene) {
-  scene.app.destroy({ removeView: true, releaseGlobalResources: true }, { children: true, texture: false });
+  scene.app.destroy(
+    { removeView: true, releaseGlobalResources: true },
+    { children: true, texture: false },
+  );
 }

@@ -59,14 +59,14 @@ Both flows are gated by Trey-I AI moderation (Gemini 2.5 Flash via the existing 
 
 ## 4. Real-time transport matrix
 
-| Concern | Tech | Why |
-|---|---|---|
-| Text chat persistence | Postgres table `chat_messages` | Need history + RLS + AI mod audit |
-| Text chat delivery | Supabase Realtime `postgres_changes` on `chat_messages` filtered by `scope_id` | Already in stack; free; persistent |
-| Channel-change push | Supabase Realtime `broadcast` on topic `wp:<id>` | No DB write needed for the broadcast itself; row update on `watch_parties` is the source of truth |
-| Member presence (online dots) | Supabase Realtime `presence` | Built-in, free |
-| Mic / voice | LiveKit room `wp:<party-id>` | Already wired in `livekit-token.server.ts`; add `"watch-party"` RoomKind |
-| Force-mute mic | `RoomServiceClient.updateParticipant({ canPublish: false })` on `muted_mic=true` | Native LiveKit feature, instant |
+| Concern                       | Tech                                                                             | Why                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Text chat persistence         | Postgres table `chat_messages`                                                   | Need history + RLS + AI mod audit                                                                 |
+| Text chat delivery            | Supabase Realtime `postgres_changes` on `chat_messages` filtered by `scope_id`   | Already in stack; free; persistent                                                                |
+| Channel-change push           | Supabase Realtime `broadcast` on topic `wp:<id>`                                 | No DB write needed for the broadcast itself; row update on `watch_parties` is the source of truth |
+| Member presence (online dots) | Supabase Realtime `presence`                                                     | Built-in, free                                                                                    |
+| Mic / voice                   | LiveKit room `wp:<party-id>`                                                     | Already wired in `livekit-token.server.ts`; add `"watch-party"` RoomKind                          |
+| Force-mute mic                | `RoomServiceClient.updateParticipant({ canPublish: false })` on `muted_mic=true` | Native LiveKit feature, instant                                                                   |
 
 ## 5. Data model
 
@@ -198,8 +198,8 @@ Pseudocode:
 ```ts
 async function postChatMessage(kind, scopeId, body, userId) {
   // 1. Authorization
-  if (kind === 'party') {
-    requireActivePartyMember(scopeId, userId);  // membership + not muted_chat + not kicked
+  if (kind === "party") {
+    requireActivePartyMember(scopeId, userId); // membership + not muted_chat + not kicked
   } else {
     requireSignedIn(userId);
   }
@@ -207,32 +207,43 @@ async function postChatMessage(kind, scopeId, body, userId) {
   // 2. Rate limit: 5 msgs per 10 seconds per user
   const recent = await db.query`select count(*) from chat_messages
     where sender_id = ${userId} and created_at > now() - interval '10 seconds'`;
-  if (recent >= 5) return { error: 'rate_limited' };
+  if (recent >= 5) return { error: "rate_limited" };
 
   // 3. AI moderation — Trey-I
-  const verdict = await moderateChat(body);   // calls vertex.server.ts with task "moderate_chat"
-  await db.insert('chat_moderation_events', { sender_id: userId, message_text: body, ...verdict, kind, scope_id: scopeId });
+  const verdict = await moderateChat(body); // calls vertex.server.ts with task "moderate_chat"
+  await db.insert("chat_moderation_events", {
+    sender_id: userId,
+    message_text: body,
+    ...verdict,
+    kind,
+    scope_id: scopeId,
+  });
 
-  if (verdict.verdict === 'block') return { error: 'blocked', reason: verdict.reason };
-  if (verdict.verdict === 'timeout') {
-    await autoMute(userId, scopeId, '5 minutes');
-    return { error: 'blocked', reason: verdict.reason, timeoutMinutes: 5 };
+  if (verdict.verdict === "block") return { error: "blocked", reason: verdict.reason };
+  if (verdict.verdict === "timeout") {
+    await autoMute(userId, scopeId, "5 minutes");
+    return { error: "blocked", reason: verdict.reason, timeoutMinutes: 5 };
   }
 
   // 4. Repeat-offender check: 3 blocks in last 10 min → auto-timeout
-  if (verdict.verdict !== 'clean') {
+  if (verdict.verdict !== "clean") {
     const offences = await db.query`select count(*) from chat_moderation_events
       where sender_id = ${userId} and created_at > now() - interval '10 minutes'
       and verdict in ('block','timeout')`;
     if (offences >= 3) {
-      await autoMute(userId, scopeId, '5 minutes');
-      return { error: 'blocked', reason: 'repeat_offender', timeoutMinutes: 5 };
+      await autoMute(userId, scopeId, "5 minutes");
+      return { error: "blocked", reason: "repeat_offender", timeoutMinutes: 5 };
     }
   }
 
   // 5. Insert + Realtime broadcast happens automatically via postgres_changes
-  const messageId = await db.insert('chat_messages', { kind, scope_id: scopeId, sender_id: userId, body });
-  return { message_id: messageId, nudge: verdict.verdict === 'nudge' ? verdict.reason : null };
+  const messageId = await db.insert("chat_messages", {
+    kind,
+    scope_id: scopeId,
+    sender_id: userId,
+    body,
+  });
+  return { message_id: messageId, nudge: verdict.verdict === "nudge" ? verdict.reason : null };
 }
 ```
 
@@ -260,7 +271,7 @@ async function postChatMessage(kind, scopeId, body, userId) {
 Add to `src/lib/trey-i/vertex.server.ts`:
 
 ```ts
-export type VertexTask = /* existing */ | "moderate_chat";
+export type VertexTask /* existing */ = "moderate_chat";
 
 SYSTEM_PROMPTS.moderate_chat = `
 You are a real-time chat moderator for Trey TV. Evaluate the user's message
@@ -346,19 +357,19 @@ Two reasonable patterns; we'll use the second because the project already prefer
 
 ## 12. Authorization model
 
-| Action | Required check |
-|---|---|
-| Create party | Signed in |
+| Action                | Required check                                                   |
+| --------------------- | ---------------------------------------------------------------- |
+| Create party          | Signed in                                                        |
 | Join via invite token | Signed in + token valid + party not full + not previously kicked |
-| Read party row | Member (not kicked) |
-| Read party chat | Member (not kicked) |
-| Post party chat | Member + not muted_chat + not rate-limited |
-| Post public chat | Signed in + not rate-limited |
-| Change channel | Host |
-| Kick member | Host |
-| Mute member chat | Host |
-| Mute member mic | Host |
-| End party | Host |
+| Read party row        | Member (not kicked)                                              |
+| Read party chat       | Member (not kicked)                                              |
+| Post party chat       | Member + not muted_chat + not rate-limited                       |
+| Post public chat      | Signed in + not rate-limited                                     |
+| Change channel        | Host                                                             |
+| Kick member           | Host                                                             |
+| Mute member chat      | Host                                                             |
+| Mute member mic       | Host                                                             |
+| End party             | Host                                                             |
 
 Kicked members lose RLS access immediately — their Realtime subscription closes; client navigates them to `/`.
 

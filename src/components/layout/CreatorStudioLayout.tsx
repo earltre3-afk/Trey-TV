@@ -3,8 +3,19 @@ import { type ReactNode, useEffect } from "react";
 import { AppShell } from "./AppShell";
 import { useAuth } from "@/lib/auth";
 import {
-  Crown, LayoutDashboard, Upload, Film, BarChart3, Users, MessageSquare, Gem,
-  Calendar, Settings, Tv, Lock, Sparkles,
+  Crown,
+  LayoutDashboard,
+  Upload,
+  Film,
+  BarChart3,
+  Users,
+  MessageSquare,
+  Gem,
+  Calendar,
+  Settings,
+  Tv,
+  Lock,
+  Sparkles,
 } from "lucide-react";
 import { currentUser } from "@/lib/mock-data";
 import { useCreatorStudio } from "@/hooks/use-creator-studio";
@@ -71,7 +82,9 @@ export function CreatorStudioLayout({
               <div className="flex items-center gap-2 text-[10px] tracking-[0.3em] text-primary mb-1">
                 <Crown className="size-3.5" /> CREATOR STUDIO
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gradient-gold truncate">{title}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-gradient-gold truncate">
+                {title}
+              </h1>
               {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -149,7 +162,9 @@ function CreatorGate({ status }: { status: string }) {
           </div>
           <h1 className="text-2xl font-bold text-gradient-gold">{c.title}</h1>
           <p className="text-sm text-muted-foreground mt-2">{c.body}</p>
-          <div className="mt-3 inline-flex"><CreatorStatusBadge status={status} /></div>
+          <div className="mt-3 inline-flex">
+            <CreatorStatusBadge status={status} />
+          </div>
           <div className="mt-6 flex flex-col gap-2">
             <button
               onClick={() => navigate({ to: c.to as any })}
@@ -157,7 +172,10 @@ function CreatorGate({ status }: { status: string }) {
             >
               <Sparkles className="inline size-4 mr-1" /> {c.cta}
             </button>
-            <Link to="/" className="px-4 py-3 rounded-xl text-sm font-semibold glass border border-white/10 hover:bg-white/5">
+            <Link
+              to="/"
+              className="px-4 py-3 rounded-xl text-sm font-semibold glass border border-white/10 hover:bg-white/5"
+            >
               Back to Trey TV
             </Link>
           </div>

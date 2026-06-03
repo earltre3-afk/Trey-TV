@@ -10,7 +10,10 @@ export const Route = createFileRoute("/legal/data-deletion")({
   head: () => ({
     meta: [
       { title: "Data Deletion Request — Trey TV" },
-      { name: "description", content: "Request deletion, export, or correction of your Trey TV data." },
+      {
+        name: "description",
+        content: "Request deletion, export, or correction of your Trey TV data.",
+      },
       { property: "og:title", content: "Data Deletion Request — Trey TV" },
       { property: "og:description", content: "Submit a data action request to Trey TV." },
     ],
@@ -38,7 +41,11 @@ function DataDeletionPage() {
     try {
       const queue = JSON.parse(localStorage.getItem("treytv_data_requests") || "[]");
       queue.push({
-        name, email, profile, type, message,
+        name,
+        email,
+        profile,
+        type,
+        message,
         submittedAt: new Date().toISOString(),
       });
       localStorage.setItem("treytv_data_requests", JSON.stringify(queue));
@@ -51,7 +58,10 @@ function DataDeletionPage() {
     <LegalLayout policy={policy}>
       <section id="form" className="scroll-mt-24">
         <div className="rounded-2xl liquid-glass border border-primary/30 p-5 lg:p-7 relative overflow-hidden">
-          <div aria-hidden className="absolute -top-24 -right-24 size-64 rounded-full bg-[radial-gradient(closest-side,oklch(0.82_0.16_85/0.18),transparent)] blur-2xl" />
+          <div
+            aria-hidden
+            className="absolute -top-24 -right-24 size-64 rounded-full bg-[radial-gradient(closest-side,oklch(0.82_0.16_85/0.18),transparent)] blur-2xl"
+          />
           <div className="relative">
             <div className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-primary">
               <Trash2 className="size-3.5" /> SUBMIT A REQUEST
@@ -68,11 +78,19 @@ function DataDeletionPage() {
                 <div>
                   <div className="text-sm font-bold">Request received</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    Thanks, {name.split(" ")[0] || "friend"}. We'll review your request and follow up to{" "}
-                    <span className="text-foreground/80">{email}</span> within a reasonable timeframe.
+                    Thanks, {name.split(" ")[0] || "friend"}. We'll review your request and follow
+                    up to <span className="text-foreground/80">{email}</span> within a reasonable
+                    timeframe.
                   </div>
                   <button
-                    onClick={() => { setSubmitted(false); setName(""); setEmail(""); setProfile(""); setType("delete"); setMessage(""); }}
+                    onClick={() => {
+                      setSubmitted(false);
+                      setName("");
+                      setEmail("");
+                      setProfile("");
+                      setType("delete");
+                      setMessage("");
+                    }}
                     className="mt-3 text-xs text-primary font-semibold hover:underline"
                   >
                     Submit another request
@@ -82,20 +100,43 @@ function DataDeletionPage() {
             ) : (
               <form onSubmit={submit} className="mt-5 space-y-4">
                 <div className="grid sm:grid-cols-2 gap-3">
-                  <Field icon={<User className="size-4 text-muted-foreground" />} label="Full name" value={name} onChange={setName} placeholder="Your name" />
-                  <Field icon={<Mail className="size-4 text-muted-foreground" />} label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
+                  <Field
+                    icon={<User className="size-4 text-muted-foreground" />}
+                    label="Full name"
+                    value={name}
+                    onChange={setName}
+                    placeholder="Your name"
+                  />
+                  <Field
+                    icon={<Mail className="size-4 text-muted-foreground" />}
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={setEmail}
+                    placeholder="you@example.com"
+                  />
                 </div>
-                <Field icon={<AtSign className="size-4 text-muted-foreground" />} label="Username or profile link" value={profile} onChange={setProfile} placeholder="@yourhandle or treytv.app/u/..." />
+                <Field
+                  icon={<AtSign className="size-4 text-muted-foreground" />}
+                  label="Username or profile link"
+                  value={profile}
+                  onChange={setProfile}
+                  placeholder="@yourhandle or treytv.app/u/..."
+                />
 
                 <div>
-                  <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">REQUEST TYPE</div>
+                  <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">
+                    REQUEST TYPE
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {([
-                      { id: "delete", label: "Delete account" },
-                      { id: "export", label: "Export data" },
-                      { id: "correct", label: "Correct data" },
-                      { id: "other", label: "Other" },
-                    ] as { id: RequestType; label: string }[]).map((t) => (
+                    {(
+                      [
+                        { id: "delete", label: "Delete account" },
+                        { id: "export", label: "Export data" },
+                        { id: "correct", label: "Correct data" },
+                        { id: "other", label: "Other" },
+                      ] as { id: RequestType; label: string }[]
+                    ).map((t) => (
                       <button
                         type="button"
                         key={t.id}
@@ -113,7 +154,9 @@ function DataDeletionPage() {
                 </div>
 
                 <label className="block">
-                  <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">MESSAGE</div>
+                  <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">
+                    MESSAGE
+                  </div>
                   <div className="flex items-start gap-2 rounded-xl glass border border-white/10 px-3 py-2 focus-within:border-primary/50 transition">
                     <MessageSquare className="size-4 text-muted-foreground mt-1" />
                     <textarea
@@ -125,7 +168,9 @@ function DataDeletionPage() {
                       className="flex-1 bg-transparent text-sm focus:outline-none resize-none"
                     />
                   </div>
-                  <div className="mt-1 text-[10px] text-muted-foreground text-right">{message.length} / 1000</div>
+                  <div className="mt-1 text-[10px] text-muted-foreground text-right">
+                    {message.length} / 1000
+                  </div>
                 </label>
 
                 <button
@@ -135,7 +180,8 @@ function DataDeletionPage() {
                   <Send className="size-4" /> Submit request
                 </button>
                 <p className="text-[11px] text-muted-foreground">
-                  By submitting, you confirm the information is accurate and you have the right to make this request.
+                  By submitting, you confirm the information is accurate and you have the right to
+                  make this request.
                 </p>
               </form>
             )}
@@ -147,13 +193,25 @@ function DataDeletionPage() {
 }
 
 function Field({
-  label, value, onChange, type = "text", placeholder, icon,
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  icon,
 }: {
-  label: string; value: string; onChange: (s: string) => void; type?: string; placeholder?: string; icon?: React.ReactNode;
+  label: string;
+  value: string;
+  onChange: (s: string) => void;
+  type?: string;
+  placeholder?: string;
+  icon?: React.ReactNode;
 }) {
   return (
     <label className="block">
-      <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">{label.toUpperCase()}</div>
+      <div className="text-[10px] tracking-[0.22em] text-muted-foreground mb-1.5">
+        {label.toUpperCase()}
+      </div>
       <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-11 focus-within:border-primary/50 transition">
         {icon}
         <input

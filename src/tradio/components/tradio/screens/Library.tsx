@@ -1,25 +1,57 @@
-import React from 'react';
-import { Heart, Download, ListMusic, Users, Clock, ChevronRight, Shuffle, Sparkles, MoreHorizontal, Pin } from 'lucide-react';
-import { TopBar, GlassCard, PrimaryButton, PlayCircle, SectionHeader, Waveform } from '../ui';
-import { IMG, COLLECTIONS, TRACKS } from '../data';
-import { usePlayer } from '@/tradio/contexts/PlayerContext';
-import { TradioImage } from '../NoCoverVisualizer';
-import { PrescriptionRail } from '../auth/components';
+import React from "react";
+import {
+  Heart,
+  Download,
+  ListMusic,
+  Users,
+  Clock,
+  ChevronRight,
+  Shuffle,
+  Sparkles,
+  MoreHorizontal,
+  Pin,
+} from "lucide-react";
+import { TopBar, GlassCard, PrimaryButton, PlayCircle, SectionHeader, Waveform } from "../ui";
+import { IMG, COLLECTIONS, TRACKS } from "../data";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
+import { TradioImage } from "../NoCoverVisualizer";
+import { PrescriptionRail } from "../auth/components";
 
 const TILES = [
-  { icon: <Heart className="h-6 w-6 text-purple-300" />, title: 'Saved Stations', sub: '24 stations' },
-  { icon: <Heart className="h-6 w-6 text-pink-400" />, title: 'Liked Songs', sub: '312 songs' },
-  { icon: <Download className="h-6 w-6 text-purple-300" />, title: 'Downloads', sub: '89 songs' },
-  { icon: <ListMusic className="h-6 w-6 text-purple-300" />, title: 'Playlists', sub: '18 playlists' },
-  { icon: <Users className="h-6 w-6 text-cyan-300" />, title: 'Artists', sub: '128 followed' },
-  { icon: <Clock className="h-6 w-6 text-purple-300" />, title: 'Recently Played', sub: '50 tracks' },
+  {
+    icon: <Heart className="h-6 w-6 text-purple-300" />,
+    title: "Saved Stations",
+    sub: "24 stations",
+  },
+  { icon: <Heart className="h-6 w-6 text-pink-400" />, title: "Liked Songs", sub: "312 songs" },
+  { icon: <Download className="h-6 w-6 text-purple-300" />, title: "Downloads", sub: "89 songs" },
+  {
+    icon: <ListMusic className="h-6 w-6 text-purple-300" />,
+    title: "Playlists",
+    sub: "18 playlists",
+  },
+  { icon: <Users className="h-6 w-6 text-cyan-300" />, title: "Artists", sub: "128 followed" },
+  {
+    icon: <Clock className="h-6 w-6 text-purple-300" />,
+    title: "Recently Played",
+    sub: "50 tracks",
+  },
 ];
+const OWNER_ARTIST_TRACKS = [TRACKS.iLookLike, TRACKS.callOn];
+
+const formatTrackDuration = (seconds?: number) => {
+  if (!seconds) return "";
+  const totalSeconds = Math.round(seconds);
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+};
 
 export const LibraryScreen: React.FC = () => {
-  const { playQueue, liked } = usePlayer();
+  const { playQueue, liked, play, currentTrack, isPlaying } = usePlayer();
 
   const shufflePinned = () => {
     const all = [
+      TRACKS.iLookLike,
+      TRACKS.callOn,
       TRACKS.midnightVelvet,
       TRACKS.fallingForYou,
       TRACKS.cityLights,
@@ -47,7 +79,7 @@ export const LibraryScreen: React.FC = () => {
       {/* Tiles */}
       <div className="grid grid-cols-2 gap-3 px-4 sm:px-6 lg:px-10">
         {TILES.map((t) => {
-          const isLiked = t.title === 'Liked Songs';
+          const isLiked = t.title === "Liked Songs";
           const sub = isLiked ? `${312 + liked.size} songs` : t.sub;
           return (
             <GlassCard key={t.title} className="flex items-center gap-3 p-3.5">
@@ -69,6 +101,46 @@ export const LibraryScreen: React.FC = () => {
           title="Rediscover My Sound"
           subtitle="Prescribe from my library using saves, skips, station habits, and listening journeys."
         />
+      </div>
+
+      <div className="px-4 sm:px-6 lg:px-10">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <div className="text-sm font-bold uppercase tracking-[0.16em] text-white/45">
+              Owner Media Library
+            </div>
+            <div className="mt-1 text-lg font-bold text-white">Trey Trizzy uploads</div>
+          </div>
+          <PrimaryButton className="px-4 py-2 text-[11px]" onClick={() => playQueue(OWNER_ARTIST_TRACKS)}>
+            <ListMusic className="h-3.5 w-3.5" /> Play All
+          </PrimaryButton>
+        </div>
+        <div className="grid gap-2 md:grid-cols-2">
+          {OWNER_ARTIST_TRACKS.map((track) => {
+            const trackPlaying = currentTrack?.id === track.id && isPlaying;
+            return (
+              <GlassCard key={track.id} className="flex items-center gap-3 p-2.5">
+                <TradioImage
+                  src={track.art}
+                  title={track.title}
+                  artist={track.artist}
+                  isPlaying={trackPlaying}
+                  fallbackSize="mini"
+                  className="h-14 w-14 rounded-lg object-cover"
+                  imgClassName="h-14 w-14 rounded-lg object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-white">{track.title}</div>
+                  <div className="truncate text-[11px] text-white/55">{track.artist}</div>
+                  <div className="mt-0.5 truncate font-mono text-[10px] text-white/40">
+                    {formatTrackDuration(track.duration)} - {track.src}
+                  </div>
+                </div>
+                <PlayCircle size={36} onClick={() => play(track, OWNER_ARTIST_TRACKS)} gradient={trackPlaying} />
+              </GlassCard>
+            );
+          })}
+        </div>
       </div>
 
       {/* Pinned collection */}
@@ -136,7 +208,9 @@ export const LibraryScreen: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-white">Let AI organize your library</div>
-            <div className="text-[11px] text-white/55">Smart albums, mood sets, and more. All personalized for you.</div>
+            <div className="text-[11px] text-white/55">
+              Smart albums, mood sets, and more. All personalized for you.
+            </div>
           </div>
           <PrimaryButton className="px-3 py-2 text-xs">
             <Sparkles className="h-3.5 w-3.5" /> Try AI

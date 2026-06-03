@@ -1,6 +1,12 @@
 import { type LegalSection } from "@/lib/legal-content";
 
-export function LegalTOC({ sections, compact = false }: { sections: LegalSection[]; compact?: boolean }) {
+export function LegalTOC({
+  sections,
+  compact = false,
+}: {
+  sections: LegalSection[];
+  compact?: boolean;
+}) {
   return (
     <nav className={compact ? "" : "rounded-2xl liquid-glass border border-white/10 p-4"}>
       {!compact && (
@@ -16,7 +22,9 @@ export function LegalTOC({ sections, compact = false }: { sections: LegalSection
               <span className="mt-0.5 text-[10px] font-mono text-muted-foreground tabular-nums w-5 shrink-0">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <span className="text-foreground/80 group-hover:text-foreground transition leading-snug">{s.heading}</span>
+              <span className="text-foreground/80 group-hover:text-foreground transition leading-snug">
+                {s.heading}
+              </span>
             </a>
           </li>
         ))}

@@ -11,7 +11,11 @@ export const Route = createFileRoute("/legal/")({
   head: () => ({
     meta: [
       { title: "Legal & Safety — Trey TV" },
-      { name: "description", content: "Trey TV's legal and safety center: terms, privacy, community guidelines, content policy, and more." },
+      {
+        name: "description",
+        content:
+          "Trey TV's legal and safety center: terms, privacy, community guidelines, content policy, and more.",
+      },
       { property: "og:title", content: "Legal & Safety — Trey TV" },
       { property: "og:description", content: "Trey TV's trust and safety center." },
     ],
@@ -52,7 +56,8 @@ function LegalHub() {
               Legal & Safety
             </h1>
             <p className="mt-3 text-sm sm:text-base text-foreground/70 max-w-2xl">
-              How Trey TV works, what we expect, and the rights you have. Browse policies, request data actions, and learn how we keep the community welcoming.
+              How Trey TV works, what we expect, and the rights you have. Browse policies, request
+              data actions, and learn how we keep the community welcoming.
             </p>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px]">
               <span className="inline-flex items-center gap-1.5 px-2.5 h-7 rounded-full liquid-glass border border-white/10 text-muted-foreground">
@@ -75,7 +80,9 @@ function LegalHub() {
                 />
               </label>
               <div className="flex flex-wrap gap-1.5">
-                <Chip active={tab === "all"} onClick={() => setTab("all")}>All</Chip>
+                <Chip active={tab === "all"} onClick={() => setTab("all")}>
+                  All
+                </Chip>
                 {CATEGORIES.map((c) => (
                   <Chip key={c.id} active={tab === c.id} onClick={() => setTab(c.id)}>
                     {c.label}
@@ -88,15 +95,36 @@ function LegalHub() {
 
         {/* Quick actions */}
         <div className="grid sm:grid-cols-3 gap-3 mb-6">
-          <ActionTile to="/legal/data-deletion" title="Data request" body="Delete, export, or correct your data." accent="gold" />
-          <ActionTile to="/legal/community-guidelines" title="Report content" body="See what's allowed and how to flag violations." accent="cyan" />
-          <ActionTile to="/legal/dmca" title="Copyright complaint" body="File a DMCA takedown notice." accent="magenta" />
+          <ActionTile
+            to="/legal/data-deletion"
+            title="Data request"
+            body="Delete, export, or correct your data."
+            accent="gold"
+          />
+          <ActionTile
+            to="/legal/community-guidelines"
+            title="Report content"
+            body="See what's allowed and how to flag violations."
+            accent="cyan"
+          />
+          <ActionTile
+            to="/legal/dmca"
+            title="Copyright complaint"
+            body="File a DMCA takedown notice."
+            accent="magenta"
+          />
         </div>
 
         {/* Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((p) => (
-            <LegalHubCard key={p.slug} slug={p.slug} title={p.title} summary={p.summary} icon={p.icon} />
+            <LegalHubCard
+              key={p.slug}
+              slug={p.slug}
+              title={p.title}
+              summary={p.summary}
+              icon={p.icon}
+            />
           ))}
           {filtered.length === 0 && (
             <div className="col-span-full text-center text-sm text-muted-foreground py-10 rounded-2xl liquid-glass border border-white/10">
@@ -111,7 +139,15 @@ function LegalHub() {
   );
 }
 
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       onClick={onClick}
@@ -126,7 +162,17 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-function ActionTile({ to, title, body, accent }: { to: string; title: string; body: string; accent: "gold" | "cyan" | "magenta" }) {
+function ActionTile({
+  to,
+  title,
+  body,
+  accent,
+}: {
+  to: string;
+  title: string;
+  body: string;
+  accent: "gold" | "cyan" | "magenta";
+}) {
   const accents: Record<string, string> = {
     gold: "from-[oklch(0.82_0.16_85/0.18)] to-transparent border-[oklch(0.82_0.16_85/0.35)]",
     cyan: "from-[oklch(0.82_0.15_215/0.18)] to-transparent border-[oklch(0.82_0.15_215/0.35)]",

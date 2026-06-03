@@ -128,7 +128,11 @@ export function PartyMic({ partyId, canPublishLocally, className }: Props) {
       <div className="flex items-center gap-2 mb-2">
         <Radio className="size-3.5 text-primary" />
         <span className="text-[11px] uppercase tracking-widest text-white/60">Voice</span>
-        {error && <span className="ml-auto text-[10px] text-red-400 truncate" title={error}>error</span>}
+        {error && (
+          <span className="ml-auto text-[10px] text-red-400 truncate" title={error}>
+            error
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <button
@@ -138,11 +142,17 @@ export function PartyMic({ partyId, canPublishLocally, className }: Props) {
             !canPublishLocally
               ? "border-red-500/30 text-red-400/80 bg-red-500/5 cursor-not-allowed"
               : micEnabled
-              ? "border-green-500/40 text-green-400 bg-green-500/10"
-              : "border-white/15 text-white/70 hover:bg-white/5"
+                ? "border-green-500/40 text-green-400 bg-green-500/10"
+                : "border-white/15 text-white/70 hover:bg-white/5"
           }`}
         >
-          {!canPublishLocally ? <MicOff className="size-3.5" /> : micEnabled ? <Mic className="size-3.5" /> : <MicOff className="size-3.5" />}
+          {!canPublishLocally ? (
+            <MicOff className="size-3.5" />
+          ) : micEnabled ? (
+            <Mic className="size-3.5" />
+          ) : (
+            <MicOff className="size-3.5" />
+          )}
           {!canPublishLocally ? "Muted by host" : micEnabled ? "Mic on" : "Mic off"}
         </button>
         <div className="flex items-center gap-1 flex-wrap text-[11px] text-white/60">
@@ -155,7 +165,8 @@ export function PartyMic({ partyId, canPublishLocally, className }: Props) {
                   : "border-white/10 bg-white/5"
               }`}
             >
-              {p.speaking ? "🔊 " : p.muted ? "🔇 " : ""}{p.name}
+              {p.speaking ? "🔊 " : p.muted ? "🔇 " : ""}
+              {p.name}
             </span>
           ))}
         </div>

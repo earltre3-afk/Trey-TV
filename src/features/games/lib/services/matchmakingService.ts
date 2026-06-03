@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // Trey TV Matchmaking & Queue service.
 // Polling-based to match the rest of the room sync model.
 //
@@ -9,14 +8,12 @@
 // - When current_players hits max_players, status flips to matched and
 //   matched_room_id is set. Client polls and routes to the room.
 
-import { supabase } from '@/lib/supabase';
-import { PlayerIdentity, generateRoomCode } from './identity';
-import {
-  GameType, MAX_PLAYERS_BY_GAME, RoomRow,
-} from './roomService';
+import { supabase } from "@/lib/supabase";
+import { PlayerIdentity, generateRoomCode } from "./identity";
+import { GameType, MAX_PLAYERS_BY_GAME, RoomRow } from "./roomService";
 
-export type QueueStatus = 'searching' | 'matched' | 'cancelled';
-export type QueueMode = 'public' | 'friends' | 'solo';
+export type QueueStatus = "searching" | "matched" | "cancelled";
+export type QueueMode = "public" | "friends" | "solo";
 
 export interface QueueEntry {
   id: string;
@@ -42,8 +39,8 @@ export const MIN_TO_START: Record<GameType, number> = {
 
 export interface QueueSnapshot {
   myEntry: QueueEntry | null;
-  positionInGame: number;        // 1-based position in this game's queue
-  waitingInGame: number;          // total searching for this game
+  positionInGame: number; // 1-based position in this game's queue
+  waitingInGame: number; // total searching for this game
   formingRooms: Array<{ id: string; current: number; max: number }>;
   matchedRoomId: string | null;
 }
@@ -58,19 +55,19 @@ export async function joinQueue(opts: {
 }): Promise<QueueEntry> {
   // cancel any prior searching entry for same user
   await supabase
-    .from('game_queue_entries')
-    .update({ status: 'cancelled' })
-    .eq('user_id', opts.identity.userId)
-    .eq('status', 'searching');
+    .from("game_queue_entries")
+    .update({ status: "cancelled" })
+    .eq("user_id", opts.identity.userId)
+    .eq("status", "searching");
 
   const { data, error } = await supabase
-    .from('game_queue_entries')
+    .from("game_queue_entries")
     .insert({
       user_id: opts.identity.userId,
       display_name: opts.identity.displayName,
       game_type: opts.gameType,
-      mode: opts.mode ?? 'public',
-      status: 'searching',
+      mode: opts.mode ?? "public",
+      status: "searching",
       party_id: opts.partyId ?? null,
     })
     .select()
@@ -81,17 +78,17 @@ export async function joinQueue(opts: {
 
 export async function cancelQueue(userId: string): Promise<void> {
   await supabase
-    .from('game_queue_entries')
-    .update({ status: 'cancelled' })
-    .eq('user_id', userId)
-    .eq('status', 'searching');
+    .from("game_queue_entries")
+    .update({ status: "cancelled" })
+    .eq("user_id", userId)
+    .eq("status", "searching");
 }
 
 export async function heartbeatQueue(entryId: string): Promise<void> {
   await supabase
-    .from('game_queue_entries')
+    .from("game_queue_entries")
     .update({ last_seen_at: new Date().toISOString() })
-    .eq('id', entryId);
+    .eq("id", entryId);
 }
 
 /* -------------------- snapshot for UI -------------------- */
@@ -99,35 +96,39 @@ export async function heartbeatQueue(entryId: string): Promise<void> {
 export async function getQueueSnapshot(userId: string, gameType: GameType): Promise<QueueSnapshot> {
   // fetch all currently-searching entries for this game, oldest first
   const { data: entries } = await supabase
-    .from('game_queue_entries')
-    .select('*')
-    .eq('game_type', gameType)
-    .in('status', ['searching', 'matched'])
-    .order('enqueued_at', { ascending: true })
+    .from("game_queue_entries")
+    .select("*")
+    .eq("game_type", gameType)
+    .in("status", ["searching", "matched"])
+    .order("enqueued_at", { ascending: true })
     .limit(200);
 
   const list = (entries || []) as QueueEntry[];
-  const myEntry = list.find(e => e.user_id === userId) || null;
+  const myEntry = list.find((e) => e.user_id === userId) || null;
 
   // searching-only for position math
-  const searching = list.filter(e => e.status === 'searching');
+  const searching = list.filter((e) => e.status === "searching");
   const positionInGame = myEntry
-    ? Math.max(1, searching.findIndex(e => e.user_id === userId) + 1)
+    ? Math.max(1, searching.findIndex((e) => e.user_id === userId) + 1)
     : 0;
 
   // forming rooms = waiting rooms for this game with seats open
   const { data: rooms } = await supabase
-    .from('game_rooms')
-    .select('id,current_players,max_players,status,game_type,is_private')
-    .eq('game_type', gameType)
-    .eq('status', 'waiting')
-    .eq('is_private', false)
-    .order('current_players', { ascending: false })
+    .from("game_rooms")
+    .select("id,current_players,max_players,status,game_type,is_private")
+    .eq("game_type", gameType)
+    .eq("status", "waiting")
+    .eq("is_private", false)
+    .order("current_players", { ascending: false })
     .limit(20);
 
   const formingRooms = ((rooms || []) as any[])
-    .filter(r => r.current_players < r.max_players)
-    .map(r => ({ id: r.id as string, current: r.current_players as number, max: r.max_players as number }));
+    .filter((r) => r.current_players < r.max_players)
+    .map((r) => ({
+      id: r.id as string,
+      current: r.current_players as number,
+      max: r.max_players as number,
+    }));
 
   return {
     myEntry,
@@ -142,9 +143,9 @@ export async function getQueueCounts(): Promise<Record<GameType, number>> {
   const counts: Record<GameType, number> = { spades: 0, blackjack: 0, bullshit: 0, truno: 0 };
   try {
     const { data, error } = await supabase
-      .from('game_queue_entries')
-      .select('game_type,status')
-      .eq('status', 'searching')
+      .from("game_queue_entries")
+      .select("game_type,status")
+      .eq("status", "searching")
       .limit(500);
     if (error) return counts;
     for (const r of (data || []) as any[]) {
@@ -167,7 +168,10 @@ export async function getQueueCounts(): Promise<Record<GameType, number>> {
 //   2. Then fill rooms with the most players already seated.
 //   3. Then create a new room.
 //   4. Within those, prioritize oldest waiting players.
-export async function resolveMatchesForGame(gameType: GameType, hostIdentity: PlayerIdentity): Promise<number> {
+export async function resolveMatchesForGame(
+  gameType: GameType,
+  hostIdentity: PlayerIdentity,
+): Promise<number> {
   const max = MAX_PLAYERS_BY_GAME[gameType];
 
   // Blackjack: instant solo route — we never need >1 seat in a multiplayer room
@@ -180,19 +184,19 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
 
   // 1. fetch oldest searching entries
   const { data: queued } = await supabase
-    .from('game_queue_entries')
-    .select('*')
-    .eq('game_type', gameType)
-    .eq('status', 'searching')
-    .eq('mode', 'public')
-    .order('enqueued_at', { ascending: true })
+    .from("game_queue_entries")
+    .select("*")
+    .eq("game_type", gameType)
+    .eq("status", "searching")
+    .eq("mode", "public")
+    .order("enqueued_at", { ascending: true })
     .limit(40);
 
   const entries = ((queued || []) as QueueEntry[]).slice();
   if (entries.length === 0) return 0;
 
   // Blackjack: each entry gets its own room (solo vs dealer)
-  if (gameType === 'blackjack') {
+  if (gameType === "blackjack") {
     let n = 0;
     for (const e of entries) {
       const room = await createMatchedRoom(gameType, e);
@@ -204,31 +208,31 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
 
   // 2. fetch existing public waiting rooms for this game, fullest first
   const { data: rooms } = await supabase
-    .from('game_rooms')
-    .select('*')
-    .eq('game_type', gameType)
-    .eq('status', 'waiting')
-    .eq('is_private', false)
-    .order('current_players', { ascending: false })
+    .from("game_rooms")
+    .select("*")
+    .eq("game_type", gameType)
+    .eq("status", "waiting")
+    .eq("is_private", false)
+    .order("current_players", { ascending: false })
     .limit(20);
 
-  const openRooms = ((rooms || []) as RoomRow[]).filter(r => r.current_players < r.max_players);
+  const openRooms = ((rooms || []) as RoomRow[]).filter((r) => r.current_players < r.max_players);
 
   let matched = 0;
 
   for (const room of openRooms) {
     // compute remaining seats by counting real (non-bot) players seated
     const { data: seated } = await supabase
-      .from('game_room_players')
-      .select('seat_index,is_bot,user_id')
-      .eq('room_id', room.id);
+      .from("game_room_players")
+      .select("seat_index,is_bot,user_id")
+      .eq("room_id", room.id);
 
     const realSeats = (seated || []).filter((p: any) => !p.is_bot);
     let remaining = room.max_players - realSeats.length;
     if (remaining <= 0) continue;
 
     for (const e of entries) {
-      if (e.status !== 'searching') continue;
+      if (e.status !== "searching") continue;
       if (remaining <= 0) break;
       // skip if user already seated
       if (realSeats.some((p: any) => p.user_id === e.user_id)) continue;
@@ -238,7 +242,7 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
       const inserted = await seatPlayerInRoom(room, seat, e);
       if (inserted) {
         await assignEntryToRoom(e, room.id);
-        e.status = 'matched';
+        e.status = "matched";
         realSeats.push({ seat_index: seat, is_bot: false, user_id: e.user_id });
         remaining--;
         matched++;
@@ -247,7 +251,7 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
   }
 
   // 3. for whoever's still searching, create new rooms in groups of `max`
-  const stillSearching = entries.filter(e => e.status === 'searching');
+  const stillSearching = entries.filter((e) => e.status === "searching");
   let i = 0;
   while (i < stillSearching.length) {
     const group = stillSearching.slice(i, i + max);
@@ -264,9 +268,9 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
     for (let j = 1; j < group.length; j++) {
       const e = group[j];
       const { data: seated2 } = await supabase
-        .from('game_room_players')
-        .select('seat_index,is_bot,user_id')
-        .eq('room_id', room.id);
+        .from("game_room_players")
+        .select("seat_index,is_bot,user_id")
+        .eq("room_id", room.id);
       const seat = nextOpenSeat(seated2 || [], room.max_players);
       if (seat < 0) break;
       const ok = await seatPlayerInRoom(room, seat, e);
@@ -282,38 +286,39 @@ export async function resolveMatchesForGame(gameType: GameType, hostIdentity: Pl
 }
 
 function nextOpenSeat(seated: any[], maxPlayers: number): number {
-  const taken = new Set(seated.map(p => p.seat_index));
+  const taken = new Set(seated.map((p) => p.seat_index));
   for (let i = 0; i < maxPlayers; i++) if (!taken.has(i)) return i;
   return -1;
 }
 
 async function seatPlayerInRoom(room: RoomRow, seat: number, e: QueueEntry): Promise<boolean> {
-  const { error } = await supabase
-    .from('game_room_players')
-    .insert({
-      room_id: room.id,
-      user_id: e.user_id,
-      display_name: e.display_name,
-      seat_index: seat,
-      team_index: room.game_type === 'spades' ? (seat % 2) : null,
-      is_bot: false,
-      is_host: false,
-      is_ready: true,
-      is_connected: true,
-    });
+  const { error } = await supabase.from("game_room_players").insert({
+    room_id: room.id,
+    user_id: e.user_id,
+    display_name: e.display_name,
+    seat_index: seat,
+    team_index: room.game_type === "spades" ? seat % 2 : null,
+    is_bot: false,
+    is_host: false,
+    is_ready: true,
+    is_connected: true,
+  });
   if (error) {
     // race condition (duplicate seat) — ignore
     return false;
   }
   // bump current_players from row count
   const { count } = await supabase
-    .from('game_room_players')
-    .select('*', { count: 'exact', head: true })
-    .eq('room_id', room.id);
+    .from("game_room_players")
+    .select("*", { count: "exact", head: true })
+    .eq("room_id", room.id);
   await supabase
-    .from('game_rooms')
-    .update({ current_players: count ?? room.current_players + 1, last_activity_at: new Date().toISOString() })
-    .eq('id', room.id);
+    .from("game_rooms")
+    .update({
+      current_players: count ?? room.current_players + 1,
+      last_activity_at: new Date().toISOString(),
+    })
+    .eq("id", room.id);
   return true;
 }
 
@@ -322,11 +327,11 @@ async function createMatchedRoom(gameType: GameType, host: QueueEntry): Promise<
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateRoomCode();
     const { data, error } = await supabase
-      .from('game_rooms')
+      .from("game_rooms")
       .insert({
         room_code: code,
         game_type: gameType,
-        status: 'waiting',
+        status: "waiting",
         host_user_id: host.user_id,
         host_display_name: host.display_name,
         max_players: max,
@@ -338,19 +343,19 @@ async function createMatchedRoom(gameType: GameType, host: QueueEntry): Promise<
       .single();
     if (!error && data) return data as RoomRow;
   }
-  throw new Error('Could not create matched room');
+  throw new Error("Could not create matched room");
 }
 
 async function assignEntryToRoom(entry: QueueEntry, roomId: string): Promise<void> {
   await supabase
-    .from('game_queue_entries')
+    .from("game_queue_entries")
     .update({
-      status: 'matched',
+      status: "matched",
       matched_room_id: roomId,
       matched_at: new Date().toISOString(),
     })
-    .eq('id', entry.id)
-    .eq('status', 'searching');
+    .eq("id", entry.id)
+    .eq("status", "searching");
 }
 
 /* -------------------- janitor: clean stale entries -------------------- */
@@ -358,8 +363,8 @@ async function assignEntryToRoom(entry: QueueEntry, roomId: string): Promise<voi
 export async function reapStaleQueueEntries(olderThanSeconds = 90): Promise<void> {
   const cutoff = new Date(Date.now() - olderThanSeconds * 1000).toISOString();
   await supabase
-    .from('game_queue_entries')
-    .update({ status: 'cancelled' })
-    .eq('status', 'searching')
-    .lt('last_seen_at', cutoff);
+    .from("game_queue_entries")
+    .update({ status: "cancelled" })
+    .eq("status", "searching")
+    .lt("last_seen_at", cutoff);
 }

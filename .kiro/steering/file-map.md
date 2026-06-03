@@ -1,6 +1,7 @@
 # File Map — TREY-TV-ANTIGRAVITY
 
 ## Entry Points
+
 ```
 src/start.ts          — Cloudflare Worker entry
 src/server.ts         — Server-side handler
@@ -10,6 +11,7 @@ src/styles.css        — Global styles
 ```
 
 ## Routes (`src/routes/`)
+
 ```
 __root.tsx                        — Root layout (BottomNav lives here)
 index.tsx                         — Home feed (/)
@@ -51,6 +53,7 @@ admin.videos.tsx / admin.users.tsx / etc.
 ```
 
 ## Hooks (`src/hooks/`)
+
 ```
 use-auth.ts                   — Auth session (REAL)
 use-posts.ts                  — Feed posts (REAL)
@@ -69,6 +72,7 @@ use-go-back.ts                — Navigation helper
 ```
 
 ## Lib (`src/lib/`)
+
 ```
 supabase-browser.ts           — Supabase anon client (REAL)
 backend-env.ts                — Env var reader (VITE_SUPABASE_*)
@@ -92,6 +96,7 @@ error-page.ts / error-capture.ts
 ```
 
 ## Components (`src/components/`)
+
 ```
 layout/     — AppLayout, BottomNav, TopBar, etc.
               NotificationsPopover.tsx — Wired to Supabase notifications via useNotifications() (REAL — tsc ✅ build ✅; mock fallback comment block preserved in file)
@@ -117,6 +122,7 @@ CurrentUserSync.tsx — Zero-render bridge: pushes real Supabase profile into Lo
 ```
 
 ## Config
+
 ```
 vite.config.ts        — Vite + Cloudflare + TanStack plugin
 tsconfig.json         — TypeScript config

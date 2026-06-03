@@ -5,15 +5,15 @@
 RESTORE uses Next.js App Router API routes (`app/api/*/route.ts`).
 ANTIGRAVITY uses TanStack Start + Cloudflare Workers with `createServerFn()`.
 
-| RESTORE pattern | ANTIGRAVITY equivalent |
-|-----------------|----------------------|
-| `app/api/intake/profile-setup-turn/route.ts` | `src/lib/trey-i/intake.server.ts` → `profileSetupTurn` (createServerFn) |
-| `app/api/onboarding/save-profile/route.ts` | `src/lib/trey-i/onboarding.server.ts` → `saveOnboardingProfile` (createServerFn) |
-| `app/api/trey-i/tts/route.ts` | `src/lib/trey-i/tts.server.ts` → `treyITts` (createServerFn) |
-| `app/api/elevenlabs/conversation/token/route.ts` | `src/lib/trey-i/elevenlabs.server.ts` → `getElevenLabsToken` (createServerFn) |
-| `app/api/gemini/live/profile-setup/session/route.ts` | `src/lib/trey-i/gemini-live.server.ts` → `startGeminiLiveSession` (createServerFn) |
-| `createAdminClient()` (service-role) | `createClient(url, serviceKey)` — same pattern as `getAdminClient()` in post-queue.server.ts |
-| `createClient()` (auth user) | `createBrowserClient()` in hooks; auth token passed to server fn |
+| RESTORE pattern                                      | ANTIGRAVITY equivalent                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `app/api/intake/profile-setup-turn/route.ts`         | `src/lib/trey-i/intake.server.ts` → `profileSetupTurn` (createServerFn)                      |
+| `app/api/onboarding/save-profile/route.ts`           | `src/lib/trey-i/onboarding.server.ts` → `saveOnboardingProfile` (createServerFn)             |
+| `app/api/trey-i/tts/route.ts`                        | `src/lib/trey-i/tts.server.ts` → `treyITts` (createServerFn)                                 |
+| `app/api/elevenlabs/conversation/token/route.ts`     | `src/lib/trey-i/elevenlabs.server.ts` → `getElevenLabsToken` (createServerFn)                |
+| `app/api/gemini/live/profile-setup/session/route.ts` | `src/lib/trey-i/gemini-live.server.ts` → `startGeminiLiveSession` (createServerFn)           |
+| `createAdminClient()` (service-role)                 | `createClient(url, serviceKey)` — same pattern as `getAdminClient()` in post-queue.server.ts |
+| `createClient()` (auth user)                         | `createBrowserClient()` in hooks; auth token passed to server fn                             |
 
 ---
 
@@ -39,6 +39,7 @@ profileSetupTurn (createServerFn, server-only)
 ```
 
 The UI (`onboarding.voice.tsx`) is updated minimally:
+
 - Replace `signIn("creator") + updateUser()` with a call to `profileSetupTurn`
 - Display the `assistant.message` response
 - On `complete: true`, navigate to `/u/{public_profile_uid}?tour=1`
@@ -126,6 +127,7 @@ complete
 ```
 
 Optional stages (skippable, added after location):
+
 ```
 ask_birthday_choice → ask_birthday → confirm_date_of_birth
 ask_content_choice  → ask_categories → confirm_categories
@@ -137,10 +139,12 @@ ask_privacy_choice  → ask_visibility → ask_privacy_details
 ```
 
 Filler detection patterns (must not save as real values):
+
 ```typescript
-const yesPattern = /^(yes|yeah|yep|correct|right|that'?s right|looks good|sounds good|save it|confirm|confirmed|sure|ok|okay|please do)$/i
-const noPattern  = /^(no|nope|nah|not quite|wrong|change it|try again)/i
-const skipPattern = /^(skip|skip it|pass|no thanks|not now|later|next)$/i
+const yesPattern =
+  /^(yes|yeah|yep|correct|right|that'?s right|looks good|sounds good|save it|confirm|confirmed|sure|ok|okay|please do)$/i;
+const noPattern = /^(no|nope|nah|not quite|wrong|change it|try again)/i;
+const skipPattern = /^(skip|skip it|pass|no thanks|not now|later|next)$/i;
 ```
 
 ---
@@ -164,6 +168,7 @@ Each confirmed field is written to `confirmed_fields` immediately (not batched).
 ## Profile Finalization
 
 On `stage === "complete"`:
+
 1. Read all `confirmed_fields` from `intake_sessions`
 2. UPDATE `profiles` with confirmed fields (anon client, user's own row)
 3. Set `onboarding_completed = true`, `onboarding_status = "completed"`, `onboarding_completed_at = now()`
@@ -175,41 +180,41 @@ On `stage === "complete"`:
 
 ## Security Boundaries
 
-| Boundary | Enforcement |
-|----------|-------------|
-| Gemini API key | `process.env.GOOGLE_GENAI_API_KEY` — server-only, no `VITE_` prefix |
-| ElevenLabs API key | `process.env.ELEVENLABS_API_KEY` — server-only, no `VITE_` prefix |
-| Supabase service-role | `process.env.SUPABASE_SERVICE_ROLE_KEY` — server-only, only if needed for intake_sessions write |
-| User auth verification | Access token passed from browser to server fn; verified with anon client before any write |
-| `profiles.is_creator` | Not queried anywhere in this flow |
-| `profiles.age` | Not queried; `date_of_birth` only collected through confirmed voice step |
-| Filler detection | Server-side only; browser never decides what gets saved |
+| Boundary               | Enforcement                                                                                     |
+| ---------------------- | ----------------------------------------------------------------------------------------------- |
+| Gemini API key         | `process.env.GOOGLE_GENAI_API_KEY` — server-only, no `VITE_` prefix                             |
+| ElevenLabs API key     | `process.env.ELEVENLABS_API_KEY` — server-only, no `VITE_` prefix                               |
+| Supabase service-role  | `process.env.SUPABASE_SERVICE_ROLE_KEY` — server-only, only if needed for intake_sessions write |
+| User auth verification | Access token passed from browser to server fn; verified with anon client before any write       |
+| `profiles.is_creator`  | Not queried anywhere in this flow                                                               |
+| `profiles.age`         | Not queried; `date_of_birth` only collected through confirmed voice step                        |
+| Filler detection       | Server-side only; browser never decides what gets saved                                         |
 
 ---
 
 ## Rollback Risks
 
-| Risk | Mitigation |
-|------|-----------|
-| `intake_sessions` table missing | Verify before implementing; write migration if absent |
-| `profiles` onboarding columns missing | Verify before implementing; write migration if absent |
-| `onboarding.voice.tsx` breaks Lovable UI | Minimal change: only replace the `signIn`/`updateUser` call; preserve all JSX |
-| `profileSetupTurn` tsc error | All server fn inputs validated with `as any` cast pattern (consistent with existing server fns) |
-| Gemini TTS unavailable | Phase 2 is optional; Phase 1 works text-only |
-| ElevenLabs token unavailable | Phase 3 is optional; Phase 1+2 work without it |
-| `public_profile_uid` not generated | `ensurePublicProfileUid` must be called before redirect; if it returns null, show error, do not redirect |
+| Risk                                     | Mitigation                                                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `intake_sessions` table missing          | Verify before implementing; write migration if absent                                                    |
+| `profiles` onboarding columns missing    | Verify before implementing; write migration if absent                                                    |
+| `onboarding.voice.tsx` breaks Lovable UI | Minimal change: only replace the `signIn`/`updateUser` call; preserve all JSX                            |
+| `profileSetupTurn` tsc error             | All server fn inputs validated with `as any` cast pattern (consistent with existing server fns)          |
+| Gemini TTS unavailable                   | Phase 2 is optional; Phase 1 works text-only                                                             |
+| ElevenLabs token unavailable             | Phase 3 is optional; Phase 1+2 work without it                                                           |
+| `public_profile_uid` not generated       | `ensurePublicProfileUid` must be called before redirect; if it returns null, show error, do not redirect |
 
 ---
 
 ## What Is NOT Changed
 
-| Area | Reason |
-|------|--------|
-| `src/routes/onboarding.tsx` | Entry page is visual-only; no wiring needed |
-| `src/components/ai/TreyIWidget.tsx` | Floating widget — separate lane, not part of onboarding |
-| `src/components/profile/` | Default Profile Layout System — complete, do not touch |
-| `src/routes/u.$uid.tsx` | Public profile route — complete, do not touch |
-| `src/lib/admin/post-queue.server.ts` | Admin publishing — complete, do not touch |
-| `src/lib/watch-data.ts` | Watch Now static data |
-| `src/lib/guide-store.tsx` | Guide localStorage |
-| `src/lib/feed-store.tsx` | Feed localStorage |
+| Area                                 | Reason                                                  |
+| ------------------------------------ | ------------------------------------------------------- |
+| `src/routes/onboarding.tsx`          | Entry page is visual-only; no wiring needed             |
+| `src/components/ai/TreyIWidget.tsx`  | Floating widget — separate lane, not part of onboarding |
+| `src/components/profile/`            | Default Profile Layout System — complete, do not touch  |
+| `src/routes/u.$uid.tsx`              | Public profile route — complete, do not touch           |
+| `src/lib/admin/post-queue.server.ts` | Admin publishing — complete, do not touch               |
+| `src/lib/watch-data.ts`              | Watch Now static data                                   |
+| `src/lib/guide-store.tsx`            | Guide localStorage                                      |
+| `src/lib/feed-store.tsx`             | Feed localStorage                                       |

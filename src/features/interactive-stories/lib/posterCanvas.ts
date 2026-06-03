@@ -1,12 +1,11 @@
 ﻿// Generates a shareable 1080x1920 Instagram-Story-ready ending poster as a PNG blob.
-import { IMAGES, CHARACTERS_BY_ID } from './storyData';
-import { Ending, Branch, RelationshipImpactType, Tone } from './storyTypes';
-
+import { IMAGES, CHARACTERS_BY_ID } from "./storyData";
+import { Ending, Branch, RelationshipImpactType, Tone } from "./storyTypes";
 
 const loadImage = (src: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
@@ -20,16 +19,12 @@ const tryLoadImage = async (src: string): Promise<HTMLImageElement | null> => {
   }
 };
 
-const wrapText = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] => {
-  const words = text.split(' ');
+const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+  const words = text.split(" ");
   const lines: string[] = [];
-  let line = '';
+  let line = "";
   for (const word of words) {
-    const test = line ? line + ' ' + word : word;
+    const test = line ? line + " " + word : word;
     if (ctx.measureText(test).width > maxWidth && line) {
       lines.push(line);
       line = word;
@@ -52,18 +47,18 @@ const wrapText = (
 export async function renderEndingPoster(
   ending: Ending,
   imageUrl?: string,
-  castIds: string[] = []
+  castIds: string[] = [],
 ): Promise<Blob> {
   const W = 1080;
   const H = 1920;
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas not supported');
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
 
   // Background fill
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, W, H);
 
   // Hero image (cover-fit)
@@ -90,48 +85,49 @@ export async function renderEndingPoster(
 
   // Top dim
   const topGrad = ctx.createLinearGradient(0, 0, 0, H * 0.4);
-  topGrad.addColorStop(0, 'rgba(0,0,0,0.7)');
-  topGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  topGrad.addColorStop(0, "rgba(0,0,0,0.7)");
+  topGrad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = topGrad;
   ctx.fillRect(0, 0, W, H * 0.4);
 
   // Bottom dramatic gradient
   const bottomGrad = ctx.createLinearGradient(0, H * 0.35, 0, H);
-  bottomGrad.addColorStop(0, 'rgba(0,0,0,0)');
-  bottomGrad.addColorStop(0.55, 'rgba(0,0,0,0.85)');
-  bottomGrad.addColorStop(1, 'rgba(0,0,0,1)');
+  bottomGrad.addColorStop(0, "rgba(0,0,0,0)");
+  bottomGrad.addColorStop(0.55, "rgba(0,0,0,0.85)");
+  bottomGrad.addColorStop(1, "rgba(0,0,0,1)");
   ctx.fillStyle = bottomGrad;
   ctx.fillRect(0, H * 0.35, W, H * 0.65);
 
   // "NEW ENDING UNLOCKED" badge
-  ctx.fillStyle = '#f59e0b';
-  const badgeText = 'âœ¦ NEW ENDING UNLOCKED';
-  ctx.font = '700 32px Inter, system-ui, sans-serif';
+  ctx.fillStyle = "#f59e0b";
+  const badgeText = "âœ¦ NEW ENDING UNLOCKED";
+  ctx.font = "700 32px Inter, system-ui, sans-serif";
   const badgeW = ctx.measureText(badgeText).width + 60;
   const badgeX = (W - badgeW) / 2;
   const badgeY = 110;
   ctx.beginPath();
-  if ('roundRect' in ctx && typeof ctx.roundRect === 'function') ctx.roundRect(badgeX, badgeY, badgeW, 60, 30);
+  if ("roundRect" in ctx && typeof ctx.roundRect === "function")
+    ctx.roundRect(badgeX, badgeY, badgeW, 60, 30);
   else ctx.rect(badgeX, badgeY, badgeW, 60);
   ctx.fill();
-  ctx.fillStyle = '#000';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.fillStyle = "#000";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
   ctx.fillText(badgeText, W / 2, badgeY + 32);
 
   // "SWITCH KICKS" eyebrow
-  ctx.fillStyle = '#fbbf24';
-  ctx.font = '800 28px Inter, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('SWITCH KICKS', W / 2, H - 580);
+  ctx.fillStyle = "#fbbf24";
+  ctx.font = "800 28px Inter, system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("SWITCH KICKS", W / 2, H - 580);
 
   // Ending name (big display)
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = "#fff";
   ctx.font = '900 140px "Anton Impact", Impact, sans-serif';
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = "top";
   const nameLines = wrapText(ctx, ending.name.toUpperCase(), W - 120);
   let nameY = H - 510;
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowColor = "rgba(0,0,0,0.8)";
   ctx.shadowBlur = 20;
   for (const line of nameLines) {
     ctx.fillText(line, W / 2, nameY);
@@ -140,7 +136,7 @@ export async function renderEndingPoster(
   ctx.shadowBlur = 0;
 
   // Tagline
-  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
   ctx.font = 'italic 400 44px "Crimson Pro", Georgia, serif';
   const taglineLines = wrapText(ctx, ending.tagline, W - 160);
   let tagY = nameY + 50;
@@ -161,11 +157,11 @@ export async function renderEndingPoster(
     const stripY = H - 250;
 
     // "STARRING" label
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.font = '800 22px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText('Â· STARRING Â·', W / 2, stripY - 38);
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "800 22px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("Â· STARRING Â·", W / 2, stripY - 38);
 
     for (let i = 0; i < uniqueCastIds.length; i++) {
       const id = uniqueCastIds[i];
@@ -206,36 +202,36 @@ export async function renderEndingPoster(
         ctx.drawImage(portrait, dx, dy, dw, dh);
       } else {
         // Neutral placeholder
-        ctx.fillStyle = '#1f1f23';
+        ctx.fillStyle = "#1f1f23";
         ctx.fillRect(cx - r, cy - r, avatarSize, avatarSize);
-        ctx.fillStyle = '#fbbf24';
-        ctx.font = '900 56px Inter, system-ui, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.fillStyle = "#fbbf24";
+        ctx.font = "900 56px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText(character.firstName[0], cx, cy);
       }
 
       ctx.restore();
 
       // Gold ring
-      ctx.strokeStyle = '#fbbf24';
+      ctx.strokeStyle = "#fbbf24";
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
       ctx.stroke();
 
       // First-name caption under each face
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = '800 20px Inter, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = "800 20px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
       ctx.fillText(character.firstName.toUpperCase(), cx, cy + r + 12);
     }
   }
 
   // Footer: Trey TV branding (now uses the official logo image)
   const logo = await tryLoadImage(
-    'https://d64gsuwffb70l.cloudfront.net/6a060641815889c4c7c610fd_1778783806509_ab6fb4ed.png'
+    "https://d64gsuwffb70l.cloudfront.net/6a060641815889c4c7c610fd_1778783806509_ab6fb4ed.png",
   );
   if (logo) {
     const logoH = 78;
@@ -244,24 +240,28 @@ export async function renderEndingPoster(
     ctx.drawImage(logo, (W - logoW) / 2, H - 110, logoW, logoH);
   } else {
     // Fallback text if logo PNG is unreachable
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.font = '700 24px Inter, system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('TREY TV  â€¢  STORY BY TREY TRIZZY', W / 2, H - 60);
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "700 24px Inter, system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("TREY TV  â€¢  STORY BY TREY TRIZZY", W / 2, H - 60);
   }
 
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error('Failed to render poster'));
-    }, 'image/png', 0.95);
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Failed to render poster"));
+      },
+      "image/png",
+      0.95,
+    );
   });
 }
 
 export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -275,18 +275,19 @@ export function downloadBlob(blob: Blob, filename: string) {
  * based on which characters appear most often across the branch's chapters.
  */
 export function pickCastFromBranch(branch: Branch | null, limit = 5): string[] {
-  if (!branch) return ['malik-carter', 'micah-carter'];
+  if (!branch) return ["malik-carter", "micah-carter"];
   const counts: Record<string, number> = {};
   const allIds = Object.keys(CHARACTERS_BY_ID);
   for (const id of allIds) counts[id] = 0;
 
   for (const ch of branch.chapters) {
-    const blob = `${ch.title || ''} ${ch.summary || ''} ${ch.choiceMade?.text || ''} ${ch.prose || ''}`.toLowerCase();
+    const blob =
+      `${ch.title || ""} ${ch.summary || ""} ${ch.choiceMade?.text || ""} ${ch.prose || ""}`.toLowerCase();
     for (const id of allIds) {
       const c = CHARACTERS_BY_ID[id];
       if (
-        new RegExp(`\\b${c.firstName}\\b`, 'i').test(blob) ||
-        new RegExp(`\\b${c.name}\\b`, 'i').test(blob)
+        new RegExp(`\\b${c.firstName}\\b`, "i").test(blob) ||
+        new RegExp(`\\b${c.name}\\b`, "i").test(blob)
       ) {
         counts[id] += 1;
       }
@@ -296,22 +297,21 @@ export function pickCastFromBranch(branch: Branch | null, limit = 5): string[] {
   // Always include the twins as anchors
   const ranked = allIds.sort((a, b) => counts[b] - counts[a]);
   const top = ranked.filter((id) => counts[id] > 0).slice(0, limit);
-  if (!top.includes('malik-carter')) top.unshift('malik-carter');
-  if (!top.includes('micah-carter')) top.splice(1, 0, 'micah-carter');
+  if (!top.includes("malik-carter")) top.unshift("malik-carter");
+  if (!top.includes("micah-carter")) top.splice(1, 0, "micah-carter");
   return top.slice(0, limit);
 }
-
 
 /**
  * Map a chapter Tone to its dominant relationship impact dimension.
  * Used to "color" a branch tile by the kind of pressure the user keeps applying.
  */
 const TONE_TO_IMPACT: Record<Tone, RelationshipImpactType> = {
-  Risky:    'Tension',
-  Safe:     'Trust',
-  Romantic: 'Bond',
-  Funny:    'Loyalty',
-  Bold:     'Pressure',
+  Risky: "Tension",
+  Safe: "Trust",
+  Romantic: "Bond",
+  Funny: "Loyalty",
+  Bold: "Pressure",
 };
 
 /**
@@ -323,15 +323,19 @@ const TONE_TO_IMPACT: Record<Tone, RelationshipImpactType> = {
  * Returns null only if the branch has no chapters yet.
  */
 
-export function pickDominantImpactFromBranch(
-  branch: Branch | null
-): RelationshipImpactType | null {
+export function pickDominantImpactFromBranch(branch: Branch | null): RelationshipImpactType | null {
   if (!branch || branch.chapters.length === 0) return null;
 
   // 1) Tone tally â†’ impact tally
   const impactCounts: Record<RelationshipImpactType, number> = {
-    Trust: 0, Tension: 0, Loyalty: 0, Respect: 0,
-    Pressure: 0, Distance: 0, Bond: 0, Rivalry: 0,
+    Trust: 0,
+    Tension: 0,
+    Loyalty: 0,
+    Respect: 0,
+    Pressure: 0,
+    Distance: 0,
+    Bond: 0,
+    Rivalry: 0,
   };
 
   for (const ch of branch.chapters) {
@@ -350,20 +354,26 @@ export function pickDominantImpactFromBranch(
   //    when the branch is dominated by certain characters.
   const cast = pickCastFromBranch(branch, 4);
   const top3 = new Set(cast.slice(0, 3));
-  if (top3.has('coach-bridges'))      impactCounts.Respect  += 2;
-  if (top3.has('compliance-officer')) impactCounts.Pressure += 2;
-  if (top3.has('ms-valentina'))       impactCounts.Pressure += 1;
-  if (top3.has('ari'))                impactCounts.Bond     += 2;
-  if (top3.has('reggie'))             impactCounts.Loyalty  += 1;
-  if (top3.has('dante-reeves'))       impactCounts.Rivalry  += 1;
-  if (top3.has('denise-carter'))      impactCounts.Tension  += 1;
-
+  if (top3.has("coach-bridges")) impactCounts.Respect += 2;
+  if (top3.has("compliance-officer")) impactCounts.Pressure += 2;
+  if (top3.has("ms-valentina")) impactCounts.Pressure += 1;
+  if (top3.has("ari")) impactCounts.Bond += 2;
+  if (top3.has("reggie")) impactCounts.Loyalty += 1;
+  if (top3.has("dante-reeves")) impactCounts.Rivalry += 1;
+  if (top3.has("denise-carter")) impactCounts.Tension += 1;
 
   // 3) Pick the winner; tie-breaker favors higher-signal dimensions
   const order: RelationshipImpactType[] = [
-    'Bond', 'Tension', 'Pressure', 'Trust', 'Loyalty', 'Respect', 'Rivalry', 'Distance',
+    "Bond",
+    "Tension",
+    "Pressure",
+    "Trust",
+    "Loyalty",
+    "Respect",
+    "Rivalry",
+    "Distance",
   ];
-  let winner: RelationshipImpactType = 'Trust';
+  let winner: RelationshipImpactType = "Trust";
   let best = -1;
   for (const k of order) {
     if (impactCounts[k] > best) {
@@ -373,4 +383,3 @@ export function pickDominantImpactFromBranch(
   }
   return best > 0 ? winner : null;
 }
-

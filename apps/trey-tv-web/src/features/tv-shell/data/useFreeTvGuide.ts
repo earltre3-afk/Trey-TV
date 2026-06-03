@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import type { FreeTvGuideChannel, UseFreeTvGuideState } from './freeTvApi.types';
-import { getFreeTvSchedule } from './freeTvApi';
+import { useEffect, useState } from "react";
+import type { FreeTvGuideChannel, UseFreeTvGuideState } from "./freeTvApi.types";
+import { getFreeTvSchedule } from "./freeTvApi";
 
 type UseFreeTvGuideOptions = {
   fallbackChannels: FreeTvGuideChannel[];
@@ -11,7 +11,7 @@ export function useFreeTvGuide({ fallbackChannels }: UseFreeTvGuideOptions): Use
     channels: fallbackChannels,
     loading: true,
     error: null,
-    source: 'fallback',
+    source: "fallback",
   });
 
   useEffect(() => {
@@ -27,17 +27,22 @@ export function useFreeTvGuide({ fallbackChannels }: UseFreeTvGuideOptions): Use
           setState({
             channels: fallbackChannels,
             loading: false,
-            error: 'Free TV schedule returned no channels yet.',
-            source: 'fallback',
+            error: "Free TV schedule returned no channels yet.",
+            source: "fallback",
           });
           return;
         }
 
-        setState({ channels, loading: false, error: null, source: 'api' });
+        setState({ channels, loading: false, error: null, source: "api" });
       } catch (error) {
         if (!alive || controller.signal.aborted) return;
-        const message = error instanceof Error ? error.message : 'Free TV schedule unavailable.';
-        setState({ channels: fallbackChannels, loading: false, error: message, source: 'fallback' });
+        const message = error instanceof Error ? error.message : "Free TV schedule unavailable.";
+        setState({
+          channels: fallbackChannels,
+          loading: false,
+          error: message,
+          source: "fallback",
+        });
       }
     }
 

@@ -78,7 +78,10 @@ export function useCreatorSubmit(): UseCreatorSubmitReturn {
 
     try {
       const supabase = createBrowserClient();
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       if (error || !user) {
         return null;
@@ -199,26 +202,24 @@ export function useCreatorSubmit(): UseCreatorSubmitReturn {
         if (existing) return true;
 
         const episodeNumber = draft.episode_number > 0 ? draft.episode_number : null;
-        const { error: queueError } = await (supabase as any)
-          .from("creator_post_queue")
-          .insert({
-            creator_id: userId,
-            edit_project_id: rowId,
-            channel_id: channel?.id ?? null,
-            show_id: draft.show_id || null,
-            episode_number: episodeNumber,
-            title: draft.title.trim(),
-            description: draft.short_description?.trim() || null,
-            stream_uid: streamUid,
-            thumbnail_url: draft.thumbnail_url || null,
-            visibility: mapVisibility(draft.visibility),
-            is_plus_content: isPlusContent(draft.episode_number, draft.access_type),
-            scheduled_at:
-              draft.visibility === "scheduled" && draft.scheduled_at
-                ? new Date(draft.scheduled_at).toISOString()
-                : null,
-            approval_status: "pending",
-          });
+        const { error: queueError } = await (supabase as any).from("creator_post_queue").insert({
+          creator_id: userId,
+          edit_project_id: rowId,
+          channel_id: channel?.id ?? null,
+          show_id: draft.show_id || null,
+          episode_number: episodeNumber,
+          title: draft.title.trim(),
+          description: draft.short_description?.trim() || null,
+          stream_uid: streamUid,
+          thumbnail_url: draft.thumbnail_url || null,
+          visibility: mapVisibility(draft.visibility),
+          is_plus_content: isPlusContent(draft.episode_number, draft.access_type),
+          scheduled_at:
+            draft.visibility === "scheduled" && draft.scheduled_at
+              ? new Date(draft.scheduled_at).toISOString()
+              : null,
+          approval_status: "pending",
+        });
 
         if (queueError) {
           toast.error("Submission queued but review entry failed - contact support");

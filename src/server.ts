@@ -12,6 +12,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
 import { handleLiveKitToken, handleLiveKitDiagnostics } from "./lib/livekit-token.server";
+import { handleTradioCaller } from "./lib/tradio/tradioCaller.server";
 import { handlePluginApiRequest } from "./lib/plugins/registry";
 import { handlePlutoApiRequest } from "./lib/pluto/pluto-api.server";
 import { handleTrafficRequest } from "./lib/traffic-fake.server";
@@ -26,7 +27,7 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => ((m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry)),
+      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
     );
   }
   return serverEntryPromise;
@@ -66,11 +67,15 @@ async function handleOAuthApiRequest(request: Request, env: unknown): Promise<Re
   if (url.pathname === "/api/livekit/diagnostics") {
     return handleLiveKitDiagnostics(request, env);
   }
+  if (url.pathname === "/api/tradio/caller") {
+    return handleTradioCaller(request, env);
+  }
 
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);
   if (url.pathname === "/oauth/userinfo") return handleOAuthUserInfo(request);
   if (url.pathname === "/oauth/revoke") return handleOAuthRevoke(request);
-  if (url.pathname === "/.well-known/openid-configuration") return handleOpenIdConfiguration(request);
+  if (url.pathname === "/.well-known/openid-configuration")
+    return handleOpenIdConfiguration(request);
   if (url.pathname === "/oauth/jwks.json") return handleJwks();
 
   return null;

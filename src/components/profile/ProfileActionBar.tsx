@@ -9,8 +9,20 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Pencil, UserPlus, UserCheck, MessageCircle, Share2, Copy,
-  Crown, Sparkles, Gift, Bell, MoreVertical, Shield, ShieldAlert, Tv,
+  Pencil,
+  UserPlus,
+  UserCheck,
+  MessageCircle,
+  Share2,
+  Copy,
+  Crown,
+  Sparkles,
+  Gift,
+  Bell,
+  MoreVertical,
+  Shield,
+  ShieldAlert,
+  Tv,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProfileContext } from "./ProfileTypes";
@@ -316,7 +328,11 @@ export function ProfileActionBar({
           >
             <Gift className="size-4" /> Gift
           </button>
-          <GiftPickerSheet open={giftOpen} onClose={() => setGiftOpen(false)} recipient={profile.handle} />
+          <GiftPickerSheet
+            open={giftOpen}
+            onClose={() => setGiftOpen(false)}
+            recipient={profile.handle}
+          />
         </>
       )}
 
@@ -358,7 +374,11 @@ export function ProfileActionBar({
               <Copy className="size-4 mr-2" /> Copy UID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleBlock} disabled={isBlocking} className="text-destructive">
+            <DropdownMenuItem
+              onClick={handleBlock}
+              disabled={isBlocking}
+              className="text-destructive"
+            >
               <Shield className="size-4 mr-2" /> {isBlocking ? "Blocking..." : "Block User"}
             </DropdownMenuItem>
           </DropdownMenuContent>

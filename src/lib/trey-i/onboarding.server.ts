@@ -59,7 +59,9 @@ const validateFinalizeInput = (input: any): FinalizeInput => {
   };
 };
 
-const validateChooseOnboardingMethodInput = (input: ChooseOnboardingMethodInput): ChooseOnboardingMethodInput => {
+const validateChooseOnboardingMethodInput = (
+  input: ChooseOnboardingMethodInput,
+): ChooseOnboardingMethodInput => {
   const method = input?.method === "voice" || input?.method === "manual" ? input.method : "manual";
   return {
     accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
@@ -67,13 +69,21 @@ const validateChooseOnboardingMethodInput = (input: ChooseOnboardingMethodInput)
   };
 };
 
-const validateSaveOnboardingProfileInput = (input: SaveOnboardingProfileInput): SaveOnboardingProfileInput => ({
+const validateSaveOnboardingProfileInput = (
+  input: SaveOnboardingProfileInput,
+): SaveOnboardingProfileInput => ({
   accessToken: typeof input?.accessToken === "string" ? input.accessToken : "",
-  fields: input?.fields && typeof input.fields === "object" && !Array.isArray(input.fields) ? input.fields : {},
+  fields:
+    input?.fields && typeof input.fields === "object" && !Array.isArray(input.fields)
+      ? input.fields
+      : {},
 });
 
 function cleanText(value: unknown, max = 500): string {
-  return String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, max);
 }
 
 function cleanProfileUsername(value: unknown): string {
@@ -106,7 +116,10 @@ function cleanBoolean(value: unknown, fallback = false): boolean {
 
 function cleanList(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return Array.from(new Set(value.map((item) => cleanText(item, 40)).filter(Boolean))).slice(0, 12);
+    return Array.from(new Set(value.map((item) => cleanText(item, 40)).filter(Boolean))).slice(
+      0,
+      12,
+    );
   }
 
   return cleanText(value, 800)
@@ -131,7 +144,10 @@ function socialLinksFrom(input: Record<string, unknown>): Record<string, string>
   return links;
 }
 
-function sanitizeSafeProfileFields(fields: Record<string, unknown>, options: { requireBasics?: boolean } = {}): SafeProfileFields {
+function sanitizeSafeProfileFields(
+  fields: Record<string, unknown>,
+  options: { requireBasics?: boolean } = {},
+): SafeProfileFields {
   const updates: SafeProfileFields = {};
 
   const displayName = cleanText(fields.display_name ?? fields.name, 50);
@@ -141,7 +157,11 @@ function sanitizeSafeProfileFields(fields: Record<string, unknown>, options: { r
   }
 
   const usernameInput = fields.username;
-  if (typeof usernameInput !== "undefined" && usernameInput !== null && cleanText(usernameInput, 80)) {
+  if (
+    typeof usernameInput !== "undefined" &&
+    usernameInput !== null &&
+    cleanText(usernameInput, 80)
+  ) {
     const username = cleanProfileUsername(usernameInput);
     if (!USERNAME_PATTERN.test(username)) {
       throw new Error("Use 3-30 lowercase letters, numbers, or underscores");
@@ -188,9 +208,12 @@ function sanitizeSafeProfileFields(fields: Record<string, unknown>, options: { r
     updates.profile_visibility = profileVisibility;
   }
 
-  if (typeof fields.show_location !== "undefined") updates.show_location = cleanBoolean(fields.show_location, true);
-  if (typeof fields.show_birthday !== "undefined") updates.show_birthday = cleanBoolean(fields.show_birthday, false);
-  if (typeof fields.show_top_three !== "undefined") updates.show_top_three = cleanBoolean(fields.show_top_three, true);
+  if (typeof fields.show_location !== "undefined")
+    updates.show_location = cleanBoolean(fields.show_location, true);
+  if (typeof fields.show_birthday !== "undefined")
+    updates.show_birthday = cleanBoolean(fields.show_birthday, false);
+  if (typeof fields.show_top_three !== "undefined")
+    updates.show_top_three = cleanBoolean(fields.show_top_three, true);
   if (typeof fields.allow_top_three_adds !== "undefined") {
     updates.allow_top_three_adds = cleanBoolean(fields.allow_top_three_adds, true);
   }
@@ -230,7 +253,9 @@ function getUserClient(accessToken: string) {
   });
 }
 
-export async function verifyTreyIUser(accessToken: string): Promise<{ supabase: any; user: VerifiedUser }> {
+export async function verifyTreyIUser(
+  accessToken: string,
+): Promise<{ supabase: any; user: VerifiedUser }> {
   const token = accessToken.trim();
   const supabase = getUserClient(token);
   const {
@@ -286,17 +311,15 @@ export async function ensurePublicProfileUid(userId: string): Promise<string | n
 
   if (!existing) {
     const publicUid = generateFallbackPublicProfileUid();
-    const { error } = await (supabase as any)
-      .from("profiles")
-      .upsert(
-        {
-          id: userId,
-          public_profile_uid: publicUid,
-          site_uid: publicUid,
-          role: "user",
-        },
-        { onConflict: "id" },
-      );
+    const { error } = await (supabase as any).from("profiles").upsert(
+      {
+        id: userId,
+        public_profile_uid: publicUid,
+        site_uid: publicUid,
+        role: "user",
+      },
+      { onConflict: "id" },
+    );
 
     if (error) throw new Error(error.message);
     return ensurePublicProfileUid(userId);
@@ -324,8 +347,14 @@ export async function ensurePublicProfileUid(userId: string): Promise<string | n
   }
 
   let candidate = "";
-  const { data: generatedUid, error: rpcError } = await (supabase as any).rpc("generate_trey_public_profile_uid");
-  if (!rpcError && typeof generatedUid === "string" && TREY_PUBLIC_PROFILE_UID_PATTERN.test(generatedUid)) {
+  const { data: generatedUid, error: rpcError } = await (supabase as any).rpc(
+    "generate_trey_public_profile_uid",
+  );
+  if (
+    !rpcError &&
+    typeof generatedUid === "string" &&
+    TREY_PUBLIC_PROFILE_UID_PATTERN.test(generatedUid)
+  ) {
     candidate = generatedUid;
   }
 
@@ -377,32 +406,32 @@ async function ensureCompletedAccountPersistence(userId: string, publicProfileUi
     .upsert(profilePatch, { onConflict: "id" });
   if (profileError) throw new Error(profileError.message);
 
-  const { error: prefError } = await (supabase as any)
-    .from("user_preferences")
-    .upsert(
-      {
-        user_id: userId,
-        public_profile_uid: publicProfileUid,
-        updated_at: now,
-      },
-      { onConflict: "user_id" },
-    );
+  const { error: prefError } = await (supabase as any).from("user_preferences").upsert(
+    {
+      user_id: userId,
+      public_profile_uid: publicProfileUid,
+      updated_at: now,
+    },
+    { onConflict: "user_id" },
+  );
   if (prefError) throw new Error(prefError.message);
 
-  const { error: creditError } = await (supabase as any)
-    .from("community_credit_balances")
-    .upsert(
-      {
-        user_id: userId,
-        public_profile_uid: publicProfileUid,
-        updated_at: now,
-      },
-      { onConflict: "user_id" },
-    );
+  const { error: creditError } = await (supabase as any).from("community_credit_balances").upsert(
+    {
+      user_id: userId,
+      public_profile_uid: publicProfileUid,
+      updated_at: now,
+    },
+    { onConflict: "user_id" },
+  );
   if (creditError) throw new Error(creditError.message);
 }
 
-async function assertUsernameAvailable(supabase: ReturnType<typeof createClient>, username: string, userId: string) {
+async function assertUsernameAvailable(
+  supabase: ReturnType<typeof createClient>,
+  username: string,
+  userId: string,
+) {
   const { data: usernameOwner, error } = await (supabase as any)
     .from("profiles")
     .select("id")
@@ -422,7 +451,11 @@ async function assertUsernameAvailable(supabase: ReturnType<typeof createClient>
 export async function saveProfileFieldsForUser(
   accessToken: string,
   fields: Record<string, unknown>,
-  options: { complete?: boolean; method?: "voice" | "manual" | "import_screenshot"; requireBasics?: boolean } = {},
+  options: {
+    complete?: boolean;
+    method?: "voice" | "manual" | "import_screenshot";
+    requireBasics?: boolean;
+  } = {},
 ) {
   const { supabase, user } = await verifyTreyIUser(accessToken);
   const updates = sanitizeSafeProfileFields(fields, { requireBasics: options.requireBasics });
@@ -443,7 +476,9 @@ export async function saveProfileFieldsForUser(
   if (options.complete) {
     publicProfileUid = await ensurePublicProfileUid(user.id);
     if (!publicProfileUid) {
-      throw new Error("Your public profile link is not ready yet. Please try finishing setup again.");
+      throw new Error(
+        "Your public profile link is not ready yet. Please try finishing setup again.",
+      );
     }
 
     profileUpdates.public_profile_uid = publicProfileUid;
@@ -458,7 +493,10 @@ export async function saveProfileFieldsForUser(
     if (options.method) profileUpdates.onboarding_method = options.method;
   }
 
-  const { error } = await (supabase as any).from("profiles").update(profileUpdates).eq("id", user.id);
+  const { error } = await (supabase as any)
+    .from("profiles")
+    .update(profileUpdates)
+    .eq("id", user.id);
 
   if (error) {
     throw new Error(error.message);
@@ -466,7 +504,9 @@ export async function saveProfileFieldsForUser(
 
   if (options.complete) {
     if (!publicProfileUid) {
-      throw new Error("Your public profile link is not ready yet. Please try finishing setup again.");
+      throw new Error(
+        "Your public profile link is not ready yet. Please try finishing setup again.",
+      );
     }
     await ensureCompletedAccountPersistence(user.id, publicProfileUid);
 
@@ -524,9 +564,15 @@ export const saveOnboardingProfile = createServerFn({ method: "POST" })
 export const finalizeOnboarding = createServerFn({ method: "POST" })
   .inputValidator(validateFinalizeInput)
   .handler(async ({ data }): Promise<{ publicProfileUid: string }> => {
-    const { publicProfileUid } = await saveProfileFieldsForUser(data.accessToken, {}, { complete: true, method: data.method ?? "manual" });
+    const { publicProfileUid } = await saveProfileFieldsForUser(
+      data.accessToken,
+      {},
+      { complete: true, method: data.method ?? "manual" },
+    );
     if (!publicProfileUid) {
-      throw new Error("Your public profile link is not ready yet. Please try finishing setup again.");
+      throw new Error(
+        "Your public profile link is not ready yet. Please try finishing setup again.",
+      );
     }
 
     return { publicProfileUid };
@@ -538,17 +584,25 @@ export const treyICheckUsername = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ username: string; available: boolean; reason: string }> => {
     const raw = data.username
-      .toLowerCase().replace(/^@/, "").replace(/\s+underscore\s+/g, "_")
-      .replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "_")
-      .replace(/_+/g, "_").replace(/^_+|_+$/g, "").slice(0, 30);
+      .toLowerCase()
+      .replace(/^@/, "")
+      .replace(/\s+underscore\s+/g, "_")
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 30);
 
     if (!USERNAME_PATTERN.test(raw)) return { username: raw, available: false, reason: "invalid" };
 
     try {
       const supabase = getTreyIServiceClient();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const { data: existing } = await (supabase as any)
-        .from("profiles").select("id").ilike("username", raw).maybeSingle();
+        .from("profiles")
+        .select("id")
+        .ilike("username", raw)
+        .maybeSingle();
       if (existing) return { username: raw, available: false, reason: "taken" };
       return { username: raw, available: true, reason: "available" };
     } catch {

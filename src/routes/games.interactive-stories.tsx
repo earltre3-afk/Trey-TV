@@ -5,7 +5,11 @@ export const Route = createFileRoute("/games/interactive-stories")({
   head: () => ({
     meta: [
       { title: "Interactive Stories · Trey TV Games" },
-      { name: "description", content: "Play cinematic stories where every choice changes the outcome. Interactive Stories on Trey TV." },
+      {
+        name: "description",
+        content:
+          "Play cinematic stories where every choice changes the outcome. Interactive Stories on Trey TV.",
+      },
     ],
   }),
 });

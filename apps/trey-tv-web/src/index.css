@@ -1,5 +1,4 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -96,7 +95,8 @@
     @apply bg-background text-foreground font-sans dark:bg-background dark:text-foreground;
   }
 
-  pre, code {
+  pre,
+  code {
     @apply font-mono;
   }
 }
@@ -132,8 +132,18 @@
 }
 
 /* TV shell utilities */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* Force dark base for TV shell */
-html, body, #root { background: #05050A; color: #fff; }
+html,
+body,
+#root {
+  background: #05050a;
+  color: #fff;
+}

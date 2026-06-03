@@ -30,7 +30,8 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
   const [busy, setBusy] = useState<string | null>(null);
 
   const inviteUrl = useMemo(
-    () => `${typeof location !== "undefined" ? location.origin : ""}/watch-party/${partyId}?join=${inviteToken}`,
+    () =>
+      `${typeof location !== "undefined" ? location.origin : ""}/watch-party/${partyId}?join=${inviteToken}`,
     [partyId, inviteToken],
   );
 
@@ -41,25 +42,25 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
       // Followers = users following the host (host is the one inviting).
       const { data } = await (supabase as any)
         .from("follows")
-        .select("follower_id, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url)")
+        .select(
+          "follower_id, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url)",
+        )
         .eq("following_id", session.user.id)
         .limit(100);
       if (cancelled) return;
-      const list = (data ?? [])
-        .map((r: any) => r.profiles)
-        .filter(Boolean) as Follower[];
+      const list = (data ?? []).map((r: any) => r.profiles).filter(Boolean) as Follower[];
       setFollowers(list);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [session?.user?.id]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return followers;
     return followers.filter(
-      (f) =>
-        f.display_name?.toLowerCase().includes(q) ||
-        f.username?.toLowerCase().includes(q),
+      (f) => f.display_name?.toLowerCase().includes(q) || f.username?.toLowerCase().includes(q),
     );
   }, [followers, query]);
 
@@ -78,7 +79,9 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
     if (!session?.access_token) return;
     setBusy(userId);
     try {
-      const res = await hostAddMember({ data: { accessToken: session.access_token, partyId, targetUserId: userId } });
+      const res = await hostAddMember({
+        data: { accessToken: session.access_token, partyId, targetUserId: userId },
+      });
       if (!res.ok) {
         toast.error(res.error === "party_full" ? "Party is full" : `Couldn't add (${res.error})`);
       } else {
@@ -90,7 +93,10 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0B1426] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -107,7 +113,9 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
 
         <div className="p-4 space-y-4">
           <div>
-            <label className="text-xs text-white/60 mb-1 block">Shareable link · up to 10 members</label>
+            <label className="text-xs text-white/60 mb-1 block">
+              Shareable link · up to 10 members
+            </label>
             <div className="flex items-center gap-2">
               <input
                 readOnly
@@ -144,18 +152,27 @@ export function InviteModal({ partyId, inviteToken, alreadyMemberIds, onClose }:
               {filtered.map((f) => {
                 const inParty = alreadyMemberIds.has(f.id);
                 return (
-                  <div key={f.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5">
+                  <div
+                    key={f.id}
+                    className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5"
+                  >
                     <div className="size-8 rounded-full bg-white/10 overflow-hidden">
-                      {f.avatar_url ? <img src={f.avatar_url} alt="" className="size-full object-cover" /> : null}
+                      {f.avatar_url ? (
+                        <img src={f.avatar_url} alt="" className="size-full object-cover" />
+                      ) : null}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold truncate">
                         {f.display_name || f.username || "Follower"}
                       </div>
-                      {f.username && <div className="text-[10px] text-white/40 truncate">@{f.username}</div>}
+                      {f.username && (
+                        <div className="text-[10px] text-white/40 truncate">@{f.username}</div>
+                      )}
                     </div>
                     {inParty ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/50">In party</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-white/50">
+                        In party
+                      </span>
                     ) : (
                       <button
                         onClick={() => addFollower(f.id)}

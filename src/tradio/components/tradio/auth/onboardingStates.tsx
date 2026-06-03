@@ -1,65 +1,88 @@
-import React from 'react';
-import { Clock, Disc3, Mic2, Music2, Radio, ShieldAlert, ShieldCheck, Sparkles, XCircle } from 'lucide-react';
-import { GlassCard, PrimaryButton, SecondaryButton } from '../ui';
-import type { AccessRequestEvent, RoleRequestStatus } from './types';
-import { getRequestStatusLabel } from './accessRequests';
+import React from "react";
+import {
+  Clock,
+  Disc3,
+  Mic2,
+  Music2,
+  Radio,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  XCircle,
+} from "lucide-react";
+import { GlassCard, PrimaryButton, SecondaryButton } from "../ui";
+import type { AccessRequestEvent, RoleRequestStatus } from "./types";
+import { getRequestStatusLabel } from "./accessRequests";
 
 const STATUS_TONE: Record<RoleRequestStatus, string> = {
-  not_started: 'border-white/12 bg-white/[0.05] text-white/55',
-  draft: 'border-white/15 bg-white/[0.06] text-white/70',
-  submitted: 'border-cyan-300/30 bg-cyan-500/10 text-cyan-200',
-  pending: 'border-amber-300/30 bg-amber-500/10 text-amber-200',
-  approved: 'border-emerald-300/30 bg-emerald-500/10 text-emerald-200',
-  rejected: 'border-red-300/30 bg-red-500/10 text-red-200',
-  restricted: 'border-orange-300/30 bg-orange-500/10 text-orange-200',
-  needs_more_info: 'border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-200',
-  cancelled: 'border-white/12 bg-white/[0.04] text-white/45',
+  not_started: "border-white/12 bg-white/[0.05] text-white/55",
+  draft: "border-white/15 bg-white/[0.06] text-white/70",
+  submitted: "border-cyan-300/30 bg-cyan-500/10 text-cyan-200",
+  pending: "border-amber-300/30 bg-amber-500/10 text-amber-200",
+  approved: "border-emerald-300/30 bg-emerald-500/10 text-emerald-200",
+  rejected: "border-red-300/30 bg-red-500/10 text-red-200",
+  restricted: "border-orange-300/30 bg-orange-500/10 text-orange-200",
+  needs_more_info: "border-fuchsia-300/30 bg-fuchsia-500/10 text-fuchsia-200",
+  cancelled: "border-white/12 bg-white/[0.04] text-white/45",
 };
 
-const EVENT_LABEL: Record<AccessRequestEvent['event_type'], string> = {
-  submitted: 'Request submitted',
-  updated: 'Details updated',
-  needs_more_info: 'More info requested',
-  approved: 'Approved',
-  rejected: 'Not approved',
-  restricted: 'Restricted',
-  cancelled: 'Cancelled',
-  note_added: 'Reviewer note',
+const EVENT_LABEL: Record<AccessRequestEvent["event_type"], string> = {
+  submitted: "Request submitted",
+  updated: "Details updated",
+  needs_more_info: "More info requested",
+  approved: "Approved",
+  rejected: "Not approved",
+  restricted: "Restricted",
+  cancelled: "Cancelled",
+  note_added: "Reviewer note",
 };
 
-const EVENT_DOT: Record<AccessRequestEvent['event_type'], string> = {
-  submitted: 'bg-cyan-300',
-  updated: 'bg-white/50',
-  needs_more_info: 'bg-fuchsia-300',
-  approved: 'bg-emerald-300',
-  rejected: 'bg-red-300',
-  restricted: 'bg-orange-300',
-  cancelled: 'bg-white/40',
-  note_added: 'bg-purple-300',
+const EVENT_DOT: Record<AccessRequestEvent["event_type"], string> = {
+  submitted: "bg-cyan-300",
+  updated: "bg-white/50",
+  needs_more_info: "bg-fuchsia-300",
+  approved: "bg-emerald-300",
+  rejected: "bg-red-300",
+  restricted: "bg-orange-300",
+  cancelled: "bg-white/40",
+  note_added: "bg-purple-300",
 };
 
 const formatEventTime = (iso?: string) => {
-  if (!iso) return '';
+  if (!iso) return "";
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 };
 
 /** Vertical audit timeline for an access request. Shown to the owner and to reviewers. */
-export const RequestEventTimeline: React.FC<{ events?: AccessRequestEvent[]; compact?: boolean }> = ({ events, compact }) => {
+export const RequestEventTimeline: React.FC<{
+  events?: AccessRequestEvent[];
+  compact?: boolean;
+}> = ({ events, compact }) => {
   if (!events || events.length === 0) {
     return <p className="text-[11px] italic text-white/40">No timeline events yet.</p>;
   }
   return (
-    <ol className={`relative space-y-2 ${compact ? '' : 'pl-1'}`}>
+    <ol className={`relative space-y-2 ${compact ? "" : "pl-1"}`}>
       {events.map((event) => (
         <li key={event.id} className="flex items-start gap-2.5">
           <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${EVENT_DOT[event.event_type]}`} />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-white/80">{EVENT_LABEL[event.event_type]}</span>
-              {event.created_at && <span className="text-[10px] text-white/35">{formatEventTime(event.created_at)}</span>}
+              <span className="text-[11px] font-bold text-white/80">
+                {EVENT_LABEL[event.event_type]}
+              </span>
+              {event.created_at && (
+                <span className="text-[10px] text-white/35">
+                  {formatEventTime(event.created_at)}
+                </span>
+              )}
             </div>
-            {event.note && <p className="mt-0.5 text-[11px] leading-relaxed text-white/50">{event.note}</p>}
+            {event.note && (
+              <p className="mt-0.5 text-[11px] leading-relaxed text-white/50">{event.note}</p>
+            )}
           </div>
         </li>
       ))}
@@ -68,7 +91,9 @@ export const RequestEventTimeline: React.FC<{ events?: AccessRequestEvent[]; com
 };
 
 export const RequestStatusBadge: React.FC<{ status: RoleRequestStatus }> = ({ status }) => (
-  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${STATUS_TONE[status]}`}>
+  <span
+    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${STATUS_TONE[status]}`}
+  >
     <span className="h-1.5 w-1.5 rounded-full bg-current" />
     {getRequestStatusLabel(status)}
   </span>
@@ -89,7 +114,18 @@ export const OnboardingState: React.FC<{
   secondaryLabel?: string;
   onSecondary?: () => void;
   note?: string;
-}> = ({ icon, eyebrow, title, message, status, primaryLabel, onPrimary, secondaryLabel, onSecondary, note }) => (
+}> = ({
+  icon,
+  eyebrow,
+  title,
+  message,
+  status,
+  primaryLabel,
+  onPrimary,
+  secondaryLabel,
+  onSecondary,
+  note,
+}) => (
   <GlassCard glow className="p-6">
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-start gap-4">
@@ -98,7 +134,11 @@ export const OnboardingState: React.FC<{
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            {eyebrow && <span className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">{eyebrow}</span>}
+            {eyebrow && (
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">
+                {eyebrow}
+              </span>
+            )}
             {status && <RequestStatusBadge status={status} />}
           </div>
           <h3 className="mt-1.5 text-xl font-black tracking-tight text-white">{title}</h3>
@@ -114,7 +154,9 @@ export const OnboardingState: React.FC<{
             </PrimaryButton>
           )}
           {secondaryLabel && (
-            <SecondaryButton className="px-4 py-2.5 text-[11px]" onClick={onSecondary}>{secondaryLabel}</SecondaryButton>
+            <SecondaryButton className="px-4 py-2.5 text-[11px]" onClick={onSecondary}>
+              {secondaryLabel}
+            </SecondaryButton>
           )}
         </div>
       )}
@@ -179,7 +221,10 @@ export const VerificationPendingState: React.FC = () => (
   />
 );
 
-export const RequestRejectedState: React.FC<{ reason?: string; onResubmit?: () => void }> = ({ reason, onResubmit }) => (
+export const RequestRejectedState: React.FC<{ reason?: string; onResubmit?: () => void }> = ({
+  reason,
+  onResubmit,
+}) => (
   <OnboardingState
     icon={<XCircle className="h-5 w-5" />}
     status="rejected"
@@ -191,7 +236,10 @@ export const RequestRejectedState: React.FC<{ reason?: string; onResubmit?: () =
   />
 );
 
-export const NeedsMoreInfoState: React.FC<{ reason?: string; onContinue?: () => void }> = ({ reason, onContinue }) => (
+export const NeedsMoreInfoState: React.FC<{ reason?: string; onContinue?: () => void }> = ({
+  reason,
+  onContinue,
+}) => (
   <OnboardingState
     icon={<Clock className="h-5 w-5" />}
     status="needs_more_info"

@@ -12,11 +12,16 @@ function OAuthUserInfoEndpoint() {
         <p className="text-[10px] tracking-[0.35em] text-primary">TREY TV OAUTH</p>
         <h1 className="mt-3 text-3xl font-black">/oauth/userinfo</h1>
         <p className="mt-3 text-sm text-muted-foreground leading-6">
-          This endpoint is reserved for scoped Trey TV identity responses. It should require a valid bearer token and return only data covered by approved scopes.
+          This endpoint is reserved for scoped Trey TV identity responses. It should require a valid
+          bearer token and return only data covered by approved scopes.
         </p>
-        <Link to="/developers/docs" className="mt-5 inline-flex h-10 px-4 rounded-xl liquid-glass border border-white/10 items-center text-sm">Developer docs</Link>
+        <Link
+          to="/developers/docs"
+          className="mt-5 inline-flex h-10 px-4 rounded-xl liquid-glass border border-white/10 items-center text-sm"
+        >
+          Developer docs
+        </Link>
       </div>
     </main>
   );
 }
-

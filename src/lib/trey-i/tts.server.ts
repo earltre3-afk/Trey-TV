@@ -44,7 +44,9 @@ function extractAudioBuffer(response: unknown): { bytes: Buffer; mimeType: strin
     }>;
   };
 
-  const part = data.candidates?.[0]?.content?.parts?.find((item) => item.inlineData?.data || item.inline_data?.data);
+  const part = data.candidates?.[0]?.content?.parts?.find(
+    (item) => item.inlineData?.data || item.inline_data?.data,
+  );
   const inline = (part?.inlineData ?? part?.inline_data) as
     | { data?: string; mimeType?: string; mime_type?: string }
     | undefined;
@@ -106,9 +108,10 @@ export const treyITts = createServerFn({ method: "POST" })
       const audio = extractAudioBuffer(response);
       if (!audio) return { audioBase64: null };
 
-      const wav = audio.mimeType.includes("wav") || audio.bytes.subarray(0, 4).toString("ascii") === "RIFF"
-        ? audio.bytes
-        : wavFromPcm(audio.bytes);
+      const wav =
+        audio.mimeType.includes("wav") || audio.bytes.subarray(0, 4).toString("ascii") === "RIFF"
+          ? audio.bytes
+          : wavFromPcm(audio.bytes);
 
       return {
         audioBase64: wav.toString("base64"),

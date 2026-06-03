@@ -10,14 +10,14 @@
  * AI-provider backend swaps in behind the same signatures in a later phase.
  */
 
-import { analyzeContentFeelMock } from './contentFeelMockAnalysis';
+import { analyzeContentFeelMock } from "./contentFeelMockAnalysis";
 import {
   buildQuietContexts,
   buildRouteMappingsFromProfile,
   profileToQuietIndexEntry,
   profileToRouteIndexEntries,
-} from './contentFeelRouteMapping';
-import { PRESCRIBE_ME_DAILY_LIMIT } from './contentFeelQuestions';
+} from "./contentFeelRouteMapping";
+import { PRESCRIBE_ME_DAILY_LIMIT } from "./contentFeelQuestions";
 import type {
   ContentAnalysisJob,
   ContentFeelProfile,
@@ -26,9 +26,9 @@ import type {
   PrescribeMeRouteIndexEntry,
   QuietRecommendationIndexEntry,
   ReanalysisTrigger,
-} from './contentFeelTypes';
+} from "./contentFeelTypes";
 
-export type ContentFeelDataSource = 'mock' | 'supabase';
+export type ContentFeelDataSource = "mock" | "supabase";
 
 export interface ContentFeelResult<T> {
   source: ContentFeelDataSource;
@@ -36,7 +36,11 @@ export interface ContentFeelResult<T> {
   warning: string | null;
 }
 
-const ok = <T,>(data: T, warning: string | null = null): ContentFeelResult<T> => ({ source: 'mock', data, warning });
+const ok = <T>(data: T, warning: string | null = null): ContentFeelResult<T> => ({
+  source: "mock",
+  data,
+  warning,
+});
 
 // In-memory stores (replace with Supabase tables in a later phase).
 const profileCache = new Map<string, ContentFeelProfile>();
@@ -45,19 +49,22 @@ const prescribeUsage = new Map<string, { date: string; count: number }>();
 
 const nowIso = () => new Date().toISOString();
 const today = () => new Date().toISOString().slice(0, 10);
-const fingerprint = (tags: string[]) => tags.slice().sort().join('|') || 'none';
+const fingerprint = (tags: string[]) => tags.slice().sort().join("|") || "none";
 
 // ─── Pipeline ─────────────────────────────────────────────────────────────────
 
 /** Step 1: create a pending analysis job when an upload is created. */
-export const createAnalysisJob = (input: ContentFeelScanInput, analysisType: ContentAnalysisJob['analysis_type'] = 'initial'): ContentFeelResult<ContentAnalysisJob> => {
+export const createAnalysisJob = (
+  input: ContentFeelScanInput,
+  analysisType: ContentAnalysisJob["analysis_type"] = "initial",
+): ContentFeelResult<ContentAnalysisJob> => {
   const job: ContentAnalysisJob = {
     id: `job-${input.content_id}-${Date.now()}`,
     content_id: input.content_id,
     content_type: input.content_type,
     source_platform: input.source_platform,
     user_id: input.creator_user_id ?? null,
-    status: 'pending',
+    status: "pending",
     analysis_type: analysisType,
     input_metadata: input,
     output_profile: null,
@@ -72,7 +79,10 @@ export const createAnalysisJob = (input: ContentFeelScanInput, analysisType: Con
 };
 
 /** Converts a provider scan result into a full Content Feel Profile. */
-export const scanResultToProfile = (input: ContentFeelScanInput, result: ContentFeelScanResult): ContentFeelProfile => {
+export const scanResultToProfile = (
+  input: ContentFeelScanInput,
+  result: ContentFeelScanResult,
+): ContentFeelProfile => {
   const profile: ContentFeelProfile = {
     content_id: input.content_id,
     content_type: input.content_type,
@@ -82,8 +92,8 @@ export const scanResultToProfile = (input: ContentFeelScanInput, result: Content
     public_profile_uid: input.public_profile_uid ?? null,
     title: input.title,
     description: input.description,
-    upload_status: 'ready',
-    visibility: 'public',
+    upload_status: "ready",
+    visibility: "public",
     created_at: nowIso(),
     analyzed_at: nowIso(),
     summary: result.summary,
@@ -111,12 +121,12 @@ export const scanResultToProfile = (input: ContentFeelScanInput, result: Content
     },
     quiet: {
       feed_boost_contexts: result.quiet_feed_contexts,
-      feed_suppress_contexts: result.safety_review_needed ? ['general_feed', 'minors_feed'] : [],
+      feed_suppress_contexts: result.safety_review_needed ? ["general_feed", "minors_feed"] : [],
       discovery_clusters: result.quiet_feed_contexts.slice(0, 2),
       user_match_signals: [],
       content_similarity_fingerprint: fingerprint([...result.mood_tags, ...result.energy_tags]),
       freshness_score: 1,
-      engagement_prediction_bucket: 'unknown',
+      engagement_prediction_bucket: "unknown",
       safety_review_needed: result.safety_review_needed,
       rights_review_needed: result.rights_review_needed,
     },
@@ -124,7 +134,10 @@ export const scanResultToProfile = (input: ContentFeelScanInput, result: Content
       confidence_score: result.confidence_score,
       confidence_label: result.confidence_label,
       uncertainty_notes: result.uncertainty_notes,
-      needs_human_review: result.confidence_label === 'low' || result.safety_review_needed || result.rights_review_needed,
+      needs_human_review:
+        result.confidence_label === "low" ||
+        result.safety_review_needed ||
+        result.rights_review_needed,
     },
   };
   // Enrich Prescribe Me mappings using the shared mapper (dedup + lane mapping).
@@ -134,7 +147,9 @@ export const scanResultToProfile = (input: ContentFeelScanInput, result: Content
 };
 
 /** Steps 2–4: run analysis (mock) and produce + cache a Content Feel Profile. */
-export const runContentFeelAnalysis = async (input: ContentFeelScanInput): Promise<ContentFeelResult<ContentFeelProfile>> => {
+export const runContentFeelAnalysis = async (
+  input: ContentFeelScanInput,
+): Promise<ContentFeelResult<ContentFeelProfile>> => {
   try {
     const result = analyzeContentFeelMock(input);
     const profile = scanResultToProfile(input, result);
@@ -143,7 +158,7 @@ export const runContentFeelAnalysis = async (input: ContentFeelScanInput): Promi
   } catch (error) {
     return ok(
       scanResultToProfile(input, fallbackScan(input)),
-      error instanceof Error ? error.message : 'Mock analysis fallback used.',
+      error instanceof Error ? error.message : "Mock analysis fallback used.",
     );
   }
 };
@@ -152,20 +167,20 @@ const fallbackScan = (input: ContentFeelScanInput): ContentFeelScanResult => ({
   content_id: input.content_id,
   content_type: input.content_type,
   source_platform: input.source_platform,
-  summary: 'Pending analysis.',
+  summary: "Pending analysis.",
   mood_tags: [],
   energy_tags: [],
   behavioral_need_tags: [],
   mood_direction: [],
   audience_intent: [],
-  content_intensity: ['needs_context'],
+  content_intensity: ["needs_context"],
   prescribe_me_mapping: [],
   quiet_feed_contexts: [`${input.source_platform}_lane`],
   safety_review_needed: false,
   rights_review_needed: false,
   confidence_score: 0.4,
-  confidence_label: 'low',
-  uncertainty_notes: ['Analysis could not complete; profile is a placeholder.'],
+  confidence_label: "low",
+  uncertainty_notes: ["Analysis could not complete; profile is a placeholder."],
 });
 
 export const getContentFeelProfile = (contentId: string): ContentFeelProfile | null =>
@@ -176,11 +191,15 @@ export const indexForPrescribeMe = (profile: ContentFeelProfile): PrescribeMeRou
   profileToRouteIndexEntries(profile);
 
 /** Step 7: Quiet algorithm indexing. */
-export const indexForQuietAlgorithm = (profile: ContentFeelProfile): QuietRecommendationIndexEntry =>
-  profileToQuietIndexEntry(profile);
+export const indexForQuietAlgorithm = (
+  profile: ContentFeelProfile,
+): QuietRecommendationIndexEntry => profileToQuietIndexEntry(profile);
 
 /** Step 8: request a re-analysis (mock: re-runs immediately). */
-export const requestReanalysis = async (contentId: string, trigger: ReanalysisTrigger): Promise<ContentFeelResult<ContentFeelProfile | null>> => {
+export const requestReanalysis = async (
+  contentId: string,
+  trigger: ReanalysisTrigger,
+): Promise<ContentFeelResult<ContentFeelProfile | null>> => {
   const existing = profileCache.get(contentId);
   if (!existing) return ok(null, `No profile cached for ${contentId}.`);
   const input: ContentFeelScanInput = {
@@ -197,7 +216,12 @@ export const requestReanalysis = async (contentId: string, trigger: ReanalysisTr
 
 // ─── Explicit Prescribe Me daily limit ─────────────────────────────────────────
 
-export interface PrescribeMeUsage { used: number; limit: number; remaining: number; canStart: boolean; }
+export interface PrescribeMeUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+  canStart: boolean;
+}
 
 export const getPrescribeMeUsage = (userId: string): PrescribeMeUsage => {
   const entry = prescribeUsage.get(userId);
@@ -206,7 +230,8 @@ export const getPrescribeMeUsage = (userId: string): PrescribeMeUsage => {
   return { used, limit: PRESCRIBE_ME_DAILY_LIMIT, remaining, canStart: remaining > 0 };
 };
 
-export const canStartPrescribeMe = (userId: string): boolean => getPrescribeMeUsage(userId).canStart;
+export const canStartPrescribeMe = (userId: string): boolean =>
+  getPrescribeMeUsage(userId).canStart;
 
 /** Records one explicit Prescribe Me use (call when a guided flow completes). */
 export const recordPrescribeMeUse = (userId: string): PrescribeMeUsage => {
@@ -230,7 +255,10 @@ export interface QuietRankInput {
  * Ranks cached profiles for a quiet-feed context. Pure scoring stub: boosts
  * context matches + recent-signal overlap, suppresses review-flagged content.
  */
-export const rankForQuietFeed = (input: QuietRankInput, profiles: ContentFeelProfile[] = Array.from(profileCache.values())): { profile: ContentFeelProfile; score: number }[] => {
+export const rankForQuietFeed = (
+  input: QuietRankInput,
+  profiles: ContentFeelProfile[] = Array.from(profileCache.values()),
+): { profile: ContentFeelProfile; score: number }[] => {
   const recentMood = new Set(input.recentMoodTags ?? []);
   const recentNeed = new Set(input.recentNeedTags ?? []);
   return profiles

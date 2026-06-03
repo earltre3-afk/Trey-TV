@@ -46,7 +46,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") return send(res, 405, { error: "Method not allowed." });
 
   const deviceCode = String(req.query.device_code ?? "");
-  if (!deviceCode.startsWith("tv_") || deviceCode.length < 32) return send(res, 200, { status: "expired" });
+  if (!deviceCode.startsWith("tv_") || deviceCode.length < 32)
+    return send(res, 200, { status: "expired" });
 
   const s = svc();
   const { data: session } = await s
@@ -56,17 +57,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .maybeSingle();
 
   if (!session) return send(res, 200, { status: "expired" });
-  await s.from(TABLE).update({ last_polled_at: new Date().toISOString() }).eq("device_code", deviceCode);
+  await s
+    .from(TABLE)
+    .update({ last_polled_at: new Date().toISOString() })
+    .eq("device_code", deviceCode);
 
   if (new Date(session.expires_at).getTime() <= Date.now()) {
-    await s.from(TABLE).update({ status: "expired" }).eq("device_code", deviceCode).eq("status", "pending");
+    await s
+      .from(TABLE)
+      .update({ status: "expired" })
+      .eq("device_code", deviceCode)
+      .eq("status", "pending");
     return send(res, 200, { status: "expired" });
   }
   if (session.status === "denied") return send(res, 200, { status: "denied" });
   if (session.status !== "approved") return send(res, 200, { status: "pending" });
 
   const accessToken = await decryptToken(session.session_reference);
-  if (!accessToken) return send(res, 503, { status: "approved", error: "TV session handoff is not configured." });
+  if (!accessToken)
+    return send(res, 503, { status: "approved", error: "TV session handoff is not configured." });
 
   return send(res, 200, {
     status: "approved",

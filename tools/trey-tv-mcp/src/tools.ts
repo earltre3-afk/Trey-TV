@@ -59,7 +59,10 @@ export function assertSafeReadOnlyDescriptor(tool: TreyTvMcpToolDescriptor): voi
   }
 }
 
-export function findManifestTool(manifest: TreyTvMcpManifest, name: string): TreyTvMcpToolDescriptor {
+export function findManifestTool(
+  manifest: TreyTvMcpManifest,
+  name: string,
+): TreyTvMcpToolDescriptor {
   if (!isKnownTreyTvToolName(name)) {
     throw new Error(`Unknown Trey TV MCP tool: ${name}`);
   }
@@ -81,4 +84,3 @@ export function listSafeManifestTools(manifest: TreyTvMcpManifest): TreyTvMcpToo
       return tool;
     });
 }
-

@@ -48,11 +48,19 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
   const [vibeScanning, setVibeScanning] = useState(false);
   const [vibeResult, setVibeResult] = useState<string | null>(null);
   const [coverChatMsg, setCoverChatMsg] = useState("");
-  const [coverChatHistory, setCoverChatHistory] = useState<Array<{ sender: "user" | "trey-i"; text: string }>>([
-    { sender: "trey-i", text: "Hey! Trey-I assistant active. Need a quick vibe check or session curation?" },
+  const [coverChatHistory, setCoverChatHistory] = useState<
+    Array<{ sender: "user" | "trey-i"; text: string }>
+  >([
+    {
+      sender: "trey-i",
+      text: "Hey! Trey-I assistant active. Need a quick vibe check or session curation?",
+    },
   ]);
   const [musicPlaying, setMusicPlaying] = useState(false);
-  const [musicTrack, setMusicTrack] = useState({ title: "Pull Up On Me (360 RA)", artist: "Trey Trizzy" });
+  const [musicTrack, setMusicTrack] = useState({
+    title: "Pull Up On Me (360 RA)",
+    artist: "Trey Trizzy",
+  });
 
   // Flex Mode States
   const [flexNotes, setFlexNotes] = useState("");
@@ -165,8 +173,11 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
       setBattery((prev) => (prev > 5 ? prev - 1 : 100));
       setDeviceTemp((prev) => {
         const drift = Math.random() * 0.4 - 0.2;
-        const targetBase = mode === "standard" ? 31.0 : mode === "cover" ? 34.5 : mode === "flex" ? 35.0 : 33.0;
-        return parseFloat(Math.max(28.0, Math.min(41.0, prev + drift + (targetBase - prev) * 0.05)).toFixed(1));
+        const targetBase =
+          mode === "standard" ? 31.0 : mode === "cover" ? 34.5 : mode === "flex" ? 35.0 : 33.0;
+        return parseFloat(
+          Math.max(28.0, Math.min(41.0, prev + drift + (targetBase - prev) * 0.05)).toFixed(1),
+        );
       });
     }, 15000);
     return () => clearInterval(timer);
@@ -266,13 +277,17 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
     playWebAudioTone("beep");
     let text = "";
     if (templateType === "hype") {
-      text = "🚨 SQUAD GOALS! Trey Trizzy just dropped an absolute studio masterclass. This bassline is registered for serious club tremors only. Vibe is immaculate.";
+      text =
+        "🚨 SQUAD GOALS! Trey Trizzy just dropped an absolute studio masterclass. This bassline is registered for serious club tremors only. Vibe is immaculate.";
     } else if (templateType === "review") {
-      text = "A&R Review: Dynamic rhythm matches early 2000s club anthems. Exceptional vocal presence. Acoustic trust is calibrated perfectly. Risk level holds strong appeal.";
+      text =
+        "A&R Review: Dynamic rhythm matches early 2000s club anthems. Exceptional vocal presence. Acoustic trust is calibrated perfectly. Risk level holds strong appeal.";
     } else if (templateType === "bts") {
-      text = "Behind the Scenes 🤫: Late night session with Malik tracking premium sub-bass waveforms. Folded down standard mixers, we are running strictly on custom AI setups.";
+      text =
+        "Behind the Scenes 🤫: Late night session with Malik tracking premium sub-bass waveforms. Folded down standard mixers, we are running strictly on custom AI setups.";
     } else if (templateType === "promo") {
-      text = "Trey TV Exclusive: Sign up, tune in. Prescribing high-frequency electronic flows for creative focus and pure workspace dominance. Click for full broadcast.";
+      text =
+        "Trey TV Exclusive: Sign up, tune in. Prescribing high-frequency electronic flows for creative focus and pure workspace dominance. Click for full broadcast.";
     }
     setDraftText(text);
   };
@@ -308,18 +323,15 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
       <div className="absolute bottom-20 right-10 size-[500px] rounded-full bg-cyan-900/10 blur-[130px] pointer-events-none" />
       <div className="absolute top-1/2 left-1/3 size-[300px] rounded-full bg-amber-900/5 blur-[100px] pointer-events-none" />
 
-
       {/* ─── COVER SCREEN MODE (Motorola Razr Luxury Widget Deck) ─── */}
       {mode === "cover" && (
         <div className="min-h-[100dvh] w-full bg-[#0a0514] flex flex-col items-center justify-center p-4 relative">
-          
           {/* Physical Phone Chassis Frame simulation */}
           <div className="relative w-[386px] h-[386px] rounded-[44px] bg-[#14121f] p-3 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_0_2px_rgba(255,255,255,0.1)] border border-white/5 flex items-center justify-center transition-all duration-500">
-            
             {/* Glossy Metallic Bezel Highlights */}
             <div className="absolute inset-0 rounded-[44px] border-t border-l border-white/20 pointer-events-none" />
             <div className="absolute inset-0.5 rounded-[42px] border border-black/40 pointer-events-none" />
-            
+
             {/* Top Phone Hinge Micro-Bezel Details */}
             <div className="absolute -top-[6px] left-1/2 -translate-x-1/2 w-28 h-[12px] bg-[#0c0914] rounded-t-lg border-t border-x border-white/10 flex justify-between px-4 items-center">
               <span className="size-1 rounded-full bg-slate-800" />
@@ -328,7 +340,6 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
             {/* Inner Premium Cover Display Screen Container */}
             <div className="relative w-full h-full rounded-[34px] bg-[#07050e] overflow-hidden flex flex-col justify-between p-4 border border-white/10 shadow-[inset_0_4px_24px_rgba(0,0,0,0.8)] cover-screen-glass">
-              
               {/* Outer Screen Gloss Layer */}
               <div className="absolute top-0 right-0 w-[150%] h-[40%] bg-gradient-to-b from-white/[0.03] to-transparent -rotate-12 translate-x-10 pointer-events-none" />
 
@@ -336,9 +347,11 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
               <div className="flex justify-between items-center text-[9px] text-white/60 tracking-wider font-mono border-b border-white/5 pb-1.5 flex-shrink-0 z-10">
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="size-3 text-fuchsia-400" />
-                  <span className="font-extrabold uppercase bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-amber-300">RAZR PRO</span>
+                  <span className="font-extrabold uppercase bg-clip-text text-transparent bg-gradient-to-r from-fuchsia-400 to-amber-300">
+                    RAZR PRO
+                  </span>
                 </div>
-                
+
                 {/* Simulated Lens Flash dot & Sensor Indicator */}
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-blue-500/20 border border-blue-400/50 animate-pulse" />
@@ -355,11 +368,10 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
               {/* Widget Deck Area (Scrollable with premium glassmorphism) */}
               <div className="flex-1 overflow-y-auto overflow-x-hidden py-3.5 space-y-3.5 no-scrollbar z-10">
-                
                 {/* 1. Interactive Vibe Prescription Widget */}
                 <div className="rounded-2xl p-3 flex items-center justify-between gap-3 bg-white/[0.02] border border-white/10 hover:border-amber-400/30 transition-all duration-300 relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-r from-amber-400/0 via-amber-400/[0.02] to-amber-400/0 -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="text-[8px] uppercase font-black tracking-widest text-amber-400 flex items-center gap-1">
                       <Sparkles className="size-2.5" /> Rx VIBE RADAR
@@ -379,8 +391,8 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     onClick={runVibeCheck}
                     disabled={vibeScanning}
                     className={`size-10 rounded-xl flex items-center justify-center text-white active:scale-90 transition-all duration-300 shrink-0 shadow-lg ${
-                      vibeScanning 
-                        ? "bg-amber-500/20 border border-amber-400/40 animate-spin" 
+                      vibeScanning
+                        ? "bg-amber-500/20 border border-amber-400/40 animate-spin"
                         : "bg-gradient-to-tr from-amber-400 via-pink-500 to-fuchsia-600 hover:brightness-110 active:brightness-90 border border-amber-300/30"
                     }`}
                   >
@@ -434,14 +446,16 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
                 {/* 3. Luxury 360 Spatial Audio Widget */}
                 <div className="rounded-2xl p-3 flex items-center gap-3 bg-white/[0.02] border border-white/10 hover:border-cyan-400/30 transition-all duration-300">
-                  
                   {/* Rotating Vinyl disk with light reflections */}
                   <div className="relative size-12 shrink-0 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center overflow-hidden shadow-inner group">
-                    <div className={`absolute inset-0.5 rounded-full border border-black bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-950 to-neutral-900 flex items-center justify-center ${musicPlaying ? "animate-spin" : ""}`} style={{ animationDuration: "5s" }}>
+                    <div
+                      className={`absolute inset-0.5 rounded-full border border-black bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-950 to-neutral-900 flex items-center justify-center ${musicPlaying ? "animate-spin" : ""}`}
+                      style={{ animationDuration: "5s" }}
+                    >
                       {/* Metallic Vinyl Shimmer lines */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.04] to-transparent rotate-45" />
                       <div className="absolute inset-0 bg-gradient-to-bl from-transparent via-white/[0.04] to-transparent rotate-45" />
-                      
+
                       {/* Center Label */}
                       <div className="size-4 rounded-full bg-gradient-to-br from-cyan-400 to-fuchsia-500 border border-black flex items-center justify-center">
                         <div className="size-1 rounded-full bg-black" />
@@ -454,15 +468,20 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     <div className="text-[8px] uppercase tracking-widest text-cyan-400 font-extrabold flex items-center gap-1">
                       <Music className="size-2.5" /> 360 SOUND STAGE
                     </div>
-                    <div className="text-[11px] font-black text-white truncate mt-0.5">{musicTrack.title}</div>
-                    
+                    <div className="text-[11px] font-black text-white truncate mt-0.5">
+                      {musicTrack.title}
+                    </div>
+
                     {/* Pulsing visualizer bars */}
                     <div className="flex items-end gap-0.5 h-3 mt-1.5">
                       {eqHeights.map((h, index) => (
                         <span
                           key={index}
                           className="w-1 bg-cyan-400/80 rounded-full transition-all duration-150"
-                          style={{ height: `${h}%`, backgroundColor: index % 2 === 0 ? "#06b6d4" : "#d946ef" }}
+                          style={{
+                            height: `${h}%`,
+                            backgroundColor: index % 2 === 0 ? "#06b6d4" : "#d946ef",
+                          }}
                         />
                       ))}
                     </div>
@@ -480,7 +499,11 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                         : "bg-white/5 border-white/10 text-white hover:bg-white/10"
                     }`}
                   >
-                    {musicPlaying ? <Pause className="size-4" /> : <Play className="size-4 fill-white translate-x-0.5" />}
+                    {musicPlaying ? (
+                      <Pause className="size-4" />
+                    ) : (
+                      <Play className="size-4 fill-white translate-x-0.5" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -497,11 +520,9 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
         </div>
       )}
 
-
       {/* ─── UNFOLDED WORKSTATION MODE (Galaxy Fold Pro Studio) ─── */}
       {mode === "unfolded" && (
         <div className="min-h-[100dvh] w-full bg-[#05030d] flex flex-col relative transition-all duration-500">
-          
           {/* Subtle Workspace Title Notice */}
           <div className="bg-black/40 border-b border-white/5 py-2 px-6 flex justify-between items-center z-10 shrink-0">
             <div className="flex items-center gap-2">
@@ -511,17 +532,19 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
               </span>
             </div>
             <div className="flex items-center gap-3 font-mono text-[9px] text-slate-500">
-              <span className="flex items-center gap-1"><CheckCircle className="size-3 text-emerald-400" /> A&R AI Sync Online</span>
-              <span className="bg-white/5 px-2 py-0.5 rounded-full border border-white/10">Active View: Unfolded Tablet</span>
+              <span className="flex items-center gap-1">
+                <CheckCircle className="size-3 text-emerald-400" /> A&R AI Sync Online
+              </span>
+              <span className="bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                Active View: Unfolded Tablet
+              </span>
             </div>
           </div>
 
           {/* 3-Column Premium Layout Grid with Flexible Mechanical Hinges */}
           <div className="flex-1 grid grid-cols-[290px_1fr_340px] min-h-0 overflow-hidden relative">
-            
             {/* COLUMN 1: Compact Feed / Creators */}
             <aside className="h-full overflow-y-auto p-4 space-y-5 bg-black/30 border-r border-white/5 z-10 scrollbar-thin">
-              
               {/* Trending tonight Section with luxurious entries */}
               <div>
                 <h3 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-3 flex items-center gap-2">
@@ -545,7 +568,9 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                             c.live ? "bg-red-500" : "bg-emerald-400"
                           }`}
                         >
-                          {c.live && <span className="size-1.5 rounded-full bg-white animate-ping" />}
+                          {c.live && (
+                            <span className="size-1.5 rounded-full bg-white animate-ping" />
+                          )}
                         </span>
                       </div>
 
@@ -585,13 +610,17 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] font-black text-white">{p.creator.name}</span>
+                          <span className="text-[10px] font-black text-white">
+                            {p.creator.name}
+                          </span>
                           <span className="text-[8px] text-slate-500">@{p.creator.handle}</span>
                         </div>
                         <span className="text-[8px] text-slate-600">{p.timeAgo} ago</span>
                       </div>
-                      <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">{p.text}</p>
-                      
+                      <p className="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">
+                        {p.text}
+                      </p>
+
                       {/* Micro actions row */}
                       <div className="flex justify-between items-center border-t border-white/5 pt-2 text-[8px] text-slate-500">
                         <span className="flex items-center gap-1 hover:text-red-400 transition cursor-pointer">
@@ -632,15 +661,20 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
             {/* COLUMN 3: Trey-I Creative Desk & Soundboard Console */}
             <aside className="h-full overflow-y-auto p-4 space-y-4 bg-black/30 border-l border-white/5 z-10 flex flex-col justify-between scrollbar-thin">
               <div className="space-y-4">
-                
                 {/* Hologram AI Agent Core Node */}
                 <div className="flex items-center gap-3 border-b border-white/5 pb-3">
                   {/* Holographic glowing brain sphere */}
                   <div className="relative size-10 flex items-center justify-center bg-black/40 rounded-full border border-fuchsia-500/20 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                     <Bot className="size-5 text-fuchsia-400 animate-pulse relative z-10" />
                     {/* Ring Orbits */}
-                    <div className="absolute inset-0 rounded-full border border-dashed border-cyan-400/40 animate-spin" style={{ animationDuration: "10s" }} />
-                    <div className="absolute -inset-1 rounded-full border border-dotted border-fuchsia-500/20 animate-spin" style={{ animationDuration: "15s", animationDirection: "reverse" }} />
+                    <div
+                      className="absolute inset-0 rounded-full border border-dashed border-cyan-400/40 animate-spin"
+                      style={{ animationDuration: "10s" }}
+                    />
+                    <div
+                      className="absolute -inset-1 rounded-full border border-dotted border-fuchsia-500/20 animate-spin"
+                      style={{ animationDuration: "15s", animationDirection: "reverse" }}
+                    />
                   </div>
 
                   <div>
@@ -648,7 +682,8 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                       Trey-I Sidepad
                     </h3>
                     <p className="text-[8px] text-emerald-400 font-mono flex items-center gap-1">
-                      <span className="size-1 rounded-full bg-emerald-400 animate-ping" /> NEURAL ENGINE SYNCD
+                      <span className="size-1 rounded-full bg-emerald-400 animate-ping" /> NEURAL
+                      ENGINE SYNCD
                     </p>
                   </div>
                 </div>
@@ -656,8 +691,12 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                 {/* A&R Writer with Prompt Template Chips */}
                 <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3.5 space-y-3 relative overflow-hidden">
                   <div className="text-[9px] font-black tracking-wider text-amber-300 flex items-center justify-between">
-                    <span className="flex items-center gap-1.5"><Sparkles className="size-3.5" /> A&R PRODUCTION COMPOSER</span>
-                    <span className="bg-amber-400/10 text-amber-300 text-[7px] px-1.5 rounded-full border border-amber-400/20 font-bold uppercase">v2.4</span>
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="size-3.5" /> A&R PRODUCTION COMPOSER
+                    </span>
+                    <span className="bg-amber-400/10 text-amber-300 text-[7px] px-1.5 rounded-full border border-amber-400/20 font-bold uppercase">
+                      v2.4
+                    </span>
                   </div>
 
                   {/* Suggestion Tokens */}
@@ -685,7 +724,7 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     onChange={(e) => setDraftText(e.target.value)}
                     className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-[10px] text-white focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500/30 font-medium leading-relaxed"
                   />
-                  
+
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => {
@@ -714,12 +753,14 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                   <div className="text-[9px] font-black text-cyan-400 tracking-widest flex items-center gap-1.5">
                     <Sliders className="size-3.5" /> DYNAMIC CRITICAL DIALS
                   </div>
-                  
+
                   <div className="space-y-3.5">
                     <div>
                       <div className="flex justify-between text-[9px] mb-1 font-semibold">
                         <span className="text-slate-400">Acoustic Synergetic Trust</span>
-                        <span className="text-fuchsia-400 font-bold">{trustLevelText} ({meterTrust}%)</span>
+                        <span className="text-fuchsia-400 font-bold">
+                          {trustLevelText} ({meterTrust}%)
+                        </span>
                       </div>
                       <input
                         type="range"
@@ -736,7 +777,9 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     <div>
                       <div className="flex justify-between text-[9px] mb-1 font-semibold">
                         <span className="text-slate-400">Creative Risk Tolerance</span>
-                        <span className="text-cyan-400 font-bold">{riskLevelText} ({meterRisk}%)</span>
+                        <span className="text-cyan-400 font-bold">
+                          {riskLevelText} ({meterRisk}%)
+                        </span>
                       </div>
                       <input
                         type="range"
@@ -755,7 +798,9 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                 {/* Interactive A&R Soundboard Drum Pads (Plays real synthesised tones) */}
                 <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3.5 space-y-2.5">
                   <div className="flex justify-between items-center text-[9px] font-black text-fuchsia-400 tracking-widest">
-                    <span className="flex items-center gap-1.5"><Activity className="size-3.5" /> A&R STUDIO SOUNDBOARD</span>
+                    <span className="flex items-center gap-1.5">
+                      <Activity className="size-3.5" /> A&R STUDIO SOUNDBOARD
+                    </span>
                     <span className="text-slate-500 text-[8px]">TAP PADS</span>
                   </div>
 
@@ -810,14 +855,18 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
         </div>
       )}
 
-
       {/* ─── FLEX MODE SPLIT SCREEN (Premium 3D Physical Folding Console) ─── */}
       {mode === "flex" && (
         <div className="min-h-[100dvh] w-full bg-[#030107] flex flex-col relative transition-all duration-500">
-          
           {/* Top Half: active application outlet with subtle perspective */}
-          <div className="flex-1 h-[50dvh] overflow-y-auto relative border-b border-black/40 shadow-[inset_0_-24px_30px_rgba(0,0,0,0.9)] bg-black/20" style={{ perspective: "1000px" }}>
-            <div className="h-full w-full transition-transform duration-500" style={{ transformOrigin: "bottom center", transform: "rotateX(5deg)" }}>
+          <div
+            className="flex-1 h-[50dvh] overflow-y-auto relative border-b border-black/40 shadow-[inset_0_-24px_30px_rgba(0,0,0,0.9)] bg-black/20"
+            style={{ perspective: "1000px" }}
+          >
+            <div
+              className="h-full w-full transition-transform duration-500"
+              style={{ transformOrigin: "bottom center", transform: "rotateX(5deg)" }}
+            >
               {children}
             </div>
           </div>
@@ -828,7 +877,7 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
             <div className="absolute inset-x-0 h-[1px] bg-white/20 top-[4px] shadow-sm" />
             <div className="absolute inset-x-0 h-[4px] bg-gradient-to-b from-transparent via-[#d946ef]/20 to-transparent blur-[2px] pointer-events-none" />
             <div className="absolute inset-x-0 h-[1px] bg-white/10 bottom-[4px]" />
-            
+
             {/* Center metal hinge pins */}
             <div className="w-20 h-[6px] bg-slate-800 rounded-full border border-white/5 flex justify-between px-2 items-center">
               <span className="size-1 rounded-full bg-slate-950" />
@@ -839,9 +888,11 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
             {/* Ambient hinge light */}
             <div className="absolute left-6 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
               <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[7px] text-slate-500 font-mono tracking-widest uppercase">HINGE AT 90°</span>
+              <span className="text-[7px] text-slate-500 font-mono tracking-widest uppercase">
+                HINGE AT 90°
+              </span>
             </div>
-            
+
             <div className="absolute right-6 top-1/2 -translate-y-1/2 font-mono text-[7px] text-slate-500 tracking-wider">
               TENSION AUTO-ADJUSTED
             </div>
@@ -849,7 +900,6 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
           {/* Bottom Half: Trey-I Flexpad Control Deck */}
           <div className="h-[50dvh] bg-gradient-to-b from-[#0b081c] to-[#04020a] flex flex-col justify-between p-4 relative overflow-hidden shrink-0 z-10 shadow-[inset_0_12px_24px_rgba(0,0,0,0.8)]">
-            
             {/* Drifting subtle tech grid lines under glass console */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(255,255,255,0.01)_1px,_transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-40" />
 
@@ -871,7 +921,6 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
             {/* Dynamic Console Controls Area */}
             <div className="flex-1 overflow-y-auto py-2 space-y-3.5 no-scrollbar z-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-              
               {/* Draft Composer Column */}
               <div className="space-y-3">
                 <div className="rounded-2xl p-3 bg-black/40 border border-white/5 relative overflow-hidden flex flex-col justify-between gap-2 h-full">
@@ -879,7 +928,7 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     <span>Active Composer Assistant</span>
                     <span className="text-[7px] text-slate-500 font-mono">Trey-I Copilot v2</span>
                   </div>
-                  
+
                   <textarea
                     rows={2}
                     value={flexNotes}
@@ -887,7 +936,7 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                     placeholder="Compose review draft or chat reply..."
                     className="w-full flex-1 bg-black/60 border border-white/10 rounded-xl p-2 text-[10px] text-white focus:outline-none focus:border-fuchsia-500 font-medium leading-relaxed"
                   />
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
@@ -928,14 +977,54 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
 
                   <div className="grid grid-cols-4 gap-1.5">
                     {[
-                      { label: "BASS", tone: "bass" as const, color: "border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:border-amber-400/50" },
-                      { label: "SYNTH", tone: "synth" as const, color: "border-cyan-500/30 bg-cyan-500/5 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400/50" },
-                      { label: "SWEEP", tone: "applause" as const, color: "border-fuchsia-500/30 bg-fuchsia-500/5 text-fuchsia-300 hover:bg-fuchsia-500/10 hover:border-fuchsia-400/50" },
-                      { label: "TICK", tone: "beep" as const, color: "border-emerald-500/30 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-400/50" },
-                      { label: "HYPE 2", tone: "synth" as const, color: "border-blue-500/30 bg-blue-500/5 text-blue-300 hover:bg-blue-500/10 hover:border-blue-400/50" },
-                      { label: "DEEP", tone: "bass" as const, color: "border-orange-500/30 bg-orange-500/5 text-orange-300 hover:bg-orange-500/10 hover:border-orange-400/50" },
-                      { label: "LASER", tone: "applause" as const, color: "border-pink-500/30 bg-pink-500/5 text-pink-300 hover:bg-pink-500/10 hover:border-pink-400/50" },
-                      { label: "BIP", tone: "beep" as const, color: "border-indigo-500/30 bg-indigo-500/5 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400/50" },
+                      {
+                        label: "BASS",
+                        tone: "bass" as const,
+                        color:
+                          "border-amber-500/30 bg-amber-500/5 text-amber-300 hover:bg-amber-500/10 hover:border-amber-400/50",
+                      },
+                      {
+                        label: "SYNTH",
+                        tone: "synth" as const,
+                        color:
+                          "border-cyan-500/30 bg-cyan-500/5 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400/50",
+                      },
+                      {
+                        label: "SWEEP",
+                        tone: "applause" as const,
+                        color:
+                          "border-fuchsia-500/30 bg-fuchsia-500/5 text-fuchsia-300 hover:bg-fuchsia-500/10 hover:border-fuchsia-400/50",
+                      },
+                      {
+                        label: "TICK",
+                        tone: "beep" as const,
+                        color:
+                          "border-emerald-500/30 bg-emerald-500/5 text-emerald-300 hover:bg-emerald-500/10 hover:border-emerald-400/50",
+                      },
+                      {
+                        label: "HYPE 2",
+                        tone: "synth" as const,
+                        color:
+                          "border-blue-500/30 bg-blue-500/5 text-blue-300 hover:bg-blue-500/10 hover:border-blue-400/50",
+                      },
+                      {
+                        label: "DEEP",
+                        tone: "bass" as const,
+                        color:
+                          "border-orange-500/30 bg-orange-500/5 text-orange-300 hover:bg-orange-500/10 hover:border-orange-400/50",
+                      },
+                      {
+                        label: "LASER",
+                        tone: "applause" as const,
+                        color:
+                          "border-pink-500/30 bg-pink-500/5 text-pink-300 hover:bg-pink-500/10 hover:border-pink-400/50",
+                      },
+                      {
+                        label: "BIP",
+                        tone: "beep" as const,
+                        color:
+                          "border-indigo-500/30 bg-indigo-500/5 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400/50",
+                      },
                     ].map((pad, index) => (
                       <button
                         key={index}
@@ -949,7 +1038,6 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                   </div>
                 </div>
               </div>
-
             </div>
 
             {/* Bottom tactile quick sliders (sub-bass, reverb, vocal gain control simulation) */}
@@ -963,7 +1051,7 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
                   <div className="bg-amber-400 h-full w-[65%]" />
                 </div>
               </div>
-              
+
               <div>
                 <div className="flex justify-between text-[7px] font-mono text-slate-400 uppercase tracking-widest mb-1">
                   <span>Reverb Space</span>
@@ -992,7 +1080,6 @@ export const FoldableLayoutManager: React.FC<FoldableLayoutManagerProps> = ({ ch
           </div>
         </div>
       )}
-
     </div>
   );
 };

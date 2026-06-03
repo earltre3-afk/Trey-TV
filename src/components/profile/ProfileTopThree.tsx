@@ -20,11 +20,7 @@ export function ProfileTopThree({ topThree, isOwner, onEdit }: Props) {
   }
 
   return (
-    <ProfileSectionCard
-      title="Top 3"
-      icon={Users}
-      iconColor="oklch(0.82 0.16 85)"
-    >
+    <ProfileSectionCard title="Top 3" icon={Users} iconColor="oklch(0.82 0.16 85)">
       <div className="space-y-3">
         {topThree.map((entry) => (
           <TopThreeCard key={entry.id} entry={entry} />
@@ -35,14 +31,15 @@ export function ProfileTopThree({ topThree, isOwner, onEdit }: Props) {
 }
 
 function TopThreeCard({ entry }: { entry: TopThreeEntry }) {
-  const displayName = (entry.featured_display_name as string) || (entry.featured_username as string) || "Unknown";
+  const displayName =
+    (entry.featured_display_name as string) || (entry.featured_username as string) || "Unknown";
   const handle = entry.featured_username ? `@${entry.featured_username}` : "";
   const avatar = (entry.featured_avatar_url as string) || "/default-avatar.png";
   const profileUid = entry.featured_public_profile_uid;
 
   return (
     <Link
-      to={profileUid ? `/u/${profileUid}` as any : "#"}
+      to={profileUid ? (`/u/${profileUid}` as any) : "#"}
       className="group block rounded-2xl liquid-glass border border-white/10 p-3 hover:border-primary/30 transition-all duration-300"
     >
       <div className="flex items-center gap-3">

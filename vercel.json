@@ -6,15 +6,11 @@
   "headers": [
     {
       "source": "/apk",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }]
     },
     {
       "source": "/apk/",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" }]
     },
     {
       "source": "/downloads/trey-tv-streamingbox-debug.apk",
@@ -24,7 +20,5 @@
       ]
     }
   ],
-  "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
 }

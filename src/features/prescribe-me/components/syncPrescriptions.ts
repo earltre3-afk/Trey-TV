@@ -1,5 +1,5 @@
-import { supabase, hasSupabaseConfig } from '@/lib/supabase';
-import type { SavedPrescription } from './data';
+import { supabase, hasSupabaseConfig } from "@/lib/supabase";
+import type { SavedPrescription } from "./data";
 
 interface DBRow {
   id: string;
@@ -40,14 +40,15 @@ const fromRow = (row: DBRow): SavedPrescription => {
     : [];
   return {
     id: row.client_id || row.id,
-    title: row.title || 'My Prescription',
+    title: row.title || "My Prescription",
     answers: {
-      moods: (row.selected_moods || []) as SavedPrescription['answers']['moods'],
-      energy: (row.selected_energy as SavedPrescription['answers']['energy']) ?? null,
-      contentTypes: (row.selected_content_types || []) as SavedPrescription['answers']['contentTypes'],
-      momentNeeds: (row.selected_moment_needs || []) as SavedPrescription['answers']['momentNeeds'],
+      moods: (row.selected_moods || []) as SavedPrescription["answers"]["moods"],
+      energy: (row.selected_energy as SavedPrescription["answers"]["energy"]) ?? null,
+      contentTypes: (row.selected_content_types ||
+        []) as SavedPrescription["answers"]["contentTypes"],
+      momentNeeds: (row.selected_moment_needs || []) as SavedPrescription["answers"]["momentNeeds"],
     },
-    topId: row.top_recommendation_id || '',
+    topId: row.top_recommendation_id || "",
     recIds,
     matchScore: row.match_score ?? 0,
     createdAt: new Date(row.created_at).getTime(),
@@ -66,26 +67,29 @@ const dedupeById = (list: SavedPrescription[]) => {
 };
 
 /** Push every local prescription to DB (upsert on user_id + client_id), then return merged list. */
-export async function syncOnSignIn(userId: string, local: SavedPrescription[]): Promise<SavedPrescription[]> {
+export async function syncOnSignIn(
+  userId: string,
+  local: SavedPrescription[],
+): Promise<SavedPrescription[]> {
   if (!hasSupabaseConfig || !supabase) return local;
 
   // 1) push local to DB
   if (local.length > 0) {
     const rows = local.map((p) => toRow(p, userId));
     const { error } = await supabase
-      .from('prescribe_me_sessions')
-      .upsert(rows, { onConflict: 'user_id,client_id' });
-    if (error) console.warn('[prescribe] upsert local error', error.message);
+      .from("prescribe_me_sessions")
+      .upsert(rows, { onConflict: "user_id,client_id" });
+    if (error) console.warn("[prescribe] upsert local error", error.message);
   }
   // 2) pull all rows for this user
   const { data, error } = await supabase
-    .from('prescribe_me_sessions')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("prescribe_me_sessions")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(100);
   if (error) {
-    console.warn('[prescribe] fetch error', error.message);
+    console.warn("[prescribe] fetch error", error.message);
     return local;
   }
   const remote = (data as DBRow[]).map(fromRow);
@@ -97,7 +101,7 @@ export async function upsertPrescription(userId: string, p: SavedPrescription): 
   if (!hasSupabaseConfig || !supabase) return;
 
   const { error } = await supabase
-    .from('prescribe_me_sessions')
-    .upsert([toRow(p, userId)], { onConflict: 'user_id,client_id' });
-  if (error) console.warn('[prescribe] upsert error', error.message);
+    .from("prescribe_me_sessions")
+    .upsert([toRow(p, userId)], { onConflict: "user_id,client_id" });
+  if (error) console.warn("[prescribe] upsert error", error.message);
 }

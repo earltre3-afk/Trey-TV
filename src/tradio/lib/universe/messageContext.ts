@@ -14,35 +14,43 @@
 
 /** Where a message / notification originated. */
 export type MessageSourceSurface =
-  | 'trey_tv'
-  | 'tradio'
-  | 'song_wars'
-  | 'radio_show'
-  | 'artist_profile'
-  | 'producer_profile'
-  | 'dj_profile'
-  | 'track_page'
-  | 'playlist'
-  | 'station'
-  | 'collab_request';
+  | "trey_tv"
+  | "tradio"
+  | "song_wars"
+  | "radio_show"
+  | "artist_profile"
+  | "producer_profile"
+  | "dj_profile"
+  | "track_page"
+  | "playlist"
+  | "station"
+  | "collab_request";
 
 /** The kind of entity a message / notification is about. */
 export type SourceEntityType =
-  | 'artist'
-  | 'band'
-  | 'producer'
-  | 'dj'
-  | 'radio_show'
-  | 'station'
-  | 'track'
-  | 'album'
-  | 'playlist'
-  | 'song_war_battle'
-  | 'collab_request'
-  | 'profile';
+  | "artist"
+  | "band"
+  | "producer"
+  | "dj"
+  | "radio_show"
+  | "station"
+  | "track"
+  | "album"
+  | "playlist"
+  | "song_war_battle"
+  | "collab_request"
+  | "profile";
 
 /** Role lens the sender/recipient were operating in when the message originated. */
-export type RoleContext = 'fan' | 'artist' | 'producer' | 'dj' | 'host' | 'admin' | 'owner' | 'viewer';
+export type RoleContext =
+  | "fan"
+  | "artist"
+  | "producer"
+  | "dj"
+  | "host"
+  | "admin"
+  | "owner"
+  | "viewer";
 
 /**
  * Context metadata attached to a Trey TV Messenger message that originated from
@@ -67,7 +75,11 @@ export interface MessageContext {
 }
 
 /** A notification that bridges a Trey TV Messenger / mention event into Tradio UI. */
-export type UniverseNotificationKind = 'messenger_message' | 'mention' | 'collab_request' | 'system';
+export type UniverseNotificationKind =
+  | "messenger_message"
+  | "mention"
+  | "collab_request"
+  | "system";
 
 export interface UniverseNotification {
   id: string;
@@ -84,24 +96,24 @@ export interface UniverseNotification {
 }
 
 const SURFACE_LABEL: Record<MessageSourceSurface, string> = {
-  trey_tv: 'Trey TV',
-  tradio: 'Tradio',
-  song_wars: 'Song Wars',
-  radio_show: 'Radio Show',
-  artist_profile: 'Tradio Artist Page',
-  producer_profile: 'Tradio Producer Page',
-  dj_profile: 'Tradio DJ / Host Page',
-  track_page: 'Tradio Track',
-  playlist: 'Tradio Playlist',
-  station: 'Tradio Station',
-  collab_request: 'Tradio Collab Request',
+  trey_tv: "Trey TV",
+  tradio: "Tradio",
+  song_wars: "Song Wars",
+  radio_show: "Radio Show",
+  artist_profile: "Tradio Artist Page",
+  producer_profile: "Tradio Producer Page",
+  dj_profile: "Tradio DJ / Host Page",
+  track_page: "Tradio Track",
+  playlist: "Tradio Playlist",
+  station: "Tradio Station",
+  collab_request: "Tradio Collab Request",
 };
 
 /** Builds the "Sent from …" label shown in Messenger + the Tradio bridge toast. */
 export const buildDisplayContextLabel = (context: MessageContext): string => {
   if (context.display_context_label) return context.display_context_label;
-  const surface = SURFACE_LABEL[context.source_surface] ?? 'Tradio';
-  return context.source_surface === 'trey_tv' ? 'Trey TV' : `Sent from ${surface}`;
+  const surface = SURFACE_LABEL[context.source_surface] ?? "Tradio";
+  return context.source_surface === "trey_tv" ? "Trey TV" : `Sent from ${surface}`;
 };
 
 /** Builds the "About: …" subject label when the message references an entity. */
@@ -143,10 +155,10 @@ export const createTradioMessageContext = (params: {
 
 /** Standard universe copy so every surface stays consistent and non-confusing. */
 export const MESSENGER_COPY = {
-  newMessage: 'New message in Trey TV Messenger',
+  newMessage: "New message in Trey TV Messenger",
   fromSender: (name: string) => `Message from ${name}`,
-  openInMessenger: 'Open in Messenger',
-  returnToTradio: 'Return to Tradio',
-  sentFromTradio: 'Sent from Tradio',
-  noSeparateInbox: 'Messages live in Trey TV Messenger — Tradio doesn’t have a separate inbox.',
+  openInMessenger: "Open in Messenger",
+  returnToTradio: "Return to Tradio",
+  sentFromTradio: "Sent from Tradio",
+  noSeparateInbox: "Messages live in Trey TV Messenger — Tradio doesn’t have a separate inbox.",
 } as const;

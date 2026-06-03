@@ -7,7 +7,17 @@
  * - Responsive: taller on lg+ breakpoints
  */
 
-import { ArrowLeft, Bell, MoreHorizontal, Crown, Pencil, Play, Image as ImageIcon, Copy, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  MoreHorizontal,
+  Crown,
+  Pencil,
+  Play,
+  Image as ImageIcon,
+  Copy,
+  ExternalLink,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -28,7 +38,17 @@ interface ProfileBannerProps extends ProfileContext {
   profileUserId?: string;
 }
 
-export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBack, followingThis, onFollow, profileUserId, relationshipStatus }: ProfileBannerProps) {
+export function ProfileBanner({
+  profile,
+  viewerRole,
+  profileType,
+  isOwner,
+  onBack,
+  followingThis,
+  onFollow,
+  profileUserId,
+  relationshipStatus,
+}: ProfileBannerProps) {
   const { updateUser } = useAuth();
   const { user: supabaseUser } = useSupabaseAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,9 +62,7 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
       ? "glass neon-border rounded-3xl overflow-hidden"
       : "rounded-3xl overflow-hidden border border-white/10 liquid-glass";
 
-  const bannerHeight = isCreator
-    ? "h-44 sm:h-60 lg:h-80 xl:h-96"
-    : "h-40 sm:h-56 lg:h-72 xl:h-80";
+  const bannerHeight = isCreator ? "h-44 sm:h-60 lg:h-80 xl:h-96" : "h-40 sm:h-56 lg:h-72 xl:h-80";
 
   return (
     <div className="relative">
@@ -93,7 +111,10 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
             <ArrowLeft className="size-4" />
           </button>
           <div className="flex items-center gap-2">
-            <button aria-label="Notifications" className="size-9 grid place-items-center rounded-full glass">
+            <button
+              aria-label="Notifications"
+              className="size-9 grid place-items-center rounded-full glass"
+            >
               <Bell className="size-4" />
             </button>
             <button
@@ -127,9 +148,19 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
                         updateUser({ banner: preview });
                         try {
                           if (!supabaseUser?.id) throw new Error("Sign in required");
-                          const uploaded = await uploadProfileMedia(supabaseUser.id, file, "banner");
+                          const uploaded = await uploadProfileMedia(
+                            supabaseUser.id,
+                            file,
+                            "banner",
+                          );
                           updateUser({ banner: uploaded.url });
-                          recordUserTrace({ userUid: profile.uid, action: "profile.banner_update", targetType: "profile", targetId: profile.uid, details: { fileType: file.type } });
+                          recordUserTrace({
+                            userUid: profile.uid,
+                            action: "profile.banner_update",
+                            targetType: "profile",
+                            targetId: profile.uid,
+                            details: { fileType: file.type },
+                          });
                           toast.success("Banner photo updated");
                           setMenuOpen(false);
                         } catch (error) {
@@ -141,7 +172,10 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
                   </>
                 )}
                 <button
-                  onClick={() => { navigator.clipboard?.writeText(profile.uid); toast.success("UID copied"); }}
+                  onClick={() => {
+                    navigator.clipboard?.writeText(profile.uid);
+                    toast.success("UID copied");
+                  }}
                   className="w-full flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white/5 text-left"
                 >
                   <Copy className="size-4" /> Copy UID {profile.uid.slice(0, 3)}
@@ -186,7 +220,12 @@ export function ProfileBanner({ profile, viewerRole, profileType, isOwner, onBac
 
           {/* Identity text — rendered in ProfileIdentityCard on mobile */}
           <div className="flex-1 min-w-0 pb-2">
-            <DesktopIdentityText profile={profile} isOwner={isOwner} profileType={profileType} viewerRole={viewerRole} />
+            <DesktopIdentityText
+              profile={profile}
+              isOwner={isOwner}
+              profileType={profileType}
+              viewerRole={viewerRole}
+            />
           </div>
 
           {/* Desktop CTA buttons */}
@@ -231,16 +270,23 @@ import { ShieldCheck, Sparkles } from "lucide-react";
 import { VerifiedBadge } from "@/components/brand/Badge";
 
 function DesktopIdentityText({
-  profile, isOwner, profileType,
+  profile,
+  isOwner,
+  profileType,
 }: Pick<ProfileContext, "profile" | "viewerRole" | "profileType"> & { isOwner: boolean }) {
   const isCreator = profileType === "creator";
   const isSiteOwnerProfile = Boolean(profile.isFounder);
   return (
     <>
-      <h1 className={`text-3xl xl:text-4xl font-bold leading-tight flex items-center gap-2 ${isSiteOwnerProfile ? "text-gradient-gold" : ""}`}>
+      <h1
+        className={`text-3xl xl:text-4xl font-bold leading-tight flex items-center gap-2 ${isSiteOwnerProfile ? "text-gradient-gold" : ""}`}
+      >
         {profile.displayName}
         {profile.isVerified && (
-          <VerifiedBadge kind={profile.verifiedKind ?? (isCreator ? "creator" : "user")} className="!size-5" />
+          <VerifiedBadge
+            kind={profile.verifiedKind ?? (isCreator ? "creator" : "user")}
+            className="!size-5"
+          />
         )}
         {isSiteOwnerProfile && (
           <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold tracking-[0.25em] px-2.5 py-1 rounded-full owner-ribbon text-black">
@@ -289,7 +335,15 @@ function DesktopIdentityText({
 import { UserCheck, UserPlus, MessageCircle } from "lucide-react";
 
 function DesktopActionButtons({
-  profile, isOwner, viewerRole, profileType, followingThis, onFollow, profileUserId, canFollow, canMessage,
+  profile,
+  isOwner,
+  viewerRole,
+  profileType,
+  followingThis,
+  onFollow,
+  profileUserId,
+  canFollow,
+  canMessage,
 }: Pick<ProfileContext, "profile" | "viewerRole" | "profileType"> & {
   isOwner: boolean;
   followingThis?: boolean;
@@ -341,7 +395,9 @@ function DesktopActionButtons({
           onClick={handleFollow}
           disabled={!profileUserId || busy}
           className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-semibold tilt-press disabled:opacity-60 ${
-            followingThis ? "glass border border-white/15" : "bg-primary text-primary-foreground glow-gold"
+            followingThis
+              ? "glass border border-white/15"
+              : "bg-primary text-primary-foreground glow-gold"
           }`}
         >
           {followingThis ? <UserCheck className="size-4" /> : <UserPlus className="size-4" />}

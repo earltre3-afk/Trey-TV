@@ -4,21 +4,24 @@ import { GamePreviewCard } from "./GamePreviewCard";
 const GAMES = [
   {
     name: "Spades",
-    description: "Team up, read your partner, and bid your tricks. The definitive card game — upgraded for the Trey TV lounge.",
+    description:
+      "Team up, read your partner, and bid your tricks. The definitive card game — upgraded for the Trey TV lounge.",
     suitSymbol: "♠",
     suitLabel: "Enter Spades",
     accentHex: "#00B7FF",
   },
   {
     name: "Blackjack",
-    description: "Hit or stand. Beat the dealer to 21 in a sleek, after-midnight casino experience built for real players.",
+    description:
+      "Hit or stand. Beat the dealer to 21 in a sleek, after-midnight casino experience built for real players.",
     suitSymbol: "A♦",
     suitLabel: "Hit the Table",
     accentHex: "#FFC857",
   },
   {
     name: "Bullshit",
-    description: "Bluff your way through the entire deck. Call it when you see it — everyone's got something to hide.",
+    description:
+      "Bluff your way through the entire deck. Call it when you see it — everyone's got something to hide.",
     suitSymbol: "🃏",
     suitLabel: "Call It",
     accentHex: "#C084FC",
@@ -28,13 +31,17 @@ const GAMES = [
 export function GamesPreviewSection() {
   return (
     <section className="relative px-4 sm:px-6 lg:px-2 py-10 lg:py-14 max-w-7xl mx-auto overflow-hidden">
-
       {/* ── Lounge atmosphere background ── */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[40px]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden rounded-[40px]"
+      >
         {/* Felt table glow — electric blue center lamp */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[70%] rounded-full blur-3xl opacity-[0.07]"
-          style={{ background: "radial-gradient(ellipse, #00B7FF 0%, #0033FF 40%, transparent 70%)" }}
+          style={{
+            background: "radial-gradient(ellipse, #00B7FF 0%, #0033FF 40%, transparent 70%)",
+          }}
         />
         {/* Gold ambient right */}
         <div
@@ -83,34 +90,48 @@ export function GamesPreviewSection() {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             {/* Eyebrow badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3"
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3"
               style={{
                 background: "rgba(0,183,255,0.08)",
                 border: "1px solid rgba(0,183,255,0.3)",
               }}
             >
               <Dices className="size-3.5" style={{ color: "#00B7FF" }} />
-              <span className="text-[10px] font-black tracking-[0.22em]" style={{ color: "#00B7FF" }}>
+              <span
+                className="text-[10px] font-black tracking-[0.22em]"
+                style={{ color: "#00B7FF" }}
+              >
                 GAMING LOUNGE
               </span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#F8FAFC]">
-              Trey TV <span style={{
-                background: "linear-gradient(90deg, #00B7FF, #FFC857)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}>Games</span>
+              Trey TV{" "}
+              <span
+                style={{
+                  background: "linear-gradient(90deg, #00B7FF, #FFC857)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Games
+              </span>
             </h2>
             <p className="mt-2 text-sm sm:text-base text-[#94A3B8] max-w-lg leading-relaxed">
-              Play classics with a Trey TV twist. Spades, Blackjack, Bullshit, and more are entering the lounge.
+              Play classics with a Trey TV twist. Spades, Blackjack, Bullshit, and more are entering
+              the lounge.
             </p>
           </div>
 
           {/* Desktop status note */}
-          <div className="hidden sm:flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-xl"
-            style={{ background: "rgba(255,200,87,0.06)", border: "1px solid rgba(255,200,87,0.18)" }}
+          <div
+            className="hidden sm:flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-xl"
+            style={{
+              background: "rgba(255,200,87,0.06)",
+              border: "1px solid rgba(255,200,87,0.18)",
+            }}
           >
             <Sparkles className="size-3" style={{ color: "#FFC857" }} />
             <span className="text-[11px] font-semibold text-[#FFC857]/70">

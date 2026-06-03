@@ -28,7 +28,9 @@ export function useCurrentUser(): SessionUser {
         const [{ data: rawData, error }, { data: rewardsData }] = await Promise.all([
           supabase
             .from("profiles")
-            .select("id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, created_at, role, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday")
+            .select(
+              "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, created_at, role, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday",
+            )
             .eq("id", supaUser.id)
             .single(),
           (supabase as any)
@@ -50,15 +52,18 @@ export function useCurrentUser(): SessionUser {
             if (data.is_verified) {
               verified = data.verified_creator ? "creator" : "user";
             } else if (data.verification_type === "creator") {
-               verified = "creator";
+              verified = "creator";
             }
 
             const rewardPoints = Number(rewardBalance?.current_balance ?? 0);
-            const rewardTier = pointsToRewardTier(Number(rewardBalance?.lifetime_earned ?? rewardPoints)).tier as any;
+            const rewardTier = pointsToRewardTier(
+              Number(rewardBalance?.lifetime_earned ?? rewardPoints),
+            ).tier as any;
             const publicUid = data.public_profile_uid || data.id || "";
             const mappedProfile: SessionUser = {
               name: data.display_name || data.username || "Trey TV Member",
-              handle: data.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member"),
+              handle:
+                data.username || (publicUid ? `user_${String(publicUid).slice(-6)}` : "member"),
               uid: publicUid,
               avatar: data.avatar_url || "",
               banner: data.banner_url || "",

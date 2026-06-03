@@ -17,7 +17,10 @@ function ChannelPage() {
       subtitle="Your public face on Trey TV."
       actions={
         user && (
-          <a href={`/channel/${user.handle}`} className="px-3 py-2 rounded-xl text-xs font-bold glass border border-primary/40 text-primary glow-gold inline-flex items-center gap-1.5">
+          <a
+            href={`/channel/${user.handle}`}
+            className="px-3 py-2 rounded-xl text-xs font-bold glass border border-primary/40 text-primary glow-gold inline-flex items-center gap-1.5"
+          >
             <Eye className="size-3.5" /> View public channel
           </a>
         )
@@ -40,7 +43,9 @@ function ChannelPage() {
           <SectionHeader icon={Eye} title="Public preview" />
           <div className="rounded-2xl overflow-hidden ring-1 ring-white/10">
             <div className="relative h-32 bg-gradient-to-br from-[oklch(0.25_0.1_300)] via-[oklch(0.18_0.05_270)] to-[oklch(0.22_0.08_85)]">
-              <button className="absolute top-2 right-2 px-2 py-1 rounded-md text-[10px] glass border border-white/15 inline-flex items-center gap-1"><ImageIcon className="size-3" /> Banner</button>
+              <button className="absolute top-2 right-2 px-2 py-1 rounded-md text-[10px] glass border border-white/15 inline-flex items-center gap-1">
+                <ImageIcon className="size-3" /> Banner
+              </button>
             </div>
             <div className="p-4 -mt-8 relative">
               <div className="size-16 rounded-2xl conic-ring inline-block">
@@ -50,11 +55,19 @@ function ChannelPage() {
                 <span className="font-bold">{user?.name ?? "Your name"}</span>
                 <Crown className="size-4 text-primary" />
               </div>
-              <div className="text-xs text-muted-foreground">@{user?.handle ?? "you"} · 32.7K fans</div>
+              <div className="text-xs text-muted-foreground">
+                @{user?.handle ?? "you"} · 32.7K fans
+              </div>
               <div className="mt-3 flex gap-2">
-                <button className="flex-1 px-3 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground">Follow</button>
-                <button className="px-3 py-2 rounded-lg text-xs font-semibold border border-white/15">Gift</button>
-                <button className="px-3 py-2 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.78_0.25_340)]">Subscribe</button>
+                <button className="flex-1 px-3 py-2 rounded-lg text-xs font-bold bg-primary text-primary-foreground">
+                  Follow
+                </button>
+                <button className="px-3 py-2 rounded-lg text-xs font-semibold border border-white/15">
+                  Gift
+                </button>
+                <button className="px-3 py-2 rounded-lg text-xs font-semibold border border-[oklch(0.7_0.25_340)] text-[oklch(0.78_0.25_340)]">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>
@@ -73,14 +86,33 @@ function ChannelPage() {
   );
 }
 
-function Field({ label, defaultValue, multiline, icon: Icon }: { label: string; defaultValue?: string; multiline?: boolean; icon?: typeof Tv }) {
+function Field({
+  label,
+  defaultValue,
+  multiline,
+  icon: Icon,
+}: {
+  label: string;
+  defaultValue?: string;
+  multiline?: boolean;
+  icon?: typeof Tv;
+}) {
   return (
     <label className="block">
-      <div className="text-[11px] tracking-[0.18em] uppercase text-muted-foreground mb-1 flex items-center gap-1.5">{Icon && <Icon className="size-3" />} {label}</div>
+      <div className="text-[11px] tracking-[0.18em] uppercase text-muted-foreground mb-1 flex items-center gap-1.5">
+        {Icon && <Icon className="size-3" />} {label}
+      </div>
       {multiline ? (
-        <textarea defaultValue={defaultValue} rows={3} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40" />
+        <textarea
+          defaultValue={defaultValue}
+          rows={3}
+          className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
+        />
       ) : (
-        <input defaultValue={defaultValue} className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40" />
+        <input
+          defaultValue={defaultValue}
+          className="w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
+        />
       )}
     </label>
   );
@@ -91,7 +123,9 @@ function Slot({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl bg-white/5 ring-1 ring-white/10 p-3">
       <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground">{label}</div>
       <div className="text-sm font-semibold mt-1">{value}</div>
-      <button className="mt-2 px-2.5 py-1 rounded-md text-[11px] border border-white/15 hover:bg-white/5">Change</button>
+      <button className="mt-2 px-2.5 py-1 rounded-md text-[11px] border border-white/15 hover:bg-white/5">
+        Change
+      </button>
     </div>
   );
 }

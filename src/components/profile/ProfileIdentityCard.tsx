@@ -17,20 +17,16 @@ interface Props extends ProfileContext {
   followingThis?: boolean;
 }
 
-export function ProfileIdentityCard({
-  profile,
-  profileType,
-  viewerRole,
-  isOwner,
-  isGuest,
-}: Props) {
+export function ProfileIdentityCard({ profile, profileType, viewerRole, isOwner, isGuest }: Props) {
   const isCreator = profileType === "creator";
   const isSiteOwnerProfile = Boolean(profile.isFounder);
 
   return (
     <div className="lg:hidden text-center px-2 -mt-2 space-y-2">
       {/* Display name */}
-      <h1 className={`text-2xl font-bold leading-tight ${isSiteOwnerProfile ? "text-gradient-gold" : ""}`}>
+      <h1
+        className={`text-2xl font-bold leading-tight ${isSiteOwnerProfile ? "text-gradient-gold" : ""}`}
+      >
         {profile.displayName}
       </h1>
 
@@ -51,7 +47,13 @@ export function ProfileIdentityCard({
 
       {profile.zodiacSunSign && (
         <div className="flex justify-center">
-          <ZodiacBadge sign={profile.zodiacSunSign} isCusp={profile.zodiacIsCusp} cuspLabel={profile.zodiacCuspLabel} size="sm" showName />
+          <ZodiacBadge
+            sign={profile.zodiacSunSign}
+            isCusp={profile.zodiacIsCusp}
+            cuspLabel={profile.zodiacCuspLabel}
+            size="sm"
+            showName
+          />
         </div>
       )}
 

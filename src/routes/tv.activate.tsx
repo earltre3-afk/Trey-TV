@@ -9,13 +9,20 @@ export const Route = createFileRoute("/tv/activate")({
   head: () => ({
     meta: [
       { title: "Activate Trey TV - TV App" },
-      { name: "description", content: "Link your Trey TV account to an Android TV, Google TV, Chromecast, or Fire TV device." },
+      {
+        name: "description",
+        content:
+          "Link your Trey TV account to an Android TV, Google TV, Chromecast, or Fire TV device.",
+      },
     ],
   }),
 });
 
 function normalizeCode(value: string) {
-  return value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+  return value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 8);
 }
 
 function displayCode(value: string) {
@@ -27,7 +34,9 @@ function TvActivatePage() {
   const nav = useNavigate();
   const search: any = useSearch({ strict: false });
   const { session, user, loading } = useSupabaseSession();
-  const [code, setCode] = useState(displayCode(typeof search?.code === "string" ? search.code : ""));
+  const [code, setCode] = useState(
+    displayCode(typeof search?.code === "string" ? search.code : ""),
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [approved, setApproved] = useState(false);
@@ -62,11 +71,17 @@ function TvActivatePage() {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(typeof payload.error === "string" ? payload.error : "Could not link that TV device.");
+        setMessage(
+          typeof payload.error === "string" ? payload.error : "Could not link that TV device.",
+        );
         return;
       }
       setApproved(decision === "approve");
-      setMessage(decision === "approve" ? "This TV is linked. You can return to the TV app." : "This TV request was denied.");
+      setMessage(
+        decision === "approve"
+          ? "This TV is linked. You can return to the TV app."
+          : "This TV request was denied.",
+      );
     } catch {
       setMessage("Network error. Try again.");
     } finally {
@@ -80,7 +95,9 @@ function TvActivatePage() {
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col px-5 py-8">
         <Link to="/" className="inline-flex w-fit items-center gap-3">
           <Logo className="h-10 w-10" />
-          <span className="text-sm font-black uppercase tracking-[0.28em] text-primary">Trey TV</span>
+          <span className="text-sm font-black uppercase tracking-[0.28em] text-primary">
+            Trey TV
+          </span>
         </Link>
 
         <section className="grid flex-1 place-items-center">
@@ -91,7 +108,9 @@ function TvActivatePage() {
               </div>
               <div>
                 <h1 className="text-3xl font-black">Activate Your TV</h1>
-                <p className="text-sm text-white/62">Enter the code shown on your Trey TV streaming-box app.</p>
+                <p className="text-sm text-white/62">
+                  Enter the code shown on your Trey TV streaming-box app.
+                </p>
               </div>
             </div>
 
@@ -119,12 +138,16 @@ function TvActivatePage() {
                   <CheckCircle2 className="h-5 w-5" />
                   {message}
                 </div>
-                <p className="text-sm text-white/60">Signed in as {user?.email ?? "your Trey TV account"}.</p>
+                <p className="text-sm text-white/60">
+                  Signed in as {user?.email ?? "your Trey TV account"}.
+                </p>
               </div>
             ) : (
               <div className="space-y-5">
                 <label className="block">
-                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-white/55">TV Code</span>
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-white/55">
+                    TV Code
+                  </span>
                   <input
                     value={code}
                     onChange={(event) => setCode(displayCode(event.target.value))}
@@ -157,7 +180,10 @@ function TvActivatePage() {
                     {message}
                   </div>
                 ) : null}
-                <p className="text-xs text-white/45">Device codes expire after a few minutes. Restart sign-in on the TV if this code no longer works.</p>
+                <p className="text-xs text-white/45">
+                  Device codes expire after a few minutes. Restart sign-in on the TV if this code no
+                  longer works.
+                </p>
               </div>
             )}
           </div>

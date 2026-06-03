@@ -20,8 +20,8 @@ interface DefaultAvatarProps {
 // ─── Deterministic color from string ──────────────────────────────────────────
 
 const NEON_ACCENTS = [
-  { ring: "oklch(0.82_0.16_85)", glow: "oklch(0.82_0.16_85_/_0.25)" },   // gold
-  { ring: "oklch(0.7_0.25_340)", glow: "oklch(0.7_0.25_340_/_0.25)" },   // magenta
+  { ring: "oklch(0.82_0.16_85)", glow: "oklch(0.82_0.16_85_/_0.25)" }, // gold
+  { ring: "oklch(0.7_0.25_340)", glow: "oklch(0.7_0.25_340_/_0.25)" }, // magenta
   { ring: "oklch(0.82_0.15_215)", glow: "oklch(0.82_0.15_215_/_0.25)" }, // cyan
   { ring: "oklch(0.78_0.18_150)", glow: "oklch(0.78_0.18_150_/_0.25)" }, // green
   { ring: "oklch(0.65_0.22_300)", glow: "oklch(0.65_0.22_300_/_0.25)" }, // purple
@@ -39,11 +39,11 @@ function seedIndex(seed?: string): number {
 // ─── Size map ─────────────────────────────────────────────────────────────────
 
 const SIZE_MAP: Record<DefaultAvatarSize, { wrapper: string; icon: string; border: string }> = {
-  xs:  { wrapper: "size-6",  icon: "size-3",   border: "border" },
-  sm:  { wrapper: "size-8",  icon: "size-4",   border: "border" },
-  md:  { wrapper: "size-10", icon: "size-5",   border: "border" },
-  lg:  { wrapper: "size-14", icon: "size-6",   border: "border-2" },
-  xl:  { wrapper: "size-20", icon: "size-8",   border: "border-2" },
+  xs: { wrapper: "size-6", icon: "size-3", border: "border" },
+  sm: { wrapper: "size-8", icon: "size-4", border: "border" },
+  md: { wrapper: "size-10", icon: "size-5", border: "border" },
+  lg: { wrapper: "size-14", icon: "size-6", border: "border-2" },
+  xl: { wrapper: "size-20", icon: "size-8", border: "border-2" },
   "2xl": { wrapper: "size-28", icon: "size-10", border: "border-2" },
 };
 
@@ -71,11 +71,7 @@ export function DefaultAvatar({
       }}
       aria-hidden="true"
     >
-      <User
-        className={`${icon} opacity-60`}
-        style={{ color: accent.ring }}
-        strokeWidth={1.5}
-      />
+      <User className={`${icon} opacity-60`} style={{ color: accent.ring }} strokeWidth={1.5} />
     </div>
   );
 }

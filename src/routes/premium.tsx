@@ -9,7 +9,10 @@ export const Route = createFileRoute("/premium")({
   head: () => ({
     meta: [
       { title: "Trey TV Premium — Unlock Everything" },
-      { name: "description", content: "Exclusive creator tools, AI insights and ad-free viewing on Trey TV Premium." },
+      {
+        name: "description",
+        content: "Exclusive creator tools, AI insights and ad-free viewing on Trey TV Premium.",
+      },
     ],
   }),
 });
@@ -32,13 +35,22 @@ function Premium() {
   return (
     <AppShell>
       <div className="space-y-6 -mt-2">
-        <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Back
         </button>
 
         <div className="relative overflow-hidden rounded-3xl border border-[oklch(0.65_0.22_300_/_0.45)] p-6 lg:p-10 bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple">
-          <div aria-hidden className="absolute -top-20 -right-20 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.25)] blur-3xl" />
-          <div aria-hidden className="absolute -bottom-20 -left-20 size-72 rounded-full bg-primary/15 blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute -top-20 -right-20 size-72 rounded-full bg-[oklch(0.7_0.25_340_/_0.25)] blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="absolute -bottom-20 -left-20 size-72 rounded-full bg-primary/15 blur-3xl"
+          />
           <div className="relative">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] tracking-[0.2em] uppercase border border-white/15 bg-white/5">
               <Gem className="size-3 text-[oklch(0.7_0.25_340)]" /> Premium
@@ -47,14 +59,19 @@ function Premium() {
               Unlock the full Trey TV.
             </h1>
             <p className="mt-3 text-sm text-muted-foreground max-w-prose">
-              Premium creators ship faster, look sharper, and grow louder. Get every Trey-I tool, deeper insights, and that signature glow.
+              Premium creators ship faster, look sharper, and grow louder. Get every Trey-I tool,
+              deeper insights, and that signature glow.
             </p>
           </div>
         </div>
 
         <ul className="grid sm:grid-cols-2 gap-2">
           {perks.map((p, i) => (
-            <li key={p.label} style={{ animationDelay: `${i * 60}ms` }} className="animate-rise rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 flex items-start gap-3">
+            <li
+              key={p.label}
+              style={{ animationDelay: `${i * 60}ms` }}
+              className="animate-rise rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3 flex items-start gap-3"
+            >
               <div className="size-9 grid place-items-center rounded-xl bg-primary/15 text-primary glow-gold">
                 <p.icon className="size-4" />
               </div>
@@ -68,13 +85,13 @@ function Premium() {
             <div
               key={t.name}
               className={`relative rounded-2xl border p-4 ${
-                t.featured
-                  ? "border-primary/50 bg-primary/5 glow-gold"
-                  : "border-white/10 glass"
+                t.featured ? "border-primary/50 bg-primary/5 glow-gold" : "border-white/10 glass"
               }`}
             >
               {t.featured && (
-                <span className="absolute -top-2 left-3 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">BEST VALUE</span>
+                <span className="absolute -top-2 left-3 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                  BEST VALUE
+                </span>
               )}
               <div className="text-xs text-muted-foreground">{t.name}</div>
               <div className="mt-1 flex items-baseline gap-1">
@@ -85,7 +102,9 @@ function Premium() {
               <button
                 onClick={() => toast.success(`${t.name} plan — added to checkout (demo)`)}
                 className={`mt-3 w-full py-2 rounded-xl text-sm font-semibold tilt-press ${
-                  t.featured ? "bg-primary text-primary-foreground" : "border border-white/15 hover:bg-white/5"
+                  t.featured
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-white/15 hover:bg-white/5"
                 }`}
               >
                 <Check className="inline size-4 mr-1" /> Choose

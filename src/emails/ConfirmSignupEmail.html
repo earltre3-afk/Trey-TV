@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <!--
   TREY TV — Signup Email Confirmation Template
   ─────────────────────────────────────────────
@@ -16,200 +16,231 @@
     {{ .SiteURL }}          — your app's base URL
 -->
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Confirm your Trey TV account</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Confirm your Trey TV account</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap");
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background-color: #05070D;
-      color: #E8EAF0;
-      -webkit-font-smoothing: antialiased;
-    }
-    .wrapper {
-      max-width: 560px;
-      margin: 0 auto;
-      padding: 32px 16px 48px;
-    }
-    .logo-area {
-      text-align: center;
-      padding: 32px 0 24px;
-    }
-    .logo-text {
-      display: inline-block;
-      font-size: 22px;
-      font-weight: 900;
-      letter-spacing: 0.12em;
-      color: #FFD166;
-      text-transform: uppercase;
-    }
-    .card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 24px;
-      overflow: hidden;
-    }
-    .card-top {
-      background: linear-gradient(135deg, rgba(255,209,102,0.12), rgba(124,58,237,0.10), rgba(0,183,255,0.08));
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      padding: 40px 36px 32px;
-      text-align: center;
-    }
-    .icon-ring {
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(255,209,102,0.40);
-      background: rgba(255,209,102,0.08);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-    .icon-ring svg {
-      width: 32px;
-      height: 32px;
-    }
-    .card-top h1 {
-      font-size: 26px;
-      font-weight: 900;
-      line-height: 1.2;
-      color: #FFFFFF;
-      margin-bottom: 10px;
-    }
-    .card-top p {
-      font-size: 14px;
-      color: rgba(232,234,240,0.65);
-      line-height: 1.6;
-    }
-    .card-body {
-      padding: 32px 36px 36px;
-    }
-    .cta-btn {
-      display: block;
-      width: 100%;
-      max-width: 320px;
-      margin: 0 auto 28px;
-      padding: 16px 24px;
-      background: #FFD166;
-      color: #05070D;
-      font-size: 15px;
-      font-weight: 900;
-      letter-spacing: 0.04em;
-      text-align: center;
-      border-radius: 14px;
-      text-decoration: none;
-      box-shadow: 0 0 36px -10px rgba(255,209,102,0.7);
-    }
-    .link-fallback {
-      font-size: 12px;
-      color: rgba(232,234,240,0.50);
-      line-height: 1.7;
-      text-align: center;
-    }
-    .link-fallback a {
-      color: rgba(255,209,102,0.80);
-      word-break: break-all;
-    }
-    .divider {
-      height: 1px;
-      background: rgba(255,255,255,0.07);
-      margin: 28px 0;
-    }
-    .info-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .info-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #FFD166;
-      margin-top: 7px;
-      flex-shrink: 0;
-    }
-    .info-row p {
-      font-size: 13px;
-      color: rgba(232,234,240,0.60);
-      line-height: 1.5;
-    }
-    .footer {
-      text-align: center;
-      padding-top: 28px;
-      font-size: 11px;
-      color: rgba(232,234,240,0.30);
-      line-height: 1.8;
-    }
-    .footer a {
-      color: rgba(232,234,240,0.45);
-    }
-  </style>
-</head>
-<body>
-  <div class="wrapper">
-    <!-- Logo -->
-    <div class="logo-area">
-      <span class="logo-text">Trey TV</span>
-    </div>
-
-    <div class="card">
-      <!-- Top section -->
-      <div class="card-top">
-        <div class="icon-ring">
-          <!-- Mail icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="#FFD166" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="20" height="16" rx="3" />
-            <polyline points="2,4 12,13 22,4" />
-          </svg>
-        </div>
-        <h1>Confirm your Trey TV account</h1>
-        <p>You're one tap away from entering the universe. Click the button below to verify your email and activate your account.</p>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background-color: #05070d;
+        color: #e8eaf0;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrapper {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      .logo-area {
+        text-align: center;
+        padding: 32px 0 24px;
+      }
+      .logo-text {
+        display: inline-block;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        color: #ffd166;
+        text-transform: uppercase;
+      }
+      .card {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.06) 0%,
+          rgba(255, 255, 255, 0.03) 100%
+        );
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        overflow: hidden;
+      }
+      .card-top {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 209, 102, 0.12),
+          rgba(124, 58, 237, 0.1),
+          rgba(0, 183, 255, 0.08)
+        );
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 40px 36px 32px;
+        text-align: center;
+      }
+      .icon-ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 209, 102, 0.4);
+        background: rgba(255, 209, 102, 0.08);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .icon-ring svg {
+        width: 32px;
+        height: 32px;
+      }
+      .card-top h1 {
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1.2;
+        color: #ffffff;
+        margin-bottom: 10px;
+      }
+      .card-top p {
+        font-size: 14px;
+        color: rgba(232, 234, 240, 0.65);
+        line-height: 1.6;
+      }
+      .card-body {
+        padding: 32px 36px 36px;
+      }
+      .cta-btn {
+        display: block;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto 28px;
+        padding: 16px 24px;
+        background: #ffd166;
+        color: #05070d;
+        font-size: 15px;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-align: center;
+        border-radius: 14px;
+        text-decoration: none;
+        box-shadow: 0 0 36px -10px rgba(255, 209, 102, 0.7);
+      }
+      .link-fallback {
+        font-size: 12px;
+        color: rgba(232, 234, 240, 0.5);
+        line-height: 1.7;
+        text-align: center;
+      }
+      .link-fallback a {
+        color: rgba(255, 209, 102, 0.8);
+        word-break: break-all;
+      }
+      .divider {
+        height: 1px;
+        background: rgba(255, 255, 255, 0.07);
+        margin: 28px 0;
+      }
+      .info-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      .info-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ffd166;
+        margin-top: 7px;
+        flex-shrink: 0;
+      }
+      .info-row p {
+        font-size: 13px;
+        color: rgba(232, 234, 240, 0.6);
+        line-height: 1.5;
+      }
+      .footer {
+        text-align: center;
+        padding-top: 28px;
+        font-size: 11px;
+        color: rgba(232, 234, 240, 0.3);
+        line-height: 1.8;
+      }
+      .footer a {
+        color: rgba(232, 234, 240, 0.45);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <!-- Logo -->
+      <div class="logo-area">
+        <span class="logo-text">Trey TV</span>
       </div>
 
-      <!-- Body -->
-      <div class="card-body">
-        <a href="{{ .ConfirmationURL }}" class="cta-btn">
-          Confirm My Trey TV Account →
-        </a>
+      <div class="card">
+        <!-- Top section -->
+        <div class="card-top">
+          <div class="icon-ring">
+            <!-- Mail icon -->
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFD166"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="3" />
+              <polyline points="2,4 12,13 22,4" />
+            </svg>
+          </div>
+          <h1>Confirm your Trey TV account</h1>
+          <p>
+            You're one tap away from entering the universe. Click the button below to verify your
+            email and activate your account.
+          </p>
+        </div>
 
-        <p class="link-fallback">
-          Button not working? Copy and paste this link into your browser:<br />
-          <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+        <!-- Body -->
+        <div class="card-body">
+          <a href="{{ .ConfirmationURL }}" class="cta-btn"> Confirm My Trey TV Account → </a>
+
+          <p class="link-fallback">
+            Button not working? Copy and paste this link into your browser:<br />
+            <a href="{{ .ConfirmationURL }}">{{ .ConfirmationURL }}</a>
+          </p>
+
+          <div class="divider"></div>
+
+          <div class="info-row">
+            <div class="info-dot"></div>
+            <p>
+              This link expires in <strong style="color: #e8eaf0">24 hours</strong>. Request a new
+              one on the login page if needed.
+            </p>
+          </div>
+          <div class="info-row">
+            <div class="info-dot"></div>
+            <p>If you didn't create a Trey TV account, you can safely ignore this email.</p>
+          </div>
+          <div class="info-row">
+            <div class="info-dot"></div>
+            <p>Never share your login link with anyone. Trey TV will never ask for it.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>Trey TV &mdash; the premium creator entertainment platform</p>
+        <p style="margin-top: 6px">
+          <a href="{{ .SiteURL }}">Visit Trey TV</a> &middot;
+          <a href="{{ .SiteURL }}/legal/privacy">Privacy</a> &middot;
+          <a href="{{ .SiteURL }}/legal/terms">Terms</a>
         </p>
-
-        <div class="divider"></div>
-
-        <div class="info-row">
-          <div class="info-dot"></div>
-          <p>This link expires in <strong style="color:#E8EAF0">24 hours</strong>. Request a new one on the login page if needed.</p>
-        </div>
-        <div class="info-row">
-          <div class="info-dot"></div>
-          <p>If you didn't create a Trey TV account, you can safely ignore this email.</p>
-        </div>
-        <div class="info-row">
-          <div class="info-dot"></div>
-          <p>Never share your login link with anyone. Trey TV will never ask for it.</p>
-        </div>
+        <p style="margin-top: 8px">
+          You're receiving this because someone signed up with {{ .Email }}
+        </p>
       </div>
     </div>
-
-    <!-- Footer -->
-    <div class="footer">
-      <p>Trey TV &mdash; the premium creator entertainment platform</p>
-      <p style="margin-top:6px">
-        <a href="{{ .SiteURL }}">Visit Trey TV</a> &middot;
-        <a href="{{ .SiteURL }}/legal/privacy">Privacy</a> &middot;
-        <a href="{{ .SiteURL }}/legal/terms">Terms</a>
-      </p>
-      <p style="margin-top:8px">You're receiving this because someone signed up with {{ .Email }}</p>
-    </div>
-  </div>
-</body>
+  </body>
 </html>

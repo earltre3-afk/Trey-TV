@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 import { BufferingScreen } from "./BufferingScreen";
+import { CastButton } from "@/components/cast/CastButton";
 
 interface Props {
   src?: string;
   poster?: string;
+  title?: string;
+  subtitle?: string;
   className?: string;
   controls?: boolean;
   fallbackImg?: string;
@@ -11,7 +14,17 @@ interface Props {
   onEnded?: () => void;
 }
 
-export function VideoPlayer({ src, poster, className, controls = true, fallbackImg, onProgress, onEnded }: Props) {
+export function VideoPlayer({
+  src,
+  poster,
+  title = "Trey TV video",
+  subtitle,
+  className,
+  controls = true,
+  fallbackImg,
+  onProgress,
+  onEnded,
+}: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [buffering, setBuffering] = useState(!!src);
   const [dismissed, setDismissed] = useState(false);
@@ -23,9 +36,7 @@ export function VideoPlayer({ src, poster, className, controls = true, fallbackI
   }
 
   if (!src) {
-    return (
-      <img src={fallbackImg} className={className} alt="" />
-    );
+    return <img src={fallbackImg} className={className} alt="" />;
   }
 
   return (
@@ -34,9 +45,12 @@ export function VideoPlayer({ src, poster, className, controls = true, fallbackI
         ref={videoRef}
         src={src}
         poster={poster}
+        disableRemotePlayback={false}
         className={className}
         controls={controls}
-        onWaiting={() => { if (dismissed) setBuffering(true); }}
+        onWaiting={() => {
+          if (dismissed) setBuffering(true);
+        }}
         onPlaying={() => setBuffering(false)}
         onTimeUpdate={(event) => {
           const video = event.currentTarget;
@@ -48,6 +62,16 @@ export function VideoPlayer({ src, poster, className, controls = true, fallbackI
           });
         }}
         onEnded={onEnded}
+      />
+      <CastButton
+        src={src}
+        title={title}
+        subtitle={subtitle}
+        poster={poster}
+        kind="video"
+        mediaRef={videoRef}
+        compact
+        className="absolute right-3 top-3 z-20"
       />
       {buffering && <BufferingScreen onPlay={handlePlay} />}
     </div>

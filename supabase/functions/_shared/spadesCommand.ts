@@ -26,7 +26,8 @@ export type SpadesCommandEnvelope<TBody = Record<string, unknown>> = {
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-tv-device-token",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-tv-device-token",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
@@ -47,7 +48,11 @@ export function optionsResponse(): Response {
   });
 }
 
-export function commandError(code: SpadesCommandErrorCode, message: string, status: number): Response {
+export function commandError(
+  code: SpadesCommandErrorCode,
+  message: string,
+  status: number,
+): Response {
   return jsonResponse(
     {
       ok: false,
@@ -148,12 +153,20 @@ export async function prepareSpadesCommand<TBody = Record<string, unknown>>(
 
   const serviceClient = createServiceClient();
   if (!serviceClient) {
-    return commandError("server_config_missing", "Supabase service configuration is not available.", 500);
+    return commandError(
+      "server_config_missing",
+      "Supabase service configuration is not available.",
+      500,
+    );
   }
 
   const identity = await resolveSpadesIdentity(req, body as Record<string, unknown>, serviceClient);
   if (!identity) {
-    return commandError("unauthorized", "A Supabase Auth bearer token or validated TV device session is required.", 401);
+    return commandError(
+      "unauthorized",
+      "A Supabase Auth bearer token or validated TV device session is required.",
+      401,
+    );
   }
 
   return {
@@ -163,7 +176,10 @@ export async function prepareSpadesCommand<TBody = Record<string, unknown>>(
   };
 }
 
-export function notImplementedProjectionResponse(command: string, identity: SpadesIdentity): Response {
+export function notImplementedProjectionResponse(
+  command: string,
+  identity: SpadesIdentity,
+): Response {
   return jsonResponse(
     {
       ok: false,

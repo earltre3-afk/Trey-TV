@@ -6,7 +6,10 @@ export const Route = createFileRoute("/games/")({
   head: () => ({
     meta: [
       { title: "Games · Trey TV" },
-      { name: "description", content: "Trey TV Gaming Lounge — Spades, Blackjack, Bullshit, and more coming soon." },
+      {
+        name: "description",
+        content: "Trey TV Gaming Lounge — Spades, Blackjack, Bullshit, and more coming soon.",
+      },
     ],
   }),
 });

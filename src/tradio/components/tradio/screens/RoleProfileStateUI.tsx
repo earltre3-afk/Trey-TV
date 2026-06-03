@@ -1,7 +1,7 @@
-import React from 'react';
-import { Lock, Clock, AlertCircle, CheckCircle, ChevronRight } from 'lucide-react';
-import { GlassCard, PrimaryButton, SecondaryButton, Chip } from '../ui';
-import type { RoleProfileActivationState, RoleProfileStatus } from '../auth/roleProfile';
+import React from "react";
+import { Lock, Clock, AlertCircle, CheckCircle, ChevronRight } from "lucide-react";
+import { GlassCard, PrimaryButton, SecondaryButton, Chip } from "../ui";
+import type { RoleProfileActivationState, RoleProfileStatus } from "../auth/roleProfile";
 
 interface RoleProfileCompletionItem {
   id: string;
@@ -39,7 +39,8 @@ export const RoleProfileLockedState: React.FC<{
         </div>
         <h2 className="text-2xl font-bold text-white">{roleLabel} Access Locked</h2>
         <p className="text-sm leading-relaxed text-white/60">
-          You don't currently have {roleLabel.toLowerCase()} access. Request access to set up your {roleLabel.toLowerCase()} profile and start creating.
+          You don't currently have {roleLabel.toLowerCase()} access. Request access to set up your{" "}
+          {roleLabel.toLowerCase()} profile and start creating.
         </p>
         <PrimaryButton onClick={onRequestAccess} className="mt-4">
           Request {roleLabel} Access
@@ -65,7 +66,8 @@ export const RoleProfilePendingState: React.FC<{
         </div>
         <h2 className="text-2xl font-bold text-white">{roleLabel} Access Under Review</h2>
         <p className="text-sm leading-relaxed text-white/60">
-          Your {roleLabel.toLowerCase()} access request is being reviewed by our team. You'll be notified as soon as a decision is made.
+          Your {roleLabel.toLowerCase()} access request is being reviewed by our team. You'll be
+          notified as soon as a decision is made.
         </p>
         {requestedAt && (
           <div className="text-xs text-white/50">
@@ -99,17 +101,12 @@ export const RoleProfileNeedsMoreInfoState: React.FC<{
         </div>
         <h2 className="text-2xl font-bold text-white">{roleLabel} Access Needs Update</h2>
         <p className="text-sm leading-relaxed text-white/60">
-          {message || `Your ${roleLabel.toLowerCase()} access request needs some additional information. Please review and update your request.`}
+          {message ||
+            `Your ${roleLabel.toLowerCase()} access request needs some additional information. Please review and update your request.`}
         </p>
         <div className="flex gap-3">
-          {onViewDetails && (
-            <SecondaryButton onClick={onViewDetails}>
-              View Details
-            </SecondaryButton>
-          )}
-          <PrimaryButton onClick={onUpdate}>
-            Update Request
-          </PrimaryButton>
+          {onViewDetails && <SecondaryButton onClick={onViewDetails}>View Details</SecondaryButton>}
+          <PrimaryButton onClick={onUpdate}>Update Request</PrimaryButton>
         </div>
       </div>
     </GlassCard>
@@ -133,7 +130,8 @@ export const RoleProfileIncompleteState: React.FC<{
           <div className="flex-1">
             <h3 className="font-semibold text-white">Complete Your {roleLabel} Profile</h3>
             <p className="mt-1 text-sm text-white/60">
-              Your {roleLabel.toLowerCase()} access is approved! Complete the setup below to publish your profile.
+              Your {roleLabel.toLowerCase()} access is approved! Complete the setup below to publish
+              your profile.
             </p>
           </div>
         </div>
@@ -168,7 +166,10 @@ export const RoleProfileCompletionChecklist: React.FC<{
 
       <div className="space-y-2">
         {completion.items.map((item) => (
-          <div key={item.id} className="flex items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3">
+          <div
+            key={item.id}
+            className="flex items-start gap-3 rounded-lg border border-white/5 bg-white/[0.02] p-3"
+          >
             <div className="mt-0.5 flex-shrink-0">
               {item.completed ? (
                 <CheckCircle className="h-5 w-5 text-emerald-400" />
@@ -186,8 +187,11 @@ export const RoleProfileCompletionChecklist: React.FC<{
               <div className="mt-0.5 text-xs text-white/50">{item.description}</div>
             </div>
             {item.actionUrl && !item.completed && (
-              <a href={item.actionUrl} className="flex-shrink-0 text-xs font-semibold text-cyan-300 hover:text-cyan-200">
-                {item.actionLabel || 'Setup'} →
+              <a
+                href={item.actionUrl}
+                className="flex-shrink-0 text-xs font-semibold text-cyan-300 hover:text-cyan-200"
+              >
+                {item.actionLabel || "Setup"} →
               </a>
             )}
           </div>
@@ -198,7 +202,7 @@ export const RoleProfileCompletionChecklist: React.FC<{
         <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
           <div className="text-xs font-semibold text-amber-200">Missing required fields:</div>
           <div className="mt-1 text-xs text-amber-100/80">
-            {completion.missingRequiredLabels.join(', ')}
+            {completion.missingRequiredLabels.join(", ")}
           </div>
         </div>
       )}
@@ -222,7 +226,8 @@ export const RoleProfileRestrictedState: React.FC<{
         </div>
         <h2 className="text-2xl font-bold text-white">{roleLabel} Access Restricted</h2>
         <p className="text-sm leading-relaxed text-white/60">
-          {reason || `Your ${roleLabel.toLowerCase()} access has been temporarily restricted. Please contact support for more information.`}
+          {reason ||
+            `Your ${roleLabel.toLowerCase()} access has been temporarily restricted. Please contact support for more information.`}
         </p>
         {onAppeal && (
           <PrimaryButton onClick={onAppeal} className="mt-4">
@@ -240,9 +245,7 @@ export const RoleProfileRestrictedState: React.FC<{
  */
 export const RoleProfileActiveState: React.FC<{
   children: React.ReactNode;
-}> = ({ children }) => (
-  <>{children}</>
-);
+}> = ({ children }) => <>{children}</>;
 
 /**
  * Main state router — displays the correct UI based on activation state
@@ -268,10 +271,10 @@ export const RoleProfileStateRouter: React.FC<{
   onAppeal,
   children,
 }) => {
-  const status = typeof state === 'string' ? state : state.status;
+  const status = typeof state === "string" ? state : state.status;
   switch (status) {
-    case 'locked':
-    case 'request_available':
+    case "locked":
+    case "request_available":
       return (
         <RoleProfileLockedState
           roleLabel={roleLabel}
@@ -279,15 +282,10 @@ export const RoleProfileStateRouter: React.FC<{
         />
       );
 
-    case 'pending_review':
-      return (
-        <RoleProfilePendingState
-          roleLabel={roleLabel}
-          onViewTimeline={onViewTimeline}
-        />
-      );
+    case "pending_review":
+      return <RoleProfilePendingState roleLabel={roleLabel} onViewTimeline={onViewTimeline} />;
 
-    case 'needs_more_info':
+    case "needs_more_info":
       return (
         <RoleProfileNeedsMoreInfoState
           roleLabel={roleLabel}
@@ -296,7 +294,7 @@ export const RoleProfileStateRouter: React.FC<{
         />
       );
 
-    case 'rejected':
+    case "rejected":
       return (
         <RoleProfileNeedsMoreInfoState
           roleLabel={roleLabel}
@@ -305,31 +303,33 @@ export const RoleProfileStateRouter: React.FC<{
         />
       );
 
-    case 'approved_incomplete':
+    case "approved_incomplete":
       return (
         <RoleProfileIncompleteState
           roleLabel={roleLabel}
-          completion={completion || { totalItems: 0, completedItems: 0, requiredItems: 0, completedRequired: 0, percentComplete: 0, isComplete: false, items: [], missingRequiredLabels: [] }}
+          completion={
+            completion || {
+              totalItems: 0,
+              completedItems: 0,
+              requiredItems: 0,
+              completedRequired: 0,
+              percentComplete: 0,
+              isComplete: false,
+              items: [],
+              missingRequiredLabels: [],
+            }
+          }
         />
       );
 
-    case 'restricted':
-      return (
-        <RoleProfileRestrictedState
-          roleLabel={roleLabel}
-          onAppeal={onAppeal}
-        />
-      );
+    case "restricted":
+      return <RoleProfileRestrictedState roleLabel={roleLabel} onAppeal={onAppeal} />;
 
-    case 'active_public':
-    case 'active_private':
-      return (
-        <RoleProfileActiveState>
-          {children}
-        </RoleProfileActiveState>
-      );
+    case "active_public":
+    case "active_private":
+      return <RoleProfileActiveState>{children}</RoleProfileActiveState>;
 
-    case 'suspended':
+    case "suspended":
       return (
         <RoleProfileRestrictedState
           roleLabel={roleLabel}

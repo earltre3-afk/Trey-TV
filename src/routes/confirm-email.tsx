@@ -35,7 +35,9 @@ function ConfirmEmail() {
     try {
       // Refresh session to pick up any new confirmation
       await supabase.auth.refreshSession();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user?.email_confirmed_at) {
         return true;
       }
@@ -77,7 +79,9 @@ function ConfirmEmail() {
     if (ok) {
       handleConfirmed();
     } else {
-      toast.error("We haven't received your confirmation yet. Check your inbox and click the link.");
+      toast.error(
+        "We haven't received your confirmation yet. Check your inbox and click the link.",
+      );
     }
   };
 
@@ -140,7 +144,10 @@ function ConfirmEmail() {
         <div className="rounded-3xl liquid-glass neon-border p-8 space-y-6">
           {/* Animated icon */}
           <div className="relative mx-auto w-24 h-24">
-            <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-30" style={{ animationDuration: "2s" }} />
+            <div
+              className="absolute inset-0 rounded-full bg-primary/10 animate-ping opacity-30"
+              style={{ animationDuration: "2s" }}
+            />
             <div className="absolute inset-0 rounded-full bg-primary/5 animate-pulse" />
             <div className="relative size-24 rounded-full border border-primary/30 bg-[oklch(0.13_0.02_270)] flex items-center justify-center">
               <Mail className="size-10 text-primary" />
@@ -156,8 +163,8 @@ function ConfirmEmail() {
             {email ? (
               <p className="mt-2 text-sm text-muted-foreground">
                 We sent a confirmation link to{" "}
-                <span className="text-foreground font-medium break-all">{email}</span>.
-                Click the link to activate your Trey TV account.
+                <span className="text-foreground font-medium break-all">{email}</span>. Click the
+                link to activate your Trey TV account.
               </p>
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
@@ -195,8 +202,7 @@ function ConfirmEmail() {
                 </>
               ) : (
                 <>
-                  <CheckCircle className="size-4" />
-                  I confirmed my email
+                  <CheckCircle className="size-4" />I confirmed my email
                 </>
               )}
             </button>

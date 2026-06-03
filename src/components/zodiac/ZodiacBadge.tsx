@@ -17,7 +17,8 @@ export function ZodiacBadge({
   showName?: boolean;
 }) {
   if (!sign) return null;
-  const dims = size === "lg" ? "size-20 text-4xl" : size === "sm" ? "size-9 text-lg" : "size-12 text-2xl";
+  const dims =
+    size === "lg" ? "size-20 text-4xl" : size === "sm" ? "size-9 text-lg" : "size-12 text-2xl";
   const shouldShowName = showName ?? size !== "sm";
   return (
     <div className="inline-flex items-center gap-2">
@@ -35,7 +36,11 @@ export function ZodiacBadge({
       {shouldShowName && (
         <span className="min-w-0">
           <span className="block text-sm font-black leading-tight">{sign}</span>
-          {isCusp && <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[oklch(0.9_0.18_92)]"><Sparkles className="size-3" /> {cuspLabel ?? "Cusp Soul"}</span>}
+          {isCusp && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[oklch(0.9_0.18_92)]">
+              <Sparkles className="size-3" /> {cuspLabel ?? "Cusp Soul"}
+            </span>
+          )}
         </span>
       )}
     </div>
@@ -62,23 +67,40 @@ export function ProfileZodiacCard({
   if (!sign) return null;
   return (
     <section className="relative overflow-hidden rounded-3xl liquid-glass neon-border p-5">
-      <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 size-40 rounded-full bg-[oklch(0.65_0.22_300/.22)] blur-3xl" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 -top-16 size-40 rounded-full bg-[oklch(0.65_0.22_300/.22)] blur-3xl"
+      />
       <div className="relative flex items-start gap-4">
         <div className="grid size-16 shrink-0 place-items-center rounded-full border border-primary/40 bg-primary/10 text-3xl shadow-[0_0_30px_oklch(0.82_0.16_85/.28)]">
           {symbol ?? zodiacSymbol(sign)}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">Zodiac Identity</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.25em] text-primary">
+            Zodiac Identity
+          </div>
           <h3 className="mt-1 text-xl font-black">{sign}</h3>
           {isCusp && <CuspBadge label={cuspLabel} />}
           {(moonSign || risingSign) && (
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              {moonSign && <span className="rounded-xl bg-white/5 px-3 py-2 text-muted-foreground">Moon <b className="text-foreground">{moonSign}</b></span>}
-              {risingSign && <span className="rounded-xl bg-white/5 px-3 py-2 text-muted-foreground">Rising <b className="text-foreground">{risingSign}</b></span>}
+              {moonSign && (
+                <span className="rounded-xl bg-white/5 px-3 py-2 text-muted-foreground">
+                  Moon <b className="text-foreground">{moonSign}</b>
+                </span>
+              )}
+              {risingSign && (
+                <span className="rounded-xl bg-white/5 px-3 py-2 text-muted-foreground">
+                  Rising <b className="text-foreground">{risingSign}</b>
+                </span>
+              )}
             </div>
           )}
-          {joinedDate && <p className="mt-2 text-[11px] text-muted-foreground">Unlocked {joinedDate}</p>}
-          <p className="mt-3 text-xs text-muted-foreground">Exact birth date, time, and location stay private.</p>
+          {joinedDate && (
+            <p className="mt-2 text-[11px] text-muted-foreground">Unlocked {joinedDate}</p>
+          )}
+          <p className="mt-3 text-xs text-muted-foreground">
+            Exact birth date, time, and location stay private.
+          </p>
         </div>
       </div>
     </section>

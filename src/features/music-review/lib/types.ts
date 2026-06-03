@@ -1,12 +1,12 @@
 export type SubmissionStatus =
-  | 'pending'
-  | 'ai_prechecked'
-  | 'in_queue'
-  | 'now_playing'
-  | 'under_review'
-  | 'review_complete'
-  | 'needs_revision'
-  | 'rejected';
+  | "pending"
+  | "ai_prechecked"
+  | "in_queue"
+  | "now_playing"
+  | "under_review"
+  | "review_complete"
+  | "needs_revision"
+  | "rejected";
 
 export interface Submission {
   id: string;
@@ -66,7 +66,7 @@ export interface OpenMicItem {
   cover_art_storage_path?: string;
   audio_duration?: number;
   queue_position?: number;
-  status: 'queued' | 'playing' | 'played' | 'skipped' | 'removed';
+  status: "queued" | "playing" | "played" | "skipped" | "removed";
   submitted_at: string;
   started_at?: string;
   ended_at?: string;
@@ -85,7 +85,7 @@ export interface AIPrecheck {
     replay_value: number;
     overall_readiness: number;
   };
-  confidence_level: 'Low' | 'Medium' | 'High';
+  confidence_level: "Low" | "Medium" | "High";
   confidence_pct: number;
   summary: string;
   strengths: string[];
@@ -95,7 +95,7 @@ export interface AIPrecheck {
 
 export interface ChatComment {
   id: string;
-  room_type: 'live' | 'open_mic';
+  room_type: "live" | "open_mic";
   submission_id?: string;
   open_mic_item_id?: string;
   user_id?: string;
@@ -108,7 +108,14 @@ export interface ChatComment {
 }
 
 export const PRIORITY_TIERS = [
-  { id: 'quick', label: 'Quick Pass', price: 5, weight: 10, badge: 'POPULAR', accent: '#FFC857' },
-  { id: 'hot', label: 'Hot Seat', price: 10, weight: 50, badge: '', accent: '#A855F7' },
-  { id: 'front', label: 'Front of Line', price: 15, weight: 100, badge: 'BEST VALUE', accent: '#00B7FF' }
+  { id: "quick", label: "Quick Pass", price: 5, weight: 10, badge: "POPULAR", accent: "#FFC857" },
+  { id: "hot", label: "Hot Seat", price: 10, weight: 50, badge: "", accent: "#A855F7" },
+  {
+    id: "front",
+    label: "Front of Line",
+    price: 15,
+    weight: 100,
+    badge: "BEST VALUE",
+    accent: "#00B7FF",
+  },
 ] as const;

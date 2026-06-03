@@ -12,10 +12,10 @@
 //     `user_story_playthroughs` in Supabase under their auth.uid().
 // ---------------------------------------------------------------------------
 
-import { Branch } from './storyTypes';
-import { supabase } from './supabase';
-import { loadBranches, saveBranches } from './storyEngine';
-import { getInstalledStoryPackage } from './treyStoryPackage';
+import { Branch } from "./storyTypes";
+import { supabase } from "./supabase";
+import { loadBranches, saveBranches } from "./storyEngine";
+import { getInstalledStoryPackage } from "./treyStoryPackage";
 
 export interface PlaythroughMeta {
   id: string;
@@ -29,7 +29,7 @@ export interface PlaythroughMeta {
   progress_percent: number;
   branch_title: string;
   selected_branch_path: string[];
-  status: 'active' | 'completed' | 'archived';
+  status: "active" | "completed" | "archived";
   relationship_stats: Record<string, number>;
   story_status_stats: Record<string, number>;
   unlocked_scenes: string[];
@@ -44,7 +44,7 @@ export interface PlaythroughMeta {
   public_share_slug: string | null;
 }
 
-const META_KEY = 'trey_playthroughs_meta_v1';
+const META_KEY = "trey_playthroughs_meta_v1";
 
 function loadMetaAll(): Record<string, PlaythroughMeta> {
   try {
@@ -60,11 +60,11 @@ function saveMetaAll(all: Record<string, PlaythroughMeta>) {
 }
 
 const STORY_TITLES: Record<string, string> = {
-  switch_kicks: 'Switch Kicks',
+  switch_kicks: "Switch Kicks",
 };
 
 const STORY_COVERS: Record<string, string> = {
-  switch_kicks: '/interactive-stories/scenes/twins_cover.png',
+  switch_kicks: "/interactive-stories/scenes/twins_cover.png",
 };
 
 export function getStoryCover(storyId: string): string {
@@ -74,7 +74,7 @@ export function getStoryCover(storyId: string): string {
 
 export function getStoryTitle(storyId: string): string {
   const installed = getInstalledStoryPackage(storyId);
-  return installed?.story.title || STORY_TITLES[storyId] || 'Untitled Story';
+  return installed?.story.title || STORY_TITLES[storyId] || "Untitled Story";
 }
 
 // -- Branch â†’ derived stats --------------------------------------------------
@@ -92,9 +92,7 @@ function computeRelationshipStats(b: Branch): Record<string, number> {
     compliance_pressure: m.risk_level,
     malik_pressure: m.risk_level,
     micah_stress: Math.round((m.risk_level + m.suspicion_valentina) / 2),
-    secret_exposure: Math.round(
-      (m.suspicion_mom + m.suspicion_coach + m.suspicion_valentina) / 3
-    ),
+    secret_exposure: Math.round((m.suspicion_mom + m.suspicion_coach + m.suspicion_valentina) / 3),
     school_risk: Math.round((m.suspicion_coach + m.risk_level) / 2),
   };
 }
@@ -103,22 +101,22 @@ function computeStoryStatusStats(b: Branch): Record<string, number> {
   const tones = b.toneHistory;
   const count = (t: string) => tones.filter((x) => x === t).length;
   return {
-    comedy_chaos: Math.min(100, count('Funny') * 18 + count('Bold') * 6),
+    comedy_chaos: Math.min(100, count("Funny") * 18 + count("Bold") * 6),
     honesty_level: Math.max(0, 100 - b.meters.suspicion_mom - b.meters.suspicion_coach / 2),
-    romance_heat: Math.min(100, count('Romantic') * 20 + b.meters.trust_ari / 2),
-    performance_momentum: Math.min(100, count('Bold') * 18 + (100 - b.meters.risk_level) / 2),
+    romance_heat: Math.min(100, count("Romantic") * 20 + b.meters.trust_ari / 2),
+    performance_momentum: Math.min(100, count("Bold") * 18 + (100 - b.meters.risk_level) / 2),
   };
 }
 
 function inferBranchTitle(b: Branch): string {
   const last = b.chapters[b.chapters.length - 1];
   if (b.ending) return b.ending.name;
-  if (last?.toneTag === 'Romantic') return 'The Soft Path';
-  if (last?.toneTag === 'Risky') return 'The Risk Spiral';
-  if (last?.toneTag === 'Bold') return 'The Bold Move';
-  if (last?.toneTag === 'Funny') return 'The Chaos Route';
-  if (last?.toneTag === 'Safe') return 'The Honest Road';
-  return 'Day One';
+  if (last?.toneTag === "Romantic") return "The Soft Path";
+  if (last?.toneTag === "Risky") return "The Risk Spiral";
+  if (last?.toneTag === "Bold") return "The Bold Move";
+  if (last?.toneTag === "Funny") return "The Chaos Route";
+  if (last?.toneTag === "Safe") return "The Honest Road";
+  return "Day One";
 }
 
 // Roughly: 8 chapters of narrative target before an ending.
@@ -132,11 +130,7 @@ function computeProgressPercent(b: Branch): number {
 // -- Public API --------------------------------------------------------------
 
 export function generateSlug(): string {
-  return (
-    Math.random().toString(36).slice(2, 8) +
-    '-' +
-    Math.random().toString(36).slice(2, 6)
-  );
+  return Math.random().toString(36).slice(2, 8) + "-" + Math.random().toString(36).slice(2, 6);
 }
 
 export function getOrCreateMeta(branch: Branch, userUid: string | null): PlaythroughMeta {
@@ -149,16 +143,15 @@ export function getOrCreateMeta(branch: Branch, userUid: string | null): Playthr
     user_uid: userUid,
     story_id: branch.storyId,
     story_title: getStoryTitle(branch.storyId),
-    playthrough_name: 'New Playthrough',
-    current_scene_id: branch.chapters[branch.chapters.length - 1]?.sceneId || `chapter_${branch.chapters.length}`,
+    playthrough_name: "New Playthrough",
+    current_scene_id:
+      branch.chapters[branch.chapters.length - 1]?.sceneId || `chapter_${branch.chapters.length}`,
     current_chapter: branch.chapters.length,
     current_choice_node: branch.pendingStopPoint ? `stop_${branch.chapters.length}` : null,
     progress_percent: computeProgressPercent(branch),
     branch_title: inferBranchTitle(branch),
-    selected_branch_path: branch.chapters
-      .map((c) => c.choiceMade?.label || '')
-      .filter(Boolean),
-    status: branch.isComplete ? 'completed' : 'active',
+    selected_branch_path: branch.chapters.map((c) => c.choiceMade?.label || "").filter(Boolean),
+    status: branch.isComplete ? "completed" : "active",
     relationship_stats: computeRelationshipStats(branch),
     story_status_stats: computeStoryStatusStats(branch),
     unlocked_scenes: branch.chapters.map((c, i) => c.sceneId || `chapter_${i + 1}`),
@@ -185,14 +178,13 @@ export function syncMetaFromBranch(branch: Branch, userUid: string | null): Play
     user_uid: userUid ?? prev.user_uid,
     story_title: getStoryTitle(branch.storyId),
     current_chapter: branch.chapters.length,
-    current_scene_id: branch.chapters[branch.chapters.length - 1]?.sceneId || `chapter_${branch.chapters.length}`,
+    current_scene_id:
+      branch.chapters[branch.chapters.length - 1]?.sceneId || `chapter_${branch.chapters.length}`,
     current_choice_node: branch.pendingStopPoint ? `stop_${branch.chapters.length}` : null,
     progress_percent: computeProgressPercent(branch),
     branch_title: inferBranchTitle(branch),
-    selected_branch_path: branch.chapters
-      .map((c) => c.choiceMade?.label || '')
-      .filter(Boolean),
-    status: branch.isComplete ? 'completed' : 'active',
+    selected_branch_path: branch.chapters.map((c) => c.choiceMade?.label || "").filter(Boolean),
+    status: branch.isComplete ? "completed" : "active",
     relationship_stats: computeRelationshipStats(branch),
     story_status_stats: computeStoryStatusStats(branch),
     unlocked_scenes: branch.chapters.map((c, i) => c.sceneId || `chapter_${i + 1}`),
@@ -233,14 +225,18 @@ export function deletePlaythroughMeta(id: string, userUid: string | null) {
   delete all[id];
   saveMetaAll(all);
   if (userUid) {
-    (supabase as any).from('user_story_playthroughs').delete().eq('id', id).then(() => {});
+    (supabase as any)
+      .from("user_story_playthroughs")
+      .delete()
+      .eq("id", id)
+      .then(() => {});
   }
 }
 
 export async function enableShare(id: string, userUid: string | null): Promise<string> {
   const all = loadMetaAll();
   const meta = all[id];
-  if (!meta) throw new Error('Playthrough not found');
+  if (!meta) throw new Error("Playthrough not found");
   const slug = meta.public_share_slug || generateSlug();
   const next: PlaythroughMeta = {
     ...meta,
@@ -255,18 +251,21 @@ export async function enableShare(id: string, userUid: string | null): Promise<s
     await pushToSupabase(next);
     // Also record a shared_story_endings row if ending exists
     if (next.ending_title) {
-      await (supabase as any).from('shared_story_endings').upsert({
-        id: `share_${id}`,
-        playthrough_id: id,
-        user_uid: userUid,
-        story_id: next.story_id,
-        ending_id: next.ending_id,
-        ending_title: next.ending_title,
-        ending_summary: next.ending_summary,
-        ending_card_image: getStoryCover(next.story_id),
-        share_slug: slug,
-        is_public: true,
-      }, { onConflict: 'id' });
+      await (supabase as any).from("shared_story_endings").upsert(
+        {
+          id: `share_${id}`,
+          playthrough_id: id,
+          user_uid: userUid,
+          story_id: next.story_id,
+          ending_id: next.ending_id,
+          ending_title: next.ending_title,
+          ending_summary: next.ending_summary,
+          ending_card_image: getStoryCover(next.story_id),
+          share_slug: slug,
+          is_public: true,
+        },
+        { onConflict: "id" },
+      );
     }
   }
   return slug;
@@ -284,32 +283,35 @@ export async function disableShare(id: string, userUid: string | null) {
 
 async function pushToSupabase(meta: PlaythroughMeta) {
   if (!meta.user_uid) return;
-  await (supabase as any).from('user_story_playthroughs').upsert({
-    id: meta.id,
-    user_uid: meta.user_uid,
-    story_id: meta.story_id,
-    story_title: meta.story_title,
-    playthrough_name: meta.playthrough_name,
-    current_scene_id: meta.current_scene_id,
-    current_chapter: meta.current_chapter,
-    current_choice_node: meta.current_choice_node,
-    progress_percent: meta.progress_percent,
-    branch_title: meta.branch_title,
-    selected_branch_path: meta.selected_branch_path,
-    status: meta.status,
-    relationship_stats: meta.relationship_stats,
-    story_status_stats: meta.story_status_stats,
-    unlocked_scenes: meta.unlocked_scenes,
-    unlocked_endings: meta.unlocked_endings,
-    created_at: new Date(meta.created_at).toISOString(),
-    updated_at: new Date(meta.updated_at).toISOString(),
-    completed_at: meta.completed_at ? new Date(meta.completed_at).toISOString() : null,
-    ending_id: meta.ending_id,
-    ending_title: meta.ending_title,
-    ending_summary: meta.ending_summary,
-    share_enabled: meta.share_enabled,
-    public_share_slug: meta.public_share_slug,
-  }, { onConflict: 'id' });
+  await (supabase as any).from("user_story_playthroughs").upsert(
+    {
+      id: meta.id,
+      user_uid: meta.user_uid,
+      story_id: meta.story_id,
+      story_title: meta.story_title,
+      playthrough_name: meta.playthrough_name,
+      current_scene_id: meta.current_scene_id,
+      current_chapter: meta.current_chapter,
+      current_choice_node: meta.current_choice_node,
+      progress_percent: meta.progress_percent,
+      branch_title: meta.branch_title,
+      selected_branch_path: meta.selected_branch_path,
+      status: meta.status,
+      relationship_stats: meta.relationship_stats,
+      story_status_stats: meta.story_status_stats,
+      unlocked_scenes: meta.unlocked_scenes,
+      unlocked_endings: meta.unlocked_endings,
+      created_at: new Date(meta.created_at).toISOString(),
+      updated_at: new Date(meta.updated_at).toISOString(),
+      completed_at: meta.completed_at ? new Date(meta.completed_at).toISOString() : null,
+      ending_id: meta.ending_id,
+      ending_title: meta.ending_title,
+      ending_summary: meta.ending_summary,
+      share_enabled: meta.share_enabled,
+      public_share_slug: meta.public_share_slug,
+    },
+    { onConflict: "id" },
+  );
 }
 
 export async function recordChoiceEvent(opts: {
@@ -322,7 +324,7 @@ export async function recordChoiceEvent(opts: {
   statChanges: Record<string, number>;
 }) {
   if (!opts.userUid) return;
-  await (supabase as any).from('user_story_choice_events').insert({
+  await (supabase as any).from("user_story_choice_events").insert({
     id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     playthrough_id: opts.playthroughId,
     user_uid: opts.userUid,
@@ -357,19 +359,18 @@ export function replayFromChapter(branchId: string, chapterNumber: number) {
 /** Resolve a shared playthrough by slug from Supabase (public). */
 export async function fetchSharedBySlug(slug: string) {
   const { data, error } = await (supabase as any)
-    .from('shared_story_endings')
-    .select('*')
-    .eq('share_slug', slug)
+    .from("shared_story_endings")
+    .select("*")
+    .eq("share_slug", slug)
     .maybeSingle();
   if (error || !data) {
     const { data: pt } = await (supabase as any)
-      .from('user_story_playthroughs')
-      .select('*')
-      .eq('public_share_slug', slug)
-      .eq('share_enabled', true)
+      .from("user_story_playthroughs")
+      .select("*")
+      .eq("public_share_slug", slug)
+      .eq("share_enabled", true)
       .maybeSingle();
     return pt;
   }
   return data;
 }
-

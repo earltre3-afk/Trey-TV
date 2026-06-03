@@ -140,7 +140,9 @@ export function useCreatorStudio(): CreatorStudioData {
       // Get auth email without relying on profiles schema
       let email: string | null = null;
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
         email = authUser?.email?.toLowerCase() ?? null;
       } catch {
         // not signed in or env missing
@@ -156,7 +158,9 @@ export function useCreatorStudio(): CreatorStudioData {
       try {
         const { data: ch } = await (supabase as any)
           .from("channels")
-          .select("id, owner_email, status, slug, name, title, banner_url, avatar_url, created_at, updated_at")
+          .select(
+            "id, owner_email, status, slug, name, title, banner_url, avatar_url, created_at, updated_at",
+          )
           .eq("owner_email", email)
           .in("status", ["draft", "active"])
           .order("created_at", { ascending: false })
@@ -186,7 +190,9 @@ export function useCreatorStudio(): CreatorStudioData {
             .order("created_at", { ascending: false }),
           (supabase as any)
             .from("episodes")
-            .select("id, channel_id, show_id, title, season_number, episode_number, thumbnail_url, publish_status, scheduled_at, published_at, audio_status, created_at, updated_at")
+            .select(
+              "id, channel_id, show_id, title, season_number, episode_number, thumbnail_url, publish_status, scheduled_at, published_at, audio_status, created_at, updated_at",
+            )
             .eq("channel_id", channel.id)
             .order("created_at", { ascending: false })
             .limit(50),
@@ -213,7 +219,9 @@ export function useCreatorStudio(): CreatorStudioData {
     }
 
     load();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [isAdmin]);
 
   return data;

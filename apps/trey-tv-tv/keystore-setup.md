@@ -54,6 +54,7 @@ RELEASE_KEY_PASSWORD=<your key password>
 ```
 
 Notes:
+
 - Use forward slashes in `RELEASE_STORE_FILE` even on Windows — Gradle
   treats them as portable file paths.
 - `keystore.properties` is gitignored.
@@ -121,10 +122,10 @@ key compromised, etc.) — refuse the upload.
 
 ## Troubleshooting
 
-| Symptom | Likely cause |
-|---|---|
-| `Failed to read key trey-tv-tv from store ...: keystore password was incorrect` | Wrong `RELEASE_STORE_PASSWORD` |
-| `Cannot recover key` | Wrong `RELEASE_KEY_PASSWORD` |
-| `keystore.properties` not found but env vars set | OK — Gradle falls back to env vars |
-| Release APK installs over debug fine on a dev box | Expected — the debug build uses applicationIdSuffix `.debug` so they coexist |
-| Play Store rejects with "upload signed with a different key" | You're using a different keystore than the one the listing was created with — restore the original |
+| Symptom                                                                         | Likely cause                                                                                       |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `Failed to read key trey-tv-tv from store ...: keystore password was incorrect` | Wrong `RELEASE_STORE_PASSWORD`                                                                     |
+| `Cannot recover key`                                                            | Wrong `RELEASE_KEY_PASSWORD`                                                                       |
+| `keystore.properties` not found but env vars set                                | OK — Gradle falls back to env vars                                                                 |
+| Release APK installs over debug fine on a dev box                               | Expected — the debug build uses applicationIdSuffix `.debug` so they coexist                       |
+| Play Store rejects with "upload signed with a different key"                    | You're using a different keystore than the one the listing was created with — restore the original |

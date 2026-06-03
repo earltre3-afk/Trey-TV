@@ -52,20 +52,25 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost
   const items = excludeGhost ? MENU_ITEMS.filter((item) => item.id !== "ghost") : MENU_ITEMS;
 
   return (
-    <div
-      className="plus-menu-overlay"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="plus-menu-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="plus-menu-panel animate-ghost-rise">
         {/* Ambient orb */}
         <div
           className="absolute -top-12 left-1/2 -translate-x-1/2 size-24 rounded-full pointer-events-none"
-          style={{ background: "radial-gradient(circle, oklch(0.7 0.22 300 / 0.4), transparent 70%)", filter: "blur(20px)" }}
+          style={{
+            background: "radial-gradient(circle, oklch(0.7 0.22 300 / 0.4), transparent 70%)",
+            filter: "blur(20px)",
+          }}
         />
 
         <div className="relative flex items-center justify-between mb-4">
-          <div className="text-xs tracking-[0.3em] text-muted-foreground uppercase font-semibold">Message Options</div>
-          <button onClick={onClose} className="size-7 grid place-items-center rounded-full hover:bg-white/10 transition">
+          <div className="text-xs tracking-[0.3em] text-muted-foreground uppercase font-semibold">
+            Message Options
+          </div>
+          <button
+            onClick={onClose}
+            className="size-7 grid place-items-center rounded-full hover:bg-white/10 transition"
+          >
             <X className="size-3.5 text-muted-foreground" />
           </button>
         </div>
@@ -81,7 +86,9 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost
               >
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: `radial-gradient(ellipse at left, ${item.glow}, transparent 60%)` }}
+                  style={{
+                    background: `radial-gradient(ellipse at left, ${item.glow}, transparent 60%)`,
+                  }}
                 />
                 <div className="relative flex items-center gap-3.5 px-4 py-3.5">
                   <div
@@ -91,7 +98,10 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost
                       boxShadow: `0 0 20px ${item.glow}, inset 0 1px 0 oklch(1 0 0 / 0.3)`,
                     }}
                   >
-                    <Icon className="size-5 text-white" style={{ filter: "drop-shadow(0 1px 2px oklch(0 0 0 / 0.3))" }} />
+                    <Icon
+                      className="size-5 text-white"
+                      style={{ filter: "drop-shadow(0 1px 2px oklch(0 0 0 / 0.3))" }}
+                    />
                   </div>
                   <div className="flex-1 text-left">
                     <div
@@ -99,7 +109,8 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost
                       style={
                         item.isGold
                           ? {
-                              background: "linear-gradient(135deg, oklch(0.86 0.17 90), oklch(0.7 0.25 340))",
+                              background:
+                                "linear-gradient(135deg, oklch(0.86 0.17 90), oklch(0.7 0.25 340))",
                               WebkitBackgroundClip: "text",
                               backgroundClip: "text",
                               color: "transparent",
@@ -110,7 +121,9 @@ export function PlusMenu({ onGhostMessage, onPhoto, onFwd, onClose, excludeGhost
                     >
                       {item.label}
                     </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">{item.description}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {item.description}
+                    </div>
                   </div>
                   <div
                     className="text-lg opacity-50 group-hover:opacity-100 transition group-hover:translate-x-0.5"

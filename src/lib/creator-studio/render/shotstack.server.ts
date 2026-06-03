@@ -38,11 +38,16 @@ export async function submitShotstackRender(
 
 export async function getShotstackStatus(
   id: string,
-): Promise<{ ok: true; status: ShotstackStatus; url: string | null; error?: string } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; status: ShotstackStatus; url: string | null; error?: string }
+  | { ok: false; error: string }
+> {
   const key = apiKey();
   if (!key) return { ok: false, error: "shotstack_not_configured" };
   try {
-    const res = await fetch(`${host()}/render/${encodeURIComponent(id)}`, { headers: { "x-api-key": key } });
+    const res = await fetch(`${host()}/render/${encodeURIComponent(id)}`, {
+      headers: { "x-api-key": key },
+    });
     const json = (await res.json().catch(() => null)) as any;
     if (!json?.success) return { ok: false, error: json?.message || `http_${res.status}` };
     return {

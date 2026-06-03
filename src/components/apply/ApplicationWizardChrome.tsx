@@ -1,9 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
-type Variant = "creator" | "gold";
+type Variant = "creator" | "gold" | "tradio" | "trance";
 
 export function ApplicationWizardChrome({
   variant,
@@ -31,23 +36,50 @@ export function ApplicationWizardChrome({
   side?: ReactNode;
 }) {
   const isGold = variant === "gold";
-  const outer = isGold ? "neon-gold" : "neon-blue";
-  const accentText = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
-  const titleSplit = isGold ? "title-split-gold" : "title-split-blue";
-  const stepActive = isGold ? "is-active-gold" : "is-active-blue";
+  const isTradio = variant === "tradio";
+  const isTrance = variant === "trance";
+  const outer = isTrance || isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accentText = isTrance
+    ? "text-fuchsia-300"
+    : isTradio
+      ? "text-purple-300"
+      : isGold
+        ? "text-[oklch(0.92_0.18_88)]"
+        : "text-[oklch(0.85_0.2_240)]";
+  const titleSplit = isTrance
+    ? "text-fuchsia-400 drop-shadow-[0_0_8px_rgba(240,79,255,0.4)] font-bold"
+    : isTradio
+      ? "text-purple-300 drop-shadow-[0_0_8px_rgba(168,85,247,0.4)] font-bold"
+      : isGold
+        ? "title-split-gold"
+        : "title-split-blue";
+  const stepActive = isTrance
+    ? "is-active-purple bg-fuchsia-500 text-white border-fuchsia-400"
+    : isTradio
+      ? "is-active-purple bg-purple-500 text-white border-purple-400"
+      : isGold
+        ? "is-active-gold"
+        : "is-active-blue";
   const pct = Math.round(((current - 1) / (steps.length - 1)) * 100);
 
   return (
-    <div className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : ""}`}>
+    <div
+      className={`apply-scroll-page liquid-stage min-h-screen min-h-[100dvh] ${isGold ? "gold" : isTrance || isTradio ? "purple" : ""}`}
+    >
       <div className="grid-veil" aria-hidden />
       <div className="orb-extra" aria-hidden />
 
       {/* ── Top nav bar ── */}
-      <div className="sticky top-0 z-30 border-b border-white/[0.06] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
-        style={{ background: "oklch(0.08 0.02 262 / 0.85)" }}>
+      <div
+        className="sticky top-0 z-30 border-b border-white/[0.06] backdrop-blur-xl pt-[env(safe-area-inset-top)]"
+        style={{ background: "oklch(0.08 0.02 262 / 0.85)" }}
+      >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 md:px-6">
           {/* Back */}
-          <Link to="/apply" className={`neon-btn-ghost ${isGold ? "gold" : ""} text-xs md:text-sm`}>
+          <Link
+            to="/apply"
+            className={`neon-btn-ghost ${isGold ? "gold" : isTrance ? "purple text-fuchsia-300 hover:text-white" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+          >
             <ChevronLeft className="h-4 w-4" /> Back
           </Link>
 
@@ -55,13 +87,16 @@ export function ApplicationWizardChrome({
           <div className="hidden items-center gap-3 md:flex">
             <Logo className="h-7" />
             <span className="text-sm font-semibold text-foreground/80">
-              {titleA}{" "}<span className={titleSplit}>{titleB}</span>
+              {titleA} <span className={titleSplit}>{titleB}</span>
             </span>
           </div>
 
           {/* Save draft */}
           {onSaveDraft && (
-            <button onClick={onSaveDraft} className={`neon-btn-ghost ${isGold ? "gold" : ""} text-xs md:text-sm`}>
+            <button
+              onClick={onSaveDraft}
+              className={`neon-btn-ghost ${isGold ? "gold" : isTrance ? "purple text-fuchsia-300 hover:text-white" : isTradio ? "purple text-purple-300 hover:text-white" : ""} text-xs md:text-sm`}
+            >
               <Save className="h-4 w-4" />
               <span>{draftSaved ? "Saved ✓" : "Save Draft"}</span>
             </button>
@@ -72,12 +107,16 @@ export function ApplicationWizardChrome({
         {/* Progress bar */}
         <div className="h-[2px] w-full bg-white/[0.05]">
           <div
-            className={`h-full transition-all duration-500 ease-out ${isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
+            className={`h-full transition-all duration-500 ease-out ${isTrance ? "bg-fuchsia-500" : isTradio ? "bg-purple-500" : isGold ? "bg-[oklch(0.88_0.2_88)]" : "bg-[oklch(0.75_0.25_245)]"}`}
             style={{
               width: `${pct}%`,
-              boxShadow: isGold
-                ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
-                : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
+              boxShadow: isTrance
+                ? "0 0 12px rgba(240,79,255,0.8)"
+                : isTradio
+                  ? "0 0 12px rgba(168,85,247,0.8)"
+                  : isGold
+                    ? "0 0 12px oklch(0.88 0.2 88 / 0.8)"
+                    : "0 0 12px oklch(0.75 0.25 245 / 0.8)",
             }}
           />
         </div>
@@ -85,13 +124,11 @@ export function ApplicationWizardChrome({
 
       {/* ── Page body ── */}
       <div className="mx-auto max-w-7xl px-3 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-6 md:px-6 md:pb-10 md:pt-8 lg:pt-10">
-
         {/* ── Hero card (full-width outer neon card) ── */}
         <div className={`relative ${outer} p-4 md:p-8 wizard-outer-pad`}>
           <div className="swoosh-bg" />
           <div className="liquid-sheen" />
           <div className="relative">
-
             {/* Header: Logo + Title + Steps */}
             <div className="mb-5 flex flex-col items-center text-center md:mb-8">
               <Logo className="logo-float h-10 md:h-14 lg:h-16" />
@@ -110,14 +147,21 @@ export function ApplicationWizardChrome({
                   const isActive = n === current;
                   const isDone = n < current;
                   return (
-                    <li key={s.label} className="flex min-w-fit items-center gap-1 sm:gap-1.5 md:gap-2">
+                    <li
+                      key={s.label}
+                      className="flex min-w-fit items-center gap-1 sm:gap-1.5 md:gap-2"
+                    >
                       <div className="flex flex-col items-center gap-1.5">
                         <span className={`step-circle ${state}`}>{isDone ? "✓" : n}</span>
-                        <span className={`whitespace-nowrap text-[9px] font-medium sm:text-[10px] md:text-xs ${isActive ? accentText : isDone ? "text-foreground/60" : "text-muted-foreground"}`}>
+                        <span
+                          className={`whitespace-nowrap text-[9px] font-medium sm:text-[10px] md:text-xs ${isActive ? accentText : isDone ? "text-foreground/60" : "text-muted-foreground"}`}
+                        >
                           {s.label}
                         </span>
                       </div>
-                      {n < steps.length && <span className="step-line -mt-5 w-3 sm:w-6 md:w-10 lg:w-16" />}
+                      {n < steps.length && (
+                        <span className="step-line -mt-5 w-3 sm:w-6 md:w-10 lg:w-16" />
+                      )}
                     </li>
                   );
                 })}
@@ -125,7 +169,9 @@ export function ApplicationWizardChrome({
             </div>
 
             {/* ── Content grid: form | sidebar ── */}
-            <div className={`grid min-w-0 gap-5 ${side ? "lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+            <div
+              className={`grid min-w-0 gap-5 ${side ? "lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]" : ""}`}
+            >
               {/* Form panel */}
               <section className={`relative min-w-0 ${outer} p-4 md:p-7 wizard-section-pad`}>
                 <div className="liquid-sheen" />
@@ -170,6 +216,8 @@ export function WizardNav({
   submitting?: boolean;
 }) {
   const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   return (
     <div className="wizard-cta-bar mx-auto mt-5 grid max-w-7xl grid-cols-[auto_1fr] items-center gap-2 px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] md:gap-3 md:px-6">
       <button
@@ -182,7 +230,7 @@ export function WizardNav({
       <button
         onClick={onNext}
         disabled={submitting}
-        className={`${isGold ? "neon-btn-gold" : "neon-btn-blue"} w-full text-base disabled:opacity-60`}
+        className={`${isGold ? "neon-btn-gold" : isTrance || isTradio ? "neon-btn-purple" : "neon-btn-blue"} w-full text-base disabled:opacity-60`}
       >
         {submitting ? "Submitting…" : nextLabel}
         <ChevronRight className="h-5 w-5" />
@@ -214,7 +262,7 @@ export function Field({
 }
 
 export function NeonInput(
-  props: InputHTMLAttributes<HTMLInputElement> & { trailingIcon?: ReactNode }
+  props: InputHTMLAttributes<HTMLInputElement> & { trailingIcon?: ReactNode },
 ) {
   const { trailingIcon, className = "", ...rest } = props;
   return (
@@ -230,12 +278,15 @@ export function NeonInput(
 }
 
 export function NeonTextarea(
-  props: TextareaHTMLAttributes<HTMLTextAreaElement> & { trailingIcon?: ReactNode }
+  props: TextareaHTMLAttributes<HTMLTextAreaElement> & { trailingIcon?: ReactNode },
 ) {
   const { trailingIcon, className = "", ...rest } = props;
   return (
     <div className="relative">
-      <textarea {...rest} className={`neon-input w-full px-4 py-3 pr-11 text-base leading-relaxed ${className}`} />
+      <textarea
+        {...rest}
+        className={`neon-input w-full px-4 py-3 pr-11 text-base leading-relaxed ${className}`}
+      />
       {trailingIcon && (
         <span className="pointer-events-none absolute right-3 top-4 text-[oklch(0.7_0.18_245)]">
           {trailingIcon}
@@ -274,7 +325,16 @@ export function TileChoice<T extends string>({
   onChange: (v: T) => void;
   variant?: Variant;
 }) {
-  const activeClass = variant === "gold" ? "active-gold" : "active-blue";
+  const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
+  const activeClass = isGold
+    ? "active-gold"
+    : isTrance
+      ? "border-fuchsia-500 bg-fuchsia-500/10 text-white shadow-[0_0_15px_rgba(240,79,255,0.3)] font-semibold"
+      : isTradio
+        ? "border-purple-500 bg-purple-500/10 text-white shadow-[0_0_15px_rgba(168,85,247,0.3)] font-semibold"
+        : "active-blue";
   return (
     <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
       {options.map((o) => {
@@ -322,10 +382,16 @@ export function ChipPicker<T extends string>({
       onChange(v);
     }
   };
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   const activeClass =
     variant === "gold"
       ? "bg-[oklch(0.13_0.05_80/0.85)] text-[oklch(0.95_0.05_90)] shadow-[inset_0_0_0_1px_oklch(0.95_0.2_88),0_0_18px_oklch(0.85_0.2_85/0.4)]"
-      : "bg-[oklch(0.13_0.07_252/0.85)] text-[oklch(0.95_0.02_250)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240),0_0_18px_oklch(0.65_0.3_245/0.45)]";
+      : isTrance
+        ? "bg-[oklch(0.13_0.07_320/0.85)] text-fuchsia-200 shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320),0_0_18px_oklch(0.7_0.25_340/0.45)]"
+        : isTradio
+          ? "bg-[oklch(0.13_0.07_292/0.85)] text-purple-200 shadow-[inset_0_0_0_1px_oklch(0.8_0.22_292),0_0_18px_oklch(0.65_0.3_295/0.45)]"
+          : "bg-[oklch(0.13_0.07_252/0.85)] text-[oklch(0.95_0.02_250)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240),0_0_18px_oklch(0.65_0.3_245/0.45)]";
   const baseClass =
     "bg-[oklch(0.09_0.03_262/0.6)] text-muted-foreground shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08),0_0_0_1px_oklch(0.5_0.05_260/0.15)]";
 
@@ -357,6 +423,8 @@ export function NeonCheckList({
   variant?: Variant;
 }) {
   const isGold = variant === "gold";
+  const isTrance = variant === "trance";
+  const isTradio = variant === "tradio";
   return (
     <div className="space-y-2.5">
       {items.map((labelText, i) => {
@@ -368,17 +436,30 @@ export function NeonCheckList({
               active
                 ? isGold
                   ? "bg-[oklch(0.13_0.05_80/0.6)] shadow-[inset_0_0_0_1px_oklch(0.95_0.2_88/0.8),0_0_18px_oklch(0.85_0.2_85/0.35)]"
-                  : "bg-[oklch(0.13_0.07_252/0.6)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.8),0_0_18px_oklch(0.65_0.3_245/0.4)]"
+                  : isTrance
+                    ? "bg-[oklch(0.13_0.07_320/0.6)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320/0.8),0_0_18px_oklch(0.7_0.25_340/0.4)]"
+                    : isTradio
+                      ? "bg-[oklch(0.13_0.07_292/0.6)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_292/0.8),0_0_18px_oklch(0.65_0.3_295/0.4)]"
+                      : "bg-[oklch(0.13_0.07_252/0.6)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.8),0_0_18px_oklch(0.65_0.3_245/0.4)"
                 : "bg-[oklch(0.09_0.03_262/0.55)] shadow-[inset_0_0_0_1px_oklch(1_0_0/0.08)]"
             }`}
           >
-            <input type="checkbox" checked={active} onChange={() => onToggle(i)} className="sr-only" />
+            <input
+              type="checkbox"
+              checked={active}
+              onChange={() => onToggle(i)}
+              className="sr-only"
+            />
             <span
               className={`mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded-md text-[12px] font-bold ${
                 active
                   ? isGold
                     ? "bg-[oklch(0.85_0.2_85)] text-[oklch(0.18_0.04_70)] shadow-[0_0_12px_oklch(0.85_0.2_85/0.7)]"
-                    : "bg-[oklch(0.7_0.22_245)] text-[oklch(0.05_0.02_265)] shadow-[0_0_12px_oklch(0.7_0.3_245/0.7)]"
+                    : isTrance
+                      ? "bg-fuchsia-500 text-white shadow-[0_0_12px_rgba(240,79,255,0.7)]"
+                      : isTradio
+                        ? "bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.7)]"
+                        : "bg-[oklch(0.7_0.22_245)] text-[oklch(0.05_0.02_265)] shadow-[0_0_12px_oklch(0.7_0.3_245/0.7)]"
                   : "bg-transparent shadow-[inset_0_0_0_1.5px_oklch(0.5_0.05_260/0.6)]"
               }`}
             >

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Star, Flame, TrendingUp, Sparkles, Radio, UserPlus } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { Composer } from "@/components/feed/Composer";
+import { FeedComposer } from "@/components/feed/FeedComposer";
 import { CreatorRail } from "@/components/feed/CreatorRail";
 import { PostCard } from "@/components/feed/PostCard";
 import { posts, creators, prescribed } from "@/lib/mock-data";
@@ -53,9 +53,7 @@ function Home() {
       .then((res) => {
         if (res?.rankedIds && res.rankedIds.length > 0) {
           const map = new Map(rawList.map((p) => [String(p.id), p]));
-          const ordered = res.rankedIds
-            .map((id) => map.get(String(id)))
-            .filter(Boolean) as any[];
+          const ordered = res.rankedIds.map((id) => map.get(String(id))).filter(Boolean) as any[];
           const seen = new Set(ordered.map((p) => p.id));
           for (const p of rawList) {
             if (!seen.has(p.id)) {
@@ -76,18 +74,26 @@ function Home() {
       });
   }, [badge, userPosts]);
 
-  const merged = tab === "for-you" ? (rankedPosts.length > 0 ? rankedPosts : [...userPosts, ...posts]) : [...userPosts, ...posts];
+  const merged =
+    tab === "for-you"
+      ? rankedPosts.length > 0
+        ? rankedPosts
+        : [...userPosts, ...posts]
+      : [...userPosts, ...posts];
   const filtered =
     tab === "following"
       ? merged.filter((p) => {
           const isOwnPost = !p.creator || p.creator.handle === "trey";
           const isDbFollow = p.creator && isFollowing(p.creator.handle);
-          const isDemoMode = typeof window !== "undefined" && (
-            window.location.search.includes("demo=1") ||
-            localStorage.getItem("treytv_demo") === "true" ||
-            process.env.NODE_ENV === "development"
-          );
-          const isMockFollow = isDemoMode && p.creator && (p.creator.handle === "chrishorizon" || p.creator.handle === "treyipicks");
+          const isDemoMode =
+            typeof window !== "undefined" &&
+            (window.location.search.includes("demo=1") ||
+              localStorage.getItem("treytv_demo") === "true" ||
+              process.env.NODE_ENV === "development");
+          const isMockFollow =
+            isDemoMode &&
+            p.creator &&
+            (p.creator.handle === "chrishorizon" || p.creator.handle === "treyipicks");
           return isOwnPost || isDbFollow || isMockFollow;
         })
       : tab === "latest"
@@ -95,9 +101,11 @@ function Home() {
         : merged;
 
   const heading =
-    tab === "following" ? "From creators you follow"
-      : tab === "latest" ? "Latest drops"
-      : "Recommended for you";
+    tab === "following"
+      ? "From creators you follow"
+      : tab === "latest"
+        ? "Latest drops"
+        : "Recommended for you";
 
   return (
     <AppShell activeTab={tab} onTabChange={setTab} wide>
@@ -120,7 +128,9 @@ function Home() {
             {t.label}
           </button>
         ))}
-        <div className="ml-auto text-xs text-muted-foreground">Live network · {posts.length * 412} active viewers</div>
+        <div className="ml-auto text-xs text-muted-foreground">
+          Live network · {posts.length * 412} active viewers
+        </div>
       </div>
 
       {/* Desktop: 3-col grid · Mobile: stacked */}
@@ -129,43 +139,76 @@ function Home() {
         <aside className="hidden lg:flex flex-col gap-4 sticky top-6 h-fit">
           <section className="rounded-3xl glass neon-border p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold flex items-center gap-2"><Radio className="size-4 text-[oklch(0.65_0.24_15)]" /> Live now</h3>
-              <Link to="/explore" className="text-[11px] text-primary hover:underline">All</Link>
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <Radio className="size-4 text-[oklch(0.65_0.24_15)]" /> Live now
+              </h3>
+              <Link to="/explore" className="text-[11px] text-primary hover:underline">
+                All
+              </Link>
             </div>
             <ul className="space-y-2.5">
-              {creators.filter((c) => c.live).concat(creators.slice(0, 3)).slice(0, 4).map((c) => (
-                <li key={c.id + Math.random()} className="flex items-center gap-3">
-                  <div className="relative size-10 rounded-full conic-ring shrink-0">
-                    <img src={c.avatar} alt="" className="size-10 rounded-full object-cover" />
-                    {c.live && <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[oklch(0.65_0.24_15)] ring-2 ring-background animate-glow-pulse" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold truncate">{c.name}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
-                  </div>
-                  <button onClick={() => toast(`Followed ${c.name}`)} className="text-[11px] px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10">Follow</button>
-                </li>
-              ))}
+              {creators
+                .filter((c) => c.live)
+                .concat(creators.slice(0, 3))
+                .slice(0, 4)
+                .map((c, i) => (
+                  <li key={`${c.id}-${i}`} className="flex items-center gap-3">
+                    <div className="relative size-10 rounded-full conic-ring shrink-0">
+                      <img src={c.avatar} alt="" className="size-10 rounded-full object-cover" />
+                      {c.live && (
+                        <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full bg-[oklch(0.65_0.24_15)] ring-2 ring-background animate-glow-pulse" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate">{c.name}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
+                    </div>
+                    <button
+                      onClick={() => toast(`Followed ${c.name}`)}
+                      className="text-[11px] px-2.5 py-1 rounded-full border border-primary/40 text-primary hover:bg-primary/10"
+                    >
+                      Follow
+                    </button>
+                  </li>
+                ))}
             </ul>
           </section>
 
           <section className="rounded-3xl glass neon-border p-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-3"><Sparkles className="size-4 text-primary" /> Quick picks</h3>
+            <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
+              <Sparkles className="size-4 text-primary" /> Quick picks
+            </h3>
             <div className="grid grid-cols-2 gap-2">
-              <Link to="/prescribe-me" className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5">
+              <Link
+                to="/prescribe-me"
+                className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5"
+              >
                 <div className="text-[10px] tracking-widest text-primary">PRESCRIBE</div>
                 <div className="text-sm font-semibold mt-1">Mood mix</div>
               </Link>
-              <Link to="/go-live" className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5">
-                <div className="text-[10px] tracking-widest text-[oklch(0.65_0.24_15)]">GO LIVE</div>
+              <Link
+                to="/go-live"
+                className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5"
+              >
+                <div className="text-[10px] tracking-widest text-[oklch(0.65_0.24_15)]">
+                  GO LIVE
+                </div>
                 <div className="text-sm font-semibold mt-1">Stream now</div>
               </Link>
-              <Link to="/create" className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5">
+              <Link
+                to="/create"
+                className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5"
+              >
                 <div className="text-[10px] tracking-widest text-[oklch(0.7_0.25_340)]">CREATE</div>
                 <div className="text-sm font-semibold mt-1">New post</div>
               </Link>
-              <Link to="/rewards" className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5">
-                <div className="text-[10px] tracking-widest text-[oklch(0.82_0.15_215)]">REWARDS</div>
+              <Link
+                to="/rewards"
+                className="rounded-2xl glass border border-white/10 p-3 hover:bg-white/5"
+              >
+                <div className="text-[10px] tracking-widest text-[oklch(0.82_0.15_215)]">
+                  REWARDS
+                </div>
                 <div className="text-sm font-semibold mt-1">12,480 pts</div>
               </Link>
             </div>
@@ -174,8 +217,10 @@ function Home() {
 
         {/* CENTER — feed */}
         <div className="space-y-5 min-w-0">
-          <Composer />
-          <div className="lg:hidden"><CreatorRail /></div>
+          <FeedComposer />
+          <div className="lg:hidden">
+            <CreatorRail />
+          </div>
 
           <div className="flex items-center justify-between px-1">
             <h2 className="text-base lg:text-lg font-semibold flex items-center gap-2">
@@ -191,7 +236,12 @@ function Home() {
                 <Sparkles className="size-3.5" /> Trey-I tuning...
               </span>
             ) : (
-              <button onClick={() => toast("Loading more…")} className="text-sm text-primary hover:underline">See all</button>
+              <button
+                onClick={() => toast("Loading more…")}
+                className="text-sm text-primary hover:underline"
+              >
+                See all
+              </button>
             )}
           </div>
 
@@ -205,7 +255,9 @@ function Home() {
         {/* RIGHT RAIL — desktop only · trending + suggested */}
         <aside className="hidden lg:flex flex-col gap-4 sticky top-6 h-fit">
           <section className="rounded-3xl glass neon-border p-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-3"><Flame className="size-4 text-[oklch(0.7_0.25_340)]" /> Trending tonight</h3>
+            <h3 className="text-sm font-bold flex items-center gap-2 mb-3">
+              <Flame className="size-4 text-[oklch(0.7_0.25_340)]" /> Trending tonight
+            </h3>
             <ul className="space-y-3">
               {[
                 { tag: "#StudioSessions", up: "+184%" },
@@ -218,7 +270,9 @@ function Home() {
                   <span className="text-xs font-mono text-muted-foreground w-5">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate">{t.tag}</div>
-                    <div className="text-[11px] text-[oklch(0.78_0.18_150)] flex items-center gap-1"><TrendingUp className="size-3" /> {t.up}</div>
+                    <div className="text-[11px] text-[oklch(0.78_0.18_150)] flex items-center gap-1">
+                      <TrendingUp className="size-3" /> {t.up}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -227,18 +281,31 @@ function Home() {
 
           <section className="rounded-3xl glass neon-border p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold flex items-center gap-2"><UserPlus className="size-4 text-primary" /> Suggested creators</h3>
-              <Link to="/explore" className="text-[11px] text-primary hover:underline">More</Link>
+              <h3 className="text-sm font-bold flex items-center gap-2">
+                <UserPlus className="size-4 text-primary" /> Suggested creators
+              </h3>
+              <Link to="/explore" className="text-[11px] text-primary hover:underline">
+                More
+              </Link>
             </div>
             <ul className="space-y-3">
               {creators.slice(1, 5).map((c) => (
                 <li key={c.id} className="flex items-center gap-3">
-                  <img src={c.avatar} alt="" className="size-9 rounded-full object-cover ring-1 ring-white/15" />
+                  <img
+                    src={c.avatar}
+                    alt=""
+                    className="size-9 rounded-full object-cover ring-1 ring-white/15"
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate">{c.name}</div>
                     <div className="text-[11px] text-muted-foreground truncate">@{c.handle}</div>
                   </div>
-                  <button onClick={() => toast(`Followed ${c.name}`)} className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 border border-primary/40 text-primary hover:bg-primary/20">+ Follow</button>
+                  <button
+                    onClick={() => toast(`Followed ${c.name}`)}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-primary/10 border border-primary/40 text-primary hover:bg-primary/20"
+                  >
+                    + Follow
+                  </button>
                 </li>
               ))}
             </ul>
@@ -248,7 +315,11 @@ function Home() {
             <h3 className="text-sm font-bold mb-3">Tonight's prescriptions</h3>
             <div className="space-y-2">
               {prescribed.slice(0, 3).map((p) => (
-                <Link to="/prescribe-me" key={p.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5">
+                <Link
+                  to="/prescribe-me"
+                  key={p.id}
+                  className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5"
+                >
                   <div className="size-12 rounded-lg overflow-hidden shrink-0">
                     <img src={p.media} alt="" className="size-full object-cover" />
                   </div>

@@ -52,7 +52,7 @@ src/features/music-review/
 ## Mount inside Trey TV
 
 ```tsx
-import MusicReviewModule from '@/features/music-review/MusicReviewModule';
+import MusicReviewModule from "@/features/music-review/MusicReviewModule";
 
 export default function MusicReviewTab() {
   return <MusicReviewModule />;
@@ -82,14 +82,14 @@ window.__TREY_USER__ = {
   id: currentUser.id,
   email: currentUser.email,
   name: currentUser.displayName,
-  isAdmin: currentUser.role === 'admin' || currentUser.role === 'owner'
+  isAdmin: currentUser.role === "admin" || currentUser.role === "owner",
 };
 ```
 
 Role helpers are exported from `hooks/useTreyAuth.ts`:
 
 ```ts
-isAdmin, canManageMusicReviews, canModerateOpenMic, canCompleteReviews
+(isAdmin, canManageMusicReviews, canModerateOpenMic, canCompleteReviews);
 ```
 
 ## Admin API exports
@@ -97,18 +97,18 @@ isAdmin, canManageMusicReviews, canModerateOpenMic, canCompleteReviews
 Available from `lib/adminApi.ts`:
 
 ```ts
-getMusicReviewSubmissions
-updateSubmissionStatus
-reorderReviewQueue
-markNowPlaying
-completeMusicReview
-sendMusicReviewEmail
-publishReviewToProfile
-getOpenMicQueue
-removeOpenMicSong
-skipOpenMicSong
-retryOpenMicCleanupAction
-updateMusicReviewSettings
+getMusicReviewSubmissions;
+updateSubmissionStatus;
+reorderReviewQueue;
+markNowPlaying;
+completeMusicReview;
+sendMusicReviewEmail;
+publishReviewToProfile;
+getOpenMicQueue;
+removeOpenMicSong;
+skipOpenMicSong;
+retryOpenMicCleanupAction;
+updateMusicReviewSettings;
 ```
 
 ## Database and storage

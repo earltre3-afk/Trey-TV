@@ -14,17 +14,17 @@ The admin content-approval pages (`/admin/content-approval` and `/admin/content-
 
 ## 2. Security Boundary — Non-Negotiable
 
-| Rule | Detail |
-|---|---|
-| `isAdmin` / `AdminShell` is visual-only | The browser `isAdmin` flag reads from `localStorage` (mock-based). It is a UI convenience gate only — it does not authorize any server-side action |
-| Service-role key stays server-side | `creator_post_queue` has no admin RLS policy — admin SELECT/UPDATE requires the service-role client inside a `createServerFn` handler |
-| No `VITE_SUPABASE_SERVICE_ROLE_KEY` | A `VITE_*` or `NEXT_PUBLIC_*` prefix exposes the value to the browser — the service-role key must never use either prefix |
-| Auth client first, service-role second | Every server function verifies the caller with the normal anon/auth client before constructing the service-role client. The service-role client is never used to return or update data before authorization passes |
-| Server-side admin identity check | After confirming the user is authenticated, the server function checks admin identity against a server-only source: `profiles.role = 'admin'` (DB) or `ADMIN_EMAILS` env var allowlist (see §4) |
-| Unauthorized callers get a safe error | Any unauthenticated or non-admin call throws `'Admin access required'` — no queue data is returned |
-| Creators cannot approve their own content | Server function checks `queue.creator_id !== adminUser.id` before approving |
-| `admin_notes` is admin-only | Written and read only in admin server functions — never returned to creator-facing hooks |
-| `profiles.is_creator` not used | Column does not exist |
+| Rule                                      | Detail                                                                                                                                                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `isAdmin` / `AdminShell` is visual-only   | The browser `isAdmin` flag reads from `localStorage` (mock-based). It is a UI convenience gate only — it does not authorize any server-side action                                                                 |
+| Service-role key stays server-side        | `creator_post_queue` has no admin RLS policy — admin SELECT/UPDATE requires the service-role client inside a `createServerFn` handler                                                                              |
+| No `VITE_SUPABASE_SERVICE_ROLE_KEY`       | A `VITE_*` or `NEXT_PUBLIC_*` prefix exposes the value to the browser — the service-role key must never use either prefix                                                                                          |
+| Auth client first, service-role second    | Every server function verifies the caller with the normal anon/auth client before constructing the service-role client. The service-role client is never used to return or update data before authorization passes |
+| Server-side admin identity check          | After confirming the user is authenticated, the server function checks admin identity against a server-only source: `profiles.role = 'admin'` (DB) or `ADMIN_EMAILS` env var allowlist (see §4)                    |
+| Unauthorized callers get a safe error     | Any unauthenticated or non-admin call throws `'Admin access required'` — no queue data is returned                                                                                                                 |
+| Creators cannot approve their own content | Server function checks `queue.creator_id !== adminUser.id` before approving                                                                                                                                        |
+| `admin_notes` is admin-only               | Written and read only in admin server functions — never returned to creator-facing hooks                                                                                                                           |
+| `profiles.is_creator` not used            | Column does not exist                                                                                                                                                                                              |
 
 ### Why service-role is required
 
@@ -38,25 +38,25 @@ The service-role key must live in a `createServerFn` handler — the same patter
 
 ### `creator_post_queue` — all fields, admin view
 
-| Column | Admin can read? | Admin can write? | Notes |
-|---|---|---|---|
-| `id` | ✅ | ❌ | Queue row UUID |
-| `creator_id` | ✅ | ❌ | Creator's auth UID |
-| `edit_project_id` | ✅ | ❌ | Links to `creator_edit_projects` |
-| `channel_id` | ✅ | ❌ | Creator's channel |
-| `show_id` | ✅ | ❌ | Show reference |
-| `episode_number` | ✅ | ❌ | Episode number |
-| `title` | ✅ | ❌ | Creator-supplied |
-| `description` | ✅ | ❌ | Creator-supplied |
-| `stream_uid` | ✅ | ❌ | Cloudflare Stream UID |
-| `thumbnail_url` | ✅ | ❌ | Creator-supplied |
-| `visibility` | ✅ | ❌ | Creator-supplied |
-| `is_plus_content` | ✅ | ❌ | Creator-supplied |
-| `scheduled_at` | ✅ | ❌ | Creator-supplied |
-| `approval_status` | ✅ | ✅ | Admin sets: `pending` / `approved` / `rejected` / `needs_changes` |
-| `admin_notes` | ✅ | ✅ | Admin-only — visible in admin UI, never in creator-facing hooks |
-| `created_at` | ✅ | ❌ | Auto |
-| `updated_at` | ✅ | ❌ | Auto via trigger |
+| Column            | Admin can read? | Admin can write? | Notes                                                             |
+| ----------------- | --------------- | ---------------- | ----------------------------------------------------------------- |
+| `id`              | ✅              | ❌               | Queue row UUID                                                    |
+| `creator_id`      | ✅              | ❌               | Creator's auth UID                                                |
+| `edit_project_id` | ✅              | ❌               | Links to `creator_edit_projects`                                  |
+| `channel_id`      | ✅              | ❌               | Creator's channel                                                 |
+| `show_id`         | ✅              | ❌               | Show reference                                                    |
+| `episode_number`  | ✅              | ❌               | Episode number                                                    |
+| `title`           | ✅              | ❌               | Creator-supplied                                                  |
+| `description`     | ✅              | ❌               | Creator-supplied                                                  |
+| `stream_uid`      | ✅              | ❌               | Cloudflare Stream UID                                             |
+| `thumbnail_url`   | ✅              | ❌               | Creator-supplied                                                  |
+| `visibility`      | ✅              | ❌               | Creator-supplied                                                  |
+| `is_plus_content` | ✅              | ❌               | Creator-supplied                                                  |
+| `scheduled_at`    | ✅              | ❌               | Creator-supplied                                                  |
+| `approval_status` | ✅              | ✅               | Admin sets: `pending` / `approved` / `rejected` / `needs_changes` |
+| `admin_notes`     | ✅              | ✅               | Admin-only — visible in admin UI, never in creator-facing hooks   |
+| `created_at`      | ✅              | ❌               | Auto                                                              |
+| `updated_at`      | ✅              | ❌               | Auto via trigger                                                  |
 
 ### `approval_status` valid values (DB constraint)
 
@@ -69,17 +69,18 @@ The service-role key must live in a `createServerFn` handler — the same patter
 When `approval_status` is updated, the linked `creator_edit_projects` row should also be updated:
 
 | `approval_status` | `creator_edit_projects.status` |
-|---|---|
-| `'approved'` | `'published'` |
-| `'rejected'` | `'rejected'` |
-| `'needs_changes'` | `'ready'` |
-| `'pending'` | `'submitted'` |
+| ----------------- | ------------------------------ |
+| `'approved'`      | `'published'`                  |
+| `'rejected'`      | `'rejected'`                   |
+| `'needs_changes'` | `'ready'`                      |
+| `'pending'`       | `'submitted'`                  |
 
 This mirrors the RESTORE pattern. The `creator_edit_projects` UPDATE uses the same service-role client inside the same server function — no separate call needed.
 
 ### Approval validation rules (from RESTORE reference)
 
 Before setting `approval_status = 'approved'`:
+
 - `title` must be non-empty
 - `stream_uid` must be non-empty
 - `episode_number` must be a positive integer
@@ -107,10 +108,10 @@ Real admin authorization happens server-side in every server function, in this o
 
 ### Required env vars for admin authorization
 
-| Variable | Purpose | Exposed to browser? |
-|---|---|---|
-| `ADMIN_EMAILS` | Comma-separated admin email allowlist (fallback) | ❌ Never — no `VITE_*` prefix |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service-role client for bypassing RLS | ❌ Never — no `VITE_*` prefix |
+| Variable                    | Purpose                                          | Exposed to browser?           |
+| --------------------------- | ------------------------------------------------ | ----------------------------- |
+| `ADMIN_EMAILS`              | Comma-separated admin email allowlist (fallback) | ❌ Never — no `VITE_*` prefix |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service-role client for bypassing RLS            | ❌ Never — no `VITE_*` prefix |
 
 If neither `profiles.role = 'admin'` nor `ADMIN_EMAILS` is configured, the server function throws `'Admin not configured'` — no queue data is returned.
 
@@ -198,10 +199,10 @@ The "Public feedback to creator" textarea maps to `admin_notes` as well (there i
 
 ## 6. Required Environment Variables
 
-| Variable | Where set | Exposed to browser? |
-|---|---|---|
+| Variable                    | Where set                                | Exposed to browser?           |
+| --------------------------- | ---------------------------------------- | ----------------------------- |
 | `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` + Cloudflare Workers secret | ❌ Never — no `VITE_*` prefix |
-| `ADMIN_EMAILS` | `.env.local` + Cloudflare Workers secret | ❌ Never — no `VITE_*` prefix |
+| `ADMIN_EMAILS`              | `.env.local` + Cloudflare Workers secret | ❌ Never — no `VITE_*` prefix |
 
 `VITE_SUPABASE_URL` is already set and is reused inside the server function to construct the service-role client. The service-role key itself must never use a `VITE_*` prefix.
 

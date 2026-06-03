@@ -20,4 +20,3 @@ export type TreyTvMcpToolDescriptor = PluginMcpToolDescriptor & {
   responseShape: string;
   safetyNotes: string[];
 };
-

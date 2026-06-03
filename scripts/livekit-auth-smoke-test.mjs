@@ -30,7 +30,10 @@ function loadEnvFile(filename, override = false) {
     if (eq < 0) continue;
     const key = trimmed.slice(0, eq).trim();
     let value = trimmed.slice(eq + 1).trim();
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       value = value.slice(1, -1);
     }
     if (override || !process.env[key]) process.env[key] = value;
@@ -66,7 +69,15 @@ function assertMinimalGrant(payload, roomName) {
   assert(!payload.sip, "SIP permissions must not be granted.");
 }
 
-async function mintRouteLikeToken({ apiKey, apiSecret, roomName, identity, name, dispatchAgent, metadata }) {
+async function mintRouteLikeToken({
+  apiKey,
+  apiSecret,
+  roomName,
+  identity,
+  name,
+  dispatchAgent,
+  metadata,
+}) {
   const at = new AccessToken(apiKey, apiSecret, {
     identity,
     name,
@@ -134,7 +145,8 @@ if (livekitUrl && !livekitUrl.startsWith("wss://") && !livekitUrl.startsWith("ws
 }
 if (!apiKey) issues.push("LIVEKIT_API_KEY is missing.");
 if (!apiSecret) issues.push("LIVEKIT_API_SECRET is missing.");
-if (!diagnostics.serverSdkAvailable) issues.push("LiveKit server SDK/protocol classes are unavailable.");
+if (!diagnostics.serverSdkAvailable)
+  issues.push("LiveKit server SDK/protocol classes are unavailable.");
 
 if (issues.length) {
   console.error("\nConfig issues:");
@@ -172,7 +184,10 @@ try {
   const storyAgent = storyPayload.roomConfig?.agents?.[0];
   assert(storyAgent?.agentName === AGENT_NAME, "Story token missing Hayden RoomAgentDispatch.");
   const decodedMetadata = JSON.parse(storyAgent.metadata);
-  assert(decodedMetadata.mode === "story-narrator", "Story dispatch metadata missing story-narrator mode.");
+  assert(
+    decodedMetadata.mode === "story-narrator",
+    "Story dispatch metadata missing story-narrator mode.",
+  );
   assert(decodedMetadata.storyId === "switch-kicks", "Story dispatch metadata missing storyId.");
 
   const gameResponse = await mintRouteLikeToken({
@@ -220,7 +235,10 @@ try {
   assert(diagnostics.apiSecretConfigured, "Diagnostics did not report API secret configured.");
   assert(diagnostics.agentName === AGENT_NAME, "Diagnostics agentName mismatch.");
   assert(diagnostics.serverSdkAvailable, "Diagnostics serverSdkAvailable mismatch.");
-  assert(diagnostics.serverApiAuthenticated, "LiveKit server API auth failed for configured URL/key/secret.");
+  assert(
+    diagnostics.serverApiAuthenticated,
+    "LiveKit server API auth failed for configured URL/key/secret.",
+  );
 
   console.log("\nPassed:");
   console.log("- LiveKit server API accepted the configured URL/key/secret.");

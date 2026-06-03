@@ -7,11 +7,11 @@ import { recordUserTrace } from "@/lib/user-trace";
 export type ReactionKey = "fire" | "gem" | "crown" | "dead" | "cinematic";
 
 export const REACTIONS: { key: ReactionKey; emoji: string; label: string; color: string }[] = [
-  { key: "fire",      emoji: "🔥", label: "Fire",       color: "oklch(0.75 0.2 40)" },
-  { key: "gem",       emoji: "💎", label: "Gem",        color: "oklch(0.82 0.15 215)" },
-  { key: "crown",     emoji: "👑", label: "Crown",      color: "oklch(0.82 0.16 85)" },
-  { key: "dead",      emoji: "💀", label: "Dead",       color: "oklch(0.75 0.05 270)" },
-  { key: "cinematic", emoji: "🎬", label: "Cinematic",  color: "oklch(0.7 0.25 340)" },
+  { key: "fire", emoji: "🔥", label: "Fire", color: "oklch(0.75 0.2 40)" },
+  { key: "gem", emoji: "💎", label: "Gem", color: "oklch(0.82 0.15 215)" },
+  { key: "crown", emoji: "👑", label: "Crown", color: "oklch(0.82 0.16 85)" },
+  { key: "dead", emoji: "💀", label: "Dead", color: "oklch(0.75 0.05 270)" },
+  { key: "cinematic", emoji: "🎬", label: "Cinematic", color: "oklch(0.7 0.25 340)" },
 ];
 
 export type ActivityItem = {
@@ -30,9 +30,19 @@ type Ctx = {
   reactions: Record<string, ReactionKey | null>;
   saves: Record<string, boolean>;
   activity: ActivityItem[];
-  setReaction: (postId: string, r: ReactionKey | null, meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "reaction">) => void;
-  toggleSave: (postId: string, meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "userUid">) => void;
-  logShare: (postId: string, meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "userUid">) => void;
+  setReaction: (
+    postId: string,
+    r: ReactionKey | null,
+    meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "reaction">,
+  ) => void;
+  toggleSave: (
+    postId: string,
+    meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "userUid">,
+  ) => void;
+  logShare: (
+    postId: string,
+    meta: Omit<ActivityItem, "id" | "ts" | "type" | "postId" | "userUid">,
+  ) => void;
   clear: () => void;
 };
 
@@ -64,7 +74,9 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   }, [storageKey]);
 
   useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ reactions, saves, activity })); } catch {}
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({ reactions, saves, activity }));
+    } catch {}
   }, [reactions, saves, activity, storageKey]);
 
   useEffect(() => {
@@ -88,7 +100,8 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
             .eq("target_type", "post"),
         ]);
 
-        if (activityResult.error || savedResult.error) throw activityResult.error || savedResult.error;
+        if (activityResult.error || savedResult.error)
+          throw activityResult.error || savedResult.error;
         if (cancelled) return;
 
         const rows = (activityResult.data ?? []) as any[];
@@ -157,8 +170,21 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   const setReaction: Ctx["setReaction"] = (postId, r, meta) => {
     setReactions((prev) => ({ ...prev, [postId]: r }));
     if (r) {
-      push({ id: crypto.randomUUID(), ts: Date.now(), type: "react", postId, reaction: r, ...meta });
-      recordUserTrace({ userUid: traceUid, action: "feed.react", targetType: "post", targetId: postId, details: { reaction: r, title: meta.title } });
+      push({
+        id: crypto.randomUUID(),
+        ts: Date.now(),
+        type: "react",
+        postId,
+        reaction: r,
+        ...meta,
+      });
+      recordUserTrace({
+        userUid: traceUid,
+        action: "feed.react",
+        targetType: "post",
+        targetId: postId,
+        details: { reaction: r, title: meta.title },
+      });
     }
   };
   const toggleSave: Ctx["toggleSave"] = (postId, meta) => {
@@ -166,19 +192,28 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       const next = !prev[postId];
       if (next) {
         push({ id: crypto.randomUUID(), ts: Date.now(), type: "save", postId, ...meta });
-        recordUserTrace({ userUid: traceUid, action: "feed.save", targetType: "post", targetId: postId, details: { title: meta.title } });
+        recordUserTrace({
+          userUid: traceUid,
+          action: "feed.save",
+          targetType: "post",
+          targetId: postId,
+          details: { title: meta.title },
+        });
       }
       if (supaUser) {
         void (async () => {
           try {
             const supabase = createBrowserClient();
             if (next) {
-              await (supabase as any).from("user_saved_items").upsert({
-                user_id: supaUser.id,
-                target_type: "post",
-                target_id: postId,
-                metadata: meta,
-              }, { onConflict: "user_id,target_type,target_id" });
+              await (supabase as any).from("user_saved_items").upsert(
+                {
+                  user_id: supaUser.id,
+                  target_type: "post",
+                  target_id: postId,
+                  metadata: meta,
+                },
+                { onConflict: "user_id,target_type,target_id" },
+              );
             } else {
               await (supabase as any)
                 .from("user_saved_items")
@@ -197,7 +232,13 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
   };
   const logShare: Ctx["logShare"] = (postId, meta) => {
     push({ id: crypto.randomUUID(), ts: Date.now(), type: "share", postId, ...meta });
-    recordUserTrace({ userUid: traceUid, action: "feed.share", targetType: "post", targetId: postId, details: { title: meta.title } });
+    recordUserTrace({
+      userUid: traceUid,
+      action: "feed.share",
+      targetType: "post",
+      targetId: postId,
+      details: { title: meta.title },
+    });
     if (supaUser) {
       void (async () => {
         try {
@@ -215,7 +256,11 @@ export function ActivityProvider({ children }: { children: ReactNode }) {
       })();
     }
   };
-  const clear = () => { setReactions({}); setSaves({}); setActivity([]); };
+  const clear = () => {
+    setReactions({});
+    setSaves({});
+    setActivity([]);
+  };
 
   return (
     <C.Provider value={{ reactions, saves, activity, setReaction, toggleSave, logShare, clear }}>

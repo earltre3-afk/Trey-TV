@@ -28,7 +28,11 @@ export async function uploadProfileMedia(userId: string, file: File, kind: "avat
   return { path, url: data.publicUrl };
 }
 
-export async function uploadMessageMedia(userId: string, file: File | Blob, kind: "media" | "voice") {
+export async function uploadMessageMedia(
+  userId: string,
+  file: File | Blob,
+  kind: "media" | "voice",
+) {
   const supabase = createBrowserClient();
   const ext = extFromFile(file, kind === "voice" ? "webm" : "bin");
   const path = `${userId}/${kind}-${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}.${ext}`;
@@ -47,7 +51,9 @@ export async function createMessageMediaUrl(pathOrUrl?: string | null) {
   if (/^(https?:|blob:|data:)/i.test(pathOrUrl)) return pathOrUrl;
 
   const supabase = createBrowserClient();
-  const { data, error } = await supabase.storage.from("message-media").createSignedUrl(pathOrUrl, 60 * 60);
+  const { data, error } = await supabase.storage
+    .from("message-media")
+    .createSignedUrl(pathOrUrl, 60 * 60);
   if (error) throw error;
   return data.signedUrl;
 }
@@ -57,7 +63,9 @@ export async function uploadFeedMedia(userId: string, file: File) {
   const ext = extFromFile(file, file.type.startsWith("video/") ? "mp4" : "jpg");
   const path = `${userId}/${Date.now()}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await supabase.storage.from("feed-media").upload(path, file, {
-    cacheControl: "3600", contentType: file.type || undefined, upsert: false,
+    cacheControl: "3600",
+    contentType: file.type || undefined,
+    upsert: false,
   });
   if (error) throw error;
   const { data } = supabase.storage.from("feed-media").getPublicUrl(path);

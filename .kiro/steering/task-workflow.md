@@ -7,6 +7,7 @@ Every backend migration task follows this process. No exceptions.
 ## Step 1 — Spec First
 
 Before writing any code, define:
+
 - **What** is being wired (which feature, which route/component)
 - **Which table(s)** are involved
 - **Which columns** will be queried (check `schema.md` — no banned columns)
@@ -31,6 +32,7 @@ Do not proceed until the spec is agreed upon.
 ## Step 3 — Validate
 
 Run both commands. Both must pass with zero errors:
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -43,6 +45,7 @@ If either fails, fix before presenting the result.
 ## Step 4 — Replace Mock
 
 Only after Step 3 passes:
+
 - Swap the mock import/usage in the route or component for the real hook
 - Keep the mock data file intact (other routes may still use it)
 - Re-run Step 3
@@ -51,11 +54,11 @@ Only after Step 3 passes:
 
 ## Naming Conventions
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Supabase hooks | `use-{feature}.ts` | `use-comments.ts` |
-| Supabase types | `Supabase{Entity}` | `SupabaseComment` |
-| Store files | `{feature}-store.tsx` | `comments-store.tsx` |
+| Type           | Pattern               | Example              |
+| -------------- | --------------------- | -------------------- |
+| Supabase hooks | `use-{feature}.ts`    | `use-comments.ts`    |
+| Supabase types | `Supabase{Entity}`    | `SupabaseComment`    |
+| Store files    | `{feature}-store.tsx` | `comments-store.tsx` |
 
 ---
 

@@ -8,7 +8,8 @@ export const Route = createFileRoute("/prescribe-me")({
       { title: "Prescribe Me - Trey TV" },
       {
         name: "description",
-        content: "Tell Trey-I your vibe and get the perfect creators and content prescribed just for you.",
+        content:
+          "Tell Trey-I your vibe and get the perfect creators and content prescribed just for you.",
       },
     ],
   }),

@@ -17,4 +17,3 @@ Production access must continue to pass through the Plugin Bridge gate. Local de
 No tools in this folder write data, run mutations, query private messages, expose private user data, expose environment values, expose Supabase service role values, or expose OAuth tokens.
 
 Do not add write tools without a separate security review.
-

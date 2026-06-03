@@ -1,6 +1,6 @@
-import React from 'react';
-import { ArrowRight, Info, Keyboard, List, Lock } from 'lucide-react';
-import TreyTVLogo from './TreyTVLogo';
+import React from "react";
+import { ArrowRight, Info, Keyboard, List, Lock } from "lucide-react";
+import TreyTVLogo from "./TreyTVLogo";
 
 interface Props {
   onContinue: () => void;
@@ -11,26 +11,26 @@ const SignalTestRules: React.FC<Props> = ({ onContinue }) => {
     {
       n: 1,
       icon: List,
-      title: 'THREE',
-      sub: 'ANSWER CHOICES',
-      body: 'Each question includes three possible answers.',
-      tint: 'text-cyan-300',
+      title: "THREE",
+      sub: "ANSWER CHOICES",
+      body: "Each question includes three possible answers.",
+      tint: "text-cyan-300",
     },
     {
       n: 2,
       icon: Keyboard,
-      title: 'ONE',
-      sub: 'CUSTOM RESPONSE BOX',
-      body: 'Type your own move if none of the answers fit.',
-      tint: 'text-cyan-300',
+      title: "ONE",
+      sub: "CUSTOM RESPONSE BOX",
+      body: "Type your own move if none of the answers fit.",
+      tint: "text-cyan-300",
     },
     {
       n: 3,
       icon: Lock,
-      title: 'ONE',
-      sub: 'LOCKED CHOICE PER SCENE',
-      body: 'Once you lock it in, you cannot change your answer.',
-      tint: 'text-violet-300',
+      title: "ONE",
+      sub: "LOCKED CHOICE PER SCENE",
+      body: "Once you lock it in, you cannot change your answer.",
+      tint: "text-violet-300",
     },
   ];
 
@@ -53,9 +53,14 @@ const SignalTestRules: React.FC<Props> = ({ onContinue }) => {
           {rules.map((r) => {
             const Icon = r.icon;
             return (
-              <div key={r.n} className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-cyan-400/40 via-violet-500/20 to-fuchsia-500/30">
+              <div
+                key={r.n}
+                className="relative rounded-2xl p-[1.5px] bg-gradient-to-br from-cyan-400/40 via-violet-500/20 to-fuchsia-500/30"
+              >
                 <div className="rounded-2xl bg-gradient-to-b from-white/[0.05] to-white/[0.02] backdrop-blur-xl border border-white/5 px-4 py-4 flex items-center gap-3 sm:px-5 sm:py-5 sm:gap-4">
-                  <div className="text-2xl font-bold text-cyan-300/80 w-7 text-center sm:text-3xl sm:w-8">{r.n}</div>
+                  <div className="text-2xl font-bold text-cyan-300/80 w-7 text-center sm:text-3xl sm:w-8">
+                    {r.n}
+                  </div>
                   <div className="w-11 h-11 shrink-0 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center sm:w-14 sm:h-14">
                     <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${r.tint}`} />
                   </div>
@@ -75,8 +80,8 @@ const SignalTestRules: React.FC<Props> = ({ onContinue }) => {
         <div className="mt-5 rounded-2xl border border-cyan-400/20 bg-white/[0.03] backdrop-blur px-5 py-4 flex items-center gap-3">
           <Info className="w-5 h-5 text-cyan-300 shrink-0" />
           <p className="text-sm text-slate-300">
-            You can choose an answer <span className="italic text-cyan-300">or</span> type your own —{' '}
-            <span className="text-cyan-300 font-semibold">but not both.</span>
+            You can choose an answer <span className="italic text-cyan-300">or</span> type your own
+            — <span className="text-cyan-300 font-semibold">but not both.</span>
           </p>
         </div>
 

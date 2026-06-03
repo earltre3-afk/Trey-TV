@@ -1,4 +1,5 @@
 # Trey-I Phase 4 — ElevenLabs Mic Wiring
+
 ## Requirements
 
 ### Context
@@ -27,6 +28,7 @@ responses regardless of whether ElevenLabs voice is active.
 ### Scope
 
 **In scope — Phase 4:**
+
 - `pnpm add @elevenlabs/react@1.3.0` (exact version matching RESTORE)
 - `src/routes/onboarding.voice.tsx` — mic button wiring, voice state machine, fallback
 - Spec files in `.kiro/specs/trey-i-phase-4-elevenlabs-mic/`
@@ -34,6 +36,7 @@ responses regardless of whether ElevenLabs voice is active.
 - Checkpoint update in `.kiro/checkpoints/lovable-backend-migration-current-state.md`
 
 **Explicitly out of scope — Phase 4:**
+
 - Gemini Live — not implemented in any phase
 - TreyIWidget — separate future lane, not touched
 - Watch Now / Guide — not touched
@@ -58,6 +61,7 @@ pnpm add @elevenlabs/react@1.3.0
 ```
 
 The `useConversation` hook from `@elevenlabs/react` provides:
+
 - `startSession({ signedUrl, connectionType })` — opens the WebSocket
 - `endSession()` — closes the WebSocket
 - `setMuted(boolean)` — mutes/unmutes the mic
@@ -74,13 +78,15 @@ The same pattern is used in Phase 4.
 
 **FR-1 — Mic button activates ElevenLabs session**
 When the user taps the mic button (currently visual-only), the component must:
+
 1. Call `treyIElevenLabsSession({ data: { accessToken } })` to obtain a signed URL.
 2. If `result.ok`, call `conversation.startSession({ signedUrl: result.signedUrl, connectionType: "websocket" })`.
 3. If `result.ok === false`, set `voiceUnavailable = true` and keep text input active.
-The mic button must not activate if `accessToken` is null or `sessionId` is null.
+   The mic button must not activate if `accessToken` is null or `sessionId` is null.
 
 **FR-2 — Mic button deactivates ElevenLabs session**
 When the user taps the mic button while a session is active, the component must:
+
 1. Call `conversation.endSession()`.
 2. Reset voice state to idle.
 3. Keep text input active.
@@ -90,6 +96,7 @@ The component must track a `voiceStatus` state with values:
 `"idle" | "connecting" | "connected" | "listening" | "speaking" | "error" | "unavailable"`
 
 Mapping:
+
 - `"idle"` — mic button not yet tapped; no session
 - `"connecting"` — `treyIElevenLabsSession` call in flight or WebSocket opening
 - `"connected"` — `onConnect` fired; agent is active
@@ -101,9 +108,10 @@ Mapping:
 **FR-4 — Orb visual state**
 The existing orb in `onboarding.voice.tsx` already uses `listening` state to drive
 animation. Phase 4 must map `voiceStatus` to the existing orb props:
+
 - `listening` prop: `voiceStatus === "connected" || voiceStatus === "listening"`
 - `thinking` prop: `voiceStatus === "connecting" || thinking`
-The orb JSX must not be redesigned.
+  The orb JSX must not be redesigned.
 
 **FR-5 — Transcript feeds `profileSetupTurn`**
 When ElevenLabs fires `onMessage` with `role === "user"`, the transcript text must be
@@ -135,6 +143,7 @@ Typed submissions call `submit()` directly, bypassing the voice path.
 
 **FR-10 — Fallback on `ok: false`**
 If `treyIElevenLabsSession` returns `ok: false`, the component must:
+
 1. Set `voiceStatus = "unavailable"`.
 2. Display the `result.message` string in the existing `error` state display area.
 3. Keep text input active and focused.
@@ -142,6 +151,7 @@ If `treyIElevenLabsSession` returns `ok: false`, the component must:
 
 **FR-11 — Fallback on `onError` / `onDisconnect` with error**
 If the WebSocket errors or disconnects unexpectedly after connecting:
+
 1. Set `voiceStatus = "error"`.
 2. Display a safe inline message: `"Voice disconnected. Type to continue or tap mic to retry."`.
 3. Keep text input active.
@@ -149,6 +159,7 @@ If the WebSocket errors or disconnects unexpectedly after connecting:
 
 **FR-12 — Normal disconnect**
 If ElevenLabs disconnects normally (agent ended the session, not an error):
+
 1. Set `voiceStatus = "idle"`.
 2. Clear any voice error message.
 3. Keep text input active.
@@ -161,13 +172,15 @@ session may already be closed.
 **FR-14 — Connection watchdog**
 A 12-second timeout must be set after `startSession()` is called. If `onConnect` has
 not fired within 12 seconds, the session is considered failed:
+
 1. Call `conversation.endSession()`.
 2. Set `voiceStatus = "error"`.
 3. Display: `"Voice connection timed out. Type to continue or tap mic to retry."`.
-The timeout must be cleared in `onConnect` and `onError`/`onDisconnect`.
+   The timeout must be cleared in `onConnect` and `onError`/`onDisconnect`.
 
 **FR-15 — Mic button disabled states**
 The mic button must be disabled (not just visually) when:
+
 - `accessToken` is null
 - `sessionId` is null (intake session not yet started)
 - `voiceStatus === "connecting"`
@@ -176,6 +189,7 @@ The mic button must be disabled (not just visually) when:
 **FR-16 — `ConversationProvider` wrapper**
 `useConversation` requires `ConversationProvider` in the React tree above it.
 The existing `VoiceOnboarding` function must be split into:
+
 - `VoiceOnboarding` — thin wrapper that renders `<ConversationProvider><VoiceOnboardingInner /></ConversationProvider>`
 - `VoiceOnboardingInner` — the existing component body, now calling `useConversation`
 
@@ -207,6 +221,7 @@ upstream error bodies, internal file paths, or WebSocket URLs.
 
 **SEC-8** — After `pnpm build`, the client bundle must not contain the string
 `ELEVENLABS_API_KEY`. Build validation:
+
 ```bash
 grep -r "ELEVENLABS_API_KEY" dist/client 2>/dev/null | wc -l
 # expected: 0
@@ -224,15 +239,15 @@ Both remain server-only (no `VITE_` prefix).
 
 ### What the Browser Receives vs Does Not Receive
 
-| Item                    | Browser receives? | Notes                                      |
-|-------------------------|-------------------|--------------------------------------------|
-| `signedUrl`             | Yes               | WSS URL; short-lived, self-authenticating  |
-| `ELEVENLABS_API_KEY`    | **No**            | Server-only                                |
-| `ELEVENLABS_AGENT_ID`   | **No**            | Server-only                                |
-| Voice transcript text   | Yes               | User's own speech, displayed locally       |
-| Agent message text      | Yes               | Displayed in `assistantMessage`            |
-| Error code string       | Yes               | Safe diagnostic, no secret content         |
-| User-facing message     | Yes               | Safe, always fallback-friendly             |
+| Item                  | Browser receives? | Notes                                     |
+| --------------------- | ----------------- | ----------------------------------------- |
+| `signedUrl`           | Yes               | WSS URL; short-lived, self-authenticating |
+| `ELEVENLABS_API_KEY`  | **No**            | Server-only                               |
+| `ELEVENLABS_AGENT_ID` | **No**            | Server-only                               |
+| Voice transcript text | Yes               | User's own speech, displayed locally      |
+| Agent message text    | Yes               | Displayed in `assistantMessage`           |
+| Error code string     | Yes               | Safe diagnostic, no secret content        |
+| User-facing message   | Yes               | Safe, always fallback-friendly            |
 
 ---
 
@@ -240,6 +255,7 @@ Both remain server-only (no `VITE_` prefix).
 
 Text input is the permanent fallback. At no point in Phase 4 does the component
 require ElevenLabs to be available. If ElevenLabs is:
+
 - Not configured (`ELEVENLABS_NOT_CONFIGURED`) → text input, no error shown
 - Unavailable (any `ok: false`) → text input, safe message shown
 - Connected then disconnected → text input, reconnect option shown

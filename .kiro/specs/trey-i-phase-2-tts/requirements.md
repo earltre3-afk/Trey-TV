@@ -10,28 +10,30 @@ if it fails for any reason, the text response still displays and the user can co
 
 ## Current State
 
-| Item | Status |
-|------|--------|
-| `src/lib/trey-i/intake.server.ts` | Real — `startIntakeSession` + `profileSetupTurn` |
-| `src/lib/trey-i/onboarding.server.ts` | Real — `saveProfileFieldsForUser` + helpers |
-| `src/routes/onboarding.voice.tsx` | Real — wired to text-first server flow |
-| Mic button | Visual-only |
-| TTS | Not implemented |
-| ElevenLabs | Not implemented |
-| Gemini Live | Not implemented |
-| `@google/genai` package | **Not in package.json** — must be added |
+| Item                                  | Status                                           |
+| ------------------------------------- | ------------------------------------------------ |
+| `src/lib/trey-i/intake.server.ts`     | Real — `startIntakeSession` + `profileSetupTurn` |
+| `src/lib/trey-i/onboarding.server.ts` | Real — `saveProfileFieldsForUser` + helpers      |
+| `src/routes/onboarding.voice.tsx`     | Real — wired to text-first server flow           |
+| Mic button                            | Visual-only                                      |
+| TTS                                   | Not implemented                                  |
+| ElevenLabs                            | Not implemented                                  |
+| Gemini Live                           | Not implemented                                  |
+| `@google/genai` package               | **Not in package.json** — must be added          |
 
 ---
 
 ## Scope
 
 **In scope:**
+
 - New server function `treyITts` in `src/lib/trey-i/tts.server.ts`
 - `@google/genai` dependency added to `package.json`
 - `onboarding.voice.tsx` calls `treyITts` after each `profileSetupTurn` response and plays the audio
 - TTS failure is silent and non-fatal — text flow continues unaffected
 
 **Out of scope:**
+
 - ElevenLabs real-time voice
 - Gemini Live bidirectional session
 - Mic input / speech-to-text
@@ -78,7 +80,10 @@ the browser decodes into an `ArrayBuffer` and plays via the Web Audio API or `Au
 Because `createServerFn` serializes return values as JSON, the server function returns:
 
 ```typescript
-{ audioBase64: string; mimeType: "audio/wav" }
+{
+  audioBase64: string;
+  mimeType: "audio/wav";
+}
 ```
 
 The browser decodes `audioBase64` → `Uint8Array` → `Blob` → `URL.createObjectURL` →
@@ -92,6 +97,7 @@ returns `{ audioBase64: null }` instead of throwing. The browser silently skips 
 ## Text Cleaning (server-side)
 
 Before sending to Gemini TTS, clean the assistant message:
+
 - Collapse whitespace
 - Strip trailing "Next steps:…" and "If it still fails…" sections
 - Truncate to 700 characters
@@ -101,6 +107,7 @@ Before sending to Gemini TTS, clean the assistant message:
 ## Non-Fatal Failure Contract
 
 The browser must treat TTS as fire-and-forget:
+
 - Call `treyITts` after `profileSetupTurn` resolves
 - Do not `await` it in the critical path — use `.then().catch()` or a separate `useEffect`
 - If `treyITts` throws or returns `{ audioBase64: null }`, log silently and continue
@@ -119,6 +126,7 @@ version in RESTORE and pin the same major.
 ## Validation
 
 Terminal-only:
+
 ```
 pnpm tsc --noEmit   — must pass with zero errors
 pnpm build          — must produce a clean build

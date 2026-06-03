@@ -14,14 +14,14 @@ Approved creators can currently submit videos to `creator_post_queue`, but have 
 
 ## 2. Security Boundary — Non-Negotiable
 
-| Rule | Detail |
-|---|---|
-| Browser SELECT is allowed | RLS: `creator_id = auth.uid() AND is_approved_creator_for_current_user()` |
-| No service-role key | Anon/user Supabase client only |
-| Creator identity via auth email | Same `channels.owner_email` gate already used in `useCreatorStudio` |
+| Rule                            | Detail                                                                                                                 |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Browser SELECT is allowed       | RLS: `creator_id = auth.uid() AND is_approved_creator_for_current_user()`                                              |
+| No service-role key             | Anon/user Supabase client only                                                                                         |
+| Creator identity via auth email | Same `channels.owner_email` gate already used in `useCreatorStudio`                                                    |
 | `admin_notes` must not be shown | Column exists on `creator_post_queue` but is written by admins only — do not SELECT or display it in creator-facing UI |
-| No status writes | Creator cannot change `approval_status` — read-only |
-| `profiles.is_creator` not used | Column does not exist in current schema |
+| No status writes                | Creator cannot change `approval_status` — read-only                                                                    |
+| `profiles.is_creator` not used  | Column does not exist in current schema                                                                                |
 
 ---
 
@@ -29,33 +29,33 @@ Approved creators can currently submit videos to `creator_post_queue`, but have 
 
 ### `creator_post_queue` — columns safe for creator display
 
-| Column | Safe to show creator? | Notes |
-|---|---|---|
-| `id` | ✅ | Queue row UUID |
-| `edit_project_id` | ✅ | Links back to `creator_edit_projects` |
-| `channel_id` | ✅ | Creator's own channel |
-| `show_id` | ✅ | Show reference |
-| `episode_number` | ✅ | Episode number |
-| `title` | ✅ | Creator-supplied title |
-| `description` | ✅ | Creator-supplied description |
-| `stream_uid` | ✅ | Creator's own video UID |
-| `thumbnail_url` | ✅ | Creator-supplied thumbnail |
-| `visibility` | ✅ | Creator-supplied visibility |
-| `is_plus_content` | ✅ | Creator-supplied flag |
-| `scheduled_at` | ✅ | Creator-supplied schedule |
-| `approval_status` | ✅ | The primary display field |
-| `created_at` | ✅ | Submission timestamp |
-| `updated_at` | ✅ | Last update timestamp |
-| `admin_notes` | ❌ **Do not SELECT** | Admin-internal field — not for creator display |
+| Column            | Safe to show creator? | Notes                                          |
+| ----------------- | --------------------- | ---------------------------------------------- |
+| `id`              | ✅                    | Queue row UUID                                 |
+| `edit_project_id` | ✅                    | Links back to `creator_edit_projects`          |
+| `channel_id`      | ✅                    | Creator's own channel                          |
+| `show_id`         | ✅                    | Show reference                                 |
+| `episode_number`  | ✅                    | Episode number                                 |
+| `title`           | ✅                    | Creator-supplied title                         |
+| `description`     | ✅                    | Creator-supplied description                   |
+| `stream_uid`      | ✅                    | Creator's own video UID                        |
+| `thumbnail_url`   | ✅                    | Creator-supplied thumbnail                     |
+| `visibility`      | ✅                    | Creator-supplied visibility                    |
+| `is_plus_content` | ✅                    | Creator-supplied flag                          |
+| `scheduled_at`    | ✅                    | Creator-supplied schedule                      |
+| `approval_status` | ✅                    | The primary display field                      |
+| `created_at`      | ✅                    | Submission timestamp                           |
+| `updated_at`      | ✅                    | Last update timestamp                          |
+| `admin_notes`     | ❌ **Do not SELECT**  | Admin-internal field — not for creator display |
 
 ### `approval_status` values
 
-| DB value | Maps to `SubmissionStatus` | `STATUS_LABEL` | `STATUS_TONE` |
-|---|---|---|---|
-| `'pending'` | `'pending'` | `"Pending Review"` | gold |
-| `'approved'` | `'approved'` | `"Approved"` | green |
-| `'rejected'` | `'rejected'` | `"Rejected"` | red |
-| `'needs_changes'` | `'needs_changes'` | `"Needs Changes"` | magenta |
+| DB value          | Maps to `SubmissionStatus` | `STATUS_LABEL`     | `STATUS_TONE` |
+| ----------------- | -------------------------- | ------------------ | ------------- |
+| `'pending'`       | `'pending'`                | `"Pending Review"` | gold          |
+| `'approved'`      | `'approved'`               | `"Approved"`       | green         |
+| `'rejected'`      | `'rejected'`               | `"Rejected"`       | red           |
+| `'needs_changes'` | `'needs_changes'`          | `"Needs Changes"`  | magenta       |
 
 All four values map directly to existing `SubmissionStatus` values in `submissions-store.tsx`. No new status labels or tone classes are needed.
 
@@ -91,7 +91,7 @@ type QueueRow = {
   episode_number: number | null;
   stream_uid: string;
   visibility: string;
-  approval_status: 'pending' | 'approved' | 'rejected' | 'needs_changes';
+  approval_status: "pending" | "approved" | "rejected" | "needs_changes";
   created_at: string;
   updated_at: string;
 };
@@ -102,6 +102,7 @@ type QueueRow = {
 Convert each `QueueRow` to a `Submission` for use in the existing submissions list UI. The mapping function is pure and not exported.
 
 Key mappings:
+
 - `content_id` ← `row.id` (queue row UUID, not `edit_project_id`)
 - `status` ← `mapApprovalStatus(row.approval_status)`
 - `title` ← `row.title`
@@ -116,6 +117,7 @@ Key mappings:
 In `creator-studio.submissions.tsx`, the submissions list currently comes from `useCreatorStudio().submissions` (derived from `episodes` table). Queue rows represent a different, newer data source.
 
 Merge strategy:
+
 - Load both: `useCreatorStudio().submissions` (episodes) and `useCreatorPostQueue().queueRows` (mapped to `Submission`).
 - Deduplicate: if a queue row's `edit_project_id` matches a `creator_edit_projects`-derived submission's `content_id`, prefer the queue row (it has the real `approval_status`).
 - If no match: include both independently.

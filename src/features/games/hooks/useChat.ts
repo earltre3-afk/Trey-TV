@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChatMessageRow, fetchChatMessages, sendChatMessage } from '../lib/services/chatService';
-import { PlayerIdentity } from '../lib/services/identity';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChatMessageRow, fetchChatMessages, sendChatMessage } from "../lib/services/chatService";
+import { PlayerIdentity } from "../lib/services/identity";
 
 interface UseChatOpts {
   roomId: string | null | undefined;
@@ -14,7 +14,7 @@ export interface UseChatResult {
   messages: ChatMessageRow[];
   unread: number;
   loading: boolean;
-  send: (body: string, kind?: 'text' | 'quick' | 'emoji') => Promise<void>;
+  send: (body: string, kind?: "text" | "quick" | "emoji") => Promise<void>;
   markRead: () => void;
 }
 
@@ -23,7 +23,13 @@ export interface UseChatResult {
  * room sync cadence) and tracks an unread counter for messages received
  * while the drawer is closed.
  */
-export function useChat({ roomId, identity, mySeat, isOpen, pollMs = 2000 }: UseChatOpts): UseChatResult {
+export function useChat({
+  roomId,
+  identity,
+  mySeat,
+  isOpen,
+  pollMs = 2000,
+}: UseChatOpts): UseChatResult {
   const [messages, setMessages] = useState<ChatMessageRow[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -44,9 +50,9 @@ export function useChat({ roomId, identity, mySeat, isOpen, pollMs = 2000 }: Use
         setLoading(false);
         return;
       }
-      setMessages(prev => {
+      setMessages((prev) => {
         // dedupe by id
-        const seen = new Set(prev.map(m => m.id));
+        const seen = new Set(prev.map((m) => m.id));
         const merged = [...prev];
         for (const m of incoming) if (!seen.has(m.id)) merged.push(m);
         merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -57,8 +63,8 @@ export function useChat({ roomId, identity, mySeat, isOpen, pollMs = 2000 }: Use
 
       // Bump unread for messages from others received while drawer is closed
       if (!openRef.current && identity) {
-        const others = incoming.filter(m => m.user_id !== identity.userId);
-        if (others.length) setUnread(u => u + others.length);
+        const others = incoming.filter((m) => m.user_id !== identity.userId);
+        if (others.length) setUnread((u) => u + others.length);
       } else if (openRef.current) {
         lastSeenRef.current = newest.created_at;
       }
@@ -80,7 +86,10 @@ export function useChat({ roomId, identity, mySeat, isOpen, pollMs = 2000 }: Use
     if (!roomId) return;
     refresh();
     const t = setInterval(refresh, pollMs);
-    return () => { cancelledRef.current = true; clearInterval(t); };
+    return () => {
+      cancelledRef.current = true;
+      clearInterval(t);
+    };
   }, [roomId, refresh, pollMs]);
 
   // when drawer opens, clear unread and pin last-seen to newest
@@ -91,27 +100,30 @@ export function useChat({ roomId, identity, mySeat, isOpen, pollMs = 2000 }: Use
     }
   }, [isOpen, messages]);
 
-  const send = useCallback(async (body: string, kind: 'text' | 'quick' | 'emoji' = 'text') => {
-    if (!roomId || !identity) return;
-    const row = await sendChatMessage({
-      roomId,
-      userId: identity.userId,
-      displayName: identity.displayName,
-      seatIndex: mySeat,
-      body,
-      kind,
-    });
-    if (row) {
-      // optimistic merge
-      setMessages(prev => {
-        if (prev.some(m => m.id === row.id)) return prev;
-        const next = [...prev, row].sort((a, b) => a.created_at.localeCompare(b.created_at));
-        return next.slice(-200);
+  const send = useCallback(
+    async (body: string, kind: "text" | "quick" | "emoji" = "text") => {
+      if (!roomId || !identity) return;
+      const row = await sendChatMessage({
+        roomId,
+        userId: identity.userId,
+        displayName: identity.displayName,
+        seatIndex: mySeat,
+        body,
+        kind,
       });
-      lastFetchedAtRef.current = row.created_at;
-      lastSeenRef.current = row.created_at;
-    }
-  }, [roomId, identity, mySeat]);
+      if (row) {
+        // optimistic merge
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === row.id)) return prev;
+          const next = [...prev, row].sort((a, b) => a.created_at.localeCompare(b.created_at));
+          return next.slice(-200);
+        });
+        lastFetchedAtRef.current = row.created_at;
+        lastSeenRef.current = row.created_at;
+      }
+    },
+    [roomId, identity, mySeat],
+  );
 
   const markRead = useCallback(() => {
     setUnread(0);

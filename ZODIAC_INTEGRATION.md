@@ -40,6 +40,7 @@ export function SignupStep() {
 ```
 
 **Props**:
+
 - `onSelect?: (sign: string, birthDate?: string, isCusp?: boolean) => void` — Called when user confirms selection
 
 ### 2. Zodiac Confirmation (Lock Screen)
@@ -65,6 +66,7 @@ export function ConfirmationModal() {
 ```
 
 **Props**:
+
 - `sign: string` — Zodiac sign name (e.g., "Leo")
 - `symbol: string` — Zodiac symbol (e.g., "♌")
 - `isCusp?: boolean` — Whether user is born on cusp
@@ -105,6 +107,7 @@ export function HomepageReading() {
 ```
 
 **Props**:
+
 - `sign: string` — User's zodiac sign
 - `symbol: string` — Zodiac symbol emoji
 - `dailyReading: string` — The daily cosmic message (2–3 sentences)
@@ -120,18 +123,20 @@ export function HomepageReading() {
 Display user's zodiac in profile or anywhere their cosmic identity appears.
 
 **Icon Only**:
+
 ```typescript
 import { ZodiacBadge } from "@/components/zodiac";
 
-<ZodiacBadge 
-  sign="Leo" 
-  symbol="♌" 
+<ZodiacBadge
+  sign="Leo"
+  symbol="♌"
   size="md"
   showName={false}
 />
 ```
 
 **With Name**:
+
 ```typescript
 <ZodiacBadge
   sign="Taurus"
@@ -143,6 +148,7 @@ import { ZodiacBadge } from "@/components/zodiac";
 ```
 
 **Badge Props**:
+
 - `sign: string` — Zodiac sign name
 - `symbol: string` — Zodiac symbol
 - `isCusp?: boolean` — Show "Cusp Soul" indicator
@@ -176,6 +182,7 @@ export function ProfilePage({ userId }) {
 ```
 
 **Props**:
+
 - `sign: string` — Zodiac sign
 - `symbol: string` — Symbol emoji
 - `isCusp?: boolean` — Cusp soul status
@@ -206,6 +213,7 @@ import { ZodiacGroupCard } from "@/components/zodiac";
 ```
 
 **Props**:
+
 - `groupName: string` — Group name (max 40 chars recommended)
 - `matchReason: string` — Why this group is matched (2 lines max)
 - `memberCount: number` — Total members
@@ -432,6 +440,7 @@ The showcase includes tabs for each component with various states and configurat
 ## Data Structure Reference
 
 ### User Zodiac Profile
+
 ```typescript
 interface UserZodiacProfile {
   zodiacSign: string; // "Leo"
@@ -445,6 +454,7 @@ interface UserZodiacProfile {
 ```
 
 ### Daily Reading
+
 ```typescript
 interface DailyReading {
   sign: string;
@@ -461,6 +471,7 @@ interface DailyReading {
 ```
 
 ### Zodiac Group
+
 ```typescript
 interface ZodiacGroup {
   id: string;
@@ -508,6 +519,7 @@ No additional media query modifications needed — components handle responsive 
 ## Accessibility
 
 All components include:
+
 - WCAG AA color contrast
 - Keyboard navigation
 - Focus indicators
@@ -515,9 +527,12 @@ All components include:
 - ARIA labels (for buttons & icons)
 
 Components respect `prefers-reduced-motion`:
+
 ```css
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.01ms !important; }
+  * {
+    animation-duration: 0.01ms !important;
+  }
 }
 ```
 

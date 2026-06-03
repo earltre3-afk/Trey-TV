@@ -1,5 +1,5 @@
-import type { Prescription, TradioMode, UserAnswers, DailyUsageState } from './prescribeMeTypes';
-import { generateAIPreRoutePrescription } from './prescribeMeMockData';
+import type { Prescription, TradioMode, UserAnswers, DailyUsageState } from "./prescribeMeTypes";
+import { generateAIPreRoutePrescription } from "./prescribeMeMockData";
 
 const DAILY_LIMIT_KEY = (userId: string) => `tradio_rx_limit_${userId}`;
 const DATE_KEY = (userId: string) => `tradio_rx_date_${userId}`;
@@ -11,12 +11,12 @@ const LAST_RX_KEY = (userId: string) => `tradio_rx_last_${userId}`;
  */
 export function getDailyUsageState(userId: string): DailyUsageState {
   const todayStr = new Date().toLocaleDateString();
-  let storedDate = '';
+  let storedDate = "";
   let leftCount = 2;
   let lastRx: Prescription | null = null;
 
   try {
-    storedDate = localStorage.getItem(DATE_KEY(userId)) || '';
+    storedDate = localStorage.getItem(DATE_KEY(userId)) || "";
     const storedCount = localStorage.getItem(DAILY_LIMIT_KEY(userId));
     if (storedCount !== null) {
       leftCount = parseInt(storedCount, 10);
@@ -27,7 +27,7 @@ export function getDailyUsageState(userId: string): DailyUsageState {
       lastRx = JSON.parse(storedLast);
     }
   } catch (e) {
-    console.warn('[prescribeMeService] Failed reading prescription storage:', e);
+    console.warn("[prescribeMeService] Failed reading prescription storage:", e);
   }
 
   // If date has changed, reset daily limit
@@ -35,7 +35,7 @@ export function getDailyUsageState(userId: string): DailyUsageState {
     leftCount = 2;
     try {
       localStorage.setItem(DATE_KEY(userId), todayStr);
-      localStorage.setItem(DAILY_LIMIT_KEY(userId), '2');
+      localStorage.setItem(DAILY_LIMIT_KEY(userId), "2");
     } catch (e) {
       // ignore
     }
@@ -54,7 +54,7 @@ export function getDailyUsageState(userId: string): DailyUsageState {
 export function executeNewPrescription(
   userId: string,
   mode: TradioMode,
-  answers: UserAnswers
+  answers: UserAnswers,
 ): { success: boolean; prescription: Prescription | null; leftCount: number } {
   const state = getDailyUsageState(userId);
 
@@ -70,7 +70,7 @@ export function executeNewPrescription(
     localStorage.setItem(LAST_RX_KEY(userId), JSON.stringify(prescription));
     localStorage.setItem(DATE_KEY(userId), new Date().toLocaleDateString());
   } catch (e) {
-    console.error('[prescribeMeService] Failed saving new prescription:', e);
+    console.error("[prescribeMeService] Failed saving new prescription:", e);
   }
 
   return {
@@ -87,7 +87,7 @@ export function refineCurrentPrescription(
   userId: string,
   mode: TradioMode,
   answers: UserAnswers,
-  refinementId: string
+  refinementId: string,
 ): Prescription {
   const prescription = generateAIPreRoutePrescription(mode, answers, refinementId);
 
@@ -105,7 +105,7 @@ export function refineCurrentPrescription(
  * Simulates saving a prescription to profile.
  */
 export function handleSavePrescription(prescription: Prescription): boolean {
-  console.log('[prescribeMeService] Prescription saved:', prescription.id);
+  console.log("[prescribeMeService] Prescription saved:", prescription.id);
   // Simulates persistence success
   return true;
 }
@@ -113,7 +113,7 @@ export function handleSavePrescription(prescription: Prescription): boolean {
 /**
  * Simulates feedback log submission.
  */
-export function handleFeedback(prescription: Prescription, type: 'like' | 'dislike'): boolean {
+export function handleFeedback(prescription: Prescription, type: "like" | "dislike"): boolean {
   console.log(`[prescribeMeService] Feedback for ${prescription.title}: ${type}`);
   return true;
 }
@@ -123,7 +123,7 @@ export function handleFeedback(prescription: Prescription, type: 'like' | 'disli
  */
 export function debugResetDailyLimit(userId: string): DailyUsageState {
   try {
-    localStorage.setItem(DAILY_LIMIT_KEY(userId), '2');
+    localStorage.setItem(DAILY_LIMIT_KEY(userId), "2");
     localStorage.removeItem(LAST_RX_KEY(userId));
   } catch (e) {
     // ignore

@@ -9,11 +9,13 @@
 ## Task 1 — Verify env var safety and add `.env.local` entries
 
 **Files involved:**
+
 - `.env.local` (local only — never commit)
 - `wrangler.jsonc` (read-only — no changes needed)
 - `vite.config.ts` (read-only — verify `envPrefix`)
 
 **What to do:**
+
 1. Confirm `vite.config.ts` has `envPrefix: ["VITE_", "NEXT_PUBLIC_"]` — `CLOUDFLARE_*` vars are not in either prefix and will not be injected into the client bundle.
 2. Add to `.env.local` (do not commit):
    ```
@@ -24,6 +26,7 @@
 4. Do not add `CLOUDFLARE_*` to `wrangler.jsonc` — production secrets are set via `wrangler secret put`.
 
 **Acceptance criteria:**
+
 - `vite.config.ts` `envPrefix` confirmed — no `CLOUDFLARE_*` prefix match.
 - `.env.local` has the two vars.
 - `.env.local` is gitignored.
@@ -36,6 +39,7 @@
 **Rollback risk:** None. No code changes.
 
 **Terminal validation:**
+
 ```
 # Verify envPrefix — no build step needed
 grep -r "CLOUDFLARE" src/  # should return zero results after later tasks
@@ -46,6 +50,7 @@ grep -r "CLOUDFLARE" src/  # should return zero results after later tasks
 ## Task 2 — Create server function `upload.server.ts`
 
 **Files involved:**
+
 - `src/lib/creator-studio/upload.server.ts` (new file)
 - `src/lib/supabase-browser.ts` (read-only reference)
 
@@ -53,6 +58,7 @@ grep -r "CLOUDFLARE" src/  # should return zero results after later tasks
 Create `src/lib/creator-studio/upload.server.ts` with the `requestDirectUpload` server function per design.md §2.
 
 Key implementation rules:
+
 1. Import `createServerFn` from `@tanstack/react-start`.
 2. Import `supabase` from `@/lib/supabase-browser` (safe inside `createServerFn` — runs server-side).
 3. Auth check: `supabase.auth.getUser()` — throw `'Sign in required'` if no user.
@@ -64,6 +70,7 @@ Key implementation rules:
 9. Export `DirectUploadResponse` type.
 
 **Acceptance criteria:**
+
 - File compiles with zero TypeScript errors.
 - `process.env.CLOUDFLARE_*` is only accessed inside `.handler()`.
 - Return type contains no secrets.
@@ -77,6 +84,7 @@ Key implementation rules:
 **Rollback risk:** None. New file.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -87,6 +95,7 @@ pnpm build
 ## Task 3 — Create client hook `use-cloudflare-upload.ts`
 
 **Files involved:**
+
 - `src/hooks/use-cloudflare-upload.ts` (new file)
 - `src/lib/creator-studio/upload.server.ts` (read-only)
 
@@ -107,6 +116,7 @@ Create `src/hooks/use-cloudflare-upload.ts` per design.md §3:
 5. Export `useCloudflareUpload` as named export.
 
 **Acceptance criteria:**
+
 - Hook compiles with zero TypeScript errors.
 - `requestUpload()` returns `null` on server function error without crashing.
 - `pnpm tsc --noEmit` passes.
@@ -119,6 +129,7 @@ Create `src/hooks/use-cloudflare-upload.ts` per design.md §3:
 **Rollback risk:** Low. New file.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -129,6 +140,7 @@ pnpm build
 ## Task 4 — Wire upload into `creator-studio.edit.tsx`
 
 **Files involved:**
+
 - `src/routes/creator-studio.edit.tsx`
 - `src/hooks/use-cloudflare-upload.ts` (read-only)
 
@@ -136,11 +148,13 @@ pnpm build
 Make targeted changes to `creator-studio.edit.tsx` per design.md §4:
 
 1. Add import:
+
    ```ts
-   import { useCloudflareUpload } from '@/hooks/use-cloudflare-upload';
+   import { useCloudflareUpload } from "@/hooks/use-cloudflare-upload";
    ```
 
 2. Inside `Studio` component, add:
+
    ```ts
    const { requestUpload, uploadFile } = useCloudflareUpload();
    const [streamUid, setStreamUid] = useState<string | null>(null);
@@ -158,10 +172,11 @@ Make targeted changes to `creator-studio.edit.tsx` per design.md §4:
 
 4. Update the "Next: Details" button `onClick` to pass `draftId`:
    ```ts
-   navigate({ to: "/creator-studio/submit", search: { id: draftId ?? undefined } as any })
+   navigate({ to: "/creator-studio/submit", search: { id: draftId ?? undefined } as any });
    ```
 
 **Acceptance criteria:**
+
 - File picker triggers real upload flow.
 - Progress bar reflects real XHR upload progress.
 - On Cloudflare error: `uploadState = 'error'`, existing error UI renders.
@@ -177,6 +192,7 @@ Make targeted changes to `creator-studio.edit.tsx` per design.md §4:
 **Rollback risk:** Medium. Rollback: revert `handleFile` to the original `setInterval` simulation, remove the two new state vars, remove the import, revert the navigation call.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -187,9 +203,11 @@ pnpm build
 ## Task 5 — Final cleanup and verification
 
 **Files involved:**
+
 - All modified files
 
 **What to do:**
+
 1. Confirm no `CLOUDFLARE_` string appears in `src/` outside of `upload.server.ts`.
 2. Confirm `upload.server.ts` only accesses `process.env.CLOUDFLARE_*` inside `.handler()`.
 3. Confirm `submissions-store.tsx`, `use-creator-submit.ts`, `use-creator-studio.ts` are unchanged.
@@ -197,6 +215,7 @@ pnpm build
 5. Run full type check and build.
 
 **Acceptance criteria:**
+
 - Zero TypeScript errors: `pnpm tsc --noEmit`.
 - Clean production build: `pnpm build`.
 - No `CLOUDFLARE_` references outside `upload.server.ts`.
@@ -210,6 +229,7 @@ pnpm build
 **Rollback risk:** None. Cleanup only.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -219,13 +239,13 @@ pnpm build
 
 ## Summary Table
 
-| # | Task | Files | Risk | Validation |
-|---|---|---|---|---|
-| 1 | Verify env var safety | .env.local | None | Manual check |
-| 2 | Create server function | upload.server.ts (new) | Low | tsc + build |
-| 3 | Create client hook | use-cloudflare-upload.ts (new) | Low | tsc + build |
-| 4 | Wire upload into edit page | creator-studio.edit.tsx | Medium | tsc + build |
-| 5 | Final cleanup and verification | all | None | tsc + build |
+| #   | Task                           | Files                          | Risk   | Validation   |
+| --- | ------------------------------ | ------------------------------ | ------ | ------------ |
+| 1   | Verify env var safety          | .env.local                     | None   | Manual check |
+| 2   | Create server function         | upload.server.ts (new)         | Low    | tsc + build  |
+| 3   | Create client hook             | use-cloudflare-upload.ts (new) | Low    | tsc + build  |
+| 4   | Wire upload into edit page     | creator-studio.edit.tsx        | Medium | tsc + build  |
+| 5   | Final cleanup and verification | all                            | None   | tsc + build  |
 
 All tasks are sequential. Do not start a task until the previous task's validation passes.
 

@@ -21,6 +21,7 @@ Prescribe Me propagation is sub-project #3. This spec covers **only the composer
 pipeline + data model**.
 
 ### Sibling sub-projects (out of scope here)
+
 - **#2 Friends / Following news feed + post interactions** — aggregate posts from followed
   users (RLS for follower reads) into the For You "Following" tab + home. `useFeed` currently
   loads only the current user's own posts (`.eq("user_id", me)`), so this is a real build.
@@ -35,6 +36,7 @@ pipeline + data model**.
   carries the media URL + caption that #3 reads.
 
 ## Goals
+
 - The + button (tap) → `/create` → media-first composer.
 - A post requires exactly one media item: photo, ≤30s clip, or a created FWD GIF.
 - Optional short caption (≤150 chars).
@@ -42,6 +44,7 @@ pipeline + data model**.
 - Post appears on the author's public profile (existing behavior preserved).
 
 ## Non-goals
+
 - Friends-feed aggregation (#2), mood AI / Prescribe Me (#3).
 - Multi-media carousels (single media per post).
 - In-app camera capture / video trimming UI (user supplies a ≤30s clip; we validate, not edit).
@@ -53,6 +56,7 @@ Reuses the `/create` route, `addPost`, profile rendering, `PlusMenu`, and `FwdGi
 minimizes UI churn (per the project rule against unnecessary app-UI changes).
 
 ## UX / behavior (`src/components/feed/Composer.tsx`)
+
 - **Media required.** The Post button is disabled until a media item is selected. Single
   slot — selecting new media replaces the current selection (with the existing remove "X").
 - **Optional caption.** The textarea becomes an optional caption, max **150** chars
@@ -66,6 +70,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
   visibility — and the **recommendation tags** (feed recommendations / #3).
 
 ## Upload + post flow (on Post)
+
 1. **Validate**: media present; caption length ≤150; if video, `duration ≤ 30s`; size/type caps.
 2. **Upload** (photo/clip only): `supabase.storage.from('feed-media').upload('<user_id>/<uuid>.<ext>', file)`
    → resolve public URL. FWD GIFs skip upload (already hosted).
@@ -74,6 +79,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
    pattern; reconcile id/created_at from the returned row.
 
 ## Data model — migration on `user_feed_posts`
+
 - `media_type text check (media_type in ('image','video','gif'))` — null allowed only for
   legacy rows; new posts always set it.
 - `media_duration_ms integer` — clip length; null for image/gif.
@@ -82,6 +88,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
   `audience`, `tags`, `metrics`.
 
 ## Storage — migration
+
 - Create bucket **`feed-media`**, public read.
 - RLS on `storage.objects`:
   - `SELECT`: public (anyone can read media for display).
@@ -89,6 +96,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
     first segment equals `auth.uid()` (users write only under their own `<user_id>/` prefix).
 
 ## Validation / limits / errors
+
 - Caption ≤ 150 chars (trim; empty allowed).
 - Image ≤ 8 MB; video ≤ 30 s and ≤ 50 MB; reject any other MIME type.
 - 30s enforcement: load the file into a hidden `<video>`, read `duration` on
@@ -97,6 +105,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
 - Guest → "Sign up to post" + redirect to `/signup` (existing behavior).
 
 ## Verification
+
 - **Unit**: caption length, size cap, MIME-type guard, and 30s duration check.
 - **Browser smoke**: post a photo; attempt a >30s clip (rejected with message); post a ≤30s
   clip; post a created FWD GIF. Confirm each appears on the author's profile, a `feed-media`
@@ -104,6 +113,7 @@ minimizes UI churn (per the project rule against unnecessary app-UI changes).
   `media_type` + `media_url` (or `gif_*`).
 
 ## Decisions / defaults
+
 - One media item per post.
 - Public-read `feed-media` bucket.
 - Caption ≤150; image ≤8 MB; clip ≤30 s / ≤50 MB.

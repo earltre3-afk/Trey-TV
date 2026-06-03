@@ -16,6 +16,7 @@ P8 — Dual Supabase client consolidation (risk reduction, not user-visible)
 ```
 
 Items intentionally deferred (keep mock):
+
 - Online presence / typing indicators (realtime out of scope)
 - Message reactions (out of scope)
 - Voice notes (out of scope)
@@ -29,6 +30,7 @@ Items intentionally deferred (keep mock):
 ## P1 — Notifications Re-Wire
 
 ### Problem
+
 `use-notifications.ts` re-exports from `notifications-store.ts` which is a pure
 localStorage mock. The `notifications` Supabase table exists and has RLS policies
 but is not queried.
@@ -39,6 +41,7 @@ Replace `notifications-store.ts` with a real Supabase hook. Keep the `Notificati
 type shape identical so `NotificationsPopover.tsx` requires no changes.
 
 **New `src/hooks/use-notifications.ts`** (replaces re-export):
+
 ```typescript
 // SELECT from notifications table, ordered by created_at desc, limit 50
 // UPDATE read_at for markRead / markAllRead
@@ -47,16 +50,19 @@ type shape identical so `NotificationsPopover.tsx` requires no changes.
 ```
 
 DB columns used:
+
 ```
 id, user_id, actor_id, type, message, read_at, created_at, post_id, metadata
 ```
 
 Actor profile join (for `who` field):
+
 ```sql
 actor:profiles!notifications_actor_id_fkey(display_name, username, avatar_url)
 ```
 
 Type mapping (DB → NotificationItem.kind):
+
 ```
 new_follower     → "follow"
 user_followed    → "follow"
@@ -80,27 +86,31 @@ Fallback: if `type` is unrecognized, map to `"trey"`.
 error if accidentally imported. The real hook is `use-notifications.ts`.
 
 **Files changed:**
+
 - `src/hooks/use-notifications.ts` — replace re-export with real Supabase hook
 - `src/lib/notifications-store.ts` — stub (or delete if no other imports)
 
 **Files NOT changed:**
+
 - `src/components/layout/NotificationsPopover.tsx` — consumes `useNotifications()` unchanged
 - `src/routes/notifications.tsx` — remains ComingSoonPage stub
 
 ### RLS
+
 `notifications` table: SELECT/UPDATE own rows (`user_id = auth.uid()`).
 Browser never INSERTs — server-side triggers write notifications.
 
 ### Notification triggers (server-side, not browser)
+
 The following DB triggers should exist (or be added via migration) to generate
 notifications automatically:
 
-| Action | Trigger table | Notification type |
-|--------|--------------|-------------------|
-| Follow INSERT | `follows` | `user_followed` |
-| Comment INSERT | `user_post_comments` | `post_commented` |
-| Reaction INSERT | `user_post_reactions` | `post_liked` |
-| DM INSERT | `direct_messages` | (no notification type confirmed — out of scope for now) |
+| Action          | Trigger table         | Notification type                                       |
+| --------------- | --------------------- | ------------------------------------------------------- |
+| Follow INSERT   | `follows`             | `user_followed`                                         |
+| Comment INSERT  | `user_post_comments`  | `post_commented`                                        |
+| Reaction INSERT | `user_post_reactions` | `post_liked`                                            |
+| DM INSERT       | `direct_messages`     | (no notification type confirmed — out of scope for now) |
 
 These triggers are server-side only. The browser never writes to `notifications`.
 If triggers don't exist in the live DB, notifications will be empty but the hook
@@ -111,6 +121,7 @@ will not error. Trigger creation is a separate migration task.
 ## P2 — Remove Mock Seed Contamination
 
 ### Problem
+
 `follow-store.tsx` seeds from `creators.slice(0, 3)` and merges local mock follows
 with DB follows. `messages-store.tsx` seeds from `SEED_THREADS`/`SEED_MSGS` from
 `mock-data.ts creators[]`.
@@ -153,6 +164,7 @@ exist, it can be added back after confirming the schema.
 ## P3 — New User → Onboarding Routing
 
 ### Problem
+
 New users who sign in with Google (or email) are not routed to `/onboarding` if
 `profiles.onboarding_completed = false`. They land on `/` regardless.
 
@@ -164,6 +176,7 @@ After successful auth, check `profiles.onboarding_completed` for the signed-in u
 If `false` (or profile row doesn't exist yet), redirect to `/onboarding`.
 
 **Option A — in `login.tsx` `postAuthRedirect()`:**
+
 ```typescript
 // After signInWithPassword or Google OAuth success:
 const { data: profile } = await supabase
@@ -195,20 +208,25 @@ This avoids touching `__root.tsx` and keeps the change isolated.
 ## P4 — Comment Edit Wired to DB
 
 ### Problem
+
 `edit()` in `comments-store.tsx` updates local state only. No DB UPDATE is called.
 
 ### Design
 
 ```typescript
 const edit: Ctx["edit"] = async (id, text) => {
-  const comment = items.find(c => c.id === id);
+  const comment = items.find((c) => c.id === id);
   if (!comment || !isUUID(comment.postId)) {
     // local-only for mock posts
-    setItems(s => s.map(c => c.id === id ? { ...c, text: text.trim(), editedAt: Date.now() } : c));
+    setItems((s) =>
+      s.map((c) => (c.id === id ? { ...c, text: text.trim(), editedAt: Date.now() } : c)),
+    );
     return;
   }
   // Optimistic update
-  setItems(s => s.map(c => c.id === id ? { ...c, text: text.trim(), editedAt: Date.now() } : c));
+  setItems((s) =>
+    s.map((c) => (c.id === id ? { ...c, text: text.trim(), editedAt: Date.now() } : c)),
+  );
   const supabase = createBrowserClient();
   const { error } = await supabase
     .from("user_post_comments")
@@ -231,6 +249,7 @@ RLS: `creator_id = auth.uid()` — only the comment author can UPDATE.
 ## P5 — Follower/Following Counts on Profile
 
 ### Problem
+
 `ProfileStatsBar` uses `SessionUser.stats` which has hardcoded mock values.
 `profiles.follower_count` and `profiles.following_count` exist in schema but are
 not read by `useProfile` or `useCurrentUser`.
@@ -238,6 +257,7 @@ not read by `useProfile` or `useCurrentUser`.
 ### Design
 
 Add `follower_count` and `following_count` to the `useProfile` SELECT:
+
 ```typescript
 .select("..., follower_count, following_count")
 ```
@@ -246,6 +266,7 @@ Pass through `ProfileData` → `ProfileStatsBar`.
 
 **Note:** `profiles.follower_count` is a denormalized counter. It may be stale if
 no trigger maintains it. A safer alternative is a COUNT query on `follows`:
+
 ```sql
 SELECT COUNT(*) FROM follows WHERE following_id = profiles.id  -- followers
 SELECT COUNT(*) FROM follows WHERE follower_id = profiles.id   -- following
@@ -262,12 +283,14 @@ accurate. If the column is always 0, fall back to COUNT query.
 ## P6 — User Search
 
 ### Problem
+
 No user search by username or display name exists. `ensureFromHandle` in
 `messages-store.tsx` does a single exact-match lookup but there is no search UI.
 
 ### Design
 
 Add a `useUserSearch(query: string)` hook:
+
 ```typescript
 // SELECT id, public_profile_uid, display_name, username, avatar_url
 // FROM profiles
@@ -277,6 +300,7 @@ Add a `useUserSearch(query: string)` hook:
 ```
 
 Use in:
+
 1. `NewConversationSheet` — search before starting a DM
 2. A future "Find people" surface on the following/followers page
 
@@ -287,11 +311,13 @@ Use in:
 ## P7 — Follower/Following List Surfaces
 
 ### Problem
+
 No route or component lists followers or following for a profile.
 
 ### Design
 
 Add a `useFollowList(profileId: string, direction: "followers" | "following")` hook:
+
 ```typescript
 // followers: SELECT follower:profiles!follows_follower_id_fkey(...) WHERE following_id = profileId
 // following: SELECT following:profiles!follows_following_id_fkey(...) WHERE follower_id = profileId
@@ -308,7 +334,9 @@ navigates to a list. Keep within existing Lovable UI structure.
 ## P8 — Dual Supabase Client Consolidation
 
 ### Problem
+
 Two Supabase clients exist:
+
 1. `src/integrations/supabase/client.ts` — Lovable-generated; uses `VITE_SUPABASE_PUBLISHABLE_KEY`
 2. `src/lib/supabase-browser.ts` — project-standard; uses `VITE_SUPABASE_ANON_KEY`
 
@@ -340,56 +368,56 @@ This is a low-risk refactor with high correctness benefit.
 
 ## Files Likely Involved (by priority)
 
-| Priority | File | Change type |
-|----------|------|-------------|
-| P1 | `src/hooks/use-notifications.ts` | Replace re-export with real hook |
-| P1 | `src/lib/notifications-store.ts` | Stub or delete |
-| P2 | `src/lib/follow-store.tsx` | Remove mock seed |
-| P2 | `src/lib/messages-store.tsx` | Remove mock seed; remove `message_type` |
-| P3 | `src/routes/login.tsx` | Add onboarding_completed check |
-| P4 | `src/lib/comments-store.tsx` | Wire edit() to DB UPDATE |
-| P5 | `src/hooks/use-profile.ts` | Add follower_count, following_count |
-| P5 | `src/components/profile/ProfileTypes.ts` | Add count fields to ProfileData |
-| P5 | `src/components/profile/ProfileStatsBar.tsx` | Use real counts |
-| P6 | `src/hooks/use-user-search.ts` | New hook |
-| P6 | `src/components/inbox/NewConversationSheet.tsx` | Wire search |
-| P7 | `src/hooks/use-follow-list.ts` | New hook |
-| P8 | `src/routes/login.tsx` | Switch to supabase-browser client |
-| P8 | `src/lib/supabase-session.tsx` | Switch to supabase-browser client |
-| P8 | `src/integrations/supabase/client.ts` | Shim re-export |
+| Priority | File                                            | Change type                             |
+| -------- | ----------------------------------------------- | --------------------------------------- |
+| P1       | `src/hooks/use-notifications.ts`                | Replace re-export with real hook        |
+| P1       | `src/lib/notifications-store.ts`                | Stub or delete                          |
+| P2       | `src/lib/follow-store.tsx`                      | Remove mock seed                        |
+| P2       | `src/lib/messages-store.tsx`                    | Remove mock seed; remove `message_type` |
+| P3       | `src/routes/login.tsx`                          | Add onboarding_completed check          |
+| P4       | `src/lib/comments-store.tsx`                    | Wire edit() to DB UPDATE                |
+| P5       | `src/hooks/use-profile.ts`                      | Add follower_count, following_count     |
+| P5       | `src/components/profile/ProfileTypes.ts`        | Add count fields to ProfileData         |
+| P5       | `src/components/profile/ProfileStatsBar.tsx`    | Use real counts                         |
+| P6       | `src/hooks/use-user-search.ts`                  | New hook                                |
+| P6       | `src/components/inbox/NewConversationSheet.tsx` | Wire search                             |
+| P7       | `src/hooks/use-follow-list.ts`                  | New hook                                |
+| P8       | `src/routes/login.tsx`                          | Switch to supabase-browser client       |
+| P8       | `src/lib/supabase-session.tsx`                  | Switch to supabase-browser client       |
+| P8       | `src/integrations/supabase/client.ts`           | Shim re-export                          |
 
 ---
 
 ## Files NOT Changed (protected)
 
-| File | Reason |
-|------|--------|
-| `src/routes/watch.$id.tsx` | Watch Now — protected |
-| `src/lib/guide-store.tsx` | Guide — protected |
-| `src/lib/admin/post-queue.server.ts` | Admin pipeline — protected |
-| `src/lib/creator-studio/upload.server.ts` | Cloudflare upload — protected |
-| `src/lib/trey-i/` (all files) | Trey-I server functions — protected |
-| `src/routes/onboarding.voice.tsx` | Phase 4 lane — protected |
-| `src/components/ai/TreyIWidget.tsx` | Future lane — protected |
-| `.claude/` | Local output — never touched |
-| `src/components/layout/NotificationsPopover.tsx` | Consumes hook unchanged |
-| `src/routes/notifications.tsx` | ComingSoonPage stub — unchanged |
+| File                                             | Reason                              |
+| ------------------------------------------------ | ----------------------------------- |
+| `src/routes/watch.$id.tsx`                       | Watch Now — protected               |
+| `src/lib/guide-store.tsx`                        | Guide — protected                   |
+| `src/lib/admin/post-queue.server.ts`             | Admin pipeline — protected          |
+| `src/lib/creator-studio/upload.server.ts`        | Cloudflare upload — protected       |
+| `src/lib/trey-i/` (all files)                    | Trey-I server functions — protected |
+| `src/routes/onboarding.voice.tsx`                | Phase 4 lane — protected            |
+| `src/components/ai/TreyIWidget.tsx`              | Future lane — protected             |
+| `.claude/`                                       | Local output — never touched        |
+| `src/components/layout/NotificationsPopover.tsx` | Consumes hook unchanged             |
+| `src/routes/notifications.tsx`                   | ComingSoonPage stub — unchanged     |
 
 ---
 
 ## Security Notes
 
-| Area | Rule |
-|------|------|
-| `notifications` INSERT | Browser never INSERTs — server triggers only |
-| `follows` INSERT/DELETE | `follower_id = auth.uid()` enforced by RLS |
-| `direct_messages` INSERT | `sender_id = auth.uid()` enforced by RLS |
-| `user_post_comments` INSERT/UPDATE/DELETE | `creator_id = auth.uid()` enforced by RLS |
-| `user_post_reactions` INSERT/DELETE | `user_id = auth.uid()` enforced by RLS |
-| `profiles` UPDATE | Only own row; privilege fields blocked by DB trigger |
-| Service-role key | Never in browser; only in `.server.ts` files |
-| `profiles.is_creator` | Never queried |
-| `profiles.age` / `date_of_birth` | Never queried |
+| Area                                      | Rule                                                 |
+| ----------------------------------------- | ---------------------------------------------------- |
+| `notifications` INSERT                    | Browser never INSERTs — server triggers only         |
+| `follows` INSERT/DELETE                   | `follower_id = auth.uid()` enforced by RLS           |
+| `direct_messages` INSERT                  | `sender_id = auth.uid()` enforced by RLS             |
+| `user_post_comments` INSERT/UPDATE/DELETE | `creator_id = auth.uid()` enforced by RLS            |
+| `user_post_reactions` INSERT/DELETE       | `user_id = auth.uid()` enforced by RLS               |
+| `profiles` UPDATE                         | Only own row; privilege fields blocked by DB trigger |
+| Service-role key                          | Never in browser; only in `.server.ts` files         |
+| `profiles.is_creator`                     | Never queried                                        |
+| `profiles.age` / `date_of_birth`          | Never queried                                        |
 
 ---
 
@@ -397,16 +425,16 @@ This is a low-risk refactor with high correctness benefit.
 
 Each priority item is independently reversible:
 
-| Item | Rollback |
-|------|----------|
-| P1 notifications | `git checkout HEAD -- src/hooks/use-notifications.ts src/lib/notifications-store.ts` |
-| P2 mock seed removal | `git checkout HEAD -- src/lib/follow-store.tsx src/lib/messages-store.tsx` |
-| P3 onboarding routing | `git checkout HEAD -- src/routes/login.tsx` |
-| P4 comment edit | `git checkout HEAD -- src/lib/comments-store.tsx` |
-| P5 profile counts | `git checkout HEAD -- src/hooks/use-profile.ts src/components/profile/ProfileTypes.ts src/components/profile/ProfileStatsBar.tsx` |
-| P6 user search | `git rm src/hooks/use-user-search.ts && git checkout HEAD -- src/components/inbox/NewConversationSheet.tsx` |
-| P7 follow lists | `git rm src/hooks/use-follow-list.ts` |
-| P8 client consolidation | `git checkout HEAD -- src/routes/login.tsx src/lib/supabase-session.tsx src/integrations/supabase/client.ts` |
+| Item                    | Rollback                                                                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| P1 notifications        | `git checkout HEAD -- src/hooks/use-notifications.ts src/lib/notifications-store.ts`                                              |
+| P2 mock seed removal    | `git checkout HEAD -- src/lib/follow-store.tsx src/lib/messages-store.tsx`                                                        |
+| P3 onboarding routing   | `git checkout HEAD -- src/routes/login.tsx`                                                                                       |
+| P4 comment edit         | `git checkout HEAD -- src/lib/comments-store.tsx`                                                                                 |
+| P5 profile counts       | `git checkout HEAD -- src/hooks/use-profile.ts src/components/profile/ProfileTypes.ts src/components/profile/ProfileStatsBar.tsx` |
+| P6 user search          | `git rm src/hooks/use-user-search.ts && git checkout HEAD -- src/components/inbox/NewConversationSheet.tsx`                       |
+| P7 follow lists         | `git rm src/hooks/use-follow-list.ts`                                                                                             |
+| P8 client consolidation | `git checkout HEAD -- src/routes/login.tsx src/lib/supabase-session.tsx src/integrations/supabase/client.ts`                      |
 
 All rollbacks are single-file or small-set operations. No database migrations are
 required for any of these items — all changes are browser-side code only.

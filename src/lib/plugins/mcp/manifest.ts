@@ -5,13 +5,15 @@ import type { TreyTvMcpToolDescriptor } from "./types";
 export const TREY_TV_MCP_TOOLS: readonly TreyTvMcpToolDescriptor[] = [
   {
     name: "get_trey_tv_status",
-    description: "Read Trey TV app health, safe environment-name presence, expected domains, and diagnostic warnings.",
+    description:
+      "Read Trey TV app health, safe environment-name presence, expected domains, and diagnostic warnings.",
     endpoint: "/api/plugins/status",
     method: "GET",
     readOnly: true,
     sensitiveData: false,
     requiresAdmin: true,
-    responseShape: "PluginBridgeMetadata plus appName, appStack, environmentLabel, timestamp, requiredEnv name/presence, expected domains, buildSafe, and warnings.",
+    responseShape:
+      "PluginBridgeMetadata plus appName, appStack, environmentLabel, timestamp, requiredEnv name/presence, expected domains, buildSafe, and warnings.",
     safetyNotes: [
       "Reports environment variable names and presence only, never values.",
       "Does not read private user records, private messages, OAuth tokens, or service role values.",
@@ -25,7 +27,8 @@ export const TREY_TV_MCP_TOOLS: readonly TreyTvMcpToolDescriptor[] = [
     readOnly: true,
     sensitiveData: false,
     requiresAdmin: true,
-    responseShape: "PluginBridgeMetadata plus features with key, displayName, status, protected flag, safe related files, and notes.",
+    responseShape:
+      "PluginBridgeMetadata plus features with key, displayName, status, protected flag, safe related files, and notes.",
     safetyNotes: [
       "Uses a static registry and safe file references.",
       "Does not inspect protected onboarding data or private account details.",
@@ -39,7 +42,8 @@ export const TREY_TV_MCP_TOOLS: readonly TreyTvMcpToolDescriptor[] = [
     readOnly: true,
     sensitiveData: false,
     requiresAdmin: true,
-    responseShape: "PluginBridgeMetadata plus games with type, displayName, quick play, multiplayer, player limits, bot fill support, and status.",
+    responseShape:
+      "PluginBridgeMetadata plus games with type, displayName, quick play, multiplayer, player limits, bot fill support, and status.",
     safetyNotes: [
       "Uses static capability metadata only.",
       "Does not join game room data, player identity, or private session state.",
@@ -53,7 +57,8 @@ export const TREY_TV_MCP_TOOLS: readonly TreyTvMcpToolDescriptor[] = [
     readOnly: true,
     sensitiveData: false,
     requiresAdmin: true,
-    responseShape: "PluginBridgeMetadata plus expectedFwdDomain, OAuth and picker presence, message/comment/profile integration statuses, and warnings.",
+    responseShape:
+      "PluginBridgeMetadata plus expectedFwdDomain, OAuth and picker presence, message/comment/profile integration statuses, and warnings.",
     safetyNotes: [
       "Uses fwd.treytv.com and code-surface presence only.",
       "Does not expose OAuth secrets, access tokens, GIF payloads, private messages, or private comments.",
@@ -61,13 +66,15 @@ export const TREY_TV_MCP_TOOLS: readonly TreyTvMcpToolDescriptor[] = [
   },
   {
     name: "get_protected_flows",
-    description: "Read protected Trey TV flow rules and file patterns without reading private onboarding data.",
+    description:
+      "Read protected Trey TV flow rules and file patterns without reading private onboarding data.",
     endpoint: "/api/plugins/protected-flows",
     method: "GET",
     readOnly: true,
     sensitiveData: false,
     requiresAdmin: true,
-    responseShape: "PluginBridgeMetadata plus protected Trey-I file patterns, profile UID routing rules, date_of_birth rule, public UID rule, and warnings.",
+    responseShape:
+      "PluginBridgeMetadata plus protected Trey-I file patterns, profile UID routing rules, date_of_birth rule, public UID rule, and warnings.",
     safetyNotes: [
       "Reports protected paths and rules only.",
       "Does not read Trey-I onboarding submissions, private profile data, or profiles.age.",
@@ -83,4 +90,3 @@ export function getTreyTvMcpTool(name: string): TreyTvMcpToolDescriptor | undefi
   const tool = TREY_TV_MCP_TOOLS.find((candidate) => candidate.name === name);
   return tool ? { ...tool, safetyNotes: [...tool.safetyNotes] } : undefined;
 }
-

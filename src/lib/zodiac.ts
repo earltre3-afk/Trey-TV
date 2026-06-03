@@ -12,7 +12,13 @@ export type ZodiacSign =
   | "Aquarius"
   | "Pisces";
 
-export type BirthTimePrecision = "unknown" | "morning" | "afternoon" | "evening" | "night" | "exact";
+export type BirthTimePrecision =
+  | "unknown"
+  | "morning"
+  | "afternoon"
+  | "evening"
+  | "night"
+  | "exact";
 
 export type ZodiacIdentity = {
   sunSign: ZodiacSign;
@@ -20,7 +26,10 @@ export type ZodiacIdentity = {
   cuspLabel: string | null;
   badgeKey: string;
   confidence: "exact_time" | "approximate_time" | "date_only";
-  calculationMethod: "solar_longitude" | "solar_longitude_approximate_timezone" | "solar_longitude_date_noon";
+  calculationMethod:
+    | "solar_longitude"
+    | "solar_longitude_approximate_timezone"
+    | "solar_longitude_date_noon";
   chart: {
     sign: ZodiacSign;
     symbol: string;
@@ -42,19 +51,110 @@ const SIGN_BOUNDARIES: Array<{
   modality: string;
   archetype: string;
 }> = [
-  { sign: "Capricorn", symbol: "♑", starts: [1, 1], element: "Earth", modality: "Cardinal", archetype: "Legacy Builder" },
-  { sign: "Aquarius", symbol: "♒", starts: [1, 20], element: "Air", modality: "Fixed", archetype: "Future Frequency" },
-  { sign: "Pisces", symbol: "♓", starts: [2, 19], element: "Water", modality: "Mutable", archetype: "Dream Current" },
-  { sign: "Aries", symbol: "♈", starts: [3, 21], element: "Fire", modality: "Cardinal", archetype: "First Flame" },
-  { sign: "Taurus", symbol: "♉", starts: [4, 20], element: "Earth", modality: "Fixed", archetype: "Velvet Bull" },
-  { sign: "Gemini", symbol: "♊", starts: [5, 21], element: "Air", modality: "Mutable", archetype: "Twin Signal" },
-  { sign: "Cancer", symbol: "♋", starts: [6, 21], element: "Water", modality: "Cardinal", archetype: "Tide Keeper" },
-  { sign: "Leo", symbol: "♌", starts: [7, 23], element: "Fire", modality: "Fixed", archetype: "Solar Royal" },
-  { sign: "Virgo", symbol: "♍", starts: [8, 23], element: "Earth", modality: "Mutable", archetype: "Clean Frequency" },
-  { sign: "Libra", symbol: "♎", starts: [9, 23], element: "Air", modality: "Cardinal", archetype: "Balance Room" },
-  { sign: "Scorpio", symbol: "♏", starts: [10, 23], element: "Water", modality: "Fixed", archetype: "Deep Water" },
-  { sign: "Sagittarius", symbol: "♐", starts: [11, 22], element: "Fire", modality: "Mutable", archetype: "Wild Arrow" },
-  { sign: "Capricorn", symbol: "♑", starts: [12, 22], element: "Earth", modality: "Cardinal", archetype: "Mountain Mind" },
+  {
+    sign: "Capricorn",
+    symbol: "♑",
+    starts: [1, 1],
+    element: "Earth",
+    modality: "Cardinal",
+    archetype: "Legacy Builder",
+  },
+  {
+    sign: "Aquarius",
+    symbol: "♒",
+    starts: [1, 20],
+    element: "Air",
+    modality: "Fixed",
+    archetype: "Future Frequency",
+  },
+  {
+    sign: "Pisces",
+    symbol: "♓",
+    starts: [2, 19],
+    element: "Water",
+    modality: "Mutable",
+    archetype: "Dream Current",
+  },
+  {
+    sign: "Aries",
+    symbol: "♈",
+    starts: [3, 21],
+    element: "Fire",
+    modality: "Cardinal",
+    archetype: "First Flame",
+  },
+  {
+    sign: "Taurus",
+    symbol: "♉",
+    starts: [4, 20],
+    element: "Earth",
+    modality: "Fixed",
+    archetype: "Velvet Bull",
+  },
+  {
+    sign: "Gemini",
+    symbol: "♊",
+    starts: [5, 21],
+    element: "Air",
+    modality: "Mutable",
+    archetype: "Twin Signal",
+  },
+  {
+    sign: "Cancer",
+    symbol: "♋",
+    starts: [6, 21],
+    element: "Water",
+    modality: "Cardinal",
+    archetype: "Tide Keeper",
+  },
+  {
+    sign: "Leo",
+    symbol: "♌",
+    starts: [7, 23],
+    element: "Fire",
+    modality: "Fixed",
+    archetype: "Solar Royal",
+  },
+  {
+    sign: "Virgo",
+    symbol: "♍",
+    starts: [8, 23],
+    element: "Earth",
+    modality: "Mutable",
+    archetype: "Clean Frequency",
+  },
+  {
+    sign: "Libra",
+    symbol: "♎",
+    starts: [9, 23],
+    element: "Air",
+    modality: "Cardinal",
+    archetype: "Balance Room",
+  },
+  {
+    sign: "Scorpio",
+    symbol: "♏",
+    starts: [10, 23],
+    element: "Water",
+    modality: "Fixed",
+    archetype: "Deep Water",
+  },
+  {
+    sign: "Sagittarius",
+    symbol: "♐",
+    starts: [11, 22],
+    element: "Fire",
+    modality: "Mutable",
+    archetype: "Wild Arrow",
+  },
+  {
+    sign: "Capricorn",
+    symbol: "♑",
+    starts: [12, 22],
+    element: "Earth",
+    modality: "Cardinal",
+    archetype: "Mountain Mind",
+  },
 ];
 
 export const ZODIAC_SIGNS: ZodiacSign[] = [
@@ -87,7 +187,12 @@ export const ZODIAC_GROUP_NAMES: Record<ZodiacSign, string[]> = {
   Pisces: ["The Dream Current", "The Soft Visionaries", "The Ocean Hearts"],
 };
 
-export const CUSP_GROUP_NAMES = ["The Between Worlds Circle", "The Cusp Souls", "The Double Energy Room", "The Two-Sign Tribe"];
+export const CUSP_GROUP_NAMES = [
+  "The Between Worlds Circle",
+  "The Cusp Souls",
+  "The Double Energy Room",
+  "The Two-Sign Tribe",
+];
 
 const ZODIAC_DEGREES = 30;
 const CUSP_ORB_DEGREES = 2;
@@ -119,7 +224,10 @@ function startDate(month: number, day: number) {
 }
 
 function signMeta(sign: ZodiacSign) {
-  return SIGN_BOUNDARIES.find((s) => s.sign === sign && s.starts[0] !== 12) ?? SIGN_BOUNDARIES.find((s) => s.sign === sign)!;
+  return (
+    SIGN_BOUNDARIES.find((s) => s.sign === sign && s.starts[0] !== 12) ??
+    SIGN_BOUNDARIES.find((s) => s.sign === sign)!
+  );
 }
 
 const ZODIAC_SYMBOLS: Record<ZodiacSign, string> = {
@@ -145,7 +253,9 @@ export function zodiacSymbol(sign?: string | null) {
 }
 
 export function zodiacBadgeKey(sign?: string | null, isCusp = false) {
-  const key = String(sign ?? "unknown").toLowerCase().replace(/\s+/g, "-");
+  const key = String(sign ?? "unknown")
+    .toLowerCase()
+    .replace(/\s+/g, "-");
   return isCusp ? `cusp-${key}` : `zodiac-${key}`;
 }
 
@@ -183,8 +293,14 @@ function nearestBoundary(longitude: number) {
   const normalized = normalizeDegrees(longitude);
   const lowerBoundary = Math.floor(normalized / ZODIAC_DEGREES) * ZODIAC_DEGREES;
   const upperBoundary = normalizeDegrees(lowerBoundary + ZODIAC_DEGREES);
-  const lowerDistance = Math.min(Math.abs(normalized - lowerBoundary), 360 - Math.abs(normalized - lowerBoundary));
-  const upperDistance = Math.min(Math.abs(normalized - upperBoundary), 360 - Math.abs(normalized - upperBoundary));
+  const lowerDistance = Math.min(
+    Math.abs(normalized - lowerBoundary),
+    360 - Math.abs(normalized - lowerBoundary),
+  );
+  const upperDistance = Math.min(
+    Math.abs(normalized - upperBoundary),
+    360 - Math.abs(normalized - upperBoundary),
+  );
   const boundary = lowerDistance <= upperDistance ? lowerBoundary : upperBoundary;
   const enteringSign = signFromSolarLongitude(boundary);
   const enteringIndex = SOLAR_SIGN_BY_INDEX.indexOf(enteringSign);
@@ -217,7 +333,14 @@ function timeZoneOffsetMinutes(timeZone: string, utcDate: Date) {
       hour12: false,
     }).formatToParts(utcDate);
     const get = (type: string) => Number(parts.find((part) => part.type === type)?.value);
-    const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+    const asUtc = Date.UTC(
+      get("year"),
+      get("month") - 1,
+      get("day"),
+      get("hour"),
+      get("minute"),
+      get("second"),
+    );
     return (asUtc - utcDate.getTime()) / 60000;
   } catch {
     return null;
@@ -238,20 +361,27 @@ function birthMomentUtc({
   birthLongitude?: number;
 }) {
   const [year, month, day] = dateOfBirth.split("-").map(Number);
-  const [hour, minute] = timeForPrecision(birthTimePrecision, birthTimeLocal).split(":").map(Number);
+  const [hour, minute] = timeForPrecision(birthTimePrecision, birthTimeLocal)
+    .split(":")
+    .map(Number);
   const localAsUtc = new Date(Date.UTC(year, month - 1, day, hour, minute));
   const firstOffset = birthTimezone ? timeZoneOffsetMinutes(birthTimezone, localAsUtc) : null;
-  const firstGuess = firstOffset === null ? localAsUtc : new Date(localAsUtc.getTime() - firstOffset * 60000);
+  const firstGuess =
+    firstOffset === null ? localAsUtc : new Date(localAsUtc.getTime() - firstOffset * 60000);
   const exactOffset = birthTimezone ? timeZoneOffsetMinutes(birthTimezone, firstGuess) : null;
-  const longitudeOffset = typeof birthLongitude === "number" && Number.isFinite(birthLongitude) ? Math.round((birthLongitude / 15) * 60) : null;
+  const longitudeOffset =
+    typeof birthLongitude === "number" && Number.isFinite(birthLongitude)
+      ? Math.round((birthLongitude / 15) * 60)
+      : null;
   const offset = exactOffset ?? longitudeOffset ?? 0;
   return {
     moment: new Date(localAsUtc.getTime() - offset * 60000),
-    method: exactOffset !== null
-      ? "solar_longitude"
-      : longitudeOffset !== null
-        ? "solar_longitude_approximate_timezone"
-        : "solar_longitude_date_noon",
+    method:
+      exactOffset !== null
+        ? "solar_longitude"
+        : longitudeOffset !== null
+          ? "solar_longitude_approximate_timezone"
+          : "solar_longitude_date_noon",
   } as const;
 }
 
@@ -308,14 +438,23 @@ export function calculateZodiacIdentity({
       archetype: selected.archetype,
       solarLongitude: Number(longitude.toFixed(4)),
       cuspOrbDegrees: Number(cusp.distance.toFixed(4)),
-      calculatedWith: [dateOfBirth, birthLocationLabel, birthTimezone, birthTimePrecision !== "unknown" ? birthTimePrecision : ""].filter(Boolean).join(" · "),
-      privacyNote: "Exact birth details stay private. Trey TV only shows your zodiac identity and opted-in highlights.",
+      calculatedWith: [
+        dateOfBirth,
+        birthLocationLabel,
+        birthTimezone,
+        birthTimePrecision !== "unknown" ? birthTimePrecision : "",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      privacyNote:
+        "Exact birth details stay private. Trey TV only shows your zodiac identity and opted-in highlights.",
     },
   };
 }
 
 export function ageBracket(dateOfBirth?: string | null) {
-  if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return { label: "18-24", min: 18, max: 24 };
+  if (!dateOfBirth || !/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth))
+    return { label: "18-24", min: 18, max: 24 };
   const dob = new Date(`${dateOfBirth}T00:00:00`);
   const now = new Date();
   let age = now.getFullYear() - dob.getFullYear();
@@ -329,7 +468,10 @@ export function ageBracket(dateOfBirth?: string | null) {
 }
 
 export function locationParts(label?: string | null) {
-  const parts = String(label ?? "").split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = String(label ?? "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   return {
     city: parts[0] ?? null,
     region: parts[1] ?? null,
@@ -352,6 +494,8 @@ export function staticDailyReading(sign: ZodiacSign, isCusp = false) {
     energy_word: isCusp ? "Alchemy" : "Proof",
     lucky_color: colors[seed % colors.length],
     lucky_number: luckyNumber,
-    recommended_action: isCusp ? "Blend two ideas you usually keep separate." : "Finish one thing before chasing the next spark.",
+    recommended_action: isCusp
+      ? "Blend two ideas you usually keep separate."
+      : "Finish one thing before chasing the next spark.",
   };
 }

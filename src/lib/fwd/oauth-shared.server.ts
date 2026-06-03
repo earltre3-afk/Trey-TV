@@ -27,7 +27,10 @@ export function generateCode() {
 }
 
 export function cleanText(value: unknown, max = 500) {
-  return String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, max);
 }
 
 export function cleanUrl(value: unknown) {
@@ -68,11 +71,15 @@ export function verifySecret(secret: string, hash: string) {
 }
 
 export function getFwdAllowedRedirects() {
-  return Array.from(new Set([
-    process.env.FWD_ALLOWED_REDIRECT_URI?.trim(),
-    process.env.FWD_LOCAL_REDIRECT_URI?.trim(),
-    ...DEFAULT_FWD_ALLOWED_REDIRECTS,
-  ].filter(Boolean) as string[]));
+  return Array.from(
+    new Set(
+      [
+        process.env.FWD_ALLOWED_REDIRECT_URI?.trim(),
+        process.env.FWD_LOCAL_REDIRECT_URI?.trim(),
+        ...DEFAULT_FWD_ALLOWED_REDIRECTS,
+      ].filter(Boolean) as string[],
+    ),
+  );
 }
 
 export function getFwdClientId() {
@@ -94,13 +101,17 @@ export function isAllowedRedirect(client: FwdOAuthClient, redirectUri: string) {
 
 export function isAllowedScope(client: FwdOAuthClient, scope: unknown) {
   const requested = normalizeFwdScope(scope);
-  const allowed = Array.isArray(client.allowed_scopes) && client.allowed_scopes.length ? client.allowed_scopes : ["profile"];
+  const allowed =
+    Array.isArray(client.allowed_scopes) && client.allowed_scopes.length
+      ? client.allowed_scopes
+      : ["profile"];
   return requested.every((item) => allowed.includes(item));
 }
 
 export function getPublicProfileUrl(uid: string | null | undefined) {
   if (!uid) return null;
-  const origin = process.env.TREY_TV_PUBLIC_ORIGIN?.trim()?.replace(/\/+$/, "") || "https://tv.treytrizzy.com";
+  const origin =
+    process.env.TREY_TV_PUBLIC_ORIGIN?.trim()?.replace(/\/+$/, "") || "https://tv.treytrizzy.com";
   return `${origin}/u/${uid}`;
 }
 
@@ -111,7 +122,9 @@ export async function getActiveFwdClient(clientId: string): Promise<FwdOAuthClie
   const service = getTreyIServiceClient();
   const { data, error } = await service
     .from("fwd_oauth_clients")
-    .select("id, client_id, client_secret_hash, app_name, allowed_redirect_uris, allowed_scopes, is_active")
+    .select(
+      "id, client_id, client_secret_hash, app_name, allowed_redirect_uris, allowed_scopes, is_active",
+    )
     .eq("client_id", clientId)
     .eq("is_active", true)
     .maybeSingle();

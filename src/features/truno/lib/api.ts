@@ -1,5 +1,5 @@
 // TRUNO Supabase data layer
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 const TOURNAMENT_BACKEND_ENABLED = false;
 
@@ -49,14 +49,14 @@ export interface TrunoClubRow {
 // ---- ROOMS ----
 export async function listOpenPublicRooms(limit = 12): Promise<TrunoRoomRow[]> {
   const { data, error } = await supabase
-    .from('truno_rooms')
-    .select('*')
-    .eq('visibility', 'public')
-    .eq('status', 'open')
-    .order('current_players', { ascending: false })
+    .from("truno_rooms")
+    .select("*")
+    .eq("visibility", "public")
+    .eq("status", "open")
+    .order("current_players", { ascending: false })
     .limit(limit);
   if (error) {
-    console.error('[truno] listOpenPublicRooms error', error);
+    console.error("[truno] listOpenPublicRooms error", error);
     return [];
   }
   return (data ?? []) as TrunoRoomRow[];
@@ -64,14 +64,14 @@ export async function listOpenPublicRooms(limit = 12): Promise<TrunoRoomRow[]> {
 
 export function subscribeOpenRooms(onChange: () => void) {
   const channel = supabase
-    .channel('truno_rooms_public')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'truno_rooms' },
-      () => onChange()
+    .channel("truno_rooms_public")
+    .on("postgres_changes", { event: "*", schema: "public", table: "truno_rooms" }, () =>
+      onChange(),
     )
     .subscribe();
-  return () => { supabase.removeChannel(channel); };
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
 // ---- TOURNAMENTS ----
@@ -80,14 +80,14 @@ export async function listUpcomingTournaments(limit = 10): Promise<TrunoTourname
   if (!TOURNAMENT_BACKEND_ENABLED) return [];
 
   const { data, error } = await supabase
-    .from('truno_tournaments')
-    .select('*')
-    .in('status', ['upcoming', 'registering', 'live'])
-    .order('starts_at', { ascending: true })
+    .from("truno_tournaments")
+    .select("*")
+    .in("status", ["upcoming", "registering", "live"])
+    .order("starts_at", { ascending: true })
     .limit(limit);
   if (error) {
     if (!isMissingOrUnavailableRelation(error)) {
-      console.warn('[truno] listUpcomingTournaments unavailable');
+      console.warn("[truno] listUpcomingTournaments unavailable");
     }
     return [];
   }
@@ -99,8 +99,14 @@ export async function getTournament(id: string): Promise<TrunoTournamentRow | nu
   if (!TOURNAMENT_BACKEND_ENABLED) return null;
 
   const { data, error } = await supabase
-    .from('truno_tournaments').select('*').eq('id', id).maybeSingle();
-  if (error) { console.error('[truno] getTournament', error); return null; }
+    .from("truno_tournaments")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    console.error("[truno] getTournament", error);
+    return null;
+  }
   return data as TrunoTournamentRow | null;
 }
 
@@ -108,41 +114,48 @@ export function subscribeTournaments(onChange: () => void) {
   if (!TOURNAMENT_BACKEND_ENABLED) return () => {};
 
   const channel = supabase
-    .channel('truno_tournaments_live')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'truno_tournaments' },
-      () => onChange()
+    .channel("truno_tournaments_live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "truno_tournaments" }, () =>
+      onChange(),
     )
     .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'truno_tournament_entries' },
-      () => onChange()
+      "postgres_changes",
+      { event: "*", schema: "public", table: "truno_tournament_entries" },
+      () => onChange(),
     )
     .subscribe();
-  return () => { supabase.removeChannel(channel); };
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
 // ---- CLUBS ----
 export async function listPublicClubs(limit = 20): Promise<TrunoClubRow[]> {
   const { data, error } = await supabase
-    .from('truno_clubs')
-    .select('*')
-    .eq('visibility', 'public')
-    .order('online_count', { ascending: false })
+    .from("truno_clubs")
+    .select("*")
+    .eq("visibility", "public")
+    .order("online_count", { ascending: false })
     .limit(limit);
-  if (error) { console.error('[truno] listPublicClubs', error); return []; }
+  if (error) {
+    console.error("[truno] listPublicClubs", error);
+    return [];
+  }
   return (data ?? []) as TrunoClubRow[];
 }
 
 // ---- Tournament join (RLS-enforced) ----
-export async function joinTournament(tournamentId: string): Promise<{ ok: boolean; error?: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: 'Sign in to join a tournament.' };
-  const { error } = await supabase.from('truno_tournament_entries').insert({
+export async function joinTournament(
+  tournamentId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Sign in to join a tournament." };
+  const { error } = await supabase.from("truno_tournament_entries").insert({
     tournament_id: tournamentId,
     user_id: user.id,
-    status: 'registered',
+    status: "registered",
   });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
@@ -159,29 +172,33 @@ export function tableTagFromRoom(r: TrunoRoomRow): string | null {
 
 export function ruleSummaryFromRoom(r: TrunoRoomRow): string {
   const rs = r.rule_set || {};
-  if (rs.wild_rules) return 'Wild Rules';
-  if (rs.action_heavy) return 'Action Only';
-  return 'Classic';
+  if (rs.wild_rules) return "Wild Rules";
+  if (rs.action_heavy) return "Action Only";
+  return "Classic";
 }
 
 export function formatCountdown(startsAt: string): string {
   const diff = new Date(startsAt).getTime() - Date.now();
-  if (diff <= 0) return '00:00:00';
+  if (diff <= 0) return "00:00:00";
   const totalSec = Math.floor(diff / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
   const s = totalSec % 60;
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  const pad = (n: number) => n.toString().padStart(2, "0");
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-function isMissingOrUnavailableRelation(error: { code?: string; message?: string; details?: string }) {
-  const text = `${error.code ?? ''} ${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+function isMissingOrUnavailableRelation(error: {
+  code?: string;
+  message?: string;
+  details?: string;
+}) {
+  const text = `${error.code ?? ""} ${error.message ?? ""} ${error.details ?? ""}`.toLowerCase();
   return (
-    error.code === '42P01' ||
-    error.code === 'PGRST205' ||
-    text.includes('truno_tournaments') ||
-    text.includes('could not find the table') ||
-    text.includes('does not exist')
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    text.includes("truno_tournaments") ||
+    text.includes("could not find the table") ||
+    text.includes("does not exist")
   );
 }

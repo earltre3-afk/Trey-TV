@@ -8,6 +8,7 @@ Reference types: `C:\Users\info\TREY-TV-RESTORE-599\lib\social\types.ts`
 ## profiles table
 
 Safe columns (confirmed queryable):
+
 ```
 id                    uuid
 public_profile_uid    text
@@ -26,6 +27,7 @@ profile_accent_color  text | null
 ```
 
 Banned columns — do NOT query:
+
 - `is_creator` — does not exist in current public schema
 - `age` — does not exist; use `date_of_birth` only if needed, never expose directly
 
@@ -37,8 +39,9 @@ Confirmed present in RESTORE migrations. Assumed present in live project (same S
 Must be verified against live project before first server function write.
 
 Migration sources:
+
 - `20260430013000_trey_tv_user_onboarding_profiles.sql` — initial onboarding columns
-- `20260501183500_repair_profiles_onboarding_columns_without_age.sql` — adds fan_type, favorite_moods, content_frequency, profile_visibility, show_*, onboarding_completed, onboarding_step, public_profile_uid
+- `20260501183500_repair_profiles_onboarding_columns_without_age.sql` — adds fan*type, favorite_moods, content_frequency, profile_visibility, show*\*, onboarding_completed, onboarding_step, public_profile_uid
 - `20260501190000_add_voice_onboarding_method.sql` — adds onboarding_method
 - `20260503170000_lock_onboarding_resume_flow.sql` — adds favorite_content_types, accepted_terms_at, age_gate_verified_at, onboarding_last_saved_at; updates onboarding_status constraint
 - `20260429183000_trey_tv_public_private_social_streaming.sql` — adds favorite_categories
@@ -72,6 +75,7 @@ interests                  text[] NOT NULL DEFAULT '{}'
 ```
 
 Columns NOT safe to use (banned):
+
 - `is_creator` — does not exist
 - `age` — does not exist
 - `date_of_birth` — exists but must only be collected through a confirmed voice step with explicit user consent; never expose directly
@@ -96,6 +100,7 @@ created_at       timestamptz
 ```
 
 FK aliases for joins:
+
 - `author:profiles!user_posts_author_id_fkey(...)` — preferred
 - `author:profiles(...)` — fallback if FK name fails
 
@@ -157,6 +162,7 @@ Format: 16-digit numeric string starting with "423" (e.g., `4235358111618238`).
 Unique index: `profiles_public_profile_uid_unique_idx`.
 
 `ensurePublicProfileUid(profileId)` in RESTORE (`lib/social/data.ts`):
+
 - Uses service-role client
 - Checks if `public_profile_uid` already exists and is valid
 - If not, generates a new one via `generate_trey_public_profile_uid()` DB function
@@ -170,30 +176,31 @@ It requires service-role access (to write `public_profile_uid` to any profile ro
 
 ## Phase 1 Blocker Assessment
 
-| Item | Status | Blocks Phase 1? |
-|------|--------|-----------------|
-| `intake_sessions` table | Confirmed in RESTORE migrations | YES if not in live project |
-| `user_onboarding` table | Confirmed in RESTORE migrations | NO (optional write) |
-| `profiles.onboarding_status` | Confirmed | YES — written on completion |
-| `profiles.onboarding_completed` | Confirmed | YES — written on completion |
-| `profiles.onboarding_method` | Confirmed | YES — written on method choice |
-| `profiles.onboarding_step` | Confirmed | NO — informational only |
-| `profiles.onboarding_last_saved_at` | Confirmed | NO — informational only |
-| `profiles.onboarding_completed_at` | Confirmed | YES — written on completion |
-| `profiles.account_setup_completed_at` | Confirmed | NO — optional |
-| `profiles.favorite_categories` | Confirmed | NO — optional field |
-| `profiles.favorite_moods` | Confirmed | NO — optional field |
-| `profiles.content_frequency` | Confirmed | NO — optional field |
-| `profiles.fan_type` | Confirmed | NO — optional field |
-| `profiles.profile_visibility` | Confirmed | NO — optional field |
-| `profiles.show_location` | Confirmed | NO — optional field |
-| `profiles.show_birthday` | Confirmed | NO — optional field |
-| `profiles.show_top_three` | Confirmed | NO — optional field |
-| `profiles.social_links` | Confirmed | NO — optional field |
-| `profiles.public_profile_uid` | Confirmed | YES — required for redirect on completion |
-| `ensurePublicProfileUid` helper | Must be ported to ANTIGRAVITY | YES — required for completion redirect |
+| Item                                  | Status                          | Blocks Phase 1?                           |
+| ------------------------------------- | ------------------------------- | ----------------------------------------- |
+| `intake_sessions` table               | Confirmed in RESTORE migrations | YES if not in live project                |
+| `user_onboarding` table               | Confirmed in RESTORE migrations | NO (optional write)                       |
+| `profiles.onboarding_status`          | Confirmed                       | YES — written on completion               |
+| `profiles.onboarding_completed`       | Confirmed                       | YES — written on completion               |
+| `profiles.onboarding_method`          | Confirmed                       | YES — written on method choice            |
+| `profiles.onboarding_step`            | Confirmed                       | NO — informational only                   |
+| `profiles.onboarding_last_saved_at`   | Confirmed                       | NO — informational only                   |
+| `profiles.onboarding_completed_at`    | Confirmed                       | YES — written on completion               |
+| `profiles.account_setup_completed_at` | Confirmed                       | NO — optional                             |
+| `profiles.favorite_categories`        | Confirmed                       | NO — optional field                       |
+| `profiles.favorite_moods`             | Confirmed                       | NO — optional field                       |
+| `profiles.content_frequency`          | Confirmed                       | NO — optional field                       |
+| `profiles.fan_type`                   | Confirmed                       | NO — optional field                       |
+| `profiles.profile_visibility`         | Confirmed                       | NO — optional field                       |
+| `profiles.show_location`              | Confirmed                       | NO — optional field                       |
+| `profiles.show_birthday`              | Confirmed                       | NO — optional field                       |
+| `profiles.show_top_three`             | Confirmed                       | NO — optional field                       |
+| `profiles.social_links`               | Confirmed                       | NO — optional field                       |
+| `profiles.public_profile_uid`         | Confirmed                       | YES — required for redirect on completion |
+| `ensurePublicProfileUid` helper       | Must be ported to ANTIGRAVITY   | YES — required for completion redirect    |
 
 **Hard blockers for Phase 1 (must exist before server functions are written):**
+
 1. `intake_sessions` table — must be confirmed in live project or migration applied
 2. `profiles.onboarding_status`, `onboarding_completed`, `onboarding_method`, `onboarding_completed_at` — must exist
 3. `profiles.public_profile_uid` — already confirmed safe in existing schema.md
@@ -206,7 +213,7 @@ If any of the above tables/columns are missing from the live ANTIGRAVITY Supabas
 apply the following migrations (in order) from RESTORE:
 
 1. `20260430013000_trey_tv_user_onboarding_profiles.sql` — adds onboarding_status, account_setup_completed_at, onboarding_completed_at, site_uid
-2. `20260501183500_repair_profiles_onboarding_columns_without_age.sql` — adds onboarding_completed, onboarding_step, fan_type, favorite_moods, content_frequency, profile_visibility, show_*, public_profile_uid
+2. `20260501183500_repair_profiles_onboarding_columns_without_age.sql` — adds onboarding*completed, onboarding_step, fan_type, favorite_moods, content_frequency, profile_visibility, show*\*, public_profile_uid
 3. `20260501190000_add_voice_onboarding_method.sql` — adds onboarding_method
 4. `20260503170000_lock_onboarding_resume_flow.sql` — adds onboarding_last_saved_at, favorite_content_types, accepted_terms_at; updates onboarding_status constraint
 5. `20260502150000_voice_intake_sessions.sql` — creates intake_sessions table
@@ -235,6 +242,7 @@ All migrations use `ADD COLUMN IF NOT EXISTS` and `CREATE TABLE IF NOT EXISTS` �
 ## Supabase Client
 
 Browser client (anon key only):
+
 ```ts
 import { createBrowserClient } from "@/lib/supabase-browser";
 const supabase = createBrowserClient();

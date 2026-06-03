@@ -1,12 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
 import {
-  RoomRow, PlayerRow, SessionRow,
-  getRoomPlayers, getActiveSession,
-  updateSessionState, recordMove, heartbeat, endSession, replaceDisconnectedPlayersWithBots,
-} from '../lib/services/roomService';
-import { PlayerIdentity } from '../lib/services/identity';
+  RoomRow,
+  PlayerRow,
+  SessionRow,
+  getRoomPlayers,
+  getActiveSession,
+  updateSessionState,
+  recordMove,
+  heartbeat,
+  endSession,
+  replaceDisconnectedPlayersWithBots,
+} from "../lib/services/roomService";
+import { PlayerIdentity } from "../lib/services/identity";
 
 export interface RealtimeRoomState {
   room: RoomRow | null;
@@ -34,11 +40,22 @@ export function useRealtimeRoom(
   roomId: string | null,
   identity: PlayerIdentity,
   applyMove: (state: any, move: { type: string; seat: number; payload?: any }) => any,
-  extractMeta: (state: any) => { currentSeat: number | null; phase: string; round?: number; ended?: boolean },
+  extractMeta: (state: any) => {
+    currentSeat: number | null;
+    phase: string;
+    round?: number;
+    ended?: boolean;
+  },
 ) {
   const [data, setData] = useState<RealtimeRoomState>({
-    room: null, players: [], session: null, state: null,
-    mySeat: null, isHost: false, loading: !!roomId, error: null,
+    room: null,
+    players: [],
+    session: null,
+    state: null,
+    mySeat: null,
+    isHost: false,
+    loading: !!roomId,
+    error: null,
   });
   const moveCounter = useRef(0);
   const dataRef = useRef(data);
@@ -47,32 +64,35 @@ export function useRealtimeRoom(
   const hbTimer = useRef<any>(null);
   const staleTimer = useRef<any>(null);
 
-  const loadAll = useCallback(async (rid: string) => {
-    try {
-      const [{ data: roomRow }, players, session] = await Promise.all([
-        supabase.from('game_rooms').select('*').eq('id', rid).single(),
-        getRoomPlayers(rid),
-        getActiveSession(rid),
-      ]);
-      const room = roomRow as RoomRow | null;
-      const me = players.find(p => p.user_id === identity.userId);
-      setData(prev => ({
-        room,
-        players,
-        session: session ?? prev.session,
-        // Prefer the freshest local state if its updated_at is newer than DB's;
-        // otherwise take DB state. This avoids clobbering an optimistic move
-        // with a stale poll response.
-        state: pickFreshestState(prev, session),
-        mySeat: me ? me.seat_index : prev.mySeat,
-        isHost: isTableRunner(players, me),
-        loading: false,
-        error: null,
-      }));
-    } catch (e: any) {
-      setData(d => ({ ...d, loading: false, error: e?.message || 'Failed to load room' }));
-    }
-  }, [identity.userId]);
+  const loadAll = useCallback(
+    async (rid: string) => {
+      try {
+        const [{ data: roomRow }, players, session] = await Promise.all([
+          supabase.from("game_rooms").select("*").eq("id", rid).single(),
+          getRoomPlayers(rid),
+          getActiveSession(rid),
+        ]);
+        const room = roomRow as RoomRow | null;
+        const me = players.find((p) => p.user_id === identity.userId);
+        setData((prev) => ({
+          room,
+          players,
+          session: session ?? prev.session,
+          // Prefer the freshest local state if its updated_at is newer than DB's;
+          // otherwise take DB state. This avoids clobbering an optimistic move
+          // with a stale poll response.
+          state: pickFreshestState(prev, session),
+          mySeat: me ? me.seat_index : prev.mySeat,
+          isHost: isTableRunner(players, me),
+          loading: false,
+          error: null,
+        }));
+      } catch (e: any) {
+        setData((d) => ({ ...d, loading: false, error: e?.message || "Failed to load room" }));
+      }
+    },
+    [identity.userId],
+  );
 
   useEffect(() => {
     if (!roomId) return;
@@ -83,7 +103,11 @@ export function useRealtimeRoom(
     // poll every 2s for room/player/session changes
     const tick = async () => {
       if (cancelled) return;
-      try { await loadAll(roomId); } catch { /* swallow */ }
+      try {
+        await loadAll(roomId);
+      } catch {
+        /* swallow */
+      }
     };
     pollTimer.current = setInterval(tick, 2000);
 
@@ -96,7 +120,9 @@ export function useRealtimeRoom(
       const current = dataRef.current;
       if (!current.room || !current.isHost) return;
       replaceDisconnectedPlayersWithBots(roomId)
-        .then((replaced) => { if (replaced.length > 0) loadAll(roomId); })
+        .then((replaced) => {
+          if (replaced.length > 0) loadAll(roomId);
+        })
         .catch(() => {});
     }, 5000);
 
@@ -117,38 +143,56 @@ export function useRealtimeRoom(
    * single-turn-gated, races are minimal in preview; the next poll will
    * reconcile any drift.
    */
-  const sendMove = useCallback(async (move: { type: string; seat: number; payload?: any }) => {
-    const current = dataRef.current;
-    if (!current.room || !current.session || !current.state) return;
-    try {
-      const nextState = applyMove(current.state, move);
-      const meta = extractMeta(nextState);
-      // optimistic local update
-      setData(d => ({ ...d, state: nextState }));
-      await updateSessionState(current.session.id, nextState, meta.currentSeat, meta.phase, meta.round);
-      await recordMove(
-        current.session.id,
-        identity.userId,
-        move.seat,
-        move.type,
-        move.payload || {},
-        ++moveCounter.current,
-      );
-      if (meta.ended) await endSession(current.session.id, current.room.id);
-    } catch (e) {
-      console.warn('sendMove failed', e);
-    }
-  }, [identity.userId, applyMove, extractMeta]);
+  const sendMove = useCallback(
+    async (move: { type: string; seat: number; payload?: any }) => {
+      const current = dataRef.current;
+      if (!current.room || !current.session || !current.state) return;
+      try {
+        const nextState = applyMove(current.state, move);
+        const meta = extractMeta(nextState);
+        // optimistic local update
+        setData((d) => ({ ...d, state: nextState }));
+        await updateSessionState(
+          current.session.id,
+          nextState,
+          meta.currentSeat,
+          meta.phase,
+          meta.round,
+        );
+        await recordMove(
+          current.session.id,
+          identity.userId,
+          move.seat,
+          move.type,
+          move.payload || {},
+          ++moveCounter.current,
+        );
+        if (meta.ended) await endSession(current.session.id, current.room.id);
+      } catch (e) {
+        console.warn("sendMove failed", e);
+      }
+    },
+    [identity.userId, applyMove, extractMeta],
+  );
 
   /** Host-only: directly set the state (used for bot-driven advancement). */
-  const setHostState = useCallback(async (nextState: any) => {
-    const current = dataRef.current;
-    if (!current.session) return;
-    const meta = extractMeta(nextState);
-    setData(d => ({ ...d, state: nextState }));
-    await updateSessionState(current.session.id, nextState, meta.currentSeat, meta.phase, meta.round);
-    if (meta.ended && current.room) await endSession(current.session.id, current.room.id);
-  }, [extractMeta]);
+  const setHostState = useCallback(
+    async (nextState: any) => {
+      const current = dataRef.current;
+      if (!current.session) return;
+      const meta = extractMeta(nextState);
+      setData((d) => ({ ...d, state: nextState }));
+      await updateSessionState(
+        current.session.id,
+        nextState,
+        meta.currentSeat,
+        meta.phase,
+        meta.round,
+      );
+      if (meta.ended && current.room) await endSession(current.session.id, current.room.id);
+    },
+    [extractMeta],
+  );
 
   return { ...data, sendMove, setHostState, reload: () => roomId && loadAll(roomId) };
 }
@@ -167,15 +211,12 @@ function isTableRunner(players: PlayerRow[], me: PlayerRow | undefined) {
   if (!me || me.is_bot || !me.is_connected) return false;
   if (me.is_host) return true;
   const cutoff = Date.now() - STALE_PLAYER_MS;
-  const connectedHost = players.find(p => (
-    p.is_host &&
-    !p.is_bot &&
-    p.is_connected &&
-    new Date(p.last_seen_at).getTime() >= cutoff
-  ));
+  const connectedHost = players.find(
+    (p) => p.is_host && !p.is_bot && p.is_connected && new Date(p.last_seen_at).getTime() >= cutoff,
+  );
   if (connectedHost) return false;
   const connectedRealPlayers = players
-    .filter(p => !p.is_bot && p.is_connected)
+    .filter((p) => !p.is_bot && p.is_connected)
     .sort((a, b) => a.seat_index - b.seat_index);
   return connectedRealPlayers[0]?.id === me.id;
 }

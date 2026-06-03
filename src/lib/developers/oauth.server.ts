@@ -28,7 +28,12 @@ type AppInput = AuthInput & {
 };
 type UpdateAppInput = AppInput & { appId: string; status?: string };
 type AppIdInput = AuthInput & { appId: string };
-type ApiKeyInput = AuthInput & { appId?: string | null; label: string; scopes: string[]; mode: "live" | "test" };
+type ApiKeyInput = AuthInput & {
+  appId?: string | null;
+  label: string;
+  scopes: string[];
+  mode: "live" | "test";
+};
 type ApiKeyIdInput = AuthInput & { keyId: string };
 type ConsentInput = AuthInput & {
   clientId: string;
@@ -39,7 +44,11 @@ type ConsentInput = AuthInput & {
   codeChallengeMethod?: string;
 };
 
-const cleanText = (value: unknown, max = 500) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, max);
+const cleanText = (value: unknown, max = 500) =>
+  String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .slice(0, max);
 const cleanUrl = (value: unknown, max = 800) => cleanText(value, max);
 const cleanId = (value: unknown) => cleanText(value, 120);
 
@@ -68,10 +77,10 @@ function generateApiKey(mode: "live" | "test") {
 }
 
 function normalizeScopes(scopes: unknown): OAuthScope[] {
-  const list = Array.isArray(scopes)
-    ? scopes
-    : cleanText(scopes, 300).split(/[,\s]+/);
-  return Array.from(new Set(list.filter((s): s is OAuthScope => OAUTH_SCOPES.includes(s as OAuthScope))));
+  const list = Array.isArray(scopes) ? scopes : cleanText(scopes, 300).split(/[,\s]+/);
+  return Array.from(
+    new Set(list.filter((s): s is OAuthScope => OAUTH_SCOPES.includes(s as OAuthScope))),
+  );
 }
 
 function normalizeRedirectUris(primary: string, extra: unknown[] = []) {
@@ -148,7 +157,11 @@ async function getOwnedApp(service: any, appId: string, userId: string) {
 async function auditDeveloperEvent(
   service: any,
   eventType: string,
-  options: { appId?: string | null; actorUserId?: string | null; metadata?: Record<string, unknown> } = {},
+  options: {
+    appId?: string | null;
+    actorUserId?: string | null;
+    metadata?: Record<string, unknown>;
+  } = {},
 ) {
   await service.from("developer_app_audit_events").insert({
     app_id: options.appId ?? null,
@@ -158,10 +171,15 @@ async function auditDeveloperEvent(
   });
 }
 
-async function validateOAuthRequest(service: any, data: { clientId: string; redirectUri: string; scope: string }) {
+async function validateOAuthRequest(
+  service: any,
+  data: { clientId: string; redirectUri: string; scope: string },
+) {
   const { data: app, error } = await service
     .from("developer_apps")
-    .select("id, app_name, website_url, privacy_policy_url, terms_url, redirect_uris, allowed_scopes, status")
+    .select(
+      "id, app_name, website_url, privacy_policy_url, terms_url, redirect_uris, allowed_scopes, status",
+    )
     .eq("client_id", data.clientId)
     .maybeSingle();
 
@@ -170,7 +188,8 @@ async function validateOAuthRequest(service: any, data: { clientId: string; redi
   if (!["draft", "active"].includes(app.status)) throw new Error("This Trey TV app is not active");
 
   const redirectUris = Array.isArray(app.redirect_uris) ? app.redirect_uris : [];
-  if (!redirectUris.includes(data.redirectUri)) throw new Error("redirect_uri is not registered for this app");
+  if (!redirectUris.includes(data.redirectUri))
+    throw new Error("redirect_uri is not registered for this app");
 
   const requestedScopes = normalizeScopes(data.scope);
   const allowedScopes = normalizeScopes(app.allowed_scopes);
@@ -186,10 +205,21 @@ export const listDeveloperDashboard = createServerFn({ method: "POST" })
     const { user } = await verifyTreyIUser(data.accessToken);
     const service = getTreyIServiceClient();
 
-    const [{ data: apps, error: appsError }, { data: apiKeys, error: keysError }] = await Promise.all([
-      service.from("developer_apps").select("*").eq("owner_user_id", user.id).order("created_at", { ascending: false }),
-      service.from("api_keys").select("id, app_id, key_prefix, label, scopes, status, last_used_at, created_at, revoked_at").eq("owner_user_id", user.id).order("created_at", { ascending: false }),
-    ]);
+    const [{ data: apps, error: appsError }, { data: apiKeys, error: keysError }] =
+      await Promise.all([
+        service
+          .from("developer_apps")
+          .select("*")
+          .eq("owner_user_id", user.id)
+          .order("created_at", { ascending: false }),
+        service
+          .from("api_keys")
+          .select(
+            "id, app_id, key_prefix, label, scopes, status, last_used_at, created_at, revoked_at",
+          )
+          .eq("owner_user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
     if (appsError) throw new Error(appsError.message);
     if (keysError) throw new Error(keysError.message);
@@ -202,7 +232,11 @@ export const listAdminDeveloperApps = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { user } = await verifyTreyIUser(data.accessToken);
     const service = getTreyIServiceClient();
-    const { data: admin } = await service.from("admin_users").select("role").eq("user_id", user.id).maybeSingle();
+    const { data: admin } = await service
+      .from("admin_users")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
     if (!admin) throw new Error("Admin access required");
 
     const { data: apps, error } = await service
@@ -211,7 +245,10 @@ export const listAdminDeveloperApps = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false });
 
     if (error) {
-      const fallback = await service.from("developer_apps").select("*").order("created_at", { ascending: false });
+      const fallback = await service
+        .from("developer_apps")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (fallback.error) throw new Error(fallback.error.message);
       return { apps: fallback.data ?? [] };
     }
@@ -301,10 +338,16 @@ export const rotateDeveloperSecret = createServerFn({ method: "POST" })
     const clientSecret = generateClientSecret();
     const { error } = await service
       .from("developer_apps")
-      .update({ client_secret_hash: hashSecret(clientSecret), updated_at: new Date().toISOString() })
+      .update({
+        client_secret_hash: hashSecret(clientSecret),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", data.appId);
     if (error) throw new Error(error.message);
-    await auditDeveloperEvent(service, "secret_rotated", { appId: data.appId, actorUserId: user.id });
+    await auditDeveloperEvent(service, "secret_rotated", {
+      appId: data.appId,
+      actorUserId: user.id,
+    });
     return { clientSecret };
   });
 
@@ -322,7 +365,11 @@ export const revokeDeveloperApp = createServerFn({ method: "POST" })
       .eq("id", data.appId);
     if (error) throw new Error(error.message);
     await auditDeveloperEvent(service, "app_revoked", { appId: data.appId, actorUserId: user.id });
-    await service.from("developer_app_tokens").update({ revoked_at: now }).eq("app_id", data.appId).is("revoked_at", null);
+    await service
+      .from("developer_app_tokens")
+      .update({ revoked_at: now })
+      .eq("app_id", data.appId)
+      .is("revoked_at", null);
     return { ok: true };
   });
 
@@ -352,7 +399,11 @@ export const createApiKey = createServerFn({ method: "POST" })
       .select("id, app_id, key_prefix, label, scopes, status, last_used_at, created_at, revoked_at")
       .single();
     if (error) throw new Error(error.message);
-    await auditDeveloperEvent(service, "api_key_created", { appId: data.appId, actorUserId: user.id, metadata: { label: data.label, mode: data.mode } });
+    await auditDeveloperEvent(service, "api_key_created", {
+      appId: data.appId,
+      actorUserId: user.id,
+      metadata: { label: data.label, mode: data.mode },
+    });
     return { key, apiKey };
   });
 
@@ -368,7 +419,10 @@ export const revokeApiKey = createServerFn({ method: "POST" })
       .eq("id", data.keyId)
       .eq("owner_user_id", user.id);
     if (error) throw new Error(error.message);
-    await auditDeveloperEvent(service, "api_key_revoked", { actorUserId: user.id, metadata: { key_id: data.keyId } });
+    await auditDeveloperEvent(service, "api_key_revoked", {
+      actorUserId: user.id,
+      metadata: { key_id: data.keyId },
+    });
     return { ok: true };
   });
 
@@ -385,9 +439,7 @@ export const listConnectedApps = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     const activeConsents = (consents ?? []).filter((consent: any) => !consent.revoked_at);
-    const appIds = activeConsents
-      .map((consent: any) => consent.developer_apps?.id)
-      .filter(Boolean);
+    const appIds = activeConsents.map((consent: any) => consent.developer_apps?.id).filter(Boolean);
     const lastUsedByApp = new Map<string, string | null>();
 
     if (appIds.length) {
@@ -399,7 +451,8 @@ export const listConnectedApps = createServerFn({ method: "POST" })
         .order("last_used_at", { ascending: false, nullsFirst: false });
 
       for (const row of tokens ?? []) {
-        if (!lastUsedByApp.has(row.app_id)) lastUsedByApp.set(row.app_id, row.last_used_at ?? row.created_at ?? null);
+        if (!lastUsedByApp.has(row.app_id))
+          lastUsedByApp.set(row.app_id, row.last_used_at ?? row.created_at ?? null);
       }
     }
 
@@ -426,7 +479,10 @@ export const revokeConnectedApp = createServerFn({ method: "POST" })
       .eq("id", data.consentId)
       .eq("user_id", user.id);
     if (error) throw new Error(error.message);
-    await auditDeveloperEvent(service, "consent_revoked", { actorUserId: user.id, metadata: { consent_id: data.consentId } });
+    await auditDeveloperEvent(service, "consent_revoked", {
+      actorUserId: user.id,
+      metadata: { consent_id: data.consentId },
+    });
     return { ok: true };
   });
 

@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { analyzeContentFeelMock } from '@/tradio/lib/content-feel/contentFeelMockAnalysis';
-import { scanResultToProfile } from '@/tradio/lib/content-feel/contentFeelService';
+import { useEffect, useMemo, useState } from "react";
+import { analyzeContentFeelMock } from "@/tradio/lib/content-feel/contentFeelMockAnalysis";
+import { scanResultToProfile } from "@/tradio/lib/content-feel/contentFeelService";
 import type {
   ContentFeelProfile,
   ContentFeelScanInput,
   ContentFeelScanResult,
   ContentType,
   SourcePlatform,
-} from '@/tradio/lib/content-feel/contentFeelTypes';
+} from "@/tradio/lib/content-feel/contentFeelTypes";
 
 /**
  * TREY TV UNIVERSE — Content Feel Pass 2 mock-analysis hook (frontend-only).
@@ -17,7 +17,7 @@ import type {
  * real AI, and NEVER blocks form submission — purely a creator-facing preview.
  */
 
-export type ContentFeelStatus = 'idle' | 'analyzing' | 'complete' | 'needs_review';
+export type ContentFeelStatus = "idle" | "analyzing" | "complete" | "needs_review";
 
 export interface ContentFeelDraft {
   contentId: string;
@@ -35,9 +35,9 @@ export interface ContentFeelDraft {
 
 /** Builds a full scan input from a lightweight draft. */
 export const draftToScanInput = (draft: ContentFeelDraft): ContentFeelScanInput => {
-  const description = [draft.description, draft.explicit ? 'Contains explicit content.' : '']
+  const description = [draft.description, draft.explicit ? "Contains explicit content." : ""]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
   return {
     content_id: draft.contentId,
     content_type: draft.contentType,
@@ -53,7 +53,9 @@ export const draftToScanInput = (draft: ContentFeelDraft): ContentFeelScanInput 
 };
 
 /** Pure helper: run the mock analysis for a draft (no React). */
-export const runMockContentFeelAnalysis = (draft: ContentFeelDraft): { result: ContentFeelScanResult; profile: ContentFeelProfile } => {
+export const runMockContentFeelAnalysis = (
+  draft: ContentFeelDraft,
+): { result: ContentFeelScanResult; profile: ContentFeelProfile } => {
   const input = draftToScanInput(draft);
   const result = analyzeContentFeelMock(input);
   const profile = scanResultToProfile(input, result);
@@ -82,26 +84,36 @@ export const useContentFeelAnalysis = (
   options: { auto?: boolean } = {},
 ): UseContentFeelAnalysisResult => {
   const { auto = true } = options;
-  const [status, setStatus] = useState<ContentFeelStatus>(auto ? 'analyzing' : 'idle');
+  const [status, setStatus] = useState<ContentFeelStatus>(auto ? "analyzing" : "idle");
   const [runToken, setRunToken] = useState(0);
 
   // Deterministic — safe to compute on every relevant change.
   const { result, profile } = useMemo(
     () => runMockContentFeelAnalysis(draft),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft.contentId, draft.contentType, draft.sourcePlatform, draft.title, draft.description, draft.explicit, JSON.stringify(draft.creatorTags), JSON.stringify(draft.hints), runToken],
+    [
+      draft.contentId,
+      draft.contentType,
+      draft.sourcePlatform,
+      draft.title,
+      draft.description,
+      draft.explicit,
+      JSON.stringify(draft.creatorTags),
+      JSON.stringify(draft.hints),
+      runToken,
+    ],
   );
 
   const shouldAnalyze = auto || runToken > 0;
 
   useEffect(() => {
     if (!shouldAnalyze) {
-      setStatus('idle');
+      setStatus("idle");
       return;
     }
-    setStatus('analyzing');
+    setStatus("analyzing");
     const timer = setTimeout(() => {
-      setStatus(profile.ai.needs_human_review ? 'needs_review' : 'complete');
+      setStatus(profile.ai.needs_human_review ? "needs_review" : "complete");
     }, 480);
     return () => clearTimeout(timer);
   }, [shouldAnalyze, profile, runToken]);

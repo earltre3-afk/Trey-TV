@@ -1,5 +1,5 @@
-import React from 'react';
-import { Check, Pencil } from 'lucide-react';
+import React from "react";
+import { Check, Pencil } from "lucide-react";
 
 interface Props {
   value: string;
@@ -23,10 +23,10 @@ const SignalCustomAnswerBox: React.FC<Props> = ({
     <div
       className={`relative rounded-2xl p-[1.5px] transition ${
         active
-          ? 'bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 shadow-[0_0_30px_-5px_rgba(217,70,239,0.55)]'
+          ? "bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 shadow-[0_0_30px_-5px_rgba(217,70,239,0.55)]"
           : disabled
-          ? 'bg-white/5 opacity-50'
-          : 'bg-white/10'
+            ? "bg-white/5 opacity-50"
+            : "bg-white/10"
       }`}
     >
       <div className="rounded-2xl bg-[#0a0518]/80 backdrop-blur-xl px-4 py-3 border border-white/5">
@@ -60,11 +60,9 @@ const SignalCustomAnswerBox: React.FC<Props> = ({
                 <span className="text-cyan-300">Custom response selected</span>
               </>
             )}
-            {active && !valid && (
-              <span className="text-slate-500">Min {minLength} characters</span>
-            )}
+            {active && !valid && <span className="text-slate-500">Min {minLength} characters</span>}
           </div>
-          <span className={`${value.length > 0 ? 'text-cyan-300' : 'text-slate-500'}`}>
+          <span className={`${value.length > 0 ? "text-cyan-300" : "text-slate-500"}`}>
             {value.length}/{maxLength}
           </span>
         </div>

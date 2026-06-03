@@ -11,7 +11,10 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Sign Up — Trey TV" },
-      { name: "description", content: "Create your free Trey TV account and start building your universe." },
+      {
+        name: "description",
+        content: "Create your free Trey TV account and start building your universe.",
+      },
     ],
   }),
 });
@@ -37,7 +40,11 @@ const STRENGTH_LABELS = ["Too weak", "Getting there", "Strong"];
 
 function friendlySignupError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("already registered") || m.includes("user already exists") || m.includes("email_exists"))
+  if (
+    m.includes("already registered") ||
+    m.includes("user already exists") ||
+    m.includes("email_exists")
+  )
     return "An account with that email already exists. Log in instead.";
   if (m.includes("weak password") || m.includes("password should be"))
     return "Choose a stronger password — at least 8 characters with a number.";
@@ -116,18 +123,32 @@ function SignupPage() {
       <CinematicBackdrop />
 
       <div className="relative max-w-[460px] mx-auto px-4 pt-6 pb-14">
-        <Link to="/" className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10">
+        <Link
+          to="/"
+          className="size-9 grid place-items-center rounded-full liquid-glass border border-white/10"
+        >
           <ArrowLeft className="size-4" />
         </Link>
 
         <div className="mt-6 text-center space-y-2 animate-rise">
           <Logo className="h-14 mx-auto" />
           <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="text-xs text-muted-foreground">Join Trey TV and start building your universe.</p>
+          <p className="text-xs text-muted-foreground">
+            Join Trey TV and start building your universe.
+          </p>
         </div>
 
         {/* Google */}
-        <div className="mt-6 space-y-3 animate-rise" style={{ animationDelay: "60ms" }}>
+        <div
+          className="mt-6 space-y-3"
+          style={{
+            animationName: "rise",
+            animationDuration: "300ms",
+            animationTimingFunction: "ease-out",
+            animationFillMode: "both",
+            animationDelay: "60ms",
+          }}
+        >
           <button
             type="button"
             onClick={handleGoogle}
@@ -143,13 +164,19 @@ function SignupPage() {
               <span className="w-full border-t border-white/10" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-2 bg-background/40 text-[10px] tracking-[0.25em] text-muted-foreground">OR</span>
+              <span className="px-2 bg-background/40 text-[10px] tracking-[0.25em] text-muted-foreground">
+                OR
+              </span>
             </div>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSignup} className="rounded-3xl liquid-glass border border-white/10 p-5 space-y-4 animate-rise" style={{ animationDelay: "100ms" }}>
+        <form
+          onSubmit={handleSignup}
+          className="rounded-3xl liquid-glass border border-white/10 p-5 space-y-4 animate-rise"
+          style={{ animationDelay: "100ms" }}
+        >
           {/* Email */}
           <div>
             <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1.5">EMAIL</div>
@@ -168,18 +195,27 @@ function SignupPage() {
 
           {/* Password */}
           <div>
-            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1.5">PASSWORD</div>
+            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1.5">
+              PASSWORD
+            </div>
             <div className="flex items-center gap-2 rounded-xl glass border border-white/10 px-3 h-11 focus-within:border-primary/50 transition">
               <Lock className="size-4 shrink-0 text-muted-foreground" />
               <input
                 value={pw}
-                onChange={(e) => { setPw(e.target.value); setTouched(true); }}
+                onChange={(e) => {
+                  setPw(e.target.value);
+                  setTouched(true);
+                }}
                 type={showPw ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Create a strong password"
                 className="flex-1 bg-transparent text-sm focus:outline-none"
               />
-              <button type="button" onClick={() => setShowPw((v) => !v)} className="text-muted-foreground hover:text-foreground shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowPw((v) => !v)}
+                className="text-muted-foreground hover:text-foreground shrink-0"
+              >
                 {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
@@ -195,14 +231,19 @@ function SignupPage() {
                     />
                   ))}
                 </div>
-                <p className={`text-[10px] ${strength >= 2 ? "text-primary" : "text-muted-foreground"}`}>
+                <p
+                  className={`text-[10px] ${strength >= 2 ? "text-primary" : "text-muted-foreground"}`}
+                >
                   {STRENGTH_LABELS[Math.max(0, strength - 1)] ?? "Too weak"}
                 </p>
                 <div className="space-y-0.5">
                   {RULES.map((rule) => {
                     const pass = rule.test(pw);
                     return (
-                      <div key={rule.label} className={`flex items-center gap-1.5 text-[10px] ${pass ? "text-green-400" : "text-muted-foreground"}`}>
+                      <div
+                        key={rule.label}
+                        className={`flex items-center gap-1.5 text-[10px] ${pass ? "text-green-400" : "text-muted-foreground"}`}
+                      >
                         {pass ? <Check className="size-3" /> : <X className="size-3 opacity-50" />}
                         {rule.label}
                       </div>
@@ -215,20 +256,33 @@ function SignupPage() {
 
           {/* Confirm password */}
           <div>
-            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1.5">CONFIRM PASSWORD</div>
-            <div className={`flex items-center gap-2 rounded-xl glass border px-3 h-11 focus-within:border-primary/50 transition ${
-              touched && confirm && pwMatch === false ? "border-red-500/50" : "border-white/10"
-            }`}>
-              <ShieldCheck className={`size-4 shrink-0 ${pwMatch === true ? "text-green-400" : "text-muted-foreground"}`} />
+            <div className="text-[10px] tracking-[0.2em] text-muted-foreground mb-1.5">
+              CONFIRM PASSWORD
+            </div>
+            <div
+              className={`flex items-center gap-2 rounded-xl glass border px-3 h-11 focus-within:border-primary/50 transition ${
+                touched && confirm && pwMatch === false ? "border-red-500/50" : "border-white/10"
+              }`}
+            >
+              <ShieldCheck
+                className={`size-4 shrink-0 ${pwMatch === true ? "text-green-400" : "text-muted-foreground"}`}
+              />
               <input
                 value={confirm}
-                onChange={(e) => { setConfirm(e.target.value); setTouched(true); }}
+                onChange={(e) => {
+                  setConfirm(e.target.value);
+                  setTouched(true);
+                }}
                 type={showConfirm ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Re-enter password"
                 className="flex-1 bg-transparent text-sm focus:outline-none"
               />
-              <button type="button" onClick={() => setShowConfirm((v) => !v)} className="text-muted-foreground hover:text-foreground shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="text-muted-foreground hover:text-foreground shrink-0"
+              >
                 {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
@@ -263,8 +317,14 @@ function SignupPage() {
 
         <p className="mt-4 text-center text-[10px] text-muted-foreground px-4">
           By signing up you agree to Trey TV's{" "}
-          <a href="/legal/terms" className="underline hover:text-foreground">Terms</a> and{" "}
-          <a href="/legal/privacy" className="underline hover:text-foreground">Privacy Policy</a>.
+          <a href="/legal/terms" className="underline hover:text-foreground">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="/legal/privacy" className="underline hover:text-foreground">
+            Privacy Policy
+          </a>
+          .
         </p>
       </div>
     </div>

@@ -19,8 +19,20 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  Play, Sparkles, Tv, Film, Calendar, Bell, MessageSquare, ChevronRight,
-  Users, Eye, Clock, Crown, TrendingUp, BarChart2,
+  Play,
+  Sparkles,
+  Tv,
+  Film,
+  Calendar,
+  Bell,
+  MessageSquare,
+  ChevronRight,
+  Users,
+  Eye,
+  Clock,
+  Crown,
+  TrendingUp,
+  BarChart2,
 } from "lucide-react";
 import { posts as mockPosts } from "@/lib/mock-data";
 import { useSubmissions, type Submission } from "@/lib/submissions-store";
@@ -40,15 +52,16 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
   // Resolve public episodes for this creator
   const publicEpisodes = useMemo(() => {
     const visible = store.submissions.filter(
-      (s) => s.status === "approved" || s.status === "published" || s.status === "scheduled"
+      (s) => s.status === "approved" || s.status === "published" || s.status === "scheduled",
     );
     const byThem = visible.filter(
-      (s) => s.creator_handle === profile.handle || s.creator_id === profile.uid
+      (s) => s.creator_handle === profile.handle || s.creator_id === profile.uid,
     );
     return byThem.length ? byThem : visible.slice(0, 6);
   }, [store.submissions, profile.handle, profile.uid]);
 
-  const trailer = publicEpisodes.find((s) => s.is_trailer || s.episode_type === "Trailer") ?? publicEpisodes[0];
+  const trailer =
+    publicEpisodes.find((s) => s.is_trailer || s.episode_type === "Trailer") ?? publicEpisodes[0];
   const featured = publicEpisodes.find((s) => !s.is_trailer) ?? publicEpisodes[0];
 
   const shows = useMemo(() => {
@@ -73,15 +86,20 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
   return (
     <div className="space-y-5 min-w-0">
       {/* ── Creator bio card (desktop) ───────────────────────── */}
-      <div className={`hidden lg:block rounded-3xl ${isOwner ? "owner-neon owner-glass" : "glass neon-border"} p-5`}>
+      <div
+        className={`hidden lg:block rounded-3xl ${isOwner ? "owner-neon owner-glass" : "glass neon-border"} p-5`}
+      >
         <div className="text-[10px] tracking-[0.3em] text-primary mb-2 flex items-center gap-1.5">
           <Crown className="size-3" /> CREATOR CHANNEL
         </div>
         <p className="text-sm whitespace-pre-line leading-relaxed">
-          {profile.bio || "Approved Trey TV creator. Original shows, episodes, and live moments — only on Trey TV."}
+          {profile.bio ||
+            "Approved Trey TV creator. Original shows, episodes, and live moments — only on Trey TV."}
         </p>
         {profile.joinedDate && (
-          <p className="text-[11px] text-muted-foreground mt-2">Member since {profile.joinedDate}</p>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Member since {profile.joinedDate}
+          </p>
         )}
       </div>
 
@@ -126,7 +144,9 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
               <item.icon className="size-4" />
             </div>
             <div>
-              <div className="text-[10px] tracking-[0.18em] text-muted-foreground uppercase">{item.k}</div>
+              <div className="text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+                {item.k}
+              </div>
               <div className="text-base font-bold tabular-nums">{item.v}</div>
             </div>
           </div>
@@ -190,7 +210,9 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <Tv className="size-4 text-primary" /> {sh.title}
                 </h3>
-                <span className="text-[11px] text-muted-foreground">{sh.episodes.length} episodes</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {sh.episodes.length} episodes
+                </span>
               </div>
               <EpisodesGrid title="" items={sh.episodes} />
             </section>
@@ -199,9 +221,7 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
       )}
 
       {/* ── Episodes tab ─────────────────────────────────────── */}
-      {tab === "episodes" && (
-        <EpisodesGrid title="All episodes" items={publicEpisodes} />
-      )}
+      {tab === "episodes" && <EpisodesGrid title="All episodes" items={publicEpisodes} />}
 
       {/* ── Live tab ─────────────────────────────────────────── */}
       {tab === "live" && (
@@ -249,7 +269,9 @@ export function CreatorProfileModules({ profile, isOwner, viewerRole }: Props) {
               { label: "Tier", value: profile.rewards?.tier ?? "Gold" },
             ].map((p) => (
               <div key={p.label} className="rounded-xl bg-white/5 ring-1 ring-white/10 p-2.5">
-                <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground">{p.label}</div>
+                <div className="text-[10px] tracking-[0.18em] uppercase text-muted-foreground">
+                  {p.label}
+                </div>
                 <div className="text-sm font-bold mt-0.5">{p.value}</div>
               </div>
             ))}
@@ -313,7 +335,11 @@ function FeaturedCard({ ep }: { ep: Submission }) {
 
 // ─── Shows rail ─────────────────────────────────────────────────────────────
 
-function ShowsRail({ shows }: { shows: Array<{ id: string; title: string; episodes: Submission[] }> }) {
+function ShowsRail({
+  shows,
+}: {
+  shows: Array<{ id: string; title: string; episodes: Submission[] }>;
+}) {
   if (shows.length === 0) return null;
   return (
     <section>
@@ -324,7 +350,10 @@ function ShowsRail({ shows }: { shows: Array<{ id: string; title: string; episod
       </div>
       <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-3 px-3 pb-1">
         {shows.map((sh) => (
-          <div key={sh.id} className="shrink-0 w-44 rounded-2xl glass neon-border overflow-hidden hover-lift">
+          <div
+            key={sh.id}
+            className="shrink-0 w-44 rounded-2xl glass neon-border overflow-hidden hover-lift"
+          >
             <div className="relative aspect-[3/4]">
               <img
                 src={sh.episodes[0]?.thumbnail_url || mockPosts[1].media}
@@ -333,8 +362,12 @@ function ShowsRail({ shows }: { shows: Array<{ id: string; title: string; episod
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
               <div className="absolute bottom-2 left-2 right-2">
-                <div className="text-sm font-bold leading-tight drop-shadow line-clamp-2">{sh.title}</div>
-                <div className="text-[10px] text-white/70 mt-0.5">{sh.episodes.length} episodes</div>
+                <div className="text-sm font-bold leading-tight drop-shadow line-clamp-2">
+                  {sh.title}
+                </div>
+                <div className="text-[10px] text-white/70 mt-0.5">
+                  {sh.episodes.length} episodes
+                </div>
               </div>
             </div>
           </div>
@@ -388,7 +421,9 @@ function EpisodesGrid({ title, items }: { title: string; items: Submission[] }) 
             </div>
             <div className="p-2.5">
               <div className="text-sm font-semibold truncate">{e.title || "Untitled"}</div>
-              <div className="text-[11px] text-muted-foreground truncate">{e.show_title || "—"}</div>
+              <div className="text-[11px] text-muted-foreground truncate">
+                {e.show_title || "—"}
+              </div>
             </div>
           </Link>
         ))}

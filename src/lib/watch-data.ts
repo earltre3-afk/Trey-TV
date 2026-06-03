@@ -8,7 +8,13 @@ import postConcert from "@/assets/post-concert.jpg";
 import profileTrey from "@/assets/profile-trey.jpg";
 
 export type Category =
-  | "Music" | "Comedy" | "Reality" | "Talk" | "Drama" | "Documentary" | "Lifestyle";
+  | "Music"
+  | "Comedy"
+  | "Reality"
+  | "Talk"
+  | "Drama"
+  | "Documentary"
+  | "Lifestyle";
 
 export type Channel = {
   id: string;
@@ -62,13 +68,74 @@ export type ScheduleSlot = {
 
 // ---- Channels ----
 export const channels: Channel[] = [
-  { id: "ch-chris",  name: "Chris Horizon TV", handle: "chrishorizon", avatar: chris,  color: "oklch(0.7 0.25 340)", category: "Talk",       verified: true, followers: "284K" },
-  { id: "ch-treyi",  name: "Trey-I Picks",     handle: "treyipicks",   avatar: treyi,  color: "oklch(0.82 0.15 215)", category: "Lifestyle", verified: true, followers: "412K" },
-  { id: "ch-lena",   name: "Lena Live",        handle: "lena",         avatar: lena,   color: "oklch(0.7 0.25 340)", category: "Reality",   verified: true, followers: "198K" },
-  { id: "ch-zay",    name: "Zay Beats Radio",  handle: "zaybeats",     avatar: zay,    color: "oklch(0.65 0.22 300)", category: "Music",     verified: true, followers: "521K" },
-  { id: "ch-trey",   name: "Trey TV Originals",handle: "trey",         avatar: profileTrey, color: "oklch(0.82 0.16 85)", category: "Drama",  verified: true, followers: "1.2M" },
-  { id: "ch-night",  name: "Night Mode",       handle: "nightmode",    avatar: postNight,  color: "oklch(0.65 0.22 300)", category: "Documentary", followers: "92K" },
-  { id: "ch-comedy", name: "Punchline Plus",   handle: "punchline",    avatar: postConcert, color: "oklch(0.78 0.18 150)", category: "Comedy", followers: "76K" },
+  {
+    id: "ch-chris",
+    name: "Chris Horizon TV",
+    handle: "chrishorizon",
+    avatar: chris,
+    color: "oklch(0.7 0.25 340)",
+    category: "Talk",
+    verified: true,
+    followers: "284K",
+  },
+  {
+    id: "ch-treyi",
+    name: "Trey-I Picks",
+    handle: "treyipicks",
+    avatar: treyi,
+    color: "oklch(0.82 0.15 215)",
+    category: "Lifestyle",
+    verified: true,
+    followers: "412K",
+  },
+  {
+    id: "ch-lena",
+    name: "Lena Live",
+    handle: "lena",
+    avatar: lena,
+    color: "oklch(0.7 0.25 340)",
+    category: "Reality",
+    verified: true,
+    followers: "198K",
+  },
+  {
+    id: "ch-zay",
+    name: "Zay Beats Radio",
+    handle: "zaybeats",
+    avatar: zay,
+    color: "oklch(0.65 0.22 300)",
+    category: "Music",
+    verified: true,
+    followers: "521K",
+  },
+  {
+    id: "ch-trey",
+    name: "Trey TV Originals",
+    handle: "trey",
+    avatar: profileTrey,
+    color: "oklch(0.82 0.16 85)",
+    category: "Drama",
+    verified: true,
+    followers: "1.2M",
+  },
+  {
+    id: "ch-night",
+    name: "Night Mode",
+    handle: "nightmode",
+    avatar: postNight,
+    color: "oklch(0.65 0.22 300)",
+    category: "Documentary",
+    followers: "92K",
+  },
+  {
+    id: "ch-comedy",
+    name: "Punchline Plus",
+    handle: "punchline",
+    avatar: postConcert,
+    color: "oklch(0.78 0.18 150)",
+    category: "Comedy",
+    followers: "76K",
+  },
 ];
 
 const baseDate = (() => {
@@ -87,7 +154,13 @@ function stableCount(seed: string, min: number, span: number) {
   return min + (hash % span);
 }
 
-function mkEp(p: Partial<Episode> & Pick<Episode, "id" | "showId" | "channelId" | "title" | "duration" | "thumb" | "airTime" | "number">): Episode {
+function mkEp(
+  p: Partial<Episode> &
+    Pick<
+      Episode,
+      "id" | "showId" | "channelId" | "title" | "duration" | "thumb" | "airTime" | "number"
+    >,
+): Episode {
   return {
     season: 1,
     isFree: p.number <= 2,
@@ -99,69 +172,272 @@ function mkEp(p: Partial<Episode> & Pick<Episode, "id" | "showId" | "channelId" 
 
 export const shows: Show[] = [
   {
-    id: "s-mindset", title: "Level Up Your Mindset", channelId: "ch-chris", poster: postStudio, backdrop: postStudio,
-    category: "Talk", rating: "TV-14", year: 2025,
-    description: "Chris Horizon sits down with founders, athletes and artists to unpack the habits that build winners.",
+    id: "s-mindset",
+    title: "Level Up Your Mindset",
+    channelId: "ch-chris",
+    poster: postStudio,
+    backdrop: postStudio,
+    category: "Talk",
+    rating: "TV-14",
+    year: 2025,
+    description:
+      "Chris Horizon sits down with founders, athletes and artists to unpack the habits that build winners.",
     episodes: [
-      mkEp({ id: "e-mind-1", showId: "s-mindset", channelId: "ch-chris", number: 1, title: "Reset the Operating System", duration: 32, thumb: postStudio, airTime: at(20) }),
-      mkEp({ id: "e-mind-2", showId: "s-mindset", channelId: "ch-chris", number: 2, title: "Build the Calendar of a King",  duration: 28, thumb: postStudio, airTime: at(20, 30) }),
-      mkEp({ id: "e-mind-3", showId: "s-mindset", channelId: "ch-chris", number: 3, title: "How Pros Recover",               duration: 41, thumb: postStudio, airTime: at(21, 15), premium: true }),
+      mkEp({
+        id: "e-mind-1",
+        showId: "s-mindset",
+        channelId: "ch-chris",
+        number: 1,
+        title: "Reset the Operating System",
+        duration: 32,
+        thumb: postStudio,
+        airTime: at(20),
+      }),
+      mkEp({
+        id: "e-mind-2",
+        showId: "s-mindset",
+        channelId: "ch-chris",
+        number: 2,
+        title: "Build the Calendar of a King",
+        duration: 28,
+        thumb: postStudio,
+        airTime: at(20, 30),
+      }),
+      mkEp({
+        id: "e-mind-3",
+        showId: "s-mindset",
+        channelId: "ch-chris",
+        number: 3,
+        title: "How Pros Recover",
+        duration: 41,
+        thumb: postStudio,
+        airTime: at(21, 15),
+        premium: true,
+      }),
     ],
   },
   {
-    id: "s-latenight", title: "Late Night Drive", channelId: "ch-zay", poster: postNight, backdrop: postNight,
-    category: "Music", rating: "TV-MA", year: 2025,
+    id: "s-latenight",
+    title: "Late Night Drive",
+    channelId: "ch-zay",
+    poster: postNight,
+    backdrop: postNight,
+    category: "Music",
+    rating: "TV-MA",
+    year: 2025,
     description: "A weekly mix tape from Zay Beats designed for the city after dark.",
     episodes: [
-      mkEp({ id: "e-late-1", showId: "s-latenight", channelId: "ch-zay", number: 1, title: "Side A — Neon",  duration: 24, thumb: postNight, airTime: at(22) }),
-      mkEp({ id: "e-late-2", showId: "s-latenight", channelId: "ch-zay", number: 2, title: "Side B — Smoke", duration: 26, thumb: postNight, airTime: at(22, 30) }),
-      mkEp({ id: "e-late-3", showId: "s-latenight", channelId: "ch-zay", number: 3, title: "Encore — Aurora",duration: 30, thumb: postNight, airTime: at(23), premium: true }),
+      mkEp({
+        id: "e-late-1",
+        showId: "s-latenight",
+        channelId: "ch-zay",
+        number: 1,
+        title: "Side A — Neon",
+        duration: 24,
+        thumb: postNight,
+        airTime: at(22),
+      }),
+      mkEp({
+        id: "e-late-2",
+        showId: "s-latenight",
+        channelId: "ch-zay",
+        number: 2,
+        title: "Side B — Smoke",
+        duration: 26,
+        thumb: postNight,
+        airTime: at(22, 30),
+      }),
+      mkEp({
+        id: "e-late-3",
+        showId: "s-latenight",
+        channelId: "ch-zay",
+        number: 3,
+        title: "Encore — Aurora",
+        duration: 30,
+        thumb: postNight,
+        airTime: at(23),
+        premium: true,
+      }),
     ],
   },
   {
-    id: "s-creators", title: "Creator Talk Live", channelId: "ch-lena", poster: postConcert, backdrop: postConcert,
-    category: "Reality", rating: "TV-14", year: 2025,
-    description: "Lena hosts the creators shaping tomorrow's culture — live, unfiltered, no script.",
+    id: "s-creators",
+    title: "Creator Talk Live",
+    channelId: "ch-lena",
+    poster: postConcert,
+    backdrop: postConcert,
+    category: "Reality",
+    rating: "TV-14",
+    year: 2025,
+    description:
+      "Lena hosts the creators shaping tomorrow's culture — live, unfiltered, no script.",
     episodes: [
-      mkEp({ id: "e-ctl-1", showId: "s-creators", channelId: "ch-lena", number: 1, title: "Welcome to the Network", duration: 45, thumb: postConcert, airTime: at(19), isLive: true }),
-      mkEp({ id: "e-ctl-2", showId: "s-creators", channelId: "ch-lena", number: 2, title: "From Bedroom to Billboard", duration: 50, thumb: postConcert, airTime: at(19, 45) }),
+      mkEp({
+        id: "e-ctl-1",
+        showId: "s-creators",
+        channelId: "ch-lena",
+        number: 1,
+        title: "Welcome to the Network",
+        duration: 45,
+        thumb: postConcert,
+        airTime: at(19),
+        isLive: true,
+      }),
+      mkEp({
+        id: "e-ctl-2",
+        showId: "s-creators",
+        channelId: "ch-lena",
+        number: 2,
+        title: "From Bedroom to Billboard",
+        duration: 50,
+        thumb: postConcert,
+        airTime: at(19, 45),
+      }),
     ],
   },
   {
-    id: "s-night", title: "City After Dark", channelId: "ch-night", poster: postNight, backdrop: postNight,
-    category: "Documentary", rating: "TV-MA", year: 2025,
-    description: "A cinematic doc-series following the people who keep the city alive between midnight and dawn.",
+    id: "s-night",
+    title: "City After Dark",
+    channelId: "ch-night",
+    poster: postNight,
+    backdrop: postNight,
+    category: "Documentary",
+    rating: "TV-MA",
+    year: 2025,
+    description:
+      "A cinematic doc-series following the people who keep the city alive between midnight and dawn.",
     episodes: [
-      mkEp({ id: "e-cad-1", showId: "s-night", channelId: "ch-night", number: 1, title: "The Bouncer", duration: 38, thumb: postNight, airTime: at(23, 30) }),
-      mkEp({ id: "e-cad-2", showId: "s-night", channelId: "ch-night", number: 2, title: "Last Call",   duration: 42, thumb: postNight, airTime: at(0, 15) }),
+      mkEp({
+        id: "e-cad-1",
+        showId: "s-night",
+        channelId: "ch-night",
+        number: 1,
+        title: "The Bouncer",
+        duration: 38,
+        thumb: postNight,
+        airTime: at(23, 30),
+      }),
+      mkEp({
+        id: "e-cad-2",
+        showId: "s-night",
+        channelId: "ch-night",
+        number: 2,
+        title: "Last Call",
+        duration: 42,
+        thumb: postNight,
+        airTime: at(0, 15),
+      }),
     ],
   },
   {
-    id: "s-punch", title: "Punchline Plus", channelId: "ch-comedy", poster: postConcert, backdrop: postConcert,
-    category: "Comedy", rating: "TV-14", year: 2025,
+    id: "s-punch",
+    title: "Punchline Plus",
+    channelId: "ch-comedy",
+    poster: postConcert,
+    backdrop: postConcert,
+    category: "Comedy",
+    rating: "TV-14",
+    year: 2025,
     description: "Stand-up sets and sketches from rising comics across the network.",
     episodes: [
-      mkEp({ id: "e-pun-1", showId: "s-punch", channelId: "ch-comedy", number: 1, title: "Open Mic Heat", duration: 22, thumb: postConcert, airTime: at(21) }),
-      mkEp({ id: "e-pun-2", showId: "s-punch", channelId: "ch-comedy", number: 2, title: "Sketch Hour",   duration: 28, thumb: postConcert, airTime: at(21, 30) }),
+      mkEp({
+        id: "e-pun-1",
+        showId: "s-punch",
+        channelId: "ch-comedy",
+        number: 1,
+        title: "Open Mic Heat",
+        duration: 22,
+        thumb: postConcert,
+        airTime: at(21),
+      }),
+      mkEp({
+        id: "e-pun-2",
+        showId: "s-punch",
+        channelId: "ch-comedy",
+        number: 2,
+        title: "Sketch Hour",
+        duration: 28,
+        thumb: postConcert,
+        airTime: at(21, 30),
+      }),
     ],
   },
   {
-    id: "s-trey", title: "TREY: The Origin", channelId: "ch-trey", poster: profileTrey, backdrop: profileTrey,
-    category: "Drama", rating: "TV-MA", year: 2025,
-    description: "The flagship Trey TV original. The story behind the network, the man, and the mission.",
+    id: "s-trey",
+    title: "TREY: The Origin",
+    channelId: "ch-trey",
+    poster: profileTrey,
+    backdrop: profileTrey,
+    category: "Drama",
+    rating: "TV-MA",
+    year: 2025,
+    description:
+      "The flagship Trey TV original. The story behind the network, the man, and the mission.",
     episodes: [
-      mkEp({ id: "e-trey-1", showId: "s-trey", channelId: "ch-trey", number: 1, title: "Pilot", duration: 52, thumb: profileTrey, airTime: at(20, 0) }),
-      mkEp({ id: "e-trey-2", showId: "s-trey", channelId: "ch-trey", number: 2, title: "The Network", duration: 48, thumb: profileTrey, airTime: at(20, 52) }),
-      mkEp({ id: "e-trey-3", showId: "s-trey", channelId: "ch-trey", number: 3, title: "Empire", duration: 50, thumb: profileTrey, airTime: at(21, 40), premium: true }),
+      mkEp({
+        id: "e-trey-1",
+        showId: "s-trey",
+        channelId: "ch-trey",
+        number: 1,
+        title: "Pilot",
+        duration: 52,
+        thumb: profileTrey,
+        airTime: at(20, 0),
+      }),
+      mkEp({
+        id: "e-trey-2",
+        showId: "s-trey",
+        channelId: "ch-trey",
+        number: 2,
+        title: "The Network",
+        duration: 48,
+        thumb: profileTrey,
+        airTime: at(20, 52),
+      }),
+      mkEp({
+        id: "e-trey-3",
+        showId: "s-trey",
+        channelId: "ch-trey",
+        number: 3,
+        title: "Empire",
+        duration: 50,
+        thumb: profileTrey,
+        airTime: at(21, 40),
+        premium: true,
+      }),
     ],
   },
   {
-    id: "s-picks", title: "Trey-I Picks", channelId: "ch-treyi", poster: postStudio, backdrop: postStudio,
-    category: "Lifestyle", rating: "TV-PG", year: 2025,
+    id: "s-picks",
+    title: "Trey-I Picks",
+    channelId: "ch-treyi",
+    poster: postStudio,
+    backdrop: postStudio,
+    category: "Lifestyle",
+    rating: "TV-PG",
+    year: 2025,
     description: "AI-curated lifestyle, tech and culture picks, hand-finished by Trey-I.",
     episodes: [
-      mkEp({ id: "e-pick-1", showId: "s-picks", channelId: "ch-treyi", number: 1, title: "Daily Curate", duration: 14, thumb: postStudio, airTime: at(8) }),
-      mkEp({ id: "e-pick-2", showId: "s-picks", channelId: "ch-treyi", number: 2, title: "Weekend Drop", duration: 18, thumb: postStudio, airTime: at(9) }),
+      mkEp({
+        id: "e-pick-1",
+        showId: "s-picks",
+        channelId: "ch-treyi",
+        number: 1,
+        title: "Daily Curate",
+        duration: 14,
+        thumb: postStudio,
+        airTime: at(8),
+      }),
+      mkEp({
+        id: "e-pick-2",
+        showId: "s-picks",
+        channelId: "ch-treyi",
+        number: 2,
+        title: "Weekend Drop",
+        duration: 18,
+        thumb: postStudio,
+        airTime: at(9),
+      }),
     ],
   },
 ];
@@ -185,7 +461,13 @@ function genScheduleForChannel(ch: Channel): ScheduleSlot[] {
     const ep = eps[i % eps.length];
     const start = new Date(cursor);
     const end = new Date(cursor.getTime() + ep.duration * 60_000);
-    slots.push({ channelId: ch.id, startsAt: start.toISOString(), endsAt: end.toISOString(), episodeId: ep.id, status: "upcoming" });
+    slots.push({
+      channelId: ch.id,
+      startsAt: start.toISOString(),
+      endsAt: end.toISOString(),
+      episodeId: ep.id,
+      status: "upcoming",
+    });
     cursor = end;
     i++;
   }
@@ -199,7 +481,7 @@ export const rails = {
     { episodeId: "e-mind-1", progress: 0.62 },
     { episodeId: "e-late-1", progress: 0.18 },
     { episodeId: "e-trey-1", progress: 0.91 },
-    { episodeId: "e-cad-1",  progress: 0.34 },
+    { episodeId: "e-cad-1", progress: 0.34 },
   ],
   trending: ["s-trey", "s-mindset", "s-latenight", "s-creators", "s-night"],
   newEpisodes: ["e-trey-3", "e-mind-3", "e-late-3", "e-pun-2", "e-cad-2"],
@@ -218,5 +500,11 @@ export const featuredHero = {
 };
 
 export const categories: Category[] = [
-  "Music", "Comedy", "Reality", "Talk", "Drama", "Documentary", "Lifestyle",
+  "Music",
+  "Comedy",
+  "Reality",
+  "Talk",
+  "Drama",
+  "Documentary",
+  "Lifestyle",
 ];

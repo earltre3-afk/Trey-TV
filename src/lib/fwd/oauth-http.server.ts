@@ -29,42 +29,55 @@ function publicProfileUrl(request: Request, uid: unknown) {
 }
 
 function signingSecret(clientSecretHash: string) {
-  const serviceSecret = process.env.FWD_OAUTH_SECRET_PEPPER?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const serviceSecret =
+    process.env.FWD_OAUTH_SECRET_PEPPER?.trim() || process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!serviceSecret) throw new Error("missing_signing_secret");
   return `${serviceSecret}:${clientSecretHash}`;
 }
 
 function signToken(profile: FwdSafeProfile, clientId: string, clientSecretHash: string) {
   const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const payload = base64url(JSON.stringify({
-    aud: "fwd.treytv.com",
-    avatar_url: profile.avatar_url,
-    client_id: clientId,
-    display_name: profile.display_name,
-    exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_SECONDS,
-    iat: Math.floor(Date.now() / 1000),
-    iss: "trey-tv",
-    jti: randomBytes(16).toString("base64url"),
-    sub: profile.trey_tv_uid,
-    profile_url: profile.profile_url,
-    trey_tv_uid: profile.trey_tv_uid,
-  }));
+  const payload = base64url(
+    JSON.stringify({
+      aud: "fwd.treytv.com",
+      avatar_url: profile.avatar_url,
+      client_id: clientId,
+      display_name: profile.display_name,
+      exp: Math.floor(Date.now() / 1000) + ACCESS_TOKEN_SECONDS,
+      iat: Math.floor(Date.now() / 1000),
+      iss: "trey-tv",
+      jti: randomBytes(16).toString("base64url"),
+      sub: profile.trey_tv_uid,
+      profile_url: profile.profile_url,
+      trey_tv_uid: profile.trey_tv_uid,
+    }),
+  );
   const input = `${header}.${payload}`;
-  const signature = createHmac("sha256", signingSecret(clientSecretHash)).update(input).digest("base64url");
+  const signature = createHmac("sha256", signingSecret(clientSecretHash))
+    .update(input)
+    .digest("base64url");
   return `${input}.${signature}`;
 }
 
-function verifySignedToken(token: string, clientSecretHash: string): Record<string, unknown> | null {
+function verifySignedToken(
+  token: string,
+  clientSecretHash: string,
+): Record<string, unknown> | null {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
   const [header, payload, signature] = parts;
-  const expected = createHmac("sha256", signingSecret(clientSecretHash)).update(`${header}.${payload}`).digest("base64url");
+  const expected = createHmac("sha256", signingSecret(clientSecretHash))
+    .update(`${header}.${payload}`)
+    .digest("base64url");
   const supplied = Buffer.from(signature);
   const stored = Buffer.from(expected);
   if (supplied.length !== stored.length || !timingSafeEqual(supplied, stored)) return null;
 
   try {
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<string, unknown>;
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<
+      string,
+      unknown
+    >;
     const exp = typeof decoded.exp === "number" ? decoded.exp : 0;
     if (exp <= Math.floor(Date.now() / 1000)) return null;
     return decoded;
@@ -77,7 +90,9 @@ async function readPayload(request: Request): Promise<Payload> {
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     const body = await request.json().catch(() => ({}));
-    return Object.fromEntries(Object.entries(body ?? {}).map(([key, value]) => [key, String(value ?? "")]));
+    return Object.fromEntries(
+      Object.entries(body ?? {}).map(([key, value]) => [key, String(value ?? "")]),
+    );
   }
 
   const text = await request.text();
@@ -86,7 +101,8 @@ async function readPayload(request: Request): Promise<Payload> {
 
 async function exchangeAuthorizationCode(request: Request) {
   if (request.method === "OPTIONS") return oauthJson({});
-  if (request.method !== "POST") return oauthError("invalid_request", "Use POST for the token endpoint.", 405);
+  if (request.method !== "POST")
+    return oauthError("invalid_request", "Use POST for the token endpoint.", 405);
 
   try {
     const payload = await readPayload(request);
@@ -100,7 +116,10 @@ async function exchangeAuthorizationCode(request: Request) {
       return oauthError("unsupported_grant_type", "Only authorization_code is supported.");
     }
     if (!code || !redirectUri || !clientId || !clientSecret) {
-      return oauthError("invalid_request", "code, redirect_uri, client_id, and client_secret are required.");
+      return oauthError(
+        "invalid_request",
+        "code, redirect_uri, client_id, and client_secret are required.",
+      );
     }
 
     const client = await getActiveFwdClient(clientId);
@@ -116,16 +135,23 @@ async function exchangeAuthorizationCode(request: Request) {
     const service = getTreyIServiceClient();
     const { data: codeRow, error } = await service
       .from("fwd_oauth_codes")
-      .select("id, code, client_id, redirect_uri, trey_tv_user_id, trey_tv_uid, display_name, avatar_url, profile_url, scope, expires_at, used_at")
+      .select(
+        "id, code, client_id, redirect_uri, trey_tv_user_id, trey_tv_uid, display_name, avatar_url, profile_url, scope, expires_at, used_at",
+      )
       .eq("code", code)
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!codeRow || codeRow.client_id !== client.client_id) return oauthError("invalid_grant", "Invalid authorization code.");
-    if (codeRow.redirect_uri !== redirectUri) return oauthError("invalid_grant", "redirect_uri does not match the authorization code.");
-    if (codeRow.used_at) return oauthError("invalid_grant", "Authorization code has already been used.");
-    if (isPast(codeRow.expires_at)) return oauthError("invalid_grant", "Authorization code has expired.");
-    if (!isAllowedScope(client, codeRow.scope)) return oauthError("invalid_grant", "Authorization code scope is not allowed.");
+    if (!codeRow || codeRow.client_id !== client.client_id)
+      return oauthError("invalid_grant", "Invalid authorization code.");
+    if (codeRow.redirect_uri !== redirectUri)
+      return oauthError("invalid_grant", "redirect_uri does not match the authorization code.");
+    if (codeRow.used_at)
+      return oauthError("invalid_grant", "Authorization code has already been used.");
+    if (isPast(codeRow.expires_at))
+      return oauthError("invalid_grant", "Authorization code has expired.");
+    if (!isAllowedScope(client, codeRow.scope))
+      return oauthError("invalid_grant", "Authorization code scope is not allowed.");
 
     const now = new Date().toISOString();
     const { data: usedRows, error: usedError } = await service
@@ -136,7 +162,8 @@ async function exchangeAuthorizationCode(request: Request) {
       .select("id");
 
     if (usedError) throw new Error(usedError.message);
-    if (!usedRows?.length) return oauthError("invalid_grant", "Authorization code has already been used.");
+    if (!usedRows?.length)
+      return oauthError("invalid_grant", "Authorization code has already been used.");
 
     const profile: FwdSafeProfile = {
       avatar_url: codeRow.avatar_url ?? null,
@@ -153,7 +180,7 @@ async function exchangeAuthorizationCode(request: Request) {
       trey_tv_uid: profile.trey_tv_uid,
     });
 
-  return oauthJson({
+    return oauthJson({
       access_token: accessToken,
       token_type: "Bearer",
       expires_in: ACCESS_TOKEN_SECONDS,
@@ -177,13 +204,18 @@ async function handleUserInfo(request: Request) {
   }
 
   try {
-    const bearer = (request.headers.get("authorization") ?? "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+    const bearer = (request.headers.get("authorization") ?? "")
+      .match(/^Bearer\s+(.+)$/i)?.[1]
+      ?.trim();
     if (!bearer) return oauthError("invalid_request", "Bearer access token is required.", 401);
 
     const unsignedPayload = bearer.split(".")[1];
-    if (!unsignedPayload) return oauthError("invalid_token", "Access token is invalid or expired.", 401);
+    if (!unsignedPayload)
+      return oauthError("invalid_token", "Access token is invalid or expired.", 401);
 
-    const decoded = JSON.parse(Buffer.from(unsignedPayload, "base64url").toString("utf8")) as Record<string, unknown>;
+    const decoded = JSON.parse(
+      Buffer.from(unsignedPayload, "base64url").toString("utf8"),
+    ) as Record<string, unknown>;
     const clientId = typeof decoded.client_id === "string" ? decoded.client_id : "";
     const client = await getActiveFwdClient(clientId);
     if (!client) return oauthError("invalid_token", "Access token is invalid or expired.", 401);

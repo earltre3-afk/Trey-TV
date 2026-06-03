@@ -28,7 +28,7 @@ No other files touched.
 // Public interface
 type NotificationItem = {
   id: string;
-  kind: 'like' | 'comment' | 'follow' | 'live' | 'trey' | 'boost';
+  kind: "like" | "comment" | "follow" | "live" | "trey" | "boost";
   who?: { name: string; avatar: string; handle: string };
   text: string;
   time: string;
@@ -101,12 +101,13 @@ useNotifications() mounts
 ### Supabase `type` → Lovable `kind`
 
 ```ts
-function typeToKind(type: string): NotificationItem['kind'] {
-  if (type === 'new_follower' || type === 'user_followed') return 'follow';
-  if (type === 'post_liked' || type === 'like_on_video') return 'like';
-  if (type === 'post_commented' || type === 'comment_on_video' || type === 'reply_to_comment') return 'comment';
-  if (type === 'post_saved') return 'boost';
-  return 'trey';
+function typeToKind(type: string): NotificationItem["kind"] {
+  if (type === "new_follower" || type === "user_followed") return "follow";
+  if (type === "post_liked" || type === "like_on_video") return "like";
+  if (type === "post_commented" || type === "comment_on_video" || type === "reply_to_comment")
+    return "comment";
+  if (type === "post_saved") return "boost";
+  return "trey";
 }
 ```
 
@@ -114,13 +115,14 @@ function typeToKind(type: string): NotificationItem['kind'] {
 
 ```ts
 function deriveText(row: SupabaseNotification, actor?: ActorProfile): string {
-  const name = actor?.display_name ?? 'Someone';
-  if (row.type === 'post_liked' || row.type === 'like_on_video') return 'liked your post';
-  if (row.type === 'post_commented' || row.type === 'comment_on_video') return 'commented on your post';
-  if (row.type === 'reply_to_comment') return 'replied to your comment';
-  if (row.type === 'new_follower' || row.type === 'user_followed') return 'started following you';
-  if (row.type === 'post_saved') return 'saved your post';
-  return row.message ?? 'sent you a notification';
+  const name = actor?.display_name ?? "Someone";
+  if (row.type === "post_liked" || row.type === "like_on_video") return "liked your post";
+  if (row.type === "post_commented" || row.type === "comment_on_video")
+    return "commented on your post";
+  if (row.type === "reply_to_comment") return "replied to your comment";
+  if (row.type === "new_follower" || row.type === "user_followed") return "started following you";
+  if (row.type === "post_saved") return "saved your post";
+  return row.message ?? "sent you a notification";
 }
 ```
 
@@ -129,7 +131,7 @@ function deriveText(row: SupabaseNotification, actor?: ActorProfile): string {
 ```ts
 function timeAgo(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'now';
+  if (s < 60) return "now";
   if (s < 3600) return `${Math.floor(s / 60)}m`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
   return `${Math.floor(s / 86400)}d`;
@@ -138,15 +140,15 @@ function timeAgo(iso: string): string {
 
 ### Supabase row → `NotificationItem`
 
-| Supabase field | `NotificationItem` field | Notes |
-|---|---|---|
-| `id` | `id` | |
-| `type` | `kind` | via `typeToKind()` |
-| actor profile | `who` | `{ name: display_name, avatar: avatar_url, handle: username }` |
-| derived | `text` | via `deriveText()` |
-| `created_at` | `time` | via `timeAgo()` |
-| `read_at === null` | `unread` | `true` if null |
-| `post_id` | `to` | `post_id ? '/feed' : undefined` (no deep link in this phase) |
+| Supabase field     | `NotificationItem` field | Notes                                                          |
+| ------------------ | ------------------------ | -------------------------------------------------------------- |
+| `id`               | `id`                     |                                                                |
+| `type`             | `kind`                   | via `typeToKind()`                                             |
+| actor profile      | `who`                    | `{ name: display_name, avatar: avatar_url, handle: username }` |
+| derived            | `text`                   | via `deriveText()`                                             |
+| `created_at`       | `time`                   | via `timeAgo()`                                                |
+| `read_at === null` | `unread`                 | `true` if null                                                 |
+| `post_id`          | `to`                     | `post_id ? '/feed' : undefined` (no deep link in this phase)   |
 
 ---
 
@@ -195,9 +197,9 @@ These are internal to `use-notifications.ts` and not exported.
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/hooks/use-notifications.ts` | New file |
+| File                                             | Change                                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `src/hooks/use-notifications.ts`                 | New file                                                                        |
 | `src/components/layout/NotificationsPopover.tsx` | 5 targeted edits (import, replace items, wire markRead/markAllRead/unreadCount) |
 
 No other files touched. `activity-store.tsx`, `notifications.tsx` route, and `activity.tsx` route are untouched.

@@ -1,13 +1,13 @@
-import { supabase } from '@/integrations/supabase/client';
-import { PrivacyMode, SignalResult, UserAnswer } from '@/types/naturalAbility';
+import { supabase } from "@/integrations/supabase/client";
+import { PrivacyMode, SignalResult, UserAnswer } from "@/types/naturalAbility";
 import {
   buildTreyTVNaturalAbilitySavePayload,
   getVisibilityFlags,
-} from './naturalAbilityActivation';
+} from "./naturalAbilityActivation";
 
-const TABLE = 'natural_ability_results';
-const LOCAL_USER_KEY = 'trey_tv_signal_user_id';
-const LOCAL_ROW_KEY = 'trey_tv_signal_result_row';
+const TABLE = "natural_ability_results";
+const LOCAL_USER_KEY = "trey_tv_signal_user_id";
+const LOCAL_ROW_KEY = "trey_tv_signal_result_row";
 
 function isSupabaseAvailable(): boolean {
   try {
@@ -18,7 +18,7 @@ function isSupabaseAvailable(): boolean {
 }
 
 export function getOrCreateUserId(): string {
-  if (typeof window === 'undefined') return 'anon';
+  if (typeof window === "undefined") return "anon";
   let id = localStorage.getItem(LOCAL_USER_KEY);
   if (!id) {
     id = `u_${crypto.randomUUID()}`;
@@ -50,7 +50,7 @@ export interface StoredSignalRow {
 }
 
 function readLocalRow(userId: string): StoredSignalRow | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(LOCAL_ROW_KEY);
     if (!raw) return null;
@@ -62,7 +62,7 @@ function readLocalRow(userId: string): StoredSignalRow | null {
 }
 
 function writeLocalRow(row: StoredSignalRow): StoredSignalRow {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     localStorage.setItem(LOCAL_ROW_KEY, JSON.stringify(row));
   }
   return row;
@@ -114,17 +114,17 @@ export async function fetchSignalRecord(userId: string): Promise<StoredSignalRow
   try {
     const { data, error } = await (supabase as any)
       .from(TABLE)
-      .select('*')
-      .eq('user_id', userId)
+      .select("*")
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (error) {
-      console.warn('[signal] Supabase fetch failed, using local prototype storage', error.message);
+      console.warn("[signal] Supabase fetch failed, using local prototype storage", error.message);
       return readLocalRow(userId);
     }
     return (data as StoredSignalRow) || readLocalRow(userId);
   } catch (err: any) {
-    console.warn('[signal] Supabase connection error, using local storage', err?.message || err);
+    console.warn("[signal] Supabase connection error, using local storage", err?.message || err);
     return readLocalRow(userId);
   }
 }
@@ -133,7 +133,9 @@ export async function hasCompletedNaturalAbilityTest(userId: string): Promise<bo
   return !!(await fetchSignalRecord(userId));
 }
 
-export async function getLockedNaturalAbilityResult(userId: string): Promise<StoredSignalRow | null> {
+export async function getLockedNaturalAbilityResult(
+  userId: string,
+): Promise<StoredSignalRow | null> {
   return fetchSignalRecord(userId);
 }
 
@@ -143,13 +145,13 @@ export async function saveNaturalAbilityVisibility(params: {
 }): Promise<{ ok: true; row: StoredSignalRow } | { ok: false; error: string }> {
   const existing = await fetchSignalRecord(params.userId);
   if (!existing) {
-    return { ok: false, error: 'No completed Natural Ability result exists to update.' };
+    return { ok: false, error: "No completed Natural Ability result exists to update." };
   }
 
   const now = new Date();
   const row = buildRow({
     userId: params.userId,
-    displayName: '',
+    displayName: "",
     result: {} as SignalResult,
     privacyMode: params.privacyMode,
     answers: existing.answer_snapshot,
@@ -164,12 +166,15 @@ export async function saveNaturalAbilityVisibility(params: {
   try {
     const { data, error } = await (supabase as any)
       .from(TABLE)
-      .upsert(row, { onConflict: 'user_id' })
-      .select('*')
+      .upsert(row, { onConflict: "user_id" })
+      .select("*")
       .single();
 
     if (error) {
-      console.warn('[signal] Supabase visibility update failed, saving locally instead', error.message);
+      console.warn(
+        "[signal] Supabase visibility update failed, saving locally instead",
+        error.message,
+      );
       return { ok: true, row: writeLocalRow(row) };
     }
 
@@ -177,7 +182,7 @@ export async function saveNaturalAbilityVisibility(params: {
     writeLocalRow(savedRow);
     return { ok: true, row: savedRow };
   } catch (err: any) {
-    console.warn('[signal] Supabase update error, saving locally instead', err?.message || err);
+    console.warn("[signal] Supabase update error, saving locally instead", err?.message || err);
     return { ok: true, row: writeLocalRow(row) };
   }
 }
@@ -215,12 +220,12 @@ export async function saveNaturalAbilityResultOnce(params: {
   try {
     const { data, error } = await (supabase as any)
       .from(TABLE)
-      .upsert(row, { onConflict: 'user_id' })
-      .select('*')
+      .upsert(row, { onConflict: "user_id" })
+      .select("*")
       .single();
 
     if (error) {
-      console.warn('[signal] Supabase save failed, saving locally instead', error.message);
+      console.warn("[signal] Supabase save failed, saving locally instead", error.message);
       return { ok: true, row: writeLocalRow(row) };
     }
 
@@ -228,7 +233,7 @@ export async function saveNaturalAbilityResultOnce(params: {
     writeLocalRow(savedRow);
     return { ok: true, row: savedRow };
   } catch (err: any) {
-    console.warn('[signal] Supabase save error, saving locally instead', err?.message || err);
+    console.warn("[signal] Supabase save error, saving locally instead", err?.message || err);
     return { ok: true, row: writeLocalRow(row) };
   }
 }

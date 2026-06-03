@@ -45,7 +45,12 @@ type AdminUser = {
   id: string;
 };
 
-const VALID_APPROVAL_STATUSES: AdminQueueApprovalStatus[] = ["pending", "approved", "rejected", "needs_changes"];
+const VALID_APPROVAL_STATUSES: AdminQueueApprovalStatus[] = [
+  "pending",
+  "approved",
+  "rejected",
+  "needs_changes",
+];
 
 const PROJECT_STATUS_BY_APPROVAL_STATUS: Record<AdminQueueApprovalStatus, string> = {
   approved: "published",
@@ -135,10 +140,10 @@ export async function verifyAdmin(accessToken: string): Promise<AdminUser> {
     return { id: user.id, email: user.email };
   }
 
-  const adminEmails = process.env.ADMIN_EMAILS
-    ?.split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean) ?? [];
+  const adminEmails =
+    process.env.ADMIN_EMAILS?.split(",")
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean) ?? [];
 
   if (adminEmails.length > 0 && adminEmails.includes(user.email.toLowerCase())) {
     return { id: user.id, email: user.email };
@@ -220,7 +225,10 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
       throw new Error("Invalid approval status");
     }
 
-    if ((data.approvalStatus === "rejected" || data.approvalStatus === "needs_changes") && !adminNotes) {
+    if (
+      (data.approvalStatus === "rejected" || data.approvalStatus === "needs_changes") &&
+      !adminNotes
+    ) {
       throw new Error("A note is required when rejecting or requesting changes");
     }
 
@@ -243,7 +251,8 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
     if (data.approvalStatus === "approved") {
       if (!queue.title?.trim()) throw new Error("Approval blocked: missing title");
       if (!queue.stream_uid?.trim()) throw new Error("Approval blocked: missing stream UID");
-      if (!queue.episode_number || queue.episode_number < 1) throw new Error("Approval blocked: invalid episode number");
+      if (!queue.episode_number || queue.episode_number < 1)
+        throw new Error("Approval blocked: invalid episode number");
       if (!queue.channel_id) throw new Error("Approval blocked: missing channel");
       if (!queue.show_id) throw new Error("Approval blocked: missing show");
       if (!queue.edit_project_id) throw new Error("Approval blocked: missing edit project");
@@ -300,7 +309,8 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
       const nowIso = now.toISOString();
       const scheduledAt = queue.scheduled_at ? new Date(queue.scheduled_at) : null;
       const isScheduled = scheduledAt ? scheduledAt.getTime() > now.getTime() : false;
-      const accessType = queue.episode_number <= 2 ? "free" : queue.is_plus_content ? "locked" : "free";
+      const accessType =
+        queue.episode_number <= 2 ? "free" : queue.is_plus_content ? "locked" : "free";
       const baseSlug = slugify(queue.title) || `episode-${queue.episode_number}`;
       const episodePayload = {
         channel_id: queue.channel_id,
@@ -351,12 +361,10 @@ export const reviewAdminPostQueue = createServerFn({ method: "POST" })
         episodeError = error;
 
         if (error?.code === "23505") {
-          const { error: retryError } = await (supabase as any)
-            .from("episodes")
-            .insert({
-              ...episodePayload,
-              slug: `${baseSlug}-${queue.episode_number}`,
-            });
+          const { error: retryError } = await (supabase as any).from("episodes").insert({
+            ...episodePayload,
+            slug: `${baseSlug}-${queue.episode_number}`,
+          });
           episodeError = retryError;
         }
       }

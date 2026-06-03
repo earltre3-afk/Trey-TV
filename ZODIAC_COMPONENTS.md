@@ -32,9 +32,11 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 **Props:**
+
 - `onSelect?: (sign, birthDate, isCusp) => void`
 
 **Features:**
+
 - 12 zodiac cards (3 columns mobile, 4+ desktop)
 - Sign-specific glow colors
 - Date input with calendar icon
@@ -67,6 +69,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 **Props:**
+
 - `sign: string`
 - `symbol: string`
 - `isCusp?: boolean`
@@ -74,6 +77,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 - `onShare?: () => void`
 
 **Features:**
+
 - Animated conic gradient rings (6s + 8s reverse)
 - Draggable unlock slider (lock → sparkles)
 - Ambient orb backgrounds
@@ -107,6 +111,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 **Props:**
+
 - `sign: string`
 - `symbol: string`
 - `dailyReading: string`
@@ -118,6 +123,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 - `cuspNote?: string`
 
 **Features:**
+
 - Structured reading display
 - Energy + Lucky Number grid
 - Lucky color swatch
@@ -132,6 +138,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 **What it does**: Shows user's zodiac sign as a collectible badge
 
 ### Variant A: Icon Only
+
 ```
 ┌────┐
 │ ♌  │
@@ -139,6 +146,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 ### Variant B: With Name
+
 ```
 ┌────┐
 │ ♌  │  Leo
@@ -146,6 +154,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 ### Variant C: Profile Card
+
 ```
 ┌──────────────────────────────┐
 │   ♉ (conic-ring frame)       │
@@ -158,6 +167,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 **Props (Icon):**
+
 - `sign: string`
 - `symbol: string`
 - `isCusp?: boolean`
@@ -167,6 +177,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 - `onClick?: () => void`
 
 **Features:**
+
 - 3 sizes (32px, 48px, 64px)
 - Animated shine on hover
 - Multiple display modes
@@ -196,6 +207,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 **Props:**
+
 - `groupName: string`
 - `matchReason: string`
 - `memberCount: number`
@@ -209,6 +221,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 - `onClick?: () => void`
 
 **Features:**
+
 - Group icon (zodiac or emoji)
 - Member avatar previews (4 shown, +X)
 - Tag display (zodiac + interests)
@@ -254,6 +267,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 **Props:** Self-contained (no props required)
 
 **Features:**
+
 - Search across groups & tags
 - Filter tabs (All | Joined | Discover)
 - Multiple group cards
@@ -266,6 +280,7 @@ Showcase: http://localhost:5173/zodiac-showcase
 ## 🎨 Visual Design
 
 ### Colors (Oklch)
+
 ```
 🟡 Gold:      oklch(0.82 0.16 85)     ← Primary, premium
 🟣 Purple:    oklch(0.65 0.22 300)    ← Mystical
@@ -276,12 +291,14 @@ Showcase: http://localhost:5173/zodiac-showcase
 ```
 
 ### Effects
+
 - **Glass**: `blur(18px) saturate(140%)`
 - **Glass Strong**: `blur(24px) saturate(160%)`
 - **Glow**: Sign-specific neon shadows
 - **Rings**: Conic gradients, 6s spin, `drop-shadow()`
 
 ### Animations
+
 - **Conic Spin**: 6 seconds, 360° rotation
 - **Badge Shine**: 0.6 seconds, sweep effect
 - **Fade In**: 0.5 seconds, scale + opacity
@@ -293,11 +310,11 @@ Showcase: http://localhost:5173/zodiac-showcase
 
 All components are **100% mobile responsive**:
 
-| Device | Layout | Notes |
-|--------|--------|-------|
-| Mobile | 1 col, full width | Touch-friendly (44px+) |
-| Tablet | 2 col, balanced | Increased spacing |
-| Desktop | Multi-col, expanded | Full interactions |
+| Device  | Layout              | Notes                  |
+| ------- | ------------------- | ---------------------- |
+| Mobile  | 1 col, full width   | Touch-friendly (44px+) |
+| Tablet  | 2 col, balanced     | Increased spacing      |
+| Desktop | Multi-col, expanded | Full interactions      |
 
 No additional responsive work needed.
 
@@ -317,22 +334,26 @@ No additional responsive work needed.
 ## 🚀 Quick Integration
 
 ### Homepage (Above Feed)
+
 ```tsx
 <ReadingOfTheDay {...dailyReading} />
 ```
 
 ### Profile Page
+
 ```tsx
 <ProfileZodiacCard sign={user.zodiacSign} symbol={user.symbol} />
 ```
 
 ### Signup
+
 ```tsx
 <ZodiacOnboarding onSelect={handleZodiacSelect} />
 <ZodiacConfirmation sign={sign} symbol={symbol} />
 ```
 
 ### Groups Discovery
+
 ```tsx
 <ZodiacGroupsHub />
 ```
@@ -341,15 +362,15 @@ No additional responsive work needed.
 
 ## 📊 Stats
 
-| Component | Lines | Complexity | Dependencies |
-|-----------|-------|-----------|--------------|
-| Onboarding | 191 | Medium | React, lucide |
-| Confirmation | 202 | Medium | React, lucide |
-| Reading | 150 | Low | React, lucide |
-| Badge | 160 | Low | React, lucide |
-| GroupCard | 164 | Low | React, lucide |
-| GroupsHub | 251 | High | React, lucide |
-| **Total** | **1,118** | **Manageable** | **0 new deps** |
+| Component    | Lines     | Complexity     | Dependencies   |
+| ------------ | --------- | -------------- | -------------- |
+| Onboarding   | 191       | Medium         | React, lucide  |
+| Confirmation | 202       | Medium         | React, lucide  |
+| Reading      | 150       | Low            | React, lucide  |
+| Badge        | 160       | Low            | React, lucide  |
+| GroupCard    | 164       | Low            | React, lucide  |
+| GroupsHub    | 251       | High           | React, lucide  |
+| **Total**    | **1,118** | **Manageable** | **0 new deps** |
 
 ---
 
@@ -358,6 +379,7 @@ No additional responsive work needed.
 Visit: **http://localhost:5173/zodiac-showcase**
 
 Tab through:
+
 1. ✨ Onboarding (select sign + date)
 2. 🔐 Confirmation (lock screen)
 3. 📖 Reading (daily card)

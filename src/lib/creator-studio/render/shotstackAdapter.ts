@@ -8,8 +8,14 @@
  * a new adapter, not an editor rewrite.
  */
 import {
-  clipLength, type EditRecipe, type Clip, type TrackKind,
-  type TransitionType, type FilterType, type EffectType, type Resolution,
+  clipLength,
+  type EditRecipe,
+  type Clip,
+  type TrackKind,
+  type TransitionType,
+  type FilterType,
+  type EffectType,
+  type Resolution,
 } from "../editRecipe";
 
 // Shotstack renders tracks top-first (track[0] is above track[1]). Our recipe's
@@ -20,14 +26,22 @@ const SAFE_FONT = "Montserrat ExtraBold"; // a built-in Shotstack font
 
 function transition(t: TransitionType): string | undefined {
   switch (t) {
-    case "fade": return "fade";
-    case "slideLeft": return "slideLeft";
-    case "slideRight": return "slideRight";
-    case "wipeLeft": return "wipeLeft";
-    case "wipeRight": return "wipeRight";
-    case "zoom": return "zoom";
-    case "carouselLeft": return "carouselLeft";
-    default: return undefined; // "none"
+    case "fade":
+      return "fade";
+    case "slideLeft":
+      return "slideLeft";
+    case "slideRight":
+      return "slideRight";
+    case "wipeLeft":
+      return "wipeLeft";
+    case "wipeRight":
+      return "wipeRight";
+    case "zoom":
+      return "zoom";
+    case "carouselLeft":
+      return "carouselLeft";
+    default:
+      return undefined; // "none"
   }
 }
 
@@ -45,11 +59,14 @@ function effect(effects: EffectType[]): string | undefined {
 
 function resolutionToSize(r: Resolution): { width: number; height: number } {
   switch (r) {
-    case "720p": return { width: 1280, height: 720 };
-    case "4K": return { width: 3840, height: 2160 };
+    case "720p":
+      return { width: 1280, height: 720 };
+    case "4K":
+      return { width: 3840, height: 2160 };
     case "1080p":
     case "AI UHD":
-    default: return { width: 1920, height: 1080 };
+    default:
+      return { width: 1920, height: 1080 };
   }
 }
 
@@ -66,7 +83,8 @@ function clipToShotstack(clip: Clip, srcUrl: string): Record<string, unknown> | 
   };
   const tIn = transition(clip.transitionIn);
   const tOut = transition(clip.transitionOut);
-  if (tIn || tOut) base.transition = { ...(tIn ? { in: tIn } : {}), ...(tOut ? { out: tOut } : {}) };
+  if (tIn || tOut)
+    base.transition = { ...(tIn ? { in: tIn } : {}), ...(tOut ? { out: tOut } : {}) };
   const fl = filter(clip.filter);
   if (fl) base.filter = fl;
   const ef = effect(clip.effects);
@@ -129,7 +147,10 @@ export interface ShotstackEdit {
   callback?: string;
 }
 
-export function recipeToShotstack(recipe: EditRecipe, opts?: { callbackUrl?: string }): ShotstackEdit {
+export function recipeToShotstack(
+  recipe: EditRecipe,
+  opts?: { callbackUrl?: string },
+): ShotstackEdit {
   const srcUrl = recipe.source.srcUrl;
   const tracks: { clips: Record<string, unknown>[] }[] = [];
 

@@ -43,4 +43,3 @@ main(process.argv).catch((error: unknown) => {
   process.stderr.write(`${JSON.stringify({ error: message }, null, 2)}\n`);
   process.exitCode = 1;
 });
-

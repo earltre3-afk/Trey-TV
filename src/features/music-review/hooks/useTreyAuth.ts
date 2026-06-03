@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/lib/auth';
-import { useSupabaseSession } from '@/lib/supabase-session';
-import { musicReviewEnv } from '../lib/env';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
+import { musicReviewEnv } from "../lib/env";
 
 export interface TreyUser {
   id: string;
@@ -16,16 +16,16 @@ declare global {
   }
 }
 
-const LS_KEY = 'trey_tv_demo_user';
+const LS_KEY = "trey_tv_demo_user";
 
-function normalizeHostUser(hostUser: Window['__TREY_USER__']): TreyUser | null {
+function normalizeHostUser(hostUser: Window["__TREY_USER__"]): TreyUser | null {
   if (!hostUser?.id) return null;
-  const role = hostUser.role || '';
+  const role = hostUser.role || "";
   return {
     id: String(hostUser.id),
-    email: hostUser.email || '',
-    name: hostUser.name || hostUser.username || 'Artist',
-    isAdmin: Boolean(hostUser.isAdmin || role === 'admin' || role === 'owner')
+    email: hostUser.email || "",
+    name: hostUser.name || hostUser.username || "Artist",
+    isAdmin: Boolean(hostUser.isAdmin || role === "admin" || role === "owner"),
   };
 }
 
@@ -42,7 +42,7 @@ export function useTreyAuth() {
   const [demoUser, setDemoUser] = useState<TreyUser | null>(null);
 
   useEffect(() => {
-    if (!musicReviewEnv.demoAuthEnabled || typeof window === 'undefined') return;
+    if (!musicReviewEnv.demoAuthEnabled || typeof window === "undefined") return;
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return;
     try {
@@ -52,7 +52,7 @@ export function useTreyAuth() {
     }
   }, []);
 
-  const hostUser = typeof window !== 'undefined' ? normalizeHostUser(window.__TREY_USER__) : null;
+  const hostUser = typeof window !== "undefined" ? normalizeHostUser(window.__TREY_USER__) : null;
 
   const sessionUser = useMemo<TreyUser | null>(() => {
     if (hostUser) return hostUser;
@@ -60,25 +60,26 @@ export function useTreyAuth() {
     if (supabaseSession.user) {
       const metadata = supabaseSession.user.user_metadata as Record<string, unknown>;
       const name =
-        typeof metadata?.name === 'string' ? metadata.name :
-        typeof metadata?.full_name === 'string' ? metadata.full_name :
-        supabaseSession.user.email?.split('@')[0] ||
-        'Artist';
+        typeof metadata?.name === "string"
+          ? metadata.name
+          : typeof metadata?.full_name === "string"
+            ? metadata.full_name
+            : supabaseSession.user.email?.split("@")[0] || "Artist";
 
       return {
         id: supabaseSession.user.id,
-        email: supabaseSession.user.email || '',
+        email: supabaseSession.user.email || "",
         name,
-        isAdmin: supabaseSession.isRealAdmin || supabaseSession.isOwner
+        isAdmin: supabaseSession.isRealAdmin || supabaseSession.isOwner,
       };
     }
 
     if (appAuth.user && !appAuth.isGuest) {
       return {
         id: appAuth.user.uid,
-        email: '',
-        name: appAuth.user.name || appAuth.user.handle || 'Artist',
-        isAdmin: appAuth.isAdmin
+        email: "",
+        name: appAuth.user.name || appAuth.user.handle || "Artist",
+        isAdmin: appAuth.isAdmin,
       };
     }
 
@@ -100,7 +101,7 @@ export function useTreyAuth() {
       id: crypto.randomUUID(),
       email,
       name,
-      isAdmin: asAdmin
+      isAdmin: asAdmin,
     };
     localStorage.setItem(LS_KEY, JSON.stringify(u));
     setDemoUser(u);
@@ -108,8 +109,12 @@ export function useTreyAuth() {
 
   const signOut = async () => {
     if (musicReviewEnv.demoAuthEnabled) localStorage.removeItem(LS_KEY);
-    try { await supabaseSession.signOutSupabase(); } catch {}
-    try { appAuth.signOut(); } catch {}
+    try {
+      await supabaseSession.signOutSupabase();
+    } catch {}
+    try {
+      appAuth.signOut();
+    } catch {}
     setDemoUser(null);
   };
 
@@ -129,7 +134,7 @@ export function useTreyAuth() {
     signOut,
     toggleAdmin,
     refresh,
-    demoAuthEnabled: musicReviewEnv.demoAuthEnabled
+    demoAuthEnabled: musicReviewEnv.demoAuthEnabled,
   };
 }
 

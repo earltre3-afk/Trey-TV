@@ -36,35 +36,38 @@ src/features/games/
 ## How to mount under the existing Trey TV Games tab
 
 ### Option A — drop-in component
+
 In your existing Trey TV `App.tsx` or Games-tab route component:
 
 ```tsx
-import { GameRoomModule } from '@/features/games/GameRoomModule';
+import { GameRoomModule } from "@/features/games/GameRoomModule";
 
 // In your routes:
-<Route path="/games/*" element={<GameRoomModule />} />
+<Route path="/games/*" element={<GameRoomModule />} />;
 ```
 
 ### Option B — admin route
+
 ```tsx
-import { AdminGameRoomModule } from '@/features/games/GameRoomModule';
-<Route path="/admin/games" element={<AdminGameRoomModule />} />
+import { AdminGameRoomModule } from "@/features/games/GameRoomModule";
+<Route path="/admin/games" element={<AdminGameRoomModule />} />;
 ```
 
 ### Option C — direct game launch
+
 ```tsx
 <GameRoomModule initialView="spades" />
 ```
 
 ## Suggested route map (matches blueprint)
 
-| Route                              | Component                         |
-|------------------------------------|-----------------------------------|
-| `/games`                           | `GameRoomModule` (home)           |
-| `/games/spades`                    | `GameRoomModule initialView=spades` |
-| `/games/blackjack`                 | `GameRoomModule initialView=blackjack` |
-| `/games/bullshit`                  | `GameRoomModule initialView=bullshit` |
-| `/admin/games`                     | `AdminGameRoomModule`             |
+| Route              | Component                              |
+| ------------------ | -------------------------------------- |
+| `/games`           | `GameRoomModule` (home)                |
+| `/games/spades`    | `GameRoomModule initialView=spades`    |
+| `/games/blackjack` | `GameRoomModule initialView=blackjack` |
+| `/games/bullshit`  | `GameRoomModule initialView=bullshit`  |
+| `/admin/games`     | `AdminGameRoomModule`                  |
 
 ## Card assets
 
@@ -80,7 +83,7 @@ The naming convention in `cardManifest.ts` already matches the required format f
 ## Suit mapping (gameplay vs display)
 
 | Gameplay | Display Suit | Color  |
-|----------|--------------|--------|
+| -------- | ------------ | ------ |
 | Spades   | **Blades**   | purple |
 | Hearts   | **Soul**     | red    |
 | Diamonds | **Crowns**   | blue   |

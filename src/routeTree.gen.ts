@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char91indexChar93RouteImport } from './routes/[index]'
+import { Route as TvRouteImport } from './routes/tv'
+import { Route as TranceRouteImport } from './routes/trance'
 import { Route as TradioRouteImport } from './routes/tradio'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -43,6 +45,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TranceIndexRouteImport } from './routes/trance.index'
 import { Route as LegalIndexRouteImport } from './routes/legal.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
@@ -50,6 +53,10 @@ import { Route as WatchIdRouteImport } from './routes/watch.$id'
 import { Route as WatchPartyIdRouteImport } from './routes/watch-party.$id'
 import { Route as UUidRouteImport } from './routes/u.$uid'
 import { Route as TvActivateRouteImport } from './routes/tv.activate'
+import { Route as TranceRewardsRouteImport } from './routes/trance.rewards'
+import { Route as TranceExploreRouteImport } from './routes/trance.explore'
+import { Route as TranceBadgesRouteImport } from './routes/trance.badges'
+import { Route as TranceAdminRouteImport } from './routes/trance.admin'
 import { Route as TestsNaturalAbilityRouteImport } from './routes/tests.natural-ability'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as SettingsConnectedAppsRouteImport } from './routes/settings.connected-apps'
@@ -87,6 +94,7 @@ import { Route as ChannelHandleRouteImport } from './routes/channel.$handle'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApplyVerificationRouteImport } from './routes/apply.verification'
+import { Route as ApplyTranceCreatorRouteImport } from './routes/apply.trance-creator'
 import { Route as ApplyTradioCreatorRouteImport } from './routes/apply.tradio-creator'
 import { Route as ApplyGoVerificationRouteImport } from './routes/apply.go-verification'
 import { Route as ApplyCreatorRouteImport } from './routes/apply.creator'
@@ -111,19 +119,41 @@ import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as GamesInteractiveStoriesIndexRouteImport } from './routes/games.interactive-stories.index'
 import { Route as UUidChannelRouteImport } from './routes/u.$uid.channel'
+import { Route as TranceStudiosStudioIdRouteImport } from './routes/trance.studios.$studioId'
+import { Route as TranceRoutinesRoutineIdRouteImport } from './routes/trance.routines.$routineId'
+import { Route as TranceProfileProfileIdRouteImport } from './routes/trance.profile.$profileId'
+import { Route as TranceLeaderboardRoutineIdRouteImport } from './routes/trance.leaderboard.$routineId'
+import { Route as TranceChoreographersIdRouteImport } from './routes/trance.choreographers.$id'
+import { Route as TranceBuilderNewRouteImport } from './routes/trance.builder.new'
 import { Route as OauthJwksJsonRouteImport } from './routes/oauth.jwks.json'
 import { Route as GamesInteractiveStoriesStorySlugRouteImport } from './routes/games.interactive-stories.$storySlug'
 import { Route as AdminContentApprovalIdRouteImport } from './routes/admin.content-approval.$id'
+import { Route as TranceSessionRoutineIdPracticeRouteImport } from './routes/trance.session.$routineId.practice'
+import { Route as TranceSessionRoutineIdPerformanceRouteImport } from './routes/trance.session.$routineId.performance'
+import { Route as TranceSessionRoutineIdLearnRouteImport } from './routes/trance.session.$routineId.learn'
+import { Route as TranceBuilderRoutineIdEditRouteImport } from './routes/trance.builder.$routineId.edit'
 import { Route as GamesInteractiveStoriesShareShareSlugRouteImport } from './routes/games.interactive-stories.share.$shareSlug'
 import { Route as GamesInteractiveStoriesStorySlugPlaythroughsRouteImport } from './routes/games.interactive-stories.$storySlug.playthroughs'
 import { Route as GamesInteractiveStoriesStorySlugPlayRouteImport } from './routes/games.interactive-stories.$storySlug.play'
 import { Route as GamesInteractiveStoriesStorySlugCharactersRouteImport } from './routes/games.interactive-stories.$storySlug.characters'
 import { Route as GamesInteractiveStoriesStorySlugBranchesRouteImport } from './routes/games.interactive-stories.$storySlug.branches'
 import { Route as ApiFwdOauthAuthorizeRouteImport } from './routes/api.fwd.oauth.authorize'
+import { Route as TranceStudiosStudioIdRoomsRoomIdRouteImport } from './routes/trance.studios.$studioId.rooms.$roomId'
+import { Route as TranceSessionRoutineIdResultsSessionAttemptIdRouteImport } from './routes/trance.session.$routineId.results.$sessionAttemptId'
 
 const Char91indexChar93Route = Char91indexChar93RouteImport.update({
   id: '/index',
   path: '/index',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TvRoute = TvRouteImport.update({
+  id: '/tv',
+  path: '/tv',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TranceRoute = TranceRouteImport.update({
+  id: '/trance',
+  path: '/trance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TradioRoute = TradioRouteImport.update({
@@ -291,6 +321,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TranceIndexRoute = TranceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TranceRoute,
+} as any)
 const LegalIndexRoute = LegalIndexRouteImport.update({
   id: '/legal/',
   path: '/legal/',
@@ -322,9 +357,29 @@ const UUidRoute = UUidRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const TvActivateRoute = TvActivateRouteImport.update({
-  id: '/tv/activate',
-  path: '/tv/activate',
-  getParentRoute: () => rootRouteImport,
+  id: '/activate',
+  path: '/activate',
+  getParentRoute: () => TvRoute,
+} as any)
+const TranceRewardsRoute = TranceRewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceExploreRoute = TranceExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceBadgesRoute = TranceBadgesRouteImport.update({
+  id: '/badges',
+  path: '/badges',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceAdminRoute = TranceAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => TranceRoute,
 } as any)
 const TestsNaturalAbilityRoute = TestsNaturalAbilityRouteImport.update({
   id: '/tests/natural-ability',
@@ -514,6 +569,11 @@ const ApplyVerificationRoute = ApplyVerificationRouteImport.update({
   path: '/verification',
   getParentRoute: () => ApplyRoute,
 } as any)
+const ApplyTranceCreatorRoute = ApplyTranceCreatorRouteImport.update({
+  id: '/trance-creator',
+  path: '/trance-creator',
+  getParentRoute: () => ApplyRoute,
+} as any)
 const ApplyTradioCreatorRoute = ApplyTradioCreatorRouteImport.update({
   id: '/tradio-creator',
   path: '/tradio-creator',
@@ -635,6 +695,37 @@ const UUidChannelRoute = UUidChannelRouteImport.update({
   path: '/channel',
   getParentRoute: () => UUidRoute,
 } as any)
+const TranceStudiosStudioIdRoute = TranceStudiosStudioIdRouteImport.update({
+  id: '/studios/$studioId',
+  path: '/studios/$studioId',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceRoutinesRoutineIdRoute = TranceRoutinesRoutineIdRouteImport.update({
+  id: '/routines/$routineId',
+  path: '/routines/$routineId',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceProfileProfileIdRoute = TranceProfileProfileIdRouteImport.update({
+  id: '/profile/$profileId',
+  path: '/profile/$profileId',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceLeaderboardRoutineIdRoute =
+  TranceLeaderboardRoutineIdRouteImport.update({
+    id: '/leaderboard/$routineId',
+    path: '/leaderboard/$routineId',
+    getParentRoute: () => TranceRoute,
+  } as any)
+const TranceChoreographersIdRoute = TranceChoreographersIdRouteImport.update({
+  id: '/choreographers/$id',
+  path: '/choreographers/$id',
+  getParentRoute: () => TranceRoute,
+} as any)
+const TranceBuilderNewRoute = TranceBuilderNewRouteImport.update({
+  id: '/builder/new',
+  path: '/builder/new',
+  getParentRoute: () => TranceRoute,
+} as any)
 const OauthJwksJsonRoute = OauthJwksJsonRouteImport.update({
   id: '/oauth/jwks/json',
   path: '/oauth/jwks/json',
@@ -651,6 +742,30 @@ const AdminContentApprovalIdRoute = AdminContentApprovalIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AdminContentApprovalRoute,
 } as any)
+const TranceSessionRoutineIdPracticeRoute =
+  TranceSessionRoutineIdPracticeRouteImport.update({
+    id: '/session/$routineId/practice',
+    path: '/session/$routineId/practice',
+    getParentRoute: () => TranceRoute,
+  } as any)
+const TranceSessionRoutineIdPerformanceRoute =
+  TranceSessionRoutineIdPerformanceRouteImport.update({
+    id: '/session/$routineId/performance',
+    path: '/session/$routineId/performance',
+    getParentRoute: () => TranceRoute,
+  } as any)
+const TranceSessionRoutineIdLearnRoute =
+  TranceSessionRoutineIdLearnRouteImport.update({
+    id: '/session/$routineId/learn',
+    path: '/session/$routineId/learn',
+    getParentRoute: () => TranceRoute,
+  } as any)
+const TranceBuilderRoutineIdEditRoute =
+  TranceBuilderRoutineIdEditRouteImport.update({
+    id: '/builder/$routineId/edit',
+    path: '/builder/$routineId/edit',
+    getParentRoute: () => TranceRoute,
+  } as any)
 const GamesInteractiveStoriesShareShareSlugRoute =
   GamesInteractiveStoriesShareShareSlugRouteImport.update({
     id: '/share/$shareSlug',
@@ -686,6 +801,18 @@ const ApiFwdOauthAuthorizeRoute = ApiFwdOauthAuthorizeRouteImport.update({
   path: '/api/fwd/oauth/authorize',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TranceStudiosStudioIdRoomsRoomIdRoute =
+  TranceStudiosStudioIdRoomsRoomIdRouteImport.update({
+    id: '/rooms/$roomId',
+    path: '/rooms/$roomId',
+    getParentRoute: () => TranceStudiosStudioIdRoute,
+  } as any)
+const TranceSessionRoutineIdResultsSessionAttemptIdRoute =
+  TranceSessionRoutineIdResultsSessionAttemptIdRouteImport.update({
+    id: '/session/$routineId/results/$sessionAttemptId',
+    path: '/session/$routineId/results/$sessionAttemptId',
+    getParentRoute: () => TranceRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -722,6 +849,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
   '/tradio': typeof TradioRoute
+  '/trance': typeof TranceRouteWithChildren
+  '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -744,6 +873,7 @@ export interface FileRoutesByFullPath {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -781,6 +911,10 @@ export interface FileRoutesByFullPath {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/trance/admin': typeof TranceAdminRoute
+  '/trance/badges': typeof TranceBadgesRoute
+  '/trance/explore': typeof TranceExploreRoute
+  '/trance/rewards': typeof TranceRewardsRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -788,9 +922,16 @@ export interface FileRoutesByFullPath {
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
+  '/trance/': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/trance/builder/new': typeof TranceBuilderNewRoute
+  '/trance/choreographers/$id': typeof TranceChoreographersIdRoute
+  '/trance/leaderboard/$routineId': typeof TranceLeaderboardRoutineIdRoute
+  '/trance/profile/$profileId': typeof TranceProfileProfileIdRoute
+  '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
+  '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
   '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
@@ -799,6 +940,12 @@ export interface FileRoutesByFullPath {
   '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
   '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
   '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
+  '/trance/builder/$routineId/edit': typeof TranceBuilderRoutineIdEditRoute
+  '/trance/session/$routineId/learn': typeof TranceSessionRoutineIdLearnRoute
+  '/trance/session/$routineId/performance': typeof TranceSessionRoutineIdPerformanceRoute
+  '/trance/session/$routineId/practice': typeof TranceSessionRoutineIdPracticeRoute
+  '/trance/session/$routineId/results/$sessionAttemptId': typeof TranceSessionRoutineIdResultsSessionAttemptIdRoute
+  '/trance/studios/$studioId/rooms/$roomId': typeof TranceStudiosStudioIdRoomsRoomIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -833,6 +980,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
   '/tradio': typeof TradioRoute
+  '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -855,6 +1003,7 @@ export interface FileRoutesByTo {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -891,6 +1040,10 @@ export interface FileRoutesByTo {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/trance/admin': typeof TranceAdminRoute
+  '/trance/badges': typeof TranceBadgesRoute
+  '/trance/explore': typeof TranceExploreRoute
+  '/trance/rewards': typeof TranceRewardsRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -898,9 +1051,16 @@ export interface FileRoutesByTo {
   '/creator-studio': typeof CreatorStudioIndexRoute
   '/games': typeof GamesIndexRoute
   '/legal': typeof LegalIndexRoute
+  '/trance': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/trance/builder/new': typeof TranceBuilderNewRoute
+  '/trance/choreographers/$id': typeof TranceChoreographersIdRoute
+  '/trance/leaderboard/$routineId': typeof TranceLeaderboardRoutineIdRoute
+  '/trance/profile/$profileId': typeof TranceProfileProfileIdRoute
+  '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
+  '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
@@ -909,6 +1069,12 @@ export interface FileRoutesByTo {
   '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
   '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
   '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
+  '/trance/builder/$routineId/edit': typeof TranceBuilderRoutineIdEditRoute
+  '/trance/session/$routineId/learn': typeof TranceSessionRoutineIdLearnRoute
+  '/trance/session/$routineId/performance': typeof TranceSessionRoutineIdPerformanceRoute
+  '/trance/session/$routineId/practice': typeof TranceSessionRoutineIdPracticeRoute
+  '/trance/session/$routineId/results/$sessionAttemptId': typeof TranceSessionRoutineIdResultsSessionAttemptIdRoute
+  '/trance/studios/$studioId/rooms/$roomId': typeof TranceStudiosStudioIdRoomsRoomIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -946,6 +1112,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
   '/tradio': typeof TradioRoute
+  '/trance': typeof TranceRouteWithChildren
+  '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
   '/admin/content-approval': typeof AdminContentApprovalRouteWithChildren
@@ -968,6 +1136,7 @@ export interface FileRoutesById {
   '/apply/creator': typeof ApplyCreatorRoute
   '/apply/go-verification': typeof ApplyGoVerificationRoute
   '/apply/tradio-creator': typeof ApplyTradioCreatorRoute
+  '/apply/trance-creator': typeof ApplyTranceCreatorRoute
   '/apply/verification': typeof ApplyVerificationRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/category/$slug': typeof CategorySlugRoute
@@ -1005,6 +1174,10 @@ export interface FileRoutesById {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/trance/admin': typeof TranceAdminRoute
+  '/trance/badges': typeof TranceBadgesRoute
+  '/trance/explore': typeof TranceExploreRoute
+  '/trance/rewards': typeof TranceRewardsRoute
   '/tv/activate': typeof TvActivateRoute
   '/u/$uid': typeof UUidRouteWithChildren
   '/watch-party/$id': typeof WatchPartyIdRoute
@@ -1012,9 +1185,16 @@ export interface FileRoutesById {
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
+  '/trance/': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
   '/oauth/jwks/json': typeof OauthJwksJsonRoute
+  '/trance/builder/new': typeof TranceBuilderNewRoute
+  '/trance/choreographers/$id': typeof TranceChoreographersIdRoute
+  '/trance/leaderboard/$routineId': typeof TranceLeaderboardRoutineIdRoute
+  '/trance/profile/$profileId': typeof TranceProfileProfileIdRoute
+  '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
+  '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
   '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
@@ -1023,6 +1203,12 @@ export interface FileRoutesById {
   '/games/interactive-stories/$storySlug/play': typeof GamesInteractiveStoriesStorySlugPlayRoute
   '/games/interactive-stories/$storySlug/playthroughs': typeof GamesInteractiveStoriesStorySlugPlaythroughsRoute
   '/games/interactive-stories/share/$shareSlug': typeof GamesInteractiveStoriesShareShareSlugRoute
+  '/trance/builder/$routineId/edit': typeof TranceBuilderRoutineIdEditRoute
+  '/trance/session/$routineId/learn': typeof TranceSessionRoutineIdLearnRoute
+  '/trance/session/$routineId/performance': typeof TranceSessionRoutineIdPerformanceRoute
+  '/trance/session/$routineId/practice': typeof TranceSessionRoutineIdPracticeRoute
+  '/trance/session/$routineId/results/$sessionAttemptId': typeof TranceSessionRoutineIdResultsSessionAttemptIdRoute
+  '/trance/studios/$studioId/rooms/$roomId': typeof TranceStudiosStudioIdRoomsRoomIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1061,6 +1247,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/tradio'
+    | '/trance'
+    | '/tv'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1083,6 +1271,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1120,6 +1309,10 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/trance/admin'
+    | '/trance/badges'
+    | '/trance/explore'
+    | '/trance/rewards'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1127,9 +1320,16 @@ export interface FileRouteTypes {
     | '/creator-studio/'
     | '/games/'
     | '/legal/'
+    | '/trance/'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
+    | '/trance/builder/new'
+    | '/trance/choreographers/$id'
+    | '/trance/leaderboard/$routineId'
+    | '/trance/profile/$profileId'
+    | '/trance/routines/$routineId'
+    | '/trance/studios/$studioId'
     | '/u/$uid/channel'
     | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
@@ -1138,6 +1338,12 @@ export interface FileRouteTypes {
     | '/games/interactive-stories/$storySlug/play'
     | '/games/interactive-stories/$storySlug/playthroughs'
     | '/games/interactive-stories/share/$shareSlug'
+    | '/trance/builder/$routineId/edit'
+    | '/trance/session/$routineId/learn'
+    | '/trance/session/$routineId/performance'
+    | '/trance/session/$routineId/practice'
+    | '/trance/session/$routineId/results/$sessionAttemptId'
+    | '/trance/studios/$studioId/rooms/$roomId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1172,6 +1378,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/tradio'
+    | '/tv'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1194,6 +1401,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1230,6 +1438,10 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/trance/admin'
+    | '/trance/badges'
+    | '/trance/explore'
+    | '/trance/rewards'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1237,9 +1449,16 @@ export interface FileRouteTypes {
     | '/creator-studio'
     | '/games'
     | '/legal'
+    | '/trance'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
+    | '/trance/builder/new'
+    | '/trance/choreographers/$id'
+    | '/trance/leaderboard/$routineId'
+    | '/trance/profile/$profileId'
+    | '/trance/routines/$routineId'
+    | '/trance/studios/$studioId'
     | '/u/$uid/channel'
     | '/games/interactive-stories'
     | '/api/fwd/oauth/authorize'
@@ -1248,6 +1467,12 @@ export interface FileRouteTypes {
     | '/games/interactive-stories/$storySlug/play'
     | '/games/interactive-stories/$storySlug/playthroughs'
     | '/games/interactive-stories/share/$shareSlug'
+    | '/trance/builder/$routineId/edit'
+    | '/trance/session/$routineId/learn'
+    | '/trance/session/$routineId/performance'
+    | '/trance/session/$routineId/practice'
+    | '/trance/session/$routineId/results/$sessionAttemptId'
+    | '/trance/studios/$studioId/rooms/$roomId'
   id:
     | '__root__'
     | '/'
@@ -1284,6 +1509,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/tradio'
+    | '/trance'
+    | '/tv'
     | '/admin/applications'
     | '/admin/audit-log'
     | '/admin/content-approval'
@@ -1306,6 +1533,7 @@ export interface FileRouteTypes {
     | '/apply/creator'
     | '/apply/go-verification'
     | '/apply/tradio-creator'
+    | '/apply/trance-creator'
     | '/apply/verification'
     | '/auth/callback'
     | '/category/$slug'
@@ -1343,6 +1571,10 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/trance/admin'
+    | '/trance/badges'
+    | '/trance/explore'
+    | '/trance/rewards'
     | '/tv/activate'
     | '/u/$uid'
     | '/watch-party/$id'
@@ -1350,9 +1582,16 @@ export interface FileRouteTypes {
     | '/creator-studio/'
     | '/games/'
     | '/legal/'
+    | '/trance/'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
     | '/oauth/jwks/json'
+    | '/trance/builder/new'
+    | '/trance/choreographers/$id'
+    | '/trance/leaderboard/$routineId'
+    | '/trance/profile/$profileId'
+    | '/trance/routines/$routineId'
+    | '/trance/studios/$studioId'
     | '/u/$uid/channel'
     | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
@@ -1361,6 +1600,12 @@ export interface FileRouteTypes {
     | '/games/interactive-stories/$storySlug/play'
     | '/games/interactive-stories/$storySlug/playthroughs'
     | '/games/interactive-stories/share/$shareSlug'
+    | '/trance/builder/$routineId/edit'
+    | '/trance/session/$routineId/learn'
+    | '/trance/session/$routineId/performance'
+    | '/trance/session/$routineId/practice'
+    | '/trance/session/$routineId/results/$sessionAttemptId'
+    | '/trance/studios/$studioId/rooms/$roomId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1398,6 +1643,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
   TradioRoute: typeof TradioRoute
+  TranceRoute: typeof TranceRouteWithChildren
+  TvRoute: typeof TvRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
   CategorySlugRoute: typeof CategorySlugRoute
   ChannelHandleRoute: typeof ChannelHandleRoute
@@ -1410,7 +1657,6 @@ export interface RootRouteChildren {
   OauthTokenRoute: typeof OauthTokenRoute
   OauthUserinfoRoute: typeof OauthUserinfoRoute
   TestsNaturalAbilityRoute: typeof TestsNaturalAbilityRoute
-  TvActivateRoute: typeof TvActivateRoute
   UUidRoute: typeof UUidRouteWithChildren
   WatchPartyIdRoute: typeof WatchPartyIdRoute
   WatchIdRoute: typeof WatchIdRoute
@@ -1426,6 +1672,20 @@ declare module '@tanstack/react-router' {
       path: '/index'
       fullPath: '/index'
       preLoaderRoute: typeof Char91indexChar93RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tv': {
+      id: '/tv'
+      path: '/tv'
+      fullPath: '/tv'
+      preLoaderRoute: typeof TvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trance': {
+      id: '/trance'
+      path: '/trance'
+      fullPath: '/trance'
+      preLoaderRoute: typeof TranceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tradio': {
@@ -1659,6 +1919,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trance/': {
+      id: '/trance/'
+      path: '/'
+      fullPath: '/trance/'
+      preLoaderRoute: typeof TranceIndexRouteImport
+      parentRoute: typeof TranceRoute
+    }
     '/legal/': {
       id: '/legal/'
       path: '/legal'
@@ -1703,10 +1970,38 @@ declare module '@tanstack/react-router' {
     }
     '/tv/activate': {
       id: '/tv/activate'
-      path: '/tv/activate'
+      path: '/activate'
       fullPath: '/tv/activate'
       preLoaderRoute: typeof TvActivateRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof TvRoute
+    }
+    '/trance/rewards': {
+      id: '/trance/rewards'
+      path: '/rewards'
+      fullPath: '/trance/rewards'
+      preLoaderRoute: typeof TranceRewardsRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/explore': {
+      id: '/trance/explore'
+      path: '/explore'
+      fullPath: '/trance/explore'
+      preLoaderRoute: typeof TranceExploreRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/badges': {
+      id: '/trance/badges'
+      path: '/badges'
+      fullPath: '/trance/badges'
+      preLoaderRoute: typeof TranceBadgesRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/admin': {
+      id: '/trance/admin'
+      path: '/admin'
+      fullPath: '/trance/admin'
+      preLoaderRoute: typeof TranceAdminRouteImport
+      parentRoute: typeof TranceRoute
     }
     '/tests/natural-ability': {
       id: '/tests/natural-ability'
@@ -1967,6 +2262,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApplyVerificationRouteImport
       parentRoute: typeof ApplyRoute
     }
+    '/apply/trance-creator': {
+      id: '/apply/trance-creator'
+      path: '/trance-creator'
+      fullPath: '/apply/trance-creator'
+      preLoaderRoute: typeof ApplyTranceCreatorRouteImport
+      parentRoute: typeof ApplyRoute
+    }
     '/apply/tradio-creator': {
       id: '/apply/tradio-creator'
       path: '/tradio-creator'
@@ -2135,6 +2437,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UUidChannelRouteImport
       parentRoute: typeof UUidRoute
     }
+    '/trance/studios/$studioId': {
+      id: '/trance/studios/$studioId'
+      path: '/studios/$studioId'
+      fullPath: '/trance/studios/$studioId'
+      preLoaderRoute: typeof TranceStudiosStudioIdRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/routines/$routineId': {
+      id: '/trance/routines/$routineId'
+      path: '/routines/$routineId'
+      fullPath: '/trance/routines/$routineId'
+      preLoaderRoute: typeof TranceRoutinesRoutineIdRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/profile/$profileId': {
+      id: '/trance/profile/$profileId'
+      path: '/profile/$profileId'
+      fullPath: '/trance/profile/$profileId'
+      preLoaderRoute: typeof TranceProfileProfileIdRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/leaderboard/$routineId': {
+      id: '/trance/leaderboard/$routineId'
+      path: '/leaderboard/$routineId'
+      fullPath: '/trance/leaderboard/$routineId'
+      preLoaderRoute: typeof TranceLeaderboardRoutineIdRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/choreographers/$id': {
+      id: '/trance/choreographers/$id'
+      path: '/choreographers/$id'
+      fullPath: '/trance/choreographers/$id'
+      preLoaderRoute: typeof TranceChoreographersIdRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/builder/new': {
+      id: '/trance/builder/new'
+      path: '/builder/new'
+      fullPath: '/trance/builder/new'
+      preLoaderRoute: typeof TranceBuilderNewRouteImport
+      parentRoute: typeof TranceRoute
+    }
     '/oauth/jwks/json': {
       id: '/oauth/jwks/json'
       path: '/oauth/jwks/json'
@@ -2155,6 +2499,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/content-approval/$id'
       preLoaderRoute: typeof AdminContentApprovalIdRouteImport
       parentRoute: typeof AdminContentApprovalRoute
+    }
+    '/trance/session/$routineId/practice': {
+      id: '/trance/session/$routineId/practice'
+      path: '/session/$routineId/practice'
+      fullPath: '/trance/session/$routineId/practice'
+      preLoaderRoute: typeof TranceSessionRoutineIdPracticeRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/session/$routineId/performance': {
+      id: '/trance/session/$routineId/performance'
+      path: '/session/$routineId/performance'
+      fullPath: '/trance/session/$routineId/performance'
+      preLoaderRoute: typeof TranceSessionRoutineIdPerformanceRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/session/$routineId/learn': {
+      id: '/trance/session/$routineId/learn'
+      path: '/session/$routineId/learn'
+      fullPath: '/trance/session/$routineId/learn'
+      preLoaderRoute: typeof TranceSessionRoutineIdLearnRouteImport
+      parentRoute: typeof TranceRoute
+    }
+    '/trance/builder/$routineId/edit': {
+      id: '/trance/builder/$routineId/edit'
+      path: '/builder/$routineId/edit'
+      fullPath: '/trance/builder/$routineId/edit'
+      preLoaderRoute: typeof TranceBuilderRoutineIdEditRouteImport
+      parentRoute: typeof TranceRoute
     }
     '/games/interactive-stories/share/$shareSlug': {
       id: '/games/interactive-stories/share/$shareSlug'
@@ -2197,6 +2569,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/fwd/oauth/authorize'
       preLoaderRoute: typeof ApiFwdOauthAuthorizeRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/trance/studios/$studioId/rooms/$roomId': {
+      id: '/trance/studios/$studioId/rooms/$roomId'
+      path: '/rooms/$roomId'
+      fullPath: '/trance/studios/$studioId/rooms/$roomId'
+      preLoaderRoute: typeof TranceStudiosStudioIdRoomsRoomIdRouteImport
+      parentRoute: typeof TranceStudiosStudioIdRoute
+    }
+    '/trance/session/$routineId/results/$sessionAttemptId': {
+      id: '/trance/session/$routineId/results/$sessionAttemptId'
+      path: '/session/$routineId/results/$sessionAttemptId'
+      fullPath: '/trance/session/$routineId/results/$sessionAttemptId'
+      preLoaderRoute: typeof TranceSessionRoutineIdResultsSessionAttemptIdRouteImport
+      parentRoute: typeof TranceRoute
     }
   }
 }
@@ -2261,6 +2647,7 @@ interface ApplyRouteChildren {
   ApplyCreatorRoute: typeof ApplyCreatorRoute
   ApplyGoVerificationRoute: typeof ApplyGoVerificationRoute
   ApplyTradioCreatorRoute: typeof ApplyTradioCreatorRoute
+  ApplyTranceCreatorRoute: typeof ApplyTranceCreatorRoute
   ApplyVerificationRoute: typeof ApplyVerificationRoute
 }
 
@@ -2269,6 +2656,7 @@ const ApplyRouteChildren: ApplyRouteChildren = {
   ApplyCreatorRoute: ApplyCreatorRoute,
   ApplyGoVerificationRoute: ApplyGoVerificationRoute,
   ApplyTradioCreatorRoute: ApplyTradioCreatorRoute,
+  ApplyTranceCreatorRoute: ApplyTranceCreatorRoute,
   ApplyVerificationRoute: ApplyVerificationRoute,
 }
 
@@ -2438,6 +2826,72 @@ const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
 
+interface TranceStudiosStudioIdRouteChildren {
+  TranceStudiosStudioIdRoomsRoomIdRoute: typeof TranceStudiosStudioIdRoomsRoomIdRoute
+}
+
+const TranceStudiosStudioIdRouteChildren: TranceStudiosStudioIdRouteChildren = {
+  TranceStudiosStudioIdRoomsRoomIdRoute: TranceStudiosStudioIdRoomsRoomIdRoute,
+}
+
+const TranceStudiosStudioIdRouteWithChildren =
+  TranceStudiosStudioIdRoute._addFileChildren(
+    TranceStudiosStudioIdRouteChildren,
+  )
+
+interface TranceRouteChildren {
+  TranceAdminRoute: typeof TranceAdminRoute
+  TranceBadgesRoute: typeof TranceBadgesRoute
+  TranceExploreRoute: typeof TranceExploreRoute
+  TranceRewardsRoute: typeof TranceRewardsRoute
+  TranceIndexRoute: typeof TranceIndexRoute
+  TranceBuilderNewRoute: typeof TranceBuilderNewRoute
+  TranceChoreographersIdRoute: typeof TranceChoreographersIdRoute
+  TranceLeaderboardRoutineIdRoute: typeof TranceLeaderboardRoutineIdRoute
+  TranceProfileProfileIdRoute: typeof TranceProfileProfileIdRoute
+  TranceRoutinesRoutineIdRoute: typeof TranceRoutinesRoutineIdRoute
+  TranceStudiosStudioIdRoute: typeof TranceStudiosStudioIdRouteWithChildren
+  TranceBuilderRoutineIdEditRoute: typeof TranceBuilderRoutineIdEditRoute
+  TranceSessionRoutineIdLearnRoute: typeof TranceSessionRoutineIdLearnRoute
+  TranceSessionRoutineIdPerformanceRoute: typeof TranceSessionRoutineIdPerformanceRoute
+  TranceSessionRoutineIdPracticeRoute: typeof TranceSessionRoutineIdPracticeRoute
+  TranceSessionRoutineIdResultsSessionAttemptIdRoute: typeof TranceSessionRoutineIdResultsSessionAttemptIdRoute
+}
+
+const TranceRouteChildren: TranceRouteChildren = {
+  TranceAdminRoute: TranceAdminRoute,
+  TranceBadgesRoute: TranceBadgesRoute,
+  TranceExploreRoute: TranceExploreRoute,
+  TranceRewardsRoute: TranceRewardsRoute,
+  TranceIndexRoute: TranceIndexRoute,
+  TranceBuilderNewRoute: TranceBuilderNewRoute,
+  TranceChoreographersIdRoute: TranceChoreographersIdRoute,
+  TranceLeaderboardRoutineIdRoute: TranceLeaderboardRoutineIdRoute,
+  TranceProfileProfileIdRoute: TranceProfileProfileIdRoute,
+  TranceRoutinesRoutineIdRoute: TranceRoutinesRoutineIdRoute,
+  TranceStudiosStudioIdRoute: TranceStudiosStudioIdRouteWithChildren,
+  TranceBuilderRoutineIdEditRoute: TranceBuilderRoutineIdEditRoute,
+  TranceSessionRoutineIdLearnRoute: TranceSessionRoutineIdLearnRoute,
+  TranceSessionRoutineIdPerformanceRoute:
+    TranceSessionRoutineIdPerformanceRoute,
+  TranceSessionRoutineIdPracticeRoute: TranceSessionRoutineIdPracticeRoute,
+  TranceSessionRoutineIdResultsSessionAttemptIdRoute:
+    TranceSessionRoutineIdResultsSessionAttemptIdRoute,
+}
+
+const TranceRouteWithChildren =
+  TranceRoute._addFileChildren(TranceRouteChildren)
+
+interface TvRouteChildren {
+  TvActivateRoute: typeof TvActivateRoute
+}
+
+const TvRouteChildren: TvRouteChildren = {
+  TvActivateRoute: TvActivateRoute,
+}
+
+const TvRouteWithChildren = TvRoute._addFileChildren(TvRouteChildren)
+
 interface UUidRouteChildren {
   UUidChannelRoute: typeof UUidChannelRoute
 }
@@ -2483,6 +2937,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
   TradioRoute: TradioRoute,
+  TranceRoute: TranceRouteWithChildren,
+  TvRoute: TvRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
   CategorySlugRoute: CategorySlugRoute,
   ChannelHandleRoute: ChannelHandleRoute,
@@ -2495,7 +2951,6 @@ const rootRouteChildren: RootRouteChildren = {
   OauthTokenRoute: OauthTokenRoute,
   OauthUserinfoRoute: OauthUserinfoRoute,
   TestsNaturalAbilityRoute: TestsNaturalAbilityRoute,
-  TvActivateRoute: TvActivateRoute,
   UUidRoute: UUidRouteWithChildren,
   WatchPartyIdRoute: WatchPartyIdRoute,
   WatchIdRoute: WatchIdRoute,

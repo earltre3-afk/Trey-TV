@@ -8,7 +8,6 @@ Paste the newest task from your phone below this line. Keep one task here at a t
 
 ---
 
-
 ---
 
 ## Task Requirements
@@ -38,4 +37,3 @@ Do not modify these unless the task explicitly says to:
 ```text
 Read ai-relay/inbox.md. Complete the newest task safely. Follow ai-relay/safety-rules.md exactly. Do not touch protected Trey-I onboarding unless this task explicitly says to. Make only the smallest necessary changes. Then write your full report to ai-relay/outbox.md and update ai-relay/task-log.md.
 ```
-

@@ -1,8 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Lock, UserPlus, Copy, Bot, ChevronRight, Send, LogOut, Crown, GripVertical, Check, Loader2, Play } from 'lucide-react';
-import TrunoLogo from '../components/TrunoLogo';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { PlayerIdentity } from '@/features/games/lib/services/identity';
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Lock,
+  UserPlus,
+  Copy,
+  Bot,
+  ChevronRight,
+  Send,
+  LogOut,
+  Crown,
+  GripVertical,
+  Check,
+  Loader2,
+  Play,
+} from "lucide-react";
+import TrunoLogo from "../components/TrunoLogo";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { PlayerIdentity } from "@/features/games/lib/services/identity";
 import {
   fillSeatsWithBots,
   getActiveSession,
@@ -12,9 +25,9 @@ import {
   startGameSession,
   leaveRoom,
   heartbeat,
-} from '@/features/games/lib/services/roomService';
-import { FriendInviteCenter } from '@/features/games/components/lounge/FriendInviteCenter';
-import { supabase } from '@/lib/supabase';
+} from "@/features/games/lib/services/roomService";
+import { FriendInviteCenter } from "@/features/games/components/lounge/FriendInviteCenter";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   onNavigate: (view: string, params?: any) => void;
@@ -26,11 +39,19 @@ interface Props {
   onRoomReady: (roomId: string) => void;
 }
 
-const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, suppressActiveSession = false, onJoinRoom, onRoomReady }) => {
+const RoomScreen: React.FC<Props> = ({
+  onNavigate,
+  identity,
+  roomId,
+  roomError,
+  suppressActiveSession = false,
+  onJoinRoom,
+  onRoomReady,
+}) => {
   const currentUser = useCurrentUser();
   const [room, setRoom] = useState<RoomRow | null>(null);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState("");
   const [rules, setRules] = useState({ classic: true, action: true, wild: true, team: false });
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,14 +62,14 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     if (!roomId) return;
     try {
       const [{ data: roomRow }, seated, session] = await Promise.all([
-        supabase.from('game_rooms').select('*').eq('id', roomId).maybeSingle(),
+        supabase.from("game_rooms").select("*").eq("id", roomId).maybeSingle(),
         getRoomPlayers(roomId),
         getActiveSession(roomId),
       ]);
       const nextRoom = roomRow as RoomRow | null;
       setRoom(nextRoom);
       setPlayers(seated);
-      if (session && !suppressActiveSession) onNavigate('match', { roomId });
+      if (session && !suppressActiveSession) onNavigate("match", { roomId });
     } catch (err) {
       console.error("Failed to load room data in Truno RoomScreen:", err);
     }
@@ -61,10 +82,15 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
-    const load = async () => { if (!cancelled) await loadRoom(); };
+    const load = async () => {
+      if (!cancelled) await loadRoom();
+    };
     load();
     const timer = setInterval(load, 2000);
-    return () => { cancelled = true; clearInterval(timer); };
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, suppressActiveSession]);
 
@@ -78,26 +104,36 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
   }, [identity.userId, roomId]);
 
   const seats = room?.max_players ?? 4;
-  const filledSeats = useMemo(() => (
-    Array.from({ length: seats }).map((_, seat) => players.find((p) => p.seat_index === seat) ?? null)
-  ), [players, seats]);
+  const filledSeats = useMemo(
+    () =>
+      Array.from({ length: seats }).map(
+        (_, seat) => players.find((p) => p.seat_index === seat) ?? null,
+      ),
+    [players, seats],
+  );
   const me = players.find((p) => p.user_id === identity.userId);
   const isHost = !!me?.is_host;
 
   const copyCode = async () => {
     if (!room?.room_code) {
-      setFeedback('Create a real private room before sharing a code.');
+      setFeedback("Create a real private room before sharing a code.");
       return;
     }
     const ok = await copyTextSafely(room.room_code);
     setCopied(ok);
-    setFeedback(ok ? 'Room code copied.' : `Copy blocked. Room code: ${room.room_code}`);
-    setTimeout(() => { setCopied(false); setFeedback(null); }, ok ? 1600 : 5000);
+    setFeedback(ok ? "Room code copied." : `Copy blocked. Room code: ${room.room_code}`);
+    setTimeout(
+      () => {
+        setCopied(false);
+        setFeedback(null);
+      },
+      ok ? 1600 : 5000,
+    );
   };
 
   const handleInvite = async () => {
     if (!room) {
-      setFeedback('Create a room first, then invite friends.');
+      setFeedback("Create a room first, then invite friends.");
       return;
     }
     setShowInvites(true);
@@ -105,16 +141,16 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
 
   const handleFillBots = async () => {
     if (!room) {
-      setFeedback('Create a room before filling seats.');
+      setFeedback("Create a room before filling seats.");
       return;
     }
     setBusy(true);
     try {
-      await fillSeatsWithBots(room.id, 'truno');
+      await fillSeatsWithBots(room.id, "truno");
       await loadRoom();
-      setFeedback('Open seats filled with bot players.');
+      setFeedback("Open seats filled with bot players.");
     } catch (e: any) {
-      setFeedback(e?.message || 'Could not fill seats.');
+      setFeedback(e?.message || "Could not fill seats.");
     } finally {
       setBusy(false);
       setTimeout(() => setFeedback(null), 2500);
@@ -125,12 +161,12 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     if (!room) return;
     setBusy(true);
     try {
-      if (players.length < 2) await fillSeatsWithBots(room.id, 'truno');
-      await startGameSession(room.id, 'truno');
+      if (players.length < 2) await fillSeatsWithBots(room.id, "truno");
+      await startGameSession(room.id, "truno");
       onRoomReady(room.id);
-      onNavigate('match', { roomId: room.id });
+      onNavigate("match", { roomId: room.id });
     } catch (e: any) {
-      setFeedback(e?.message || 'Could not start match.');
+      setFeedback(e?.message || "Could not start match.");
     } finally {
       setBusy(false);
     }
@@ -138,7 +174,7 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
 
   const handleLeave = async () => {
     if (room) await leaveRoom(room.id, identity.userId);
-    onNavigate('home');
+    onNavigate("home");
   };
 
   const handleJoin = async () => {
@@ -148,7 +184,7 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
     try {
       await onJoinRoom(joinCode);
     } catch (e: any) {
-      setFeedback(e?.message || 'Could not join room.');
+      setFeedback(e?.message || "Could not join room.");
     } finally {
       setBusy(false);
     }
@@ -169,13 +205,20 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
   return (
     <div className="px-3 pb-32 space-y-4">
       <div className="flex flex-col items-center">
-        <TrunoLogo size="md" subtitle="Match colors. Play action. Own the table." showParent={false} />
+        <TrunoLogo
+          size="md"
+          subtitle="Match colors. Play action. Own the table."
+          showParent={false}
+        />
       </div>
 
       {!room && (
         <div className="rounded-2xl border border-amber-500/30 bg-zinc-950/80 p-4">
           <h2 className="text-sm font-black text-amber-300">Private Room</h2>
-          <p className="mt-1 text-xs text-zinc-400">No active room is loaded. Enter a real Trey TV room code, or go back and choose Play Friends to create one.</p>
+          <p className="mt-1 text-xs text-zinc-400">
+            No active room is loaded. Enter a real Trey TV room code, or go back and choose Play
+            Friends to create one.
+          </p>
           <div className="mt-3 flex gap-2">
             <input
               value={joinCode}
@@ -183,8 +226,12 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
               placeholder="ABC123"
               className="flex-1 rounded-xl bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm font-bold tracking-[0.25em] text-white outline-none"
             />
-            <button onClick={handleJoin} disabled={busy || joinCode.length !== 6} className="rounded-xl px-4 py-2 text-xs font-black bg-amber-500 text-black disabled:opacity-40">
-              {busy ? 'Joining...' : 'Join'}
+            <button
+              onClick={handleJoin}
+              disabled={busy || joinCode.length !== 6}
+              className="rounded-xl px-4 py-2 text-xs font-black bg-amber-500 text-black disabled:opacity-40"
+            >
+              {busy ? "Joining..." : "Join"}
             </button>
           </div>
           {feedback && <p className="mt-2 text-xs text-fuchsia-300">{feedback}</p>}
@@ -199,26 +246,46 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
           </div>
           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span className="text-[10px] font-bold text-emerald-300">{room ? 'Room is open' : 'Waiting for room'}</span>
+            <span className="text-[10px] font-bold text-emerald-300">
+              {room ? "Room is open" : "Waiting for room"}
+            </span>
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="text-center">
             <span className="text-[10px] font-bold text-zinc-500 tracking-widest">ROOM CODE</span>
-            <h2 className="text-4xl md:text-5xl font-black my-2 tracking-tight" style={{
-              background: 'linear-gradient(90deg, #FF0080, #9D4EDD, #00D9FF)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 0 12px rgba(157,78,221,0.5))',
-            }}>{room?.room_code ?? '------'}</h2>
-            <p className="text-[11px] text-zinc-500 mb-3">{room ? 'Share this real room code with friends' : 'Create or join a room to get a shareable code'}</p>
+            <h2
+              className="text-4xl md:text-5xl font-black my-2 tracking-tight"
+              style={{
+                background: "linear-gradient(90deg, #FF0080, #9D4EDD, #00D9FF)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                filter: "drop-shadow(0 0 12px rgba(157,78,221,0.5))",
+              }}
+            >
+              {room?.room_code ?? "------"}
+            </h2>
+            <p className="text-[11px] text-zinc-500 mb-3">
+              {room
+                ? "Share this real room code with friends"
+                : "Create or join a room to get a shareable code"}
+            </p>
             <div className="grid grid-cols-2 gap-2">
-              <button onClick={handleInvite} disabled={!room} className="min-h-11 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/5 text-fuchsia-300 text-xs font-bold hover:bg-fuchsia-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
+              <button
+                onClick={handleInvite}
+                disabled={!room}
+                className="min-h-11 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-fuchsia-500/50 bg-fuchsia-500/5 text-fuchsia-300 text-xs font-bold hover:bg-fuchsia-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+              >
                 <UserPlus size={14} /> Invite Friends
               </button>
-              <button onClick={copyCode} disabled={!room} className="min-h-11 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/50 bg-amber-500/5 text-amber-300 text-xs font-bold hover:bg-amber-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
-                {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied!' : 'Copy Code'}
+              <button
+                onClick={copyCode}
+                disabled={!room}
+                className="min-h-11 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-amber-500/50 bg-amber-500/5 text-amber-300 text-xs font-bold hover:bg-amber-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
+                {copied ? "Copied!" : "Copy Code"}
               </button>
             </div>
             {feedback && <p className="mt-2 text-xs text-fuchsia-300">{feedback}</p>}
@@ -226,14 +293,28 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-zinc-300">{players.length} / {seats} <span className="text-zinc-500 font-normal">PLAYERS</span></span>
-              <button onClick={handleFillBots} disabled={busy || !room} className="min-h-8 flex items-center gap-1.5 px-2 py-1 rounded-lg border border-cyan-500/40 bg-cyan-500/5 text-cyan-300 text-[10px] font-bold disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
+              <span className="text-xs font-bold text-zinc-300">
+                {players.length} / {seats}{" "}
+                <span className="text-zinc-500 font-normal">PLAYERS</span>
+              </span>
+              <button
+                onClick={handleFillBots}
+                disabled={busy || !room}
+                className="min-h-8 flex items-center gap-1.5 px-2 py-1 rounded-lg border border-cyan-500/40 bg-cyan-500/5 text-cyan-300 text-[10px] font-bold disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+              >
                 {busy ? <Loader2 size={12} className="animate-spin" /> : <Bot size={12} />} AI Fill
               </button>
             </div>
             <div className="space-y-1.5">
               {filledSeats.map((p, i) => (
-                <SeatRow key={i} player={p} seat={i} currentUserAvatar={currentUser.avatar} currentUserName={currentUser.name} isYou={p?.user_id === identity.userId} />
+                <SeatRow
+                  key={i}
+                  player={p}
+                  seat={i}
+                  currentUserAvatar={currentUser.avatar}
+                  currentUserName={currentUser.name}
+                  isYou={p?.user_id === identity.userId}
+                />
               ))}
             </div>
           </div>
@@ -243,9 +324,22 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
       <div className="grid md:grid-cols-2 gap-3">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4">
           <div className="relative aspect-square">
-            <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, rgba(157,78,221,0.2), transparent 70%)' }} />
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: "radial-gradient(circle, rgba(157,78,221,0.2), transparent 70%)",
+              }}
+            />
             <div className="absolute inset-8 rounded-full border border-purple-500/30" />
-            {filledSeats.map((p, i) => <TableSeat key={i} player={p} seat={i} isYou={p?.user_id === identity.userId} currentUserAvatar={currentUser.avatar} />)}
+            {filledSeats.map((p, i) => (
+              <TableSeat
+                key={i}
+                player={p}
+                seat={i}
+                isYou={p?.user_id === identity.userId}
+                currentUserAvatar={currentUser.avatar}
+              />
+            ))}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-12 h-16 rounded-xl bg-gradient-to-br from-zinc-900 to-black border-2 border-fuchsia-500/40 shadow-[0_0_20px_rgba(157,78,221,0.6)] flex items-center justify-center">
                 <span className="text-xl">TR</span>
@@ -257,11 +351,19 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
         <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3 flex flex-col">
           <h3 className="text-sm font-bold text-white mb-2">ROOM STATUS</h3>
           <div className="flex-1 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 p-4 text-center text-xs text-zinc-500">
-            Seats, invites, room codes, and bot fill are live. Chat stays quiet until backed room chat is added.
+            Seats, invites, room codes, and bot fill are live. Chat stays quiet until backed room
+            chat is added.
           </div>
           <div className="mt-2 flex items-center gap-2">
-            <input disabled placeholder="Chat coming soon" className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-500 outline-none" />
-            <button disabled className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center opacity-50">
+            <input
+              disabled
+              placeholder="Chat coming soon"
+              className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-500 outline-none"
+            />
+            <button
+              disabled
+              className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center opacity-50"
+            >
               <Send size={12} className="text-zinc-500" />
             </button>
           </div>
@@ -273,22 +375,28 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
           <h3 className="text-sm font-bold text-white mb-3">GAME RULES</h3>
           <div className="space-y-2">
             {[
-              { k: 'classic', label: 'Classic Mode',  sub: 'Match colors & numbers' },
-              { k: 'action',  label: 'Action Heavy',  sub: 'Skip, reverse, draw cards' },
-              { k: 'wild',    label: 'Wild Rules',    sub: 'Wild and +4 cards enabled' },
-              { k: 'team',    label: 'Team Play',     sub: 'Coming soon' },
-            ].map(r => (
+              { k: "classic", label: "Classic Mode", sub: "Match colors & numbers" },
+              { k: "action", label: "Action Heavy", sub: "Skip, reverse, draw cards" },
+              { k: "wild", label: "Wild Rules", sub: "Wild and +4 cards enabled" },
+              { k: "team", label: "Team Play", sub: "Coming soon" },
+            ].map((r) => (
               <button
                 key={r.k}
-                onClick={() => r.k !== 'team' && setRules({ ...rules, [r.k]: !rules[r.k as keyof typeof rules] })}
+                onClick={() =>
+                  r.k !== "team" && setRules({ ...rules, [r.k]: !rules[r.k as keyof typeof rules] })
+                }
                 className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-zinc-900/60 border border-zinc-800 text-left"
               >
                 <div>
                   <div className="text-xs font-bold text-white">{r.label}</div>
                   <div className="text-[10px] text-zinc-500">{r.sub}</div>
                 </div>
-                <div className={`w-9 h-5 rounded-full p-0.5 transition-colors ${rules[r.k as keyof typeof rules] ? 'bg-fuchsia-500' : 'bg-zinc-700'}`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${rules[r.k as keyof typeof rules] ? 'translate-x-4' : ''}`} />
+                <div
+                  className={`w-9 h-5 rounded-full p-0.5 transition-colors ${rules[r.k as keyof typeof rules] ? "bg-fuchsia-500" : "bg-zinc-700"}`}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full bg-white transition-transform ${rules[r.k as keyof typeof rules] ? "translate-x-4" : ""}`}
+                  />
                 </div>
               </button>
             ))}
@@ -299,11 +407,14 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
           <h3 className="text-sm font-bold text-white mb-3">MATCH SETTINGS</h3>
           <div className="space-y-2">
             {[
-              { label: 'Seats', value: `${seats}` },
-              { label: 'Mode', value: room?.is_private ? 'Private' : 'Private' },
-              { label: 'Bots', value: players.some(p => p.is_bot) ? 'Enabled' : 'Optional' },
+              { label: "Seats", value: `${seats}` },
+              { label: "Mode", value: room?.is_private ? "Private" : "Private" },
+              { label: "Bots", value: players.some((p) => p.is_bot) ? "Enabled" : "Optional" },
             ].map((s, i) => (
-              <div key={i} className="w-full flex items-center justify-between px-3 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
+              <div
+                key={i}
+                className="w-full flex items-center justify-between px-3 py-3 rounded-xl bg-zinc-900/60 border border-zinc-800"
+              >
                 <span className="text-xs text-zinc-300">{s.label}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white">{s.value}</span>
@@ -316,41 +427,66 @@ const RoomScreen: React.FC<Props> = ({ onNavigate, identity, roomId, roomError, 
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <button onClick={handleLeave} className="min-h-14 flex items-center justify-center gap-2 py-3 rounded-2xl border border-pink-500/50 text-pink-300 font-bold text-sm hover:bg-pink-500/10">
+        <button
+          onClick={handleLeave}
+          className="min-h-14 flex items-center justify-center gap-2 py-3 rounded-2xl border border-pink-500/50 text-pink-300 font-bold text-sm hover:bg-pink-500/10"
+        >
           <LogOut size={14} /> Leave Room
         </button>
-        <button onClick={handleStart} disabled={busy || !room || (!isHost && players.length > 0)} className="relative min-h-14 py-3 rounded-2xl font-black overflow-hidden disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
+        <button
+          onClick={handleStart}
+          disabled={busy || !room || (!isHost && players.length > 0)}
+          className="relative min-h-14 py-3 rounded-2xl font-black overflow-hidden disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed"
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-blue-600" />
           <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-blue-600 blur-md opacity-70" />
           <div className="relative flex items-center justify-center gap-2">
             {busy ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
             <div>
               <div className="text-white text-base">Start Match</div>
-              <div className="text-[9px] text-fuchsia-100">{isHost ? 'Bots can fill open seats' : 'Waiting for host'}</div>
+              <div className="text-[9px] text-fuchsia-100">
+                {isHost ? "Bots can fill open seats" : "Waiting for host"}
+              </div>
             </div>
           </div>
         </button>
-        <button onClick={handleFillBots} disabled={busy || !room} className="min-h-14 flex items-center justify-center gap-2 py-3 rounded-2xl border border-emerald-500/50 text-emerald-300 font-bold text-xs hover:bg-emerald-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed">
-          <Bot size={14} /> <div className="text-left"><div>AI Fill</div><div className="text-[9px] text-emerald-200/70 font-normal">Fill empty seats</div></div>
+        <button
+          onClick={handleFillBots}
+          disabled={busy || !room}
+          className="min-h-14 flex items-center justify-center gap-2 py-3 rounded-2xl border border-emerald-500/50 text-emerald-300 font-bold text-xs hover:bg-emerald-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+        >
+          <Bot size={14} />{" "}
+          <div className="text-left">
+            <div>AI Fill</div>
+            <div className="text-[9px] text-emerald-200/70 font-normal">Fill empty seats</div>
+          </div>
         </button>
       </div>
     </div>
   );
 };
 
-const SeatRow: React.FC<{ player: PlayerRow | null; seat: number; currentUserAvatar?: string; currentUserName?: string; isYou: boolean }> = ({
-  player,
-  seat,
-  currentUserAvatar,
-  currentUserName,
-  isYou,
-}) => (
-  <div className={`flex items-center gap-2 px-2 py-2 rounded-xl border ${player ? 'border-zinc-800 bg-zinc-900/60' : 'border-dashed border-zinc-700/80 bg-zinc-950/55'}`}>
+const SeatRow: React.FC<{
+  player: PlayerRow | null;
+  seat: number;
+  currentUserAvatar?: string;
+  currentUserName?: string;
+  isYou: boolean;
+}> = ({ player, seat, currentUserAvatar, currentUserName, isYou }) => (
+  <div
+    className={`flex items-center gap-2 px-2 py-2 rounded-xl border ${player ? "border-zinc-800 bg-zinc-900/60" : "border-dashed border-zinc-700/80 bg-zinc-950/55"}`}
+  >
     {player ? (
       isYou && currentUserAvatar ? (
-        <img src={currentUserAvatar} alt={currentUserName || player.display_name} className="w-7 h-7 rounded-full object-cover" />
+        <img
+          src={currentUserAvatar}
+          alt={currentUserName || player.display_name}
+          className="w-7 h-7 rounded-full object-cover"
+        />
       ) : (
-        <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${player.is_bot ? 'from-cyan-600 to-blue-800' : 'from-fuchsia-500 to-purple-700'} flex items-center justify-center text-[10px] font-black text-white`}>
+        <div
+          className={`w-7 h-7 rounded-full bg-gradient-to-br ${player.is_bot ? "from-cyan-600 to-blue-800" : "from-fuchsia-500 to-purple-700"} flex items-center justify-center text-[10px] font-black text-white`}
+        >
           {player.display_name[0]?.toUpperCase()}
         </div>
       )
@@ -361,39 +497,74 @@ const SeatRow: React.FC<{ player: PlayerRow | null; seat: number; currentUserAva
     )}
     <div className="flex-1">
       <div className="flex items-center gap-1.5">
-        <span className={`text-xs font-bold ${player?.is_host ? 'text-fuchsia-300' : player ? 'text-white' : 'text-zinc-300'}`}>{player ? (isYou ? currentUserName || player.display_name : player.display_name) : 'Open Seat'}</span>
+        <span
+          className={`text-xs font-bold ${player?.is_host ? "text-fuchsia-300" : player ? "text-white" : "text-zinc-300"}`}
+        >
+          {player
+            ? isYou
+              ? currentUserName || player.display_name
+              : player.display_name
+            : "Open Seat"}
+        </span>
         {player?.is_host && <Crown size={11} className="text-amber-400" />}
-        {player?.is_bot && <span className="text-[9px] text-cyan-300 border border-cyan-500/30 rounded px-1">BOT</span>}
-        {isYou && <span className="text-[9px] text-emerald-300 border border-emerald-500/30 rounded px-1">YOU</span>}
+        {player?.is_bot && (
+          <span className="text-[9px] text-cyan-300 border border-cyan-500/30 rounded px-1">
+            BOT
+          </span>
+        )}
+        {isYou && (
+          <span className="text-[9px] text-emerald-300 border border-emerald-500/30 rounded px-1">
+            YOU
+          </span>
+        )}
       </div>
-      <span className={`text-[10px] ${player ? 'text-emerald-400' : 'text-zinc-500'}`}>{player ? 'Ready' : `Seat ${seat + 1} available`}</span>
+      <span className={`text-[10px] ${player ? "text-emerald-400" : "text-zinc-500"}`}>
+        {player ? "Ready" : `Seat ${seat + 1} available`}
+      </span>
     </div>
     <GripVertical size={12} className="text-zinc-600" />
   </div>
 );
 
-const TableSeat: React.FC<{ player: PlayerRow | null; seat: number; isYou: boolean; currentUserAvatar?: string }> = ({ player, seat, isYou, currentUserAvatar }) => {
+const TableSeat: React.FC<{
+  player: PlayerRow | null;
+  seat: number;
+  isYou: boolean;
+  currentUserAvatar?: string;
+}> = ({ player, seat, isYou, currentUserAvatar }) => {
   const positions = [
-    'top-2 left-1/2 -translate-x-1/2',
-    'top-1/2 right-2 -translate-y-1/2',
-    'bottom-8 left-1/2 -translate-x-1/2',
-    'top-1/2 left-2 -translate-y-1/2',
+    "top-2 left-1/2 -translate-x-1/2",
+    "top-1/2 right-2 -translate-y-1/2",
+    "bottom-8 left-1/2 -translate-x-1/2",
+    "top-1/2 left-2 -translate-y-1/2",
   ];
   return (
     <div className={`absolute ${positions[seat] ?? positions[0]} flex flex-col items-center`}>
       {player ? (
         isYou && currentUserAvatar ? (
-          <img src={currentUserAvatar} alt={player.display_name} className="w-10 h-10 rounded-full object-cover ring-2 ring-fuchsia-500/50" />
+          <img
+            src={currentUserAvatar}
+            alt={player.display_name}
+            className="w-10 h-10 rounded-full object-cover ring-2 ring-fuchsia-500/50"
+          />
         ) : (
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${player.is_bot ? 'from-cyan-600 to-blue-800' : 'from-fuchsia-500 to-purple-700'} ring-2 ring-fuchsia-500/50 flex items-center justify-center text-xs font-black`}>
+          <div
+            className={`w-10 h-10 rounded-full bg-gradient-to-br ${player.is_bot ? "from-cyan-600 to-blue-800" : "from-fuchsia-500 to-purple-700"} ring-2 ring-fuchsia-500/50 flex items-center justify-center text-xs font-black`}
+          >
             {player.display_name[0]?.toUpperCase()}
           </div>
         )
       ) : (
         <div className="w-10 h-10 rounded-full border border-dashed border-zinc-700" />
       )}
-      <span className={`text-[9px] font-bold mt-1 ${player ? 'text-white' : 'text-zinc-400'}`}>{player?.display_name || 'Open Seat'}</span>
-      <span className={`text-[8px] ${player?.is_bot ? 'text-cyan-300' : player ? 'text-emerald-400' : 'text-zinc-600'}`}>{player?.is_bot ? 'Bot player' : player ? 'Ready' : `Seat ${seat + 1}`}</span>
+      <span className={`text-[9px] font-bold mt-1 ${player ? "text-white" : "text-zinc-400"}`}>
+        {player?.display_name || "Open Seat"}
+      </span>
+      <span
+        className={`text-[8px] ${player?.is_bot ? "text-cyan-300" : player ? "text-emerald-400" : "text-zinc-600"}`}
+      >
+        {player?.is_bot ? "Bot player" : player ? "Ready" : `Seat ${seat + 1}`}
+      </span>
     </div>
   );
 };
@@ -411,16 +582,16 @@ async function copyTextSafely(text: string) {
   }
 
   try {
-    const textarea = document.createElement('textarea');
+    const textarea = document.createElement("textarea");
     textarea.value = text;
-    textarea.setAttribute('readonly', '');
-    textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
-    textarea.style.top = '0';
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "0";
     document.body.appendChild(textarea);
     textarea.focus();
     textarea.select();
-    const copied = document.execCommand('copy');
+    const copied = document.execCommand("copy");
     document.body.removeChild(textarea);
     return copied;
   } catch {

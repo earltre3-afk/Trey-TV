@@ -12,7 +12,8 @@ const TOOL_DESCRIPTIONS: Record<TreyTvMcpToolName, string> = {
   get_trey_tv_features: "Read the safe Trey TV feature registry and protected-feature notes.",
   get_trey_tv_games: "Read the safe Trey TV games capability registry.",
   get_fwd_integration_status: "Read safe FWD integration status for fwd.treytv.com surfaces.",
-  get_protected_flows: "Read protected Trey TV flow rules and file patterns without reading private onboarding data.",
+  get_protected_flows:
+    "Read protected Trey TV flow rules and file patterns without reading private onboarding data.",
 };
 
 export function createTreyTvMcpServer(): McpServer {
@@ -64,4 +65,3 @@ main().catch((error: unknown) => {
   process.stderr.write(`Trey TV MCP server failed: ${message}\n`);
   process.exitCode = 1;
 });
-

@@ -47,7 +47,12 @@ export function ChatMessageList({ kind, scopeId, pending, currentUserId, classNa
       .channel(`chat-${kind}-${scopeId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `scope_id=eq.${scopeId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `scope_id=eq.${scopeId}`,
+        },
         (payload) => {
           const next = payload.new as ChatMessageRow;
           if (next.kind !== kind) return; // double-check; filter only checks scope_id
@@ -71,10 +76,11 @@ export function ChatMessageList({ kind, scopeId, pending, currentUserId, classNa
     if (pending.length === 0) return pending;
     return pending.filter((p) => {
       if (p.status === "blocked" || p.status === "nudge") return true; // keep so the user can see feedback
-      const matched = rows.some((r) =>
-        r.sender_id === currentUserId &&
-        r.body === p.body &&
-        Math.abs(new Date(r.created_at).getTime() - p.createdAt) < 30_000,
+      const matched = rows.some(
+        (r) =>
+          r.sender_id === currentUserId &&
+          r.body === p.body &&
+          Math.abs(new Date(r.created_at).getTime() - p.createdAt) < 30_000,
       );
       return !matched;
     });
@@ -117,11 +123,16 @@ export function ChatMessageList({ kind, scopeId, pending, currentUserId, classNa
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-1.5">
-                <span className={`text-[11px] font-semibold truncate ${isMe ? "text-primary" : "text-white/90"}`}>
+                <span
+                  className={`text-[11px] font-semibold truncate ${isMe ? "text-primary" : "text-white/90"}`}
+                >
                   {name}
                 </span>
                 <span className="text-[10px] text-white/40 shrink-0">
-                  {new Date(row.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(row.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
               <div className="text-sm text-white/90 break-words">{row.body}</div>
@@ -142,8 +153,8 @@ export function ChatMessageList({ kind, scopeId, pending, currentUserId, classNa
                 p.status === "blocked"
                   ? "text-red-300 line-through"
                   : p.status === "sending"
-                  ? "text-white/60 italic"
-                  : "text-white/90"
+                    ? "text-white/60 italic"
+                    : "text-white/90"
               }`}
             >
               {p.body}

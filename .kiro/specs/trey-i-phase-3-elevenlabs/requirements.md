@@ -1,4 +1,5 @@
 # Trey-I Phase 3 — ElevenLabs Real-Time Voice Token/Session Wiring
+
 ## Requirements
 
 ### Context
@@ -26,10 +27,12 @@ via the `@elevenlabs/react` SDK — without the API key ever leaving the server.
 ### Scope
 
 **In scope — Phase 3:**
+
 - `src/lib/trey-i/elevenlabs-session.server.ts` (new file)
 - Spec files in `.kiro/specs/trey-i-phase-3-elevenlabs/`
 
 **Explicitly out of scope — Phase 3:**
+
 - Mic button wiring in `onboarding.voice.tsx`
 - `@elevenlabs/react` browser SDK
 - `package.json` changes
@@ -69,6 +72,7 @@ It must not throw.
 **FR-5 — Endpoint resolution**
 The ElevenLabs API has had the signed URL endpoint under two paths.
 Try canonical underscore form first; fall back to legacy hyphen form:
+
 1. `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=<id>`
 2. `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=<id>`
 
@@ -76,6 +80,7 @@ If the first returns 404, silently try the second.
 
 **FR-6 — Success response**
 On success, return:
+
 ```ts
 {
   ok: true,
@@ -90,6 +95,7 @@ On success, return:
 All error paths return typed `{ ok: false; code: string; message: string }`.
 The function must never throw to the browser. The `message` field is always
 safe to display to the user. Error codes follow the RESTORE pattern:
+
 - `AUTH_REQUIRED`
 - `ELEVENLABS_NOT_CONFIGURED`
 - `ELEVENLABS_API_KEY_INVALID` (401)
@@ -141,6 +147,7 @@ not be read or referenced in any Phase 3 file.
 
 **SEC-8** — After `pnpm build`, the client bundle must not contain the string
 `ELEVENLABS_API_KEY`. Build validation:
+
 ```
 grep -r "ELEVENLABS_API_KEY" dist/client 2>/dev/null | wc -l
 # expected: 0
@@ -150,10 +157,10 @@ grep -r "ELEVENLABS_API_KEY" dist/client 2>/dev/null | wc -l
 
 ### Env Vars Introduced in Phase 3
 
-| Variable              | Scope       | Required | Purpose                                   |
-|-----------------------|-------------|----------|-------------------------------------------|
-| `ELEVENLABS_API_KEY`  | server-only | for voice| Authenticate to ElevenLabs API            |
-| `ELEVENLABS_AGENT_ID` | server-only | for voice| Identify which ElevenLabs agent to use    |
+| Variable              | Scope       | Required  | Purpose                                |
+| --------------------- | ----------- | --------- | -------------------------------------- |
+| `ELEVENLABS_API_KEY`  | server-only | for voice | Authenticate to ElevenLabs API         |
+| `ELEVENLABS_AGENT_ID` | server-only | for voice | Identify which ElevenLabs agent to use |
 
 Both vars are already present in the RESTORE env catalog (`server-env.ts`).
 Neither has a `VITE_` or `NEXT_PUBLIC_` counterpart.
@@ -164,17 +171,17 @@ not a crash.
 
 ### What the Browser Receives vs Does Not Receive
 
-| Item                    | Browser receives? | Notes                                      |
-|-------------------------|-------------------|--------------------------------------------|
-| `signedUrl`             | Yes               | WSS URL; token embedded by ElevenLabs      |
-| `conversationId`        | Yes (optional)    | Safe identifier, not a secret              |
-| `expiresInSeconds`      | Yes               | Integer, not a secret                      |
-| `provider`              | Yes               | Literal string `"elevenlabs"`              |
-| `ELEVENLABS_API_KEY`    | **No**            | Stays in server process only               |
-| `ELEVENLABS_AGENT_ID`   | **No**            | Stays in server process only               |
-| Error code string       | Yes               | Safe diagnostic, no secret content         |
-| User-facing message     | Yes               | Safe, always fallback-friendly             |
-| Raw upstream error body | **No**            | Never forwarded                            |
+| Item                    | Browser receives? | Notes                                 |
+| ----------------------- | ----------------- | ------------------------------------- |
+| `signedUrl`             | Yes               | WSS URL; token embedded by ElevenLabs |
+| `conversationId`        | Yes (optional)    | Safe identifier, not a secret         |
+| `expiresInSeconds`      | Yes               | Integer, not a secret                 |
+| `provider`              | Yes               | Literal string `"elevenlabs"`         |
+| `ELEVENLABS_API_KEY`    | **No**            | Stays in server process only          |
+| `ELEVENLABS_AGENT_ID`   | **No**            | Stays in server process only          |
+| Error code string       | Yes               | Safe diagnostic, no secret content    |
+| User-facing message     | Yes               | Safe, always fallback-friendly        |
+| Raw upstream error body | **No**            | Never forwarded                       |
 
 ---
 

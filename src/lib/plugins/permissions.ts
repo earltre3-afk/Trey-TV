@@ -37,7 +37,9 @@ export async function methodNotAllowed(request: Request): Promise<Response> {
   return pluginJson(
     {
       error: "Method not allowed.",
-      ...createPluginMetadata(request, access, ["Only read-only plugin bridge methods are allowed."]),
+      ...createPluginMetadata(request, access, [
+        "Only read-only plugin bridge methods are allowed.",
+      ]),
       readOnly: true,
       allowedMethods: ["GET", "HEAD", "OPTIONS"],
     },

@@ -17,14 +17,34 @@ export async function fetchAdminStats(): Promise<AdminStats> {
   const counts = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "banned"),
-    supabaseAny.from("creator_applications").select("id", { count: "exact", head: true }).eq("application_type", "creator").eq("status", "pending"),
-    supabaseAny.from("creator_applications").select("id", { count: "exact", head: true }).eq("application_type", "verification").eq("status", "pending"),
-    supabase.from("user_reports").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("reward_redemptions").select("id", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("gold_verified", true),
-    supabase.from("admin_audit_log").select("id", { count: "exact", head: true }).gte("created_at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()),
+    supabaseAny
+      .from("creator_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("application_type", "creator")
+      .eq("status", "pending"),
+    supabaseAny
+      .from("creator_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("application_type", "verification")
+      .eq("status", "pending"),
+    supabase
+      .from("user_reports")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("reward_redemptions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("gold_verified", true),
+    supabase
+      .from("admin_audit_log")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()),
   ]);
-  const ledger = await supabase.rpc as any; // not used
+  const ledger = (await supabase.rpc) as any; // not used
   let totalPoints = 0;
   const { data: pointsData } = await supabase.from("reward_ledger").select("points");
   if (pointsData) totalPoints = pointsData.reduce((s, r) => s + (r.points ?? 0), 0);
@@ -49,7 +69,9 @@ export async function logAdminAction(params: {
   metadata?: Record<string, any>;
   reason?: string;
 }) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: "no session" };
   const { error } = await supabase.from("admin_audit_log").insert({
     admin_user_id: user.id,

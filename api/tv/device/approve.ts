@@ -18,21 +18,34 @@ function send(res: VercelResponse, status: number, data: unknown) {
   res.send(JSON.stringify(data));
 }
 function normalize(code: string) {
-  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return code
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 async function readBody(req: VercelRequest): Promise<Record<string, unknown>> {
   if (req.body && typeof req.body === "object") return req.body as Record<string, unknown>;
-  if (typeof req.body === "string") { try { return JSON.parse(req.body); } catch { return {}; } }
+  if (typeof req.body === "string") {
+    try {
+      return JSON.parse(req.body);
+    } catch {
+      return {};
+    }
+  }
   return {};
 }
 async function getUser(req: VercelRequest) {
-  const token = ((req.headers.authorization as string) || "").match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  const token = ((req.headers.authorization as string) || "")
+    .match(/^Bearer\s+(.+)$/i)?.[1]
+    ?.trim();
   if (!token) return null;
   try {
     const { data, error } = await (svc().auth as any).getUser(token);
     if (error || !data.user) return null;
     return { user: data.user, accessToken: token };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 async function sha256Hex(value: string) {
   const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
@@ -48,7 +61,11 @@ async function encryptToken(accessToken: string) {
   const key = await cryptoKey();
   if (!key) return null;
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const enc = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(accessToken));
+  const enc = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(accessToken),
+  );
   return `v1:${Buffer.from(iv).toString("base64")}:${Buffer.from(new Uint8Array(enc)).toString("base64")}`;
 }
 
@@ -78,7 +95,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (decision === "deny") {
-    await s.from(TABLE).update({ status: "denied", denied_at: new Date().toISOString() }).eq("id", session.id);
+    await s
+      .from(TABLE)
+      .update({ status: "denied", denied_at: new Date().toISOString() })
+      .eq("id", session.id);
     return send(res, 200, { ok: true, status: "denied" });
   }
 

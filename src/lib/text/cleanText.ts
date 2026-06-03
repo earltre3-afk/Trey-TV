@@ -16,33 +16,33 @@
 /** Map of mojibake sequences → intended characters. */
 const MOJIBAKE_MAP: [RegExp, string][] = [
   // Smart double quotes  "  "
-  [/â€œ/g, '\u201C'],   // "
-  [/â€\x9D/g, '\u201D'], // "  (â€ + RIGHT DOUBLE QUOTATION MARK byte)
-  [/â€/g, '\u201D'],    // " — catch remaining â€ before broader rules
+  [/â€œ/g, "\u201C"], // "
+  [/â€\x9D/g, "\u201D"], // "  (â€ + RIGHT DOUBLE QUOTATION MARK byte)
+  [/â€/g, "\u201D"], // " — catch remaining â€ before broader rules
   // Smart single quotes  '  '
-  [/â€˜/g, '\u2018'],   // '
-  [/â€™/g, '\u2019'],   // '
+  [/â€˜/g, "\u2018"], // '
+  [/â€™/g, "\u2019"], // '
   // Ellipsis  …
-  [/â€¦/g, '\u2026'],   // …
+  [/â€¦/g, "\u2026"], // …
   // Em dash  —
-  [/â€"/g, '\u2014'],   // —
+  [/â€"/g, "\u2014"], // —
   // En dash  –
-  [/â€"/g, '\u2013'],   // –
+  [/â€"/g, "\u2013"], // –
   // Bullet  •
-  [/â€¢/g, '\u2022'],   // •
+  [/â€¢/g, "\u2022"], // •
   // Arrow  →
-  [/â†'/g, '\u2192'],   // →
+  [/â†'/g, "\u2192"], // →
   // Non-breaking space artifact
-  [/Â\u00A0/g, '\u00A0'], // keep NBSP but drop the Â prefix
-  [/Â /g, ' '],         // Â + regular space → just a space
-  [/Â/g, ''],           // lone Â → remove
+  [/Â\u00A0/g, "\u00A0"], // keep NBSP but drop the Â prefix
+  [/Â /g, " "], // Â + regular space → just a space
+  [/Â/g, ""], // lone Â → remove
   // Replacement character / null artifact
-  [/\uFFFD/g, ''],
-  [/\u0000/g, ''],
+  [/\uFFFD/g, ""],
+  [/\u0000/g, ""],
   // Euro sign artifact used as em dash stand-in: €"  →  —
-  [/€"/g, '\u2014'],
+  [/€"/g, "\u2014"],
   // Repeated whitespace cleanup
-  [/[ \t]{2,}/g, ' '],
+  [/[ \t]{2,}/g, " "],
 ];
 
 /**
@@ -51,11 +51,11 @@ const MOJIBAKE_MAP: [RegExp, string][] = [
  * Returns an empty string for null / undefined / non-string inputs.
  */
 export function cleanText(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  if (typeof value !== 'string') {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string") {
     // Attempt safe conversion; skip if the result isn't useful.
     const coerced = String(value);
-    if (coerced === '[object Object]' || coerced === 'undefined' || coerced === 'null') return '';
+    if (coerced === "[object Object]" || coerced === "undefined" || coerced === "null") return "";
     return cleanText(coerced);
   }
 
@@ -73,7 +73,7 @@ export function cleanText(value: unknown): string {
 export function cleanParagraphs(paragraphs: unknown[]): string[] {
   if (!Array.isArray(paragraphs)) return [];
   return paragraphs
-    .filter((p) => typeof p === 'string')
+    .filter((p) => typeof p === "string")
     .map((p) => cleanText(p))
     .filter(Boolean);
 }
@@ -84,9 +84,9 @@ export function cleanParagraphs(paragraphs: unknown[]): string[] {
  * Non-string leaf values are left untouched.
  */
 export function cleanDeep<T>(value: T): T {
-  if (typeof value === 'string') return cleanText(value) as unknown as T;
+  if (typeof value === "string") return cleanText(value) as unknown as T;
   if (Array.isArray(value)) return value.map(cleanDeep) as unknown as T;
-  if (value !== null && typeof value === 'object') {
+  if (value !== null && typeof value === "object") {
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       result[k] = cleanDeep(v);

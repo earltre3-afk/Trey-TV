@@ -11,7 +11,10 @@ export const Route = createFileRoute("/games/interactive-stories/share/$shareSlu
   head: () => ({
     meta: [
       { title: "Shared Ending · Trey TV Interactive Stories" },
-      { name: "description", content: "Someone shared their story ending with you on Trey TV Interactive Stories." },
+      {
+        name: "description",
+        content: "Someone shared their story ending with you on Trey TV Interactive Stories.",
+      },
     ],
   }),
 });

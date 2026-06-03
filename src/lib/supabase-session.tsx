@@ -1,4 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isTreyOwnerEmail, TREY_OWNER_EMAIL } from "@/lib/trey-owner";
@@ -11,6 +18,12 @@ const TESTER_ADMIN_AUTOLOGIN = import.meta.env.VITE_TESTER_ADMIN_AUTOLOGIN === "
 const TESTER_ADMIN_EMAIL =
   (import.meta.env.VITE_TESTER_ADMIN_EMAIL as string | undefined)?.trim() || TREY_OWNER_EMAIL;
 const TESTER_ADMIN_PASSWORD = import.meta.env.VITE_TESTER_ADMIN_PASSWORD as string | undefined;
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 2500;
+const STALE_AUTH_MESSAGES = [
+  "Invalid Refresh Token",
+  "Refresh Token Not Found",
+  "refresh_token_not_found",
+];
 
 export type AdminRole = "owner" | "admin" | "moderator" | null;
 
@@ -27,16 +40,72 @@ type Ctx = {
 
 const C = createContext<Ctx | null>(null);
 
+function getErrorMessage(err: unknown) {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function isStaleAuthError(err: unknown) {
+  const message = getErrorMessage(err);
+  return STALE_AUTH_MESSAGES.some((pattern) => message.includes(pattern));
+}
+
+function getStoredSupabaseAuthState() {
+  if (typeof window === "undefined") return { hasToken: false, isExpired: false };
+
+  for (const key of Object.keys(window.localStorage)) {
+    if (!(key.startsWith("sb-") && key.endsWith("-auth-token")) && key !== "supabase.auth.token") {
+      continue;
+    }
+
+    const raw = window.localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw) as { expires_at?: number; currentSession?: { expires_at?: number } };
+      const expiresAt = parsed.expires_at ?? parsed.currentSession?.expires_at;
+      if (!expiresAt) return { hasToken: true, isExpired: true };
+      return { hasToken: true, isExpired: expiresAt * 1000 <= Date.now() + 30_000 };
+    } catch {
+      return { hasToken: true, isExpired: true };
+    }
+  }
+
+  return { hasToken: false, isExpired: false };
+}
+
+function clearStoredSupabaseAuth() {
+  if (typeof window === "undefined") return;
+
+  for (const key of Object.keys(window.localStorage)) {
+    if ((key.startsWith("sb-") && key.endsWith("-auth-token")) || key === "supabase.auth.token") {
+      window.localStorage.removeItem(key);
+    }
+  }
+}
+
+async function recoverStaleSupabaseAuth() {
+  clearStoredSupabaseAuth();
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (err) {
+    console.warn("Failed to locally sign out stale Supabase auth state:", getErrorMessage(err));
+  }
+  clearStoredSupabaseAuth();
+}
+
 export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [adminRole, setAdminRole] = useState<AdminRole>(null);
   const [loading, setLoading] = useState(true);
+  const hasTesterAutoLogin = TESTER_ADMIN_AUTOLOGIN && !!TESTER_ADMIN_PASSWORD;
 
   // Sign in as the CaliforniaTrey admin using the configured tester credentials.
   // Used both by boot auto-login and the Trey-I chat access code.
   const signInAsTesterAdmin = useCallback(async (): Promise<{ error: Error | null }> => {
     if (!TESTER_ADMIN_PASSWORD) {
-      return { error: new Error("Tester admin password is not configured (VITE_TESTER_ADMIN_PASSWORD).") };
+      return {
+        error: new Error("Tester admin password is not configured (VITE_TESTER_ADMIN_PASSWORD)."),
+      };
     }
     const { data, error } = await supabase.auth.signInWithPassword({
       email: TESTER_ADMIN_EMAIL,
@@ -52,53 +121,119 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up listener FIRST
     let sub: any = null;
+    let cancelled = false;
+    let initialLoadSettled = false;
+
+    const finishInitialLoad = () => {
+      if (cancelled || initialLoadSettled) return;
+      initialLoadSettled = true;
+      setLoading(false);
+    };
+
+    const deferAdminLoad = (uid: string, email?: string | null) => {
+      setTimeout(() => {
+        if (!cancelled) void loadAdmin(uid, email);
+      }, 0);
+    };
+
     try {
-      const { data } = supabase.auth.onAuthStateChange((_event, s) => {
+      const { data } = supabase.auth.onAuthStateChange((event, s) => {
         setSession(s);
         if (s?.user) {
           // defer admin lookup to avoid deadlocking the listener
-          setTimeout(() => loadAdmin(s.user.id, s.user.email), 0);
+          deferAdminLoad(s.user.id, s.user.email);
         } else {
           setAdminRole(null);
+        }
+
+        if (event === "INITIAL_SESSION") {
+          if (s?.user || !hasTesterAutoLogin) finishInitialLoad();
+          return;
+        }
+
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          finishInitialLoad();
         }
       });
       sub = data;
     } catch (err) {
       console.error("Error setting up auth state change listener:", err);
+      finishInitialLoad();
     }
 
-    // Then check existing session
-    try {
-      supabase.auth.getSession().then(async ({ data }) => {
-        if (data.session?.user) {
-          setSession(data.session);
-          loadAdmin(data.session.user.id, data.session.user.email);
-          setLoading(false);
-          return;
-        }
+    // Then check existing session, but do not block Trey TV identity if there is
+    // no Supabase auth cache to hydrate.
+    const storedAuthAtStart = getStoredSupabaseAuthState();
+    const shouldBootstrapStoredSession = storedAuthAtStart.hasToken || hasTesterAutoLogin;
 
-        // No session: tester builds sign in as the CaliforniaTrey admin.
-        if (TESTER_ADMIN_AUTOLOGIN && TESTER_ADMIN_PASSWORD) {
-          const { error } = await signInAsTesterAdmin();
-          if (error) console.error("Tester admin auto-login failed:", error.message);
-          setLoading(false);
-          return;
-        }
+    const bootstrapTimeout = shouldBootstrapStoredSession
+      ? setTimeout(() => {
+          const storedAuth = getStoredSupabaseAuthState();
+          if (storedAuth.hasToken) {
+            void recoverStaleSupabaseAuth();
+            setSession(null);
+            setAdminRole(null);
+          } else {
+            setSession(null);
+          }
+          finishInitialLoad();
+        }, AUTH_BOOTSTRAP_TIMEOUT_MS)
+      : null;
 
-        setSession(null);
-        setLoading(false);
-      }).catch((err) => {
-        console.error("Failed to get Supabase session on init:", err);
-        setSession(null);
-        setLoading(false);
-      });
-    } catch (err) {
-      console.error("Critical error in getSession setup:", err);
+    if (!shouldBootstrapStoredSession) {
       setSession(null);
-      setLoading(false);
+      finishInitialLoad();
+    } else {
+      try {
+        supabase.auth
+          .getSession()
+          .then(async ({ data }) => {
+            if (cancelled) return;
+            if (data.session?.user) {
+              setSession(data.session);
+              deferAdminLoad(data.session.user.id, data.session.user.email);
+              finishInitialLoad();
+              return;
+            }
+
+            // No session: tester builds sign in as the CaliforniaTrey admin.
+            if (hasTesterAutoLogin) {
+              const { error } = await signInAsTesterAdmin();
+              if (cancelled) return;
+              if (error) console.error("Tester admin auto-login failed:", error.message);
+              finishInitialLoad();
+              return;
+            }
+
+            setSession(null);
+            finishInitialLoad();
+          })
+          .catch(async (err) => {
+            if (isStaleAuthError(err)) {
+              console.warn("Clearing stale Supabase auth session:", getErrorMessage(err));
+              await recoverStaleSupabaseAuth();
+            } else {
+              console.error("Failed to get Supabase session on init:", err);
+            }
+            if (cancelled) return;
+            setSession(null);
+            if (hasTesterAutoLogin) {
+              const { error } = await signInAsTesterAdmin();
+              if (cancelled) return;
+              if (error) console.error("Tester admin auto-login failed:", error.message);
+            }
+            finishInitialLoad();
+          });
+      } catch (err) {
+        console.error("Critical error in getSession setup:", err);
+        setSession(null);
+        finishInitialLoad();
+      }
     }
 
     return () => {
+      cancelled = true;
+      if (bootstrapTimeout) clearTimeout(bootstrapTimeout);
       if (sub?.subscription) {
         try {
           sub.subscription.unsubscribe();
@@ -107,11 +242,15 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
         }
       }
     };
-  }, []);
+  }, [hasTesterAutoLogin, signInAsTesterAdmin]);
 
   async function loadAdmin(uid: string, email?: string | null) {
     try {
-      const { data, error } = await supabase.from("admin_users").select("role").eq("user_id", uid).maybeSingle();
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("role")
+        .eq("user_id", uid)
+        .maybeSingle();
       if (error) throw error;
       if (data?.role === "owner") {
         setAdminRole(isTreyOwnerEmail(email) ? "owner" : null);
@@ -135,7 +274,9 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     isRealAdmin: !!adminRole,
     isOwner: adminRole === "owner",
     loading,
-    signOutSupabase: async () => { await supabase.auth.signOut(); },
+    signOutSupabase: async () => {
+      await supabase.auth.signOut();
+    },
     signInAsTesterAdmin,
   };
 

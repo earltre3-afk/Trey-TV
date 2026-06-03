@@ -3,15 +3,18 @@
 ## Source References
 
 RESTORE implementation studied:
+
 - `components/onboarding/TreyIVoiceSetup.tsx` — full `useConversation` integration
 - `lib/voice/providers/elevenlabs.ts` — browser fetch helpers and type definitions
 - `lib/voice/providers/types.ts` — `VoiceProviderStatus`, `SafeVoiceDiagnosticCode`
 - `app/api/elevenlabs/agent-session/route.ts` — server-side signed URL pattern
 
 ANTIGRAVITY files being modified:
+
 - `src/routes/onboarding.voice.tsx` — only file changed in Phase 4
 
 ANTIGRAVITY files used as-is (not modified):
+
 - `src/lib/trey-i/elevenlabs-session.server.ts` — Phase 3 server function
 - `src/lib/trey-i/intake.server.ts` — Phase 1 server functions
 - `src/lib/trey-i/tts.server.ts` — Phase 2 TTS server function
@@ -153,13 +156,13 @@ This is the exact pattern used in RESTORE's `TreyIVoiceSetup.tsx`.
 ```typescript
 // Voice status state machine
 type VoiceStatus =
-  | "idle"        // mic not active
-  | "connecting"  // treyIElevenLabsSession in flight or WebSocket opening
-  | "connected"   // onConnect fired
-  | "listening"   // onModeChange → "listening"
-  | "speaking"    // onModeChange → "speaking"
-  | "error"       // onError or onDisconnect with reason === "error"
-  | "unavailable" // treyIElevenLabsSession returned ok: false
+  | "idle" // mic not active
+  | "connecting" // treyIElevenLabsSession in flight or WebSocket opening
+  | "connected" // onConnect fired
+  | "listening" // onModeChange → "listening"
+  | "speaking" // onModeChange → "speaking"
+  | "error" // onError or onDisconnect with reason === "error"
+  | "unavailable"; // treyIElevenLabsSession returned ok: false
 
 const [voiceStatus, setVoiceStatus] = useState<VoiceStatus>("idle");
 
@@ -244,7 +247,11 @@ async function startElevenLabsSession() {
 
   // 12-second watchdog
   watchdogRef.current = setTimeout(() => {
-    try { conversation.endSession(); } catch { /* harmless */ }
+    try {
+      conversation.endSession();
+    } catch {
+      /* harmless */
+    }
     setVoiceStatus("error");
     setError("Voice connection timed out. Type to continue or tap mic to retry.");
   }, 12_000);
@@ -269,7 +276,11 @@ async function startElevenLabsSession() {
 ```typescript
 function stopElevenLabsSession() {
   clearWatchdog();
-  try { conversation.endSession(); } catch { /* harmless */ }
+  try {
+    conversation.endSession();
+  } catch {
+    /* harmless */
+  }
   setVoiceStatus("idle");
   setError(null);
 }
@@ -309,8 +320,14 @@ so both the typed path and the voice path call the same function without state c
 // Renamed from submit() — accepts text directly
 async function submitWithText(text: string) {
   if (!text.trim() || thinking) return;
-  if (!accessToken) { setError("Please sign in to use voice setup."); return; }
-  if (!sessionId) { setError("Setup session is still starting. Please try again."); return; }
+  if (!accessToken) {
+    setError("Please sign in to use voice setup.");
+    return;
+  }
+  if (!sessionId) {
+    setError("Setup session is still starting. Please try again.");
+    return;
+  }
 
   setThinking(true);
   setError(null);
@@ -322,14 +339,15 @@ async function submitWithText(text: string) {
     setAssistantMessage(result.assistant.message);
     // TTS: only play if ElevenLabs is NOT active
     const elevenLabsActive =
-      voiceStatus === "connected" ||
-      voiceStatus === "listening" ||
-      voiceStatus === "speaking";
+      voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking";
     if (!elevenLabsActive) {
       playAssistantAudio(result.assistant.message);
     }
     setConfirmedFields(result.confirmedFields);
-    if (result.switchToManual) { nav({ to: "/signup" }); return; }
+    if (result.switchToManual) {
+      nav({ to: "/signup" });
+      return;
+    }
     if (result.complete) {
       if (!result.publicProfileUid) {
         setError("Your profile is saved, but your public link isn't ready yet.");
@@ -363,6 +381,7 @@ async function submitFromVoice(text: string) {
 ## Mic Button Behavior
 
 ### Current (Phase 3 — visual only)
+
 ```tsx
 <button
   onClick={() => setListening((v) => !v)}
@@ -373,17 +392,12 @@ async function submitFromVoice(text: string) {
 ```
 
 ### Phase 4
+
 ```tsx
 const voiceActive =
-  voiceStatus === "connected" ||
-  voiceStatus === "listening" ||
-  voiceStatus === "speaking";
+  voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking";
 
-const micDisabled =
-  !accessToken ||
-  !sessionId ||
-  voiceStatus === "connecting" ||
-  thinking;
+const micDisabled = !accessToken || !sessionId || voiceStatus === "connecting" || thinking;
 
 <button
   onClick={voiceActive ? stopElevenLabsSession : startElevenLabsSession}
@@ -393,10 +407,10 @@ const micDisabled =
     voiceActive
       ? "bg-primary text-primary-foreground glow-gold"
       : voiceStatus === "connecting"
-      ? "bg-white/5 text-muted-foreground animate-pulse"
-      : voiceStatus === "error" || voiceStatus === "unavailable"
-      ? "bg-red-500/20 text-red-400"
-      : "bg-white/5 text-muted-foreground"
+        ? "bg-white/5 text-muted-foreground animate-pulse"
+        : voiceStatus === "error" || voiceStatus === "unavailable"
+          ? "bg-red-500/20 text-red-400"
+          : "bg-white/5 text-muted-foreground"
   }`}
 >
   {voiceStatus === "connecting" ? (
@@ -406,7 +420,7 @@ const micDisabled =
   ) : (
     <MicOff className="size-5" />
   )}
-</button>
+</button>;
 ```
 
 The `Loader2` icon is already imported in the existing file.
@@ -419,18 +433,24 @@ The existing orb uses `listening` and `thinking` props. Phase 4 maps `voiceStatu
 
 ```tsx
 // Existing orb usage (unchanged structure):
-<div className={`... ${
-  (voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking")
-    ? "animate-conic-spin"
-    : "opacity-60"
-}`} />
+<div
+  className={`... ${
+    voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking"
+      ? "animate-conic-spin"
+      : "opacity-60"
+  }`}
+/>;
 
 // Existing inner icon (unchanged structure):
-{thinking || voiceStatus === "connecting"
-  ? <Loader2 className="size-10 text-primary animate-spin" />
-  : (voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking")
-  ? <Volume2 className="size-10 text-primary animate-glow-pulse" />
-  : <Sparkles className="size-10 text-primary" />}
+{
+  thinking || voiceStatus === "connecting" ? (
+    <Loader2 className="size-10 text-primary animate-spin" />
+  ) : voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking" ? (
+    <Volume2 className="size-10 text-primary animate-glow-pulse" />
+  ) : (
+    <Sparkles className="size-10 text-primary" />
+  );
+}
 ```
 
 The orb JSX structure is not redesigned. Only the condition expressions change.
@@ -444,9 +464,7 @@ The suppression is inside `submitWithText`:
 
 ```typescript
 const elevenLabsActive =
-  voiceStatus === "connected" ||
-  voiceStatus === "listening" ||
-  voiceStatus === "speaking";
+  voiceStatus === "connected" || voiceStatus === "listening" || voiceStatus === "speaking";
 
 if (!elevenLabsActive) {
   playAssistantAudio(result.assistant.message);
@@ -464,7 +482,11 @@ When ElevenLabs is inactive (text-only mode), TTS plays as in Phase 2.
 useEffect(() => {
   return () => {
     clearWatchdog();
-    try { conversation.endSession(); } catch { /* harmless */ }
+    try {
+      conversation.endSession();
+    } catch {
+      /* harmless */
+    }
   };
 }, [conversation]);
 ```
@@ -492,26 +514,26 @@ button `onClick` is replaced by `startElevenLabsSession` / `stopElevenLabsSessio
 
 ## Files Changed in Phase 4
 
-| File | Change |
-|------|--------|
-| `package.json` | Add `"@elevenlabs/react": "1.3.0"` |
-| `pnpm-lock.yaml` | Updated by `pnpm add` |
-| `src/routes/onboarding.voice.tsx` | Mic wiring, `ConversationProvider` wrapper, `voiceStatus` state machine |
-| `.kiro/steering/file-map.md` | Update `onboarding.voice.tsx` entry |
-| `.kiro/checkpoints/lovable-backend-migration-current-state.md` | Add Phase 4 row |
+| File                                                           | Change                                                                  |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `package.json`                                                 | Add `"@elevenlabs/react": "1.3.0"`                                      |
+| `pnpm-lock.yaml`                                               | Updated by `pnpm add`                                                   |
+| `src/routes/onboarding.voice.tsx`                              | Mic wiring, `ConversationProvider` wrapper, `voiceStatus` state machine |
+| `.kiro/steering/file-map.md`                                   | Update `onboarding.voice.tsx` entry                                     |
+| `.kiro/checkpoints/lovable-backend-migration-current-state.md` | Add Phase 4 row                                                         |
 
 ## Files NOT Changed in Phase 4
 
-| File | Reason |
-|------|--------|
-| `src/lib/trey-i/elevenlabs-session.server.ts` | Phase 3 — complete, untouched |
-| `src/lib/trey-i/intake.server.ts` | Phase 1 — complete, untouched |
-| `src/lib/trey-i/onboarding.server.ts` | Phase 1 — complete, untouched |
-| `src/lib/trey-i/tts.server.ts` | Phase 2 — complete, untouched |
-| `src/components/ai/TreyIWidget.tsx` | Separate future lane — untouched |
-| Any Watch Now / Guide file | Out of scope — untouched |
-| Any Creator/admin pipeline file | Out of scope — untouched |
-| `.claude/` | Local output — never touched |
+| File                                          | Reason                           |
+| --------------------------------------------- | -------------------------------- |
+| `src/lib/trey-i/elevenlabs-session.server.ts` | Phase 3 — complete, untouched    |
+| `src/lib/trey-i/intake.server.ts`             | Phase 1 — complete, untouched    |
+| `src/lib/trey-i/onboarding.server.ts`         | Phase 1 — complete, untouched    |
+| `src/lib/trey-i/tts.server.ts`                | Phase 2 — complete, untouched    |
+| `src/components/ai/TreyIWidget.tsx`           | Separate future lane — untouched |
+| Any Watch Now / Guide file                    | Out of scope — untouched         |
+| Any Creator/admin pipeline file               | Out of scope — untouched         |
+| `.claude/`                                    | Local output — never touched     |
 
 ---
 
@@ -536,6 +558,7 @@ If a newer version is needed later, it is an explicit upgrade decision.
 ## Additive and Reversible Guarantee
 
 Phase 4 is fully reversible:
+
 1. `pnpm remove @elevenlabs/react` removes the dependency.
 2. Reverting `onboarding.voice.tsx` to the Phase 3 state restores text-only mode.
 3. No server functions are modified.

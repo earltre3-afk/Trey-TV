@@ -1,8 +1,17 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
-  ArrowLeft, Crown, Clock, CheckCircle2, XCircle, AlertCircle, FileEdit,
-  ChevronRight, Shield, Search, Info,
+  ArrowLeft,
+  Crown,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  FileEdit,
+  ChevronRight,
+  Shield,
+  Search,
+  Info,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -37,32 +46,56 @@ type Application = {
 
 // ── Status config ──────────────────────────────────────────────────────────────
 
-const STATUS_CFG: Record<AppStatus, {
-  label: string; color: string; bg: string; border: string;
-  icon: typeof Clock; borderCard: string;
-}> = {
+const STATUS_CFG: Record<
+  AppStatus,
+  {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+    icon: typeof Clock;
+    borderCard: string;
+  }
+> = {
   draft: {
-    label: "Draft", color: "text-muted-foreground", bg: "bg-white/5",
-    border: "border-white/20", icon: FileEdit, borderCard: "border-white/10",
+    label: "Draft",
+    color: "text-muted-foreground",
+    bg: "bg-white/5",
+    border: "border-white/20",
+    icon: FileEdit,
+    borderCard: "border-white/10",
   },
   pending: {
-    label: "Under Review", color: "text-[oklch(0.82_0.15_215)]",
-    bg: "bg-[oklch(0.82_0.15_215_/_0.1)]", border: "border-[oklch(0.82_0.15_215_/_0.5)]",
-    icon: Clock, borderCard: "border-[oklch(0.82_0.15_215_/_0.3)]",
+    label: "Under Review",
+    color: "text-[oklch(0.82_0.15_215)]",
+    bg: "bg-[oklch(0.82_0.15_215_/_0.1)]",
+    border: "border-[oklch(0.82_0.15_215_/_0.5)]",
+    icon: Clock,
+    borderCard: "border-[oklch(0.82_0.15_215_/_0.3)]",
   },
   approved: {
-    label: "Approved", color: "text-primary", bg: "bg-primary/10",
-    border: "border-primary/50", icon: CheckCircle2, borderCard: "border-primary/30",
+    label: "Approved",
+    color: "text-primary",
+    bg: "bg-primary/10",
+    border: "border-primary/50",
+    icon: CheckCircle2,
+    borderCard: "border-primary/30",
   },
   rejected: {
-    label: "Not Approved", color: "text-[oklch(0.65_0.24_15)]",
-    bg: "bg-[oklch(0.65_0.24_15_/_0.1)]", border: "border-[oklch(0.65_0.24_15_/_0.5)]",
-    icon: XCircle, borderCard: "border-[oklch(0.65_0.24_15_/_0.25)]",
+    label: "Not Approved",
+    color: "text-[oklch(0.65_0.24_15)]",
+    bg: "bg-[oklch(0.65_0.24_15_/_0.1)]",
+    border: "border-[oklch(0.65_0.24_15_/_0.5)]",
+    icon: XCircle,
+    borderCard: "border-[oklch(0.65_0.24_15_/_0.25)]",
   },
   needs_more_info: {
-    label: "More Info Needed", color: "text-[oklch(0.9_0.18_85)]",
-    bg: "bg-[oklch(0.82_0.16_85_/_0.1)]", border: "border-[oklch(0.82_0.16_85_/_0.5)]",
-    icon: AlertCircle, borderCard: "border-[oklch(0.82_0.16_85_/_0.3)]",
+    label: "More Info Needed",
+    color: "text-[oklch(0.9_0.18_85)]",
+    bg: "bg-[oklch(0.82_0.16_85_/_0.1)]",
+    border: "border-[oklch(0.82_0.16_85_/_0.5)]",
+    icon: AlertCircle,
+    borderCard: "border-[oklch(0.82_0.16_85_/_0.3)]",
   },
 };
 
@@ -70,7 +103,9 @@ function StatusBadge({ status }: { status: AppStatus }) {
   const cfg = STATUS_CFG[status] ?? STATUS_CFG.pending;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${cfg.color} ${cfg.bg} border ${cfg.border}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide ${cfg.color} ${cfg.bg} border ${cfg.border}`}
+    >
       <Icon className="size-3" /> {cfg.label.toUpperCase()}
     </span>
   );
@@ -87,7 +122,10 @@ const VERIF_TIMELINE: { key: AppStatus | "submitted"; label: string; Icon: typeo
 ];
 
 const STATUS_TIMELINE_INDEX: Record<string, number> = {
-  pending: 1, needs_more_info: 2, approved: 3, rejected: 4,
+  pending: 1,
+  needs_more_info: 2,
+  approved: 3,
+  rejected: 4,
 };
 
 function VerificationStatusTimeline({ status }: { status: AppStatus }) {
@@ -106,8 +144,8 @@ function VerificationStatusTimeline({ status }: { status: AppStatus }) {
                   isActive
                     ? "border-primary bg-primary/20 shadow-[0_0_16px_oklch(0.82_0.16_85_/_0.7)]"
                     : isDone
-                    ? "border-[oklch(0.82_0.15_215)] bg-[oklch(0.82_0.15_215_/_0.2)]"
-                    : "border-white/15 bg-white/5"
+                      ? "border-[oklch(0.82_0.15_215)] bg-[oklch(0.82_0.15_215_/_0.2)]"
+                      : "border-white/15 bg-white/5"
                 }`}
               >
                 <s.Icon
@@ -116,7 +154,11 @@ function VerificationStatusTimeline({ status }: { status: AppStatus }) {
               </div>
               <p
                 className={`text-[9px] text-center mt-1.5 leading-tight whitespace-pre-line font-medium ${
-                  isActive ? "text-primary" : isDone ? "text-[oklch(0.82_0.15_215)]" : "text-muted-foreground"
+                  isActive
+                    ? "text-primary"
+                    : isDone
+                      ? "text-[oklch(0.82_0.15_215)]"
+                      : "text-muted-foreground"
                 }`}
               >
                 {s.label}
@@ -137,18 +179,36 @@ function VerificationStatusTimeline({ status }: { status: AppStatus }) {
 
 // ── Verification application card ─────────────────────────────────────────────
 
-function VerificationCard({ app, userAvatar, userName, userHandle }: {
-  app: Application; userAvatar: string; userName: string; userHandle: string;
+function VerificationCard({
+  app,
+  userAvatar,
+  userName,
+  userHandle,
+}: {
+  app: Application;
+  userAvatar: string;
+  userName: string;
+  userHandle: string;
 }) {
   const navigate = useNavigate();
   const cfg = STATUS_CFG[app.status] ?? STATUS_CFG.pending;
   const vData = app.verification_data;
   const displayName = vData?.display_name || userName;
-  const handle = displayName ? `@${displayName.toLowerCase().replace(/\s+/g, "")}` : `@${userHandle}`;
+  const handle = displayName
+    ? `@${displayName.toLowerCase().replace(/\s+/g, "")}`
+    : `@${userHandle}`;
   const profession = vData?.profile_title || vData?.applying_as || "";
-  const submittedDate = new Date(app.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const submittedDate = new Date(app.created_at).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   const updatedDate = app.updated_at
-    ? new Date(app.updated_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    ? new Date(app.updated_at).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
     : submittedDate;
 
   return (
@@ -156,7 +216,8 @@ function VerificationCard({ app, userAvatar, userName, userHandle }: {
       className="rounded-3xl overflow-hidden border"
       style={{
         borderColor: "oklch(0.82 0.16 85 / 0.35)",
-        background: "radial-gradient(ellipse 100% 60% at 50% 0%, oklch(0.18 0.07 85 / 0.4) 0%, oklch(0.10 0.03 85 / 0.8) 100%)",
+        background:
+          "radial-gradient(ellipse 100% 60% at 50% 0%, oklch(0.18 0.07 85 / 0.4) 0%, oklch(0.10 0.03 85 / 0.8) 100%)",
       }}
     >
       {/* Logo header */}
@@ -179,7 +240,11 @@ function VerificationCard({ app, userAvatar, userName, userHandle }: {
         {/* Profile card */}
         <div className="rounded-2xl border border-[oklch(0.82_0.16_85_/_0.4)] bg-[oklch(0.10_0.04_85_/_0.6)] p-3 flex items-center gap-3">
           <div className="relative shrink-0">
-            <img src={userAvatar} alt="" className="size-14 rounded-full object-cover border-2 border-primary shadow-[0_0_16px_oklch(0.82_0.16_85_/_0.5)]" />
+            <img
+              src={userAvatar}
+              alt=""
+              className="size-14 rounded-full object-cover border-2 border-primary shadow-[0_0_16px_oklch(0.82_0.16_85_/_0.5)]"
+            />
             <div className="absolute -bottom-0.5 -right-0.5 size-5 rounded-full bg-primary border-2 border-[#02050B] grid place-items-center">
               <Shield className="size-2.5 text-black" strokeWidth={3} />
             </div>
@@ -228,7 +293,10 @@ function VerificationCard({ app, userAvatar, userName, userHandle }: {
           <Link
             to="/apply/go-verification"
             className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold text-sm text-black"
-            style={{ background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))", boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)" }}
+            style={{
+              background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))",
+              boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)",
+            }}
           >
             <FileEdit className="size-4" />
             {app.status === "draft" ? "Continue Application" : "Update & Resubmit"}
@@ -238,7 +306,10 @@ function VerificationCard({ app, userAvatar, userName, userHandle }: {
           <button
             onClick={() => navigate({ to: "/" })}
             className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
-            style={{ background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))", boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)" }}
+            style={{
+              background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))",
+              boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)",
+            }}
           >
             <Shield className="size-4 text-black" />
             <span className="text-black">Back to Trey TV</span>
@@ -263,12 +334,18 @@ function CreatorCard({ app }: { app: Application }) {
   const cfg = STATUS_CFG[app.status] ?? STATUS_CFG.pending;
   const title = app.channel_name || app.creator_name || "Creator Application";
   const sub = app.niche ? `Creator · ${app.niche}` : "Creator Application";
-  const date = new Date(app.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const date = new Date(app.created_at).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
     <div className={`rounded-3xl liquid-glass border ${cfg.borderCard} p-5 space-y-4`}>
       <div className="flex items-start gap-3">
-        <div className={`size-11 rounded-2xl ${cfg.bg} border ${cfg.border} grid place-items-center shrink-0`}>
+        <div
+          className={`size-11 rounded-2xl ${cfg.bg} border ${cfg.border} grid place-items-center shrink-0`}
+        >
           <Crown className={`size-5 ${cfg.color}`} />
         </div>
         <div className="flex-1 min-w-0">
@@ -286,14 +363,16 @@ function CreatorCard({ app }: { app: Application }) {
       {app.status === "pending" && (
         <div className="rounded-2xl bg-[oklch(0.82_0.15_215_/_0.08)] border border-[oklch(0.82_0.15_215_/_0.2)] p-3">
           <p className="text-xs text-[oklch(0.82_0.15_215)] leading-relaxed">
-            Your application is in the queue. Our team reviews within 3–5 business days and will notify you by email and in-app.
+            Your application is in the queue. Our team reviews within 3–5 business days and will
+            notify you by email and in-app.
           </p>
         </div>
       )}
       {app.status === "approved" && (
         <div className="rounded-2xl bg-primary/8 border border-primary/20 p-3">
           <p className="text-xs text-primary font-medium leading-relaxed">
-            🎉 Congratulations! Your creator application has been approved. Welcome to the creator family.
+            🎉 Congratulations! Your creator application has been approved. Welcome to the creator
+            family.
           </p>
         </div>
       )}
@@ -306,13 +385,19 @@ function CreatorCard({ app }: { app: Application }) {
 
       <div className="flex gap-2">
         {(app.status === "draft" || app.status === "needs_more_info") && (
-          <Link to="/apply/content-creator" className="flex-1 py-2.5 rounded-2xl bg-primary/15 border border-primary/40 text-primary text-xs font-bold text-center hover:bg-primary/25 transition flex items-center justify-center gap-1.5">
+          <Link
+            to="/apply/content-creator"
+            className="flex-1 py-2.5 rounded-2xl bg-primary/15 border border-primary/40 text-primary text-xs font-bold text-center hover:bg-primary/25 transition flex items-center justify-center gap-1.5"
+          >
             <FileEdit className="size-3.5" />
             {app.status === "draft" ? "Continue Application" : "Update & Resubmit"}
           </Link>
         )}
         {app.status === "approved" && (
-          <Link to="/creator-hub" className="flex-1 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold text-center glow-gold hover-scale flex items-center justify-center gap-1.5">
+          <Link
+            to="/creator-hub"
+            className="flex-1 py-2.5 rounded-2xl bg-primary text-primary-foreground text-xs font-bold text-center glow-gold hover-scale flex items-center justify-center gap-1.5"
+          >
             <Crown className="size-3.5" /> Go to Creator Hub
           </Link>
         )}
@@ -329,7 +414,9 @@ function ApplicationsPage() {
 
   useEffect(() => {
     if (isGuest) {
-      try { sessionStorage.setItem("treytv_post_auth_redirect", "/applications"); } catch {}
+      try {
+        sessionStorage.setItem("treytv_post_auth_redirect", "/applications");
+      } catch {}
       navigate({ to: "/login" });
     }
   }, [isGuest, navigate]);
@@ -339,7 +426,9 @@ function ApplicationsPage() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("creator_applications")
-        .select("id, application_type, status, creator_name, channel_name, niche, review_notes, created_at, updated_at, verification_data")
+        .select(
+          "id, application_type, status, creator_name, channel_name, niche, review_notes, created_at, updated_at, verification_data",
+        )
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Application[];
@@ -364,7 +453,11 @@ function ApplicationsPage() {
           <ArrowLeft className="size-4" />
         </button>
         <h1 className="flex-1 text-center text-sm font-bold">My Applications</h1>
-        <Link to="/apply" className="size-9 grid place-items-center rounded-xl glass text-muted-foreground hover:text-primary transition" title="New application">
+        <Link
+          to="/apply"
+          className="size-9 grid place-items-center rounded-xl glass text-muted-foreground hover:text-primary transition"
+          title="New application"
+        >
           <ChevronRight className="size-4" />
         </Link>
       </header>
@@ -385,26 +478,37 @@ function ApplicationsPage() {
             <div>
               <h2 className="text-lg font-bold mb-1">No Applications Yet</h2>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                Ready to share your voice with the world? Apply to create or request gold verification.
+                Ready to share your voice with the world? Apply to create or request gold
+                verification.
               </p>
             </div>
             <Link
               to="/apply"
               className="mt-2 inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-black font-bold text-sm"
-              style={{ background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))", boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)" }}
+              style={{
+                background: "linear-gradient(90deg, oklch(0.65_0.20_75), oklch(0.80_0.22_80))",
+                boxShadow: "0 0 24px oklch(0.82 0.16 85 / 0.5)",
+              }}
             >
               <Crown className="size-4" /> Start an Application
             </Link>
           </div>
         )}
 
-        {!isLoading && apps.map((app) =>
-          app.application_type === "verification" ? (
-            <VerificationCard key={app.id} app={app} userAvatar={userAvatar} userName={userName} userHandle={userHandle} />
-          ) : (
-            <CreatorCard key={app.id} app={app} />
-          )
-        )}
+        {!isLoading &&
+          apps.map((app) =>
+            app.application_type === "verification" ? (
+              <VerificationCard
+                key={app.id}
+                app={app}
+                userAvatar={userAvatar}
+                userName={userName}
+                userHandle={userHandle}
+              />
+            ) : (
+              <CreatorCard key={app.id} app={app} />
+            ),
+          )}
       </div>
     </div>
   );

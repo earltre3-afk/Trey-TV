@@ -27,6 +27,7 @@ import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 import { GiftBurstHost } from "@/components/gifts/GiftBurst";
 import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
+import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
 import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
 import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
@@ -100,15 +101,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Trey TV" },
-      { name: "description", content: "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes." },
+      {
+        name: "description",
+        content:
+          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+      },
       { name: "author", content: "Trey TV" },
       { property: "og:title", content: "Trey TV" },
-      { property: "og:description", content: "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes." },
+      {
+        property: "og:description",
+        content:
+          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@TreyTV" },
       { name: "twitter:title", content: "Trey TV" },
-      { name: "twitter:description", content: "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes." },
+      {
+        name: "twitter:description",
+        content:
+          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+      },
       { property: "og:image", content: "/trey-tv-seo-logo.png" },
       { name: "twitter:image", content: "/trey-tv-seo-logo.png" },
     ],
@@ -167,7 +180,8 @@ function RootComponent() {
   const isImmersiveGameRoom = pathname.startsWith("/games");
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
   const isImmersiveTradio = pathname.startsWith("/tradio");
-  
+  const isImmersiveTrance = pathname.startsWith("/trance");
+
   const [foldMode, setFoldMode] = useState<string>("standard");
 
   useEffect(() => {
@@ -189,7 +203,7 @@ function RootComponent() {
       }
     };
     window.addEventListener("resize", checkFold);
-    
+
     // Sync active fold mode state updates from the emulator
     const interval = setInterval(checkFold, 500);
 
@@ -205,6 +219,7 @@ function RootComponent() {
     isImmersiveGameRoom ||
     isFocusedAuthSurface ||
     isImmersiveTradio ||
+    isImmersiveTrance ||
     foldMode === "cover" ||
     foldMode === "unfolded" ||
     foldMode === "flex";
@@ -234,6 +249,7 @@ function RootComponent() {
                           {!hideGlobalMobileChrome && <BottomNav />}
                           {!hideGlobalMobileChrome && <TreyIWidget />}
                           <GiftBurstHost />
+                          <GlobalMediaCastButton />
                           <Toaster />
                         </MusicReviewProvider>
                       </GuideProvider>
@@ -269,16 +285,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     "/legal",
     "/developers",
     "/api",
-    "/.well-known"
+    "/.well-known",
   ];
 
-  const isPublicRoute = publicRoutes.some((route) =>
-    location.pathname === route || location.pathname.startsWith(route + "/")
+  const isPublicRoute = publicRoutes.some(
+    (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
   );
 
   const guestAllowed = ["/", "/explore", "/guide", "/explore/"];
-  const isAllowedGuestPage = guestAllowed.some((route) =>
-    location.pathname === route || (route !== "/" && location.pathname.startsWith(route))
+  const isAllowedGuestPage = guestAllowed.some(
+    (route) =>
+      location.pathname === route || (route !== "/" && location.pathname.startsWith(route)),
   );
 
   const onboardingRoutes = [
@@ -287,16 +304,23 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     "/login",
     "/signup",
     "/legal",
-    "/confirm-email"
+    "/confirm-email",
   ];
-  const isOnboardingRoute = onboardingRoutes.some((route) =>
-    location.pathname === route || location.pathname.startsWith(route + "/")
+  const isOnboardingRoute = onboardingRoutes.some(
+    (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
   );
 
   // Synchronous route protection checks to prevent layout flash/flicker
   const isBlockedUser = user && !user.onboarding_completed && !isOnboardingRoute;
   const isBlockedGuest = isGuest && !isPublicRoute && !isAllowedGuestPage;
-  const isAuthLoading = sessionLoading || authorizationStatus === "checking" || !authReady;
+  const waitingForSupabaseProfile =
+    !!supaUser &&
+    (authorizationStatus === "checking" || authorizationStatus === "logged_out" || !authReady);
+  const isAuthLoading =
+    sessionLoading || authorizationStatus === "checking" || !authReady || waitingForSupabaseProfile;
+  const canRenderWhileAuthLoads = isPublicRoute || isAllowedGuestPage;
+  const shouldShowAuthFallback =
+    isBlockedUser || isBlockedGuest || ((loading || isAuthLoading) && !canRenderWhileAuthLoads);
 
   useEffect(() => {
     let cancelled = false;
@@ -312,7 +336,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const checkOnboarding = async () => {
       // While we are checking authorization, do not redirect
-      if (authorizationStatus === "checking" || sessionLoading || !authReady) {
+      if (
+        authorizationStatus === "checking" ||
+        sessionLoading ||
+        !authReady ||
+        waitingForSupabaseProfile
+      ) {
         if (!cancelled) setLoading(true);
         return;
       }
@@ -323,10 +352,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           const authRedirectSearch =
             typeof location.search === "string"
               ? location.search
-              : location.search?.toString?.() ?? "";
+              : (location.search?.toString?.() ?? "");
           sessionStorage.setItem(
             "treytv_post_auth_redirect",
-            location.pathname + authRedirectSearch
+            location.pathname + authRedirectSearch,
           );
           navigate({ to: "/login" });
         }
@@ -340,10 +369,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
           const onboardingRedirectSearch =
             typeof location.search === "string"
               ? location.search
-              : location.search?.toString?.() ?? "";
+              : (location.search?.toString?.() ?? "");
           sessionStorage.setItem(
             "treytv_post_onboarding_redirect",
-            location.pathname + onboardingRedirectSearch
+            location.pathname + onboardingRedirectSearch,
           );
           try {
             const supabase = createBrowserClient() as any;
@@ -356,8 +385,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
             if (onboarding && !onboarding.completed && onboarding.selected_path) {
               let targetPath = "/onboarding";
               if (onboarding.selected_path === "manual") targetPath = "/onboarding/manual";
-              else if (onboarding.selected_path === "voice" || onboarding.selected_path === "trey_i") targetPath = "/onboarding/voice";
-              else if (onboarding.selected_path === "import_screenshot") targetPath = "/onboarding/import-screenshot";
+              else if (
+                onboarding.selected_path === "voice" ||
+                onboarding.selected_path === "trey_i"
+              )
+                targetPath = "/onboarding/voice";
+              else if (onboarding.selected_path === "import_screenshot")
+                targetPath = "/onboarding/import-screenshot";
               navigate({ to: targetPath as any });
             } else {
               navigate({ to: "/onboarding" });
@@ -390,30 +424,58 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       cancelled = true;
       if (to) clearTimeout(to);
     };
-  }, [authorizationStatus, user, isGuest, location.pathname, navigate, isPublicRoute, isAllowedGuestPage, isOnboardingRoute, sessionLoading, authReady]);
+  }, [
+    authorizationStatus,
+    user,
+    isGuest,
+    isAuthLoading,
+    location.pathname,
+    location.search,
+    navigate,
+    isPublicRoute,
+    isAllowedGuestPage,
+    isOnboardingRoute,
+    sessionLoading,
+    authReady,
+    waitingForSupabaseProfile,
+  ]);
 
   if (authError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
         <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
-          <p className="text-sm text-muted-foreground">We had trouble loading your account. Try again.</p>
+          <p className="text-sm text-muted-foreground">
+            We had trouble loading your account. Try again.
+          </p>
           <div className="mt-4">
-            <button onClick={() => retryHydrate()} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Retry</button>
+            <button
+              onClick={() => retryHydrate()}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (loading || isAuthLoading || isBlockedUser || isBlockedGuest) {
+  if (shouldShowAuthFallback) {
     // show retry UI if auth is stuck or an authError exists
     if (authError || showRetry) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
           <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
-            <p className="text-sm text-muted-foreground">We had trouble loading your account. Try again.</p>
+            <p className="text-sm text-muted-foreground">
+              We had trouble loading your account. Try again.
+            </p>
             <div className="mt-4">
-              <button onClick={() => retryHydrate()} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Retry</button>
+              <button
+                onClick={() => retryHydrate()}
+                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              >
+                Retry
+              </button>
             </div>
           </div>
         </div>

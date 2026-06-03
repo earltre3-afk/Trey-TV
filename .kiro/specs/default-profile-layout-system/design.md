@@ -105,19 +105,19 @@ No other changes to `u.$uid.tsx`.
 
 ## 4. Component Responsibility Map
 
-| Component | Responsibility | Data source |
-|---|---|---|
-| `ProfilePageShell` | Layout orchestration, follow/subscribe state | `ProfileData` prop |
-| `ProfileBanner` | Hero banner, desktop identity overlay, nav buttons | `ProfileContext` |
-| `ProfileIdentityCard` | Mobile identity: name, handle, badges, bio, CTA | `ProfileContext` |
-| `ProfileStatsBar` | Stats grid (user vs creator variants) | `ProfileContext` |
-| `ProfileActionBar` | Action buttons (owner / public / guest variants) | `ProfileContext` |
-| `NormalUserProfileModules` | User content: bio, Top 3, tabs, posts grid | `ProfileContext` + `follow-store` + mock |
-| `CreatorProfileModules` | Creator content: bio, tabs, episodes, shows | `ProfileContext` + `submissions-store` |
-| `ProfileOwnerControls` | Owner sidebar: rewards, shortcuts, analytics | `ProfileContext` |
-| `PublicProfileControls` | Public sidebar: share, engagement, creators | `ProfileContext` + mock |
-| `ProfileSectionCard` | Reusable section wrapper | props |
-| `ProfileEmptyState` | Empty state within sections | props |
+| Component                  | Responsibility                                     | Data source                              |
+| -------------------------- | -------------------------------------------------- | ---------------------------------------- |
+| `ProfilePageShell`         | Layout orchestration, follow/subscribe state       | `ProfileData` prop                       |
+| `ProfileBanner`            | Hero banner, desktop identity overlay, nav buttons | `ProfileContext`                         |
+| `ProfileIdentityCard`      | Mobile identity: name, handle, badges, bio, CTA    | `ProfileContext`                         |
+| `ProfileStatsBar`          | Stats grid (user vs creator variants)              | `ProfileContext`                         |
+| `ProfileActionBar`         | Action buttons (owner / public / guest variants)   | `ProfileContext`                         |
+| `NormalUserProfileModules` | User content: bio, Top 3, tabs, posts grid         | `ProfileContext` + `follow-store` + mock |
+| `CreatorProfileModules`    | Creator content: bio, tabs, episodes, shows        | `ProfileContext` + `submissions-store`   |
+| `ProfileOwnerControls`     | Owner sidebar: rewards, shortcuts, analytics       | `ProfileContext`                         |
+| `PublicProfileControls`    | Public sidebar: share, engagement, creators        | `ProfileContext` + mock                  |
+| `ProfileSectionCard`       | Reusable section wrapper                           | props                                    |
+| `ProfileEmptyState`        | Empty state within sections                        | props                                    |
 
 ---
 
@@ -136,26 +136,28 @@ Is the viewer the profile owner AND role === 'creator' or 'admin'?
 ## 6. Files Changed
 
 ### Required fix (before commit):
-| File | Change |
-|---|---|
+
+| File                       | Change                                              |
+| -------------------------- | --------------------------------------------------- | --- | ---------------------- |
 | `src/hooks/use-profile.ts` | Remove `is_creator: boolean` from `SupabaseProfile` |
-| `src/routes/u.$uid.tsx` | Remove `dbProfile.is_creator ||` and stale JSDoc line |
+| `src/routes/u.$uid.tsx`    | Remove `dbProfile.is_creator                        |     | ` and stale JSDoc line |
 
 ### New files (already written, commit as-is):
-| File | Status |
-|---|---|
-| `src/components/profile/ProfileTypes.ts` | New |
-| `src/components/profile/ProfilePageShell.tsx` | New |
-| `src/components/profile/ProfileBanner.tsx` | New |
-| `src/components/profile/ProfileIdentityCard.tsx` | New |
-| `src/components/profile/ProfileStatsBar.tsx` | New |
-| `src/components/profile/ProfileActionBar.tsx` | New |
-| `src/components/profile/ProfileOwnerControls.tsx` | New |
-| `src/components/profile/PublicProfileControls.tsx` | New |
-| `src/components/profile/ProfileSectionCard.tsx` | New |
-| `src/components/profile/NormalUserProfileModules.tsx` | New |
-| `src/components/profile/CreatorProfileModules.tsx` | New |
-| `src/components/profile/index.ts` | New |
+
+| File                                                  | Status |
+| ----------------------------------------------------- | ------ |
+| `src/components/profile/ProfileTypes.ts`              | New    |
+| `src/components/profile/ProfilePageShell.tsx`         | New    |
+| `src/components/profile/ProfileBanner.tsx`            | New    |
+| `src/components/profile/ProfileIdentityCard.tsx`      | New    |
+| `src/components/profile/ProfileStatsBar.tsx`          | New    |
+| `src/components/profile/ProfileActionBar.tsx`         | New    |
+| `src/components/profile/ProfileOwnerControls.tsx`     | New    |
+| `src/components/profile/PublicProfileControls.tsx`    | New    |
+| `src/components/profile/ProfileSectionCard.tsx`       | New    |
+| `src/components/profile/NormalUserProfileModules.tsx` | New    |
+| `src/components/profile/CreatorProfileModules.tsx`    | New    |
+| `src/components/profile/index.ts`                     | New    |
 
 ---
 

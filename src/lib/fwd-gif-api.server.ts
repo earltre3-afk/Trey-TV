@@ -30,9 +30,7 @@ export type FwdGifItem = {
   created_at: string;
 };
 
-type FwdApiResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string };
+type FwdApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
 function getFwdIntegrationUrl(route: string): string {
   const base = (process.env.FWD_SUPABASE_URL || "").replace(/\/$/, "");
@@ -82,7 +80,7 @@ async function fwdFetch<T>(
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
 
-    const json = await res.json() as Record<string, unknown>;
+    const json = (await res.json()) as Record<string, unknown>;
     if (!res.ok || !json.ok) {
       return { ok: false, error: String(json.error || "FWD API error") };
     }

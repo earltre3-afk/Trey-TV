@@ -51,7 +51,7 @@ export type AdminQueueItem = {
   visibility: string;
   is_plus_content: boolean;
   scheduled_at: string | null;
-  approval_status: 'pending' | 'approved' | 'rejected' | 'needs_changes';
+  approval_status: "pending" | "approved" | "rejected" | "needs_changes";
   created_at: string;
   updated_at: string;
 };
@@ -68,7 +68,7 @@ Authorization order: authenticate first with the normal auth client, authorize s
 ```ts
 async function verifyAdmin(accessToken: string): Promise<{ id: string; email: string }> {
   const supabaseEnv = getSupabasePublicEnv();
-  if (!supabaseEnv) throw new Error('Admin not configured');
+  if (!supabaseEnv) throw new Error("Admin not configured");
 
   // Step 1: authenticate with normal auth client — service-role not involved yet
   const authClient = createClient(supabaseEnv.url, supabaseEnv.anonKey, {
@@ -76,25 +76,28 @@ async function verifyAdmin(accessToken: string): Promise<{ id: string; email: st
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
 
-  const { data: { user }, error } = await authClient.auth.getUser(accessToken);
-  if (error || !user?.email) throw new Error('Admin access required');
+  const {
+    data: { user },
+    error,
+  } = await authClient.auth.getUser(accessToken);
+  if (error || !user?.email) throw new Error("Admin access required");
 
   // Step 2: authorize — check profiles.role = 'admin' first
   const { data: profile } = await (authClient as any)
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.role === 'admin') return { id: user.id, email: user.email };
+  if (profile?.role === "admin") return { id: user.id, email: user.email };
 
   // Fallback: check ADMIN_EMAILS server-only env var
-  const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim().toLowerCase()) ?? [];
+  const adminEmails = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim().toLowerCase()) ?? [];
   if (adminEmails.length > 0 && adminEmails.includes(user.email.toLowerCase())) {
     return { id: user.id, email: user.email };
   }
 
-  throw new Error('Admin access required');
+  throw new Error("Admin access required");
 }
 ```
 
@@ -109,7 +112,7 @@ function getAdminClient() {
   // VITE_SUPABASE_URL is already public — safe to reuse here
   const url = process.env.VITE_SUPABASE_URL?.trim();
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !serviceKey) throw new Error('Admin not configured');
+  if (!url || !serviceKey) throw new Error("Admin not configured");
   return createClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -121,17 +124,19 @@ function getAdminClient() {
 ### 2.4 `getAdminPostQueue`
 
 ```ts
-export const getAdminPostQueue = createServerFn({ method: 'POST' })
+export const getAdminPostQueue = createServerFn({ method: "POST" })
   .inputValidator(validateAccessToken)
   .handler(async ({ data }): Promise<AdminQueueItem[]> => {
     await verifyAdmin(data.accessToken);
     const supabase = getAdminClient();
     const { data: rows, error } = await (supabase as any)
-      .from('creator_post_queue')
-      .select('id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, description, stream_uid, thumbnail_url, visibility, is_plus_content, scheduled_at, approval_status, created_at, updated_at')
-      .order('created_at', { ascending: false })
+      .from("creator_post_queue")
+      .select(
+        "id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, description, stream_uid, thumbnail_url, visibility, is_plus_content, scheduled_at, approval_status, created_at, updated_at",
+      )
+      .order("created_at", { ascending: false })
       .limit(100);
-    if (error) throw new Error('Failed to load queue');
+    if (error) throw new Error("Failed to load queue");
     return (rows as AdminQueueItem[]) ?? [];
   });
 ```
@@ -141,15 +146,17 @@ Note: `admin_notes` is NOT in this SELECT — list view does not expose it.
 ### 2.5 `getAdminPostQueueItem`
 
 ```ts
-export const getAdminPostQueueItem = createServerFn({ method: 'POST' })
+export const getAdminPostQueueItem = createServerFn({ method: "POST" })
   .inputValidator(validateQueueItemInput)
   .handler(async ({ data }): Promise<AdminQueueItemDetail | null> => {
     await verifyAdmin(data.accessToken);
     const supabase = getAdminClient();
     const { data: row } = await (supabase as any)
-      .from('creator_post_queue')
-      .select('id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, description, stream_uid, thumbnail_url, visibility, is_plus_content, scheduled_at, approval_status, admin_notes, created_at, updated_at')
-      .eq('id', data.queueId)
+      .from("creator_post_queue")
+      .select(
+        "id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, description, stream_uid, thumbnail_url, visibility, is_plus_content, scheduled_at, approval_status, admin_notes, created_at, updated_at",
+      )
+      .eq("id", data.queueId)
       .maybeSingle();
     return (row as AdminQueueItemDetail) ?? null;
   });
@@ -158,58 +165,65 @@ export const getAdminPostQueueItem = createServerFn({ method: 'POST' })
 ### 2.6 `reviewAdminPostQueue`
 
 ```ts
-export const reviewAdminPostQueue = createServerFn({ method: 'POST' })
+export const reviewAdminPostQueue = createServerFn({ method: "POST" })
   .inputValidator(validateReviewInput)
   .handler(async ({ data }): Promise<{ ok: true }> => {
     const adminUser = await verifyAdmin(data.accessToken);
     const supabase = getAdminClient();
 
-    const validStatuses = ['pending', 'approved', 'rejected', 'needs_changes'];
-    if (!validStatuses.includes(data.approvalStatus)) throw new Error('Invalid approval status');
+    const validStatuses = ["pending", "approved", "rejected", "needs_changes"];
+    if (!validStatuses.includes(data.approvalStatus)) throw new Error("Invalid approval status");
 
-    if ((data.approvalStatus === 'rejected' || data.approvalStatus === 'needs_changes') && !data.adminNotes.trim()) {
-      throw new Error('A note is required when rejecting or requesting changes');
+    if (
+      (data.approvalStatus === "rejected" || data.approvalStatus === "needs_changes") &&
+      !data.adminNotes.trim()
+    ) {
+      throw new Error("A note is required when rejecting or requesting changes");
     }
 
     const { data: queue } = await (supabase as any)
-      .from('creator_post_queue')
-      .select('id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, stream_uid, is_plus_content')
-      .eq('id', data.queueId)
+      .from("creator_post_queue")
+      .select(
+        "id, creator_id, edit_project_id, channel_id, show_id, episode_number, title, stream_uid, is_plus_content",
+      )
+      .eq("id", data.queueId)
       .maybeSingle();
 
-    if (!queue) throw new Error('Submission not found');
+    if (!queue) throw new Error("Submission not found");
 
-    if (data.approvalStatus === 'approved') {
-      if (!queue.title?.trim()) throw new Error('Approval blocked: missing title');
-      if (!queue.stream_uid?.trim()) throw new Error('Approval blocked: missing stream UID');
-      if (!queue.episode_number || queue.episode_number < 1) throw new Error('Approval blocked: invalid episode number');
-      if (!queue.channel_id) throw new Error('Approval blocked: missing channel');
-      if (!queue.show_id) throw new Error('Approval blocked: missing show');
-      if (!queue.edit_project_id) throw new Error('Approval blocked: missing edit project');
+    if (data.approvalStatus === "approved") {
+      if (!queue.title?.trim()) throw new Error("Approval blocked: missing title");
+      if (!queue.stream_uid?.trim()) throw new Error("Approval blocked: missing stream UID");
+      if (!queue.episode_number || queue.episode_number < 1)
+        throw new Error("Approval blocked: invalid episode number");
+      if (!queue.channel_id) throw new Error("Approval blocked: missing channel");
+      if (!queue.show_id) throw new Error("Approval blocked: missing show");
+      if (!queue.edit_project_id) throw new Error("Approval blocked: missing edit project");
       if ((queue.episode_number === 1 || queue.episode_number === 2) && queue.is_plus_content) {
-        throw new Error('Approval blocked: episodes 1 and 2 must be free');
+        throw new Error("Approval blocked: episodes 1 and 2 must be free");
       }
-      if (queue.creator_id === adminUser.id) throw new Error('Admins cannot approve their own content');
+      if (queue.creator_id === adminUser.id)
+        throw new Error("Admins cannot approve their own content");
     }
 
     const { error: updateError } = await (supabase as any)
-      .from('creator_post_queue')
+      .from("creator_post_queue")
       .update({ approval_status: data.approvalStatus, admin_notes: data.adminNotes.trim() || null })
-      .eq('id', data.queueId);
+      .eq("id", data.queueId);
 
     if (updateError) throw new Error(updateError.message);
 
     if (queue.edit_project_id) {
       const projectStatusMap: Record<string, string> = {
-        approved: 'published',
-        rejected: 'rejected',
-        needs_changes: 'ready',
-        pending: 'submitted',
+        approved: "published",
+        rejected: "rejected",
+        needs_changes: "ready",
+        pending: "submitted",
       };
       await (supabase as any)
-        .from('creator_edit_projects')
+        .from("creator_edit_projects")
         .update({ status: projectStatusMap[data.approvalStatus] })
-        .eq('id', queue.edit_project_id);
+        .eq("id", queue.edit_project_id);
     }
 
     return { ok: true };
@@ -231,7 +245,9 @@ export function useAdminPostQueue() {
     setLoading(true);
     try {
       const supabase = createBrowserClient();
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.access_token) return;
       const result = await getAdminPostQueue({ data: { accessToken: session.access_token } });
       setItems(result);
@@ -242,7 +258,9 @@ export function useAdminPostQueue() {
     }
   }, [isAdmin]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return { items, loading, reload: load };
 }
@@ -259,29 +277,41 @@ function queueItemToSubmission(item: AdminQueueItem): Submission {
   return {
     content_id: item.id,
     creator_id: item.creator_id,
-    creator_name: '',
-    creator_handle: '',
-    creator_avatar: '',
+    creator_name: "",
+    creator_handle: "",
+    creator_avatar: "",
     title: item.title,
-    short_description: item.description ?? '',
-    full_description: '',
-    viewer_context: '', what_to_know: '', why_it_matters: '', creator_note: '',
-    show_id: item.show_id ?? '',
-    show_title: '',
+    short_description: item.description ?? "",
+    full_description: "",
+    viewer_context: "",
+    what_to_know: "",
+    why_it_matters: "",
+    creator_note: "",
+    show_id: item.show_id ?? "",
+    show_title: "",
     season_number: 1,
     episode_number: item.episode_number ?? 1,
-    episode_type: 'Full Episode',
-    category: [], tags: [], mood_tags: [],
-    thumbnail_url: item.thumbnail_url ?? '',
-    poster_url: '', video_url: '', duration: '', quality: '',
-    visibility: 'public',
-    access_type: item.is_plus_content ? 'subscribers' : 'free',
-    content_rating: '', language: '',
-    explicit_content: false, is_trailer: false, is_bonus: false,
-    is_finale: false, is_premiere: false,
+    episode_type: "Full Episode",
+    category: [],
+    tags: [],
+    mood_tags: [],
+    thumbnail_url: item.thumbnail_url ?? "",
+    poster_url: "",
+    video_url: "",
+    duration: "",
+    quality: "",
+    visibility: "public",
+    access_type: item.is_plus_content ? "subscribers" : "free",
+    content_rating: "",
+    language: "",
+    explicit_content: false,
+    is_trailer: false,
+    is_bonus: false,
+    is_finale: false,
+    is_premiere: false,
     status: item.approval_status,
-    admin_feedback: '',
-    admin_internal_note: '',
+    admin_feedback: "",
+    admin_internal_note: "",
     policy_ack: true,
     created_at: item.created_at,
     updated_at: item.updated_at,
@@ -294,6 +324,7 @@ function queueItemToSubmission(item: AdminQueueItem): Submission {
 ## 5. Changes to `admin.content-approval.tsx`
 
 Replace:
+
 ```ts
 const store = useSubmissions();
 // ...
@@ -302,6 +333,7 @@ const filtered = store.submissions.filter(...);
 ```
 
 With:
+
 ```ts
 const { items, loading, reload } = useAdminPostQueue();
 const submissions = useMemo(() => items.map(queueItemToSubmission), [items]);
@@ -309,6 +341,7 @@ const submissions = useMemo(() => items.map(queueItemToSubmission), [items]);
 ```
 
 Replace button handlers:
+
 ```ts
 // BEFORE:
 onClick={() => { store.approve(s.content_id); toast.success("Approved"); }}
@@ -337,12 +370,12 @@ Replace `store.approve()` / `store.requestChanges()` / `store.reject()` calls wi
 
 ## 7. Files Changed
 
-| File | Change |
-|---|---|
-| `src/lib/admin/post-queue.server.ts` | New — three server functions + types |
-| `src/hooks/use-admin-post-queue.ts` | New — list hook |
-| `src/routes/admin.content-approval.tsx` | Replace `useSubmissions()` with `useAdminPostQueue()`; replace store action calls with server function calls |
-| `src/routes/admin.content-approval.$id.tsx` | Add detail load on mount; replace store action calls with server function calls |
+| File                                        | Change                                                                                                       |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `src/lib/admin/post-queue.server.ts`        | New — three server functions + types                                                                         |
+| `src/hooks/use-admin-post-queue.ts`         | New — list hook                                                                                              |
+| `src/routes/admin.content-approval.tsx`     | Replace `useSubmissions()` with `useAdminPostQueue()`; replace store action calls with server function calls |
+| `src/routes/admin.content-approval.$id.tsx` | Add detail load on mount; replace store action calls with server function calls                              |
 
 `submissions-store.tsx` is not modified.
 

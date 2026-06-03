@@ -30,7 +30,9 @@ export function ReadingOfTheDay({
     "Chrome silver": "#c7d2fe",
     "Midnight teal": "#14b8a6",
   };
-  const swatchColor = /^#|rgb|hsl|oklch/.test(luckyColor) ? luckyColor : colorSwatch[luckyColor] ?? "#ffc857";
+  const swatchColor = /^#|rgb|hsl|oklch/.test(luckyColor)
+    ? luckyColor
+    : (colorSwatch[luckyColor] ?? "#ffc857");
 
   return (
     <div className="reading-of-the-day">
@@ -41,8 +43,7 @@ export function ReadingOfTheDay({
           <div
             className="absolute top-0 right-0 w-64 h-64 rounded-full"
             style={{
-              background:
-                "radial-gradient(circle, oklch(0.82 0.16 85 / 0.2), transparent 70%)",
+              background: "radial-gradient(circle, oklch(0.82 0.16 85 / 0.2), transparent 70%)",
               filter: "blur(80px)",
             }}
           />

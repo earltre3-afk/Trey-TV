@@ -50,7 +50,10 @@ function randomUserCode() {
 }
 
 function normalizeUserCode(code: string) {
-  return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return code
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
 }
 
 function displayUserCode(code: string) {
@@ -88,7 +91,9 @@ async function sha256Hex(value: string) {
 
 function base64Encode(bytes: Uint8Array) {
   let binary = "";
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
   return btoa(binary);
 }
 
@@ -110,7 +115,11 @@ async function encryptSessionReference(accessToken: string) {
   const key = await tvSessionCryptoKey();
   if (!key) return null;
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(accessToken));
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(accessToken),
+  );
   return `v1:${base64Encode(iv)}:${base64Encode(new Uint8Array(encrypted))}`;
 }
 
@@ -180,7 +189,9 @@ async function loadProgressRows(userId: string | null): Promise<Map<string, any>
     const service = getTreyIServiceClient();
     const { data } = await (service as any)
       .from("user_video_progress")
-      .select("episode_id, progress_seconds, duration_seconds, progress_ratio, completed, last_watched_at")
+      .select(
+        "episode_id, progress_seconds, duration_seconds, progress_ratio, completed, last_watched_at",
+      )
       .eq("user_id", userId)
       .order("last_watched_at", { ascending: false })
       .limit(50);
@@ -195,7 +206,9 @@ async function loadFeedVideos(progressByEpisode: Map<string, any>) {
     const service = getTreyIServiceClient();
     const { data, error } = await (service as any)
       .from("user_feed_posts")
-      .select("id, body, media_url, gif_poster_url, gif_title, source_type, created_at, profiles:user_id(display_name, username, avatar_url)")
+      .select(
+        "id, body, media_url, gif_poster_url, gif_title, source_type, created_at, profiles:user_id(display_name, username, avatar_url)",
+      )
       .not("media_url", "is", null)
       .order("created_at", { ascending: false })
       .limit(24);
@@ -217,7 +230,9 @@ async function loadFeedVideos(progressByEpisode: Map<string, any>) {
           creator_name: profile?.display_name || profile?.username || "Trey TV creator",
           channel_name: profile?.display_name || profile?.username || "Trey TV",
           duration_seconds: Number(progress?.duration_seconds ?? 0),
-          duration_label: progress?.duration_seconds ? `${Math.round(Number(progress.duration_seconds) / 60)}m` : "Video",
+          duration_label: progress?.duration_seconds
+            ? `${Math.round(Number(progress.duration_seconds) / 60)}m`
+            : "Video",
           playback_url: mediaUrl,
           stream_url: mediaUrl,
           content_rating: null,
@@ -274,7 +289,9 @@ async function handleDeviceStatus(request: Request) {
   const service = getTreyIServiceClient();
   const { data: session } = await (service as any)
     .from("tv_device_sessions")
-    .select("id, device_code, user_code, status, user_id, session_reference, created_at, expires_at")
+    .select(
+      "id, device_code, user_code, status, user_id, session_reference, created_at, expires_at",
+    )
     .eq("device_code", deviceCode)
     .maybeSingle();
 
@@ -293,7 +310,8 @@ async function handleDeviceStatus(request: Request) {
   if (session.status !== "approved") return json({ status: "pending" });
 
   const accessToken = await decryptSessionReference(session.session_reference);
-  if (!accessToken) return json({ status: "approved", error: "TV session handoff is not configured." }, 503);
+  if (!accessToken)
+    return json({ status: "approved", error: "TV session handoff is not configured." }, 503);
 
   return json({
     status: "approved",
@@ -361,7 +379,9 @@ async function handleProfile(request: Request) {
     const service = getTreyIServiceClient();
     const { data: profile } = await (service as any)
       .from("profiles")
-      .select("display_name, username, avatar_url, public_profile_uid, role, creator_status, gold_verified, profile_accent_color")
+      .select(
+        "display_name, username, avatar_url, public_profile_uid, role, creator_status, gold_verified, profile_accent_color",
+      )
       .eq("id", auth.user.id)
       .maybeSingle();
 
@@ -387,7 +407,9 @@ async function handleContentHome(request: Request) {
   const auth = await getUserFromBearer(request);
   const progressByEpisode = await loadProgressRows(auth?.user.id ?? null);
   const feedVideos = await loadFeedVideos(progressByEpisode);
-  const fallbackVideos = allEpisodes.map((episode) => episodeToTvItem(episode.id, progressByEpisode));
+  const fallbackVideos = allEpisodes.map((episode) =>
+    episodeToTvItem(episode.id, progressByEpisode),
+  );
   const videos = feedVideos.length ? feedVideos : fallbackVideos;
   const continueWatching = Array.from(progressByEpisode.keys())
     .map((episodeId) => episodeToTvItem(episodeId, progressByEpisode))
@@ -397,7 +419,11 @@ async function handleContentHome(request: Request) {
     rows: [
       { id: "featured", title: "Featured", items: [videos[0] ?? fallbackVideos[0]] },
       { id: "continue-watching", title: "Continue Watching", items: continueWatching.slice(0, 12) },
-      { id: "new-episodes", title: "New Episodes", items: rails.newEpisodes.map((id) => episodeToTvItem(id, progressByEpisode)) },
+      {
+        id: "new-episodes",
+        title: "New Episodes",
+        items: rails.newEpisodes.map((id) => episodeToTvItem(id, progressByEpisode)),
+      },
       {
         id: "creator-channels",
         title: "Creator Channels",
@@ -409,8 +435,18 @@ async function handleContentHome(request: Request) {
           avatar_url: channel.avatar,
         })),
       },
-      { id: "music-videos", title: "Music Videos", items: rails.music.flatMap((showId) => showById(showId)?.episodes ?? []).map((episode) => episodeToTvItem(episode.id, progressByEpisode)) },
-      { id: "games-interactive", title: "Games / Interactive", items: tvGames(resolveOrigin(request)) },
+      {
+        id: "music-videos",
+        title: "Music Videos",
+        items: rails.music
+          .flatMap((showId) => showById(showId)?.episodes ?? [])
+          .map((episode) => episodeToTvItem(episode.id, progressByEpisode)),
+      },
+      {
+        id: "games-interactive",
+        title: "Games / Interactive",
+        items: tvGames(resolveOrigin(request)),
+      },
     ],
   });
 }
@@ -480,12 +516,60 @@ async function handleWatchProgress(request: Request) {
 function tvGames(origin: string) {
   const web = origin.replace(/\/+$/, "");
   return [
-    { id: "truno", title: "Truno", description: "Fast color-and-number card battles.", launch_url: `${web}/games/truno?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "beta" },
-    { id: "spades", title: "Spades", description: "Classic team trick-taking for the big screen.", launch_url: `${web}/games/spades?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "beta" },
-    { id: "blackjack", title: "Blackjack", description: "Table-ready blackjack with remote selection.", launch_url: `${web}/games/blackjack?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "beta" },
-    { id: "bullshit", title: "Bullshit / Cheat", description: "Bluff, call, and clear your hand.", launch_url: `${web}/games/bullshit?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "beta" },
-    { id: "interactive-stories", title: "Interactive Stories", description: "Switch Kicks, God Ram, imports, and choice-led stories.", launch_url: `${web}/games/interactive-stories?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "beta" },
-    { id: "rpg", title: "RPG", description: "Trey TV RPG hub placeholder.", launch_url: `${web}/games?surface=tv&input=remote`, native_route: null, supports_remote: false, status: "coming_soon" },
+    {
+      id: "truno",
+      title: "Truno",
+      description: "Fast color-and-number card battles.",
+      launch_url: `${web}/games/truno?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "beta",
+    },
+    {
+      id: "spades",
+      title: "Spades",
+      description: "Classic team trick-taking for the big screen.",
+      launch_url: `${web}/games/spades?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "beta",
+    },
+    {
+      id: "blackjack",
+      title: "Blackjack",
+      description: "Table-ready blackjack with remote selection.",
+      launch_url: `${web}/games/blackjack?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "beta",
+    },
+    {
+      id: "bullshit",
+      title: "Bullshit / Cheat",
+      description: "Bluff, call, and clear your hand.",
+      launch_url: `${web}/games/bullshit?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "beta",
+    },
+    {
+      id: "interactive-stories",
+      title: "Interactive Stories",
+      description: "Switch Kicks, God Ram, imports, and choice-led stories.",
+      launch_url: `${web}/games/interactive-stories?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "beta",
+    },
+    {
+      id: "rpg",
+      title: "RPG",
+      description: "Trey TV RPG hub placeholder.",
+      launch_url: `${web}/games?surface=tv&input=remote`,
+      native_route: null,
+      supports_remote: false,
+      status: "coming_soon",
+    },
   ];
 }
 

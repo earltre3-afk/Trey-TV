@@ -58,11 +58,13 @@ export function buildCallerSpadesProjection(input: {
   legalCards?: string[];
   legalBids?: number[];
 }): SpadesCommandResponse<SpadesCallerProjection> {
-  const caller = input.source.players.find((player) => (
-    !player.isBot &&
-    (player.userId === input.callerUserId ||
-      (!!input.callerPublicProfileUid && player.publicProfileUid === input.callerPublicProfileUid))
-  ));
+  const caller = input.source.players.find(
+    (player) =>
+      !player.isBot &&
+      (player.userId === input.callerUserId ||
+        (!!input.callerPublicProfileUid &&
+          player.publicProfileUid === input.callerPublicProfileUid)),
+  );
 
   if (!caller) {
     return {
@@ -108,14 +110,20 @@ export function buildCallerSpadesProjection(input: {
   return { ok: true, projection };
 }
 
-export function validateSpadesActionPayload(value: unknown): SpadesCommandResponse<SpadesActionPayload> {
+export function validateSpadesActionPayload(
+  value: unknown,
+): SpadesCommandResponse<SpadesActionPayload> {
   if (!value || typeof value !== "object") {
     return invalidPayload("Action payload must be an object.");
   }
 
   const candidate = value as Record<string, unknown>;
   if (candidate.type === "bid") {
-    if (!Number.isInteger(candidate.bid) || Number(candidate.bid) < 0 || Number(candidate.bid) > 13) {
+    if (
+      !Number.isInteger(candidate.bid) ||
+      Number(candidate.bid) < 0 ||
+      Number(candidate.bid) > 13
+    ) {
       return invalidPayload("Bid must be an integer from 0 through 13.");
     }
     return { ok: true, projection: { type: "bid", bid: Number(candidate.bid) } };

@@ -1,10 +1,10 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 const paidWeight = (t: string | null | undefined, paid: boolean) => {
   if (!paid) return 0;
-  if (t === 'front') return 100;
-  if (t === 'hot') return 50;
-  if (t === 'quick') return 10;
+  if (t === "front") return 100;
+  if (t === "hot") return 50;
+  if (t === "quick") return 10;
   return 0;
 };
 
@@ -16,21 +16,23 @@ const paidWeight = (t: string | null | undefined, paid: boolean) => {
  */
 export async function rebuildReviewQueue() {
   try {
-    const { error } = await supabase.rpc('rebuild_music_review_queue');
+    const { error } = await supabase.rpc("rebuild_music_review_queue");
     if (!error) return;
   } catch {
     // Continue to isolated fallback.
   }
 
   if (import.meta.env.PROD) {
-    console.warn('[Trey TV Music Review] Queue RPC missing. Direct client queue rebuild is disabled in production.');
+    console.warn(
+      "[Trey TV Music Review] Queue RPC missing. Direct client queue rebuild is disabled in production.",
+    );
     return;
   }
 
   const { data, error } = await supabase
-    .from('music_review_submissions')
-    .select('id, priority_tier, priority_paid, created_at, status')
-    .in('status', ['in_queue', 'ai_prechecked', 'pending', 'now_playing', 'under_review']);
+    .from("music_review_submissions")
+    .select("id, priority_tier, priority_paid, created_at, status")
+    .in("status", ["in_queue", "ai_prechecked", "pending", "now_playing", "under_review"]);
   if (error || !data) return;
 
   const sorted = [...data].sort((a, b) => {
@@ -42,31 +44,35 @@ export async function rebuildReviewQueue() {
 
   for (let i = 0; i < sorted.length; i++) {
     await supabase
-      .from('music_review_submissions')
+      .from("music_review_submissions")
       .update({ queue_position: i + 1 })
-      .eq('id', sorted[i].id);
+      .eq("id", sorted[i].id);
   }
 }
 
 export async function setNowPlaying(submissionId: string) {
   try {
-    const { error } = await supabase.rpc('set_music_review_now_playing', { p_submission_id: submissionId });
+    const { error } = await supabase.rpc("set_music_review_now_playing", {
+      p_submission_id: submissionId,
+    });
     if (!error) return;
   } catch {
     // Continue to isolated fallback.
   }
 
   if (import.meta.env.PROD) {
-    console.warn('[Trey TV Music Review] set_music_review_now_playing RPC missing. Direct client mutation disabled in production.');
+    console.warn(
+      "[Trey TV Music Review] set_music_review_now_playing RPC missing. Direct client mutation disabled in production.",
+    );
     return;
   }
 
   await supabase
-    .from('music_review_submissions')
-    .update({ status: 'in_queue', queue_position: null })
-    .eq('status', 'now_playing');
+    .from("music_review_submissions")
+    .update({ status: "in_queue", queue_position: null })
+    .eq("status", "now_playing");
   await supabase
-    .from('music_review_submissions')
-    .update({ status: 'now_playing' })
-    .eq('id', submissionId);
+    .from("music_review_submissions")
+    .update({ status: "now_playing" })
+    .eq("id", submissionId);
 }

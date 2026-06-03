@@ -45,7 +45,9 @@ function LiveChannelPage() {
         // Non-fatal — header just stays blank.
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const onStartParty = async () => {
@@ -58,7 +60,11 @@ function LiveChannelPage() {
     try {
       // Use the pluto:<id> channel id format so the party iframe plays the same stream.
       const res = await createWatchParty({
-        data: { accessToken: session.access_token, channelId: `pluto:${id}`, name: meta?.name ?? "Live party" },
+        data: {
+          accessToken: session.access_token,
+          channelId: `pluto:${id}`,
+          name: meta?.name ?? "Live party",
+        },
       });
       if (!res.ok) {
         toast.error(`Couldn't create party: ${res.error}`);
@@ -74,11 +80,19 @@ function LiveChannelPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-white/10 bg-background/80 backdrop-blur">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate({ to: "/explore" })} aria-label="Back" className="text-white/70 hover:text-white">
+          <button
+            onClick={() => navigate({ to: "/explore" })}
+            aria-label="Back"
+            className="text-white/70 hover:text-white"
+          >
             <ArrowLeft className="size-4" />
           </button>
           {meta?.logo ? (
-            <img src={meta.logo} alt="" className="size-8 rounded object-contain bg-white/5 p-0.5" />
+            <img
+              src={meta.logo}
+              alt=""
+              className="size-8 rounded object-contain bg-white/5 p-0.5"
+            />
           ) : (
             <Tv className="size-5 text-primary" />
           )}
@@ -88,9 +102,13 @@ function LiveChannelPage() {
                 <span className="size-1.5 rounded-full bg-red-400 animate-pulse" /> LIVE
               </span>
               <h1 className="text-sm font-semibold truncate">{meta?.name ?? "Live channel"}</h1>
-              {meta?.number ? <span className="text-[10px] text-white/40">Ch. {meta.number}</span> : null}
+              {meta?.number ? (
+                <span className="text-[10px] text-white/40">Ch. {meta.number}</span>
+              ) : null}
             </div>
-            {meta?.summary && <div className="text-[10px] text-white/50 truncate max-w-md">{meta.summary}</div>}
+            {meta?.summary && (
+              <div className="text-[10px] text-white/50 truncate max-w-md">{meta.summary}</div>
+            )}
           </div>
           <div className="ml-auto">
             <button
@@ -120,7 +138,9 @@ function LiveChannelPage() {
       </div>
 
       <div className="px-4 pb-8 text-center">
-        <Link to="/explore" className="text-xs text-white/50 hover:text-white/80">← Back to Discover</Link>
+        <Link to="/explore" className="text-xs text-white/50 hover:text-white/80">
+          ← Back to Discover
+        </Link>
       </div>
     </div>
   );

@@ -1,17 +1,20 @@
-import React from 'react';
-import TrunoCard from './TrunoCard';
-import { TrunoCard as TCard } from '../lib/cards';
+import React from "react";
+import TrunoCard from "./TrunoCard";
+import { TrunoCard as TCard } from "../lib/cards";
 
 interface Props {
   cards: TCard[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   highlightCenter?: boolean;
 }
 
-const TrunoCardFan: React.FC<Props> = ({ cards, size = 'md', highlightCenter = true }) => {
+const TrunoCardFan: React.FC<Props> = ({ cards, size = "md", highlightCenter = true }) => {
   const mid = Math.floor(cards.length / 2);
   return (
-    <div className="relative flex items-end justify-center" style={{ minHeight: size === 'lg' ? 200 : 140 }}>
+    <div
+      className="relative flex items-end justify-center"
+      style={{ minHeight: size === "lg" ? 200 : 140 }}
+    >
       {cards.map((card, i) => {
         const offset = i - mid;
         const rotate = offset * 8;
@@ -24,7 +27,7 @@ const TrunoCardFan: React.FC<Props> = ({ cards, size = 'md', highlightCenter = t
             key={card.id}
             className="absolute transition-transform"
             style={{
-              transform: `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotate}deg) ${isCenter && highlightCenter ? 'scale(1.15) translateY(-20px)' : ''}`,
+              transform: `translateX(${translateX}px) translateY(${translateY}px) rotate(${rotate}deg) ${isCenter && highlightCenter ? "scale(1.15) translateY(-20px)" : ""}`,
               zIndex: z,
             }}
           >

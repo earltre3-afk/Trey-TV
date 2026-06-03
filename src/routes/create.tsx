@@ -15,7 +15,11 @@ function Create() {
     <AppShell>
       <div className="space-y-4">
         <div className="flex items-center">
-          <button onClick={goBack} className="size-9 grid place-items-center rounded-full glass" aria-label="Back">
+          <button
+            onClick={goBack}
+            className="size-9 grid place-items-center rounded-full glass"
+            aria-label="Back"
+          >
             <ArrowLeft className="size-4" />
           </button>
         </div>

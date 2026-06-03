@@ -1,9 +1,9 @@
-import React, { ComponentType, useMemo, useState } from 'react';
-import { Lock, Drama, Laugh, Skull, Zap, HeartPulse, ArrowLeft } from 'lucide-react';
-import { Scenario, UserAnswer } from '@/types/naturalAbility';
-import SignalProgressBar from './SignalProgressBar';
-import TreyTVLogo from './TreyTVLogo';
-import { useNavigate } from '@tanstack/react-router';
+import React, { ComponentType, useMemo, useState } from "react";
+import { Lock, Drama, Laugh, Skull, Zap, HeartPulse, ArrowLeft } from "lucide-react";
+import { Scenario, UserAnswer } from "@/types/naturalAbility";
+import SignalProgressBar from "./SignalProgressBar";
+import TreyTVLogo from "./TreyTVLogo";
+import { useNavigate } from "@tanstack/react-router";
 
 interface Props {
   scenario: Scenario;
@@ -12,23 +12,34 @@ interface Props {
   onLockIn: (answer: UserAnswer) => void;
 }
 
-const GENRE_META: Record<string, { icon: ComponentType<{ className?: string }>; color: string; ring: string }> = {
-  Drama: { icon: Drama, color: 'text-violet-300', ring: 'border-violet-400/40 bg-violet-500/10' },
-  Funny: { icon: Laugh, color: 'text-amber-300', ring: 'border-amber-400/40 bg-amber-500/10' },
-  Scary: { icon: Skull, color: 'text-rose-400', ring: 'border-rose-400/40 bg-rose-500/10' },
-  Action: { icon: Zap, color: 'text-cyan-300', ring: 'border-cyan-400/40 bg-cyan-500/10' },
-  'Real Life': { icon: HeartPulse, color: 'text-pink-300', ring: 'border-pink-400/40 bg-pink-500/10' },
+const GENRE_META: Record<
+  string,
+  { icon: ComponentType<{ className?: string }>; color: string; ring: string }
+> = {
+  Drama: { icon: Drama, color: "text-violet-300", ring: "border-violet-400/40 bg-violet-500/10" },
+  Funny: { icon: Laugh, color: "text-amber-300", ring: "border-amber-400/40 bg-amber-500/10" },
+  Scary: { icon: Skull, color: "text-rose-400", ring: "border-rose-400/40 bg-rose-500/10" },
+  Action: { icon: Zap, color: "text-cyan-300", ring: "border-cyan-400/40 bg-cyan-500/10" },
+  "Real Life": {
+    icon: HeartPulse,
+    color: "text-pink-300",
+    ring: "border-pink-400/40 bg-pink-500/10",
+  },
 };
 
-const choiceLetters: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C'];
-const choiceTints = ['from-cyan-400 to-blue-500', 'from-violet-400 to-fuchsia-500', 'from-amber-400 to-orange-500'];
+const choiceLetters: Array<"A" | "B" | "C"> = ["A", "B", "C"];
+const choiceTints = [
+  "from-cyan-400 to-blue-500",
+  "from-violet-400 to-fuchsia-500",
+  "from-amber-400 to-orange-500",
+];
 
 const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn }) => {
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<'A' | 'B' | 'C' | null>(null);
-  const [custom, setCustom] = useState('');
+  const [selected, setSelected] = useState<"A" | "B" | "C" | null>(null);
+  const [custom, setCustom] = useState("");
   const [isCustomOpen, setIsCustomOpen] = useState(false);
-  const [drawerInput, setDrawerInput] = useState('');
+  const [drawerInput, setDrawerInput] = useState("");
 
   const customActive = custom.trim().length > 0;
   const customValid = custom.trim().length >= 8;
@@ -37,7 +48,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
 
   const canLock = useMemo(() => Boolean(selected || customValid), [selected, customValid]);
 
-  const handleSelect = (id: 'A' | 'B' | 'C') => {
+  const handleSelect = (id: "A" | "B" | "C") => {
     if (customActive) return;
     setSelected((current) => (current === id ? null : id));
   };
@@ -71,7 +82,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
       onLockIn({ scenarioId: scenario.id, customText: custom.trim() });
     }
     setSelected(null);
-    setCustom('');
+    setCustom("");
   };
 
   const genre = GENRE_META[scenario.genre];
@@ -86,14 +97,14 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
       };
     }
 
-    const cleaned = scenario.scenarioBody.trim().replace(/\s+/g, ' ');
+    const cleaned = scenario.scenarioBody.trim().replace(/\s+/g, " ");
     const sentences = cleaned.match(/[^.!?]+[.!?]+/g) || [cleaned];
-    const trimmed = sentences.map(s => s.trim());
+    const trimmed = sentences.map((s) => s.trim());
 
     if (trimmed.length <= 1) {
       return {
         sceneBrief: trimmed,
-        pressureLine: '',
+        pressureLine: "",
       };
     }
 
@@ -105,10 +116,10 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
 
   const renderCustomTrigger = (isDesktop = false) => {
     const isSelected = customActive;
-    const paddingClass = isDesktop ? 'px-4 py-4' : 'px-3.5 py-2.5';
-    const heightClass = isDesktop ? 'h-11 w-11' : 'h-8 w-8';
-    const textClass = isDesktop ? 'text-xs' : 'text-[10px] leading-snug mt-0.5';
-    const labelClass = isDesktop ? 'text-sm' : 'text-xs';
+    const paddingClass = isDesktop ? "px-4 py-4" : "px-3.5 py-2.5";
+    const heightClass = isDesktop ? "h-11 w-11" : "h-8 w-8";
+    const textClass = isDesktop ? "text-xs" : "text-[10px] leading-snug mt-0.5";
+    const labelClass = isDesktop ? "text-sm" : "text-xs";
 
     return (
       <button
@@ -116,35 +127,37 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
         disabled={customDisabled}
         className={`group relative w-full text-left rounded-xl p-[1.5px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/80 ${
           isSelected
-            ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_20px_-5px_rgba(245,158,11,0.55)]'
+            ? "bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_20px_-5px_rgba(245,158,11,0.55)]"
             : customDisabled
-            ? 'bg-white/5 opacity-40 cursor-not-allowed'
-            : 'bg-white/10 hover:bg-white/15'
+              ? "bg-white/5 opacity-40 cursor-not-allowed"
+              : "bg-white/10 hover:bg-white/15"
         }`}
       >
-        <div className={`flex items-center gap-3 rounded-xl border border-white/5 bg-[#0a0518]/85 ${paddingClass} backdrop-blur-xl`}>
+        <div
+          className={`flex items-center gap-3 rounded-xl border border-white/5 bg-[#0a0518]/85 ${paddingClass} backdrop-blur-xl`}
+        >
           <div
             className={`flex ${heightClass} shrink-0 items-center justify-center rounded-lg text-sm font-black ${
               isSelected
-                ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white'
-                : 'border border-white/10 bg-black/40 text-slate-300'
+                ? "bg-gradient-to-br from-amber-400 to-orange-500 text-white"
+                : "border border-white/10 bg-black/40 text-slate-300"
             }`}
           >
             ✎
           </div>
           <div className="min-w-0 flex-1">
             <div className={`${labelClass} font-bold text-white`}>
-              {isSelected ? 'My Custom Action' : 'I’d do something else…'}
+              {isSelected ? "My Custom Action" : "I’d do something else…"}
             </div>
             <p className={`${textClass} text-slate-400`}>
-              {isSelected ? `"${custom}"` : 'Type your own custom reaction to this scene.'}
+              {isSelected ? `"${custom}"` : "Type your own custom reaction to this scene."}
             </p>
           </div>
           {isSelected ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleCustom('');
+                handleCustom("");
               }}
               className="text-xs text-rose-400 hover:text-rose-300 px-2.5 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 transition"
             >
@@ -169,23 +182,29 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
         <header className="flex items-center justify-between gap-4 py-2 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate({ to: '/' })}
+              onClick={() => navigate({ to: "/" })}
               className="w-8 h-8 rounded-full bg-white/[0.05] border border-white/10 flex items-center justify-center text-slate-300 hover:bg-white/10 transition shrink-0"
               aria-label="Back to dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
             <TreyTVLogo size="sm" className="hidden sm:inline-flex" />
-            <span className="text-xs font-black tracking-widest text-cyan-300/80 sm:hidden">SIGNAL TEST</span>
+            <span className="text-xs font-black tracking-widest text-cyan-300/80 sm:hidden">
+              SIGNAL TEST
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-xs font-semibold text-slate-300">
               Scene <span className="text-white font-extrabold">{index + 1}</span> of {total}
             </div>
-            <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 ${genre.ring}`}>
+            <div
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 ${genre.ring}`}
+            >
               <GenreIcon className={`h-3 w-3 ${genre.color}`} />
-              <span className={`text-[9px] font-bold uppercase tracking-wider ${genre.color}`}>{scenario.genre}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${genre.color}`}>
+                {scenario.genre}
+              </span>
             </div>
           </div>
         </header>
@@ -202,11 +221,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
             <figure className="relative h-[20dvh] min-h-[118px] max-h-[160px] overflow-hidden rounded-[20px] border border-white/10 bg-[#06030f]/60 shadow-[0_8px_30px_rgba(0,0,0,0.7)] shrink-0 flex items-center justify-center">
               {/* Blurred background glow */}
               <div className="absolute inset-0 filter blur-xl scale-110 opacity-30 pointer-events-none">
-                <img
-                  src={scenario.imageSrc}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
+                <img src={scenario.imageSrc} alt="" className="w-full h-full object-cover" />
               </div>
               {/* Contain image so no faces or details are cropped */}
               <img
@@ -234,11 +249,11 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
               </p>
             ))}
             {pressureLine && (
-              <p className="text-[11px] font-black text-amber-300 leading-snug">
-                {pressureLine}
-              </p>
+              <p className="text-[11px] font-black text-amber-300 leading-snug">{pressureLine}</p>
             )}
-            <p className="text-[10px] font-extrabold text-cyan-300 tracking-widest uppercase">What do you do?</p>
+            <p className="text-[10px] font-extrabold text-cyan-300 tracking-widest uppercase">
+              What do you do?
+            </p>
           </div>
 
           {/* Answer Choice Container */}
@@ -255,8 +270,8 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                     isSelected
                       ? `bg-gradient-to-r ${choiceTints[i]} shadow-[0_0_15px_-5px_rgba(34,211,238,0.5)]`
                       : isDisabled
-                      ? 'bg-white/5 opacity-40 cursor-not-allowed'
-                      : 'bg-white/10 hover:bg-white/15'
+                        ? "bg-white/5 opacity-40 cursor-not-allowed"
+                        : "bg-white/10 hover:bg-white/15"
                   }`}
                 >
                   <div className="flex items-center gap-3 rounded-xl border border-white/5 bg-[#0a0518]/90 px-3.5 py-2.5 backdrop-blur-md">
@@ -264,7 +279,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-black ${
                         isSelected
                           ? `bg-gradient-to-br ${choiceTints[i]} text-white`
-                          : 'border border-white/10 bg-black/40 text-slate-300'
+                          : "border border-white/10 bg-black/40 text-slate-300"
                       }`}
                     >
                       {choiceLetters[i]}
@@ -291,10 +306,12 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
               onClick={handleLock}
               disabled={!canLock}
               className={`group relative w-full overflow-hidden rounded-xl py-3.5 font-black tracking-[0.18em] text-xs transition active:scale-[0.98] ${
-                canLock ? 'opacity-100' : 'cursor-not-allowed opacity-40'
+                canLock ? "opacity-100" : "cursor-not-allowed opacity-40"
               }`}
             >
-              <div className={`absolute inset-0 ${canLock ? 'bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500' : 'bg-white/10'}`} />
+              <div
+                className={`absolute inset-0 ${canLock ? "bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500" : "bg-white/10"}`}
+              />
               {canLock && (
                 <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 opacity-70 blur-sm" />
               )}
@@ -315,11 +332,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                 <figure className="overflow-hidden rounded-[20px] border border-white/10 bg-[#06030f]/60 shadow-[0_12px_36px_-15px_rgba(0,0,0,0.8)] h-[40dvh] max-h-[320px] shrink-0 relative flex items-center justify-center">
                   {/* Blurred background glow */}
                   <div className="absolute inset-0 filter blur-xl scale-110 opacity-30 pointer-events-none">
-                    <img
-                      src={scenario.imageSrc}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={scenario.imageSrc} alt="" className="w-full h-full object-cover" />
                   </div>
                   {/* Contain image so no faces or details are cropped */}
                   <img
@@ -354,7 +367,9 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                       {pressureLine}
                     </p>
                   )}
-                  <p className="mt-2 text-sm font-black text-cyan-300 tracking-wider uppercase">What do you do?</p>
+                  <p className="mt-2 text-sm font-black text-cyan-300 tracking-wider uppercase">
+                    What do you do?
+                  </p>
                 </div>
               </div>
             </div>
@@ -375,8 +390,8 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                       isSelected
                         ? `bg-gradient-to-r ${choiceTints[i]} shadow-[0_0_20px_-5px_rgba(34,211,238,0.55)]`
                         : isDisabled
-                        ? 'bg-white/5 opacity-40 cursor-not-allowed'
-                        : 'bg-white/10 hover:bg-white/20'
+                          ? "bg-white/5 opacity-40 cursor-not-allowed"
+                          : "bg-white/10 hover:bg-white/20"
                     }`}
                   >
                     <div className="flex items-start gap-4 rounded-xl border border-white/5 bg-[#0a0518]/85 px-4 py-3.5 backdrop-blur-xl">
@@ -384,7 +399,7 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-base font-black ${
                           isSelected
                             ? `bg-gradient-to-br ${choiceTints[i]} text-white`
-                            : 'border border-white/10 bg-black/40 text-slate-300'
+                            : "border border-white/10 bg-black/40 text-slate-300"
                         }`}
                       >
                         {choiceLetters[i]}
@@ -410,10 +425,12 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                 onClick={handleLock}
                 disabled={!canLock}
                 className={`group relative w-full overflow-hidden rounded-xl py-3.5 font-black tracking-[0.18em] text-sm transition active:scale-[0.98] ${
-                  canLock ? 'opacity-100' : 'cursor-not-allowed opacity-40'
+                  canLock ? "opacity-100" : "cursor-not-allowed opacity-40"
                 }`}
               >
-                <div className={`absolute inset-0 ${canLock ? 'bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500' : 'bg-white/10'}`} />
+                <div
+                  className={`absolute inset-0 ${canLock ? "bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500" : "bg-white/10"}`}
+                />
                 {canLock && (
                   <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500 via-violet-500 to-cyan-500 opacity-70 blur-md" />
                 )}
@@ -441,7 +458,9 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
             <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-fuchsia-400 shadow-[0_0_8px_rgba(232,121,249,1)] animate-pulse" />
-                <h3 className="text-sm font-bold tracking-wider text-white uppercase">Custom Action Mode</h3>
+                <h3 className="text-sm font-bold tracking-wider text-white uppercase">
+                  Custom Action Mode
+                </h3>
               </div>
               <button
                 onClick={handleCancelCustom}
@@ -453,7 +472,8 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
             </div>
 
             <p className="text-xs text-slate-400 leading-normal">
-              Type your own move if none of the answers fit. Your response must be at least 8 characters long to be locked in.
+              Type your own move if none of the answers fit. Your response must be at least 8
+              characters long to be locked in.
             </p>
 
             <textarea
@@ -467,16 +487,18 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
             />
 
             <div className="flex items-center justify-between text-xs">
-              <span className={drawerInput.trim().length >= 8 ? 'text-cyan-300 font-semibold' : 'text-rose-400 font-semibold'}>
-                {drawerInput.trim().length >= 8 ? (
-                  '✓ Ready to use'
-                ) : (
-                  `Requires at least ${8 - drawerInput.trim().length} more characters`
-                )}
+              <span
+                className={
+                  drawerInput.trim().length >= 8
+                    ? "text-cyan-300 font-semibold"
+                    : "text-rose-400 font-semibold"
+                }
+              >
+                {drawerInput.trim().length >= 8
+                  ? "✓ Ready to use"
+                  : `Requires at least ${8 - drawerInput.trim().length} more characters`}
               </span>
-              <span className="text-slate-400 font-mono">
-                {drawerInput.length} / 300
-              </span>
+              <span className="text-slate-400 font-mono">{drawerInput.length} / 300</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-2">
@@ -491,8 +513,8 @@ const SignalScenarioCard: React.FC<Props> = ({ scenario, index, total, onLockIn 
                 disabled={drawerInput.trim().length < 8}
                 className={`rounded-xl py-3.5 font-bold text-xs text-black bg-primary transition ${
                   drawerInput.trim().length >= 8
-                    ? 'glow-gold active:scale-[0.98]'
-                    : 'opacity-40 cursor-not-allowed'
+                    ? "glow-gold active:scale-[0.98]"
+                    : "opacity-40 cursor-not-allowed"
                 }`}
               >
                 Use Custom Answer

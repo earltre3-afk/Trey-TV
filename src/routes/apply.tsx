@@ -1,6 +1,18 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Logo } from "@/components/brand/Logo";
-import { ArrowLeft, ArrowRight, ChevronRight, Clock, Crown, Diamond, ShieldCheck, Star, Tv } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+  Clock,
+  Crown,
+  Diamond,
+  ShieldCheck,
+  Star,
+  Tv,
+  Radio,
+  Zap,
+} from "lucide-react";
 import creatorIcon from "@/assets/apply-creator-icon.jpg";
 import goldIcon from "@/assets/apply-gold-icon.jpg";
 
@@ -9,7 +21,10 @@ export const Route = createFileRoute("/apply")({
   head: () => ({
     meta: [
       { title: "Choose Your Trey TV Path" },
-      { name: "description", content: "Apply to create a channel or request Go verification on Trey TV." },
+      {
+        name: "description",
+        content: "Apply to create a channel or request Go verification on Trey TV.",
+      },
     ],
   }),
 });
@@ -50,10 +65,8 @@ function ApplyHub() {
 
       {/* ══ MOBILE: centred single-column ══ DESKTOP: two-column split ══ */}
       <div className="mx-auto flex min-h-[100dvh] max-w-7xl flex-col lg:flex-row lg:items-stretch">
-
         {/* ─── LEFT PANEL — hero / branding ─── */}
         <div className="flex flex-col items-center justify-center px-6 sm:px-8 py-10 sm:py-12 pt-[max(3rem,calc(env(safe-area-inset-top)+1.5rem))] text-center lg:w-[42%] lg:items-start lg:px-16 lg:py-20 lg:pt-20 lg:text-left xl:px-24">
-
           {/* Logo */}
           <Logo className="logo-float h-24 md:h-28 lg:h-32" />
 
@@ -66,7 +79,8 @@ function ApplyHub() {
           </h1>
 
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground lg:text-base">
-            Apply to create a channel or request Go verification if you're notable. Every creator starts here.
+            Apply to create a channel or request Go verification if you're notable. Every creator
+            starts here.
           </p>
 
           {/* Feature pills — desktop only */}
@@ -78,7 +92,10 @@ function ApplyHub() {
               >
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[oklch(0.85_0.2_240)]"
-                  style={{ boxShadow: "inset 0 0 0 1px oklch(0.65 0.22 245 / 0.4), 0 0 12px oklch(0.6 0.3 245 / 0.18)" }}
+                  style={{
+                    boxShadow:
+                      "inset 0 0 0 1px oklch(0.65 0.22 245 / 0.4), 0 0 12px oklch(0.6 0.3 245 / 0.18)",
+                  }}
                 >
                   {f.icon}
                 </span>
@@ -114,7 +131,6 @@ function ApplyHub() {
 
         {/* ─── RIGHT PANEL — path cards ─── */}
         <div className="flex flex-col justify-center gap-5 px-6 pb-[max(4rem,env(safe-area-inset-bottom))] lg:w-[58%] lg:py-20 lg:pr-16 xl:pr-24">
-
           {/* Desktop section eyebrow */}
           <div className="hidden items-center gap-3 lg:flex">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[oklch(0.65_0.22_245/0.35)]" />
@@ -145,6 +161,26 @@ function ApplyHub() {
             time="3–5 minutes"
             to="/apply/go-verification"
           />
+          <DesktopPathCard
+            variant="tradio"
+            image="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=600&auto=format&fit=crop"
+            tag="Tradio Creative Position"
+            tagIcon={<Radio className="h-4 w-4" />}
+            desc="Apply to join Tradio as an approved Artist, Producer, or Radio Host/DJ to drop tracks and run live shows."
+            cta="Start Tradio Creator Application"
+            time="5–7 minutes"
+            to="/apply/tradio-creator"
+          />
+          <DesktopPathCard
+            variant="trance"
+            image="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=600&auto=format&fit=crop"
+            tag="Trance Pro Position"
+            tagIcon={<Zap className="h-4 w-4" />}
+            desc="Apply to join Trance as an approved Choreographer, Instructor, or Professional Dancer to publish routines, teach steps, or perform."
+            cta="Start Trance Creator Application"
+            time="5–7 minutes"
+            to="/apply/trance-creator"
+          />
 
           {/* Desktop small print */}
           <p className="hidden text-center text-xs text-white/30 lg:block">
@@ -167,7 +203,7 @@ function DesktopPathCard({
   time,
   to,
 }: {
-  variant: "creator" | "gold";
+  variant: "creator" | "gold" | "tradio" | "trance";
   image: string;
   tag: string;
   tagIcon: React.ReactNode;
@@ -177,23 +213,42 @@ function DesktopPathCard({
   to: string;
 }) {
   const isGold = variant === "gold";
-  const outer = isGold ? "neon-gold" : "neon-blue";
-  const accent = isGold ? "text-[oklch(0.92_0.18_88)]" : "text-[oklch(0.85_0.2_240)]";
-  const btn = isGold ? "neon-btn-gold" : "neon-btn-blue";
-  const ctaText = isGold ? "!text-white" : "";
-  const tagBg = isGold
-    ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
-    : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
+  const isTradio = variant === "tradio";
+  const isTrance = variant === "trance";
+  const outer = isTrance || isTradio ? "neon-purple" : isGold ? "neon-gold" : "neon-blue";
+  const accent = isTrance
+    ? "text-fuchsia-300"
+    : isTradio
+      ? "text-purple-300"
+      : isGold
+        ? "text-[oklch(0.92_0.18_88)]"
+        : "text-[oklch(0.85_0.2_240)]";
+  const btn = isTrance || isTradio ? "neon-btn-purple" : isGold ? "neon-btn-gold" : "neon-btn-blue";
+  const ctaText = isGold || isTradio || isTrance ? "!text-white" : "";
+  const tagBg = isTrance
+    ? "bg-[oklch(0.13_0.07_320/0.7)] shadow-[inset_0_0_0_1px_oklch(0.8_0.22_320/0.5)]"
+    : isTradio
+      ? "bg-[oklch(0.13_0.05_292/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_290/0.5)]"
+      : isGold
+        ? "bg-[oklch(0.13_0.05_80/0.7)] shadow-[inset_0_0_0_1px_oklch(0.92_0.18_88/0.5)]"
+        : "bg-[oklch(0.13_0.07_252/0.7)] shadow-[inset_0_0_0_1px_oklch(0.85_0.2_240/0.5)]";
 
   return (
-    <div className={`group relative ${outer} p-4 transition-all duration-300 hover:-translate-y-0.5 lg:p-6`}>
+    <div
+      className={`group relative ${outer} p-4 transition-all duration-300 hover:-translate-y-0.5 lg:p-6`}
+    >
       <Link to={to} className="absolute inset-0 z-10" aria-label={cta} />
       <div className="swoosh-bg" />
       <div className="liquid-sheen" />
 
       {/* ── Mobile layout: horizontal image + text ── */}
       <div className="relative grid grid-cols-[110px_1fr] items-center gap-3 lg:hidden">
-        <img src={image} alt={tag} loading="lazy" className="h-[110px] w-[110px] rounded-2xl object-cover" />
+        <img
+          src={image}
+          alt={tag}
+          loading="lazy"
+          className="h-[110px] w-[110px] rounded-2xl object-cover"
+        />
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h3 className={`text-lg font-semibold ${accent}`}>{tag}</h3>
@@ -219,12 +274,20 @@ function DesktopPathCard({
             className="overflow-hidden rounded-2xl"
             style={{
               padding: "3px",
-              background: isGold
-                ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
-                : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
-              boxShadow: isGold
-                ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
-                : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
+              background: isTrance
+                ? "linear-gradient(135deg, oklch(0.85 0.25 325 / 0.5), oklch(0.55 0.25 330 / 0.15))"
+                : isTradio
+                  ? "linear-gradient(135deg, oklch(0.85 0.2 290 / 0.5), oklch(0.55 0.25 295 / 0.15))"
+                  : isGold
+                    ? "linear-gradient(135deg, oklch(0.95 0.2 88 / 0.6), oklch(0.78 0.18 80 / 0.15))"
+                    : "linear-gradient(135deg, oklch(0.85 0.2 240 / 0.5), oklch(0.55 0.25 245 / 0.15))",
+              boxShadow: isTrance
+                ? "0 0 30px oklch(0.6 0.3 325 / 0.3)"
+                : isTradio
+                  ? "0 0 30px oklch(0.6 0.3 295 / 0.3)"
+                  : isGold
+                    ? "0 0 30px oklch(0.85 0.2 85 / 0.3)"
+                    : "0 0 30px oklch(0.6 0.3 245 / 0.3)",
             }}
           >
             <img
@@ -240,7 +303,9 @@ function DesktopPathCard({
         <div className="flex flex-1 flex-col justify-between py-1">
           <div>
             {/* Tag pill */}
-            <div className={`mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${accent} ${tagBg}`}>
+            <div
+              className={`mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${accent} ${tagBg}`}
+            >
               {tagIcon}
               {tag}
             </div>
@@ -248,10 +313,7 @@ function DesktopPathCard({
           </div>
 
           <div className="mt-4 flex items-center gap-4">
-            <Link
-              to={to}
-              className={`relative z-20 ${btn} ${ctaText} flex-1 py-3 text-sm`}
-            >
+            <Link to={to} className={`relative z-20 ${btn} ${ctaText} flex-1 py-3 text-sm`}>
               {cta} <ArrowRight className="h-4 w-4" />
             </Link>
             <span className={`inline-flex shrink-0 items-center gap-1.5 text-xs ${accent}`}>

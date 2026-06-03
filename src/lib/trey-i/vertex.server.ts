@@ -1,13 +1,37 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateShowPlan, validateGeneratedShow, SHOW_SEGMENT_TYPES, type ShowBuilderFormState } from "../../tradio/components/tradio/showPlan";
+import {
+  generateShowPlan,
+  validateGeneratedShow,
+  SHOW_SEGMENT_TYPES,
+  type ShowBuilderFormState,
+} from "../../tradio/components/tradio/showPlan";
 import type { RadioShow } from "../../tradio/components/tradio/data";
-import { UserAnswer, Scenario, SignalResult, NaturalAbility, SignalStrength } from "../../types/naturalAbility";
+import {
+  UserAnswer,
+  Scenario,
+  SignalResult,
+  NaturalAbility,
+  SignalStrength,
+} from "../../types/naturalAbility";
 import { calculateResult } from "../tests/naturalAbilityScoring";
-import { SpadesState, botBid as fallbackSpadesBid, botPlay as fallbackSpadesPlay } from "../../features/games/lib/spades/spadesEngine";
-import { BSState, botClaim as fallbackBSClaim, botShouldCall as fallbackBSShouldCall } from "../../features/games/lib/bullshit/bullshitEngine";
+import {
+  SpadesState,
+  botBid as fallbackSpadesBid,
+  botPlay as fallbackSpadesPlay,
+} from "../../features/games/lib/spades/spadesEngine";
+import {
+  BSState,
+  botClaim as fallbackBSClaim,
+  botShouldCall as fallbackBSShouldCall,
+} from "../../features/games/lib/bullshit/bullshitEngine";
 import { Branch, Choice, Tone } from "../../features/interactive-stories/lib/storyTypes";
 import { AIResult } from "../../features/interactive-stories/lib/storyEngine";
-import { PrescriptionAnswers, CONTENT_LIBRARY, scoreContent, generatePrescriptionTitle } from "../../features/prescribe-me/components/data";
+import {
+  PrescriptionAnswers,
+  CONTENT_LIBRARY,
+  scoreContent,
+  generatePrescriptionTitle,
+} from "../../features/prescribe-me/components/data";
 import { getSignalBlend } from "../tests/naturalAbilityResults";
 import { aiGenerateText, aiGenerateJson } from "./aiProvider.server";
 
@@ -35,9 +59,19 @@ type VertexInput = {
 export type VertexResult = { text: string } | { error: string };
 
 const VALID_TASKS: VertexTask[] = [
-  "widget_chat", "caption", "title", "description", "hashtags",
-  "hook", "promo_caption", "bio", "prescribe_reasoning",
-  "mood_suggestions", "admin_summary", "moderate_chat", "signal_interpretation",
+  "widget_chat",
+  "caption",
+  "title",
+  "description",
+  "hashtags",
+  "hook",
+  "promo_caption",
+  "bio",
+  "prescribe_reasoning",
+  "mood_suggestions",
+  "admin_summary",
+  "moderate_chat",
+  "signal_interpretation",
 ];
 
 const SYSTEM_PROMPTS: Record<VertexTask, string> = {
@@ -101,7 +135,7 @@ const SYSTEM_PROMPTS: Record<VertexTask, string> = {
   moderate_chat:
     "You are Trey-I, a real-time chat moderator for Trey TV. Evaluate the user's message " +
     "for safety. Reply with ONLY a JSON object on a single line, no markdown fences, no commentary:\n" +
-    "{ \"verdict\": \"clean\"|\"nudge\"|\"block\"|\"timeout\", \"severity\": \"none\"|\"low\"|\"medium\"|\"high\", \"reason\": \"short reason or empty\" }\n\n" +
+    '{ "verdict": "clean"|"nudge"|"block"|"timeout", "severity": "none"|"low"|"medium"|"high", "reason": "short reason or empty" }\n\n' +
     "Rules:\n" +
     "- clean: normal speech, banter, profanity directed at no one. Severity: none.\n" +
     "- nudge: rude, heated, or borderline. Publish anyway with a private warning. Severity: low.\n" +
@@ -160,7 +194,7 @@ export const generateMusicReviewInsight = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       const prompt = `Title: ${data.title}\nArtist: ${data.artist}\nGenre: ${data.genre}\nVibe Notes: ${data.notes}`;
-      const systemInstruction = 
+      const systemInstruction =
         "You are Trey-I, a sharp and experienced A&R for Trey TV. Provide a 'first impression' vibe check for this submitted track info. " +
         "Output ONLY a valid JSON object matching this schema exactly, with no markdown formatting: " +
         `{ "vibe": "short 4-6 word description", "strengths": ["string", "string"], "hook": "1 sentence on what to listen for", "hypeScore": number 1-10, "predictedMood": "1 word" }`;
@@ -174,9 +208,12 @@ export const generateMusicReviewInsight = createServerFn({ method: "POST" })
 
       return {
         vibe: String(parsed.vibe || "Fresh unreleased energy"),
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.slice(0, 3).map(String) : ["Atmosphere", "Potential"],
+        strengths: Array.isArray(parsed.strengths)
+          ? parsed.strengths.slice(0, 3).map(String)
+          : ["Atmosphere", "Potential"],
         hook: String(parsed.hook || "Listen for the energy shift in the chorus."),
-        hypeScore: typeof parsed.hypeScore === "number" ? Math.min(10, Math.max(1, parsed.hypeScore)) : 7,
+        hypeScore:
+          typeof parsed.hypeScore === "number" ? Math.min(10, Math.max(1, parsed.hypeScore)) : 7,
         predictedMood: String(parsed.predictedMood || "Reflective"),
       };
     } catch (err) {
@@ -193,17 +230,19 @@ export const generateMusicReviewInsight = createServerFn({ method: "POST" })
   });
 
 export const generateAdminReviewDraft = createServerFn({ method: "POST" })
-  .inputValidator((input: { title: string; artist: string; genre: string; vibe: string; bodyNotes: string }) => ({
-    title: String(input.title || "Untitled").slice(0, 100),
-    artist: String(input.artist || "Unknown").slice(0, 100),
-    genre: String(input.genre || "Other").slice(0, 50),
-    vibe: String(input.vibe || "").slice(0, 100),
-    bodyNotes: String(input.bodyNotes || "").slice(0, 2000),
-  }))
+  .inputValidator(
+    (input: { title: string; artist: string; genre: string; vibe: string; bodyNotes: string }) => ({
+      title: String(input.title || "Untitled").slice(0, 100),
+      artist: String(input.artist || "Unknown").slice(0, 100),
+      genre: String(input.genre || "Other").slice(0, 50),
+      vibe: String(input.vibe || "").slice(0, 100),
+      bodyNotes: String(input.bodyNotes || "").slice(0, 2000),
+    }),
+  )
   .handler(async ({ data }) => {
     try {
       const prompt = `Title: ${data.title}\nArtist: ${data.artist}\nGenre: ${data.genre}\nAI Vibe: ${data.vibe}\nAdmin's Rough Notes: ${data.bodyNotes}`;
-      const systemInstruction = 
+      const systemInstruction =
         "You are Trey-I, assisting the A&R admin for Trey TV. Write a professional, encouraging, and constructive music review. " +
         "Use the provided track info and expand cleanly on the Admin's Rough Notes. " +
         "If rough notes are empty, generate a plausible, constructive review based on the title/genre/vibe. " +
@@ -227,15 +266,30 @@ export const generateAdminReviewDraft = createServerFn({ method: "POST" })
 // on one of these exact values for the badge UI (keyed by ABILITY_RESULTS) to
 // render; anything else is coerced or rejected below.
 const SIGNAL_ABILITIES: NaturalAbility[] = [
-  "Diviner", "Reaper", "Empath", "Charmer", "Alchemist", "Herbalist", "Seer",
-  "Shapeshifter", "Healer", "Dreamer", "Prophet", "Manifestor", "Creative", "Ungifted",
+  "Diviner",
+  "Reaper",
+  "Empath",
+  "Charmer",
+  "Alchemist",
+  "Herbalist",
+  "Seer",
+  "Shapeshifter",
+  "Healer",
+  "Dreamer",
+  "Prophet",
+  "Manifestor",
+  "Creative",
+  "Ungifted",
 ];
 const SIGNAL_STRENGTHS: SignalStrength[] = ["Strong", "Mixed", "Emerging", "Unreadable"];
 
 /** Coerce a model-returned ability to a canonical one (case-insensitive, tolerates a leading "The "). Returns null if unrecognizable. */
 function coerceAbility(raw: unknown): NaturalAbility | null {
   if (typeof raw !== "string") return null;
-  const cleaned = raw.trim().replace(/^the\s+/i, "").toLowerCase();
+  const cleaned = raw
+    .trim()
+    .replace(/^the\s+/i, "")
+    .toLowerCase();
   return SIGNAL_ABILITIES.find((a) => a.toLowerCase() === cleaned) ?? null;
 }
 
@@ -258,7 +312,7 @@ export const judgeSignalTest = createServerFn({ method: "POST" })
 ${JSON.stringify(data.answers)}
 
 Scenarios metadata for matching IDs and option bodies:
-${JSON.stringify(data.scenarios.map(s => ({ id: s.id, title: s.title, choices: s.choices })))}
+${JSON.stringify(data.scenarios.map((s) => ({ id: s.id, title: s.title, choices: s.choices })))}
 
 The 14 possible archetypes/abilities are:
 - Diviner: The Pattern Reader. Notices hidden meanings, sign, motives.
@@ -299,7 +353,12 @@ Return ONLY valid JSON.`;
             interpretation: { type: "STRING" },
           },
           required: ["primaryAbility", "secondaryAbility", "signalStrength", "interpretation"],
-          propertyOrdering: ["primaryAbility", "secondaryAbility", "signalStrength", "interpretation"],
+          propertyOrdering: [
+            "primaryAbility",
+            "secondaryAbility",
+            "signalStrength",
+            "interpretation",
+          ],
         },
       });
 
@@ -308,20 +367,24 @@ Return ONLY valid JSON.`;
       // assign (and persist) a badge the UI can't render.
       const primary = coerceAbility(parsed.primaryAbility);
       if (!primary) {
-        throw new Error(`AI returned unrecognized primaryAbility: ${JSON.stringify(parsed.primaryAbility)}`);
+        throw new Error(
+          `AI returned unrecognized primaryAbility: ${JSON.stringify(parsed.primaryAbility)}`,
+        );
       }
 
       let secondary = coerceAbility(parsed.secondaryAbility);
       if (!secondary || secondary === primary) {
-        secondary = local.secondaryAbility !== primary
-          ? local.secondaryAbility
-          : (SIGNAL_ABILITIES.find((a) => a !== primary) as NaturalAbility);
+        secondary =
+          local.secondaryAbility !== primary
+            ? local.secondaryAbility
+            : (SIGNAL_ABILITIES.find((a) => a !== primary) as NaturalAbility);
       }
 
       const signalStrength = coerceStrength(parsed.signalStrength) ?? local.signalStrength;
-      const interpretation = typeof parsed.interpretation === "string" && parsed.interpretation.trim()
-        ? parsed.interpretation.trim()
-        : `Based on your test inputs, you show a primary connection to the path of the ${primary}.`;
+      const interpretation =
+        typeof parsed.interpretation === "string" && parsed.interpretation.trim()
+          ? parsed.interpretation.trim()
+          : `Based on your test inputs, you show a primary connection to the path of the ${primary}.`;
 
       return {
         primaryAbility: primary,
@@ -346,7 +409,7 @@ export const getGameSpadesDecision = createServerFn({ method: "POST" })
     try {
       const { state, seat, isBid } = data;
       const me = state.players[seat];
-      
+
       const cardsInHand = me.hand.join(", ");
       const partnerSeat = (seat + 2) % 4;
 
@@ -357,7 +420,7 @@ Your Seat index: ${seat}
 Your Partner's Seat index: ${partnerSeat}
 Your Hand cards: [${cardsInHand}]
 Previous bids from other players:
-${state.players.map(p => `${p.name} (Seat ${p.seat}): ${p.bid !== null ? p.bid : "deciding"}`).join("\n")}
+${state.players.map((p) => `${p.name} (Seat ${p.seat}): ${p.bid !== null ? p.bid : "deciding"}`).join("\n")}
 
 Determine how many tricks (0-13) you should bid. Be realistic and strategic.
 Return ONLY a JSON object:
@@ -369,16 +432,21 @@ Return ONLY a JSON object:
           maxTokens: 64,
         });
 
-        return { bid: typeof parsed.bid === "number" ? parsed.bid : fallbackSpadesBid(state, seat) };
+        return {
+          bid: typeof parsed.bid === "number" ? parsed.bid : fallbackSpadesBid(state, seat),
+        };
       } else {
         // Playing phase
-        const legal = state.trick.length === 0 ? me.hand : me.hand.filter(c => {
-          const led = state.ledSuit;
-          if (!led) return true;
-          const followers = me.hand.filter(x => x.endsWith(led[0].toUpperCase()));
-          if (followers.length > 0) return c.endsWith(led[0].toUpperCase());
-          return true;
-        });
+        const legal =
+          state.trick.length === 0
+            ? me.hand
+            : me.hand.filter((c) => {
+                const led = state.ledSuit;
+                if (!led) return true;
+                const followers = me.hand.filter((x) => x.endsWith(led[0].toUpperCase()));
+                if (followers.length > 0) return c.endsWith(led[0].toUpperCase());
+                return true;
+              });
 
         const prompt = `You are playing a luxury game of Spades on Trey TV.
 Card Playing Phase.
@@ -387,12 +455,12 @@ Your Partner's Seat index: ${partnerSeat}
 Your Hand: [${cardsInHand}]
 Legal cards you are allowed to play: [${legal.join(", ")}]
 Current trick in play (order of plays):
-${state.trick.map(t => `${state.players[t.seat].name} played ${t.cardId}`).join("\n")}
+${state.trick.map((t) => `${state.players[t.seat].name} played ${t.cardId}`).join("\n")}
 Led suit: ${state.ledSuit || "None"}
 Spades broken: ${state.spadesBroken}
 
 Bids and Tricks won so far this round:
-${state.players.map(p => `${p.name}: Bid ${p.bid}, Tricks Won: ${p.tricksWon}`).join("\n")}
+${state.players.map((p) => `${p.name}: Bid ${p.bid}, Tricks Won: ${p.tricksWon}`).join("\n")}
 
 Select the best card to play from your legal cards [${legal.join(", ")}].
 Return ONLY a JSON object:
@@ -407,6 +475,10 @@ Return ONLY a JSON object:
         const cardId = String(parsed.cardId);
         return { cardId: legal.includes(cardId) ? cardId : fallbackSpadesPlay(state, seat) };
       }
+
+      // ------------------------------
+      // Tradio AI Co-Pilot server fns
+      // ------------------------------
     } catch (err) {
       console.error("[getGameSpadesDecision] fallback:", err);
       if (data.isBid) {
@@ -419,13 +491,14 @@ Return ONLY a JSON object:
 
 export const getGameBullshitDecision = createServerFn({ method: "POST" })
   .inputValidator((input: { state: BSState; seat: number; isClaim: boolean }) => input)
-  .handler(async ({ data }): Promise<{ cardIds?: string[]; rank?: string; callBullshit?: boolean }> => {
-    try {
-      const { state, seat, isClaim } = data;
-      const me = state.players[seat];
+  .handler(
+    async ({ data }): Promise<{ cardIds?: string[]; rank?: string; callBullshit?: boolean }> => {
+      try {
+        const { state, seat, isClaim } = data;
+        const me = state.players[seat];
 
-      if (isClaim) {
-        const prompt = `You are playing Bullshit (Cheat) on Trey TV.
+        if (isClaim) {
+          const prompt = `You are playing Bullshit (Cheat) on Trey TV.
 It is your turn to play cards.
 Your Hand: [${me.hand.join(", ")}]
 The rank you MUST claim to play is: ${state.expectedRank}s.
@@ -433,49 +506,55 @@ You must select 1 to 4 card IDs from your hand. You can tell the truth or bluff 
 Return ONLY a JSON object:
 { "cardIds": ["ID1", ...], "rank": "${state.expectedRank}" }`;
 
-        const parsed = await aiGenerateJson<any>({
-          prompt,
-          temperature: 0.7,
-          maxTokens: 128,
-        });
+          const parsed = await aiGenerateJson<any>({
+            prompt,
+            temperature: 0.7,
+            maxTokens: 128,
+          });
 
-        const cardIds = Array.isArray(parsed.cardIds) ? parsed.cardIds.map(String) : [];
-        const validIds = cardIds.filter((id: string) => me.hand.includes(id));
-        if (validIds.length > 0) {
-          return { cardIds: validIds, rank: state.expectedRank };
-        }
-        const fallback = fallbackBSClaim(state, seat);
-        return { cardIds: fallback.cardIds, rank: fallback.rank };
-      } else {
-        const prompt = `You are playing Bullshit (Cheat) on Trey TV.
+          const cardIds = Array.isArray(parsed.cardIds) ? parsed.cardIds.map(String) : [];
+          const validIds = cardIds.filter((id: string) => me.hand.includes(id));
+          if (validIds.length > 0) {
+            return { cardIds: validIds, rank: state.expectedRank };
+          }
+          const fallback = fallbackBSClaim(state, seat);
+          return { cardIds: fallback.cardIds, rank: fallback.rank };
+        } else {
+          const prompt = `You are playing Bullshit (Cheat) on Trey TV.
 Someone just made a claim:
 ${state.players[state.lastClaim!.seat].name} claimed ${state.lastClaim!.count} x ${state.lastClaim!.rank}s.
 Your Hand: [${me.hand.join(", ")}]
 Sizes of other players' hands:
-${state.players.map(p => `${p.name}: ${p.hand.length} cards`).join("\n")}
+${state.players.map((p) => `${p.name}: ${p.hand.length} cards`).join("\n")}
 
 Determine if you should call "Bullshit" (challenge their claim) or "Pass".
 Return ONLY a JSON object:
 { "callBullshit": true or false }`;
 
-        const parsed = await aiGenerateJson<any>({
-          prompt,
-          temperature: 0.6,
-          maxTokens: 64,
-        });
+          const parsed = await aiGenerateJson<any>({
+            prompt,
+            temperature: 0.6,
+            maxTokens: 64,
+          });
 
-        return { callBullshit: typeof parsed.callBullshit === "boolean" ? parsed.callBullshit : fallbackBSShouldCall(state, seat) };
+          return {
+            callBullshit:
+              typeof parsed.callBullshit === "boolean"
+                ? parsed.callBullshit
+                : fallbackBSShouldCall(state, seat),
+          };
+        }
+      } catch (err) {
+        console.error("[getGameBullshitDecision] fallback:", err);
+        if (data.isClaim) {
+          const fallback = fallbackBSClaim(data.state, data.seat);
+          return { cardIds: fallback.cardIds, rank: fallback.rank };
+        } else {
+          return { callBullshit: fallbackBSShouldCall(data.state, data.seat) };
+        }
       }
-    } catch (err) {
-      console.error("[getGameBullshitDecision] fallback:", err);
-      if (data.isClaim) {
-        const fallback = fallbackBSClaim(data.state, data.seat);
-        return { cardIds: fallback.cardIds, rank: fallback.rank };
-      } else {
-        return { callBullshit: fallbackBSShouldCall(data.state, data.seat) };
-      }
-    }
-  });
+    },
+  );
 
 export const generateStoryChapterWithGemini = createServerFn({ method: "POST" })
   .inputValidator((input: { context: any; choice: any; premise: string; tone: Tone }) => input)
@@ -567,8 +646,18 @@ Return ONLY a JSON object matching this schema:
           next_stop_point: {
             prompt: "What will you do now?",
             choices: [
-              { id: "c1", label: "A", text: "Take a big risk and reveal the secret.", tone: "Risky" },
-              { id: "c2", label: "B", text: "Keep it safe and watch from a distance.", tone: "Safe" },
+              {
+                id: "c1",
+                label: "A",
+                text: "Take a big risk and reveal the secret.",
+                tone: "Risky",
+              },
+              {
+                id: "c2",
+                label: "B",
+                text: "Keep it safe and watch from a distance.",
+                tone: "Safe",
+              },
               { id: "c3", label: "C", text: "Crack a joke to break the ice.", tone: "Funny" },
             ],
           },
@@ -578,11 +667,16 @@ Return ONLY a JSON object matching this schema:
   });
 
 export const generateSmartReplies = createServerFn({ method: "POST" })
-  .inputValidator((input: { messages: { from: string; text: string }[]; peerName: string }) => input)
+  .inputValidator(
+    (input: { messages: { from: string; text: string }[]; peerName: string }) => input,
+  )
   .handler(async ({ data }): Promise<{ replies: string[] }> => {
     try {
       const prompt = `Below is the recent history of a DM conversation between the user and ${data.peerName}:
-${data.messages.slice(-5).map(m => `${m.from}: ${m.text}`).join("\n")}
+${data.messages
+  .slice(-5)
+  .map((m) => `${m.from}: ${m.text}`)
+  .join("\n")}
 
 Suggest exactly 3 short, conversational, and contextually appropriate quick replies (1-4 words each) that the user could send next.
 Return ONLY a JSON array of strings:
@@ -594,7 +688,11 @@ Return ONLY a JSON array of strings:
         maxTokens: 64,
       });
 
-      return { replies: Array.isArray(parsed) ? parsed.slice(0, 3).map(String) : ["I'm in!", "Let's lock it", "Talk soon!"] };
+      return {
+        replies: Array.isArray(parsed)
+          ? parsed.slice(0, 3).map(String)
+          : ["I'm in!", "Let's lock it", "Talk soon!"],
+      };
     } catch (err) {
       console.error("[generateSmartReplies] fallback:", err);
       return { replies: ["I'm in!", "Let's lock it", "Talk soon!"] };
@@ -602,12 +700,14 @@ Return ONLY a JSON array of strings:
   });
 
 export const summarizeInboxThread = createServerFn({ method: "POST" })
-  .inputValidator((input: { messages: { from: string; text: string }[]; peerName: string }) => input)
+  .inputValidator(
+    (input: { messages: { from: string; text: string }[]; peerName: string }) => input,
+  )
   .handler(async ({ data }): Promise<{ summary: string }> => {
     try {
       const prompt = `Summarize this conversation between the user and ${data.peerName} in 2-3 sentences. Highlighting any collaborative plans, beats, or next steps.
 Conversation history:
-${data.messages.map(m => `${m.from}: ${m.text}`).join("\n")}
+${data.messages.map((m) => `${m.from}: ${m.text}`).join("\n")}
 
 Format output as a clean prose paragraph. No headers or bullet points.`;
 
@@ -620,18 +720,21 @@ Format output as a clean prose paragraph. No headers or bullet points.`;
       return { summary: res.text || "A conversation about future collaborations." };
     } catch (err) {
       console.error("[summarizeInboxThread] fallback:", err);
-      return { summary: `A conversation with ${data.peerName} regarding creative collaboration and upcoming projects on Trey TV.` };
+      return {
+        summary: `A conversation with ${data.peerName} regarding creative collaboration and upcoming projects on Trey TV.`,
+      };
     }
   });
 
 export const curatePrescriptionWithAI = createServerFn({ method: "POST" })
   .inputValidator((input: { answers: PrescriptionAnswers }) => input)
-  .handler(async ({ data }): Promise<{ title: string; explanation: string; rankedIds: string[] }> => {
-    // Destructured outside the try so the catch-block fallback can reference it
-    // (previously the fallback threw a ReferenceError on any AI failure).
-    const { answers } = data;
-    try {
-      const prompt = `You are Trey-I, the recommendation engine for Trey TV.
+  .handler(
+    async ({ data }): Promise<{ title: string; explanation: string; rankedIds: string[] }> => {
+      // Destructured outside the try so the catch-block fallback can reference it
+      // (previously the fallback threw a ReferenceError on any AI failure).
+      const { answers } = data;
+      try {
+        const prompt = `You are Trey-I, the recommendation engine for Trey TV.
 The user took the Vibe quiz. Here are their selections:
 - Moods: ${answers.moods.join(", ")}
 - Energy level: ${answers.energy || "Surprise Me"}
@@ -639,7 +742,7 @@ The user took the Vibe quiz. Here are their selections:
 - Moment Needs: ${answers.momentNeeds.join(", ")}
 
 Here is the library of available content on Trey TV:
-${JSON.stringify(CONTENT_LIBRARY.map(item => ({ id: item.id, title: item.title, description: item.description, category: item.category, moods: item.moods, energy: item.energy })))}
+${JSON.stringify(CONTENT_LIBRARY.map((item) => ({ id: item.id, title: item.title, description: item.description, category: item.category, moods: item.moods, energy: item.energy })))}
 
 Please:
 1. Select the top 6 content item IDs that best match their vibe, ranked from best to sixth-best.
@@ -653,27 +756,32 @@ Return ONLY a JSON object matching this schema:
   "rankedIds": ["id1", "id2", "id3", "id4", "id5", "id6"]
 }`;
 
-      const parsed = await aiGenerateJson<any>({
-        prompt,
-        temperature: 0.7,
-        maxTokens: 512,
-      });
+        const parsed = await aiGenerateJson<any>({
+          prompt,
+          temperature: 0.7,
+          maxTokens: 512,
+        });
 
-      return {
-        title: String(parsed.title || generatePrescriptionTitle(answers)),
-        explanation: String(parsed.explanation || "A custom vibe curation for your night."),
-        rankedIds: Array.isArray(parsed.rankedIds) ? parsed.rankedIds.map(String) : scoreContent(answers).slice(0, 6).map(x => x.id),
-      };
-    } catch (err) {
-      console.error("[curatePrescriptionWithAI] fallback:", err);
-      const scoredLocal = scoreContent(answers);
-      return {
-        title: generatePrescriptionTitle(answers),
-        explanation: `Curated based on your active choices for ${answers.moods.slice(0, 2).join(" & ")}.`,
-        rankedIds: scoredLocal.slice(0, 6).map(x => x.id),
-      };
-    }
-  });
+        return {
+          title: String(parsed.title || generatePrescriptionTitle(answers)),
+          explanation: String(parsed.explanation || "A custom vibe curation for your night."),
+          rankedIds: Array.isArray(parsed.rankedIds)
+            ? parsed.rankedIds.map(String)
+            : scoreContent(answers)
+                .slice(0, 6)
+                .map((x) => x.id),
+        };
+      } catch (err) {
+        console.error("[curatePrescriptionWithAI] fallback:", err);
+        const scoredLocal = scoreContent(answers);
+        return {
+          title: generatePrescriptionTitle(answers),
+          explanation: `Curated based on your active choices for ${answers.moods.slice(0, 2).join(" & ")}.`,
+          rankedIds: scoredLocal.slice(0, 6).map((x) => x.id),
+        };
+      }
+    },
+  );
 
 export const reRankFeedWithAI = createServerFn({ method: "POST" })
   .inputValidator((input: { posts: any[]; userBadge: string | null; query: string }) => input)
@@ -683,7 +791,7 @@ export const reRankFeedWithAI = createServerFn({ method: "POST" })
 Search/Filter term: "${data.query || "None"}"
 
 Posts:
-${JSON.stringify(data.posts.map(p => ({ id: p.id, creator: p.creator.name, text: p.text, tags: p.tags })))}
+${JSON.stringify(data.posts.map((p) => ({ id: p.id, creator: p.creator.name, text: p.text, tags: p.tags })))}
 
 Provide the ranked list of post IDs from most relevant to least.
 Return ONLY a JSON object:
@@ -695,10 +803,14 @@ Return ONLY a JSON object:
         maxTokens: 256,
       });
 
-      return { rankedIds: Array.isArray(parsed.rankedIds) ? parsed.rankedIds.map(String) : data.posts.map(p => p.id) };
+      return {
+        rankedIds: Array.isArray(parsed.rankedIds)
+          ? parsed.rankedIds.map(String)
+          : data.posts.map((p) => p.id),
+      };
     } catch (err) {
       console.error("[reRankFeedWithAI] fallback:", err);
-      return { rankedIds: data.posts.map(p => p.id) };
+      return { rankedIds: data.posts.map((p) => p.id) };
     }
   });
 
@@ -751,7 +863,14 @@ Return ONLY JSON: { "title": string, "segments": [ { "type", "title", "duration"
                   script: { type: "STRING" },
                 },
                 required: ["type", "title", "duration"],
-                propertyOrdering: ["type", "title", "duration", "description", "hostNotes", "script"],
+                propertyOrdering: [
+                  "type",
+                  "title",
+                  "duration",
+                  "description",
+                  "hostNotes",
+                  "script",
+                ],
               },
             },
           },
@@ -764,5 +883,145 @@ Return ONLY JSON: { "title": string, "segments": [ { "type", "title", "duration"
     } catch (err) {
       console.error("[generateRadioShow] fallback to local generator:", err);
       return generateShowPlan(form);
+    }
+  });
+
+// ------------------------------
+// Tradio AI Co-Pilot server fns (top-level)
+// ------------------------------
+
+export const coPilotReadRoom = createServerFn({ method: "POST" })
+  .inputValidator((input: { recentChat?: string[]; recentChatLimit?: number }) => ({
+    recentChat: Array.isArray(input?.recentChat)
+      ? input.recentChat.slice(-Math.max(0, Math.min(100, input.recentChat.length)))
+      : [],
+    recentChatLimit:
+      typeof input?.recentChatLimit === "number"
+        ? Math.max(1, Math.min(50, input.recentChatLimit))
+        : 20,
+  }))
+  .handler(async ({ data }) => {
+    try {
+      const messages = (data.recentChat || []).slice(-Math.min(20, data.recentChatLimit || 20));
+      const prompt = `You are Trey-I, a concise co-pilot for a live radio host. Given the recent chat messages (most recent last), summarize the room energy and surface short highlights and a suggested topic for the host to address.\n\nRecent chat messages:\n${JSON.stringify(messages)}`;
+
+      const parsed = await aiGenerateJson<any>({
+        prompt,
+        systemInstruction:
+          "Return a JSON object matching the schema: { energy: 'low'|'building'|'hot', mood: string, highlights: string[], suggestedTopic: string }.",
+        temperature: 0.6,
+        maxTokens: 256,
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            energy: { type: "STRING", enum: ["low", "building", "hot"] },
+            mood: { type: "STRING" },
+            highlights: { type: "ARRAY", items: { type: "STRING" } },
+            suggestedTopic: { type: "STRING" },
+          },
+          required: ["energy", "mood", "highlights", "suggestedTopic"],
+        },
+      });
+
+      return {
+        energy: String(parsed.energy),
+        mood: String(parsed.mood || "neutral"),
+        highlights: Array.isArray(parsed.highlights)
+          ? parsed.highlights.slice(0, 5).map(String)
+          : [],
+        suggestedTopic: String(parsed.suggestedTopic || "Talk about what listeners are saying"),
+      };
+    } catch (err) {
+      console.error("[coPilotReadRoom]", err);
+      return {
+        energy: "low",
+        mood: "neutral",
+        highlights: [],
+        suggestedTopic: "Ask the audience what they're listening to",
+      };
+    }
+  });
+
+export const coPilotSuggestLine = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      showTitle?: string;
+      segmentTitle?: string;
+      hostTone?: string;
+      recentChat?: string[];
+    }) => ({
+      showTitle: String(input?.showTitle || "").slice(0, 200),
+      segmentTitle: String(input?.segmentTitle || "").slice(0, 200),
+      hostTone: String(input?.hostTone || "casual").slice(0, 50),
+      recentChat: Array.isArray(input?.recentChat) ? input.recentChat.slice(-20) : [],
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const chatSnippet = (data.recentChat || []).slice(-20).join("\n");
+      const prompt = `You are Trey-I, a helpful live show co-pilot. Create ONE short host line (1-2 sentences) in the show's tone that fits the show "${data.showTitle}" and segment "${data.segmentTitle}". Host tone: ${data.hostTone}. Recent chat (most recent last):\n${chatSnippet}`;
+
+      const res = await aiGenerateText({
+        prompt,
+        systemInstruction:
+          "Return a single short host line (1-2 sentences). Be concise and on-brand.",
+        temperature: 0.7,
+        maxTokens: 120,
+      });
+
+      const line = res.text?.trim() || "(Co-pilot unavailable)";
+      return { line };
+    } catch (err) {
+      console.error("[coPilotSuggestLine]", err);
+      return { line: "(Co-pilot unavailable)" };
+    }
+  });
+
+export const coPilotSuggestSongs = createServerFn({ method: "POST" })
+  .inputValidator((input: { mood?: string; recentRequests?: string[] }) => ({
+    mood: String(input?.mood || "").slice(0, 100),
+    recentRequests: Array.isArray(input?.recentRequests) ? input.recentRequests.slice(-20) : [],
+  }))
+  .handler(async ({ data }) => {
+    try {
+      const prompt = `You are Trey-I, a live show music suggester. Given mood: "${data.mood}" and recent requests: ${JSON.stringify(data.recentRequests || [])}, return a JSON object: { picks: [{ title: string, artist: string, why: string }] } with 3 picks. These are free-text placeholders (no catalog).`;
+
+      const parsed = await aiGenerateJson<any>({
+        prompt,
+        systemInstruction:
+          "Return JSON exactly matching { picks: [{ title:string, artist:string, why:string }] }.",
+        temperature: 0.7,
+        maxTokens: 256,
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            picks: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  title: { type: "STRING" },
+                  artist: { type: "STRING" },
+                  why: { type: "STRING" },
+                },
+                required: ["title", "artist", "why"],
+              },
+            },
+          },
+          required: ["picks"],
+        },
+      });
+
+      const picks = Array.isArray(parsed.picks)
+        ? parsed.picks.slice(0, 5).map((p: any) => ({
+            title: String(p.title || "Untitled"),
+            artist: String(p.artist || "Various"),
+            why: String(p.why || "Fits the mood"),
+          }))
+        : [];
+      return { picks };
+    } catch (err) {
+      console.error("[coPilotSuggestSongs]", err);
+      return { picks: [] };
     }
   });

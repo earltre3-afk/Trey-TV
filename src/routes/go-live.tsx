@@ -16,7 +16,10 @@ function GoLive() {
   return (
     <AppShell>
       <div className="space-y-5 -mt-2">
-        <button onClick={goBack} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          onClick={goBack}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-4" /> Back
         </button>
 
@@ -54,7 +57,11 @@ function GoLive() {
             { icon: Sparkles, label: "Filters" },
             { icon: Settings, label: "Setup" },
           ].map((b) => (
-            <button key={b.label} onClick={() => toast(b.label)} className="rounded-2xl glass border border-white/10 py-3 flex flex-col items-center gap-1 hover:bg-white/5">
+            <button
+              key={b.label}
+              onClick={() => toast(b.label)}
+              className="rounded-2xl glass border border-white/10 py-3 flex flex-col items-center gap-1 hover:bg-white/5"
+            >
               <b.icon className="size-5" />
               <span className="text-[10px] text-muted-foreground">{b.label}</span>
             </button>
@@ -67,7 +74,9 @@ function GoLive() {
             <div className="text-sm font-semibold">Audience</div>
             <div className="text-xs text-muted-foreground">Public · Anyone on Trey TV</div>
           </div>
-          <button onClick={() => toast("Audience settings")} className="text-xs text-primary">Change</button>
+          <button onClick={() => toast("Audience settings")} className="text-xs text-primary">
+            Change
+          </button>
         </div>
 
         <button

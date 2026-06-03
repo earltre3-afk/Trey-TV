@@ -1,10 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Mic, MessageSquare, Send, Plus, Trophy, MoreVertical, ChevronDown, Clock, Play, RotateCw, Sparkles } from 'lucide-react';
-import TrunoCard from '../components/TrunoCard';
-import { avatarFor } from '../lib/avatars';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { PlayerIdentity } from '@/features/games/lib/services/identity';
-import { useRealtimeRoom } from '@/features/games/hooks/useRealtimeRoom';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Mic,
+  MessageSquare,
+  Send,
+  Plus,
+  Trophy,
+  MoreVertical,
+  ChevronDown,
+  Clock,
+  Play,
+  RotateCw,
+  Sparkles,
+} from "lucide-react";
+import TrunoCard from "../components/TrunoCard";
+import { avatarFor } from "../lib/avatars";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { PlayerIdentity } from "@/features/games/lib/services/identity";
+import { useRealtimeRoom } from "@/features/games/hooks/useRealtimeRoom";
 import {
   applyBotMove,
   applyPlayerMove,
@@ -16,14 +28,14 @@ import {
   TrunoGameState,
   TrunoMove,
   TrunoMoveEvent,
-} from '../lib/trunoEngine';
-import { useTvRemoteInput, useTvRemoteMode } from '@/lib/tv/useTvRemoteInput';
+} from "../lib/trunoEngine";
+import { useTvRemoteInput, useTvRemoteMode } from "@/lib/tv/useTvRemoteInput";
 
 interface Props {
   onNavigate: (view: string, params?: any) => void;
   identity: PlayerIdentity;
   roomId?: string | null;
-  mode?: 'quick' | 'ai';
+  mode?: "quick" | "ai";
 }
 
 const HUMAN_AFTER_PLAY_DELAY_MS = 450;
@@ -38,34 +50,34 @@ const CARD_PLAY_GUARD_MS = 700;
 interface ActionLogItem {
   id: string;
   text: string;
-  tone: 'play' | 'draw' | 'effect' | 'system' | 'keep';
+  tone: "play" | "draw" | "effect" | "system" | "keep";
   label: string;
 }
 
 type TableEffect = {
   id: string;
   label: string;
-  tone: 'skip' | 'reverse' | 'draw' | 'wild' | 'win';
+  tone: "skip" | "reverse" | "draw" | "wild" | "win";
   targetPlayerId?: string;
 } | null;
 
-const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mode = 'quick' }) => {
+const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mode = "quick" }) => {
   const currentUser = useCurrentUser();
-  const [localState, setLocalState] = useState<TrunoGameState>(() => (
+  const [localState, setLocalState] = useState<TrunoGameState>(() =>
     createTrunoGame([
       { id: identity.userId, name: identity.displayName, isBot: false },
-      { id: 'local-bot-1', name: 'Aaliyah', isBot: true },
-      { id: 'local-bot-2', name: 'Marcus', isBot: true },
-      ...(mode === 'ai' ? [] : [{ id: 'local-bot-3', name: 'Tre Earl', isBot: true }]),
-    ])
-  ));
+      { id: "local-bot-1", name: "Aaliyah", isBot: true },
+      { id: "local-bot-2", name: "Marcus", isBot: true },
+      ...(mode === "ai" ? [] : [{ id: "local-bot-3", name: "Tre Earl", isBot: true }]),
+    ]),
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const [voice, setVoice] = useState(false);
   const [chat, setChat] = useState(false);
-  const [chatDraft, setChatDraft] = useState('');
+  const [chatDraft, setChatDraft] = useState("");
   const [localChat, setLocalChat] = useState<string[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const [turnNotice, setTurnNotice] = useState<string>('Your turn.');
+  const [turnNotice, setTurnNotice] = useState<string>("Your turn.");
   const [actionLog, setActionLog] = useState<ActionLogItem[]>([]);
   const [thinkingPlayerId, setThinkingPlayerId] = useState<string | null>(null);
   const [tableEffect, setTableEffect] = useState<TableEffect>(null);
@@ -73,7 +85,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const [drawPulse, setDrawPulse] = useState(0);
   const [pulsePlayerId, setPulsePlayerId] = useState<string | null>(null);
   const [invalidCardId, setInvalidCardId] = useState<string | null>(null);
-  const [remoteTarget, setRemoteTarget] = useState<'hand' | 'draw' | 'actions'>('hand');
+  const [remoteTarget, setRemoteTarget] = useState<"hand" | "draw" | "actions">("hand");
   const [pendingWildCardId, setPendingWildCardId] = useState<string | null>(null);
   const tvRemoteMode = useTvRemoteMode();
   const tapRef = useRef<{ cardId: string | null; at: number }>({ cardId: null, at: 0 });
@@ -87,24 +99,38 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   const timeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const observedMoveRef = useRef<string | null>(null);
 
-  const applyRoomMove = useCallback((state: TrunoGameState, move: { type: string; seat: number; payload?: any }) => {
-    const player = state.players[move.seat];
-    if (!player) return state;
-    if (move.type === 'play') {
-      return applyPlayerMove(state, { type: 'play', playerId: player.id, cardId: move.payload?.cardId, wildColor: move.payload?.wildColor });
-    }
-    if (move.type === 'draw') return applyPlayerMove(state, { type: 'draw', playerId: player.id });
-    if (move.type === 'keep') return applyPlayerMove(state, { type: 'keep', playerId: player.id });
-    if (move.type === 'call-truno') return applyPlayerMove(state, { type: 'call-truno', playerId: player.id });
-    return state;
-  }, []);
+  const applyRoomMove = useCallback(
+    (state: TrunoGameState, move: { type: string; seat: number; payload?: any }) => {
+      const player = state.players[move.seat];
+      if (!player) return state;
+      if (move.type === "play") {
+        return applyPlayerMove(state, {
+          type: "play",
+          playerId: player.id,
+          cardId: move.payload?.cardId,
+          wildColor: move.payload?.wildColor,
+        });
+      }
+      if (move.type === "draw")
+        return applyPlayerMove(state, { type: "draw", playerId: player.id });
+      if (move.type === "keep")
+        return applyPlayerMove(state, { type: "keep", playerId: player.id });
+      if (move.type === "call-truno")
+        return applyPlayerMove(state, { type: "call-truno", playerId: player.id });
+      return state;
+    },
+    [],
+  );
 
-  const extractMeta = useCallback((state: TrunoGameState) => ({
-    currentSeat: state.currentPlayerIndex,
-    phase: state.phase,
-    round: state.turn,
-    ended: state.phase === 'ended',
-  }), []);
+  const extractMeta = useCallback(
+    (state: TrunoGameState) => ({
+      currentSeat: state.currentPlayerIndex,
+      phase: state.phase,
+      round: state.turn,
+      ended: state.phase === "ended",
+    }),
+    [],
+  );
 
   const room = useRealtimeRoom(roomId, identity, applyRoomMove, extractMeta);
   const state = (roomId ? room.state : localState) as TrunoGameState | null;
@@ -119,33 +145,48 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   useEffect(() => () => clearSequencer(), [clearSequencer]);
 
-  const sleep = useCallback((ms: number) => new Promise<void>((resolve) => {
-    const timer = setTimeout(() => {
-      timeoutsRef.current = timeoutsRef.current.filter((item) => item !== timer);
-      resolve();
-    }, ms);
-    timeoutsRef.current.push(timer);
-  }), []);
+  const sleep = useCallback(
+    (ms: number) =>
+      new Promise<void>((resolve) => {
+        const timer = setTimeout(() => {
+          timeoutsRef.current = timeoutsRef.current.filter((item) => item !== timer);
+          resolve();
+        }, ms);
+        timeoutsRef.current.push(timer);
+      }),
+    [],
+  );
 
   const showMoveEvent = useCallback((event: TrunoMoveEvent, moveId?: string) => {
     if (moveId) observedMoveRef.current = moveId;
-    const tone: ActionLogItem['tone'] = event.effect ? 'effect' : event.kind === 'draw' ? 'draw' : event.kind === 'keep' ? 'keep' : event.kind === 'play' ? 'play' : 'system';
+    const tone: ActionLogItem["tone"] = event.effect
+      ? "effect"
+      : event.kind === "draw"
+        ? "draw"
+        : event.kind === "keep"
+          ? "keep"
+          : event.kind === "play"
+            ? "play"
+            : "system";
     const label = logLabelFromEvent(event);
     setTurnNotice(event.message);
-    setActionLog((prev) => [
-      {
-        id: `${Date.now()}:${event.playerId}:${event.kind}`,
-        text: event.message,
-        tone,
-        label,
-      },
-      ...prev,
-    ].slice(0, 5));
+    setActionLog((prev) =>
+      [
+        {
+          id: `${Date.now()}:${event.playerId}:${event.kind}`,
+          text: event.message,
+          tone,
+          label,
+        },
+        ...prev,
+      ].slice(0, 5),
+    );
 
-    if (event.kind === 'play') setDiscardPulse((count) => count + 1);
-    if (event.kind === 'draw') setDrawPulse((count) => count + 1);
-    if (event.kind === 'draw') setPulsePlayerId(event.playerId);
-    if (event.effect === 'draw_two' || event.effect === 'wild_draw_four') setPulsePlayerId(event.targetPlayerId ?? null);
+    if (event.kind === "play") setDiscardPulse((count) => count + 1);
+    if (event.kind === "draw") setDrawPulse((count) => count + 1);
+    if (event.kind === "draw") setPulsePlayerId(event.playerId);
+    if (event.effect === "draw_two" || event.effect === "wild_draw_four")
+      setPulsePlayerId(event.targetPlayerId ?? null);
 
     const effect = effectFromEvent(event);
     if (effect) {
@@ -159,65 +200,66 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   }, []);
 
   const roomSetHostState = room.setHostState;
-  const seatedHostCanRunBots = room.players.some((player) => (
-    player.user_id === identity.userId &&
-    player.is_host &&
-    !player.is_bot
-  ));
+  const seatedHostCanRunBots = room.players.some(
+    (player) => player.user_id === identity.userId && player.is_host && !player.is_bot,
+  );
   const engineHostCanRunBots = !!roomId && state?.players[0]?.id === identity.userId;
   const isRoomHost = room.isHost || seatedHostCanRunBots || engineHostCanRunBots;
 
-  const runBotSequence = useCallback(async (startState: TrunoGameState, token: number) => {
-    let workingState = startState;
-    let steps = 0;
-    await sleep(HUMAN_AFTER_PLAY_DELAY_MS);
+  const runBotSequence = useCallback(
+    async (startState: TrunoGameState, token: number) => {
+      let workingState = startState;
+      let steps = 0;
+      await sleep(HUMAN_AFTER_PLAY_DELAY_MS);
 
-    while (
-      sequencerRef.current.token === token &&
-      workingState.phase === 'playing' &&
-      currentPlayer(workingState)?.isBot &&
-      steps < MAX_VISIBLE_BOT_STEPS
-    ) {
-      const bot = currentPlayer(workingState)!;
-      setThinkingPlayerId(bot.id);
-      setTurnNotice(`${bot.name} is thinking...`);
-      await sleep(randomBetween(BOT_THINK_MIN_MS, BOT_THINK_MAX_MS));
-      if (sequencerRef.current.token !== token) return;
+      while (
+        sequencerRef.current.token === token &&
+        workingState.phase === "playing" &&
+        currentPlayer(workingState)?.isBot &&
+        steps < MAX_VISIBLE_BOT_STEPS
+      ) {
+        const bot = currentPlayer(workingState)!;
+        setThinkingPlayerId(bot.id);
+        setTurnNotice(`${bot.name} is thinking...`);
+        await sleep(randomBetween(BOT_THINK_MIN_MS, BOT_THINK_MAX_MS));
+        if (sequencerRef.current.token !== token) return;
 
-      const result = applyBotMove(workingState);
-      if (!result || result.state.lastMoveId === workingState.lastMoveId) break;
+        const result = applyBotMove(workingState);
+        if (!result || result.state.lastMoveId === workingState.lastMoveId) break;
 
-      showMoveEvent(result.event, result.state.lastMoveId);
-      workingState = result.state;
+        showMoveEvent(result.event, result.state.lastMoveId);
+        workingState = result.state;
 
-      if (roomId) {
-        await roomSetHostState(result.state);
-      } else {
-        setLocalState(result.state);
+        if (roomId) {
+          await roomSetHostState(result.state);
+        } else {
+          setLocalState(result.state);
+        }
+
+        await sleep(BOT_AFTER_ACTION_DELAY_MS);
+        steps++;
       }
 
-      await sleep(BOT_AFTER_ACTION_DELAY_MS);
-      steps++;
-    }
+      if (sequencerRef.current.token !== token) return;
+      const nextActive = currentPlayer(workingState);
+      setThinkingPlayerId(null);
+      sequencerRef.current.running = false;
 
-    if (sequencerRef.current.token !== token) return;
-    const nextActive = currentPlayer(workingState);
-    setThinkingPlayerId(null);
-    sequencerRef.current.running = false;
-
-    if (workingState.phase === 'ended') {
-      setTurnNotice(workingState.message);
-    } else if (nextActive?.isBot && steps >= MAX_VISIBLE_BOT_STEPS) {
-      setNotice('The table paused bot play to keep the turn sequence safe.');
-    } else if (nextActive?.id === identity.userId || (!roomId && !nextActive?.isBot)) {
-      setTurnNotice('Your turn.');
-    } else if (nextActive) {
-      setTurnNotice(`Waiting for ${nextActive.name}.`);
-    }
-  }, [identity.userId, roomId, roomSetHostState, showMoveEvent, sleep]);
+      if (workingState.phase === "ended") {
+        setTurnNotice(workingState.message);
+      } else if (nextActive?.isBot && steps >= MAX_VISIBLE_BOT_STEPS) {
+        setNotice("The table paused bot play to keep the turn sequence safe.");
+      } else if (nextActive?.id === identity.userId || (!roomId && !nextActive?.isBot)) {
+        setTurnNotice("Your turn.");
+      } else if (nextActive) {
+        setTurnNotice(`Waiting for ${nextActive.name}.`);
+      }
+    },
+    [identity.userId, roomId, roomSetHostState, showMoveEvent, sleep],
+  );
 
   useEffect(() => {
-    if (!state || state.phase === 'ended') return;
+    if (!state || state.phase === "ended") return;
     const active = currentPlayer(state);
     if (!active?.isBot) return;
     if (roomId && !isRoomHost) return;
@@ -233,13 +275,21 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
   useEffect(() => {
     if (!roomId || isRoomHost) return;
-    if (!state || state.lastMoveId === observedMoveRef.current || state.lastMoveId === 'start') return;
+    if (!state || state.lastMoveId === observedMoveRef.current || state.lastMoveId === "start")
+      return;
     observedMoveRef.current = state.lastMoveId;
     setTurnNotice(state.message);
-    setActionLog((prev) => [
-      { id: `${Date.now()}:${state.lastMoveId}`, text: state.message, tone: 'system' as const, label: 'TABLE' },
-      ...prev,
-    ].slice(0, 5));
+    setActionLog((prev) =>
+      [
+        {
+          id: `${Date.now()}:${state.lastMoveId}`,
+          text: state.message,
+          tone: "system" as const,
+          label: "TABLE",
+        },
+        ...prev,
+      ].slice(0, 5),
+    );
   }, [isRoomHost, roomId, state]);
 
   useEffect(() => {
@@ -255,20 +305,36 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   }
 
   const activePlayer = currentPlayer(state);
-  const mySeat = roomId ? room.mySeat ?? 0 : state.players.findIndex((p) => !p.isBot);
+  const mySeat = roomId ? (room.mySeat ?? 0) : state.players.findIndex((p) => !p.isBot);
   const bottomSeat = mySeat >= 0 ? mySeat : 0;
   const me = state.players[bottomSeat] ?? state.players.find((p) => !p.isBot) ?? state.players[0];
   const botIsThinking = !!thinkingPlayerId || !!activePlayer?.isBot;
-  const myTurn = activePlayer?.id === me.id && state.phase === 'playing' && !sequencerRef.current.running;
+  const myTurn =
+    activePlayer?.id === me.id && state.phase === "playing" && !sequencerRef.current.running;
   const top = topCard(state);
   const selectedCard = me.hand.find((card) => card.id === selected) ?? null;
   const canPlaySelected = !!selectedCard && myTurn && isPlayableCard(selectedCard, state);
-  const roomCode = room.room?.room_code ?? (roomId ? 'Loading' : mode === 'ai' ? 'AI MATCH' : 'QUICK PLAY');
-  const tableLabel = roomId ? 'PRIVATE TABLE' : mode === 'ai' ? 'AI PRACTICE TABLE' : 'QUICK PLAY TABLE';
-  const waitingLabel = myTurn ? 'YOUR TURN' : botIsThinking && activePlayer ? `${activePlayer.name} THINKING` : `${activePlayer?.name ?? 'Table'} TURN`;
-  const winner = state.winnerId ? state.players.find((p) => p.id === state.winnerId) ?? null : null;
+  const roomCode =
+    room.room?.room_code ?? (roomId ? "Loading" : mode === "ai" ? "AI MATCH" : "QUICK PLAY");
+  const tableLabel = roomId
+    ? "PRIVATE TABLE"
+    : mode === "ai"
+      ? "AI PRACTICE TABLE"
+      : "QUICK PLAY TABLE";
+  const waitingLabel = myTurn
+    ? "YOUR TURN"
+    : botIsThinking && activePlayer
+      ? `${activePlayer.name} THINKING`
+      : `${activePlayer?.name ?? "Table"} TURN`;
+  const winner = state.winnerId
+    ? (state.players.find((p) => p.id === state.winnerId) ?? null)
+    : null;
   const handSpread = Math.max(29, Math.min(44, 330 / Math.max(me.hand.length, 1)));
-  const isPendingDrawPlayMe = !!(state.pendingDrawPlayCardId && myTurn && me.hand.some(c => c.id === state.pendingDrawPlayCardId));
+  const isPendingDrawPlayMe = !!(
+    state.pendingDrawPlayCardId &&
+    myTurn &&
+    me.hand.some((c) => c.id === state.pendingDrawPlayCardId)
+  );
 
   // Auto-select drawn playable card
   useEffect(() => {
@@ -295,7 +361,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       await room.sendMove({
         type: move.type,
         seat: mySeat,
-        payload: move.type === 'play' ? { cardId: move.cardId, wildColor: move.wildColor } : {},
+        payload: move.type === "play" ? { cardId: move.cardId, wildColor: move.wildColor } : {},
       });
       setSelected(null);
       return;
@@ -312,9 +378,9 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     timeoutsRef.current.push(timer);
   };
 
-  const handleSelectWildColor = (color: TrunoGameState['currentColor']) => {
+  const handleSelectWildColor = (color: TrunoGameState["currentColor"]) => {
     if (!pendingWildCardId) return;
-    void commitMove({ type: 'play', playerId: me.id, cardId: pendingWildCardId, wildColor: color });
+    void commitMove({ type: "play", playerId: me.id, cardId: pendingWildCardId, wildColor: color });
     setPendingWildCardId(null);
   };
 
@@ -322,7 +388,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     const card = me.hand.find((c) => c.id === cardId);
     if (!card) return;
     if (!myTurn) {
-      setNotice(`Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      setNotice(`Waiting on ${activePlayer?.name ?? "the table"}.`);
       return;
     }
     if (state.pendingDrawPlayCardId && state.pendingDrawPlayCardId !== cardId) {
@@ -331,19 +397,23 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     }
     if (!isPlayableCard(card, state)) {
       setSelected(null);
-      flashInvalidCard(cardId, 'That card does not match the current color, number, or action.');
+      flashInvalidCard(cardId, "That card does not match the current color, number, or action.");
       return;
     }
     const now = Date.now();
-    if (playGuardRef.current.cardId === cardId && now - playGuardRef.current.at < CARD_PLAY_GUARD_MS) return;
+    if (
+      playGuardRef.current.cardId === cardId &&
+      now - playGuardRef.current.at < CARD_PLAY_GUARD_MS
+    )
+      return;
     playGuardRef.current = { cardId, at: now };
 
-    if (card.color === 'black') {
+    if (card.color === "black") {
       setPendingWildCardId(cardId);
       return;
     }
 
-    void commitMove({ type: 'play', playerId: me.id, cardId, wildColor: mostCommonColor(me.hand) });
+    void commitMove({ type: "play", playerId: me.id, cardId, wildColor: mostCommonColor(me.hand) });
   };
 
   const handleCardTap = (cardId: string) => {
@@ -352,7 +422,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       return;
     }
     const now = Date.now();
-    const isDoubleTap = tapRef.current.cardId === cardId && now - tapRef.current.at < CARD_DOUBLE_TAP_MS;
+    const isDoubleTap =
+      tapRef.current.cardId === cardId && now - tapRef.current.at < CARD_DOUBLE_TAP_MS;
     tapRef.current = { cardId, at: now };
     if (isDoubleTap) {
       attemptPlayCard(cardId);
@@ -362,86 +433,96 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
     const card = me.hand.find((c) => c.id === cardId);
     if (!card) return;
     if (!myTurn) {
-      setNotice(`Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      setNotice(`Waiting on ${activePlayer?.name ?? "the table"}.`);
       return;
     }
     if (!isPlayableCard(card, state)) {
       setSelected(null);
-      flashInvalidCard(cardId, 'That card does not match the current color, number, or action.');
+      flashInvalidCard(cardId, "That card does not match the current color, number, or action.");
       return;
     }
-    setSelected((prev) => prev === cardId ? null : cardId);
+    setSelected((prev) => (prev === cardId ? null : cardId));
   };
 
   const handlePlay = () => {
     if (!selectedCard) return;
     if (!canPlaySelected) {
-      setNotice('Select a playable card first.');
+      setNotice("Select a playable card first.");
       return;
     }
     if (state.pendingDrawPlayCardId && state.pendingDrawPlayCardId !== selectedCard.id) {
       setNotice("You must play the drawn card or keep it.");
       return;
     }
-    if (selectedCard.color === 'black') {
+    if (selectedCard.color === "black") {
       setPendingWildCardId(selectedCard.id);
       return;
     }
-    commitMove({ type: 'play', playerId: me.id, cardId: selectedCard.id, wildColor: mostCommonColor(me.hand) });
+    commitMove({
+      type: "play",
+      playerId: me.id,
+      cardId: selectedCard.id,
+      wildColor: mostCommonColor(me.hand),
+    });
   };
 
   const handleDraw = () => {
     if (!myTurn) {
-      setNotice(`Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      setNotice(`Waiting on ${activePlayer?.name ?? "the table"}.`);
       return;
     }
-    commitMove({ type: 'draw', playerId: me.id });
+    commitMove({ type: "draw", playerId: me.id });
   };
 
   const handleCallTruno = () => {
     if (!myTurn) {
-      setNotice('Call TRUNO on your turn.');
+      setNotice("Call TRUNO on your turn.");
       return;
     }
-    commitMove({ type: 'call-truno', playerId: me.id });
+    commitMove({ type: "call-truno", playerId: me.id });
   };
 
   const handleSendChat = () => {
     const text = chatDraft.trim();
     if (!text) return;
     if (roomId) {
-      setNotice('Room chat persistence is coming soon.');
+      setNotice("Room chat persistence is coming soon.");
     } else {
       setLocalChat((prev) => [...prev.slice(-3), text]);
     }
-    setChatDraft('');
+    setChatDraft("");
   };
 
   const handleLeaveMatch = () => {
     clearSequencer();
-    onNavigate(roomId ? 'room' : 'home', roomId ? { roomId, suppressActiveSession: true } : undefined);
+    onNavigate(
+      roomId ? "room" : "home",
+      roomId ? { roomId, suppressActiveSession: true } : undefined,
+    );
   };
 
   const handleBackToTruno = () => {
     clearSequencer();
-    onNavigate('home');
+    onNavigate("home");
   };
 
   const handlePlayAgain = async () => {
-    const next = createTrunoGame(state.players.map((player) => ({
-      id: player.id,
-      name: player.name,
-      isBot: player.isBot,
-    })));
+    const next = createTrunoGame(
+      state.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        isBot: player.isBot,
+      })),
+    );
     setSelected(null);
     setNotice(null);
     setActionLog([]);
     setTableEffect(null);
-    setTurnNotice(`${next.players[0]?.name ?? 'Player'} starts.`);
+    setTurnNotice(`${next.players[0]?.name ?? "Player"} starts.`);
     observedMoveRef.current = next.lastMoveId;
     if (roomId) {
       if (!isRoomHost) {
-        setNotice('The room host can start the next table.');
+        setNotice("The room host can start the next table.");
         return;
       }
       await roomSetHostState(next);
@@ -451,57 +532,64 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   };
 
   useTvRemoteInput((action) => {
-    if (action === 'BACK') {
+    if (action === "BACK") {
       clearSequencer();
-      onNavigate('exit');
+      onNavigate("exit");
       return;
     }
-    if (action === 'MENU') {
-      setNotice('Table menu is coming soon.');
+    if (action === "MENU") {
+      setNotice("Table menu is coming soon.");
       return;
     }
-    if (state.phase === 'ended') {
-      if (action === 'SELECT') void handlePlayAgain();
+    if (state.phase === "ended") {
+      if (action === "SELECT") void handlePlayAgain();
       return;
     }
 
     if (isPendingDrawPlayMe) {
-      if (action === 'LEFT' || action === 'RIGHT' || action === 'UP' || action === 'DOWN') {
-        setRemoteTarget((prev) => (prev === 'hand' ? 'actions' : 'hand'));
-        setNotice(remoteTarget === 'hand' ? 'Place Down action selected. Press Select to play.' : 'Keep Card & Pass action selected. Press Select to pass.');
+      if (action === "LEFT" || action === "RIGHT" || action === "UP" || action === "DOWN") {
+        setRemoteTarget((prev) => (prev === "hand" ? "actions" : "hand"));
+        setNotice(
+          remoteTarget === "hand"
+            ? "Place Down action selected. Press Select to play."
+            : "Keep Card & Pass action selected. Press Select to pass.",
+        );
         return;
       }
-      if (action === 'SELECT') {
-        if (remoteTarget === 'hand') {
+      if (action === "SELECT") {
+        if (remoteTarget === "hand") {
           attemptPlayCard(state.pendingDrawPlayCardId!);
         } else {
-          commitMove({ type: 'keep', playerId: me.id });
+          commitMove({ type: "keep", playerId: me.id });
         }
         return;
       }
     }
 
-    if (action === 'UP') {
-      setRemoteTarget('draw');
-      setNotice('Draw pile selected. Press Select to draw.');
+    if (action === "UP") {
+      setRemoteTarget("draw");
+      setNotice("Draw pile selected. Press Select to draw.");
       return;
     }
-    if (action === 'DOWN') {
-      setRemoteTarget('hand');
+    if (action === "DOWN") {
+      setRemoteTarget("hand");
       if (!selected && me.hand.length) setSelected(me.hand[0].id);
       return;
     }
-    if (action === 'LEFT' || action === 'RIGHT') {
-      setRemoteTarget('hand');
+    if (action === "LEFT" || action === "RIGHT") {
+      setRemoteTarget("hand");
       if (!me.hand.length) return;
-      const currentIndex = Math.max(0, me.hand.findIndex((card) => card.id === selected));
-      const delta = action === 'LEFT' ? -1 : 1;
+      const currentIndex = Math.max(
+        0,
+        me.hand.findIndex((card) => card.id === selected),
+      );
+      const delta = action === "LEFT" ? -1 : 1;
       const nextIndex = (currentIndex + delta + me.hand.length) % me.hand.length;
       setSelected(me.hand[nextIndex].id);
       return;
     }
-    if (action === 'SELECT') {
-      if (remoteTarget === 'draw') {
+    if (action === "SELECT") {
+      if (remoteTarget === "draw") {
         handleDraw();
         return;
       }
@@ -509,7 +597,11 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         attemptPlayCard(selected);
         return;
       }
-      setNotice(myTurn ? 'Select a card with Left or Right first.' : `Waiting on ${activePlayer?.name ?? 'the table'}.`);
+      setNotice(
+        myTurn
+          ? "Select a card with Left or Right first."
+          : `Waiting on ${activePlayer?.name ?? "the table"}.`,
+      );
     }
   });
 
@@ -525,7 +617,14 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => { clearSequencer(); onNavigate('exit'); }} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center" aria-label="Back to Trey TV Games">
+          <button
+            onClick={() => {
+              clearSequencer();
+              onNavigate("exit");
+            }}
+            className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center"
+            aria-label="Back to Trey TV Games"
+          >
             <ChevronDown className="rotate-90 text-zinc-300" size={16} />
           </button>
           <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">
@@ -544,17 +643,29 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
             >
               Leave Match
             </button>
-            <button onClick={() => setNotice('Table menu is coming soon.')} className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center">
+            <button
+              onClick={() => setNotice("Table menu is coming soon.")}
+              className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center"
+            >
               <MoreVertical size={16} className="text-zinc-300" />
             </button>
           </div>
 
           {actionLog.length > 0 && (
             <div className="flex items-center gap-1.5 bg-zinc-950/80 border border-zinc-800 rounded-full p-1 shadow-md max-w-[260px] sm:max-w-xs animate-[truno-pop_0.35s_ease-out]">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider px-1 shrink-0">Moves:</span>
+              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider px-1 shrink-0">
+                Moves:
+              </span>
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                 {actionLog.slice(0, 2).map((item, i) => {
-                  const dotColor = item.tone === 'effect' ? 'bg-fuchsia-400' : item.tone === 'draw' || item.tone === 'keep' ? 'bg-purple-400' : item.tone === 'play' ? 'bg-cyan-400' : 'bg-zinc-400';
+                  const dotColor =
+                    item.tone === "effect"
+                      ? "bg-fuchsia-400"
+                      : item.tone === "draw" || item.tone === "keep"
+                        ? "bg-purple-400"
+                        : item.tone === "play"
+                          ? "bg-cyan-400"
+                          : "bg-zinc-400";
                   return (
                     <div key={item.id} className="flex items-center gap-1 shrink-0 text-[10px]">
                       {i > 0 && <span className="text-zinc-800 font-bold">|</span>}
@@ -571,14 +682,22 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       </div>
 
-      <div className={`mx-auto max-w-full w-fit rounded-full bg-zinc-950/80 border px-4 py-1.5 mb-4 flex items-center gap-3 ${myTurn ? 'border-emerald-400/50 shadow-[0_0_22px_rgba(52,211,153,0.25)]' : 'border-fuchsia-500/30'}`}>
+      <div
+        className={`mx-auto max-w-full w-fit rounded-full bg-zinc-950/80 border px-4 py-1.5 mb-4 flex items-center gap-3 ${myTurn ? "border-emerald-400/50 shadow-[0_0_22px_rgba(52,211,153,0.25)]" : "border-fuchsia-500/30"}`}
+      >
         <span className="text-xs font-bold text-fuchsia-300">{tableLabel}</span>
         <span className="text-xs text-zinc-500">|</span>
         <span className="text-xs text-zinc-300 truncate">{turnNotice || state.message}</span>
       </div>
 
       <div className="relative aspect-square max-w-md mx-auto">
-        <div className="absolute inset-0 rounded-full" style={{ background: 'radial-gradient(circle, transparent 35%, rgba(157,78,221,0.15) 50%, transparent 65%)' }} />
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background:
+              "radial-gradient(circle, transparent 35%, rgba(157,78,221,0.15) 50%, transparent 65%)",
+          }}
+        />
         <div className="absolute inset-8 rounded-full border border-purple-500/30" />
         <div className="absolute inset-16 rounded-full border border-fuchsia-500/20" />
         <div className="absolute inset-24 rounded-full border border-blue-500/20" />
@@ -598,20 +717,31 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         ))}
 
         <div className="absolute inset-0 flex items-center justify-center gap-3">
-          <div key={drawPulse} className={drawPulse ? 'animate-[truno-pop_0.45s_ease-out]' : ''}>
-            <TrunoCard card={{ id: 'deck', color: 'black', symbol: 'wild', label: 'W' }} faceDown size="md" />
+          <div key={drawPulse} className={drawPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}>
+            <TrunoCard
+              card={{ id: "deck", color: "black", symbol: "wild", label: "W" }}
+              faceDown
+              size="md"
+            />
           </div>
           {top && (
-            <div key={`${top.id}:${discardPulse}`} className={discardPulse ? 'animate-[truno-pop_0.45s_ease-out]' : ''}>
+            <div
+              key={`${top.id}:${discardPulse}`}
+              className={discardPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}
+            >
               <TrunoCard card={top} size="md" playable />
             </div>
           )}
         </div>
 
         {tableEffect && (
-          <div className={`pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}>
+          <div
+            className={`pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}
+          >
             <span className="inline-flex items-center gap-2">
-              {tableEffect.tone === 'wild' || tableEffect.tone === 'win' ? <Sparkles size={18} /> : null}
+              {tableEffect.tone === "wild" || tableEffect.tone === "win" ? (
+                <Sparkles size={18} />
+              ) : null}
               {tableEffect.label}
             </span>
           </div>
@@ -619,38 +749,47 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 
         <div className="absolute left-1/2 -translate-x-1/2 bottom-1/4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/80 border border-zinc-800">
           <span className="text-[10px] text-zinc-400">Current Color</span>
-          <div className={`w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] ${colorClass(state.currentColor)}`} />
+          <div
+            className={`w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] ${colorClass(state.currentColor)}`}
+          />
           <span className="text-[10px] text-zinc-500">|</span>
-          <RotateCw size={12} className={`text-cyan-300 ${state.direction === -1 ? '-scale-x-100' : ''}`} />
-          <span className="text-[10px] text-zinc-300">{state.direction === 1 ? 'Clockwise' : 'Counter'}</span>
+          <RotateCw
+            size={12}
+            className={`text-cyan-300 ${state.direction === -1 ? "-scale-x-100" : ""}`}
+          />
+          <span className="text-[10px] text-zinc-300">
+            {state.direction === 1 ? "Clockwise" : "Counter"}
+          </span>
         </div>
 
         {/* Premium Wild Card Color Picker Modal Overlay */}
         {pendingWildCardId && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-full bg-zinc-950/90 backdrop-blur-md border border-purple-500/30 p-6 text-center animate-[truno-pop_0.3s_ease-out]">
-            <div className="text-amber-300 text-xs font-black tracking-[0.24em] mb-1">WILD CARD</div>
+            <div className="text-amber-300 text-xs font-black tracking-[0.24em] mb-1">
+              WILD CARD
+            </div>
             <div className="text-white text-lg font-black mb-4">CHOOSE PILE COLOR</div>
             <div className="grid grid-cols-2 gap-3 w-48">
               <button
-                onClick={() => handleSelectWildColor('red')}
+                onClick={() => handleSelectWildColor("red")}
                 className="min-h-12 rounded-2xl border border-red-500/50 bg-red-500/20 text-red-200 font-bold hover:bg-red-500/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(239,68,68,0.25)] flex items-center justify-center"
               >
                 Red
               </button>
               <button
-                onClick={() => handleSelectWildColor('blue')}
+                onClick={() => handleSelectWildColor("blue")}
                 className="min-h-12 rounded-2xl border border-cyan-400/50 bg-cyan-400/20 text-cyan-200 font-bold hover:bg-cyan-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.25)] flex items-center justify-center"
               >
                 Blue
               </button>
               <button
-                onClick={() => handleSelectWildColor('green')}
+                onClick={() => handleSelectWildColor("green")}
                 className="min-h-12 rounded-2xl border border-emerald-400/50 bg-emerald-400/20 text-emerald-200 font-bold hover:bg-emerald-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(52,211,153,0.25)] flex items-center justify-center"
               >
                 Green
               </button>
               <button
-                onClick={() => handleSelectWildColor('yellow')}
+                onClick={() => handleSelectWildColor("yellow")}
                 className="min-h-12 rounded-2xl border border-amber-300/50 bg-amber-300/20 text-amber-200 font-bold hover:bg-amber-300/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(251,191,36,0.25)] flex items-center justify-center"
               >
                 Yellow
@@ -667,7 +806,9 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       </div>
 
       <div className="mt-2 flex items-center justify-center gap-2 text-xs">
-        <button className={`min-h-9 flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.2)]' : botIsThinking ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-200' : 'bg-zinc-900/80 border-zinc-800 text-zinc-400'}`}>
+        <button
+          className={`min-h-9 flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.2)]" : botIsThinking ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200" : "bg-zinc-900/80 border-zinc-800 text-zinc-400"}`}
+        >
           <ChevronDown size={14} className="rotate-180" /> {waitingLabel}
         </button>
         <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300">
@@ -675,24 +816,42 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </span>
       </div>
 
-
-      {state.phase === 'ended' && (
+      {state.phase === "ended" && (
         <div className="mt-3 rounded-3xl border border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-zinc-950 p-4 text-center shadow-[0_0_34px_rgba(251,191,36,0.14)]">
           <div className="mx-auto mb-2 w-12 h-12 rounded-full border border-amber-400/60 bg-amber-400/15 flex items-center justify-center text-amber-200">
             <Trophy size={24} />
           </div>
-          <div className="text-[10px] font-black tracking-[0.24em] text-amber-300">TABLE COMPLETE</div>
-          <div className="mt-1 text-xl font-black text-white">{winner?.id === me.id ? 'You win the table' : `${winner?.name ?? 'A player'} wins the table`}</div>
-          <p className="mt-1 text-xs text-zinc-400">Start a clean rematch when everyone is ready.</p>
-          <div className={`mt-4 grid gap-2 ${roomId ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'}`}>
-            <button onClick={handlePlayAgain} className="min-h-11 rounded-2xl border border-emerald-400/50 bg-emerald-500/10 text-emerald-200 text-sm font-black hover:bg-emerald-500/15">
+          <div className="text-[10px] font-black tracking-[0.24em] text-amber-300">
+            TABLE COMPLETE
+          </div>
+          <div className="mt-1 text-xl font-black text-white">
+            {winner?.id === me.id
+              ? "You win the table"
+              : `${winner?.name ?? "A player"} wins the table`}
+          </div>
+          <p className="mt-1 text-xs text-zinc-400">
+            Start a clean rematch when everyone is ready.
+          </p>
+          <div
+            className={`mt-4 grid gap-2 ${roomId ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}
+          >
+            <button
+              onClick={handlePlayAgain}
+              className="min-h-11 rounded-2xl border border-emerald-400/50 bg-emerald-500/10 text-emerald-200 text-sm font-black hover:bg-emerald-500/15"
+            >
               Play Again
             </button>
-            <button onClick={handleBackToTruno} className="min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/10 text-fuchsia-200 text-sm font-black hover:bg-fuchsia-500/15">
+            <button
+              onClick={handleBackToTruno}
+              className="min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/10 text-fuchsia-200 text-sm font-black hover:bg-fuchsia-500/15"
+            >
               Back to Truno
             </button>
             {roomId && (
-              <button onClick={handleLeaveMatch} className="min-h-11 rounded-2xl border border-pink-500/45 bg-pink-500/10 text-pink-200 text-sm font-black hover:bg-pink-500/15">
+              <button
+                onClick={handleLeaveMatch}
+                className="min-h-11 rounded-2xl border border-pink-500/45 bg-pink-500/10 text-pink-200 text-sm font-black hover:bg-pink-500/15"
+              >
                 Leave Room
               </button>
             )}
@@ -706,26 +865,31 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       )}
 
-      <div className="mt-3 relative flex justify-center items-end overflow-visible" style={{ height: 150 }}>
+      <div
+        className="mt-3 relative flex justify-center items-end overflow-visible"
+        style={{ height: 150 }}
+      >
         {me.hand.map((c, i) => {
           const mid = Math.floor(me.hand.length / 2);
           const offset = i - mid;
           const isSel = selected === c.id;
           const playable = myTurn && isPlayableCard(c, state);
-          const remoteFocused = tvRemoteMode && remoteTarget === 'hand' && isSel;
+          const remoteFocused = tvRemoteMode && remoteTarget === "hand" && isSel;
           const invalid = invalidCardId === c.id;
           return (
             <div
               key={c.id}
-              className={`absolute transition-transform duration-200 ${invalid ? 'animate-[truno-shake_0.35s_ease-in-out]' : ''}`}
+              className={`absolute transition-transform duration-200 ${invalid ? "animate-[truno-shake_0.35s_ease-in-out]" : ""}`}
               style={{
-                transform: `translateX(${offset * handSpread}px) translateY(${Math.abs(offset) * 3}px) rotate(${offset * 4}deg) ${isSel ? 'translateY(-28px) scale(1.12)' : ''}`,
+                transform: `translateX(${offset * handSpread}px) translateY(${Math.abs(offset) * 3}px) rotate(${offset * 4}deg) ${isSel ? "translateY(-28px) scale(1.12)" : ""}`,
                 zIndex: isSel ? 100 : 10 + i,
               }}
             >
               {isSel && (
-                <div className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider whitespace-nowrap ${remoteFocused ? 'border-amber-300/70 bg-amber-400/20 text-amber-100' : 'border-cyan-300/50 bg-cyan-400/15 text-cyan-100'}`}>
-                  {remoteFocused ? 'TV FOCUS' : 'SELECTED'}
+                <div
+                  className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider whitespace-nowrap ${remoteFocused ? "border-amber-300/70 bg-amber-400/20 text-amber-100" : "border-cyan-300/50 bg-cyan-400/15 text-cyan-100"}`}
+                >
+                  {remoteFocused ? "TV FOCUS" : "SELECTED"}
                 </div>
               )}
               <TrunoCard
@@ -734,7 +898,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
                 playable={playable}
                 onClick={() => handleCardTap(c.id)}
                 selected={isSel}
-                className={`${playable ? 'ring-2 ring-cyan-300/25' : ''} ${remoteFocused ? 'ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''} ${invalid ? 'ring-4 ring-pink-400/70' : ''}`}
+                className={`${playable ? "ring-2 ring-cyan-300/25" : ""} ${remoteFocused ? "ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""} ${invalid ? "ring-4 ring-pink-400/70" : ""}`}
               />
             </div>
           );
@@ -744,15 +908,15 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       {isPendingDrawPlayMe ? (
         <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl border border-emerald-500/35 bg-emerald-950/15 p-3 backdrop-blur-sm shadow-[0_0_25px_rgba(52,211,153,0.1)] animate-[truno-pop_0.35s_ease-out]">
           <button
-            onClick={() => commitMove({ type: 'keep', playerId: me.id })}
-            disabled={state.phase === 'ended'}
+            onClick={() => commitMove({ type: "keep", playerId: me.id })}
+            disabled={state.phase === "ended"}
             className="min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 transition"
           >
             Keep Card & Pass
           </button>
           <button
             onClick={() => attemptPlayCard(state.pendingDrawPlayCardId!)}
-            disabled={state.phase === 'ended'}
+            disabled={state.phase === "ended"}
             className="min-h-14 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-teal-600 transition shadow-[0_0_20px_rgba(52,211,153,0.3)] animate-pulse"
           >
             <Play size={15} /> Place Down
@@ -760,10 +924,18 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
-          <button onClick={handleDraw} disabled={!myTurn || state.phase === 'ended'} className={`min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 py-3 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === 'draw' ? 'ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]' : ''}`}>
+          <button
+            onClick={handleDraw}
+            disabled={!myTurn || state.phase === "ended"}
+            className={`min-h-14 rounded-2xl border border-purple-500/30 bg-zinc-950/80 py-3 text-purple-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 hover:border-purple-500/50 active:scale-95 transition-all duration-200 disabled:opacity-35 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === "draw" ? "ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""}`}
+          >
             <Plus size={16} /> Draw
           </button>
-          <button onClick={handleCallTruno} disabled={!myTurn || state.phase === 'ended'} className="min-h-14 rounded-2xl py-3 font-black text-sm relative overflow-hidden group disabled:opacity-50 disabled:saturate-50 disabled:cursor-not-allowed">
+          <button
+            onClick={handleCallTruno}
+            disabled={!myTurn || state.phase === "ended"}
+            className="min-h-14 rounded-2xl py-3 font-black text-xs sm:text-sm relative overflow-hidden group active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+          >
             <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
             <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
             <div className="relative">
@@ -773,8 +945,8 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
           </button>
           <button
             onClick={handlePlay}
-            disabled={!canPlaySelected || state.phase === 'ended'}
-            className={`min-h-14 rounded-2xl border py-3 font-bold text-sm flex items-center justify-center gap-2 transition ${canPlaySelected ? 'border-cyan-500/40 bg-zinc-950/80 text-cyan-300 hover:bg-cyan-500/10 shadow-[0_0_18px_rgba(34,211,238,0.15)]' : 'border-zinc-800 bg-zinc-900/50 text-zinc-600 cursor-not-allowed'}`}
+            disabled={!canPlaySelected || state.phase === "ended"}
+            className={`min-h-14 rounded-2xl border py-3 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${canPlaySelected ? "border-cyan-400 bg-cyan-950/20 text-cyan-200 hover:bg-cyan-900/25 shadow-[0_0_22px_rgba(34,211,238,0.45)] animate-pulse" : "border-zinc-850 bg-zinc-900/50 text-zinc-600 cursor-not-allowed"}`}
           >
             <Play size={15} /> Play Card
           </button>
@@ -782,17 +954,37 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
       )}
 
       <div className="mt-3 flex items-center justify-between">
-        <button onClick={() => setVoice(!voice)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800">
-          <div className={`w-7 h-7 rounded-full ${voice ? 'bg-emerald-500/20 border border-emerald-500/50' : 'bg-zinc-800'} flex items-center justify-center`}>
-            <Mic size={14} className={voice ? 'text-emerald-300' : 'text-zinc-500'} />
+        <button
+          onClick={() => setVoice(!voice)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800"
+        >
+          <div
+            className={`w-7 h-7 rounded-full ${voice ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-zinc-800"} flex items-center justify-center`}
+          >
+            <Mic size={14} className={voice ? "text-emerald-300" : "text-zinc-500"} />
           </div>
-          <span className="text-xs text-zinc-300">Voice: <span className={voice ? 'text-emerald-300 font-bold' : 'text-zinc-500'}>{voice ? 'On' : 'Off'}</span></span>
+          <span className="text-xs text-zinc-300">
+            Voice:{" "}
+            <span className={voice ? "text-emerald-300 font-bold" : "text-zinc-500"}>
+              {voice ? "On" : "Off"}
+            </span>
+          </span>
         </button>
-        <button onClick={() => setChat(!chat)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800">
-          <div className={`w-7 h-7 rounded-full ${chat ? 'bg-cyan-500/20 border border-cyan-500/50' : 'bg-zinc-800'} flex items-center justify-center`}>
-            <MessageSquare size={14} className={chat ? 'text-cyan-300' : 'text-zinc-500'} />
+        <button
+          onClick={() => setChat(!chat)}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800"
+        >
+          <div
+            className={`w-7 h-7 rounded-full ${chat ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-zinc-800"} flex items-center justify-center`}
+          >
+            <MessageSquare size={14} className={chat ? "text-cyan-300" : "text-zinc-500"} />
           </div>
-          <span className="text-xs text-zinc-300">Chat: <span className={chat ? 'text-cyan-300 font-bold' : 'text-zinc-500'}>{chat ? 'On' : 'Off'}</span></span>
+          <span className="text-xs text-zinc-300">
+            Chat:{" "}
+            <span className={chat ? "text-cyan-300 font-bold" : "text-zinc-500"}>
+              {chat ? "On" : "Off"}
+            </span>
+          </span>
         </button>
       </div>
 
@@ -800,20 +992,29 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl p-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-zinc-300">Table Chat</span>
-            <span className="text-[10px] text-zinc-500">{roomId ? 'Persistence coming soon' : 'Local only'}</span>
+            <span className="text-[10px] text-zinc-500">
+              {roomId ? "Persistence coming soon" : "Local only"}
+            </span>
           </div>
           <div className="space-y-1.5 max-h-32 overflow-y-auto">
             {localChat.length === 0 ? (
               <p className="text-xs text-zinc-500 py-4 text-center">No chat messages yet.</p>
-            ) : localChat.map((msg, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <img src={currentUser.avatar || avatarFor(me.name)} alt={me.name} className="w-6 h-6 rounded-full object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-                <div className="flex-1 min-w-0">
-                  <span className="text-[11px] font-bold text-fuchsia-300">{me.name}</span>
-                  <p className="text-[11px] text-zinc-300 truncate">{msg}</p>
+            ) : (
+              localChat.map((msg, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <img
+                    src={currentUser.avatar || avatarFor(me.name)}
+                    alt={me.name}
+                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[11px] font-bold text-fuchsia-300">{me.name}</span>
+                    <p className="text-[11px] text-zinc-300 truncate">{msg}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           <div className="mt-2 flex items-center gap-2">
             <input
@@ -822,7 +1023,10 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
               placeholder="Say something..."
               className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500/50"
             />
-            <button onClick={handleSendChat} className="w-8 h-8 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center">
+            <button
+              onClick={handleSendChat}
+              className="w-8 h-8 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center"
+            >
               <Send size={12} className="text-fuchsia-300" />
             </button>
           </div>
@@ -833,7 +1037,7 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
 };
 
 const TablePlayer: React.FC<{
-  player: TrunoGameState['players'][number];
+  player: TrunoGameState["players"][number];
   relativeIndex: number;
   playerCount: number;
   active: boolean;
@@ -844,10 +1048,18 @@ const TablePlayer: React.FC<{
 }> = ({ player, relativeIndex, playerCount, active, thinking, pulsing, isYou, avatar }) => {
   const position = seatPosition(relativeIndex, playerCount);
   return (
-    <div className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? 'scale-105' : ''}`}>
-      <div className={`flex items-center gap-1 mb-1 transition ${pulsing ? 'animate-[truno-pop_0.45s_ease-out]' : ''}`}>
+    <div
+      className={`absolute ${position} flex flex-col items-center transition-all duration-300 ${pulsing ? "scale-105" : ""}`}
+    >
+      <div
+        className={`flex items-center gap-1 mb-1 transition ${pulsing ? "animate-[truno-pop_0.45s_ease-out]" : ""}`}
+      >
         {Array.from({ length: Math.min(5, player.hand.length) }).map((_, i) => (
-          <div key={i} className="w-3 h-8 rounded-sm border border-purple-500/40" style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: 'rgba(157,78,221,0.1)' }} />
+          <div
+            key={i}
+            className="w-3 h-8 rounded-sm border border-purple-500/40"
+            style={{ transform: `rotate(${(i - 2) * 4}deg)`, background: "rgba(157,78,221,0.1)" }}
+          />
         ))}
       </div>
       <div className="flex flex-col items-center">
@@ -855,34 +1067,60 @@ const TablePlayer: React.FC<{
           {active && (
             <div className="absolute -inset-2 rounded-full border border-emerald-300/50 animate-[truno-ring_1.45s_ease-in-out_infinite]" />
           )}
-          <div className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? 'ring-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.58)]' : 'ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]'}`}>
-            <img src={avatar || avatarFor(player.name)} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          <div
+            className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? "ring-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.58)]" : "ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]"}`}
+          >
+            <img
+              src={avatar || avatarFor(player.name)}
+              alt={player.name}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
-          <span className={`absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border text-[10px] font-black text-white flex items-center justify-center ${pulsing ? 'border-cyan-300 animate-[truno-pop_0.45s_ease-out]' : 'border-zinc-700'}`}>{player.hand.length}</span>
-          <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-black ${active ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+          <span
+            className={`absolute -top-1 -right-1 min-w-6 h-6 px-1.5 rounded-full bg-zinc-950 border text-[10px] font-black text-white flex items-center justify-center ${pulsing ? "border-cyan-300 animate-[truno-pop_0.45s_ease-out]" : "border-zinc-700"}`}
+          >
+            {player.hand.length}
+          </span>
+          <div
+            className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border border-black ${active ? "bg-emerald-400" : "bg-zinc-500"}`}
+          />
         </div>
-        <span className="mt-1 text-[11px] font-bold text-white">{isYou ? 'You' : player.name}</span>
-        <span className={`text-[10px] flex items-center gap-1 ${thinking ? 'text-cyan-300' : active ? 'text-emerald-300' : 'text-amber-400'}`}>
-          {thinking && <span className="inline-flex gap-0.5" aria-hidden="true"><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_infinite]" /><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.15s_infinite]" /><span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.3s_infinite]" /></span>}
-          {thinking ? 'THINKING' : active ? 'ACTIVE' : player.isBot ? 'BOT' : 'PLAYER'}
+        <span className="mt-1 text-[11px] font-bold text-white">{isYou ? "You" : player.name}</span>
+        <span
+          className={`text-[10px] flex items-center gap-1 ${thinking ? "text-cyan-300" : active ? "text-emerald-300" : "text-amber-400"}`}
+        >
+          {thinking && (
+            <span className="inline-flex gap-0.5" aria-hidden="true">
+              <span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_infinite]" />
+              <span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.15s_infinite]" />
+              <span className="w-1 h-1 rounded-full bg-cyan-300 animate-[truno-thinking_0.9s_ease-in-out_0.3s_infinite]" />
+            </span>
+          )}
+          {thinking ? "THINKING" : active ? "ACTIVE" : player.isBot ? "BOT" : "PLAYER"}
         </span>
       </div>
     </div>
   );
 };
 
-function colorClass(color: TrunoGameState['currentColor']) {
-  if (color === 'red') return 'bg-red-500 text-red-400';
-  if (color === 'blue') return 'bg-cyan-400 text-cyan-400';
-  if (color === 'green') return 'bg-emerald-400 text-emerald-400';
-  return 'bg-amber-300 text-amber-300';
+function colorClass(color: TrunoGameState["currentColor"]) {
+  if (color === "red") return "bg-red-500 text-red-400";
+  if (color === "blue") return "bg-cyan-400 text-cyan-400";
+  if (color === "green") return "bg-emerald-400 text-emerald-400";
+  return "bg-amber-300 text-amber-300";
 }
 
-function mostCommonColor(hand: TrunoGameState['players'][number]['hand']): TrunoGameState['currentColor'] {
-  const colors: TrunoGameState['currentColor'][] = ['red', 'blue', 'green', 'yellow'];
-  const ranked = colors.map((color) => ({ color, n: hand.filter((card) => card.color === color).length }));
+function mostCommonColor(
+  hand: TrunoGameState["players"][number]["hand"],
+): TrunoGameState["currentColor"] {
+  const colors: TrunoGameState["currentColor"][] = ["red", "blue", "green", "yellow"];
+  const ranked = colors.map((color) => ({
+    color,
+    n: hand.filter((card) => card.color === color).length,
+  }));
   ranked.sort((a, b) => b.n - a.n);
-  return ranked[0]?.color ?? 'red';
+  return ranked[0]?.color ?? "red";
 }
 
 function randomBetween(min: number, max: number) {
@@ -891,63 +1129,88 @@ function randomBetween(min: number, max: number) {
 
 function effectFromEvent(event: TrunoMoveEvent): TableEffect {
   if (!event.effect) return null;
-  if (event.effect === 'skip') return { id: `${Date.now()}:skip`, label: 'SKIP', tone: 'skip', targetPlayerId: event.targetPlayerId };
-  if (event.effect === 'reverse') return { id: `${Date.now()}:reverse`, label: 'REVERSE', tone: 'reverse' };
-  if (event.effect === 'draw_two') return { id: `${Date.now()}:draw2`, label: '+2', tone: 'draw', targetPlayerId: event.targetPlayerId };
-  if (event.effect === 'wild_draw_four') return { id: `${Date.now()}:draw4`, label: '+4', tone: 'wild', targetPlayerId: event.targetPlayerId };
-  if (event.effect === 'wild') return { id: `${Date.now()}:wild`, label: `${event.color?.toUpperCase() ?? 'WILD'}`, tone: 'wild' };
-  if (event.effect === 'win') return { id: `${Date.now()}:win`, label: 'TRUNO', tone: 'win' };
+  if (event.effect === "skip")
+    return {
+      id: `${Date.now()}:skip`,
+      label: "SKIP",
+      tone: "skip",
+      targetPlayerId: event.targetPlayerId,
+    };
+  if (event.effect === "reverse")
+    return { id: `${Date.now()}:reverse`, label: "REVERSE", tone: "reverse" };
+  if (event.effect === "draw_two")
+    return {
+      id: `${Date.now()}:draw2`,
+      label: "+2",
+      tone: "draw",
+      targetPlayerId: event.targetPlayerId,
+    };
+  if (event.effect === "wild_draw_four")
+    return {
+      id: `${Date.now()}:draw4`,
+      label: "+4",
+      tone: "wild",
+      targetPlayerId: event.targetPlayerId,
+    };
+  if (event.effect === "wild")
+    return {
+      id: `${Date.now()}:wild`,
+      label: `${event.color?.toUpperCase() ?? "WILD"}`,
+      tone: "wild",
+    };
+  if (event.effect === "win") return { id: `${Date.now()}:win`, label: "TRUNO", tone: "win" };
   return null;
 }
 
 function logLabelFromEvent(event: TrunoMoveEvent) {
-  if (event.effect === 'skip') return 'SKIP';
-  if (event.effect === 'reverse') return 'REVERSE';
-  if (event.effect === 'draw_two') return '+2';
-  if (event.effect === 'wild_draw_four') return '+4';
-  if (event.effect === 'wild') return 'WILD';
-  if (event.effect === 'win') return 'WIN';
-  if (event.kind === 'draw') return 'DRAW';
-  if (event.kind === 'keep') return 'KEEP';
-  if (event.kind === 'call-truno') return 'TRUNO';
-  return 'PLAY';
+  if (event.effect === "skip") return "SKIP";
+  if (event.effect === "reverse") return "REVERSE";
+  if (event.effect === "draw_two") return "+2";
+  if (event.effect === "wild_draw_four") return "+4";
+  if (event.effect === "wild") return "WILD";
+  if (event.effect === "win") return "WIN";
+  if (event.kind === "draw") return "DRAW";
+  if (event.kind === "keep") return "KEEP";
+  if (event.kind === "call-truno") return "TRUNO";
+  return "PLAY";
 }
 
-function effectClass(tone: NonNullable<TableEffect>['tone']) {
-  if (tone === 'skip') return 'border-pink-400/60 bg-pink-500/20 text-pink-200 shadow-[0_0_28px_rgba(236,72,153,0.4)]';
-  if (tone === 'reverse') return 'border-cyan-400/60 bg-cyan-500/20 text-cyan-200 shadow-[0_0_28px_rgba(34,211,238,0.4)]';
-  if (tone === 'draw') return 'border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_28px_rgba(168,85,247,0.4)]';
-  if (tone === 'wild') return 'border-amber-400/60 bg-amber-500/20 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.35)]';
-  return 'border-emerald-400/60 bg-emerald-500/20 text-emerald-100 shadow-[0_0_28px_rgba(52,211,153,0.4)]';
+function effectClass(tone: NonNullable<TableEffect>["tone"]) {
+  if (tone === "skip")
+    return "border-pink-400/60 bg-pink-500/20 text-pink-200 shadow-[0_0_28px_rgba(236,72,153,0.4)]";
+  if (tone === "reverse")
+    return "border-cyan-400/60 bg-cyan-500/20 text-cyan-200 shadow-[0_0_28px_rgba(34,211,238,0.4)]";
+  if (tone === "draw")
+    return "border-purple-400/60 bg-purple-500/20 text-purple-200 shadow-[0_0_28px_rgba(168,85,247,0.4)]";
+  if (tone === "wild")
+    return "border-amber-400/60 bg-amber-500/20 text-amber-100 shadow-[0_0_28px_rgba(251,191,36,0.35)]";
+  return "border-emerald-400/60 bg-emerald-500/20 text-emerald-100 shadow-[0_0_28px_rgba(52,211,153,0.4)]";
 }
 
-function logClass(tone: ActionLogItem['tone']) {
-  if (tone === 'effect') return 'border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-100';
-  if (tone === 'draw') return 'border-purple-500/25 bg-purple-500/10 text-purple-100';
-  if (tone === 'keep') return 'border-purple-500/25 bg-purple-500/10 text-purple-100';
-  if (tone === 'play') return 'border-cyan-500/25 bg-cyan-500/10 text-cyan-100';
-  return 'border-zinc-800 bg-zinc-900/50 text-zinc-300';
+function logClass(tone: ActionLogItem["tone"]) {
+  if (tone === "effect") return "border-fuchsia-500/25 bg-fuchsia-500/10 text-fuchsia-100";
+  if (tone === "draw") return "border-purple-500/25 bg-purple-500/10 text-purple-100";
+  if (tone === "keep") return "border-purple-500/25 bg-purple-500/10 text-purple-100";
+  if (tone === "play") return "border-cyan-500/25 bg-cyan-500/10 text-cyan-100";
+  return "border-zinc-800 bg-zinc-900/50 text-zinc-300";
 }
 
 function seatPosition(relativeIndex: number, playerCount: number) {
-  const two = [
-    'bottom-0 left-1/2 -translate-x-1/2',
-    'top-0 left-1/2 -translate-x-1/2',
-  ];
+  const two = ["bottom-0 left-1/2 -translate-x-1/2", "top-0 left-1/2 -translate-x-1/2"];
   const three = [
-    'bottom-0 left-1/2 -translate-x-1/2',
-    'top-1/2 left-0 -translate-y-1/2',
-    'top-1/2 right-0 -translate-y-1/2',
+    "bottom-0 left-1/2 -translate-x-1/2",
+    "top-1/2 left-0 -translate-y-1/2",
+    "top-1/2 right-0 -translate-y-1/2",
   ];
   const fourPlus = [
-    'bottom-0 left-1/2 -translate-x-1/2',
-    'top-1/2 left-0 -translate-y-1/2',
-    'top-0 left-1/2 -translate-x-1/2',
-    'top-1/2 right-0 -translate-y-1/2',
-    'top-5 left-16',
-    'top-5 right-16',
-    'bottom-12 left-4',
-    'bottom-12 right-4',
+    "bottom-0 left-1/2 -translate-x-1/2",
+    "top-1/2 left-0 -translate-y-1/2",
+    "top-0 left-1/2 -translate-x-1/2",
+    "top-1/2 right-0 -translate-y-1/2",
+    "top-5 left-16",
+    "top-5 right-16",
+    "bottom-12 left-4",
+    "bottom-12 right-4",
   ];
   if (playerCount <= 2) return two[relativeIndex] ?? two[0];
   if (playerCount === 3) return three[relativeIndex] ?? three[0];

@@ -3,6 +3,7 @@
 ## Files Created
 
 ### Components (src/components/zodiac/)
+
 - `ZodiacOnboarding.tsx` — Zodiac selection + date confirmation
 - `ZodiacConfirmation.tsx` — Dramatic lock screen reveal
 - `ReadingOfTheDay.tsx` — Daily reading card
@@ -12,13 +13,16 @@
 - `index.ts` — Component exports
 
 ### Routes
+
 - `src/routes/zodiac-showcase.tsx` — Preview all components
 
 ### Data & Utilities
+
 - `src/lib/zodiac-mock-data.ts` — Mock data, helpers, API templates
 - `src/styles.css` — Added zodiac-specific CSS & animations
 
 ### Documentation
+
 - `ZODIAC_DESIGN.md` — Complete design system documentation
 - `ZODIAC_INTEGRATION.md` — Integration examples & best practices
 - `ZODIAC_QUICK_START.md` — This file
@@ -39,15 +43,15 @@ import {
 
 ## Component Quick Reference
 
-| Component | Purpose | Key Props | Usage |
-|-----------|---------|-----------|-------|
-| `ZodiacOnboarding` | Zodiac selection flow | `onSelect` | Signup/profile setup |
-| `ZodiacConfirmation` | Lock screen reveal | `sign, symbol, isCusp, onConfirm, onShare` | After selection |
-| `ReadingOfTheDay` | Daily reading card | `sign, dailyReading, energyWord, luckyColor, luckyNumber, recommendedAction` | Homepage featured |
-| `ZodiacBadge` | Small badge display | `sign, symbol, isCusp, size, showName` | Profile, comments, etc |
-| `ProfileZodiacCard` | Large profile card | `sign, symbol, isCusp, joinedDate` | Profile page |
-| `ZodiacGroupCard` | Individual group | `groupName, memberCount, members, tags, isMember, onJoin, onLeave` | Groups list |
-| `ZodiacGroupsHub` | Full groups page | (self-contained) | `/zodiac-groups` route |
+| Component            | Purpose               | Key Props                                                                    | Usage                  |
+| -------------------- | --------------------- | ---------------------------------------------------------------------------- | ---------------------- |
+| `ZodiacOnboarding`   | Zodiac selection flow | `onSelect`                                                                   | Signup/profile setup   |
+| `ZodiacConfirmation` | Lock screen reveal    | `sign, symbol, isCusp, onConfirm, onShare`                                   | After selection        |
+| `ReadingOfTheDay`    | Daily reading card    | `sign, dailyReading, energyWord, luckyColor, luckyNumber, recommendedAction` | Homepage featured      |
+| `ZodiacBadge`        | Small badge display   | `sign, symbol, isCusp, size, showName`                                       | Profile, comments, etc |
+| `ProfileZodiacCard`  | Large profile card    | `sign, symbol, isCusp, joinedDate`                                           | Profile page           |
+| `ZodiacGroupCard`    | Individual group      | `groupName, memberCount, members, tags, isMember, onJoin, onLeave`           | Groups list            |
+| `ZodiacGroupsHub`    | Full groups page      | (self-contained)                                                             | `/zodiac-groups` route |
 
 ## Color Scheme
 
@@ -81,6 +85,7 @@ Green:     oklch(0.78 0.18 150)    ← Nature
 ## Data Structure Cheat Sheet
 
 ### User Zodiac Profile
+
 ```typescript
 {
   zodiacSign: "Leo",
@@ -93,6 +98,7 @@ Green:     oklch(0.78 0.18 150)    ← Nature
 ```
 
 ### Daily Reading
+
 ```typescript
 {
   sign: "Leo",
@@ -109,6 +115,7 @@ Green:     oklch(0.78 0.18 150)    ← Nature
 ```
 
 ### Zodiac Group
+
 ```typescript
 {
   id: "group_1",
@@ -160,6 +167,7 @@ getZodiacSymbol("Leo") → "♌"
 ## Common Patterns
 
 ### Show Reading if User Has Zodiac
+
 ```typescript
 {currentUser?.zodiacSign && (
   <ReadingOfTheDay {...reading} />
@@ -167,6 +175,7 @@ getZodiacSymbol("Leo") → "♌"
 ```
 
 ### Display Badge in List
+
 ```typescript
 <ZodiacBadge
   sign={user.zodiacSign}
@@ -176,6 +185,7 @@ getZodiacSymbol("Leo") → "♌"
 ```
 
 ### Conditional Cusp Content
+
 ```typescript
 {isCusp && (
   <div className="glass rounded-lg p-4">
@@ -185,6 +195,7 @@ getZodiacSymbol("Leo") → "♌"
 ```
 
 ### Load Groups
+
 ```typescript
 const [groups, setGroups] = useState([]);
 
@@ -198,6 +209,7 @@ return <ZodiacGroupCard {...group} />;
 ## Mobile Responsiveness
 
 All components are **100% mobile-responsive** out of the box:
+
 - Mobile-first design
 - Touch-friendly buttons (44px+)
 - Single-column layouts on mobile
@@ -208,16 +220,19 @@ All components are **100% mobile-responsive** out of the box:
 ## Performance Tips
 
 1. **Memoize zodiac group lists**
+
    ```typescript
    const groups = useMemo(() => [...], [dependencies]);
    ```
 
 2. **Lazy load groups page**
+
    ```typescript
    const ZodiacGroupsHub = lazy(() => import("@/components/zodiac"));
    ```
 
 3. **Cache daily readings (24h)**
+
    ```typescript
    queryClient.setQueryData(["zodiac-reading", sign], data, {
      staleTime: 24 * 60 * 60 * 1000,
@@ -232,6 +247,7 @@ All components are **100% mobile-responsive** out of the box:
 ## Customization Examples
 
 ### Change Primary Color
+
 ```css
 :root {
   --gold: #ff00ff; /* New magenta */
@@ -239,6 +255,7 @@ All components are **100% mobile-responsive** out of the box:
 ```
 
 ### Adjust Glass Blur
+
 ```css
 .glass {
   backdrop-filter: blur(28px); /* More blur */
@@ -246,13 +263,17 @@ All components are **100% mobile-responsive** out of the box:
 ```
 
 ### Disable Animations
+
 ```css
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; }
+  * {
+    animation: none !important;
+  }
 }
 ```
 
 ### Custom Group Icons
+
 ```typescript
 // Just pass different emoji
 <ZodiacGroupCard icon="🌙" {...props} />
@@ -261,9 +282,11 @@ All components are **100% mobile-responsive** out of the box:
 ## Testing
 
 ### View All Components
+
 Visit: `http://localhost:5173/zodiac-showcase`
 
 ### Test Sections
+
 - Onboarding flow
 - Confirmation animations
 - Reading card layout
@@ -310,24 +333,28 @@ Visit: `http://localhost:5173/zodiac-showcase`
 ## Key Features
 
 ✨ **Premium Design**
+
 - Liquid glass panels
 - Animated zodiac rings
 - Neon glow effects
 - Holographic symbols
 
 🔮 **Mystical Vibes**
+
 - Deep midnight backgrounds
 - Soft star particles
 - Breathing animations
 - Cosmic color gradients
 
 👥 **Social Integration**
+
 - Zodiac group matching
 - Soul connections
 - Cusp soul exclusivity
 - Matched by algorithm
 
 🎯 **User-Centric**
+
 - Mobile-first responsive
 - Privacy-focused (encrypted dates)
 - Accessible (WCAG AA)
@@ -336,6 +363,7 @@ Visit: `http://localhost:5173/zodiac-showcase`
 ## Questions?
 
 Refer to the full documentation files:
+
 - `ZODIAC_DESIGN.md` → Visual design specs
 - `ZODIAC_INTEGRATION.md` → Code integration examples
 - `src/lib/zodiac-mock-data.ts` → Data structures & helpers

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   ArrowLeft,
   Bookmark,
@@ -14,8 +14,8 @@ import {
   Tv,
   WandSparkles,
   Zap,
-} from 'lucide-react';
-import { PRESCRIBE_ME_PRIVACY_NOTICE } from '@/tradio/lib/content-feel/contentFeelPrivacyRules';
+} from "lucide-react";
+import { PRESCRIBE_ME_PRIVACY_NOTICE } from "@/tradio/lib/content-feel/contentFeelPrivacyRules";
 import {
   ARTIST_ROUTE_LABEL,
   QUIET_ROUTE_SUGGESTIONS,
@@ -23,13 +23,13 @@ import {
   ROUTE_ME_SURFACES,
   TRADIO_CHILD_RELATIONSHIP_COPY,
   generateMockRouteResult,
-} from './routeMeData';
+} from "./routeMeData";
 import {
   debugResetRouteMeDailyUsage,
   getRouteMeDailyUsage,
   recordRoutePrescription,
   saveRouteAgain,
-} from './routeMeStorage';
+} from "./routeMeStorage";
 import type {
   PrescribeMeAnswer,
   PrescribeMeDailyUsage,
@@ -37,7 +37,7 @@ import type {
   PrescribeMeQuestion,
   PrescribeMeRouteResult,
   RouteMePlatformLane,
-} from './routeMeTypes';
+} from "./routeMeTypes";
 
 interface RouteMePageProps {
   onBack?: () => void;
@@ -54,25 +54,38 @@ const laneIcons: Record<RouteMePlatformLane, React.FC<{ className?: string }>> =
 };
 
 const laneLabel = (lane: RouteMePlatformLane) =>
-  lane === 'trey_tv' ? 'Trey TV' : lane === 'fwd' ? 'FWD' : lane === 'all' ? 'Any lane' : lane.charAt(0).toUpperCase() + lane.slice(1);
+  lane === "trey_tv"
+    ? "Trey TV"
+    : lane === "fwd"
+      ? "FWD"
+      : lane === "all"
+        ? "Any lane"
+        : lane.charAt(0).toUpperCase() + lane.slice(1);
 
 const PrescribeMeDailyLimitBadge: React.FC<{ usage: PrescribeMeDailyUsage }> = ({ usage }) => {
   const copy =
     usage.remaining === 0
-      ? 'No prescriptions left today'
-      : `${usage.remaining} ${usage.remaining === 1 ? 'prescription' : 'prescriptions'} left today`;
+      ? "No prescriptions left today"
+      : `${usage.remaining} ${usage.remaining === 1 ? "prescription" : "prescriptions"} left today`;
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2 text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
-      <span className={`h-2 w-2 rounded-full ${usage.remaining > 0 ? 'bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.8)]' : 'bg-rose-300'}`} />
+      <span
+        className={`h-2 w-2 rounded-full ${usage.remaining > 0 ? "bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.8)]" : "bg-rose-300"}`}
+      />
       {copy}
     </div>
   );
 };
 
-const PrescribeMeProgress: React.FC<{ currentIndex: number; total: number }> = ({ currentIndex, total }) => (
+const PrescribeMeProgress: React.FC<{ currentIndex: number; total: number }> = ({
+  currentIndex,
+  total,
+}) => (
   <div className="space-y-2">
     <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-white/45">
-      <span>Question {Math.min(currentIndex + 1, total)} of {total}</span>
+      <span>
+        Question {Math.min(currentIndex + 1, total)} of {total}
+      </span>
       <span>{Math.round((currentIndex / total) * 100)}%</span>
     </div>
     <div className="h-2 overflow-hidden rounded-full bg-white/10">
@@ -90,17 +103,21 @@ const PrescribeMeQuestionCard: React.FC<{
   onAnswer: (answer: PrescribeMeAnswer) => void;
 }> = ({ question, selected, onAnswer }) => (
   <section className="rounded-[28px] border border-white/10 bg-black/25 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-2xl sm:p-6">
-    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">Prescribe Me</p>
+    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-cyan-200/70">
+      Prescribe Me
+    </p>
     <h2 className="mt-2 text-2xl font-black tracking-tight text-white">{question.prompt}</h2>
     <div className="mt-5 flex flex-wrap gap-2.5">
       {question.answers.map((answer) => (
         <button
           key={answer.key}
-          onClick={() => onAnswer({ questionKey: question.key, answerKey: answer.key, label: answer.label })}
+          onClick={() =>
+            onAnswer({ questionKey: question.key, answerKey: answer.key, label: answer.label })
+          }
           className={`rounded-full border px-4 py-2.5 text-sm font-bold transition-all duration-300 ${
             selected === answer.key
-              ? 'border-cyan-300/70 bg-cyan-300/15 text-white shadow-[0_0_22px_rgba(34,211,238,0.24)]'
-              : 'border-white/10 bg-white/[0.04] text-white/72 hover:border-white/25 hover:bg-white/[0.08]'
+              ? "border-cyan-300/70 bg-cyan-300/15 text-white shadow-[0_0_22px_rgba(34,211,238,0.24)]"
+              : "border-white/10 bg-white/[0.04] text-white/72 hover:border-white/25 hover:bg-white/[0.08]"
           }`}
         >
           {answer.label}
@@ -120,7 +137,10 @@ const PrescribeMeQuestionFlow: React.FC<{
   const selected = answers.find((answer) => answer.questionKey === question.key)?.answerKey;
 
   const handleAnswer = (answer: PrescribeMeAnswer) => {
-    const nextAnswers = [...answers.filter((item) => item.questionKey !== answer.questionKey), answer];
+    const nextAnswers = [
+      ...answers.filter((item) => item.questionKey !== answer.questionKey),
+      answer,
+    ];
     setAnswers(nextAnswers);
     if (index === ROUTE_ME_QUESTIONS.length - 1) {
       onComplete(nextAnswers);
@@ -134,7 +154,10 @@ const PrescribeMeQuestionFlow: React.FC<{
       <PrescribeMeProgress currentIndex={index} total={ROUTE_ME_QUESTIONS.length} />
       <PrescribeMeQuestionCard question={question} selected={selected} onAnswer={handleAnswer} />
       <div className="flex items-center justify-between">
-        <button onClick={onCancel} className="text-xs font-bold uppercase tracking-[0.16em] text-white/45 hover:text-white">
+        <button
+          onClick={onCancel}
+          className="text-xs font-bold uppercase tracking-[0.16em] text-white/45 hover:text-white"
+        >
           Cancel
         </button>
         <button
@@ -159,7 +182,13 @@ const PrescribeMeResultCard: React.FC<{
   return (
     <section className="overflow-hidden rounded-[30px] border border-cyan-300/20 bg-gradient-to-br from-white/[0.1] via-white/[0.035] to-cyan-500/[0.04] shadow-[0_22px_70px_rgba(0,0,0,0.55),inset_0_1px_0_rgba(255,255,255,0.16)] backdrop-blur-3xl">
       <div className="relative min-h-[220px] p-5 sm:p-6">
-        {result.imageUrl && <img src={result.imageUrl} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-35" />}
+        {result.imageUrl && (
+          <img
+            src={result.imageUrl}
+            alt=""
+            className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-35"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-black/82 via-black/55 to-transparent" />
         <div className="relative max-w-xl">
           <div className="flex flex-wrap items-center gap-2">
@@ -170,14 +199,19 @@ const PrescribeMeResultCard: React.FC<{
               {result.confidence} confidence
             </span>
           </div>
-          <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">{result.title}</h2>
+          <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">
+            {result.title}
+          </h2>
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/72">{result.summary}</p>
           <p className="mt-4 max-w-lg rounded-2xl border border-white/10 bg-black/25 p-3 text-xs leading-relaxed text-white/66">
             {result.reason.headline} {result.reason.detail}
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {result.reason.contentFeelHints.map((hint) => (
-              <span key={hint} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-bold text-white/60">
+              <span
+                key={hint}
+                className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-bold text-white/60"
+              >
                 {hint}
               </span>
             ))}
@@ -191,9 +225,13 @@ const PrescribeMeResultCard: React.FC<{
               disabled={!canRefine}
               className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-5 py-3 text-sm font-bold text-white/78 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <RefreshCw className="h-4 w-4" /> {canRefine ? result.secondaryCta : 'No Refines Today'}
+              <RefreshCw className="h-4 w-4" />{" "}
+              {canRefine ? result.secondaryCta : "No Refines Today"}
             </button>
-            <button onClick={onSave} className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-5 py-3 text-sm font-bold text-cyan-100">
+            <button
+              onClick={onSave}
+              className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-5 py-3 text-sm font-bold text-cyan-100"
+            >
               <Bookmark className="h-4 w-4" /> Save Route
             </button>
           </div>
@@ -213,7 +251,9 @@ const PrescribeMeSavedRoutes: React.FC<{
       <span className="text-xs font-bold text-white/45">Today</span>
     </div>
     {usage.savedRoutes.length === 0 ? (
-      <div className="rounded-[24px] border border-white/10 bg-white/[0.035] p-5 text-sm text-white/55">No saved routes yet today.</div>
+      <div className="rounded-[24px] border border-white/10 bg-white/[0.035] p-5 text-sm text-white/55">
+        No saved routes yet today.
+      </div>
     ) : (
       <div className="grid gap-3 md:grid-cols-2">
         {usage.savedRoutes.map((route) => (
@@ -224,9 +264,13 @@ const PrescribeMeSavedRoutes: React.FC<{
           >
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-black text-white">{route.result.title}</span>
-              <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold uppercase text-white/45">{laneLabel(route.result.platformLane)}</span>
+              <span className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold uppercase text-white/45">
+                {laneLabel(route.result.platformLane)}
+              </span>
             </div>
-            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">{route.result.reason.headline}</p>
+            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">
+              {route.result.reason.headline}
+            </p>
           </button>
         ))}
       </div>
@@ -234,11 +278,16 @@ const PrescribeMeSavedRoutes: React.FC<{
   </section>
 );
 
-const RouteMePlatformSection: React.FC<{ onPickLane: (lane: RouteMePlatformLane) => void }> = ({ onPickLane }) => (
+const RouteMePlatformSection: React.FC<{ onPickLane: (lane: RouteMePlatformLane) => void }> = ({
+  onPickLane,
+}) => (
   <section className="space-y-4">
     <div>
       <h2 className="text-lg font-black text-white">Universe lanes</h2>
-      <p className="mt-1 text-sm text-white/52">Every lane can become a route, but only the explicit question flow spends a daily prescription.</p>
+      <p className="mt-1 text-sm text-white/52">
+        Every lane can become a route, but only the explicit question flow spends a daily
+        prescription.
+      </p>
     </div>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {ROUTE_ME_SURFACES.map((surface) => {
@@ -250,16 +299,25 @@ const RouteMePlatformSection: React.FC<{ onPickLane: (lane: RouteMePlatformLane)
             className="group rounded-[26px] border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] transition duration-300 hover:border-white/25 hover:bg-white/[0.08]"
           >
             <div className="flex items-start justify-between gap-3">
-              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${surface.accent} text-black shadow-[0_0_24px_rgba(255,255,255,0.08)]`}>
+              <span
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${surface.accent} text-black shadow-[0_0_24px_rgba(255,255,255,0.08)]`}
+              >
                 <Icon className="h-5 w-5" />
               </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white/40">{surface.eyebrow}</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white/40">
+                {surface.eyebrow}
+              </span>
             </div>
             <h3 className="mt-4 text-base font-black text-white">{surface.label}</h3>
-            <p className="mt-2 min-h-[48px] text-xs leading-relaxed text-white/55">{surface.summary}</p>
+            <p className="mt-2 min-h-[48px] text-xs leading-relaxed text-white/55">
+              {surface.summary}
+            </p>
             <div className="mt-4 flex flex-wrap gap-1.5">
               {surface.examples.map((example) => (
-                <span key={example} className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-bold text-white/50">
+                <span
+                  key={example}
+                  className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[10px] font-bold text-white/50"
+                >
                   {example}
                 </span>
               ))}
@@ -275,13 +333,18 @@ const QuietRouteSuggestionRail: React.FC = () => (
   <section className="space-y-4">
     <div>
       <h2 className="text-lg font-black text-white">Quiet routes for your current lane</h2>
-      <p className="mt-1 text-sm text-white/52">Mock Content Feel suggestions. These do not count against the daily Prescribe Me limit.</p>
+      <p className="mt-1 text-sm text-white/52">
+        Mock Content Feel suggestions. These do not count against the daily Prescribe Me limit.
+      </p>
     </div>
     <div className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {QUIET_ROUTE_SUGGESTIONS.map((suggestion) => {
         const Icon = laneIcons[suggestion.lane];
         return (
-          <article key={suggestion.id} className="w-[280px] shrink-0 rounded-[24px] border border-white/10 bg-white/[0.045] p-4">
+          <article
+            key={suggestion.id}
+            className="w-[280px] shrink-0 rounded-[24px] border border-white/10 bg-white/[0.045] p-4"
+          >
             <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-cyan-200/70">
               <Icon className="h-4 w-4" /> {laneLabel(suggestion.lane)}
             </div>
@@ -290,7 +353,12 @@ const QuietRouteSuggestionRail: React.FC = () => (
             <p className="mt-3 text-[11px] leading-relaxed text-white/45">{suggestion.reason}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {suggestion.feelTags.map((tag) => (
-                <span key={tag} className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45">{tag}</span>
+                <span
+                  key={tag}
+                  className="rounded-full bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/45"
+                >
+                  {tag}
+                </span>
               ))}
             </div>
           </article>
@@ -306,7 +374,8 @@ const RouteMeUniverseMap: React.FC = () => (
       <div>
         <h2 className="text-lg font-black text-white">Route Me map</h2>
         <p className="mt-1 max-w-2xl text-sm text-white/52">
-          Parent Route Me connects Trey TV, Tradio, FWD, Storybook, Games, future Trance, creator rooms, live events, and Song Wars.
+          Parent Route Me connects Trey TV, Tradio, FWD, Storybook, Games, future Trance, creator
+          rooms, live events, and Song Wars.
         </p>
       </div>
       <div className="rounded-full border border-purple-300/20 bg-purple-300/10 px-3 py-2 text-xs font-bold text-purple-100">
@@ -315,8 +384,13 @@ const RouteMeUniverseMap: React.FC = () => (
     </div>
     <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {ROUTE_ME_SURFACES.map((surface, index) => (
-        <div key={surface.id} className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">0{index + 1}</span>
+        <div
+          key={surface.id}
+          className="relative rounded-2xl border border-white/10 bg-white/[0.04] p-3"
+        >
+          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-white/35">
+            0{index + 1}
+          </span>
           <div className="mt-2 text-sm font-black text-white">{surface.label}</div>
         </div>
       ))}
@@ -326,20 +400,25 @@ const RouteMeUniverseMap: React.FC = () => (
 
 export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
   const [usage, setUsage] = useState<PrescribeMeDailyUsage>(() => getRouteMeDailyUsage());
-  const [status, setStatus] = useState<PrescribeMeFlowStatus>(usage.remaining > 0 ? 'idle' : 'limit_reached');
-  const [activeResult, setActiveResult] = useState<PrescribeMeRouteResult | null>(usage.savedRoutes[0]?.result ?? null);
+  const [status, setStatus] = useState<PrescribeMeFlowStatus>(
+    usage.remaining > 0 ? "idle" : "limit_reached",
+  );
+  const [activeResult, setActiveResult] = useState<PrescribeMeRouteResult | null>(
+    usage.savedRoutes[0]?.result ?? null,
+  );
 
   const resultIntro = useMemo(() => {
-    if (usage.remaining === 0) return 'View today\'s saved prescriptions, or explore quiet routes without spending a prescription.';
-    return 'Answer five short questions and get one premium universe route.';
+    if (usage.remaining === 0)
+      return "View today's saved prescriptions, or explore quiet routes without spending a prescription.";
+    return "Answer five short questions and get one premium universe route.";
   }, [usage.remaining]);
 
   const startFlow = () => {
     if (usage.remaining <= 0) {
-      setStatus('limit_reached');
+      setStatus("limit_reached");
       return;
     }
-    setStatus('in_progress');
+    setStatus("in_progress");
     setActiveResult(null);
   };
 
@@ -348,21 +427,25 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
     const nextUsage = recordRoutePrescription(result);
     setUsage(nextUsage);
     setActiveResult(result);
-    setStatus('complete');
+    setStatus("complete");
   };
 
   const handlePickLane = (lane: RouteMePlatformLane) => {
     if (usage.remaining <= 0) {
-      setStatus('limit_reached');
+      setStatus("limit_reached");
       return;
     }
-    const laneKey = lane === 'all' ? 'any' : lane;
+    const laneKey = lane === "all" ? "any" : lane;
     completeFlow([
-      { questionKey: 'current_need', answerKey: 'discover', label: 'Discover something' },
-      { questionKey: 'current_energy', answerKey: 'focused', label: 'Focused' },
-      { questionKey: 'desired_shift', answerKey: 'match_my_mood', label: 'Match my mood' },
-      { questionKey: 'platform_lane', answerKey: laneKey, label: laneLabel(lane) },
-      { questionKey: 'content_type_preference', answerKey: lane === 'tradio' ? 'station' : 'video', label: lane === 'tradio' ? 'Station' : 'Video' },
+      { questionKey: "current_need", answerKey: "discover", label: "Discover something" },
+      { questionKey: "current_energy", answerKey: "focused", label: "Focused" },
+      { questionKey: "desired_shift", answerKey: "match_my_mood", label: "Match my mood" },
+      { questionKey: "platform_lane", answerKey: laneKey, label: laneLabel(lane) },
+      {
+        questionKey: "content_type_preference",
+        answerKey: lane === "tradio" ? "station" : "video",
+        label: lane === "tradio" ? "Station" : "Video",
+      },
     ]);
   };
 
@@ -385,7 +468,9 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/[0.08] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100">
               <Route className="h-3.5 w-3.5" /> Universe routing system
             </div>
-            <h1 className="mt-4 text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">Route Me</h1>
+            <h1 className="mt-4 text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Route Me
+            </h1>
             <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/68 sm:text-lg">
               Let Trey TV route the universe around what you need right now.
             </p>
@@ -399,20 +484,26 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
                 <div className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-fuchsia-200/70">
                   <WandSparkles className="h-4 w-4" /> Prescribe Me
                 </div>
-                <h2 className="mt-2 text-2xl font-black text-white">Question-first route prescription</h2>
+                <h2 className="mt-2 text-2xl font-black text-white">
+                  Question-first route prescription
+                </h2>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/58">{resultIntro}</p>
               </div>
               <PrescribeMeDailyLimitBadge usage={usage} />
             </div>
 
             <div className="mt-6">
-              {status === 'in_progress' ? (
-                <PrescribeMeQuestionFlow onComplete={completeFlow} onCancel={() => setStatus(usage.remaining > 0 ? 'idle' : 'limit_reached')} />
+              {status === "in_progress" ? (
+                <PrescribeMeQuestionFlow
+                  onComplete={completeFlow}
+                  onCancel={() => setStatus(usage.remaining > 0 ? "idle" : "limit_reached")}
+                />
               ) : activeResult ? (
                 <div className="space-y-3">
                   {usage.remaining === 0 && (
                     <div className="rounded-2xl border border-rose-300/20 bg-rose-300/[0.08] px-4 py-3 text-sm font-semibold text-rose-50">
-                      No prescriptions left today. You can view and save today's routes, but a new question flow is locked until tomorrow.
+                      No prescriptions left today. You can view and save today's routes, but a new
+                      question flow is locked until tomorrow.
                     </div>
                   )}
                   <PrescribeMeResultCard
@@ -427,7 +518,8 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
                   {usage.remaining > 0 ? (
                     <>
                       <p className="text-sm leading-relaxed text-white/60">
-                        Prescribe Me asks first, then routes. It uses only this session's answers and mock Content Feel profiles in this pass.
+                        Prescribe Me asks first, then routes. It uses only this session's answers
+                        and mock Content Feel profiles in this pass.
                       </p>
                       <button
                         onClick={startFlow}
@@ -439,13 +531,14 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
                   ) : (
                     <div className="space-y-4">
                       <p className="text-sm leading-relaxed text-white/62">
-                        No prescriptions left today. You can still view saved results and quiet routes.
+                        No prescriptions left today. You can still view saved results and quiet
+                        routes.
                       </p>
                       {usage.savedRoutes[0] && (
                         <button
                           onClick={() => {
                             setActiveResult(usage.savedRoutes[0].result);
-                            setStatus('viewing_saved');
+                            setStatus("viewing_saved");
                           }}
                           className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/[0.08] px-5 py-3 text-sm font-bold text-cyan-100"
                         >
@@ -459,13 +552,15 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
             </div>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-              <p className="max-w-2xl text-[11px] leading-relaxed text-white/42">{PRESCRIBE_ME_PRIVACY_NOTICE}</p>
+              <p className="max-w-2xl text-[11px] leading-relaxed text-white/42">
+                {PRESCRIBE_ME_PRIVACY_NOTICE}
+              </p>
               <button
                 onClick={() => {
                   const reset = debugResetRouteMeDailyUsage();
                   setUsage(reset);
                   setActiveResult(null);
-                  setStatus('idle');
+                  setStatus("idle");
                 }}
                 className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/28 hover:text-white/60"
               >
@@ -484,13 +579,16 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
                 <p className="text-xs text-white/48">Parent to child relationship</p>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-white/58">{TRADIO_CHILD_RELATIONSHIP_COPY}</p>
+            <p className="text-sm leading-relaxed text-white/58">
+              {TRADIO_CHILD_RELATIONSHIP_COPY}
+            </p>
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <div className="flex items-center gap-2 text-xs font-bold text-white">
                 <Check className="h-4 w-4 text-emerald-300" /> Tradio route example
               </div>
               <p className="mt-2 text-xs leading-relaxed text-white/52">
-                Choosing Tradio can route to a station, {ARTIST_ROUTE_LABEL} artist station, track, Song Wars battle, show, beat, or DJ mix.
+                Choosing Tradio can route to a station, {ARTIST_ROUTE_LABEL} artist station, track,
+                Song Wars battle, show, beat, or DJ mix.
               </p>
             </div>
           </aside>
@@ -503,7 +601,7 @@ export const RouteMePage: React.FC<RouteMePageProps> = ({ onBack }) => {
           usage={usage}
           onView={(result) => {
             setActiveResult(result);
-            setStatus('viewing_saved');
+            setStatus("viewing_saved");
           }}
         />
       </div>

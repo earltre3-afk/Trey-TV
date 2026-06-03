@@ -14,13 +14,13 @@ Allow approved creators to initiate a Cloudflare Stream direct upload from the C
 
 ## 2. Security Boundary — Non-Negotiable
 
-| Rule | Detail |
-|---|---|
-| Cloudflare API token stays server-side | Never in `VITE_*` or `NEXT_PUBLIC_*` env vars |
-| Browser receives only | Temporary `uploadURL` (1h TTL) + `uid` + `expires` + `draftId` |
-| Server function enforces auth | Rejects unauthenticated and non-creator requests before calling Cloudflare |
-| No token in client bundle | `createServerFn` handler code is stripped from the client bundle by the build process |
-| Secrets not committed | `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_STREAM_API_TOKEN` in `.env.local` only |
+| Rule                                   | Detail                                                                                |
+| -------------------------------------- | ------------------------------------------------------------------------------------- |
+| Cloudflare API token stays server-side | Never in `VITE_*` or `NEXT_PUBLIC_*` env vars                                         |
+| Browser receives only                  | Temporary `uploadURL` (1h TTL) + `uid` + `expires` + `draftId`                        |
+| Server function enforces auth          | Rejects unauthenticated and non-creator requests before calling Cloudflare            |
+| No token in client bundle              | `createServerFn` handler code is stripped from the client bundle by the build process |
+| Secrets not committed                  | `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_STREAM_API_TOKEN` in `.env.local` only        |
 
 ---
 
@@ -38,10 +38,10 @@ This project uses **TanStack Start** with **Cloudflare Workers**, not Next.js. T
 
 ## 4. Required Environment Variables
 
-| Variable | Where set | Exposed to browser? |
-|---|---|---|
-| `CLOUDFLARE_ACCOUNT_ID` | `.env.local` + Cloudflare Workers secret | ❌ Never |
-| `CLOUDFLARE_STREAM_API_TOKEN` | `.env.local` + Cloudflare Workers secret | ❌ Never |
+| Variable                      | Where set                                | Exposed to browser? |
+| ----------------------------- | ---------------------------------------- | ------------------- |
+| `CLOUDFLARE_ACCOUNT_ID`       | `.env.local` + Cloudflare Workers secret | ❌ Never            |
+| `CLOUDFLARE_STREAM_API_TOKEN` | `.env.local` + Cloudflare Workers secret | ❌ Never            |
 
 These must not use `VITE_` or `NEXT_PUBLIC_` prefixes. They are accessed only inside `createServerFn` handlers via `process.env`.
 
@@ -51,21 +51,21 @@ These must not use `VITE_` or `NEXT_PUBLIC_` prefixes. They are accessed only in
 
 ### `creator_edit_projects` — stream_uid field
 
-| Column | Type | Notes |
-|---|---|---|
-| `stream_uid` | `text` | nullable — set after upload URL is created |
-| `status` | `text` | `'uploading'` when upload URL is issued |
-| `metadata` | `jsonb` | stores `upload_status`, `upload_expires_at`, `playback_type` |
+| Column       | Type    | Notes                                                        |
+| ------------ | ------- | ------------------------------------------------------------ |
+| `stream_uid` | `text`  | nullable — set after upload URL is created                   |
+| `status`     | `text`  | `'uploading'` when upload URL is issued                      |
+| `metadata`   | `jsonb` | stores `upload_status`, `upload_expires_at`, `playback_type` |
 
 RLS: INSERT and UPDATE allowed for `creator_id = auth.uid()`.
 
 ### `creator_post_queue` — required fields (future phase)
 
-| Column | Constraint | Notes |
-|---|---|---|
-| `stream_uid` | `NOT NULL` | Blocks INSERT until stream_uid exists |
-| `creator_id` | `NOT NULL` | `auth.uid()` |
-| `title` | `NOT NULL` | From submission metadata |
+| Column            | Constraint          | Notes                                               |
+| ----------------- | ------------------- | --------------------------------------------------- |
+| `stream_uid`      | `NOT NULL`          | Blocks INSERT until stream_uid exists               |
+| `creator_id`      | `NOT NULL`          | `auth.uid()`                                        |
+| `title`           | `NOT NULL`          | From submission metadata                            |
 | `approval_status` | default `'pending'` | RLS: INSERT only with `approval_status = 'pending'` |
 
 `creator_post_queue` INSERT remains out of scope for this phase. It becomes unblocked once `stream_uid` is stored in `creator_edit_projects`.
@@ -78,10 +78,10 @@ The server function returns to the browser:
 
 ```ts
 type DirectUploadResponse = {
-  uploadURL: string;   // Temporary TUS upload endpoint (1h TTL)
-  uid: string;         // Cloudflare Stream video UID
-  expires: string;     // ISO timestamp of URL expiry
-  draftId: string | null;  // creator_edit_projects row id (if created)
+  uploadURL: string; // Temporary TUS upload endpoint (1h TTL)
+  uid: string; // Cloudflare Stream video UID
+  expires: string; // ISO timestamp of URL expiry
+  draftId: string | null; // creator_edit_projects row id (if created)
 };
 ```
 
@@ -92,6 +92,7 @@ The browser uses `uploadURL` to upload the video file directly to Cloudflare via
 ## 7. Functional Requirements
 
 ### FR-1: Server function — `requestDirectUpload`
+
 - Create `src/lib/creator-studio/upload.server.ts` with a `createServerFn` that:
   1. Verifies the user is authenticated via `supabase.auth.getUser()`.
   2. Verifies the user has an approved channel via `channels.owner_email = auth email`.
@@ -105,6 +106,7 @@ The browser uses `uploadURL` to upload the video file directly to Cloudflare via
 - Non-creator: throws with `'Creator access required'`.
 
 ### FR-2: Client-side upload hook — `useCloudflareUpload`
+
 - Create `src/hooks/use-cloudflare-upload.ts`.
 - Exposes: `requestUpload(): Promise<DirectUploadResponse | null>`, `uploadFile(file: File, uploadURL: string, onProgress?: (pct: number) => void): Promise<boolean>`, `uploading`, `progress`.
 - `requestUpload()` calls the server function.
@@ -113,6 +115,7 @@ The browser uses `uploadURL` to upload the video file directly to Cloudflare via
 - Signed-out / non-creator: `requestUpload()` returns `null` (server function throws, caught here).
 
 ### FR-3: Wire upload into `creator-studio.edit.tsx`
+
 - The edit page already has a file picker (`<input type="file">`) and upload state machine (`UploadState`).
 - Replace the `// TODO: wire to real upload pipeline` comment in `handleFile()` with:
   1. Call `requestUpload()` to get the upload URL.
@@ -123,22 +126,26 @@ The browser uses `uploadURL` to upload the video file directly to Cloudflare via
 - The existing progress bar, processing state, and ready state UI remain unchanged.
 
 ### FR-4: Pass `stream_uid` to submit flow
+
 - After a successful upload, the `uid` (stream_uid) must be available when the user navigates to `/creator-studio/submit`.
 - Store `uid` in the `creator_edit_projects` row (already done in FR-1 step 7).
 - Pass `draftId` as the `?id=` search param when navigating to `/creator-studio/submit` (the edit page already navigates there via the "Next: Details" button).
 - `useCreatorSubmit.saveDraft()` already handles UPDATE on existing rows by `content_id` — no change needed there.
 
 ### FR-5: `creator_post_queue` remains out of scope
+
 - Do not INSERT into `creator_post_queue` in this phase.
 - The `stream_uid` is now stored in `creator_edit_projects` — this unblocks `creator_post_queue` in a future phase.
 
 ### FR-6: Graceful handling
+
 - Signed-out: server function throws, client catches, `toast.error('Sign in required')`, upload state resets.
 - Non-creator: same pattern.
 - Cloudflare not configured: `toast.error('Upload not available')`, upload state resets.
 - Upload failure: `uploadState = 'error'`, existing error UI renders.
 
 ### FR-7: Visual preservation
+
 - `creator-studio.edit.tsx` upload UI (empty state, progress bar, processing state, ready state, error state) is structurally unchanged.
 - The only change is replacing the `// TODO` comment with real logic.
 - No new UI elements added.

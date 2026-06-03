@@ -1,25 +1,25 @@
-import type { FreeTvGuideChannel, FreeTvProgram, FreeTvProviderStatus } from './freeTvApi.types';
+import type { FreeTvGuideChannel, FreeTvProgram, FreeTvProviderStatus } from "./freeTvApi.types";
 
-const INTERNAL_FREE_TV_BASE = '/api/free-tv';
+const INTERNAL_FREE_TV_BASE = "/api/free-tv";
 
 type JsonRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is JsonRecord {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function stringValue(value: unknown, fallback = ''): string {
-  return typeof value === 'string' && value.trim().length > 0 ? value : fallback;
+function stringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" && value.trim().length > 0 ? value : fallback;
 }
 
 function numberString(value: unknown, fallback: string): string {
-  if (typeof value === 'string' && value.trim().length > 0) return value;
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value);
+  if (typeof value === "string" && value.trim().length > 0) return value;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return fallback;
 }
 
 function booleanValue(value: unknown, fallback = false): boolean {
-  return typeof value === 'boolean' ? value : fallback;
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function arrayValue(value: unknown): unknown[] {
@@ -30,25 +30,29 @@ function formatTimeRange(program: JsonRecord): string {
   const directTime = stringValue(program.time);
   if (directTime) return directTime;
 
-  const start = stringValue(program.startTime) || stringValue(program.start) || stringValue(program.airtime);
+  const start =
+    stringValue(program.startTime) || stringValue(program.start) || stringValue(program.airtime);
   const end = stringValue(program.endTime) || stringValue(program.end);
 
   if (start && end) return `${formatClock(start)} - ${formatClock(end)}`;
   if (start) return formatClock(start);
-  return 'Time TBA';
+  return "Time TBA";
 }
 
 function formatClock(value: string): string {
   const parsed = Date.parse(value);
   if (!Number.isNaN(parsed)) {
-    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(parsed));
+    return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(
+      new Date(parsed),
+    );
   }
   return value;
 }
 
 function normalizeProgram(value: unknown, index: number): FreeTvProgram | null {
   if (!isRecord(value)) return null;
-  const title = stringValue(value.title) || stringValue(value.name) || stringValue(value.programName);
+  const title =
+    stringValue(value.title) || stringValue(value.name) || stringValue(value.programName);
   if (!title) return null;
 
   return {
@@ -59,19 +63,20 @@ function normalizeProgram(value: unknown, index: number): FreeTvProgram | null {
     startTime: stringValue(value.startTime) || stringValue(value.start),
     endTime: stringValue(value.endTime) || stringValue(value.end),
     description: stringValue(value.description) || stringValue(value.summary),
-    imageUrl: stringValue(value.imageUrl) || stringValue(value.image) || stringValue(value.thumbnailUrl),
-    genres: arrayValue(value.genres).filter((item): item is string => typeof item === 'string'),
+    imageUrl:
+      stringValue(value.imageUrl) || stringValue(value.image) || stringValue(value.thumbnailUrl),
+    genres: arrayValue(value.genres).filter((item): item is string => typeof item === "string"),
   };
 }
 
 function normalizeChannel(value: unknown, index: number): FreeTvGuideChannel | null {
   if (!isRecord(value)) return null;
-  const name = stringValue(value.name) || stringValue(value.title) || stringValue(value.channelName);
+  const name =
+    stringValue(value.name) || stringValue(value.title) || stringValue(value.channelName);
   if (!name) return null;
 
-  const rawPrograms = arrayValue(value.programs).length > 0
-    ? arrayValue(value.programs)
-    : arrayValue(value.schedule);
+  const rawPrograms =
+    arrayValue(value.programs).length > 0 ? arrayValue(value.programs) : arrayValue(value.schedule);
 
   const programs = rawPrograms
     .map((program, programIndex) => normalizeProgram(program, programIndex))
@@ -111,11 +116,15 @@ function normalizeScheduleItems(items: unknown[]): FreeTvGuideChannel[] {
 export function normalizeGuideChannels(payload: unknown): FreeTvGuideChannel[] {
   const root = isRecord(payload) ? payload : {};
   const source =
-    arrayValue(root.channels).length > 0 ? arrayValue(root.channels)
-    : arrayValue(root.data).length > 0 ? arrayValue(root.data)
-    : arrayValue(root.results).length > 0 ? arrayValue(root.results)
-    : Array.isArray(payload) ? payload
-    : [];
+    arrayValue(root.channels).length > 0
+      ? arrayValue(root.channels)
+      : arrayValue(root.data).length > 0
+        ? arrayValue(root.data)
+        : arrayValue(root.results).length > 0
+          ? arrayValue(root.results)
+          : Array.isArray(payload)
+            ? payload
+            : [];
 
   const channels = source
     .map((channel, index) => normalizeChannel(channel, index))
@@ -124,16 +133,18 @@ export function normalizeGuideChannels(payload: unknown): FreeTvGuideChannel[] {
   if (channels.length > 0) return channels;
 
   const scheduleItems =
-    arrayValue(root.schedule).length > 0 ? arrayValue(root.schedule)
-    : arrayValue(root.items).length > 0 ? arrayValue(root.items)
-    : [];
+    arrayValue(root.schedule).length > 0
+      ? arrayValue(root.schedule)
+      : arrayValue(root.items).length > 0
+        ? arrayValue(root.items)
+        : [];
 
   return normalizeScheduleItems(scheduleItems);
 }
 
 async function readJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${INTERNAL_FREE_TV_BASE}${path}`, {
-    headers: { Accept: 'application/json' },
+    headers: { Accept: "application/json" },
     signal,
   });
 
@@ -145,7 +156,7 @@ async function readJson<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 export async function getFreeTvStatus(signal?: AbortSignal): Promise<FreeTvProviderStatus> {
-  return readJson<FreeTvProviderStatus>('/status', signal);
+  return readJson<FreeTvProviderStatus>("/status", signal);
 }
 
 export async function getFreeTvSchedule(signal?: AbortSignal): Promise<FreeTvGuideChannel[]> {

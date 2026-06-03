@@ -1,6 +1,6 @@
-import { createContext, useContext } from 'react';
-import type { PushNotificationInput } from './useTradioMessengerBridge';
-import type { UniverseNotification } from '@/tradio/lib/universe/messageContext';
+import { createContext, useContext } from "react";
+import type { PushNotificationInput } from "./useTradioMessengerBridge";
+import type { UniverseNotification } from "@/tradio/lib/universe/messageContext";
 
 /**
  * TREY TV UNIVERSE — Messenger bridge context + hook (no components here).
@@ -39,4 +39,5 @@ export interface MessengerBridgeContextValue {
 export const MessengerBridgeContext = createContext<MessengerBridgeContextValue | null>(null);
 
 /** Null-safe accessor so surfaces work even if the provider isn't mounted. */
-export const useMessengerBridge = (): MessengerBridgeContextValue | null => useContext(MessengerBridgeContext);
+export const useMessengerBridge = (): MessengerBridgeContextValue | null =>
+  useContext(MessengerBridgeContext);

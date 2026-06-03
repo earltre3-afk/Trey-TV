@@ -19,7 +19,7 @@ export const INTERACTIVE_STORY_RPC_METHODS = [
   "prepareNextPageDirection",
 ] as const;
 
-export type InteractiveStoryRpcMethod = typeof INTERACTIVE_STORY_RPC_METHODS[number];
+export type InteractiveStoryRpcMethod = (typeof INTERACTIVE_STORY_RPC_METHODS)[number];
 
 export interface NarrationStatusUpdate {
   pageId?: string;
@@ -91,7 +91,7 @@ function parseRpcPayload(payload: string): Record<string, unknown> {
   if (!payload) return {};
   try {
     const parsed = JSON.parse(payload);
-    return parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   } catch {
     return {};
   }
@@ -107,18 +107,20 @@ function closestChoiceForTranscript(transcript: string) {
   const normalized = transcript.trim().toLowerCase();
   if (!normalized || !choices.length) return undefined;
 
-  return choices.find((choice) => {
-    const label = choice.label.toLowerCase();
-    const text = choice.text.toLowerCase();
-    return normalized === label || normalized.includes(text) || text.includes(normalized);
-  }) || choices.find((choice) => normalized.includes(choice.label.toLowerCase()));
+  return (
+    choices.find((choice) => {
+      const label = choice.label.toLowerCase();
+      const text = choice.text.toLowerCase();
+      return normalized === label || normalized.includes(text) || text.includes(normalized);
+    }) || choices.find((choice) => normalized.includes(choice.label.toLowerCase()))
+  );
 }
 
 function safeJson(value: string | undefined): Record<string, unknown> {
   if (!value) return {};
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === "object" ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
   } catch {
     return {};
   }
@@ -128,12 +130,18 @@ function participantSnapshot(participant: Record<string, unknown>) {
   return {
     identity: typeof participant.identity === "string" ? participant.identity : "",
     name: typeof participant.name === "string" ? participant.name : "",
-    kind: typeof participant.kind === "string" || typeof participant.kind === "number" ? String(participant.kind) : "",
+    kind:
+      typeof participant.kind === "string" || typeof participant.kind === "number"
+        ? String(participant.kind)
+        : "",
     metadata: typeof participant.metadata === "string" ? participant.metadata.slice(0, 500) : "",
   };
 }
 
-function participantLooksLikeAgent(participant: Record<string, unknown>, expectedAgentName: string) {
+function participantLooksLikeAgent(
+  participant: Record<string, unknown>,
+  expectedAgentName: string,
+) {
   const snapshot = participantSnapshot(participant);
   const metadata = safeJson(snapshot.metadata);
   const expected = expectedAgentName.toLowerCase();
@@ -141,11 +149,7 @@ function participantLooksLikeAgent(participant: Record<string, unknown>, expecte
   const name = snapshot.name.toLowerCase();
   const kind = snapshot.kind.toLowerCase();
   const metadataAgentName = String(
-    metadata.agentName ||
-      metadata.agent_name ||
-      metadata.agent ||
-      metadata.livekitAgentName ||
-      "",
+    metadata.agentName || metadata.agent_name || metadata.agent || metadata.livekitAgentName || "",
   ).toLowerCase();
 
   return (
@@ -169,11 +173,17 @@ function runLocalNarratorToolCheck() {
 
 export function registerInteractiveStoryRpcTools(
   room: any,
-  options: Pick<ConnectInteractiveStoryNarratorOptions, "onNarrationStatus" | "onSpokenDirection" | "onStatusMessage"> = {},
+  options: Pick<
+    ConnectInteractiveStoryNarratorOptions,
+    "onNarrationStatus" | "onSpokenDirection" | "onStatusMessage"
+  > = {},
 ) {
   const registered: string[] = [];
 
-  const register = (method: InteractiveStoryRpcMethod, handler: (payload: Record<string, unknown>) => unknown) => {
+  const register = (
+    method: InteractiveStoryRpcMethod,
+    handler: (payload: Record<string, unknown>) => unknown,
+  ) => {
     try {
       room.unregisterRpcMethod?.(method);
     } catch {}
@@ -195,16 +205,19 @@ export function registerInteractiveStoryRpcTools(
 
   register("getCurrentStoryPage", () => getCurrentStoryPageForNarrator());
   register("getCurrentCharacters", () => {
-    if (getCurrentAIStoryMakerNarrationContext()) return getCurrentAIStoryMakerCharactersForNarrator();
+    if (getCurrentAIStoryMakerNarrationContext())
+      return getCurrentAIStoryMakerCharactersForNarrator();
     return adaptStoryCharactersForNarrator(getCurrentInteractiveStoryNarrationContext());
   });
   register("getNarrationScript", () => getCurrentNarrationScriptForNarrator());
   register("saveNarrationStatus", (payload) => {
     const update: NarrationStatusUpdate = {
       pageId: typeof payload.pageId === "string" ? payload.pageId : undefined,
-      status: typeof payload.status === "string" ? payload.status as NarrationStatusValue : undefined,
+      status:
+        typeof payload.status === "string" ? (payload.status as NarrationStatusValue) : undefined,
       message: typeof payload.message === "string" ? payload.message : "",
-      timestamp: typeof payload.timestamp === "string" ? payload.timestamp : new Date().toISOString(),
+      timestamp:
+        typeof payload.timestamp === "string" ? payload.timestamp : new Date().toISOString(),
     };
     options.onNarrationStatus?.(update);
     return { ok: true, status: update.status || "started", pageId: update.pageId || "" };
@@ -245,7 +258,9 @@ export function registerInteractiveStoryRpcTools(
   };
 }
 
-async function requestLiveKitToken(options: ConnectInteractiveStoryNarratorOptions): Promise<LiveKitTokenResponse> {
+async function requestLiveKitToken(
+  options: ConnectInteractiveStoryNarratorOptions,
+): Promise<LiveKitTokenResponse> {
   options.onStatusMessage?.("LiveKit token ready");
 
   let accessToken = "";
@@ -271,7 +286,9 @@ async function requestLiveKitToken(options: ConnectInteractiveStoryNarratorOptio
     }),
   });
 
-  const payload = await response.json().catch(() => null) as Partial<LiveKitTokenResponse> & { error?: string } | null;
+  const payload = (await response.json().catch(() => null)) as
+    | (Partial<LiveKitTokenResponse> & { error?: string })
+    | null;
   if (!response.ok || !payload?.ok || !payload.token || !payload.livekitUrl) {
     throw new Error(payload?.error || "LiveKit token route unavailable.");
   }
@@ -367,25 +384,37 @@ export async function connectInteractiveStoryNarrator(
       source,
       kind,
     });
-    if (participantLooksLikeAgent(record, expectedAgentName) && (kind === "audio" || source === Track.Source.Microphone)) {
+    if (
+      participantLooksLikeAgent(record, expectedAgentName) &&
+      (kind === "audio" || source === Track.Source.Microphone)
+    ) {
       agentAudioSubscribed = true;
       markAgentDetected(record, "audio-track-subscribed");
       options.onStatusMessage?.("audio track subscribed");
     }
   });
-  room.on(RoomEvent.TrackSubscriptionFailed, (trackSid: string, participant: unknown, reason: unknown) => {
-    console.warn("[LiveKit] track subscription failed", {
-      trackSid,
-      participant: participantSnapshot(participant as Record<string, unknown>),
-      reason: String(reason || ""),
-    });
-  });
+  room.on(
+    RoomEvent.TrackSubscriptionFailed,
+    (trackSid: string, participant: unknown, reason: unknown) => {
+      console.warn("[LiveKit] track subscription failed", {
+        trackSid,
+        participant: participantSnapshot(participant as Record<string, unknown>),
+        reason: String(reason || ""),
+      });
+    },
+  );
 
   try {
     options.onStatusMessage?.("Room connecting");
     await room.connect(token.livekitUrl, token.token);
   } catch (connectError) {
-    const urlHost = (() => { try { return new URL(token.livekitUrl).hostname; } catch { return "unknown"; } })();
+    const urlHost = (() => {
+      try {
+        return new URL(token.livekitUrl).hostname;
+      } catch {
+        return "unknown";
+      }
+    })();
     console.error("[LiveKit] room.connect failed", {
       urlHost,
       roomName: token.roomName,
@@ -414,7 +443,9 @@ export async function connectInteractiveStoryNarrator(
     options.onStatusMessage?.("Waiting for Hayden-1f01");
     agentJoinTimer = setTimeout(() => {
       if (!agentDetected) {
-        options.onStatusMessage?.("Room connected, but Hayden-1f01 did not join. Check the agent deployment, project, or dispatch config.");
+        options.onStatusMessage?.(
+          "Room connected, but Hayden-1f01 did not join. Check the agent deployment, project, or dispatch config.",
+        );
       }
     }, 20000);
   }
@@ -432,21 +463,26 @@ export async function connectInteractiveStoryNarrator(
     testCurrentPageRpc: runLocalNarratorToolCheck,
     sendCue: async (cue) => {
       const context = getCurrentInteractiveStoryNarrationContext();
-      const payload = new TextEncoder().encode(JSON.stringify({
-        type: "interactive-story-narrator-cue",
-        cue,
-        agentName: expectedAgentName,
-        page: getCurrentStoryPageForNarrator(),
-        choices: getCurrentDirectionForNarrator(),
-        storyId: context?.branch.storyId || options.storyId,
-        beatId: options.beatId,
-        pageId: options.pageId,
-        projectId: options.projectId || options.storyProjectId,
-        agentDetected,
-        agentAudioSubscribed,
-        timestamp: new Date().toISOString(),
-      }));
-      await room.localParticipant?.publishData?.(payload, { reliable: true, topic: "interactive-story-narrator" });
+      const payload = new TextEncoder().encode(
+        JSON.stringify({
+          type: "interactive-story-narrator-cue",
+          cue,
+          agentName: expectedAgentName,
+          page: getCurrentStoryPageForNarrator(),
+          choices: getCurrentDirectionForNarrator(),
+          storyId: context?.branch.storyId || options.storyId,
+          beatId: options.beatId,
+          pageId: options.pageId,
+          projectId: options.projectId || options.storyProjectId,
+          agentDetected,
+          agentAudioSubscribed,
+          timestamp: new Date().toISOString(),
+        }),
+      );
+      await room.localParticipant?.publishData?.(payload, {
+        reliable: true,
+        topic: "interactive-story-narrator",
+      });
       if (cue === "read-current-beat") options.onStatusMessage?.("reading current beat/page");
       if (cue === "read-choices") options.onStatusMessage?.("reading choices");
     },

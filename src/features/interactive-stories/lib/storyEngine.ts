@@ -1,12 +1,16 @@
-import { Branch, Meters, ChapterRecord, Choice, Ending, StateDelta, Tone } from './storyTypes';
-import { CHAPTER_1, INITIAL_METERS, CHAPTER_1_CHOICES, IMAGES } from './storyData';
-import { resolveInstalledStoryChoice } from './treyStoryPackage';
-import { supabase } from './supabase';
-import type { StoryBeatVoiceLine, StoryCharacterVoices, StoryVoiceCharacter } from './storyVoiceTypes';
-import { generateStoryChapterWithGemini } from '@/lib/trey-i/vertex.server';
+import { Branch, Meters, ChapterRecord, Choice, Ending, StateDelta, Tone } from "./storyTypes";
+import { CHAPTER_1, INITIAL_METERS, CHAPTER_1_CHOICES, IMAGES } from "./storyData";
+import { resolveInstalledStoryChoice } from "./treyStoryPackage";
+import { supabase } from "./supabase";
+import type {
+  StoryBeatVoiceLine,
+  StoryCharacterVoices,
+  StoryVoiceCharacter,
+} from "./storyVoiceTypes";
+import { generateStoryChapterWithGemini } from "@/lib/trey-i/vertex.server";
 
-const STORAGE_KEY = 'switchkicks_branches_v1';
-const ENDINGS_KEY = 'switchkicks_endings_v1';
+const STORAGE_KEY = "switchkicks_branches_v1";
+const ENDINGS_KEY = "switchkicks_endings_v1";
 
 export function loadBranches(): Branch[] {
   try {
@@ -42,15 +46,16 @@ export function createNewBranch(): Branch {
   const chapter1: ChapterRecord = {
     number: 1,
     title: CHAPTER_1.title,
-    prose: CHAPTER_1.paragraphs.join('\n\n'),
+    prose: CHAPTER_1.paragraphs.join("\n\n"),
     image: CHAPTER_1.image,
     sceneId: CHAPTER_1.sceneId,
-    summary: 'Malik confesses he ingested edibles and begs Micah to switch places with him for the day. Micah agrees.',
+    summary:
+      "Malik confesses he ingested edibles and begs Micah to switch places with him for the day. Micah agrees.",
     toneTag: undefined,
   };
   const branch: Branch = {
     id: `branch_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-    storyId: 'switch_kicks',
+    storyId: "switch_kicks",
     createdAt: Date.now(),
     updatedAt: Date.now(),
     chapters: [chapter1],
@@ -60,17 +65,17 @@ export function createNewBranch(): Branch {
       switch_revealed_to_dante: false,
       switch_revealed_to_coach: false,
       switch_revealed_to_mom: false,
-      malik_passed_test: 'pending',
+      malik_passed_test: "pending",
       micah_did_adjudication: false,
     },
     secrets: {
-      the_switch: { known_by: ['Malik', 'Micah'], suspected_by: [] },
-      malik_party_night: { known_by: ['Malik'], suspected_by: [] },
+      the_switch: { known_by: ["Malik", "Micah"], suspected_by: [] },
+      malik_party_night: { known_by: ["Malik"], suspected_by: [] },
     },
     toneHistory: [],
     isComplete: false,
     pendingStopPoint: {
-      prompt: 'Micah has to decide. What happens next?',
+      prompt: "Micah has to decide. What happens next?",
       choices: CHAPTER_1_CHOICES,
     },
   };
@@ -81,12 +86,12 @@ export function createNewBranch(): Branch {
 }
 
 export function getBranch(id: string): Branch | undefined {
-  return loadBranches().find(b => b.id === id);
+  return loadBranches().find((b) => b.id === id);
 }
 
 export function updateBranch(branch: Branch) {
   const all = loadBranches();
-  const idx = all.findIndex(b => b.id === branch.id);
+  const idx = all.findIndex((b) => b.id === branch.id);
   branch.updatedAt = Date.now();
   if (idx >= 0) all[idx] = branch;
   else all.unshift(branch);
@@ -94,7 +99,7 @@ export function updateBranch(branch: Branch) {
 }
 
 export function deleteBranch(id: string) {
-  const all = loadBranches().filter(b => b.id !== id);
+  const all = loadBranches().filter((b) => b.id !== id);
   saveBranches(all);
 }
 
@@ -115,7 +120,7 @@ export function applyDelta(meters: Meters, delta: StateDelta): Meters {
 export interface AIResult {
   prose: string;
   image?: string;
-  imageFit?: 'cover' | 'contain';
+  imageFit?: "cover" | "contain";
   imagePosition?: string;
   sceneId?: string;
   voiceLines?: StoryBeatVoiceLine[];
@@ -133,7 +138,10 @@ export interface AIResult {
   };
 }
 
-export async function generateNextChapter(branch: Branch, choice: Choice | { text: string; tone?: Tone; label?: string }): Promise<AIResult> {
+export async function generateNextChapter(
+  branch: Branch,
+  choice: Choice | { text: string; tone?: Tone; label?: string },
+): Promise<AIResult> {
   const installedResult = resolveInstalledStoryChoice(branch, choice as Choice);
   if (installedResult) {
     return {
@@ -159,7 +167,10 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
   }
 
   const lastChapter = branch.chapters[branch.chapters.length - 1];
-  const summaries = branch.chapters.slice(-3).map(c => c.summary || '').filter(Boolean);
+  const summaries = branch.chapters
+    .slice(-3)
+    .map((c) => c.summary || "")
+    .filter(Boolean);
   const context = {
     chapter_number: lastChapter.number,
     meters: branch.meters,
@@ -168,8 +179,10 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
     summaries,
   };
 
-  const premise = (branch.flags as any).custom_premise || "Two twins (Micah, a ballet dancer, and Malik, a football star) swap roles for a day to cover up a mistake, trying not to get caught by their mom, coach, and friends.";
-  const tone = choice.tone || 'Bold';
+  const premise =
+    (branch.flags as any).custom_premise ||
+    "Two twins (Micah, a ballet dancer, and Malik, a football star) swap roles for a day to cover up a mistake, trying not to get caught by their mom, coach, and friends.";
+  const tone = choice.tone || "Bold";
 
   const data = await generateStoryChapterWithGemini({
     data: {
@@ -177,23 +190,36 @@ export async function generateNextChapter(branch: Branch, choice: Choice | { tex
       choice,
       premise,
       tone,
-    }
+    },
   });
   return data as AIResult;
 }
 
 // Helper for chapter image selection based on tone/index
-export function pickChapterImage(toneTag?: Tone, index: number = 0, sceneText: string = ''): string {
+export function pickChapterImage(
+  toneTag?: Tone,
+  index: number = 0,
+  sceneText: string = "",
+): string {
   const text = sceneText.toLowerCase();
-  if (/compliance|test|officer|folder|office/.test(text)) return '/interactive-stories/scenes/compliance_office.png';
-  if (/locker|reggie|teammate|football country/.test(text)) return '/interactive-stories/scenes/micah_enters_locker_room.png';
-  if (/ari|partner|rehearsal|chemistry|dance with/.test(text)) return '/interactive-stories/scenes/ari_partner_rehearsal.png';
-  if (/adjudication|solo|panel|ms\.? valentina|black-box|ballet piece/.test(text)) return '/interactive-stories/scenes/ballet_adjudication.png';
-  if (/showcase|scout|route|catch|field|practice|coach/.test(text)) return '/interactive-stories/scenes/football_showcase.png';
-  if (/truth|reveal|costume|storage|secret|discover|figured/.test(text)) return '/interactive-stories/scenes/truth_reveal.png';
-  if (/denise|mother|mom|consequence|punishment/.test(text)) return '/interactive-stories/scenes/consequences_meeting.png';
-  if (/switch|vending|hallway|clothes|identit/.test(text)) return '/interactive-stories/scenes/hallway_switch.png';
-  if (/studio b|request|beg|favor/.test(text)) return '/interactive-stories/scenes/studio_b_request.png';
+  if (/compliance|test|officer|folder|office/.test(text))
+    return "/interactive-stories/scenes/compliance_office.png";
+  if (/locker|reggie|teammate|football country/.test(text))
+    return "/interactive-stories/scenes/micah_enters_locker_room.png";
+  if (/ari|partner|rehearsal|chemistry|dance with/.test(text))
+    return "/interactive-stories/scenes/ari_partner_rehearsal.png";
+  if (/adjudication|solo|panel|ms\.? valentina|black-box|ballet piece/.test(text))
+    return "/interactive-stories/scenes/ballet_adjudication.png";
+  if (/showcase|scout|route|catch|field|practice|coach/.test(text))
+    return "/interactive-stories/scenes/football_showcase.png";
+  if (/truth|reveal|costume|storage|secret|discover|figured/.test(text))
+    return "/interactive-stories/scenes/truth_reveal.png";
+  if (/denise|mother|mom|consequence|punishment/.test(text))
+    return "/interactive-stories/scenes/consequences_meeting.png";
+  if (/switch|vending|hallway|clothes|identit/.test(text))
+    return "/interactive-stories/scenes/hallway_switch.png";
+  if (/studio b|request|beg|favor/.test(text))
+    return "/interactive-stories/scenes/studio_b_request.png";
 
   const pool = [
     IMAGES.lockerRoom,
@@ -206,27 +232,27 @@ export function pickChapterImage(toneTag?: Tone, index: number = 0, sceneText: s
     IMAGES.costumeRoom,
     IMAGES.twinsCover,
   ];
-  if (toneTag === 'Romantic') return IMAGES.ariStudio;
-  if (toneTag === 'Risky') return IMAGES.danteDoorway;
-  if (toneTag === 'Bold') return IMAGES.footballDive;
-  if (toneTag === 'Safe') return IMAGES.coachOffice;
-  if (toneTag === 'Funny') return IMAGES.lockerRoom;
+  if (toneTag === "Romantic") return IMAGES.ariStudio;
+  if (toneTag === "Risky") return IMAGES.danteDoorway;
+  if (toneTag === "Bold") return IMAGES.footballDive;
+  if (toneTag === "Safe") return IMAGES.coachOffice;
+  if (toneTag === "Funny") return IMAGES.lockerRoom;
   return pool[index % pool.length];
 }
 
 export function createCustomStoryBranch(prompt: string, tone: Tone): Branch {
   const chapter1: ChapterRecord = {
     number: 1,
-    title: 'Chapter 1 — The Custom Spark',
+    title: "Chapter 1 — The Custom Spark",
     prose: `Your custom adventure begins here. Driven by a singular premise: "${prompt}". You step forward into this new reality, knowing that every single choice will determine how this path unfolds.`,
     image: IMAGES.twinsCover,
-    sceneId: 'custom_scene_1',
+    sceneId: "custom_scene_1",
     summary: `Started custom story with premise: "${prompt}"`,
     toneTag: tone,
   };
   const branch: Branch = {
     id: `branch_custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-    storyId: 'switch_kicks',
+    storyId: "switch_kicks",
     createdAt: Date.now(),
     updatedAt: Date.now(),
     chapters: [chapter1],
@@ -240,11 +266,29 @@ export function createCustomStoryBranch(prompt: string, tone: Tone): Branch {
     toneHistory: [tone],
     isComplete: false,
     pendingStopPoint: {
-      prompt: 'How do you want to kick off this adventure?',
+      prompt: "How do you want to kick off this adventure?",
       choices: [
-        { id: 'c1', label: 'A', text: 'Step up with confidence and set a bold new standard.', tone: 'Bold', nextSceneId: 'custom_scene_2' },
-        { id: 'c2', label: 'B', text: 'Observe carefully and look for hidden risks first.', tone: 'Risky', nextSceneId: 'custom_scene_2' },
-        { id: 'c3', label: 'C', text: 'Break the ice with a clever, lighthearted approach.', tone: 'Funny', nextSceneId: 'custom_scene_2' },
+        {
+          id: "c1",
+          label: "A",
+          text: "Step up with confidence and set a bold new standard.",
+          tone: "Bold",
+          nextSceneId: "custom_scene_2",
+        },
+        {
+          id: "c2",
+          label: "B",
+          text: "Observe carefully and look for hidden risks first.",
+          tone: "Risky",
+          nextSceneId: "custom_scene_2",
+        },
+        {
+          id: "c3",
+          label: "C",
+          text: "Break the ice with a clever, lighthearted approach.",
+          tone: "Funny",
+          nextSceneId: "custom_scene_2",
+        },
       ],
     },
   };

@@ -4,15 +4,15 @@
 
 The following was confirmed by reading reference migrations before writing this spec:
 
-| Finding | Result |
-|---------|--------|
-| `episodes.edit_project_id` column | **Does NOT exist** in any migration |
-| `ON CONFLICT (edit_project_id)` | **Not valid** — column absent |
-| Unique constraint for idempotency | `(show_id, slug)` only |
-| Idempotency strategy | SELECT on `(show_id, video_asset_id)` → UPDATE or INSERT |
-| DB trigger on episodes | `zz_episodes_enforce_publish_readiness` blocks naive publish |
-| Bypass for admin publishing | `admin_publish_override = true` (built into trigger) |
-| `episodes` RLS | Enabled — service-role required |
+| Finding                           | Result                                                       |
+| --------------------------------- | ------------------------------------------------------------ |
+| `episodes.edit_project_id` column | **Does NOT exist** in any migration                          |
+| `ON CONFLICT (edit_project_id)`   | **Not valid** — column absent                                |
+| Unique constraint for idempotency | `(show_id, slug)` only                                       |
+| Idempotency strategy              | SELECT on `(show_id, video_asset_id)` → UPDATE or INSERT     |
+| DB trigger on episodes            | `zz_episodes_enforce_publish_readiness` blocks naive publish |
+| Bypass for admin publishing       | `admin_publish_override = true` (built into trigger)         |
+| `episodes` RLS                    | Enabled — service-role required                              |
 
 ---
 
@@ -22,25 +22,30 @@ The following was confirmed by reading reference migrations before writing this 
 `thumbnail_url`, or `scheduled_at`. These are required for the episode payload.
 
 **Files involved:**
+
 - `src/lib/admin/post-queue.server.ts`
 
 **Steps:**
+
 1. In `reviewAdminPostQueue`, extend the `.select(...)` string to include
    `description, thumbnail_url, scheduled_at`.
 2. The `queue` variable is typed via `as any` cast — no type change needed.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - No behavior change — SELECT only.
 
 **Security boundary:**
+
 - Inside `reviewAdminPostQueue` server function only.
 - `verifyAdmin()` already runs before this SELECT.
 
 **Visual preservation:** Admin UI routes not modified. No visual change.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -56,21 +61,26 @@ pnpm build
 to derive it from `queue.title`.
 
 **Files involved:**
+
 - `src/lib/admin/post-queue.server.ts`
 
 **Steps:**
+
 1. Add a module-level `slugify` function (not exported):
    ```typescript
    function slugify(value: string): string {
-     return value.toLowerCase().trim()
+     return value
+       .toLowerCase()
+       .trim()
        .replace(/[^a-z0-9]+/g, "-")
        .replace(/^-+|-+$/g, "")
-       .slice(0, 70)
+       .slice(0, 70);
    }
    ```
 2. No other changes in this task.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 
@@ -79,6 +89,7 @@ to derive it from `queue.title`.
 **Visual preservation:** No UI change.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -94,6 +105,7 @@ pnpm build
 succeed, INSERT or UPDATE an `episodes` row when `approvalStatus === "approved"`.
 
 **Files involved:**
+
 - `src/lib/admin/post-queue.server.ts`
 
 **Steps:**
@@ -102,71 +114,74 @@ succeed, INSERT or UPDATE an `episodes` row when `approvalStatus === "approved"`
    add an `if (data.approvalStatus === "approved")` block.
 
 2. Build the episode payload:
+
    ```typescript
-   const now = new Date().toISOString()
-   const isScheduled = !!queue.scheduled_at && new Date(queue.scheduled_at) > new Date()
-   const accessType = (queue.episode_number <= 2) ? "free"
-                    : queue.is_plus_content ? "locked" : "free"
-   const baseSlug = slugify(queue.title)
+   const now = new Date().toISOString();
+   const isScheduled = !!queue.scheduled_at && new Date(queue.scheduled_at) > new Date();
+   const accessType =
+     queue.episode_number <= 2 ? "free" : queue.is_plus_content ? "locked" : "free";
+   const baseSlug = slugify(queue.title);
 
    const episodePayload = {
-     channel_id:               queue.channel_id,
-     show_id:                  queue.show_id,
-     episode_number:           queue.episode_number,
-     season_number:            1,
-     title:                    queue.title,
-     slug:                     baseSlug,
-     description:              queue.description ?? null,
-     thumbnail_url:            queue.thumbnail_url ?? null,
-     video_thumbnail_url:      queue.thumbnail_url ?? null,
-     video_provider:           "cloudflare_stream",
-     video_asset_id:           queue.stream_uid,
-     video_status:             "ready",
-     publish_status:           isScheduled ? "scheduled" : "published",
-     access_type:              accessType,
-     scheduled_at:             queue.scheduled_at ?? null,
-     admin_publish_override:   true,
+     channel_id: queue.channel_id,
+     show_id: queue.show_id,
+     episode_number: queue.episode_number,
+     season_number: 1,
+     title: queue.title,
+     slug: baseSlug,
+     description: queue.description ?? null,
+     thumbnail_url: queue.thumbnail_url ?? null,
+     video_thumbnail_url: queue.thumbnail_url ?? null,
+     video_provider: "cloudflare_stream",
+     video_asset_id: queue.stream_uid,
+     video_status: "ready",
+     publish_status: isScheduled ? "scheduled" : "published",
+     access_type: accessType,
+     scheduled_at: queue.scheduled_at ?? null,
+     admin_publish_override: true,
      admin_publish_override_by: adminUser.id,
      admin_publish_override_at: now,
-     updated_at:               now,
-   }
+     updated_at: now,
+   };
    ```
 
 3. Check for an existing episode by `(show_id, video_asset_id)`:
+
    ```typescript
    const { data: existing } = await (supabase as any)
      .from("episodes")
      .select("id")
      .eq("show_id", queue.show_id)
      .eq("video_asset_id", queue.stream_uid)
-     .maybeSingle()
+     .maybeSingle();
    ```
 
 4. If `existing` → UPDATE (omit `slug` to preserve the original):
+
    ```typescript
    const { error: episodeError } = await (supabase as any)
      .from("episodes")
      .update({ ...episodePayload, slug: undefined })
-     .eq("id", existing.id)
+     .eq("id", existing.id);
    ```
 
 5. If not `existing` → INSERT; on slug collision (`error.code === "23505"`), retry
    with `slug: baseSlug + "-" + queue.episode_number`:
+
    ```typescript
-   let { error: episodeError } = await (supabase as any)
-     .from("episodes")
-     .insert(episodePayload)
+   let { error: episodeError } = await (supabase as any).from("episodes").insert(episodePayload);
    if (episodeError?.code === "23505") {
      const retry = await (supabase as any)
        .from("episodes")
-       .insert({ ...episodePayload, slug: `${baseSlug}-${queue.episode_number}` })
-     episodeError = retry.error
+       .insert({ ...episodePayload, slug: `${baseSlug}-${queue.episode_number}` });
+     episodeError = retry.error;
    }
    ```
 
 6. If `episodeError` is non-null → rollback (Task 4) then throw.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - `approvalStatus !== "approved"` does not enter the episode block.
@@ -176,21 +191,25 @@ succeed, INSERT or UPDATE an `episodes` row when `approvalStatus === "approved"`
 - `admin_publish_override = true` is always set on the episode row.
 
 **Security boundary:**
+
 - Episode write uses `getAdminClient()` (service-role). Never exposed to browser.
 - `verifyAdmin()` runs before any write.
 - `profiles.is_creator` not used.
 
 **Visual preservation:**
+
 - `admin.content-approval.tsx` and `admin.content-approval.$id.tsx` not modified.
 - Watch Now, Guide, Feed not touched.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
 ```
 
 **Rollback risk:** Medium.
+
 - If the episode write throws at runtime, the queue row may be stuck at `"approved"`
   without an episode. Task 4 handles this.
 - If tsc fails, revert the added block. Existing approval flow is unaffected.
@@ -204,27 +223,30 @@ pnpm build
 `creator_edit_projects.status` to `"submitted"`, then throw the original error.
 
 **Files involved:**
+
 - `src/lib/admin/post-queue.server.ts`
 
 **Steps:**
+
 1. In the episode error handler (from Task 3), add:
    ```typescript
    // Best-effort revert
    await (supabase as any)
      .from("creator_post_queue")
      .update({ approval_status: "pending", admin_notes: null })
-     .eq("id", data.queueId)
+     .eq("id", data.queueId);
    if (queue.edit_project_id) {
      await (supabase as any)
        .from("creator_edit_projects")
        .update({ status: "submitted" })
-       .eq("id", queue.edit_project_id)
+       .eq("id", queue.edit_project_id);
    }
-   throw new Error("Publishing failed: " + episodeError.message)
+   throw new Error("Publishing failed: " + episodeError.message);
    ```
 2. The revert is best-effort. If it fails, the original episode error is still thrown.
 
 **Acceptance criteria:**
+
 - `pnpm tsc --noEmit` passes.
 - `pnpm build` passes.
 - Episode write failure causes the server function to throw (not return `{ ok: true }`).
@@ -235,6 +257,7 @@ pnpm build
 **Visual preservation:** Admin UI routes not modified.
 
 **Terminal validation:**
+
 ```
 pnpm tsc --noEmit
 pnpm build
@@ -250,10 +273,12 @@ pnpm build
 **Goal:** Record the confirmed schema findings and new publishing behavior in steering docs.
 
 **Files involved:**
+
 - `.kiro/steering/migration-map.md`
 - `.kiro/steering/file-map.md`
 
 **Steps:**
+
 1. In `migration-map.md`, add to the "Real" section:
    ```
    | Admin Publishing Activation | `src/lib/admin/post-queue.server.ts` |

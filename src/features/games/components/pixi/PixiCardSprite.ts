@@ -7,7 +7,7 @@
  *   - Drop shadow, gloss layer, and depth effect
  *   - Selection lift with smooth easing
  */
-import { Container, Graphics, Sprite, Text, Texture } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, Texture } from "pixi.js";
 
 export interface CardSpriteOptions {
   cardW: number;
@@ -33,7 +33,8 @@ export interface CardSpriteOptions {
  */
 export function makeCardSprite(opts: CardSpriteOptions): Container {
   const {
-    cardW, cardH,
+    cardW,
+    cardH,
     radius = cardW * 0.1,
     faceDown = true,
     faceTex = null,
@@ -47,7 +48,8 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
 
   // Shadow layer (drawn below card)
   const shadow = new Graphics();
-  shadow.roundRect(-cardW / 2 + 3, -cardH / 2 + 6, cardW - 4, cardH - 4, radius + 2)
+  shadow
+    .roundRect(-cardW / 2 + 3, -cardH / 2 + 6, cardW - 4, cardH - 4, radius + 2)
     .fill({ color: 0x000000, alpha: 0.55 });
   shadow.filters = []; // pixi v8: we use alpha blending instead of BlurFilter for perf
   shadow.y = 4;
@@ -74,7 +76,8 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
   } else {
     // Premium procedural fallback — dark glass card
     const cardBg = new Graphics();
-    cardBg.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius)
+    cardBg
+      .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius)
       .fill({ color: 0x07111f, alpha: 0.96 })
       .stroke({ color: accent, alpha: 0.6, width: 1.4 });
     body.addChild(cardBg);
@@ -82,7 +85,8 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
     if (faceDown) {
       // Official-look card back in procedural mode (no texture available yet)
       const backBg = new Graphics();
-      backBg.roundRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW - 6, cardH - 6, radius * 0.7)
+      backBg
+        .roundRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW - 6, cardH - 6, radius * 0.7)
         .fill({ color: 0x040c1a, alpha: 1 })
         .stroke({ color: 0x00b7ff, alpha: 0.28, width: 0.8 });
       body.addChild(backBg);
@@ -102,7 +106,8 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
 
       // Center logo ring
       const ring = new Graphics();
-      ring.circle(0, 0, cardW * 0.25)
+      ring
+        .circle(0, 0, cardW * 0.25)
         .fill({ color: 0x000d1a, alpha: 0.9 })
         .stroke({ color: 0x00b7ff, alpha: 0.55, width: 1.2 });
       body.addChild(ring);
@@ -117,41 +122,48 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
     } else {
       // Procedural face — rank + suit symbols
       const cardMeta = parseCardId(cardId);
-      const suitFill = cardMeta.suit === 'H' ? 0xef4444
-        : cardMeta.suit === 'D' ? 0x00b7ff
-          : cardMeta.suit === 'C' ? 0x22c55e
-            : cardMeta.suit === 'S' ? 0xa855f7
-              : accent;
+      const suitFill =
+        cardMeta.suit === "H"
+          ? 0xef4444
+          : cardMeta.suit === "D"
+            ? 0x00b7ff
+            : cardMeta.suit === "C"
+              ? 0x22c55e
+              : cardMeta.suit === "S"
+                ? 0xa855f7
+                : accent;
 
       const rankGfx = new Graphics();
-      rankGfx.roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius)
+      rankGfx
+        .roundRect(-cardW / 2, -cardH / 2, cardW, cardH, radius)
         .fill({ color: 0x0e1f30, alpha: 1 });
       body.addChild(rankGfx);
 
       // Decorative center diamond
       const diamond = new Graphics();
       const ds = cardW * 0.22;
-      diamond.poly([ 0, -ds, ds, 0, 0, ds, -ds, 0 ])
+      diamond
+        .poly([0, -ds, ds, 0, 0, ds, -ds, 0])
         .fill({ color: suitFill, alpha: 0.25 })
         .stroke({ color: suitFill, alpha: 0.7, width: 1 });
       body.addChild(diamond);
 
       const rankStyle = {
-        fontFamily: 'Inter, Arial, sans-serif',
+        fontFamily: "Inter, Arial, sans-serif",
         fontSize: Math.max(10, cardW * 0.22),
-        fontWeight: '900' as const,
+        fontWeight: "900" as const,
         fill: 0xf8fafc,
       };
       const suitStyle = {
-        fontFamily: 'Inter, Arial, sans-serif',
+        fontFamily: "Inter, Arial, sans-serif",
         fontSize: Math.max(10, cardW * 0.18),
-        fontWeight: '900' as const,
+        fontWeight: "900" as const,
         fill: suitFill,
       };
 
       const topRank = new Text({ text: cardMeta.rank, style: rankStyle });
       topRank.anchor.set(0, 0);
-      topRank.x = -cardW / 2 + cardW * 0.10;
+      topRank.x = -cardW / 2 + cardW * 0.1;
       topRank.y = -cardH / 2 + cardH * 0.07;
       body.addChild(topRank);
 
@@ -161,7 +173,10 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
       topSuit.y = topRank.y + cardH * 0.13;
       body.addChild(topSuit);
 
-      const centerSuit = new Text({ text: cardMeta.suit, style: { ...suitStyle, fontSize: Math.max(16, cardW * 0.34) } });
+      const centerSuit = new Text({
+        text: cardMeta.suit,
+        style: { ...suitStyle, fontSize: Math.max(16, cardW * 0.34) },
+      });
       centerSuit.anchor.set(0.5);
       centerSuit.x = 0;
       centerSuit.y = 0;
@@ -170,7 +185,7 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
       const bottomRank = new Text({ text: cardMeta.rank, style: rankStyle });
       bottomRank.anchor.set(1, 1);
       bottomRank.rotation = Math.PI;
-      bottomRank.x = cardW / 2 - cardW * 0.10;
+      bottomRank.x = cardW / 2 - cardW * 0.1;
       bottomRank.y = cardH / 2 - cardH * 0.07;
       body.addChild(bottomRank);
 
@@ -185,8 +200,9 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
 
   // Gloss highlight (top sheen — always applied for depth)
   const gloss = new Graphics();
-  gloss.roundRect(-cardW / 2 + 2, -cardH / 2 + 2, cardW - 4, cardH * 0.38, radius * 0.8)
-    .fill({ color: 0xffffff, alpha: 0.10 });
+  gloss
+    .roundRect(-cardW / 2 + 2, -cardH / 2 + 2, cardW - 4, cardH * 0.38, radius * 0.8)
+    .fill({ color: 0xffffff, alpha: 0.1 });
   root.addChild(gloss);
 
   // Dim overlay for non-playable cards
@@ -202,15 +218,15 @@ export function makeCardSprite(opts: CardSpriteOptions): Container {
  * Returns the new scale and offset applied to the container — caller drives this.
  */
 export function getCardLiftTransform(selected: boolean): { scaleY: number; dy: number } {
-  return selected
-    ? { scaleY: 1.05, dy: -cardLiftPx() }
-    : { scaleY: 1.0, dy: 0 };
+  return selected ? { scaleY: 1.05, dy: -cardLiftPx() } : { scaleY: 1.0, dy: 0 };
 }
 
-function cardLiftPx() { return 10; }
+function cardLiftPx() {
+  return 10;
+}
 
 function parseCardId(cardId?: string): { rank: string; suit: string } {
-  if (!cardId || cardId.length < 2) return { rank: '?', suit: '?' };
+  if (!cardId || cardId.length < 2) return { rank: "?", suit: "?" };
   return {
     rank: cardId.slice(0, -1).toUpperCase(),
     suit: cardId.slice(-1).toUpperCase(),

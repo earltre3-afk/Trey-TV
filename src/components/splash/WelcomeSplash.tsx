@@ -6,7 +6,11 @@ const RAY_STYLES: React.CSSProperties[] = [
   { transform: "rotate(-40deg)" },
   { transform: "rotate(-25deg)", width: "1px", opacity: 0.6 },
   { transform: "rotate(-12deg)" },
-  { transform: "rotate(0deg)", width: "3px", background: "linear-gradient(to bottom, rgba(255,210,60,0.22), transparent 50%)" },
+  {
+    transform: "rotate(0deg)",
+    width: "3px",
+    background: "linear-gradient(to bottom, rgba(255,210,60,0.22), transparent 50%)",
+  },
   { transform: "rotate(12deg)" },
   { transform: "rotate(25deg)", width: "1px", opacity: 0.6 },
   { transform: "rotate(40deg)" },

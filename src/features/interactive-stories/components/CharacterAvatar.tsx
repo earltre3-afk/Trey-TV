@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { CHARACTERS_BY_ID, CHARACTERS_BY_KEY, CHARACTER_PHOTO_MAP } from '../lib/storyData';
+﻿import React, { useState } from "react";
+import { CHARACTERS_BY_ID, CHARACTERS_BY_KEY, CHARACTER_PHOTO_MAP } from "../lib/storyData";
 
 export interface CharacterAvatarLike {
   id?: string;
@@ -31,7 +31,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
   character,
   characterId,
   relationshipKey,
-  className = '',
+  className = "",
   faceCrop = false,
   alt,
 }) => {
@@ -52,7 +52,7 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
 
   const mapped = resolved.mapKey ? CHARACTER_PHOTO_MAP[resolved.mapKey]?.image : undefined;
   const primary = mapped || resolved.image || resolved.fallbackImage;
-  const fallback = resolved.fallbackImage || mapped || resolved.image || '/placeholder.svg';
+  const fallback = resolved.fallbackImage || mapped || resolved.image || "/placeholder.svg";
   const src = !errored ? primary : fallback;
 
   return (
@@ -60,9 +60,8 @@ export const CharacterAvatar: React.FC<CharacterAvatarProps> = ({
       src={src}
       alt={alt || resolved.name}
       onError={() => setErrored(true)}
-      className={`h-full w-full object-cover ${faceCrop ? 'object-[center_35%]' : 'object-center'} ${className}`}
+      className={`h-full w-full object-cover ${faceCrop ? "object-[center_35%]" : "object-center"} ${className}`}
       draggable={false}
     />
   );
 };
-

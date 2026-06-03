@@ -15,7 +15,13 @@ import { resolveTradioShowPublish, tradioShowRoomName } from "./tradio/liveSessi
 const AGENT_NAME = "Hayden-1f01";
 const TOKEN_TTL = "15m";
 
-type RoomKind = "interactive-story" | "story-maker" | "game" | "inbox" | "watch-party" | "tradio-show";
+type RoomKind =
+  | "interactive-story"
+  | "story-maker"
+  | "game"
+  | "inbox"
+  | "watch-party"
+  | "tradio-show";
 
 type ParticipantProfile = {
   identity: string;
@@ -58,22 +64,26 @@ function json(data: unknown, status = 200): Response {
 
 function cleanPart(value: unknown, fallback: string): string {
   const raw = typeof value === "string" ? value : fallback;
-  return raw
-    .trim()
-    .toLowerCase()
-    .replace(/[_\s]+/g, "-")
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 96) || fallback;
+  return (
+    raw
+      .trim()
+      .toLowerCase()
+      .replace(/[_\s]+/g, "-")
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 96) || fallback
+  );
 }
 
 function cleanIdentity(value: unknown, fallback: string): string {
   const raw = typeof value === "string" ? value : fallback;
-  return raw
-    .trim()
-    .replace(/[^a-zA-Z0-9_.@-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 128) || fallback;
+  return (
+    raw
+      .trim()
+      .replace(/[^a-zA-Z0-9_.@-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 128) || fallback
+  );
 }
 
 function cleanName(value: unknown): string {
@@ -118,7 +128,10 @@ function decodeJwtPayload(jwt: string): Record<string, unknown> | null {
     const [, payload] = jwt.split(".");
     if (!payload) return null;
     if (typeof Buffer !== "undefined") {
-      return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<string, unknown>;
+      return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Record<
+        string,
+        unknown
+      >;
     }
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
@@ -168,8 +181,11 @@ async function resolveParticipant(request: Request): Promise<ParticipantProfile>
 }
 
 function roomKindFrom(body: Record<string, unknown>): RoomKind {
-  const raw = String(body.roomKind || body.mode || "interactive-story").trim().toLowerCase();
-  if (raw === "story-maker" || raw === "ai-story-maker" || raw === "story-journey") return "story-maker";
+  const raw = String(body.roomKind || body.mode || "interactive-story")
+    .trim()
+    .toLowerCase();
+  if (raw === "story-maker" || raw === "ai-story-maker" || raw === "story-journey")
+    return "story-maker";
   if (raw === "game" || raw === "game-room") return "game";
   if (raw === "inbox" || raw === "inbox-call" || raw === "private-call") return "inbox";
   if (raw === "watch-party" || raw === "wp") return "watch-party";
@@ -177,7 +193,10 @@ function roomKindFrom(body: Record<string, unknown>): RoomKind {
   return "interactive-story";
 }
 
-function resolveRoom(body: Record<string, unknown>, participant: ParticipantProfile): RoomResolution {
+function resolveRoom(
+  body: Record<string, unknown>,
+  participant: ParticipantProfile,
+): RoomResolution {
   const kind = roomKindFrom(body);
 
   if (kind === "game") {
@@ -238,15 +257,21 @@ function resolveRoom(body: Record<string, unknown>, participant: ParticipantProf
       kind,
       roomName: tradioShowRoomName(sessionId),
       dispatchAgent: false,
-      metadata: { mode: "voice-room", storyId: null, beatId: null, pageId: null, projectId: null, userUid: participant.userUid },
+      metadata: {
+        mode: "voice-room",
+        storyId: null,
+        beatId: null,
+        pageId: null,
+        projectId: null,
+        userUid: participant.userUid,
+      },
     };
   }
 
   if (kind === "story-maker") {
     const projectId = cleanPart(body.projectId || body.storyProjectId, "project");
-    const pageId = typeof body.pageId === "string" && body.pageId.trim()
-      ? cleanPart(body.pageId, "page")
-      : "";
+    const pageId =
+      typeof body.pageId === "string" && body.pageId.trim() ? cleanPart(body.pageId, "page") : "";
     return {
       kind,
       roomName: pageId ? `story-journey-page-${pageId}` : `story-journey-${projectId}`,
@@ -263,13 +288,14 @@ function resolveRoom(body: Record<string, unknown>, participant: ParticipantProf
   }
 
   const storyId = cleanPart(body.storyId, "story");
-  const beatId = typeof body.beatId === "string" && body.beatId.trim()
-    ? cleanPart(body.beatId, "beat")
-    : "";
+  const beatId =
+    typeof body.beatId === "string" && body.beatId.trim() ? cleanPart(body.beatId, "beat") : "";
 
   return {
     kind,
-    roomName: beatId ? `interactive-story-${storyId}-beat-${beatId}` : `interactive-story-${storyId}`,
+    roomName: beatId
+      ? `interactive-story-${storyId}-beat-${beatId}`
+      : `interactive-story-${storyId}`,
     dispatchAgent: true,
     metadata: {
       mode: "story-narrator",
@@ -326,10 +352,10 @@ function inspectTokenDispatch(jwt: string): TokenInspection {
   const payload = decodeJwtPayload(jwt);
   const roomConfig = payload?.roomConfig as Record<string, unknown> | undefined;
   const agents = Array.isArray(roomConfig?.agents)
-    ? roomConfig.agents as Array<Record<string, unknown>>
+    ? (roomConfig.agents as Array<Record<string, unknown>>)
     : [];
   const agentNames = agents
-    .map((agent) => typeof agent.agentName === "string" ? agent.agentName : "")
+    .map((agent) => (typeof agent.agentName === "string" ? agent.agentName : ""))
     .filter(Boolean);
   const hayden = agents.find((agent) => agent.agentName === AGENT_NAME);
   let dispatchMetadataValid = false;
@@ -416,7 +442,10 @@ export async function handleLiveKitToken(request: Request, env: unknown): Promis
             .select("host_user_id, status")
             .eq("id", sessionId)
             .maybeSingle();
-          const resolution = resolveTradioShowPublish({ session: session ?? null, userId: participant.userUid });
+          const resolution = resolveTradioShowPublish({
+            session: session ?? null,
+            userId: participant.userUid,
+          });
           if (!resolution.allowed) {
             return json({ error: "This live show isn't on air." }, 403);
           }
@@ -458,7 +487,13 @@ export async function handleLiveKitToken(request: Request, env: unknown): Promis
     }
 
     const token = await at.toJwt();
-    validateTokenShape(token, config.apiKey, participant.identity, room.roomName, room.dispatchAgent);
+    validateTokenShape(
+      token,
+      config.apiKey,
+      participant.identity,
+      room.roomName,
+      room.dispatchAgent,
+    );
     const tokenInspection = inspectTokenDispatch(token);
 
     return json({
@@ -537,7 +572,11 @@ export async function handleLiveKitDiagnostics(request: Request, env: unknown): 
 
     if (url.searchParams.get("includeParticipants") === "true" && room.roomName) {
       try {
-        const service = new RoomServiceClient(livekitHttpUrl(config.url), config.apiKey, config.apiSecret);
+        const service = new RoomServiceClient(
+          livekitHttpUrl(config.url),
+          config.apiKey,
+          config.apiSecret,
+        );
         const listed = await service.listParticipants(room.roomName);
         participantCount = listed.length;
         participants = listed.map(safeParticipantInfo);
@@ -551,12 +590,17 @@ export async function handleLiveKitDiagnostics(request: Request, env: unknown): 
     let serverApiAuthError: string | undefined;
     if (url.searchParams.get("includeAuthCheck") === "true") {
       try {
-        const service = new RoomServiceClient(livekitHttpUrl(config.url), config.apiKey, config.apiSecret);
+        const service = new RoomServiceClient(
+          livekitHttpUrl(config.url),
+          config.apiKey,
+          config.apiSecret,
+        );
         await service.listRooms([]);
         serverApiAuthenticated = true;
       } catch (error) {
         serverApiAuthenticated = false;
-        const message = error instanceof Error ? error.message : String(error || "authentication failed");
+        const message =
+          error instanceof Error ? error.message : String(error || "authentication failed");
         serverApiAuthError = /invalid token|invalid api key|unauthorized|forbidden/i.test(message)
           ? message
           : "LiveKit server API authentication failed.";

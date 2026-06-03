@@ -65,9 +65,7 @@ Point Codex Desktop at the built local stdio server. Use local paths and placeho
   "mcpServers": {
     "trey-tv": {
       "command": "node",
-      "args": [
-        "C:/Users/info/TREY-TV-ANTIGRAVITY/tools/trey-tv-mcp/dist/server.js"
-      ],
+      "args": ["C:/Users/info/TREY-TV-ANTIGRAVITY/tools/trey-tv-mcp/dist/server.js"],
       "env": {
         "TREY_TV_PLUGIN_BASE_URL": "http://127.0.0.1:3000"
       }

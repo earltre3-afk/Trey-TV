@@ -2,10 +2,10 @@
 
 ## Critical Finding: Two `useAuth` hooks coexist
 
-| File | Import path | Returns |
-|------|-------------|---------|
-| `src/hooks/use-auth.ts` | `@/hooks/use-auth` | `session`, `user` (Supabase `User`), `isSignedIn` |
-| `src/lib/auth.tsx` | `@/lib/auth` | `SessionUser`, `role`, `isGuest`, `isCreator`, `updateUser`, etc. |
+| File                    | Import path        | Returns                                                           |
+| ----------------------- | ------------------ | ----------------------------------------------------------------- |
+| `src/hooks/use-auth.ts` | `@/hooks/use-auth` | `session`, `user` (Supabase `User`), `isSignedIn`                 |
+| `src/lib/auth.tsx`      | `@/lib/auth`       | `SessionUser`, `role`, `isGuest`, `isCreator`, `updateUser`, etc. |
 
 Most layout components import from `@/lib/auth` (the mock one).
 `PostCard` and `use-supabase-reactions` import from `@/hooks/use-auth` (the real one).
@@ -17,22 +17,29 @@ Most layout components import from `@/lib/auth` (the mock one).
 ## Existing Shapes
 
 ### `currentUser` (mock-data.ts)
+
 ```ts
 {
-  name: string        // "Trey"
-  handle: string      // "trey"
-  uid: string         // "4234118205271678"
-  avatar: string      // imported image asset
-  banner: string      // "/profile-banner"
-  bio: string
-  location: string
-  link: string        // "trey.tv"
-  verified: "creator" | "user"
-  stats: { posts: number; followers: string; following: number; prescriptions: string }
+  name: string; // "Trey"
+  handle: string; // "trey"
+  uid: string; // "4234118205271678"
+  avatar: string; // imported image asset
+  banner: string; // "/profile-banner"
+  bio: string;
+  location: string;
+  link: string; // "trey.tv"
+  verified: "creator" | "user";
+  stats: {
+    posts: number;
+    followers: string;
+    following: number;
+    prescriptions: string;
+  }
 }
 ```
 
 ### `SessionUser` (auth.tsx) — the target shape
+
 ```ts
 {
   name: string
@@ -58,30 +65,32 @@ Most layout components import from `@/lib/auth` (the mock one).
 
 ## Field Mapping: Supabase → SessionUser
 
-| SessionUser field | Supabase column | Fallback |
-|-------------------|-----------------|---------|
-| `name` | `display_name` | `currentUser.name` |
-| `handle` | `username` | `currentUser.handle` |
-| `uid` | `public_profile_uid` | `currentUser.uid` |
-| `avatar` | `avatar_url` | `currentUser.avatar` |
-| `banner` | `banner_url` | `""` |
-| `bio` | `bio` | `currentUser.bio` |
-| `location` | `location` | `currentUser.location` |
-| `accent` | `profile_accent_color` (mapped below) | `"gold"` |
-| `verified` | derived from `role` / `verification_type` (below) | `currentUser.verified` |
-| `role` | `role` (mapped below) | `"user"` |
-| `link` | — not in safe columns | `currentUser.link` |
-| `stats` | — no count columns in safe set | `currentUser.stats` |
-| `rewards` | — out of scope | `currentUser.rewards` |
-| `creatorStatus` | — out of scope | `"not_applied"` |
+| SessionUser field | Supabase column                                   | Fallback               |
+| ----------------- | ------------------------------------------------- | ---------------------- |
+| `name`            | `display_name`                                    | `currentUser.name`     |
+| `handle`          | `username`                                        | `currentUser.handle`   |
+| `uid`             | `public_profile_uid`                              | `currentUser.uid`      |
+| `avatar`          | `avatar_url`                                      | `currentUser.avatar`   |
+| `banner`          | `banner_url`                                      | `""`                   |
+| `bio`             | `bio`                                             | `currentUser.bio`      |
+| `location`        | `location`                                        | `currentUser.location` |
+| `accent`          | `profile_accent_color` (mapped below)             | `"gold"`               |
+| `verified`        | derived from `role` / `verification_type` (below) | `currentUser.verified` |
+| `role`            | `role` (mapped below)                             | `"user"`               |
+| `link`            | — not in safe columns                             | `currentUser.link`     |
+| `stats`           | — no count columns in safe set                    | `currentUser.stats`    |
+| `rewards`         | — out of scope                                    | `currentUser.rewards`  |
+| `creatorStatus`   | — out of scope                                    | `"not_applied"`        |
 
 ### `profile_accent_color` → `accent`
+
 ```
 "gold" | "magenta" | "cyan" | "purple" → same value
 null / anything else                   → "gold"
 ```
 
 ### `role` column → `Role`
+
 ```
 "admin" | "master_admin" → "admin"
 "creator"               → "creator"
@@ -89,6 +98,7 @@ null / anything else                   → "gold"
 ```
 
 ### `verified` derivation
+
 ```
 verified_creator === true OR verification_type === "gold" → "creator"
 is_verified === true OR verification_type === "green"     → "user"
@@ -108,6 +118,7 @@ useCurrentUser(): SessionUser
 ```
 
 Logic:
+
 1. Call `useAuth()` from `@/hooks/use-auth` → get `user`, `isSignedIn`
 2. If `!isSignedIn` → return `currentUser` immediately (no fetch)
 3. Fetch `profiles` where `id = user.id`, select safe columns only
@@ -128,6 +139,7 @@ export function CurrentUserSync() {
 ```
 
 Why a separate component instead of modifying `AuthProvider`:
+
 - `AuthProvider` is in `src/lib/auth.tsx` — importing Supabase client there would
   tangle the two auth systems and risk circular imports.
 - A bridge component keeps the boundary clean and is trivially removable.
