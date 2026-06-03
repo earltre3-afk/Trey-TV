@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useAuth } from "@/lib/auth";
-import { useSupabaseSession } from "@/lib/supabase-session";
 import "@/tradio/tradio.css";
 
 /**
@@ -93,13 +91,10 @@ export const Route = createFileRoute("/tradio")({
 
 function TradioRoute() {
   const [mounted, setMounted] = useState(false);
-  const { authReady, authorizationStatus } = useAuth();
-  const { loading: sessionLoading } = useSupabaseSession();
-  const authSettled = authReady && !sessionLoading && authorizationStatus !== "checking";
   useEffect(() => setMounted(true), []);
 
-  // Server + first paint, while auth is resolving, render the gorgeous themed loading fallback
-  if (!mounted || !authSettled) {
+  // Keep the browser-only shell out of SSR, then let it paint while auth hydrates.
+  if (!mounted) {
     return <TradioLoadingFallback />;
   }
 

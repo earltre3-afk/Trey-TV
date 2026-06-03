@@ -309,16 +309,17 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const isOnboardingRoute = onboardingRoutes.some(
     (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
   );
+  const canPaintDuringAuthLoad = location.pathname.startsWith("/tradio");
 
-  // Synchronous route protection checks to prevent layout flash/flicker
-  const isBlockedUser = user && !user.onboarding_completed && !isOnboardingRoute;
-  const isBlockedGuest = isGuest && !isPublicRoute && !isAllowedGuestPage;
   const waitingForSupabaseProfile =
     !!supaUser &&
     (authorizationStatus === "checking" || authorizationStatus === "logged_out" || !authReady);
   const isAuthLoading =
     sessionLoading || authorizationStatus === "checking" || !authReady || waitingForSupabaseProfile;
-  const canRenderWhileAuthLoads = isPublicRoute || isAllowedGuestPage;
+  // Synchronous route protection checks to prevent layout flash/flicker
+  const isBlockedUser = !isAuthLoading && user && !user.onboarding_completed && !isOnboardingRoute;
+  const isBlockedGuest = !isAuthLoading && isGuest && !isPublicRoute && !isAllowedGuestPage;
+  const canRenderWhileAuthLoads = isPublicRoute || isAllowedGuestPage || canPaintDuringAuthLoad;
   const shouldShowAuthFallback =
     isBlockedUser || isBlockedGuest || ((loading || isAuthLoading) && !canRenderWhileAuthLoads);
 
@@ -435,6 +436,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     isPublicRoute,
     isAllowedGuestPage,
     isOnboardingRoute,
+    canPaintDuringAuthLoad,
     sessionLoading,
     authReady,
     waitingForSupabaseProfile,
