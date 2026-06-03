@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { ArrowRight } from "lucide-react";
 import { IMAGES } from "../../lib/storyData";
 import { TreyTVLogo } from "../TreyTVLogo";
@@ -9,7 +9,14 @@ interface Props {
 
 export const WelcomeScreen: React.FC<Props> = ({ onEnter }) => (
   <div className="relative flex min-h-screen items-center justify-center overflow-hidden">
-    <img src={IMAGES.twinsCover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+    <video
+      src="https://cdn.builder.io/o/assets%2Fde09f3f7574845d786350acb13c952c1%2F27fe861319cb439c9223e45ebce2389f?alt=media&token=51f417e4-ec77-4ce8-8e24-de4e89b4dbd4&apiKey=de09f3f7574845d786350acb13c952c1"
+      autoPlay
+      loop
+      muted
+      playsInline
+      className="absolute inset-0 h-full w-full object-cover"
+    />
     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black" />
 
     <div className="relative z-10 px-8 text-center">

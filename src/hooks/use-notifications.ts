@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+export const NOTIFICATION_SOUND_URL = "https://cdn.builder.io/o/assets%2Fde09f3f7574845d786350acb13c952c1%2F32523e9715b543b19bd8d9c6afcae18d?alt=media&token=84a0b8f2-6544-441c-a3a8-e738cac1510d&apiKey=de09f3f7574845d786350acb13c952c1";
+
+export function playNotificationSound() {
+  const audio = new Audio(NOTIFICATION_SOUND_URL);
+  audio.volume = 0.55;
+  audio.play().catch((err) => {
+    console.warn("Failed to play notification sound:", err);
+  });
+}
+
 export type NotificationItem = {
   id: string;
   kind: "like" | "comment" | "follow" | "live" | "trey" | "boost";
@@ -120,17 +130,50 @@ export function useNotifications() {
       }
     };
 
+    let realtimeChannel: any = null;
+
+    const subscribeToRealtimeNotifications = (userId: string) => {
+      if (realtimeChannel) {
+        realtimeChannel.unsubscribe();
+      }
+
+      realtimeChannel = supabase
+        .channel(`realtime-notifications-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchForUser(userId);
+            playNotificationSound();
+          }
+        )
+        .subscribe();
+    };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) fetchForUser(session.user.id);
+      if (session?.user) {
+        fetchForUser(session.user.id);
+        subscribeToRealtimeNotifications(session.user.id);
+      }
     });
 
     const { data: authSub } = supabase.auth.onAuthStateChange((_event, sess) => {
       if (!mounted) return;
       if (sess?.user) {
         fetchForUser(sess.user.id);
+        subscribeToRealtimeNotifications(sess.user.id);
       } else {
         setNotifications([]);
         setLoading(false);
+        if (realtimeChannel) {
+          realtimeChannel.unsubscribe();
+          realtimeChannel = null;
+        }
       }
     });
 
@@ -139,6 +182,9 @@ export function useNotifications() {
     return () => {
       mounted = false;
       unsubscribe();
+      if (realtimeChannel) {
+        realtimeChannel.unsubscribe();
+      }
     };
   }, []);
 
