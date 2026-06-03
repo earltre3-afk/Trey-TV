@@ -130,9 +130,13 @@ export function useNotifications() {
       }
     };
 
+    let currentSubscribedUserId: string | null = null;
     let realtimeChannel: any = null;
 
     const subscribeToRealtimeNotifications = (userId: string) => {
+      if (currentSubscribedUserId === userId) return;
+      currentSubscribedUserId = userId;
+
       if (realtimeChannel) {
         realtimeChannel.unsubscribe();
       }
