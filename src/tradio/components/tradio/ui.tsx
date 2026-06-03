@@ -178,7 +178,6 @@ export const TopBar: React.FC<{
         <button
           onClick={() => {
             window.dispatchEvent(new CustomEvent("open-tradio-nav"));
-            document.dispatchEvent(new CustomEvent("open-tradio-nav"));
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/85 backdrop-blur-md active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
           title="All Screens"
@@ -205,7 +204,6 @@ export const TopBar: React.FC<{
       <button
         onClick={() => {
           window.dispatchEvent(new CustomEvent("open-tradio-messenger"));
-          document.dispatchEvent(new CustomEvent("open-tradio-messenger"));
         }}
         className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-white/80 active:scale-95 hover:bg-white/8 hover:border-white/15 transition-all duration-300 lg:hidden shadow-sm"
         title="Trey TV Messenger"

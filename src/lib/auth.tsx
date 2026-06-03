@@ -45,6 +45,8 @@ export type SessionUser = {
   gifOfDaySetAt?: string | null;
   showFwdGifsOnProfile?: boolean;
   onboarding_completed?: boolean;
+  profileSongId?: string | null;
+  profilePreferences?: Record<string, any> | null;
 };
 
 type AuthCtx = {
@@ -144,6 +146,8 @@ const mapProfileToSessionUser = (
     gifOfDaySetAt: profile?.gif_of_day_set_at ?? null,
     showFwdGifsOnProfile: !!profile?.show_fwd_gifs_on_profile,
     onboarding_completed: !!profile?.onboarding_completed,
+    profileSongId: profile?.profile_song_id ?? null,
+    profilePreferences: profile?.profile_preferences ?? null,
     rewards: { points: 0, tier: "WHITE" },
   };
 };
@@ -237,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await (supabase as any)
           .from("profiles")
           .select(
-            "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed",
+            "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, role, creator_status, verification_type, is_verified, verified_creator, profile_accent_color, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, gif_of_day_id, gif_of_day_url, gif_of_day_poster_url, gif_of_day_provider, gif_of_day_caption, gif_of_day_set_at, show_fwd_gifs_on_profile, onboarding_completed, profile_song_id, profile_preferences",
           )
           .eq("id", supaUser.id)
           .maybeSingle();

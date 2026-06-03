@@ -43,6 +43,7 @@ import { zodiacSymbol } from "@/lib/zodiac";
 import { ReadingOfTheDay } from "@/components/zodiac";
 
 const TREY_TV_BOX_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
+const TREY_ORIGIN_HERO_VIDEO_URL = "/home/trey-origin-hero.mp4";
 
 export const Route = createFileRoute("/")({
   component: WatchNow,
@@ -66,6 +67,22 @@ export const Route = createFileRoute("/")({
 function WatchNow() {
   const { isGuest } = useAuth();
   return isGuest ? <GuestWatchNow /> : <SignedInWatchNow />;
+}
+
+function TreyOriginHeroMedia({ className }: { className: string }) {
+  return (
+    <video
+      aria-hidden="true"
+      className={className}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="metadata"
+    >
+      <source src={TREY_ORIGIN_HERO_VIDEO_URL} type="video/mp4" />
+    </video>
+  );
 }
 
 /* ============================================================
@@ -108,11 +125,7 @@ function GuestWatchNow() {
 
       {/* HERO */}
       <section className="relative min-h-[100svh] w-full overflow-hidden">
-        <img
-          src={heroShow.backdrop}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover scale-105"
-        />
+        <TreyOriginHeroMedia className="absolute inset-0 w-full h-full object-cover scale-105" />
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_30%,transparent,oklch(0.13_0.02_270/.85)_70%,oklch(0.13_0.02_270)_100%)]"
@@ -625,7 +638,7 @@ function SignedInWatchNow() {
       {/* Hero */}
       <div className="relative -mx-3 lg:-mx-8 xl:-mx-10 -mt-3 lg:-mt-8 xl:-mt-10 mb-6 lg:mb-10 overflow-hidden rounded-b-[32px]">
         <div className="relative h-[60vh] min-h-[420px] xl:h-[72vh] xl:min-h-[560px] w-full">
-          <img src={heroShow.backdrop} alt="" className="absolute inset-0 size-full object-cover" />
+          <TreyOriginHeroMedia className="absolute inset-0 size-full object-cover" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,oklch(0.13_0.02_270/.2),transparent_30%,oklch(0.13_0.02_270/.95)_92%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(80%_60%_at_15%_50%,transparent,oklch(0.13_0.02_270/.55)_70%)]" />
           <div className="relative z-10 h-full flex items-end p-6 sm:p-10 xl:p-14">

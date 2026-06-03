@@ -27,6 +27,7 @@ import { useProfile, useRelationshipStatus, useTopThree } from "@/hooks/use-prof
 import { currentUser } from "@/lib/mock-data";
 import banner from "@/assets/profile-banner.jpg";
 import { isTreyOwnerProfile } from "@/lib/trey-owner";
+import { resolveOwnerMusicOrder, resolveOwnerProfileSongId } from "@/lib/owner-music";
 import type { ProfileData, ViewerRole } from "@/components/profile";
 import { ProfilePageNew } from "@/components/profile/ProfilePageNew";
 import type { ProfileVariant } from "@/components/profile/ProfilePageNew";
@@ -71,6 +72,12 @@ function PublicProfileRoute() {
         isTreyProfile ||
         (isSessionProfile &&
           (fallback?.verified === "creator" || role === "creator" || role === "admin"));
+      const ownerProfileSongId = resolveOwnerProfileSongId(
+        uid,
+        (fallback as any)?.profileSongId ?? null,
+      );
+      const ownerMusicOrder = resolveOwnerMusicOrder(uid, (fallback as any)?.musicOrder ?? null);
+
       return {
         uid,
         displayName: fallback?.name ?? (loading ? "Loading profile" : "Profile unavailable"),
@@ -111,6 +118,8 @@ function PublicProfileRoute() {
         interests: [],
         creatorStatus: isSessionProfile ? authUser?.creatorStatus : undefined,
         accentColor: isSessionProfile ? ((authUser as any)?.accent ?? null) : null,
+        profileSongId: ownerProfileSongId,
+        musicOrder: ownerMusicOrder,
       };
     }
 
@@ -124,6 +133,13 @@ function PublicProfileRoute() {
       username: dbProfile.username,
       public_profile_uid: dbProfile.public_profile_uid,
     });
+    const ownerProfileSongId = resolveOwnerProfileSongId(uid, dbProfile.profile_song_id || null);
+    const ownerMusicOrder = resolveOwnerMusicOrder(
+      uid,
+      Array.isArray(dbProfile.profile_preferences?.music_order)
+        ? dbProfile.profile_preferences.music_order
+        : null,
+    );
 
     return {
       uid,
@@ -189,6 +205,8 @@ function PublicProfileRoute() {
       zodiacPublicOptIn: dbProfile.zodiac_public_opt_in !== false,
       birthChartHighlights:
         dbProfile.zodiac_public_opt_in === false ? null : dbProfile.birth_chart_json,
+      profileSongId: ownerProfileSongId,
+      musicOrder: ownerMusicOrder,
     };
   }, [dbProfile, loading, uid, authUser, isGuest, isOwnProfile, role, isApprovedCreator]);
 

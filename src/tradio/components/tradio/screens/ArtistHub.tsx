@@ -27,6 +27,7 @@ import {
   VerifiedBadge,
   Waveform,
   ReleaseCard,
+  PlayCircle,
 } from "../ui";
 import {
   ALL_STATIONS,
@@ -39,11 +40,19 @@ import {
 } from "../data";
 import { AccessGate } from "../auth/components";
 import { toast } from "sonner";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
 
 const fanReactions = STATION_COMMUNITIES["station-trey-trizzy"].messages.slice(0, 3);
 const artist = ARTIST_PROFILES[0];
 const station = ALL_STATIONS.find((item) => item.id === "station-trey-trizzy") || ALL_STATIONS[0];
 const pinnedRelease = RELEASES.find((release) => release.artist === artist.name) || RELEASES[0];
+const OWNER_ARTIST_TRACKS = [TRACKS.iLookLike, TRACKS.callOn];
+
+const formatTrackDuration = (seconds?: number) => {
+  if (!seconds) return "";
+  const totalSeconds = Math.round(seconds);
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+};
 
 export const ArtistHub: React.FC<{
   onOpenRelease?: () => void;
@@ -57,8 +66,11 @@ export const ArtistHub: React.FC<{
   onOpenBroadcastStudio,
   onViewPublicProfile,
   onEditProfile,
-}) => (
-  <AccessGate
+}) => {
+  const { play, currentTrack, isPlaying } = usePlayer();
+
+  return (
+    <AccessGate
     capability="release-music"
     title="Artist access required"
     message="Switch to Artist Mode or request artist access to manage releases, playlists, station premieres, and artist-owned radio."
@@ -130,6 +142,45 @@ export const ArtistHub: React.FC<{
                 </SecondaryButton>
               </div>
             </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      <div className="px-4 sm:px-6 lg:px-10">
+        <GlassCard className="p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-white">Owner Media Library</div>
+              <div className="text-xs text-white/50">
+                Uploaded songs available on Trey Trizzy's Tradio artist profile
+              </div>
+            </div>
+            <Music className="h-5 w-5 text-cyan-300" />
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {OWNER_ARTIST_TRACKS.map((track) => {
+              const trackPlaying = currentTrack?.id === track.id && isPlaying;
+              return (
+                <div
+                  key={track.id}
+                  className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] p-3"
+                >
+                  <img src={track.art} alt="" className="h-14 w-14 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold text-white">{track.title}</div>
+                    <div className="truncate text-xs text-white/55">{track.artist}</div>
+                    <div className="mt-1 truncate font-mono text-[10px] text-white/40">
+                      {formatTrackDuration(track.duration)} - {track.src}
+                    </div>
+                  </div>
+                  <PlayCircle
+                    size={38}
+                    gradient={trackPlaying}
+                    onClick={() => play(track, OWNER_ARTIST_TRACKS)}
+                  />
+                </div>
+              );
+            })}
           </div>
         </GlassCard>
       </div>
@@ -495,7 +546,8 @@ export const ArtistHub: React.FC<{
         </GlassCard>
       </div>
     </div>
-  </AccessGate>
-);
+    </AccessGate>
+  );
+};
 
 export default ArtistHub;

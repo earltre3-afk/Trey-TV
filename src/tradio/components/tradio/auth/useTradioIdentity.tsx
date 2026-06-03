@@ -22,7 +22,7 @@ import type {
   TradioVerificationState,
 } from "./types";
 import { useSupabaseSession } from "./useSupabaseSession";
-import { useCurrentUser } from "@/hooks/use-current-user";
+import { useAuth } from "@/lib/auth";
 
 /**
  * Local-only overlay applied on top of the active identity to SIMULATE the
@@ -51,6 +51,9 @@ type TradioProfileBridgeStatus =
   | "profile_bridge_missing"
   | "tradio_profile_missing"
   | "error";
+
+const ENABLE_TRADIO_SUPABASE_BOOTSTRAP =
+  import.meta.env.VITE_TRADIO_SUPABASE_BOOTSTRAP === "true";
 
 interface TradioIdentityContextValue {
   identity: TradioIdentity;
@@ -81,7 +84,7 @@ const TradioIdentityContext = createContext<TradioIdentityContextValue | null>(n
 
 export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const supabaseSession = useSupabaseSession();
-  const currentUser = useCurrentUser();
+  const { user: currentUser } = useAuth();
   const [mockIdentityKey, setMockIdentityKeyState] =
     useState<MockIdentityKey>(DEFAULT_MOCK_IDENTITY_KEY);
   const [modeOverrides, setModeOverrides] = useState<Partial<Record<MockIdentityKey, TradioMode>>>(
@@ -94,6 +97,7 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
   const [bootstrapStatus, setBootstrapStatus] = useState<TradioBootstrapStatus>("not_configured");
   const [bootstrapPhase, setBootstrapPhase] = useState<TradioBootstrapPhase>("idle");
   const [mockGrants, setMockGrants] = useState<MockGrantOverlay>({ roles: [] });
+  const hasTreyTvIdentity = Boolean(currentUser?.uid);
 
   const applyMockGrant = useCallback((grant: MockGrantInput) => {
     // Hard guard: never overlay admin/owner — those are not request-grantable.
@@ -107,12 +111,24 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
   }, []);
 
   useEffect(() => {
-    if (!supabaseSession.isConfigured || !supabaseSession.user || !supabase) {
+    if (
+      !ENABLE_TRADIO_SUPABASE_BOOTSTRAP ||
+      hasTreyTvIdentity ||
+      !supabaseSession.isConfigured ||
+      !supabaseSession.user ||
+      !supabase
+    ) {
       setSupabaseIdentity(null);
       setSupabaseModeOverride(null);
       setIdentityWarnings([]);
       setIsIdentityLoading(false);
-      setBootstrapStatus(supabaseSession.isConfigured ? "signed_out" : "not_configured");
+      setBootstrapStatus(
+        !ENABLE_TRADIO_SUPABASE_BOOTSTRAP || hasTreyTvIdentity
+          ? "connected"
+          : supabaseSession.isConfigured
+            ? "signed_out"
+            : "not_configured",
+      );
       setBootstrapPhase("idle");
       return;
     }
@@ -146,7 +162,7 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
     return () => {
       active = false;
     };
-  }, [supabaseSession.isConfigured, supabaseSession.user]);
+  }, [hasTreyTvIdentity, supabaseSession.isConfigured, supabaseSession.user]);
 
   const identitySource: TradioIdentitySource =
     supabaseIdentity && supabaseSession.user ? "supabase" : "mock";
@@ -280,6 +296,7 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
   );
 
   const profileBridgeStatus = useMemo<TradioProfileBridgeStatus>(() => {
+    if (!ENABLE_TRADIO_SUPABASE_BOOTSTRAP || hasTreyTvIdentity) return "connected";
     if (!supabaseSession.isConfigured) return "not_configured";
     if (!supabaseSession.user) return "signed_out";
     if (supabaseSession.error) return "error";
@@ -289,6 +306,7 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
       return "tradio_profile_missing";
     return "connected";
   }, [
+    hasTreyTvIdentity,
     identity.access_state,
     identity.profile_id,
     identity.public_profile_uid,
@@ -308,8 +326,12 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
       user: supabaseSession.user,
       isLoading: supabaseSession.isLoading || isIdentityLoading,
       isConfigured: supabaseSession.isConfigured,
-      isSignedOut: supabaseSession.isConfigured && !supabaseSession.user,
-      isPreviewMode: identitySource === "mock",
+      isSignedOut:
+        ENABLE_TRADIO_SUPABASE_BOOTSTRAP &&
+        !hasTreyTvIdentity &&
+        supabaseSession.isConfigured &&
+        !supabaseSession.user,
+      isPreviewMode: identitySource === "mock" && !hasTreyTvIdentity,
       authError,
       identityWarnings,
       profileBridgeStatus,
@@ -331,6 +353,7 @@ export const TradioIdentityProvider: React.FC<{ children: React.ReactNode }> = (
       supabaseSession.user,
       supabaseSession.isLoading,
       supabaseSession.isConfigured,
+      hasTreyTvIdentity,
       isIdentityLoading,
       authError,
       identityWarnings,

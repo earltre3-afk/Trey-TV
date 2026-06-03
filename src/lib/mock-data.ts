@@ -206,7 +206,7 @@ export const prescribed = [
 export const currentUser = {
   name: "Trey",
   handle: "trey",
-  uid: "4234118205271678",
+  uid: "4236868965602895",
   avatar: profileTrey,
   banner: "/profile-banner",
   bio: "I create. I inspire. I elevate.\nYour favorite creator's favorite creator.",
@@ -214,4 +214,6 @@ export const currentUser = {
   link: "trey.tv",
   verified: "creator" as const,
   stats: { posts: 248, followers: "128K", following: 342, prescriptions: "1.2K" },
+  profileSongId: "i-look-like",
+  musicOrder: ["i-look-like", "call-on", "midnight-velvet", "6am-thoughts", "neon-heartbreak"],
 };

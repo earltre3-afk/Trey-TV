@@ -68,6 +68,7 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import { useFwdGifLibrary } from "@/lib/fwd-gif-api";
 import { buildFwdGifDetailUrl, getAnimatedFwdGifUrl, getFwdPosterUrl } from "@/lib/fwd/picker";
+import { TREY_OWNER_UID, isTreyOwnerProfile } from "@/lib/trey-owner";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import staticBanner from "@/assets/lovable-hero-bg.jpg";
 import staticPortrait from "@/assets/lovable-profile-portrait.jpg";
@@ -91,6 +92,24 @@ const FALL_POSTS = [fallPost1, fallPost2, fallPost3, fallPost4, fallPost5];
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 
 const SELECTABLE_SONGS = [
+  {
+    id: "i-look-like",
+    title: "I Look Like",
+    artist: "Trey Trizzy",
+    art: staticPortrait,
+    src: "/tradio-tracks/I_Look_Like.wav",
+    duration: "3:11",
+    streams: "Owner Library",
+  },
+  {
+    id: "call-on",
+    title: "Call On",
+    artist: "Trey Trizzy",
+    art: staticPortrait,
+    src: "/tradio-tracks/Call_On.wav",
+    duration: "4:04",
+    streams: "Owner Library",
+  },
   {
     id: "midnight-velvet",
     title: "Midnight Velvet",
@@ -301,6 +320,7 @@ export function ProfilePageNew({
   profile: ProfileData;
   variant?: ProfileVariant;
 }) {
+  const isOwner = variant === "owner";
   // Audio state for profile theme song / Tradio top songs
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -314,7 +334,7 @@ export function ProfilePageNew({
         const { data, error } = await supabase
           .from("profiles")
           .select("profile_accent_color")
-          .or("public_profile_uid.eq.4234118205271678,username.eq.trey")
+          .or(`public_profile_uid.eq.${TREY_OWNER_UID},username.eq.trey`)
           .limit(1)
           .maybeSingle<{ profile_accent_color?: string }>();
         if (!error && data?.profile_accent_color) {
@@ -333,7 +353,7 @@ export function ProfilePageNew({
   }, []);
 
   const resolvedAccent = useMemo(() => {
-    const isTrey = profile.uid === "4234118205271678" || profile.handle === "trey";
+    const isTrey = isTreyOwnerProfile({ uid: profile.uid, handle: profile.handle });
     const rawColor = profile.accentColor || "#FFC857";
     if (isTrey) {
       return rawColor;
@@ -363,6 +383,10 @@ export function ProfilePageNew({
   }, [resolvedAccent]);
   const autoplayStorageKey = `tradio_autoplay_${profile.uid}`;
   const [autoplaySong, setAutoplaySong] = useState<any>(() => {
+    if (profile.profileSongId) {
+      const matched = SELECTABLE_SONGS.find((s) => s.id === profile.profileSongId);
+      if (matched) return matched;
+    }
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(autoplayStorageKey);
       if (saved) {
@@ -375,6 +399,26 @@ export function ProfilePageNew({
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [showSongPicker, setShowSongPicker] = useState(false);
+
+  const playlist = useMemo(() => {
+    if (profile.musicOrder && profile.musicOrder.length > 0) {
+      const ordered = profile.musicOrder
+        .map((id) => SELECTABLE_SONGS.find((s) => s.id === id))
+        .filter((s): s is typeof SELECTABLE_SONGS[0] => !!s);
+      if (ordered.length > 0) return ordered;
+    }
+    return SELECTABLE_SONGS.slice(0, 5);
+  }, [profile.musicOrder]);
+
+  // Attempt to sync from profile db setting
+  useEffect(() => {
+    if (profile.profileSongId) {
+      const matched = SELECTABLE_SONGS.find((s) => s.id === profile.profileSongId);
+      if (matched) {
+        setAutoplaySong(matched);
+      }
+    }
+  }, [profile.profileSongId]);
 
   // Attempt to autoplay or handle change in chosen song
   useEffect(() => {
@@ -1710,7 +1754,7 @@ export function ProfilePageNew({
 
                 {/* Song List */}
                 <div className="space-y-1.5">
-                  {SELECTABLE_SONGS.slice(0, 5).map((song, index) => {
+                  {playlist.map((song, index) => {
                     const isActive = autoplaySong.id === song.id;
                     const isSongPlaying = isActive && isPlaying;
                     return (
@@ -2804,6 +2848,20 @@ export function ProfilePageNew({
                         localStorage.setItem(autoplayStorageKey, JSON.stringify(song));
                         setShowSongPicker(false);
                         setIsPlaying(false);
+                        if (isOwner) {
+                          const supabase = createBrowserClient();
+                          (supabase as any)
+                            .from("profiles")
+                            .update({ profile_song_id: song.id })
+                            .eq("public_profile_uid", profile.uid)
+                            .then(({ error }: any) => {
+                              if (error) {
+                                console.error("Failed to sync theme song to database:", error);
+                              } else {
+                                toast.success("Theme song synced to your profile database!");
+                              }
+                            });
+                        }
                         setTimeout(() => {
                           if (audioRef.current) {
                             audioRef.current.src = song.src;

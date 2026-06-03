@@ -27,6 +27,7 @@ import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 import { GiftBurstHost } from "@/components/gifts/GiftBurst";
 import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
+import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
 import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
 import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
@@ -248,6 +249,7 @@ function RootComponent() {
                           {!hideGlobalMobileChrome && <BottomNav />}
                           {!hideGlobalMobileChrome && <TreyIWidget />}
                           <GiftBurstHost />
+                          <GlobalMediaCastButton />
                           <Toaster />
                         </MusicReviewProvider>
                       </GuideProvider>
@@ -311,7 +313,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   // Synchronous route protection checks to prevent layout flash/flicker
   const isBlockedUser = user && !user.onboarding_completed && !isOnboardingRoute;
   const isBlockedGuest = isGuest && !isPublicRoute && !isAllowedGuestPage;
-  const isAuthLoading = sessionLoading || authorizationStatus === "checking" || !authReady;
+  const waitingForSupabaseProfile =
+    !!supaUser &&
+    (authorizationStatus === "checking" || authorizationStatus === "logged_out" || !authReady);
+  const isAuthLoading =
+    sessionLoading || authorizationStatus === "checking" || !authReady || waitingForSupabaseProfile;
+  const canRenderWhileAuthLoads = isPublicRoute || isAllowedGuestPage;
+  const shouldShowAuthFallback =
+    isBlockedUser || isBlockedGuest || ((loading || isAuthLoading) && !canRenderWhileAuthLoads);
 
   useEffect(() => {
     let cancelled = false;
@@ -327,7 +336,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const checkOnboarding = async () => {
       // While we are checking authorization, do not redirect
-      if (authorizationStatus === "checking" || sessionLoading || !authReady) {
+      if (
+        authorizationStatus === "checking" ||
+        sessionLoading ||
+        !authReady ||
+        waitingForSupabaseProfile
+      ) {
         if (!cancelled) setLoading(true);
         return;
       }
@@ -414,13 +428,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     authorizationStatus,
     user,
     isGuest,
+    isAuthLoading,
     location.pathname,
+    location.search,
     navigate,
     isPublicRoute,
     isAllowedGuestPage,
     isOnboardingRoute,
     sessionLoading,
     authReady,
+    waitingForSupabaseProfile,
   ]);
 
   if (authError) {
@@ -443,7 +460,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (loading || isAuthLoading || isBlockedUser || isBlockedGuest) {
+  if (shouldShowAuthFallback) {
     // show retry UI if auth is stuck or an authError exists
     if (authError || showRetry) {
       return (

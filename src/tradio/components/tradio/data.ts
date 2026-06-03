@@ -522,10 +522,10 @@ export const ARTIST_PROFILES: ArtistProfile[] = [
     bio: ARTISTS.treyTrizzy.bio || "",
     followers: ARTISTS.treyTrizzy.followers || 0,
     stationCount: 2,
-    totalReleases: 38,
+    totalReleases: 40,
     monthlyListeners: 287600,
-    spotlightTrack: "Midnight Velvet",
-    pinnedRelease: "Neon Heartbreak",
+    spotlightTrack: "I Look Like",
+    pinnedRelease: "Call On",
   },
   {
     id: "artist-profile-kiana",
@@ -611,6 +611,24 @@ export const TRACKS: Record<string, Track> = {
     art: IMG.treyTrizzy,
     station: "Trey Trizzy Radio",
     src: SH(8),
+  },
+  iLookLike: {
+    id: "i-look-like",
+    title: "I Look Like",
+    artist: "Trey Trizzy",
+    art: IMG.treyTrizzy,
+    station: "Trey Trizzy Radio",
+    src: "/tradio-tracks/I_Look_Like.wav",
+    duration: 191.32,
+  },
+  callOn: {
+    id: "call-on",
+    title: "Call On",
+    artist: "Trey Trizzy",
+    art: IMG.treyTrizzy,
+    station: "Trey Trizzy Radio",
+    src: "/tradio-tracks/Call_On.wav",
+    duration: 244.08,
   },
   instantDrop: {
     id: "instant-drop",
@@ -907,6 +925,22 @@ export const STATION_COMMUNITIES: Record<string, { messages: CommunityMessage[];
 // ─── RELEASES (Instant Drops) ──────────────────────────
 export const RELEASES: Release[] = [
   {
+    id: "rel-trey-i-look-like",
+    title: "I Look Like",
+    artist: "Trey Trizzy",
+    artwork: IMG.treyTrizzy,
+    releasedAt: "Owner library",
+    streams: 0,
+  },
+  {
+    id: "rel-trey-call-on",
+    title: "Call On",
+    artist: "Trey Trizzy",
+    artwork: IMG.treyTrizzy,
+    releasedAt: "Owner library",
+    streams: 0,
+  },
+  {
     id: "rel-1",
     title: "Instant Drop",
     artist: "Zaylen",
@@ -1186,6 +1220,8 @@ export const ROTATION = [
 ];
 
 export const SEARCH_SONGS = [
+  { ...TRACKS.iLookLike, dur: "3:11" },
+  { ...TRACKS.callOn, dur: "4:04" },
   { ...TRACKS.afterHours, dur: "3:28" },
   { ...TRACKS.persuasion, dur: "2:49" },
   { ...TRACKS.dontCall, dur: "3:15" },
@@ -1196,6 +1232,12 @@ export const SEARCH_SONGS = [
 ];
 
 export const COLLECTIONS = [
+  {
+    title: "Trey Trizzy Owner Library",
+    sub: "2 tracks - Owner profile media",
+    img: IMG.treyTrizzy,
+    tracks: [TRACKS.iLookLike, TRACKS.callOn],
+  },
   {
     title: "Late Night Essentials",
     sub: "32 tracks • Updated 2d ago",
@@ -1559,7 +1601,7 @@ export const ARTIST_PLAYLISTS: PlaylistCollection[] = [
     creatorAvatar: IMG.treyTrizzy,
     description: "Music that moved me this month",
     artwork: IMG.treyTrizzy,
-    tracks: [TRACKS.midnightVelvet, TRACKS.fallingForYou, TRACKS.afterHours],
+    tracks: [TRACKS.iLookLike, TRACKS.callOn, TRACKS.midnightVelvet, TRACKS.afterHours],
     followers: 23400,
     isPublic: true,
     mood: "late-night, introspective",

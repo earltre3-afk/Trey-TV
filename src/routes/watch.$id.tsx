@@ -83,6 +83,8 @@ function WatchPage() {
               <VideoPlayer
                 src={s.video_url?.startsWith("blob:") ? s.video_url : undefined}
                 poster={s.thumbnail_url}
+                title={s.title}
+                subtitle={s.creator_name}
                 fallbackImg={s.thumbnail_url || posts[0].media}
                 className="size-full"
                 onProgress={({ currentTime, duration, ratio }) => {

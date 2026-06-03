@@ -8,6 +8,7 @@ import {
   Link2,
   Lock,
   MessageCircle,
+  Music,
   PenSquare,
   Play,
   Radio,
@@ -48,6 +49,8 @@ import {
 } from "../auth/creatorProfileService";
 import type { CreatorProfileServiceResult } from "../auth/creatorProfileTypes";
 import { RoleProfileEditor } from "./RoleProfileEditor";
+import { TRACKS } from "../data";
+import { usePlayer } from "@/tradio/contexts/PlayerContext";
 
 const ROLE_TITLE: Record<RoleProfileType, string> = {
   artist: "Artist Profile",
@@ -74,6 +77,13 @@ const ROLE_ENTITY_TYPE: Record<RoleProfileType, SourceEntityType> = {
   producer: "producer",
   dj: "dj",
 };
+const OWNER_ARTIST_TRACKS = [TRACKS.iLookLike, TRACKS.callOn];
+
+const formatTrackDuration = (seconds?: number) => {
+  if (!seconds) return "";
+  const totalSeconds = Math.round(seconds);
+  return `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}`;
+};
 
 const Field: React.FC<{ label: string; value?: string | null }> = ({ label, value }) => (
   <div className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-black/20 px-3 py-2">
@@ -91,6 +101,7 @@ export const RoleProfilePage: React.FC<{
   onOpenBroadcastStudio?: () => void;
 }> = ({ role, ownerView = true, lookup, onBack, onOpenPublicShell, onOpenBroadcastStudio }) => {
   const { identity, currentRoleLabel } = useTradioIdentity();
+  const { play, currentTrack, isPlaying } = usePlayer();
   const access = useAccessRequests();
   const messengerBridge = useMessengerBridge();
   const request = access?.getRequestFor(ROLE_REQUEST[role]);
@@ -206,6 +217,12 @@ export const RoleProfilePage: React.FC<{
     bio: profileRecord?.bio || baseOwner.bio,
     genres: profileRecord?.tradio_genres || baseOwner.genres,
   };
+  const ownerNameKey = `${owner.display_name} ${owner.username} ${owner.public_profile_uid}`.toLowerCase();
+  const showOwnerArtistLibrary =
+    role === "artist" &&
+    (ownerNameKey.includes("trey") ||
+      ownerNameKey.includes("trizzy") ||
+      ownerNameKey.includes("owner"));
 
   const openFlow = () => access?.openFlow(ROLE_REQUEST[role]);
 
@@ -678,6 +695,46 @@ export const RoleProfilePage: React.FC<{
               </PrimaryButton>
             </div>
           </GlassCard>
+        </div>
+      )}
+
+      {showOwnerArtistLibrary && (
+        <div className="mt-6 px-4 sm:px-6 lg:px-10">
+          <div className="mb-3 flex items-center gap-2 text-lg font-bold text-white">
+            <Music className="h-4 w-4 text-cyan-300" /> Owner Media Library
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {OWNER_ARTIST_TRACKS.map((track) => {
+              const trackPlaying = currentTrack?.id === track.id && isPlaying;
+              return (
+                <GlassCard key={track.id} className="p-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={track.art}
+                      alt=""
+                      className="h-16 w-16 rounded-xl border border-white/10 object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-bold text-white">{track.title}</div>
+                      <div className="truncate text-xs text-white/55">{track.artist}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] font-mono text-white/40">
+                        <span>{formatTrackDuration(track.duration)}</span>
+                        <span className="truncate">{track.src}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => play(track, OWNER_ARTIST_TRACKS)}
+                      aria-label={`Play ${track.title}`}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-400/10 text-cyan-100 transition hover:border-cyan-200/70 hover:bg-cyan-400/20"
+                    >
+                      <Play className={`h-4 w-4 ${trackPlaying ? "fill-current" : ""}`} />
+                    </button>
+                  </div>
+                </GlassCard>
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -8,6 +8,8 @@ import { useFeed } from "@/lib/feed-store";
 import { useAuth } from "@/lib/auth";
 import { PlusMenu } from "@/components/inbox/PlusMenu";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
+import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
+import type { FwdGifPayload } from "@/lib/fwd/picker";
 
 const tags = [
   { label: "Music", color: "cyan" },
@@ -50,10 +52,12 @@ export function FeedComposer() {
   const [audience, setAudience] = useState<(typeof AUDIENCES)[number]["id"]>("Everyone");
   const [audOpen, setAudOpen] = useState(false);
   const [media, setMedia] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | "gif" | null>(null);
+  const [fwdGif, setFwdGif] = useState<FwdGifPayload | null>(null);
   const [focused, setFocused] = useState(false);
   const [showPlusMenu, setShowPlusMenu] = useState(false);
   const [showFwdPicker, setShowFwdPicker] = useState(false);
+  const markUsed = useMarkFwdGifUsed();
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -72,6 +76,7 @@ export function FeedComposer() {
     setText("");
     setMedia(null);
     setMediaType(null);
+    setFwdGif(null);
     setSelected([]);
     setFocused(false);
   };
@@ -82,12 +87,29 @@ export function FeedComposer() {
       navigate({ to: "/signup" });
       return;
     }
-    const parsed = postSchema.safeParse({ text });
-    if (!parsed.success) {
+    if (!text.trim() && !media) {
+      toast.error("Write something or attach a GIF first");
+      return;
+    }
+    const parsed = text.trim() ? postSchema.safeParse({ text }) : null;
+    if (parsed && !parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Invalid post");
       return;
     }
-    addPost({ text: parsed.data.text, audience, tags: selected, media: media ?? undefined });
+    addPost({
+      text: parsed?.data.text ?? fwdGif?.title ?? "FWD GIF",
+      audience,
+      tags: fwdGif ? Array.from(new Set([...selected, "FWD"])) : selected,
+      media: media ?? undefined,
+      mediaType: mediaType ?? undefined,
+      sourceType: fwdGif ? "fwd" : "trey",
+      gifFwdId: fwdGif?.gif_id ?? null,
+      gifPosterUrl: fwdGif?.preview_url ?? null,
+      gifTitle: fwdGif?.title ?? null,
+    });
+    if (fwdGif) {
+      markUsed.mutate({ id: fwdGif.gif_id, gif_url: fwdGif.url });
+    }
     toast.success("Posted to your feed");
     reset();
   };
@@ -109,7 +131,8 @@ export function FeedComposer() {
     reader.onload = () => {
       if (typeof reader.result === "string") {
         setMedia(reader.result);
-        setMediaType(isImage ? "image" : "video");
+        setMediaType(f.type === "image/gif" ? "gif" : isImage ? "image" : "video");
+        setFwdGif(null);
       }
     };
     reader.readAsDataURL(f);
@@ -157,6 +180,7 @@ export function FeedComposer() {
                 onClick={() => {
                   setMedia(null);
                   setMediaType(null);
+                  setFwdGif(null);
                 }}
                 className="absolute top-2 right-2 size-7 grid place-items-center rounded-full bg-black/60 hover:bg-black/80 backdrop-blur"
                 aria-label="Remove media"
@@ -224,7 +248,7 @@ export function FeedComposer() {
           )}
           <button
             onClick={handlePost}
-            disabled={text.trim().length === 0}
+            disabled={text.trim().length === 0 && !media}
             className="px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary glow-gold hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed disabled:glow-none"
           >
             Post
@@ -279,8 +303,9 @@ export function FeedComposer() {
         onClose={() => setShowFwdPicker(false)}
         onSelect={(gif) => {
           setShowFwdPicker(false);
+          setFwdGif(gif);
           setMedia(gif.url);
-          setMediaType("image");
+          setMediaType("gif");
         }}
       />
     </div>

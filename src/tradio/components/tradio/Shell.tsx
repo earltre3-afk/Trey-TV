@@ -28,20 +28,23 @@ import { toast } from "sonner";
 import { hasAnyRole } from "./auth/roleUtils";
 import BottomNav, { TabKey } from "./BottomNav";
 import MiniPlayer from "./MiniPlayer";
-import HomeScreen from "./screens/Home";
-import SearchScreen from "./screens/Search";
-import LibraryScreen from "./screens/Library";
-import StudioScreen from "./screens/Studio";
-import StationsHub, { type StationsDestination } from "./screens/StationsHub";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
-import RouteMePage from "../route-me/RouteMePage";
+import type { StationsDestination } from "./screens/StationsHub";
+import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 
+const HomeScreen = lazy(() => import("./screens/Home"));
+const SearchScreen = lazy(() => import("./screens/Search"));
+const LibraryScreen = lazy(() => import("./screens/Library"));
+const StudioScreen = lazy(() => import("./screens/Studio"));
+const StationsHub = lazy(() => import("./screens/StationsHub"));
+const RouteMePage = lazy(() => import("../route-me/RouteMePage"));
 const BuildStationScreen = lazy(() => import("./screens/BuildStation"));
 const ArtistStationScreen = lazy(() => import("./screens/ArtistStation"));
 const InstantReleaseScreen = lazy(() => import("./screens/InstantRelease"));
-const NowPlayingScreen = lazy(() => import("./screens/NowPlaying"));
+const loadNowPlayingScreen = () => import("./screens/NowPlaying");
+const NowPlayingScreen = lazy(loadNowPlayingScreen);
 const CommunityScreen = lazy(() => import("./screens/Community"));
 const ScheduleScreen = lazy(() => import("./screens/Schedule"));
 const ArtistHubScreen = lazy(() => import("./screens/ArtistHub"));
@@ -68,7 +71,6 @@ import { AccessRequestsProvider } from "./auth/AccessRequestsContext";
 import { MessengerBridgeProvider } from "../universe/MessengerBridgeProvider";
 import { useMessengerBridge } from "../universe/MessengerBridgeContext";
 import { TradioMessengerBell } from "../universe/TradioMessengerBridge";
-import type { StudioDestination } from "./screens/Studio";
 const SongWarsHub = lazy(() =>
   import("./songwars/views/SongWarsHub").then((m) => ({ default: m.SongWarsHub })),
 );
@@ -215,6 +217,22 @@ const SCREEN_LABELS: { key: ScreenKey; label: string; group: string }[] = [
   { key: "routeMe", label: "Route Me", group: "Universe" },
 ];
 
+function NowPlayingModalFallback() {
+  return (
+    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050508] px-6 text-white">
+      <div className="flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
+        <div className="size-12 rounded-full border-2 border-cyan-300/20 border-t-cyan-300 animate-spin" />
+        <div>
+          <div className="text-sm font-black uppercase tracking-[0.26em] text-white">
+            Opening Player
+          </div>
+          <div className="mt-2 text-xs text-white/55">Loading the Tradio controls.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const FEATURE_SHORTCUTS: {
   key: ScreenKey;
   label: string;
@@ -295,20 +313,33 @@ export const TradioShellContent: React.FC = () => {
   const [navOpen, setNavOpen] = useState(false);
   const [songWarRole, setSongWarRole] = useState<SongWarRole>("fan");
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const openPlayer = useCallback(() => {
+    void loadNowPlayingScreen();
+    setPlayerOpen(true);
+  }, []);
 
   useEffect(() => {
+    const preloadTimer = window.setTimeout(() => {
+      void loadNowPlayingScreen();
+    }, 1200);
+    return () => window.clearTimeout(preloadTimer);
+  }, []);
+
+  useEffect(() => {
+    const deviceBodyClasses = [
+      "device-foldable-folded",
+      "device-foldable-unfolded",
+      "device-tablet",
+      "device-tv-cinema",
+    ];
+
     const detectDevice = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const aspect = w / h;
 
       // Clean previous classes
-      document.body.classList.remove(
-        "device-foldable-folded",
-        "device-foldable-unfolded",
-        "device-tablet",
-        "device-tv-cinema",
-      );
+      document.body.classList.remove(...deviceBodyClasses);
 
       let bodyClass = "";
 
@@ -337,26 +368,48 @@ export const TradioShellContent: React.FC = () => {
     window.addEventListener("resize", detectDevice);
     return () => {
       window.removeEventListener("resize", detectDevice);
+      document.body.classList.remove(...deviceBodyClasses);
     };
   }, []);
 
-  // Listen for mobile header custom events to open nav or messenger
+  // Listen for mobile header custom events to open nav or messenger.
+  // Keep these on window only so one tap cannot double-dispatch through window + document.
   useEffect(() => {
     const handleOpenNav = () => setNavOpen(true);
     const handleOpenMessenger = () => messengerBridge?.openPreview();
 
     window.addEventListener("open-tradio-nav", handleOpenNav);
-    document.addEventListener("open-tradio-nav", handleOpenNav);
     window.addEventListener("open-tradio-messenger", handleOpenMessenger);
-    document.addEventListener("open-tradio-messenger", handleOpenMessenger);
 
     return () => {
       window.removeEventListener("open-tradio-nav", handleOpenNav);
-      document.removeEventListener("open-tradio-nav", handleOpenNav);
       window.removeEventListener("open-tradio-messenger", handleOpenMessenger);
-      document.removeEventListener("open-tradio-messenger", handleOpenMessenger);
     };
   }, [messengerBridge]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, [navOpen]);
+
+  useEffect(() => {
+    if (!playerOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, [playerOpen]);
 
   useEffect(() => {
     const resetScroll = () => {
@@ -521,10 +574,8 @@ export const TradioShellContent: React.FC = () => {
       openLegal(target);
     };
     window.addEventListener("open-tradio-legal", handleOpenLegal);
-    document.addEventListener("open-tradio-legal", handleOpenLegal);
     return () => {
       window.removeEventListener("open-tradio-legal", handleOpenLegal);
-      document.removeEventListener("open-tradio-legal", handleOpenLegal);
     };
   }, [openLegal]);
 
@@ -702,7 +753,7 @@ export const TradioShellContent: React.FC = () => {
       case "home":
         return (
           <HomeScreen
-            onOpenPlayer={() => setPlayerOpen(true)}
+            onOpenPlayer={openPlayer}
             onOpenArtist={() => setScreen("artist")}
             onOpenBuild={() => setScreen("build")}
             onOpenProfile={(role, name) => setView({ kind: "profile", role, name })}
@@ -999,7 +1050,7 @@ export const TradioShellContent: React.FC = () => {
               LIVE
             </span>
           </div>
-          <MiniPlayer onOpen={() => setPlayerOpen(true)} className="px-0 pb-0" />
+          <MiniPlayer onOpen={openPlayer} className="px-0 pb-0" />
         </GlassCard>
 
         <GlassCard className="p-5">
@@ -1050,7 +1101,6 @@ export const TradioShellContent: React.FC = () => {
             <button
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("open-tradio-nav"));
-                document.dispatchEvent(new CustomEvent("open-tradio-nav"));
               }}
               className="group relative flex h-8 w-8 items-center justify-center select-none active:scale-95 transition-all duration-300"
             >
@@ -1107,7 +1157,7 @@ export const TradioShellContent: React.FC = () => {
           {/* Deluxe tactile ambient shroud behind floating player & navigation */}
           <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#06050A] via-[#06050A]/80 to-transparent backdrop-blur-[1px]" />
           <div className="relative">
-            <MiniPlayer onOpen={() => setPlayerOpen(true)} />
+            <MiniPlayer onOpen={openPlayer} />
             <BottomNav
               active={tab}
               onChange={handleTab}
@@ -1124,7 +1174,9 @@ export const TradioShellContent: React.FC = () => {
         {playerOpen && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in">
             <div className="w-full min-h-screen">
-              <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
+              <Suspense fallback={<NowPlayingModalFallback />}>
+                <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
+              </Suspense>
             </div>
           </div>
         )}
@@ -1132,14 +1184,14 @@ export const TradioShellContent: React.FC = () => {
         {/* Mobile nav drawer with all screens */}
         {navOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-xl lg:hidden animate-fade-in"
+            className="fixed inset-0 z-[80] flex items-end justify-center overflow-hidden overscroll-contain bg-black/85 backdrop-blur-xl lg:hidden animate-fade-in"
             onClick={() => setNavOpen(false)}
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="w-full rounded-t-[32px] border border-white/10 liquid-glass !bg-none p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-premium-lg animate-scale-in"
+              className="flex h-[min(92dvh,760px)] w-full flex-col overflow-hidden rounded-t-[32px] border border-white/10 liquid-glass !bg-none shadow-premium-lg animate-scale-in"
             >
-              <div className="mb-6 flex items-start justify-between">
+              <div className="flex shrink-0 items-start justify-between px-6 pb-4 pt-6">
                 <div>
                   <div className="text-xl font-bold bg-gradient-to-r from-fuchsia-400 via-purple-300 to-cyan-300 bg-clip-text text-transparent drop-shadow-[0_0_6px_rgba(168,85,247,0.25)]">
                     All Screens
@@ -1154,7 +1206,7 @@ export const TradioShellContent: React.FC = () => {
                   <X className="size-5 text-white" />
                 </button>
               </div>
-              <div className="mb-4">
+              <div className="shrink-0 px-6 pb-4">
                 <Link
                   to="/"
                   onClick={() => setNavOpen(false)}
@@ -1172,7 +1224,7 @@ export const TradioShellContent: React.FC = () => {
                   <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-[50vh] overflow-y-auto pr-1">
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-2 overflow-y-auto overscroll-contain px-6 pb-4 pr-5 sm:grid-cols-2">
                 {SCREEN_LABELS.map((s) => {
                   const Icon = SCREEN_ICONS[s.key] || Radio;
                   const isCurrent =
@@ -1217,7 +1269,7 @@ export const TradioShellContent: React.FC = () => {
                 })}
                 <button
                   onClick={() => {
-                    setPlayerOpen(true);
+                    openPlayer();
                     setNavOpen(false);
                   }}
                   className="group flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 hover:translate-x-1 text-left border border-transparent hover:bg-white/5"
@@ -1248,7 +1300,7 @@ export const TradioShellContent: React.FC = () => {
                 </button>
               </div>
               {/* Legal footer links */}
-              <div className="mt-5 border-t border-white/8 pt-4">
+              <div className="shrink-0 border-t border-white/8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
                 <LegalFooterLinks onOpen={openLegal} />
               </div>
             </div>

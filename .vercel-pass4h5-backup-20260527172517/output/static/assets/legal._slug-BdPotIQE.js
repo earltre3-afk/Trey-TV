@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-react-C2yuukvA.js";import"./vendor-supabase-storage-yH4x72e6.js";const n=()=>t.jsxs("div",{className:"max-w-md mx-auto py-20 text-center",children:[t.jsx("h1",{className:"text-2xl font-bold",children:"Policy not found"}),t.jsx("p",{className:"text-sm text-muted-foreground mt-2",children:"That policy doesn't exist."})]});export{n as notFoundComponent};

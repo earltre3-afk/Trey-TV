@@ -1,9 +1,47 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const NOTIFICATION_SOUND_URL = "https://cdn.builder.io/o/assets%2Fde09f3f7574845d786350acb13c952c1%2F32523e9715b543b19bd8d9c6afcae18d?alt=media&token=84a0b8f2-6544-441c-a3a8-e738cac1510d&apiKey=de09f3f7574845d786350acb13c952c1";
+export const NOTIFICATION_SOUND_URL = "/sounds/trey-notification.m4a";
 
-export function playNotificationSound() {
+const NOTIFICATION_SOUND_ENABLED_KEY = "treytv_notification_sound_enabled";
+const NOTIFICATION_SOUND_DEDUPE_MS = 1200;
+
+let lastNotificationSoundAt = 0;
+
+function soundPreferenceKey(userId?: string | null) {
+  return userId ? `${NOTIFICATION_SOUND_ENABLED_KEY}:${userId}` : NOTIFICATION_SOUND_ENABLED_KEY;
+}
+
+export function setNotificationSoundEnabled(enabled: boolean, userId?: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(soundPreferenceKey(userId), String(enabled));
+    localStorage.setItem(NOTIFICATION_SOUND_ENABLED_KEY, String(enabled));
+  } catch {}
+}
+
+export function getNotificationSoundEnabled(userId?: string | null) {
+  if (typeof window === "undefined") return true;
+  try {
+    const scoped = localStorage.getItem(soundPreferenceKey(userId));
+    if (scoped === "true" || scoped === "false") return scoped === "true";
+    const global = localStorage.getItem(NOTIFICATION_SOUND_ENABLED_KEY);
+    if (global === "true" || global === "false") return global === "true";
+  } catch {}
+  return true;
+}
+
+export function playNotificationSound({
+  enabled,
+  userId,
+}: { enabled?: boolean; userId?: string | null } = {}) {
+  if (enabled === false || !getNotificationSoundEnabled(userId) || typeof Audio === "undefined") {
+    return;
+  }
+  const now = Date.now();
+  if (now - lastNotificationSoundAt < NOTIFICATION_SOUND_DEDUPE_MS) return;
+  lastNotificationSoundAt = now;
+
   const audio = new Audio(NOTIFICATION_SOUND_URL);
   audio.volume = 0.55;
   audio.play().catch((err) => {
@@ -34,9 +72,9 @@ type DbRow = {
   message: string | null;
   read_at: string | null;
   created_at: string;
-  post_id: string | null;
-  metadata: unknown;
-  actor: DbActor | null;
+  post_id?: string | null;
+  metadata?: unknown;
+  actor?: DbActor | null;
 };
 
 // Cast to any for tables not in generated Database types
@@ -103,6 +141,31 @@ function mapRow(row: DbRow): NotificationItem {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const soundEnabledRef = useRef(true);
+  const realtimeInstanceIdRef = useRef(Math.random().toString(36).slice(2));
+  const realtimeSubscribeCountRef = useRef(0);
+
+  const loadSoundPreference = useCallback(async (userId: string) => {
+    soundEnabledRef.current = getNotificationSoundEnabled(userId);
+    try {
+      const { data, error } = await db
+        .from("user_preferences")
+        .select("app_settings")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) return;
+      const appSettings = data?.app_settings as Record<string, unknown> | null | undefined;
+      const notificationSettings = appSettings?.notifications as
+        | Record<string, unknown>
+        | null
+        | undefined;
+      const soundEnabled = notificationSettings?.sound;
+      if (typeof soundEnabled === "boolean") {
+        soundEnabledRef.current = soundEnabled;
+        setNotificationSoundEnabled(soundEnabled, userId);
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -115,8 +178,7 @@ export function useNotifications() {
         .from("notifications")
         .select(
           `
-          id, type, message, read_at, created_at, post_id, metadata,
-          actor:profiles!notifications_actor_id_fkey(public_profile_uid, display_name, username, avatar_url)
+          id, type, message, read_at, created_at
         `,
         )
         .eq("user_id", userId)
@@ -136,13 +198,17 @@ export function useNotifications() {
     const subscribeToRealtimeNotifications = (userId: string) => {
       if (currentSubscribedUserId === userId) return;
       currentSubscribedUserId = userId;
+      void loadSoundPreference(userId);
 
       if (realtimeChannel) {
         realtimeChannel.unsubscribe();
       }
 
+      realtimeSubscribeCountRef.current += 1;
+      const topic = `realtime-notifications-${userId}-${realtimeInstanceIdRef.current}-${realtimeSubscribeCountRef.current}`;
+
       realtimeChannel = supabase
-        .channel(`realtime-notifications-${userId}`)
+        .channel(topic)
         .on(
           "postgres_changes",
           {
@@ -153,8 +219,8 @@ export function useNotifications() {
           },
           () => {
             fetchForUser(userId);
-            playNotificationSound();
-          }
+            playNotificationSound({ enabled: soundEnabledRef.current, userId });
+          },
         )
         .subscribe();
     };
@@ -190,7 +256,7 @@ export function useNotifications() {
         realtimeChannel.unsubscribe();
       }
     };
-  }, []);
+  }, [loadSoundPreference]);
 
   const markRead = useCallback(async (id: string) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));

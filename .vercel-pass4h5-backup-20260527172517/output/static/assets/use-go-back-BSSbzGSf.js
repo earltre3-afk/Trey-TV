@@ -1,1 +1,0 @@
-import{r as t}from"./vendor-react-C2yuukvA.js";import{q as e}from"./index-CA-4MvaF.js";function s(r="/"){const o=e();return t.useCallback(()=>{if(typeof window<"u"&&window.history.length>1){o.history.back();return}o.navigate({to:r})},[o,r])}export{s as u};

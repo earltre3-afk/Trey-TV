@@ -19,12 +19,14 @@ import {
   Mail,
   Smartphone,
   FileText,
+  Volume2,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { useAuth } from "@/hooks/use-auth";
+import { setNotificationSoundEnabled } from "@/hooks/use-notifications";
 import {
   fetchSignalRecord,
   saveNaturalAbilityVisibility,
@@ -137,6 +139,13 @@ function SettingsPage() {
       on: true,
     },
     {
+      id: "sound",
+      label: "Notification Sound",
+      desc: "Play a Trey TV chime when notifications arrive",
+      icon: Volume2,
+      on: true,
+    },
+    {
       id: "email",
       label: "Weekly Email",
       desc: "Highlights, stats and creator picks",
@@ -165,8 +174,11 @@ function SettingsPage() {
             : item,
         ),
       );
+      if (typeof notificationPrefs.sound === "boolean") {
+        setNotificationSoundEnabled(notificationPrefs.sound, user?.id ?? currentUser.uid);
+      }
     }
-  }, [preferences.app_settings]);
+  }, [currentUser.uid, preferences.app_settings, user?.id]);
 
   const persistAppSetting = (patch: Record<string, unknown>) => {
     void updateSection("app_settings", patch);
@@ -175,6 +187,10 @@ function SettingsPage() {
   const flip = (id: string) =>
     setToggles((t) => {
       const next = t.map((x) => (x.id === id ? { ...x, on: !x.on } : x));
+      const sound = next.find((item) => item.id === "sound")?.on;
+      if (typeof sound === "boolean") {
+        setNotificationSoundEnabled(sound, user?.id ?? currentUser.uid);
+      }
       persistAppSetting({
         notifications: Object.fromEntries(next.map((item) => [item.id, item.on])),
       });

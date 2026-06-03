@@ -90,6 +90,8 @@ export interface ProfileData {
   gifOfDayCaption?: string | null;
   showFwdGifsOnProfile?: boolean;
   profileUserId?: string | null;
+  profileSongId?: string | null;
+  musicOrder?: string[] | null;
 }
 
 /** Relationship status between viewer and profile owner */

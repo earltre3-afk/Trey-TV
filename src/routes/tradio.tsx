@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import "@/tradio/tradio.css";
 
 /**
@@ -18,12 +19,6 @@ import "@/tradio/tradio.css";
 const TradioShell = lazy(() =>
   import("@/tradio/components/tradio/Shell").then((m) => ({ default: m.TradioShell })),
 );
-
-// Proactively trigger the bundle fetch as soon as this route module is parsed by TanStack Router,
-// preloading the heavy chunk to reduce perceived transition load times to virtually zero.
-if (typeof window !== "undefined") {
-  void import("@/tradio/components/tradio/Shell");
-}
 
 // Highly polished, premium themed loading fallback that aligns with Tradio's design language
 function TradioLoadingFallback() {
@@ -98,18 +93,13 @@ export const Route = createFileRoute("/tradio")({
 
 function TradioRoute() {
   const [mounted, setMounted] = useState(false);
-  const { isGuest, authReady } = useAuth();
-  const navigate = useNavigate();
+  const { authReady, authorizationStatus } = useAuth();
+  const { loading: sessionLoading } = useSupabaseSession();
+  const authSettled = authReady && !sessionLoading && authorizationStatus !== "checking";
   useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    if (mounted && authReady && isGuest) {
-      navigate({ to: "/login" });
-    }
-  }, [mounted, authReady, isGuest, navigate]);
-
   // Server + first paint, while auth is resolving, render the gorgeous themed loading fallback
-  if (!mounted || !authReady || isGuest) {
+  if (!mounted || !authSettled) {
     return <TradioLoadingFallback />;
   }
 

@@ -77,9 +77,14 @@ export const ProfileScreen: React.FC<ProfileProps> = ({
         rank: "#1 Platform Artist",
         bio: `Forging a fresh pathway through Southern Hip-Hop and modern R&B, ${displayName} fuses raw trap drumlines with liquid soul vocals. As an original Tradio Pioneer, ${displayName} hosts the late-night Velvet Session while curating one of the app's most followed custom station chains.`,
         autograph: displayName,
-        spotlight: TRACKS.midnightVelvet,
+        spotlight: TRACKS.iLookLike,
         stationName: "Velvet Horizon Radio",
-        recentReleases: [TRACKS.midnightVelvet, TRACKS.sixAmThoughts, TRACKS.afterHours],
+        recentReleases: [
+          TRACKS.iLookLike,
+          TRACKS.callOn,
+          TRACKS.midnightVelvet,
+          TRACKS.sixAmThoughts,
+        ],
         voiceDrops: [
           { id: "vd1", title: "Late Night Shoutout", duration: "0:12" },
           { id: "vd2", title: "Station Intro Hook", duration: "0:08" },

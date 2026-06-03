@@ -50,12 +50,80 @@ import { createBrowserClient } from "@/lib/supabase-browser";
 import { uploadProfileMedia } from "@/lib/supabase-storage";
 import { recordUserTrace } from "@/lib/user-trace";
 import { isPublicProfileUid } from "@/lib/profile-links";
+import { resolveOwnerMusicOrder, resolveOwnerProfileSongId } from "@/lib/owner-music";
 import bannerFallback from "@/assets/edit-profile-banner-cosmic.jpg";
 import staticBanner from "@/assets/lovable-hero-bg.jpg";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
+
+const SELECTABLE_SONGS = [
+  {
+    id: "i-look-like",
+    title: "I Look Like",
+    artist: "Trey Trizzy",
+    art: treyTvLogo,
+    src: "/tradio-tracks/I_Look_Like.wav",
+    duration: "3:11",
+  },
+  {
+    id: "call-on",
+    title: "Call On",
+    artist: "Trey Trizzy",
+    art: treyTvLogo,
+    src: "/tradio-tracks/Call_On.wav",
+    duration: "4:04",
+  },
+  {
+    id: "midnight-velvet",
+    title: "Midnight Velvet",
+    artist: "Trey Trizzy",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986727359_90668e12.png",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    duration: "3:45",
+  },
+  {
+    id: "6am-thoughts",
+    title: "6AM Thoughts",
+    artist: "Trey Trizzy",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986727359_90668e12.png",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+    duration: "2:50",
+  },
+  {
+    id: "city-lights",
+    title: "City Lights",
+    artist: "JAYE.",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986809175_9fd3c540.png",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
+    duration: "3:15",
+  },
+  {
+    id: "neon-heartbreak",
+    title: "Neon Heartbreak",
+    artist: "Trey Trizzy",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986750809_4e57f6ad.jpg",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+    duration: "4:10",
+  },
+  {
+    id: "falling-for-you",
+    title: "Falling For You",
+    artist: "Mila Rain",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986787354_65419cd8.png",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+    duration: "3:30",
+  },
+  {
+    id: "after-hours",
+    title: "After Hours",
+    artist: "Giveon",
+    art: "https://d64gsuwffb70l.cloudfront.net/6a18701749efbfb7c3f35d89_1779986683829_2c697ab7.png",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
+    duration: "3:28",
+  },
+];
 
 export const Route = createFileRoute("/edit-profile")({
   component: EditProfile,
@@ -94,6 +162,8 @@ type ProfileDraft = {
   avatar: string;
   banner: string;
   accent: string;
+  profileSongId: string;
+  musicOrder: string[];
 };
 
 const accentVariableFor = (hex: string) => {
@@ -141,6 +211,8 @@ function EditProfile() {
     avatar: base.avatar,
     banner: (base as any).banner || "",
     accent: baseAccent,
+    profileSongId: resolveOwnerProfileSongId(base.uid, base.profileSongId || null) || "",
+    musicOrder: resolveOwnerMusicOrder(base.uid, base.profilePreferences?.music_order || null) || [],
   });
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -177,7 +249,22 @@ function EditProfile() {
       });
       setGifOfDayCaption(base.gifOfDayCaption ?? "");
     }
-  }, [base.uid, base.gifOfDayUrl, base.gifOfDayId, base.gifOfDayPosterUrl, base.gifOfDayCaption]);
+    if (base) {
+      setDraft((d) => ({
+        ...d,
+        profileSongId:
+          d.profileSongId ||
+          resolveOwnerProfileSongId(base.uid, (base as any).profileSongId || null) ||
+          "",
+        musicOrder: d.musicOrder.length
+          ? d.musicOrder
+          : resolveOwnerMusicOrder(
+              base.uid,
+              ((base as any).profilePreferences?.music_order as string[] | undefined) || null,
+            ) || [],
+      }));
+    }
+  }, [base.uid, base.gifOfDayUrl, base.gifOfDayId, base.gifOfDayPosterUrl, base.gifOfDayCaption, base]);
 
   useEffect(() => {
     if (isValidHexColor(draft.accent)) applyAccentColor(draft.accent);
@@ -305,6 +392,11 @@ function EditProfile() {
           gif_of_day_provider: gifOfDay ? "fwd" : null,
           gif_of_day_caption: gifOfDay ? gifOfDayCaption.trim() || null : null,
           gif_of_day_set_at: gifOfDay ? new Date().toISOString() : null,
+          profile_song_id: draft.profileSongId || null,
+          profile_preferences: {
+            ...((base as any).profilePreferences || {}),
+            music_order: draft.musicOrder,
+          },
         };
 
         if (isPublicProfileUid(existingPublicUid)) {
@@ -326,7 +418,7 @@ function EditProfile() {
           .update(profileUpdate)
           .eq("id", supabaseUser.id)
           .select(
-            "public_profile_uid, avatar_url, banner_url, display_name, username, bio, location, link_url, profile_accent_color",
+            "public_profile_uid, avatar_url, banner_url, display_name, username, bio, location, link_url, profile_accent_color, profile_song_id, profile_preferences",
           )
           .single();
         if (error) {
@@ -372,6 +464,11 @@ function EditProfile() {
         gifOfDayProvider: gifOfDay ? "fwd" : null,
         gifOfDayCaption: gifOfDay ? gifOfDayCaption.trim() || null : null,
         gifOfDaySetAt: gifOfDay ? new Date().toISOString() : null,
+        profileSongId: draft.profileSongId || null,
+        profilePreferences: {
+          ...((base as any).profilePreferences || {}),
+          music_order: draft.musicOrder,
+        },
       });
 
       if (gifOfDay) {
@@ -926,6 +1023,166 @@ function EditProfile() {
               />
             </div>
           </section>
+
+          {/* PROFILE THEME SONG SECTION */}
+          <section
+            className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+            style={
+              {
+                ["--neon" as string]: "var(--cyan)",
+                ["--accent-2" as string]: accentVar,
+              } as CSSProperties
+            }
+          >
+            <span className="aurora-bg" aria-hidden />
+            <span
+              className="shimmer-sweep"
+              style={{ ["--shimmer-delay" as string]: "1.8s" } as CSSProperties}
+              aria-hidden
+            />
+            <div className="mb-4 flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
+              <Music2 className="size-4" style={{ color: "var(--cyan)" }} /> PROFILE THEME SONG
+            </div>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Choose a signature song that plays in the background when visitors check out your profile.
+            </p>
+            <div className="relative">
+              <select
+                value={draft.profileSongId}
+                onChange={(e) => setDraft((d) => ({ ...d, profileSongId: e.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-[#0E0E1A]/80 p-3.5 text-sm text-foreground outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#22D3EE]/50 appearance-none cursor-pointer"
+              >
+                <option value="">No Theme Song (Default Velvet Theme)</option>
+                {SELECTABLE_SONGS.map((song) => (
+                  <option key={song.id} value={song.id}>
+                    {song.title} — {song.artist}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/50 text-xs">
+                ▼
+              </div>
+            </div>
+          </section>
+
+          {/* ARTIST TOP 5 MUSIC ORDERING */}
+          {(base.role === "creator" || base.role === "admin" || (base as any).verified === "creator") && (
+            <section
+              className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"
+              style={
+                {
+                  ["--neon" as string]: "var(--purple)",
+                  ["--accent-2" as string]: "var(--magenta)",
+                } as CSSProperties
+              }
+            >
+              <span className="aurora-bg" aria-hidden />
+              <span
+                className="shimmer-sweep"
+                style={{ ["--shimmer-delay" as string]: "2.8s" } as CSSProperties}
+                aria-hidden
+              />
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-medium tracking-[0.25em] text-muted-foreground">
+                  <Star className="size-4 text-purple-400" /> ARTIST TOP 5 ROTATIONS
+                </div>
+                <span className="text-[10px] tracking-wider text-muted-foreground">
+                  {draft.musicOrder.length} of 5 Selected
+                </span>
+              </div>
+              <p className="mb-4 text-xs text-muted-foreground">
+                Select and arrange your Top 5 featured songs. Use the selection boxes below, and use the arrow controls to reorder.
+              </p>
+
+              {/* Selection list */}
+              <div className="space-y-2 mb-4">
+                {SELECTABLE_SONGS.map((song) => {
+                  const indexInTop = draft.musicOrder.indexOf(song.id);
+                  const isSelected = indexInTop !== -1;
+                  return (
+                    <div
+                      key={song.id}
+                      className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
+                        isSelected
+                          ? "bg-purple-500/10 border-purple-500/35"
+                          : "bg-white/[0.02] border-white/5"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={!isSelected && draft.musicOrder.length >= 5}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              if (draft.musicOrder.length < 5) {
+                                setDraft((d) => ({
+                                  ...d,
+                                  musicOrder: [...d.musicOrder, song.id],
+                                }));
+                              }
+                            } else {
+                              setDraft((d) => ({
+                                ...d,
+                                musicOrder: d.musicOrder.filter((id) => id !== song.id),
+                              }));
+                            }
+                          }}
+                          className="rounded border-white/20 bg-black/40 text-purple-500 focus:ring-purple-500"
+                        />
+                        <div className="text-left">
+                          <p className="text-xs font-bold text-white">{song.title}</p>
+                          <p className="text-[10px] text-slate-400">{song.artist}</p>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={indexInTop === 0}
+                            onClick={() => {
+                              const nextOrder = [...draft.musicOrder];
+                              // Swap with previous element
+                              [nextOrder[indexInTop], nextOrder[indexInTop - 1]] = [
+                                nextOrder[indexInTop - 1],
+                                nextOrder[indexInTop],
+                              ];
+                              setDraft((d) => ({ ...d, musicOrder: nextOrder }));
+                            }}
+                            className="p-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5"
+                            title="Move Up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={indexInTop === draft.musicOrder.length - 1}
+                            onClick={() => {
+                              const nextOrder = [...draft.musicOrder];
+                              // Swap with next element
+                              [nextOrder[indexInTop], nextOrder[indexInTop + 1]] = [
+                                nextOrder[indexInTop + 1],
+                                nextOrder[indexInTop],
+                              ];
+                              setDraft((d) => ({ ...d, musicOrder: nextOrder }));
+                            }}
+                            className="p-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5"
+                            title="Move Down"
+                          >
+                            ▼
+                          </button>
+                          <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">
+                            #{indexInTop + 1}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <section
             className="neon-border panel-sheen glass-panel relative mt-5 overflow-hidden rounded-3xl p-5"

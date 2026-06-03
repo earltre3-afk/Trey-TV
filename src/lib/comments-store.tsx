@@ -96,6 +96,11 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
   }, [items, supabaseUser?.id]);
 
   const fetchCommentsForPost = async (postId: string) => {
+    if (!isUUID(postId)) {
+      setLoadedPosts((prev) => new Set(prev).add(postId));
+      return;
+    }
+
     const supabase = createBrowserClient();
     const { data, error } = await (supabase as any)
       .from("user_post_comments")
@@ -243,7 +248,7 @@ export function CommentsProvider({ children }: { children: ReactNode }) {
 
     setItems((s) => [...s, newComment]);
 
-    if (!supabaseUser) return true;
+    if (!supabaseUser || !isUUID(postId)) return true;
 
     const supabase = createBrowserClient();
     const { data, error } = await (supabase as any)

@@ -173,6 +173,9 @@ function uid() {
 const isUUID = (str: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(str);
 
+const getSupabaseUserId = (user: { id?: string } | null | undefined): string | null =>
+  user?.id && isUUID(user.id) ? user.id : null;
+
 function parseCollabProposal(body: string) {
   const isCollab =
     body.startsWith("[COLLAB_PROPOSAL]") ||
@@ -240,6 +243,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const { user: supabaseUser } = useSupabaseAuth();
+  const supabaseUserId = getSupabaseUserId(supabaseUser);
   const currentProfile = useCurrentUser();
   const storageKey = `${KEY}:${currentProfile.uid}`;
 
@@ -254,13 +258,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
             );
             const realId = uid();
 
-            if (isUUID(threadId) && supabaseUser) {
+            if (isUUID(threadId) && supabaseUserId) {
               const supabase = createBrowserClient() as any;
               const updatedBody = item.text.replace("[SCHEDULED_REPLY]", "[SCHEDULED_REPLY_SENT]");
               void supabase.from("direct_messages").update({ body: updatedBody }).eq("id", msgId);
 
               void supabase.from("direct_messages").insert({
-                sender_id: supabaseUser.id,
+                sender_id: supabaseUserId,
                 recipient_id: threadId,
                 body: text,
                 message_type: "text",
@@ -283,7 +287,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         });
       }, delayMs);
     },
-    [supabaseUser],
+    [supabaseUserId],
   );
 
   // Ghost message reaper — prune expired unread ghost messages every 5s
@@ -333,7 +337,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   }, [threads, messages, hydrated, storageKey]);
 
   useEffect(() => {
-    if (!supabaseUser) return;
+    if (!supabaseUserId) return;
 
     let mounted = true;
     const fetchConversations = async () => {
@@ -347,7 +351,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
           recipient:recipient_id ( id, public_profile_uid, display_name, username, avatar_url, verification_type )
         `,
         )
-        .or(`sender_id.eq.${supabaseUser.id},recipient_id.eq.${supabaseUser.id}`)
+        .or(`sender_id.eq.${supabaseUserId},recipient_id.eq.${supabaseUserId}`)
         .order("created_at", { ascending: false })
         .limit(200);
 
@@ -362,7 +366,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
         for (const rawRow of data as any[]) {
           const row = rawRow;
-          const isMeSender = row.sender_id === supabaseUser.id;
+          const isMeSender = row.sender_id === supabaseUserId;
           const peerId = isMeSender ? row.recipient_id : row.sender_id;
           const peerProfile = isMeSender ? row.recipient : row.sender;
 
@@ -454,21 +458,21 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [supabaseUser?.id, setupScheduledTimeout]);
+  }, [supabaseUserId, setupScheduledTimeout]);
 
   useEffect(() => {
-    if (!supabaseUser) return;
+    if (!supabaseUserId) return;
 
     const supabase = createBrowserClient() as any;
     const channel = supabase
-      .channel(`direct_messages:${supabaseUser.id}`)
+      .channel(`direct_messages:${supabaseUserId}`)
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "direct_messages",
-          filter: `recipient_id=eq.${supabaseUser.id}`,
+          filter: `recipient_id=eq.${supabaseUserId}`,
         },
         async (payload: any) => {
           const row = payload.new;
@@ -537,10 +541,13 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabaseUser?.id]);
+  }, [supabaseUserId]);
 
-  const outThreads = supabaseUser ? threads : [];
-  const outMessages = supabaseUser ? messages : [];
+  const outThreads = useMemo(() => (supabaseUserId ? threads : []), [supabaseUserId, threads]);
+  const outMessages = useMemo(
+    () => (supabaseUserId ? messages : []),
+    [supabaseUserId, messages],
+  );
 
   const messagesOf: Ctx["messagesOf"] = (id) =>
     outMessages.filter((m) => m.threadId === id).sort((a, b) => a.ts - b.ts);
@@ -563,7 +570,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   );
 
   const markRead: Ctx["markRead"] = async (id) => {
-    if (!supabaseUser) return;
+    if (!supabaseUserId) return;
     setMessages((s) =>
       s.map((m) => (m.threadId === id && m.from === "them" ? { ...m, status: "read" } : m)),
     );
@@ -575,7 +582,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         .from("direct_messages")
         .update({ read_at: new Date().toISOString() })
         .eq("sender_id", id)
-        .eq("recipient_id", supabaseUser.id)
+        .eq("recipient_id", supabaseUserId)
         .is("read_at", null);
 
       if (error) console.error("Failed to mark read:", error);
@@ -609,7 +616,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       return c.id;
     }
 
-    if (supabaseUser) {
+    if (supabaseUserId) {
       const supabase = createBrowserClient();
       supabase
         .from("profiles")
@@ -646,7 +653,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
   const send: Ctx["send"] = async (threadId, text) => {
     if (!text.trim()) return;
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send messages");
       return;
     }
@@ -663,7 +670,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from("direct_messages")
         .insert({
-          sender_id: supabaseUser.id,
+          sender_id: supabaseUserId,
           recipient_id: threadId,
           body: text.trim(),
           message_type: "text",
@@ -696,7 +703,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const legacySendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send messages");
       return;
     }
@@ -725,7 +732,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const legacySendMedia: Ctx["sendMedia"] = async (threadId, file) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send media");
       return;
     }
@@ -755,7 +762,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const legacySendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send voice notes");
       return;
     }
@@ -789,7 +796,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendGhost: Ctx["sendGhost"] = (threadId, text, durationSecs, label) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send messages");
       return;
     }
@@ -817,7 +824,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from("direct_messages")
           .insert({
-            sender_id: supabaseUser.id,
+            sender_id: supabaseUserId,
             recipient_id: threadId,
             body,
             message_type: "ghost",
@@ -848,7 +855,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendMedia: Ctx["sendMedia"] = async (threadId, file) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send media");
       return;
     }
@@ -872,12 +879,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     if (isUUID(threadId)) {
       try {
-        const mediaPath = await uploadMessageMedia(supabaseUser.id!, file, "media");
+        const mediaPath = await uploadMessageMedia(supabaseUserId, file, "media");
         const supabase = createBrowserClient() as any;
         const { data, error } = await supabase
           .from("direct_messages")
           .insert({
-            sender_id: supabaseUser.id,
+            sender_id: supabaseUserId,
             recipient_id: threadId,
             body: "",
             message_type: mediaType,
@@ -908,7 +915,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendFwdGif: Ctx["sendFwdGif"] = async (threadId, gif, text) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send with FWD");
       return;
     }
@@ -939,7 +946,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from("direct_messages")
           .insert({
-            sender_id: supabaseUser.id,
+            sender_id: supabaseUserId,
             recipient_id: threadId,
             body: displayText || null,
             message_type: "gif",
@@ -974,7 +981,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendVoice: Ctx["sendVoice"] = async (threadId, blob, durationSecs) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send voice notes");
       return;
     }
@@ -1002,12 +1009,12 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
 
     if (isUUID(threadId)) {
       try {
-        const voicePath = await uploadMessageMedia(supabaseUser.id!, blob, "voice");
+        const voicePath = await uploadMessageMedia(supabaseUserId, blob, "voice");
         const supabase = createBrowserClient() as any;
         const { data, error } = await supabase
           .from("direct_messages")
           .insert({
-            sender_id: supabaseUser.id,
+            sender_id: supabaseUserId,
             recipient_id: threadId,
             body: label,
             message_type: "voice",
@@ -1039,7 +1046,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendCollabProposal: Ctx["sendCollabProposal"] = async (threadId, input) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to send collaboration proposals");
       return;
     }
@@ -1071,7 +1078,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from("direct_messages")
           .insert({
-            sender_id: supabaseUser.id,
+            sender_id: supabaseUserId,
             recipient_id: threadId,
             body,
             message_type: "text",
@@ -1116,7 +1123,7 @@ export function MessagesProvider({ children }: { children: ReactNode }) {
   };
 
   const sendScheduledReply: Ctx["sendScheduledReply"] = (threadId, text, timeLabel, delayMs) => {
-    if (!supabaseUser) {
+    if (!supabaseUserId) {
       toast.error("Please sign in to schedule a reply");
       return;
     }

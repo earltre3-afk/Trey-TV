@@ -1,5 +1,5 @@
 import React from "react";
-import { Play, Pause, Radio } from "lucide-react";
+import { Cast, Play, Pause, Radio } from "lucide-react";
 import { IMG, TRACKS } from "./data";
 import { EqIcon } from "./ui";
 import { usePlayer } from "@/tradio/contexts/PlayerContext";
@@ -22,6 +22,7 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = "" }) => {
     duration,
     progress,
     play,
+    startCast,
   } = usePlayer();
 
   // Fallback display when nothing is playing yet (so the shell never looks empty)
@@ -48,6 +49,22 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = "" }) => {
     } else {
       toggle();
     }
+  };
+
+  const handleCast = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentItem) {
+      play({
+        ...TRACKS.midnightVelvet,
+        sourceType: "station",
+        sourceLabel: "Station",
+        isLive: true,
+      });
+      return;
+    }
+    void Promise.resolve(startCast("browser-cast")).catch((error) => {
+      console.warn("[Tradio] Cast could not be started", error);
+    });
   };
 
   return (
@@ -94,6 +111,14 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = "" }) => {
           isPlaying={isPlaying}
           className={`hidden h-5 w-5 transition-all duration-300 sm:flex ${isPlaying ? "opacity-100" : "opacity-50"}`}
         />
+        <button
+          aria-label="Cast Tradio music"
+          title="Cast Tradio music"
+          onClick={handleCast}
+          className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-200 transition-all duration-300 hover:border-cyan-300/35 hover:bg-cyan-400/10 active:scale-95 sm:flex"
+        >
+          <Cast className="h-4 w-4" />
+        </button>
         <button
           aria-label={isPlaying ? "Pause track" : "Play track"}
           onClick={handlePlay}

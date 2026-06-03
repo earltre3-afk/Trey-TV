@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
 import { BufferingScreen } from "./BufferingScreen";
+import { CastButton } from "@/components/cast/CastButton";
 
 interface Props {
   src?: string;
   poster?: string;
+  title?: string;
+  subtitle?: string;
   className?: string;
   controls?: boolean;
   fallbackImg?: string;
@@ -14,6 +17,8 @@ interface Props {
 export function VideoPlayer({
   src,
   poster,
+  title = "Trey TV video",
+  subtitle,
   className,
   controls = true,
   fallbackImg,
@@ -40,6 +45,7 @@ export function VideoPlayer({
         ref={videoRef}
         src={src}
         poster={poster}
+        disableRemotePlayback={false}
         className={className}
         controls={controls}
         onWaiting={() => {
@@ -56,6 +62,16 @@ export function VideoPlayer({
           });
         }}
         onEnded={onEnded}
+      />
+      <CastButton
+        src={src}
+        title={title}
+        subtitle={subtitle}
+        poster={poster}
+        kind="video"
+        mediaRef={videoRef}
+        compact
+        className="absolute right-3 top-3 z-20"
       />
       {buffering && <BufferingScreen onPlay={handlePlay} />}
     </div>

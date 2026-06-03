@@ -106,7 +106,6 @@ export const PolicyLinkInline: React.FC<{
     event.stopPropagation();
     const detail = { target };
     window.dispatchEvent(new CustomEvent("open-tradio-legal", { detail }));
-    document.dispatchEvent(new CustomEvent("open-tradio-legal", { detail }));
   };
   return (
     <button

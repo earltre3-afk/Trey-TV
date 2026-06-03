@@ -590,6 +590,10 @@ export function Composer() {
           audience,
           media: mediaUrlToPost,
           mediaType: mediaTypeToPost,
+          sourceType: draft.kind === "gif" ? "fwd" : "trey",
+          gifFwdId: draft.kind === "gif" ? draft.gifFwdId : null,
+          gifPosterUrl: draft.kind === "gif" ? draft.gifPosterUrl : null,
+          gifTitle: draft.kind === "gif" ? draft.gifTitle : null,
           durationMs:
             draft.kind === "video" || draft.kind === "uploaded_media"
               ? draft.durationMs
@@ -1857,10 +1861,9 @@ export function Composer() {
         )}
       </div>
 
-      {/* Giphy sticker picker popup */}
+      {/* FWD GIF picker popup */}
       <FwdGifPicker
         open={showFwdPicker}
-        restrictTab="created"
         context="profile"
         treyTvUid={user?.uid ?? null}
         onClose={() => setShowFwdPicker(false)}

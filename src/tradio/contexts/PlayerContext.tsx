@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { requestMediaCast, stopMediaCast } from "@/lib/cast/media-cast";
 
 export type PlaybackSourceType =
   | "song"
@@ -174,8 +175,8 @@ export interface PlaybackContext {
   toggleMute: () => void;
   isCasting: boolean;
   activeCastDevice: string | null;
-  startCast: (deviceId: string) => void;
-  stopCast: () => void;
+  startCast: (deviceId?: string) => void | Promise<void>;
+  stopCast: () => void | Promise<void>;
 }
 
 interface PlayOptions {
@@ -243,6 +244,8 @@ const Ctx = createContext<PlaybackContext | null>(null);
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const bufferTimer = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasRealMediaRef = useRef(false);
   const [currentItem, setCurrentItem] = useState<PlaybackItem | null>(null);
   const [currentSource, setCurrentSource] = useState<PlaybackSource | null>(null);
   const [playbackQueue, setPlaybackQueue] = useState<PlaybackQueue>(() => createQueue([]));
@@ -262,11 +265,25 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const isCasting = activeCastDevice !== null;
 
-  const startCast = useCallback((deviceId: string) => {
-    setActiveCastDevice(deviceId);
-  }, []);
+  const startCast = useCallback(
+    async (deviceId = "browser-cast") => {
+      if (!currentItem?.src) return;
+      await requestMediaCast({
+        src: currentItem.src,
+        title: currentItem.title,
+        subtitle: currentItem.artist || currentSource?.title,
+        poster: currentItem.coverUrl || currentItem.art,
+        kind: "audio",
+        currentTime,
+        mediaElement: audioRef.current,
+      });
+      setActiveCastDevice(deviceId);
+    },
+    [currentItem, currentSource, currentTime],
+  );
 
-  const stopCast = useCallback(() => {
+  const stopCast = useCallback(async () => {
+    await stopMediaCast();
     setActiveCastDevice(null);
   }, []);
 
@@ -292,13 +309,17 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
       setCurrentSource(resolvedSource);
       setCurrentTime(0);
+      currentTimeRef.current = 0;
+      lastPushedTimeRef.current = 0;
       setDuration(normalized.isLive || resolvedSource.isLive ? 0 : normalized.duration || 210);
       if (nextItems) setPlaybackQueue(createQueue(nextItems, resolvedSource));
       setStatus(normalized.unavailable ? "unavailable" : "buffering");
 
-      bufferTimer.current = window.setTimeout(() => {
-        setStatus(normalized.unavailable ? "unavailable" : "playing");
-      }, 350);
+      if (!normalized.unavailable && !normalized.src) {
+        bufferTimer.current = window.setTimeout(() => {
+          setStatus("playing");
+        }, 250);
+      }
     },
     [],
   );
@@ -410,17 +431,24 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const seek = useCallback(
     (timeSec: number) => {
       if (isLive) return;
-      setCurrentTime(Math.max(0, Math.min(timeSec, duration || timeSec)));
+      const target = Math.max(0, Math.min(timeSec, duration || timeSec));
+      const audio = audioRef.current;
+      if (audio && currentItem?.src) {
+        audio.currentTime = target;
+      }
+      currentTimeRef.current = target;
+      lastPushedTimeRef.current = target;
+      setCurrentTime(target);
     },
-    [duration, isLive],
+    [currentItem?.src, duration, isLive],
   );
 
   const seekPct = useCallback(
     (pct: number) => {
       if (isLive || duration <= 0) return;
-      setCurrentTime((Math.max(0, Math.min(100, pct)) / 100) * duration);
+      seek((Math.max(0, Math.min(100, pct)) / 100) * duration);
     },
-    [duration, isLive],
+    [duration, isLive, seek],
   );
 
   const toggleLike = useCallback(
@@ -488,32 +516,101 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const toggleMute = useCallback(() => setMuted((value) => !value), []);
   const toggleShuffle = useCallback(() => setShuffleMode((value) => !value), []);
 
-  // Track playhead with a ref and push updates to React state less often
+  useEffect(() => {
+    const audio = audioRef.current;
+    hasRealMediaRef.current = Boolean(currentItem?.src);
+    if (!audio) return;
+
+    if (!currentItem?.src) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      return;
+    }
+
+    if (audio.src !== new URL(currentItem.src, window.location.href).toString()) {
+      audio.src = currentItem.src;
+      audio.currentTime = 0;
+      audio.load();
+    }
+  }, [currentItem?.id, currentItem?.src]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = muted ? 0 : volume;
+    audio.muted = muted;
+  }, [muted, volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !currentItem?.src) return;
+
+    if (status === "playing" || status === "buffering") {
+      audio.play().catch((error) => {
+        if (error instanceof DOMException && error.name === "NotAllowedError") {
+          setStatus("paused");
+          return;
+        }
+        setStatus("error");
+      });
+    } else if (
+      status === "paused" ||
+      status === "idle" ||
+      status === "ended" ||
+      status === "unavailable" ||
+      status === "error"
+    ) {
+      audio.pause();
+    }
+  }, [currentItem?.src, status]);
+
+  const nextRef = useRef(next);
+  const isLiveRef = useRef(isLive);
+  const durationRef = useRef(duration);
+
+  useEffect(() => {
+    nextRef.current = next;
+  }, [next]);
+
+  useEffect(() => {
+    isLiveRef.current = isLive;
+  }, [isLive]);
+
+  useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+  // Sync currentTime state to refs to handle external updates/seeks
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+    lastPushedTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  // Track playhead with a ref and push updates to React state
   useEffect(() => {
     if (status !== "playing") return;
-    currentTimeRef.current = currentTime;
+    if (hasRealMediaRef.current) return;
     const timer = window.setInterval(() => {
+      const currentIsLive = isLiveRef.current;
+      const currentDuration = durationRef.current;
       const newTime = (function (prev: number) {
-        if (isLive || duration <= 0) return prev + 1;
-        if (prev + 1 >= duration) {
+        if (currentIsLive || currentDuration <= 0) return prev + 1;
+        if (prev + 1 >= currentDuration) {
           // schedule next track change
-          window.setTimeout(next, 0);
-          return duration;
+          window.setTimeout(() => nextRef.current(), 0);
+          return currentDuration;
         }
         return prev + 1;
       })(currentTimeRef.current);
 
       currentTimeRef.current = newTime;
-
-      // Only update React state every ~2 seconds to reduce re-renders for consumers
-      if (Math.abs(newTime - lastPushedTimeRef.current) >= 2 || isLive) {
-        lastPushedTimeRef.current = newTime;
-        setCurrentTime(newTime);
-      }
+      lastPushedTimeRef.current = newTime;
+      setCurrentTime(newTime);
     }, 1000);
 
     return () => window.clearInterval(timer);
-  }, [duration, isLive, next, status, currentTime]);
+  }, [status]);
 
   useEffect(
     () => () => {
@@ -639,7 +736,38 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     ],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+      <audio
+        ref={audioRef}
+        preload="metadata"
+        onLoadedMetadata={(event) => {
+          const nextDuration = event.currentTarget.duration;
+          if (Number.isFinite(nextDuration)) setDuration(nextDuration);
+        }}
+        onCanPlay={() => {
+          if (status === "buffering") setStatus("playing");
+        }}
+        onPlaying={() => setStatus("playing")}
+        onPause={() => {
+          if (status === "playing") setStatus("paused");
+        }}
+        onWaiting={() => {
+          if (status === "playing") setStatus("buffering");
+        }}
+        onTimeUpdate={(event) => {
+          const audio = event.currentTarget;
+          setCurrentTime(audio.currentTime);
+          if (Number.isFinite(audio.duration)) setDuration(audio.duration);
+        }}
+        onEnded={() => nextRef.current()}
+        onError={() => {
+          if (currentItem?.src) setStatus("error");
+        }}
+      />
+    </Ctx.Provider>
+  );
 };
 
 export const usePlayer = (): PlaybackContext => {

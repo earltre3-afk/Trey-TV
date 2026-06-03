@@ -1,6 +1,7 @@
 export const TREY_OWNER_EMAIL = "californiatrey@gmail.com";
 export const TREY_OWNER_HANDLE = "trey";
-export const TREY_OWNER_UID = "4234118205271678";
+export const TREY_OWNER_UID = "4236868965602895";
+export const LEGACY_TREY_OWNER_UID = "4234118205271678";
 
 const normalize = (value?: string | null) => value?.trim().toLowerCase() ?? "";
 
@@ -13,7 +14,8 @@ export function isTreyOwnerHandle(handle?: string | null) {
 }
 
 export function isTreyOwnerUid(uid?: string | null) {
-  return normalize(uid) === TREY_OWNER_UID;
+  const value = normalize(uid);
+  return value === TREY_OWNER_UID || value === LEGACY_TREY_OWNER_UID;
 }
 
 export function isTreyOwnerProfile(profile: {
