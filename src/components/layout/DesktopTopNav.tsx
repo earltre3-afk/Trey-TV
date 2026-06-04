@@ -151,14 +151,6 @@ export function DesktopTopNav() {
               </>
             );
 
-            if (l.to === "/tradio") {
-              return (
-                <a key={l.to} href="/tradio" className={className}>
-                  {content}
-                </a>
-              );
-            }
-
             return (
               <Link key={l.to} to={l.to} preload="intent" className={className}>
                 {content}

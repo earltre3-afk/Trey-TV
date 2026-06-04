@@ -251,24 +251,11 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
                 </>
               );
 
-              if (i.to === "/tradio") {
-                return (
-                  <a
-                    key={i.label}
-                    href="/tradio"
-                    onClick={onClose}
-                    style={style}
-                    className={className}
-                  >
-                    {content}
-                  </a>
-                );
-              }
-
               return (
                 <Link
                   key={i.label}
                   to={i.to}
+                  preload="intent"
                   onClick={onClose}
                   style={style}
                   className={className}
