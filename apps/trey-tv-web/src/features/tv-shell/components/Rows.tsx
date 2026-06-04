@@ -25,7 +25,7 @@ export const ContentRow: React.FC<{
   title: string;
   items: VideoTile[];
   size?: "sm" | "md" | "lg";
-  onSelect?: (v: VideoTile) => void;
+  onSelect?: (_v: VideoTile) => void;
 }> = ({ title, items, size = "md", onSelect }) => {
   const w = { sm: "w-[200px]", md: "w-[280px]", lg: "w-[320px]" }[size];
   const h = { sm: "h-[120px]", md: "h-[160px]", lg: "h-[180px]" }[size];
@@ -98,7 +98,7 @@ export const CreatorRow: React.FC<{ title: string; items: Creator[] }> = ({ titl
   </section>
 );
 
-export const GameRow: React.FC<{ title: string; items: Game[]; onSelect?: (g: Game) => void }> = ({
+export const GameRow: React.FC<{ title: string; items: Game[]; onSelect?: (_g: Game) => void }> = ({
   title,
   items,
   onSelect,

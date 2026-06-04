@@ -22,7 +22,7 @@ export type Screen =
 
 type TVCtx = {
   screen: Screen;
-  navigate: (s: Screen) => void;
+  navigate: (_s: Screen) => void;
   back: () => void;
   history: Screen[];
 };

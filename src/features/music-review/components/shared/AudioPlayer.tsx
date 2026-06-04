@@ -89,6 +89,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       <audio
         ref={ref}
         src={src}
+        data-is-music="true"
+        data-castable="true"
         preload="metadata"
         onLoadedMetadata={(e) => setDuration((e.target as HTMLAudioElement).duration || 0)}
         onTimeUpdate={(e) => setProgress((e.target as HTMLAudioElement).currentTime || 0)}

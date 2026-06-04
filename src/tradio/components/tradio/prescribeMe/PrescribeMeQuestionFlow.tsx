@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, HelpCircle, Activity } from "lucide-react";
 import { PRESCRIBE_ME_QUESTIONS } from "./prescribeMeQuestions";
 import type { UserAnswers } from "./prescribeMeTypes";
@@ -20,26 +20,45 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
     familiarity: "",
     contentType: "",
   });
+  const [isAdvancing, setIsAdvancing] = useState(false);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const question = PRESCRIBE_ME_QUESTIONS[currentStep];
 
+  useEffect(() => {
+    return () => {
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    };
+  }, []);
+
   const handleSelectOption = (value: string) => {
+    if (isAdvancing) return;
     const category = question.category;
     const updatedAnswers = { ...answers, [category]: value };
     setAnswers(updatedAnswers);
+    setIsAdvancing(true);
 
     // Auto-advance with a slight delay for slick visual feel
-    setTimeout(() => {
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    advanceTimerRef.current = setTimeout(() => {
       if (currentStep < PRESCRIBE_ME_QUESTIONS.length - 1) {
         setCurrentStep((prev) => prev + 1);
+        setIsAdvancing(false);
+        advanceTimerRef.current = null;
       } else {
         // We reached the end, pass full answers
+        advanceTimerRef.current = null;
         onComplete(updatedAnswers as UserAnswers);
       }
-    }, 200);
+    }, 160);
   };
 
   const handleBack = () => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+    setIsAdvancing(false);
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     } else {
@@ -90,20 +109,21 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
       </div>
 
       {/* Option Selection Panel */}
-      <div className="grid gap-2 max-h-[250px] overflow-y-auto pr-1 scrollbar-thin">
+      <div className="grid gap-2 max-h-[min(42dvh,260px)] overflow-y-auto pr-1 scrollbar-thin">
         {question.options.map((opt) => {
           const isSelected = (answers as any)[question.category] === opt.value;
           return (
             <button
               key={opt.value}
               onClick={() => handleSelectOption(opt.value)}
-              className={`w-full text-left py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl border text-xs font-bold transition-all flex items-center justify-between active:scale-[0.99] ${
+              disabled={isAdvancing}
+              className={`w-full text-left py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl sm:rounded-2xl border text-xs font-bold transition-all flex items-center justify-between active:scale-[0.99] disabled:pointer-events-none disabled:opacity-80 ${
                 isSelected
                   ? "bg-gradient-to-r from-purple-500/25 to-cyan-500/15 border-purple-500/50 text-white shadow-[0_0_12px_rgba(168,85,247,0.25)] font-black"
                   : "bg-white/[0.02] border-white/8 text-white/70 hover:text-white hover:border-white/15"
               }`}
             >
-              <span>{opt.label}</span>
+              <span className="min-w-0 break-words pr-3">{opt.label}</span>
               {isSelected ? (
                 <CheckCircle className="h-4 w-4 text-purple-300 animate-pulse" />
               ) : (
@@ -115,7 +135,7 @@ export const PrescribeMeQuestionFlow: React.FC<PrescribeMeQuestionFlowProps> = (
       </div>
 
       {/* Footer support */}
-      <div className="border-t border-white/5 pt-2 sm:pt-3 flex items-center justify-between text-[9px] font-mono text-white/30">
+      <div className="border-t border-white/5 pt-2 sm:pt-3 flex flex-col gap-1 text-[9px] font-mono text-white/30 sm:flex-row sm:items-center sm:justify-between">
         <span className="flex items-center gap-1">
           <Activity className="h-3 w-3 text-purple-400 animate-pulse" />
           Intent-based algorithmic routing

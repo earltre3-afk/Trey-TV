@@ -8,7 +8,7 @@ type Theme = "dark" | "light" | "system";
 
 type ThemeContextType = {
   theme: Theme;
-  setTheme: (theme: Theme) => void;
+  setTheme: (_theme: Theme) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -16,7 +16,6 @@ const ThemeContext = createContext<ThemeContextType | null>(null);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  value: _value,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {

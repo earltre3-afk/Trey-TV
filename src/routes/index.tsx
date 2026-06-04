@@ -43,7 +43,7 @@ import { zodiacSymbol } from "@/lib/zodiac";
 import { ReadingOfTheDay } from "@/components/zodiac";
 
 const TREY_TV_BOX_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
-const TREY_ORIGIN_HERO_VIDEO_URL = "/home/trey-origin-hero.mp4";
+const TREY_ORIGIN_HERO_VIDEO_URL = "https://cdn.builder.io/o/assets%2Fde09f3f7574845d786350acb13c952c1%2F566b2f5a684c42e59128585a30440d6c?alt=media&token=81986aea-7ddd-4291-8137-dffc0dd4082b&apiKey=de09f3f7574845d786350acb13c952c1";
 
 export const Route = createFileRoute("/")({
   component: WatchNow,

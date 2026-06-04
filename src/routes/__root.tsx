@@ -292,7 +292,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
   );
 
-  const guestAllowed = ["/", "/explore", "/guide", "/explore/"];
+  const guestAllowed = ["/", "/explore", "/guide", "/tradio", "/explore/"];
   const isAllowedGuestPage = guestAllowed.some(
     (route) =>
       location.pathname === route || (route !== "/" && location.pathname.startsWith(route)),

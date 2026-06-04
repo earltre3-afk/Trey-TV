@@ -8,6 +8,19 @@ const isVisibleMedia = (media: HTMLMediaElement) => {
   return rect.width >= 120 && rect.height >= 60 && media.offsetParent !== null;
 };
 
+const isCastableMedia = (media: HTMLMediaElement) => {
+  if (media instanceof HTMLVideoElement) {
+    return isVisibleMedia(media);
+  }
+  if (media instanceof HTMLAudioElement) {
+    return (
+      media.getAttribute("data-is-music") === "true" ||
+      media.getAttribute("data-castable") === "true"
+    );
+  }
+  return false;
+};
+
 const mediaTitle = (media: HTMLMediaElement) =>
   media.getAttribute("title") ||
   media.getAttribute("aria-label") ||
@@ -22,7 +35,7 @@ export function GlobalMediaCastButton() {
   useEffect(() => {
     const chooseTarget = (event: Event) => {
       const media = event.target instanceof HTMLMediaElement ? event.target : null;
-      if (!media || !media.currentSrc || !isVisibleMedia(media)) return;
+      if (!media || !media.currentSrc || !isCastableMedia(media)) return;
       setTarget(media);
     };
 

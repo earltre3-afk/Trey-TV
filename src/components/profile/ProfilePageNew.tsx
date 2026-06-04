@@ -2901,6 +2901,8 @@ export function ProfilePageNew({
       <audio
         ref={audioRef}
         src={autoplaySong.src}
+        data-is-music="true"
+        data-castable="true"
         loop
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}

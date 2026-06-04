@@ -741,6 +741,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       {children}
       <audio
         ref={audioRef}
+        data-is-music="true"
+        data-castable="true"
         preload="metadata"
         onLoadedMetadata={(event) => {
           const nextDuration = event.currentTarget.duration;

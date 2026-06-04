@@ -88,7 +88,7 @@ export function generateAIPreRoutePrescription(
   let ctaType: "start_radio" | "navigate_screen" | "open_forge" | "action_alert" = "start_radio";
 
   // Mode-Specific Mapping
-  if (mode === "fan") {
+  if (mode === "fan" || mode === "listener") {
     if (contentType === "song_wars" || desiredShift === "challenge_me") {
       destination = "stations"; // Song Wars Hub is inside Stations
       routeType = "Song Wars Arena";
@@ -204,7 +204,8 @@ export function generateAIPreRoutePrescription(
   // 4. Construct behavioral explanation summary using answer parameters (privacy-safe, supportive, non-diagnostic)
   const description = `This custom ${routeType.toLowerCase()} is optimized for a ${energyText} energy level, targeting your stated intent ${needText}. Fits a desire to ${shiftText} with ${famText}.`;
 
-  const reason = `Formulated because you said you need ${needText} and want this content to ${shiftText}.${energyAdjustment}${surpriseAdjustment} Designed for a highly intentional, content-focused ${mode === "fan" ? "listening" : "creator"} lane.`;
+  const isListeningMode = mode === "fan" || mode === "listener";
+  const reason = `Formulated because you said you need ${needText} and want this content to ${shiftText}.${energyAdjustment}${surpriseAdjustment} Designed for a highly intentional, content-focused ${isListeningMode ? "listening" : "creator"} lane.`;
 
   const confidenceScore = Math.floor(88 + Math.random() * 11);
 

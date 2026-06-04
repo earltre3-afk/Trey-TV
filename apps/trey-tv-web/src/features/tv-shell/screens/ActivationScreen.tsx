@@ -71,7 +71,7 @@ export const ActivationScreen: React.FC = () => {
             localStorage.setItem("trey_tv_token", d.access_token);
           } catch {}
           (
-            window as unknown as { TreyTvNative?: { saveToken?: (t: string) => void } }
+            window as unknown as { TreyTvNative?: { saveToken?: (_token: string) => void } }
           ).TreyTvNative?.saveToken?.(d.access_token);
           setStatus("approved");
           if (pollRef.current) clearInterval(pollRef.current);

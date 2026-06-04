@@ -1,454 +1,526 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  Radio,
-  Sparkles,
-  ChevronRight,
-  Lock,
-  CheckCircle,
-  Send,
-  User,
-  Shield,
-  Users,
-  Music,
-  Mic2,
-  Disc,
-  Calendar,
-  Flame,
-  UploadCloud,
-  Layers,
-  AlertCircle,
-  Megaphone,
-  Play,
-  RotateCcw,
-  Check,
-  Plus,
-  Globe,
-  Settings,
-  X,
+  Radio, Sparkles, ChevronRight, Lock, CheckCircle, Send, User, Shield, Users,
+  Music, Mic2, Disc, Calendar, Flame, UploadCloud, Layers, AlertCircle,
+  Megaphone, Play, RotateCcw, Check, Plus, Globe, Settings, X, Trash2, ArrowUp, ArrowDown,
+  Volume2, Pause, Clock, Tag, ShieldCheck, Eye, BadgeAlert, Heart, BarChart3, MessageSquare
 } from "lucide-react";
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, Waveform } from "../ui";
-import { ACTIVE_USER, IMG, TRACKS, ALL_STATIONS, type RadioShow } from "../data";
-import { ShowBuilder } from "./ShowBuilder";
-import { LiveShowConsole } from "./LiveShowConsole";
-import { AccessGate, PrescriptionRail } from "../auth/components";
-import { LegalAcceptanceGroup } from "../legal/LegalPrimitives";
-import { generateShowPlan } from "../showPlan";
+import { ACTIVE_USER, IMG, ALL_STATIONS } from "../data";
+import { AccessGate } from "../auth/components";
+import { isSupabaseConfigured, supabase } from "@/tradio/lib/supabaseClient";
 import { toast } from "sonner";
-import { goLive, endLive } from "../tradioLiveService";
-import { useTradioLiveRoom } from "../useTradioLiveRoom";
-import { useTradioLiveInteraction } from "../useTradioLiveInteraction";
-import { useTradioCallers } from "../useTradioCallers";
 import {
-  createLegalAcceptanceValues,
-  isLegalFlowAccepted,
-  LEGAL_ACCEPTANCE_FLOWS,
-  recordLegalFlowAcceptance,
-  type LegalAcceptanceValues,
-} from "../legal/legalAcceptanceConfig";
+  TradioShow, TradioShowEpisode, TradioShowBlock, TradioBroadcastSlot,
+  TradioAdSlot, TradioMusicSubmission, TradioShowAnalytics
+} from "../types/broadcast";
+import {
+  generateShowRundown, generateHostScripts, generateStationDrop,
+  generateAdRead, suggestMusicBlocks, validateShowReadiness,
+  renderVoiceWithProvider
+} from "../services/broadcastService";
 
-// TypeScript definitions
-export type BroadcastRole = "fan" | "artist" | "producer" | "dj" | "admin";
-export type BroadcastAccessStatus = "Cleared" | "Pending" | "Invite-Only";
-
-export interface BroadcastShowType {
-  id: string;
-  title: string;
-  description: string;
-  allowedRole: string;
-  setupTime: string;
-  tags: string[];
-  icon: React.ReactNode;
-}
-
-export interface BroadcastDraft {
-  id: string;
-  title: string;
-  type: string;
-  lastEdited: string;
-  completion: number;
-}
-
-export interface ScheduledBroadcast {
-  id: string;
-  title?: string;
-  dateTime: string;
-  station: string;
-  type: string;
-  host: string;
-  status: "scheduled" | "live" | "replay";
-}
-
-interface Props {
-  onBack: () => void;
-  initialTab?: string;
-}
-
-const SHOW_TYPES: BroadcastShowType[] = [
-  {
-    id: "artist-show",
-    title: "Artist Radio Show",
-    description:
-      "Host your own official broadcast lane. Blend tracks, share exclusive commentary, and talk directly to listeners.",
-    allowedRole: "Artist / Admin",
-    setupTime: "10-15 mins",
-    tags: ["Live", "Scheduled", "Replayable"],
-    icon: <Mic2 className="h-5 w-5 text-purple-300" />,
-  },
-  {
-    id: "release-premiere",
-    title: "Release Premiere Hour",
-    description:
-      "Coordinate a high-status first-listen drop. Invite fan chats, queue stems, and bundle pre-saves in real-time.",
-    allowedRole: "Artist / Admin",
-    setupTime: "5-10 mins",
-    tags: ["Live Only", "Pinned"],
-    icon: <Radio className="h-5 w-5 text-fuchsia-300 animate-pulse" />,
-  },
-  {
-    id: "dj-mix",
-    title: "DJ Live Mix",
-    description:
-      "Stream structured DJ sets, beat blends, and live request blocks with animated interactive VU level feedback.",
-    allowedRole: "DJ / Admin",
-    setupTime: "15-20 mins",
-    tags: ["Live", "Replayable"],
-    icon: (
-      <Disc className="h-5 w-5 text-cyan-300 animate-spin" style={{ animationDuration: "4s" }} />
-    ),
-  },
-  {
-    id: "producer-spotlight",
-    title: "Producer Spotlight",
-    description:
-      "Upload loops or full beats. Invite artists to pitch vocals or save stems in a themed beat showcase session.",
-    allowedRole: "Producer / Admin",
-    setupTime: "10 mins",
-    tags: ["Scheduled", "Replayable"],
-    icon: (
-      <Sparkles
-        className="h-5 w-5 text-purple-300 animate-bounce"
-        style={{ animationDuration: "3s" }}
-      />
-    ),
-  },
-  {
-    id: "fan-request",
-    title: "Fan Request Hour",
-    description:
-      "Unlock crowdsourced radio segments. Fans submit requests and vote on live chat queues dynamically.",
-    allowedRole: "DJ / Admin",
-    setupTime: "5 mins",
-    tags: ["Live Only"],
-    icon: <Users className="h-5 w-5 text-cyan-300" />,
-  },
-  {
-    id: "songwars-promo",
-    title: "Song Wars Pre-Show",
-    description:
-      "Set round constraints, introduce competing artists, preview battle tracks, and trigger fan voting.",
-    allowedRole: "DJ / Admin / Owner",
-    setupTime: "15 mins",
-    tags: ["Live Only", "Official Status"],
-    icon: <Flame className="h-5 w-5 text-fuchsia-400" />,
-  },
-];
-
-const INITIAL_DRAFTS: BroadcastDraft[] = [
-  {
-    id: "dr-1",
-    title: "Late Night Chill with Jordan",
-    type: "Artist Radio Show",
-    lastEdited: "2 hours ago",
-    completion: 75,
-  },
-  {
-    id: "dr-2",
-    title: "6AM Thoughts Premiere Block",
-    type: "Release Premiere",
-    lastEdited: "Yesterday",
-    completion: 40,
-  },
-];
-
-const INITIAL_SCHEDULED: ScheduledBroadcast[] = [
-  {
-    id: "sch-1",
-    dateTime: "Tonight at 9:00 PM",
-    station: "Trey Trizzy Radio",
-    type: "Artist Radio Show",
-    host: "Trey Trizzy",
-    status: "scheduled",
-  },
-  {
-    id: "sch-2",
-    dateTime: "Tomorrow at 4:00 PM",
-    station: "After Dark R&B",
-    type: "DJ Live Mix",
-    host: "Mila Rain",
-    status: "scheduled",
-  },
-  {
-    id: "sch-3",
-    dateTime: "Live Now",
-    station: "Trey TV Main Layer",
-    type: "Song Wars Pre-Show",
-    host: "Jordan Host",
-    status: "live",
-  },
-];
-
+// Standard class for customized custom-styled premium inputs
 const inputClass =
-  "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-cyan-400/40";
+  "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-cyan-400/50 focus:bg-white/[0.02]";
+
+const selectClass =
+  "w-full rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-sm text-white outline-none transition cursor-pointer focus:border-cyan-400/50 focus:bg-black/80 appearance-none";
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="space-y-2">
-    <span className="block text-[10px] font-black uppercase tracking-widest text-white/45">
+  <label className="block space-y-1.5">
+    <span className="block text-[10px] font-black uppercase tracking-widest text-white/45 font-mono">
       {label}
     </span>
-    {children}
+    <div className="relative">
+      {children}
+    </div>
   </label>
 );
 
-export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) => {
-  // Inside the AccessGate the user is cleared; default to artist tooling.
-  const role = "artist" as BroadcastRole;
-  const [accessStatus, setAccessStatus] = useState<BroadcastAccessStatus>("Cleared");
-  const [applied, setSavedApplied] = useState(false);
-  const [activeLiveShow, setActiveLiveShow] = useState<RadioShow | null>(null);
-  const [liveSessionId, setLiveSessionId] = useState<string | null>(null);
-  const live = useTradioLiveRoom({
-    active: Boolean(liveSessionId),
-    role: "host",
-    sessionId: liveSessionId,
-  });
-  const interaction = useTradioLiveInteraction({ sessionId: liveSessionId });
-  const callers = useTradioCallers({ sessionId: liveSessionId });
+const MOCK_SHOWS: TradioShow[] = [
+  {
+    id: "show-1",
+    user_id: "user-1",
+    title: "Late Night Lounge",
+    description: "The ultimate chill vibes for late-night music lovers.",
+    show_type: "artist-show",
+    mood: "Chill",
+    target_audience: "Lo-fi fans",
+    visibility: "public",
+    status: "published",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "show-2",
+    user_id: "user-1",
+    title: "Trap Soul Sessions",
+    description: "Heavy drum loops and deep atmospheric trap vocals.",
+    show_type: "dj-mix",
+    mood: "Energetic",
+    target_audience: "Hip hop heads",
+    visibility: "public",
+    status: "draft",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+];
 
-  // Stepper show builder flow states
-  const [currentStep, setCurrentStep] = useState<number>(0);
-  const [isBuildingShow, setIsBuildingShow] = useState(false);
+const MOCK_EPISODES: Record<string, TradioShowEpisode[]> = {
+  "show-1": [
+    {
+      id: "ep-1",
+      show_id: "show-1",
+      user_id: "user-1",
+      title: "Episode 1: Smooth Waveforms",
+      description: "Atmospheric textures and premium loops to set the night right.",
+      duration_seconds: 1800,
+      status: "published",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    {
+      id: "ep-2",
+      show_id: "show-1",
+      user_id: "user-1",
+      title: "Episode 2: Lo-Fi Reverie (Draft)",
+      description: "A soft journey into nostalgic vinyl crackles and synth pads.",
+      duration_seconds: 1200,
+      status: "draft",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+  ]
+};
 
-  // Guided flow fields
-  const [selectedShowType, setSelectedShowType] = useState<string>("artist-show");
-  const [showName, setShowName] = useState("");
-  const [showTagline, setShowTagline] = useState("");
-  const [showHost, setShowHost] = useState("Trey Trizzy");
-  const [showStation, setShowStation] = useState("station-trey-trizzy");
-  const [showMood, setShowMood] = useState("late-night");
-  const [showGenre, setShowGenre] = useState("R&B / Trap Soul");
-  const [showAudience, setShowAudience] = useState("fans of premieres and discovery");
-  const [showArt, setShowArt] = useState(IMG.aiSphere);
+export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?: string }> = ({ onBack, initialTab }) => {
+  const [subView, setSubView] = useState<"dashboard" | "create-show" | "show-detail" | "create-episode" | "editor">("dashboard");
+  const [loading, setLoading] = useState(false);
+  const [role] = useState<string>("artist");
 
-  // Structures List
-  const [seqSegments, setSeqSegments] = useState<string[]>([
-    "intro",
-    "music-block",
-    "host-talk",
-    "outro",
+  // Database states
+  const [shows, setShows] = useState<TradioShow[]>(MOCK_SHOWS);
+  const [episodes, setEpisodes] = useState<Record<string, TradioShowEpisode[]>>(MOCK_EPISODES);
+  const [currentShow, setCurrentShow] = useState<TradioShow | null>(null);
+  const [currentEpisode, setCurrentEpisode] = useState<TradioShowEpisode | null>(null);
+  const [episodeBlocks, setEpisodeBlocks] = useState<TradioShowBlock[]>([]);
+  const [analytics, setAnalytics] = useState<Record<string, TradioShowAnalytics>>({});
+  const [stationDrops, setStationDrops] = useState<{ id: string; title: string; audio_url: string }[]>([
+    { id: "drop-1", title: "Trey TV Official Station ID", audio_url: "/audio/drops/id1.mp3" },
+    { id: "drop-2", title: "Midnight Atmospheric Drop", audio_url: "/audio/drops/id2.mp3" }
   ]);
-  // Selected Music
-  const [addedMusic, setAddedMusic] = useState<string[]>(["Midnight Velvet", "6AM Thoughts"]);
-  // Selected Interactions
-  const [addedInteractions, setAddedInteractions] = useState<string[]>([
-    "Live Chat",
-    "Emoji Reactions",
-  ]);
-  // Selected Schedule / Publish options
-  const [scheduleOpt, setScheduleOpt] = useState<string>("live");
 
-  // Application inputs
-  const [applyRole, setApplyRole] = useState<"Artist" | "Producer" | "DJ" | "Host">("Artist");
-  const [applyMotivation, setApplyMotivation] = useState("");
-  const [applyLink, setApplyLink] = useState("");
-  const [broadcastLegalValues, setBroadcastLegalValues] = useState<LegalAcceptanceValues>(() =>
-    createLegalAcceptanceValues("dj_broadcast_schedule"),
-  );
-  const [broadcastLegalStatus, setBroadcastLegalStatus] = useState<
-    "idle" | "saving" | "saved" | "fallback" | "error"
-  >("idle");
-  const [broadcastLegalMessage, setBroadcastLegalMessage] = useState<string | null>(null);
-  const [accessLegalValues, setAccessLegalValues] = useState<LegalAcceptanceValues>(() =>
-    createLegalAcceptanceValues("role_access_request"),
-  );
-  const [accessLegalStatus, setAccessLegalStatus] = useState<
-    "idle" | "saving" | "saved" | "fallback" | "error"
-  >("idle");
-  const [accessLegalMessage, setAccessLegalMessage] = useState<string | null>(null);
-  const broadcastLegalAccepted = isLegalFlowAccepted("dj_broadcast_schedule", broadcastLegalValues);
-  const accessLegalAccepted = isLegalFlowAccepted("role_access_request", accessLegalValues);
+  // Form states for Create Show
+  const [newShowTitle, setNewShowTitle] = useState("");
+  const [newShowDesc, setNewShowDesc] = useState("");
+  const [newShowType, setNewShowType] = useState("artist-show");
+  const [newShowMood, setNewShowMood] = useState("late-night");
+  const [newShowAudience, setNewShowAudience] = useState("fans of premieres and discovery");
+  const [newShowHostMode, setNewShowHostMode] = useState("cinematic");
+  const [newShowMusicSource, setNewShowMusicSource] = useState("station-trey-trizzy");
+  const [newShowAdPref, setNewShowAdPref] = useState("none");
+  const [newShowVisibility, setNewShowVisibility] = useState<"public" | "private" | "unlisted">("public");
+  const [newShowScheduleIntent, setNewShowScheduleIntent] = useState("live");
 
-  // Drafts & Schedules list
-  const [drafts, setDrafts] = useState<BroadcastDraft[]>(INITIAL_DRAFTS);
-  const [scheduled, setScheduled] = useState<ScheduledBroadcast[]>(INITIAL_SCHEDULED);
+  // Form states for Create Episode
+  const [newEpTitle, setNewEpisodeTitle] = useState("");
+  const [newEpDesc, setNewEpisodeDesc] = useState("");
 
-  // Open the builder when deep-linked into it (incl. the 'golive' shortcut,
-  // which lands on the builder with GO LIVE ready since ShowBuilder always
-  // seeds a default plan).
+  // Script editor states
+  const [editingBlock, setEditingBlock] = useState<TradioShowBlock | null>(null);
+  const [editingScriptText, setEditingScriptText] = useState("");
+  const [generatingScript, setGeneratingScript] = useState(false);
+
+  // Scheduling states
+  const [scheduleStartTime, setScheduleStartTime] = useState("");
+  const [scheduleTimezone, setScheduleTimezone] = useState("UTC");
+  const [scheduleRecurrence, setScheduleRecurrence] = useState("none");
+
+  // Review states
+  const [readinessCheck, setReadinessCheck] = useState<{ ready: boolean; warnings: string[] }>({ ready: true, warnings: [] });
+
+  // Load Data
+  const loadData = async () => {
+    if (!isSupabaseConfigured || !supabase) return;
+    setLoading(true);
+    try {
+      const { data: showsData, error: showsError } = await supabase
+        .from("tradio_shows")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (showsError) throw showsError;
+      if (showsData) {
+        setShows(showsData);
+
+        // Fetch all episodes
+        const { data: epData, error: epError } = await supabase
+          .from("tradio_show_episodes")
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        if (epError) throw epError;
+        if (epData) {
+          const epMap: Record<string, TradioShowEpisode[]> = {};
+          epData.forEach((ep) => {
+            if (!epMap[ep.show_id]) epMap[ep.show_id] = [];
+            epMap[ep.show_id].push(ep);
+          });
+          setEpisodes(epMap);
+        }
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Failed to load show data: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (initialTab === "builder" || initialTab === "golive") {
-      setIsBuildingShow(true);
-    }
-  }, [initialTab]);
+    loadData();
+  }, []);
 
-  // Stepper Steps list
-  const steps = [
-    { title: "Show Type", desc: "Select programming" },
-    { title: "Identity", desc: "Set cover & mood" },
-    { title: "Structure", desc: "Sequence blocks" },
-    { title: "Add Music", desc: "Queue tracks & stems" },
-    { title: "Interaction", desc: "Enable fan toolkits" },
-    { title: "Schedule", desc: "Go live or book" },
-    { title: "Rundown", desc: "Readiness checklist" },
-  ];
-
-  // Helper arrays for Stepper selections
-  const availableSegments = [
-    {
-      id: "intro",
-      label: "Opening Intro Script",
-      duration: 180,
-      icon: <Mic2 className="h-4 w-4" />,
-    },
-    {
-      id: "music-block",
-      label: "Premium Music Block",
-      duration: 480,
-      icon: <Music className="h-4 w-4" />,
-    },
-    {
-      id: "host-talk",
-      label: "Host Commentary Talk",
-      duration: 120,
-      icon: <Mic2 className="h-4 w-4" />,
-    },
-    {
-      id: "producer-spotlight",
-      label: "Producer Spotlight Show",
-      duration: 240,
-      icon: <Sparkles className="h-4 w-4" />,
-    },
-    {
-      id: "artist-premiere",
-      label: "Artist Premiere Hour",
-      duration: 300,
-      icon: <Radio className="h-4 w-4" />,
-    },
-    {
-      id: "fan-request",
-      label: "Fan Request Segment",
-      duration: 360,
-      icon: <Users className="h-4 w-4" />,
-    },
-    {
-      id: "commercial",
-      label: "Ad/Commercial Break",
-      duration: 60,
-      icon: <Megaphone className="h-4 w-4" />,
-    },
-    {
-      id: "outro",
-      label: "Closing Message Outro",
-      duration: 180,
-      icon: <Calendar className="h-4 w-4" />,
-    },
-  ];
-
-  const availableMusic = [
-    "Midnight Velvet",
-    "6AM Thoughts",
-    "Persuasion",
-    "City Lights",
-    "After Hours",
-    "Neon Heartbreak",
-    "Producer Beat #1",
-    "Memphis Drum Loop",
-  ];
-  const availableInteractions = [
-    "Live Chat",
-    "Fan Audio Requests",
-    "Live Audience Polls",
-    "Real-time Emoji Reactions",
-    "GIF Chat via Giphy",
-    "Top Fan Spotlight",
-    "Tracklist Voting",
-  ];
-
-  const toggleSelection = (
-    list: string[],
-    setList: React.Dispatch<React.SetStateAction<string[]>>,
-    item: string,
-  ) => {
-    if (list.includes(item)) {
-      setList(list.filter((x) => x !== item));
-    } else {
-      setList([...list, item]);
-    }
-  };
-
-  const handleNextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSubmitApplication = async (e: React.FormEvent) => {
+  // Save new show
+  const handleSaveShow = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accessLegalAccepted || accessLegalStatus === "saving") return;
-    setAccessLegalStatus("saving");
-    const result = await recordLegalFlowAcceptance("role_access_request", accessLegalValues, {
-      requestType: "broadcast",
-      applyRole,
-      applyLink,
-    });
-    setAccessLegalStatus(result.source === "supabase" ? "saved" : "fallback");
-    setAccessLegalMessage(
-      result.source === "supabase" ? "Access acknowledgement saved." : result.warning,
-    );
-    setSavedApplied(true);
-    setAccessStatus("Pending");
-  };
+    if (!newShowTitle.trim()) {
+      toast.error("Show title is required");
+      return;
+    }
 
-  const handleCreateNewShow = () => {
-    setIsBuildingShow(true);
-    setCurrentStep(0);
-    setShowName("");
-    setShowTagline("");
-  };
+    let userId = "00000000-0000-0000-0000-000000000000";
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) userId = data.user.id;
+    }
 
-  const handleCompleteShowBuild = async () => {
-    if (!broadcastLegalAccepted || broadcastLegalStatus === "saving") return;
-    setBroadcastLegalStatus("saving");
-    const result = await recordLegalFlowAcceptance("dj_broadcast_schedule", broadcastLegalValues, {
-      referenceId: showName || "mock-broadcast-show",
-      showName,
-      showHost,
-      showStation,
-      scheduleOpt,
-      selectedShowType,
-    });
-    setBroadcastLegalStatus(result.source === "supabase" ? "saved" : "fallback");
-    setBroadcastLegalMessage(
-      result.source === "supabase" ? "Broadcast acknowledgement saved." : result.warning,
-    );
-
-    // Generate scheduled broadcast or template
-    const newBroadcast: ScheduledBroadcast = {
-      id: `sch-added-${Date.now()}`,
-      dateTime: scheduleOpt === "live" ? "Live Now" : "Scheduled: Jun 12 at 8PM",
-      station: ALL_STATIONS.find((s) => s.id === showStation)?.title || "My Station",
-      type: SHOW_TYPES.find((t) => t.id === selectedShowType)?.title || "Artist Radio Show",
-      host: showHost,
-      status: scheduleOpt === "live" ? "live" : "scheduled",
+    const showRecord: Omit<TradioShow, "id" | "created_at" | "updated_at"> = {
+      user_id: userId,
+      title: newShowTitle,
+      description: newShowDesc,
+      show_type: newShowType,
+      mood: newShowMood,
+      target_audience: newShowAudience,
+      host_mode: newShowHostMode,
+      music_source_pref: newShowMusicSource,
+      ad_preference: newShowAdPref,
+      visibility: newShowVisibility,
+      schedule_intent: newShowScheduleIntent,
+      status: "draft",
     };
 
-    setScheduled([newBroadcast, ...scheduled]);
-    setIsBuildingShow(false);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("tradio_shows")
+          .insert(showRecord)
+          .select("*")
+          .single();
+        if (error) throw error;
+        toast.success("Show created in cloud database!");
+        setShows([data, ...shows]);
+        setCurrentShow(data);
+        setSubView("show-detail");
+      } catch (e: any) {
+        toast.error("Cloud save failed: " + e.message);
+      }
+    } else {
+      const localShow: TradioShow = {
+        ...showRecord,
+        id: `local-show-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      setShows([localShow, ...shows]);
+      setCurrentShow(localShow);
+      toast.message("Supabase offline: Show saved to memory.");
+      setSubView("show-detail");
+    }
+  };
+
+  // Save Episode
+  const handleSaveEpisode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShow) return;
+    if (!newEpTitle.trim()) {
+      toast.error("Episode title is required");
+      return;
+    }
+
+    let userId = "00000000-0000-0000-0000-000000000000";
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) userId = data.user.id;
+    }
+
+    const epRecord = {
+      show_id: currentShow.id,
+      user_id: userId,
+      title: newEpTitle,
+      description: newEpDesc,
+      duration_seconds: 1800, // default 30 min
+      status: "draft" as const,
+    };
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: epData, error: epError } = await supabase
+          .from("tradio_show_episodes")
+          .insert(epRecord)
+          .select("*")
+          .single();
+        if (epError) throw epError;
+
+        // Auto-generate AI rundown
+        const { blocks: rundownBlocks } = await generateShowRundown({
+          title: currentShow.title,
+          showType: currentShow.show_type,
+          mood: currentShow.mood ?? "Chill",
+          durationMinutes: 30,
+          hostTone: currentShow.host_mode ?? "warm",
+          musicSourcePref: currentShow.music_source_pref ?? "Tradio catalog",
+          commercialBreaks: currentShow.ad_preference === "commercial" ? 1 : 0,
+          includeListenerRequests: true,
+          includeProducerSpotlight: true,
+          includeArtistPremiere: true,
+        });
+
+        // Insert blocks
+        const blocksToInsert = rundownBlocks.map((b) => ({
+          ...b,
+          episode_id: epData.id,
+          user_id: userId,
+        }));
+
+        const { data: savedBlocks, error: blockError } = await supabase
+          .from("tradio_show_blocks")
+          .insert(blocksToInsert)
+          .select("*")
+          .order("sort_order", { ascending: true });
+
+        if (blockError) throw blockError;
+
+        setEpisodes({
+          ...episodes,
+          [currentShow.id]: [...(episodes[currentShow.id] || []), epData],
+        });
+        setCurrentEpisode(epData);
+        setEpisodeBlocks(savedBlocks || []);
+        toast.success("Episode and AI Rundown initialized in database!");
+        setSubView("editor");
+      } catch (e: any) {
+        toast.error("Cloud insert failed: " + e.message);
+      }
+    } else {
+      const epId = `local-ep-${Date.now()}`;
+      const localEp: TradioShowEpisode = {
+        ...epRecord,
+        id: epId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Generate local blocks
+      const { blocks: rundownBlocks } = await generateShowRundown({
+        title: currentShow.title,
+        showType: currentShow.show_type,
+        mood: currentShow.mood ?? "Chill",
+        durationMinutes: 30,
+        hostTone: currentShow.host_mode ?? "warm",
+        musicSourcePref: currentShow.music_source_pref ?? "Tradio catalog",
+        commercialBreaks: currentShow.ad_preference === "commercial" ? 1 : 0,
+        includeListenerRequests: true,
+        includeProducerSpotlight: true,
+        includeArtistPremiere: true,
+      });
+
+      const blocksToInsert: TradioShowBlock[] = rundownBlocks.map((b, i) => ({
+        id: `local-block-${i}-${Date.now()}`,
+        episode_id: epId,
+        user_id: userId,
+        block_type: b.block_type ?? "voiceover",
+        title: b.title ?? "Untitled Segment",
+        description: b.description ?? "",
+        script_text: b.script_text ?? "",
+        start_time_seconds: b.start_time_seconds ?? 0,
+        duration_seconds: b.duration_seconds ?? 120,
+        sort_order: i,
+        volume_level: 1.0,
+        fade_in_seconds: 1.0,
+        fade_out_seconds: 1.0,
+        approval_status: b.approval_status ?? "approved",
+        clearance_status: b.clearance_status ?? "cleared",
+        metadata: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }));
+
+      setEpisodes({
+        ...episodes,
+        [currentShow.id]: [...(episodes[currentShow.id] || []), localEp],
+      });
+      setCurrentEpisode(localEp);
+      setEpisodeBlocks(blocksToInsert);
+      toast.message("Supabase offline: Local episode timeline built!");
+      setSubView("editor");
+    }
+  };
+
+  // Reorder Block
+  const handleMoveBlock = async (index: number, direction: "up" | "down") => {
+    const blocks = [...episodeBlocks];
+    const targetIdx = direction === "up" ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= blocks.length) return;
+
+    // Swap sort orders
+    const temp = blocks[index].sort_order;
+    blocks[index].sort_order = blocks[targetIdx].sort_order;
+    blocks[targetIdx].sort_order = temp;
+
+    // Swap in array
+    const tempObj = blocks[index];
+    blocks[index] = blocks[targetIdx];
+    blocks[targetIdx] = tempObj;
+
+    setEpisodeBlocks(blocks);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from("tradio_show_blocks").upsert([
+          { id: blocks[index].id, sort_order: blocks[index].sort_order },
+          { id: blocks[targetIdx].id, sort_order: blocks[targetIdx].sort_order }
+        ]);
+        toast.success("Timeline order saved!");
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  // Delete Block
+  const handleDeleteBlock = async (id: string, index: number) => {
+    const updated = episodeBlocks.filter((b) => b.id !== id);
+    setEpisodeBlocks(updated);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from("tradio_show_blocks").delete().eq("id", id);
+        toast.success("Segment removed");
+      } catch (e: any) {
+        toast.error("Failed to delete segment: " + e.message);
+      }
+    } else {
+      toast.success("Segment removed locally");
+    }
+  };
+
+  // AI Script Generation
+  const handleAIRegenerateScript = async () => {
+    if (!editingBlock) return;
+    setGeneratingScript(true);
+    try {
+      const generated = await generateHostScripts({
+        blockTitle: editingBlock.title,
+        blockType: editingBlock.block_type,
+        hostTone: currentShow?.host_mode ?? "cinematic",
+        promptNotes: editingBlock.description ?? "",
+      });
+      setEditingScriptText(generated);
+      toast.success("AI script drafted successfully!");
+    } catch (e: any) {
+      toast.error("AI Generation failed: " + e.message);
+    } finally {
+      setGeneratingScript(false);
+    }
+  };
+
+  // Save Script edits
+  const handleSaveBlockScript = async () => {
+    if (!editingBlock) return;
+
+    const updatedBlocks = episodeBlocks.map((b) => {
+      if (b.id === editingBlock.id) {
+        return { ...b, script_text: editingScriptText };
+      }
+      return b;
+    });
+    setEpisodeBlocks(updatedBlocks);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from("tradio_show_blocks")
+          .update({ script_text: editingScriptText })
+          .eq("id", editingBlock.id);
+        toast.success("Script saved to database!");
+      } catch (e: any) {
+        toast.error("Failed to save script: " + e.message);
+      }
+    } else {
+      toast.success("Script saved locally!");
+    }
+    setEditingBlock(null);
+  };
+
+  // Check show readiness
+  const triggerReadinessCheck = async () => {
+    if (!currentEpisode) return;
+    const validation = await validateShowReadiness(currentEpisode.id, episodeBlocks);
+    setReadinessCheck(validation);
+  };
+
+  useEffect(() => {
+    if (currentEpisode) {
+      triggerReadinessCheck();
+    }
+  }, [episodeBlocks, currentEpisode]);
+
+  // Publish / Schedule
+  const handlePublishEpisode = async (statusToSet: "published" | "scheduled") => {
+    if (!currentEpisode) return;
+
+    // Check readiness first
+    if (!readinessCheck.ready) {
+      toast.error("Cannot publish. Please resolve all timeline checklist errors first.");
+      return;
+    }
+
+    const updatedEpisode = { ...currentEpisode, status: statusToSet };
+    setCurrentEpisode(updatedEpisode);
+
+    // Update in list
+    if (currentShow) {
+      const showEps = episodes[currentShow.id] || [];
+      const updatedEps = showEps.map((e) => (e.id === currentEpisode.id ? updatedEpisode : e));
+      setEpisodes({ ...episodes, [currentShow.id]: updatedEps });
+    }
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from("tradio_show_episodes")
+          .update({ status: statusToSet })
+          .eq("id", currentEpisode.id);
+
+        if (statusToSet === "scheduled" && scheduleStartTime) {
+          await supabase.from("tradio_broadcast_slots").insert({
+            show_id: currentShow?.id,
+            episode_id: currentEpisode.id,
+            start_time: scheduleStartTime,
+            timezone: scheduleTimezone,
+            recurrence: scheduleRecurrence,
+            status: "scheduled",
+          });
+        }
+        toast.success(`Episode successfully ${statusToSet === "published" ? "Published Live" : "Scheduled"}!`);
+      } catch (e: any) {
+        toast.error("Failed to update status: " + e.message);
+      }
+    } else {
+      toast.success(`Supabase offline: Episode mock ${statusToSet === "published" ? "Published" : "Scheduled"}!`);
+    }
   };
 
   return (
@@ -458,462 +530,707 @@ export const BroadcastStudioGateway: React.FC<Props> = ({ onBack, initialTab }) 
       message="Apply for Broadcast Access or switch to a cleared Artist, Producer, DJ, or Admin mode to build premium Tradio shows."
       ctaType="broadcast"
     >
-      <div className="space-y-8 pb-12 lg:space-y-10">
-        <div className="px-4 sm:px-6 lg:px-10 pt-[max(2rem,env(safe-area-inset-top))]">
-          <PrescriptionRail
-            title="Prescribe show segments"
-            subtitle="Mock broadcast prescriptions can later recommend show segments, music blocks, and fan interaction pacing."
-          />
-        </div>
+      <div className="space-y-6 pb-12">
+        <TopBar
+          title="Tradio Broadcast Control Room"
+          showBack
+          onBack={() => {
+            if (subView === "dashboard") onBack();
+            else if (subView === "create-show") setSubView("dashboard");
+            else if (subView === "show-detail") setSubView("dashboard");
+            else if (subView === "create-episode") setSubView("show-detail");
+            else if (subView === "editor") setSubView("show-detail");
+          }}
+        />
 
-        <TopBar title="Tradio Broadcast Suite" showBack onBack={onBack} />
+        {/* LOADING INDICATOR */}
+        {loading && (
+          <div className="flex items-center justify-center p-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-purple-400 border-purple-400/20" />
+          </div>
+        )}
 
-        {activeLiveShow ? (
-          <LiveShowConsole
-            show={activeLiveShow}
-            live={live}
-            interaction={interaction}
-            callers={callers.calls}
-            sessionId={liveSessionId}
-            onEndLive={async () => {
-              if (liveSessionId)
-                await endLive({
-                  sessionId: liveSessionId,
-                  showId: activeLiveShow.id ?? null,
-                  peakListeners: live.listenerCount,
-                });
-              live.leave();
-              setLiveSessionId(null);
-              setActiveLiveShow(null);
-              setIsBuildingShow(false);
-            }}
-          />
-        ) : isBuildingShow ? (
-          <ShowBuilder
-            onGoLive={async (show) => {
-              const { session, error } = await goLive({
-                showId: show.id ?? null,
-                title: show.title,
-                hostName: show.djName ?? "Host",
-              });
-              if (error || !session) {
-                toast.error(error ?? "Could not go live.");
-                return;
-              }
-              setLiveSessionId(session.id);
-              setActiveLiveShow(show);
-              toast.success(`Broadcasting LIVE with "${show.title}"!`);
-            }}
-            onBack={() => setIsBuildingShow(false)}
-          />
-        ) : (
-          /* BROADCAST GATEWAY SCREEN */
-          <div className="px-4 sm:px-6 lg:px-10 space-y-8">
-            {/* 1. Premium Hero Section */}
-            <GlassCard
-              glow
-              className="relative rounded-[2.5rem] border-[0.5px] border-purple-500/15 bg-gradient-to-br from-[#1A0C2B]/55 via-[#060412]/80 to-black/95 p-8 md:p-12 overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.8)]"
-            >
-              <div className="absolute top-0 right-0 h-96 w-96 bg-purple-600/10 blur-[130px] rounded-full pointer-events-none" />
-              <div className="absolute bottom-0 left-0 h-72 w-72 bg-cyan-600/10 blur-[110px] rounded-full pointer-events-none" />
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.005)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.005)_1px,transparent_1px)] bg-[size:35px_30px] opacity-25 pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                <div className="max-w-2xl">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-400/40 bg-purple-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.25)] mb-4">
-                    <Shield className="h-3.5 w-3.5" /> Invite-Only Broadcast Access
-                  </span>
-                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight leading-none">
-                    Tradio{" "}
-                    <span className="bg-gradient-to-r from-fuchsia-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                      Broadcast Suite
-                    </span>
-                  </h1>
-                  <p className="mt-4 text-sm md:text-base text-white/60 leading-relaxed font-medium">
-                    "You are not just creating a post. You are programming a music experience." Step
-                    into our private, high-status broadcast gateway and control room.
-                  </p>
-
-                  {/* Dynamically Render CTA based on active access status */}
-                  <div className="mt-6 flex flex-wrap gap-2.5">
-                    {accessStatus === "Cleared" ? (
-                      <>
-                        <button
-                          onClick={handleCreateNewShow}
-                          className="rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white px-6 py-3 text-xs font-black uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_20px_rgba(176,38,255,0.5)]"
-                        >
-                          Build A Show
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedShowType("release-premiere");
-                            handleCreateNewShow();
-                          }}
-                          className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-xs font-semibold text-white/80 hover:bg-white/10 active:scale-95 transition-all"
-                        >
-                          Schedule Premiere
-                        </button>
-                      </>
-                    ) : accessStatus === "Pending" ? (
-                      <div className="rounded-2xl border border-yellow-400/35 bg-yellow-500/10 px-4 py-3 text-xs font-semibold text-yellow-300 animate-pulse">
-                        Broadcast Clearance Pending Approval
-                      </div>
-                    ) : (
-                      <a
-                        href="#apply-upgrade"
-                        className="rounded-full bg-purple-500/15 border border-purple-500/35 hover:bg-purple-500/25 text-purple-200 px-6 py-3 text-xs font-black uppercase tracking-widest active:scale-95 transition-all text-center"
-                      >
-                        Apply For Access
-                      </a>
-                    )}
-                  </div>
-                </div>
-
-                {/* 2. Access Card Detail */}
-                <GlassCard className="w-full lg:w-[320px] p-5 border-white/10 bg-black/40 backdrop-blur-2xl relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_15px_30px_rgba(0,0,0,0.5)] flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={ACTIVE_USER.avatar}
-                        alt=""
-                        className="h-10 w-10 rounded-xl object-cover border border-white/15"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">{ACTIVE_USER.name}</div>
-                        <div className="text-[10px] text-white/50">{ACTIVE_USER.modeLabel}</div>
-                      </div>
-                    </div>
-                    {role !== "fan" && (
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-                    )}
-                  </div>
-
-                  <div className="pt-3 border-t border-white/5 space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-white/40">Access Level:</span>
-                      <span className="font-mono font-bold text-purple-300 uppercase tracking-widest">
-                        {role.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-white/40">Status:</span>
-                      <span
-                        className={`font-semibold rounded-full px-2 py-0.5 text-[9px] font-mono tracking-wider ${
-                          accessStatus === "Cleared"
-                            ? "bg-emerald-400/10 text-emerald-300 border border-emerald-400/20"
-                            : "bg-yellow-400/10 text-yellow-300 border border-yellow-400/20"
-                        }`}
-                      >
-                        {accessStatus.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-white/40">Host Rights:</span>
-                      <span className="text-white/80 font-bold">
-                        {role === "fan" ? "Guest Only" : "Official Tradio Host"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {role !== "fan" && (
-                    <div className="text-[10px] bg-cyan-400/10 border border-cyan-400/20 p-2 rounded-xl text-cyan-200 leading-snug">
-                      <span className="font-bold">Cleared Categories:</span>{" "}
-                      {role === "artist"
-                        ? "Shows, Premieres, Listening Parties"
-                        : role === "producer"
-                          ? "Spotlights, Beat Battles"
-                          : "Mixes, Replays, Request Hours"}
-                    </div>
-                  )}
-                </GlassCard>
-              </div>
-            </GlassCard>
-
-            {/* 3. Show Type Selector */}
-            <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-bold text-white">Programming Options</h3>
-                <p className="text-xs text-white/50">
-                  Each type has customized segment structures, timers, and widget presets.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                {SHOW_TYPES.map((t) => {
-                  const isLocked =
-                    role === "fan" ||
-                    (role === "artist" && t.id === "dj-mix") ||
-                    (role === "producer" && t.id === "release-premiere");
-                  return (
-                    <GlassCard
-                      key={t.id}
-                      className={`p-4 flex flex-col justify-between hover:-translate-y-1 hover:border-white/15 hover:bg-white/[0.02] transition-all duration-300 relative group/card ${isLocked ? "opacity-50" : ""}`}
-                    >
-                      {isLocked && (
-                        <div className="absolute top-2 right-2 flex items-center justify-center h-6 w-6 rounded-full bg-black/60 border border-white/10 text-white/50">
-                          <Lock className="h-3 w-3" />
-                        </div>
-                      )}
-
-                      <div>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10">
-                          {t.icon}
-                        </div>
-                        <h4 className="mt-4 font-bold text-white text-base">{t.title}</h4>
-                        <p className="mt-1 text-xs text-white/60 leading-relaxed min-h-[48px]">
-                          {t.description}
-                        </p>
-                      </div>
-
-                      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-mono font-bold text-purple-300">
-                        <span>{t.setupTime}</span>
-                        <span className="rounded-full bg-white/[0.04] border border-white/5 px-2 py-0.5 text-white/45">
-                          {t.allowedRole}
-                        </span>
-                      </div>
-                    </GlassCard>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 4. AI Show Builder Card (Dual Layout) */}
-            <GlassCard
-              glow
-              className="p-5 border border-cyan-500/10 bg-gradient-to-r from-[#0C1A2D]/40 to-transparent"
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/10">
-                    <Sparkles className="h-6 w-6 text-cyan-300 animate-pulse" />
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-white flex items-center gap-1.5">
-                      Build With Tradio AI <Chip label="Premium" selected />
-                    </h4>
-                    <p className="text-xs text-white/60 mt-1 max-w-xl leading-relaxed">
-                      Let Tradio's generative music engine organize your segment timeline, compile
-                      recommended music tracks based on your mood, and write a ready-to-read AI
-                      speech teleprompter.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsBuildingShow(true);
-                  }}
-                  disabled={role === "fan"}
-                  className="rounded-full bg-gradient-to-r from-cyan-400 to-purple-600 hover:brightness-110 text-white font-bold px-6 py-2.5 text-xs uppercase tracking-widest active:scale-95 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] whitespace-nowrap disabled:opacity-30 disabled:pointer-events-none"
+        {!loading && (
+          <div className="px-4 sm:px-6 lg:px-10">
+            {/* 1. DASHBOARD VIEW */}
+            {subView === "dashboard" && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Dashboard Hero */}
+                <GlassCard
+                  glow
+                  className="relative rounded-[2.5rem] border-[0.5px] border-purple-500/15 bg-gradient-to-br from-[#120724] via-[#04020a] to-black p-8 overflow-hidden shadow-2xl"
                 >
-                  Start AI Show Plan
-                </button>
-              </div>
-            </GlassCard>
-
-            {/* 5. Existing Drafts & 6. Scheduled Shows (Side by side) */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Drafts Block */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black text-white/45 uppercase tracking-widest font-mono">
-                    My Active Drafts
-                  </h3>
-                  {role !== "fan" && (
-                    <button
-                      onClick={handleCreateNewShow}
-                      className="text-xs text-purple-300 font-bold hover:text-white transition-all flex items-center gap-1"
-                    >
-                      <Plus className="h-3 w-3" /> New Show
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-2.5">
-                  {drafts.map((d) => (
-                    <GlassCard
-                      key={d.id}
-                      className="p-3.5 flex items-center justify-between gap-3 hover:border-white/10 transition-all"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-bold text-white text-sm truncate">{d.title}</div>
-                        <div className="text-[10px] text-white/45 mt-0.5">
-                          {d.type} • Edited {d.lastEdited}
-                        </div>
-
-                        {/* Percent progress bar */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <div className="h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-purple-500"
-                              style={{ width: `${d.completion}%` }}
-                            />
-                          </div>
-                          <span className="text-[9px] font-mono text-purple-300 font-bold">
-                            {d.completion}%
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => {
-                          const matchedType =
-                            d.type === "Artist Radio Show" ? "artist-show" : "release-premiere";
-                          setSelectedShowType(matchedType);
-                          setShowName(d.title);
-                          setIsBuildingShow(true);
-                        }}
-                        disabled={role === "fan"}
-                        className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-500/10 disabled:opacity-20"
-                      >
-                        Continue
-                      </button>
-                    </GlassCard>
-                  ))}
-                </div>
-              </div>
-
-              {/* Scheduled Block */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-black text-white/45 uppercase tracking-widest font-mono">
-                  My Upcoming Schedule
-                </h3>
-                <div className="space-y-2.5">
-                  {scheduled.map((s) => (
-                    <GlassCard key={s.id} className="p-3.5 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-bold text-white text-sm truncate">
-                            {s.title || s.type}
-                          </div>
-                          {s.status === "live" && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-500/20 bg-red-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-red-400">
-                              Live
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[10px] text-white/45 mt-0.5">
-                          {s.dateTime} • {s.station}
-                        </div>
-                        <div className="text-[10px] text-cyan-300 font-bold mt-1.5">
-                          Host: @{s.host}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={async () => {
-                          const showFromTemplate = generateShowPlan({
-                            showName: s.title || s.type,
-                            showLength: 60,
-                            showMood: "late-night",
-                            targetAudience: "broad audience",
-                            hostTone: "cinematic",
-                            musicSource: "artist station plus Tradio catalog",
-                            selectedStation: "station-trey-trizzy",
-                            commercialBreaks: 2,
-                            fanInteractionStyle: "balanced",
-                            includeProducerBeatSpotlight: true,
-                            includeArtistPremiere: true,
-                            includeListenerRequests: true,
-                            saveAs: "live show",
-                          });
-                          const { session } = await goLive({
-                            showId: null,
-                            title: showFromTemplate.title,
-                            hostName: showFromTemplate.djName ?? "Host",
-                          });
-                          if (session) setLiveSessionId(session.id);
-                          setActiveLiveShow(showFromTemplate);
-                          toast.success(`Connected to scheduled live broadcast desk!`);
-                        }}
-                        className="rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-1.5 text-xs font-semibold text-white/70 hover:text-white"
-                      >
-                        Manage
-                      </button>
-                    </GlassCard>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 7. Broadcast Access Upgrade Application (Hidden for Admin/DJ/Cleared roles to avoid clutter) */}
-            {role === "fan" && (
-              <div id="apply-upgrade" className="pt-4 scroll-mt-24">
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold text-white">Unlock Broadcast Suite</h3>
-                  <p className="text-xs text-white/50">
-                    Apply for cleared broadcast rights inside the Trey TV music universe.
-                  </p>
-                </div>
-                <GlassCard className="p-5 border-white/10 bg-black/30">
-                  {applied ? (
-                    <div className="py-8 text-center space-y-3">
-                      <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto animate-pulse" />
-                      <h4 className="text-base font-black text-white">
-                        Cleared Application Submitted
-                      </h4>
-                      <p className="text-xs text-white/50 max-w-sm mx-auto leading-relaxed">
-                        Your request is currently being prioritized by station directors. Watch your
-                        notifications tab for official host credentials.
+                  <div className="absolute top-0 right-0 h-64 w-64 bg-purple-500/10 blur-[100px] pointer-events-none" />
+                  <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                    <div>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-purple-400/40 bg-purple-500/15 px-3 py-0.5 text-[9px] font-black uppercase tracking-widest text-purple-300 mb-3 font-mono">
+                        <Shield className="h-3 w-3" /> VERIFIED BROADCASTER
+                      </span>
+                      <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                        Tradio <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">Studio</span>
+                      </h1>
+                      <p className="mt-2 text-xs md:text-sm text-white/60 max-w-xl">
+                        "Your sound is not a post. It is programming." Design, schedule, and live broadcast highly atmospheric radio shows with generative AI.
                       </p>
                     </div>
+                    <button
+                      onClick={() => setSubView("create-show")}
+                      className="rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white font-black px-6 py-3 text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] whitespace-nowrap"
+                    >
+                      <Plus className="h-3.5 w-3.5 inline mr-1.5" /> Create Show Lane
+                    </button>
+                  </div>
+                </GlassCard>
+
+                {/* Grid for Show Lanes */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-black text-white/40 uppercase tracking-widest font-mono">
+                      Your Broadcast Lanes
+                    </h3>
+                  </div>
+
+                  {shows.length === 0 ? (
+                    <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
+                      <Mic2 className="h-8 w-8 text-white/20 mx-auto" />
+                      <div className="text-sm font-bold text-white/80">No lanes created yet</div>
+                      <p className="text-xs text-white/50 max-w-xs mx-auto">
+                        Create your first official show lane to start compiling episodes and scheduling broadcasts.
+                      </p>
+                    </GlassCard>
                   ) : (
-                    <form onSubmit={handleSubmitApplication} className="space-y-4">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Field label="Choose Broadcast Role">
-                          <select
-                            className={inputClass}
-                            value={applyRole}
-                            onChange={(e) =>
-                              setApplyRole(e.target.value as "Artist" | "Producer" | "DJ" | "Host")
-                            }
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {shows.map((show) => {
+                        const showEps = episodes[show.id] || [];
+                        return (
+                          <GlassCard
+                            key={show.id}
+                            className="p-5 flex flex-col justify-between hover:border-purple-500/30 hover:bg-white/[0.01] transition-all group cursor-pointer"
+                            onClick={() => {
+                              setCurrentShow(show);
+                              setSubView("show-detail");
+                            }}
                           >
-                            <option value="Artist">Verified Artist</option>
-                            <option value="Producer">Verified Producer</option>
-                            <option value="DJ">Verified DJ / Remix Master</option>
-                            <option value="Host">Tradio Guest Host</option>
-                          </select>
-                        </Field>
-                        <Field label="Station / Artist Profile Link">
-                          <input
-                            className={inputClass}
-                            value={applyLink}
-                            onChange={(e) => setApplyLink(e.target.value)}
-                            placeholder="e.g. tradio.fm/station/jordan"
-                            required
-                          />
-                        </Field>
-                      </div>
-                      <Field label="Why do you want to host on Tradio?">
-                        <textarea
-                          className={`${inputClass} h-24 resize-none`}
-                          value={applyMotivation}
-                          onChange={(e) => setApplyMotivation(e.target.value)}
-                          placeholder="Explain your show concept, genre focus, and release lineup plans..."
-                          required
+                            <div>
+                              <div className="flex items-start justify-between">
+                                <span className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono">
+                                  {show.show_type.replace(/-/g, " ")}
+                                </span>
+                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest font-mono ${
+                                  show.status === "published" ? "bg-emerald-500/15 border border-emerald-500/20 text-emerald-300" : "bg-yellow-500/15 border border-yellow-500/20 text-yellow-300"
+                                }`}>
+                                  {show.status}
+                                </span>
+                              </div>
+                              <h4 className="mt-4 font-black text-white text-lg group-hover:text-purple-300 transition-colors">
+                                {show.title}
+                              </h4>
+                              <p className="mt-1 text-xs text-white/50 line-clamp-2">
+                                {show.description || "No description provided."}
+                              </p>
+                            </div>
+                            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-mono font-bold text-white/40">
+                              <span>Mood: <span className="text-purple-300">{show.mood || "Atmospheric"}</span></span>
+                              <span className="flex items-center gap-1 text-cyan-300">
+                                {showEps.length} EPISODES <ChevronRight className="h-3 w-3" />
+                              </span>
+                            </div>
+                          </GlassCard>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 2. CREATE SHOW FORM */}
+            {subView === "create-show" && (
+              <div className="max-w-2xl mx-auto animate-scale-in">
+                <GlassCard className="p-6 md:p-8 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-white">Create Broadcast Lane</h3>
+                    <p className="text-xs text-white/55 mt-1 leading-relaxed">
+                      Set up your official lane parameters. These constraints guide the AI in drafting timeline structures, moods, and playlist models.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSaveShow} className="space-y-4">
+                    <Field label="Show Lane Title">
+                      <input
+                        className={inputClass}
+                        value={newShowTitle}
+                        onChange={(e) => setNewShowTitle(e.target.value)}
+                        placeholder="e.g. Midnight Waves Radio"
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Audience/Vibe Description">
+                      <textarea
+                        className={`${inputClass} h-20 resize-none`}
+                        value={newShowDesc}
+                        onChange={(e) => setNewShowDesc(e.target.value)}
+                        placeholder="Describe what listeners should feel..."
+                      />
+                    </Field>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Programming Format">
+                        <select
+                          className={selectClass}
+                          value={newShowType}
+                          onChange={(e) => setNewShowType(e.target.value)}
+                        >
+                          <option value="artist-show">Artist Showcase Lane</option>
+                          <option value="dj-mix">DJ Live Set Mix</option>
+                          <option value="producer-spotlight">Producer Beat Hour</option>
+                          <option value="release-premiere">Release Premiere Drop</option>
+                        </select>
+                      </Field>
+
+                      <Field label="Co-Pilot Tone">
+                        <select
+                          className={selectClass}
+                          value={newShowHostMode}
+                          onChange={(e) => setNewShowHostMode(e.target.value)}
+                        >
+                          <option value="cinematic">Cinematic & Smooth</option>
+                          <option value="hype">Energetic & Hype</option>
+                          <option value="cozy">Cozy, Lofi & Intimate</option>
+                          <option value="robotic">Sci-fi / Future Synthetic</option>
+                        </select>
+                      </Field>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Aesthetic Mood">
+                        <input
+                          className={inputClass}
+                          value={newShowMood}
+                          onChange={(e) => setNewShowMood(e.target.value)}
+                          placeholder="e.g. Late-night, Velvet, Neon"
                         />
                       </Field>
-                      <LegalAcceptanceGroup
-                        config={LEGAL_ACCEPTANCE_FLOWS.role_access_request}
-                        values={accessLegalValues}
-                        onChange={setAccessLegalValues}
-                        status={accessLegalStatus}
-                        statusMessage={accessLegalMessage}
-                        compact
-                      />
-                      <div className="flex justify-end pt-2">
-                        <button
-                          type="submit"
-                          disabled={!accessLegalAccepted || accessLegalStatus === "saving"}
-                          className={`rounded-full px-6 py-2.5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_0_20px_rgba(168,85,247,0.3)] ${
-                            accessLegalAccepted
-                              ? "bg-purple-500 hover:bg-purple-600 text-white"
-                              : "border border-white/10 bg-white/5 text-white/25"
-                          }`}
+
+                      <Field label="Target Listeners">
+                        <input
+                          className={inputClass}
+                          value={newShowAudience}
+                          onChange={(e) => setNewShowAudience(e.target.value)}
+                          placeholder="e.g. lo-fi heads, late sleepers"
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Catalog Source Preferences">
+                        <input
+                          className={inputClass}
+                          value={newShowMusicSource}
+                          onChange={(e) => setNewShowMusicSource(e.target.value)}
+                          placeholder="e.g. Creator upload feed + Tradio database"
+                        />
+                      </Field>
+
+                      <Field label="Ad Slot Strategy">
+                        <select
+                          className={selectClass}
+                          value={newShowAdPref}
+                          onChange={(e) => setNewShowAdPref(e.target.value)}
                         >
-                          Submit Broadcast Request
+                          <option value="none">No Ads (Subscribers Only)</option>
+                          <option value="commercial">1 Mid-roll Sponsorship Read</option>
+                          <option value="heavy">Balanced Sponsors</option>
+                        </select>
+                      </Field>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Publish Visibility">
+                        <select
+                          className={selectClass}
+                          value={newShowVisibility}
+                          onChange={(e) => setNewShowVisibility(e.target.value as any)}
+                        >
+                          <option value="public">Public (Show on main feeds)</option>
+                          <option value="unlisted">Unlisted (Links only)</option>
+                          <option value="private">Private (Owners/DJs only)</option>
+                        </select>
+                      </Field>
+
+                      <Field label="Schedule Intent">
+                        <select
+                          className={selectClass}
+                          value={newShowScheduleIntent}
+                          onChange={(e) => setNewShowScheduleIntent(e.target.value)}
+                        >
+                          <option value="live">Continuous Live Room</option>
+                          <option value="scheduled">Weekly Slot Booking</option>
+                        </select>
+                      </Field>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setSubView("dashboard")}
+                        className="rounded-full border border-white/10 hover:bg-white/5 px-6 py-2.5 text-xs font-semibold text-white/80"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white font-black px-6 py-2.5 text-xs uppercase tracking-widest hover:brightness-110 shadow-lg"
+                      >
+                        Create Lane
+                      </button>
+                    </div>
+                  </form>
+                </GlassCard>
+              </div>
+            )}
+
+            {/* 3. SHOW DETAIL PAGE */}
+            {subView === "show-detail" && currentShow && (
+              <div className="space-y-6 animate-scale-in">
+                {/* Show Header */}
+                <GlassCard className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-purple-500/10">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-purple-300 font-mono">
+                        {currentShow.show_type.replace(/-/g, " ")}
+                      </span>
+                      <Chip label={`Mood: ${currentShow.mood || "Atmospheric"}`} />
+                    </div>
+                    <h2 className="mt-3 text-3xl font-black text-white">{currentShow.title}</h2>
+                    <p className="mt-1 text-xs text-white/60 max-w-xl">{currentShow.description}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setNewEpisodeTitle("");
+                      setNewEpisodeDesc("");
+                      setSubView("create-episode");
+                    }}
+                    className="rounded-full bg-gradient-to-r from-purple-500 via-fuchsia-600 to-cyan-400 text-white font-black px-6 py-2.5 text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-md whitespace-nowrap"
+                  >
+                    <Plus className="h-4 w-4 inline mr-1" /> New Episode
+                  </button>
+                </GlassCard>
+
+                {/* Episodes list */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-black text-white/45 uppercase tracking-widest font-mono">
+                    Show Episodes
+                  </h3>
+
+                  {(episodes[currentShow.id] || []).length === 0 ? (
+                    <GlassCard className="p-8 text-center border-dashed border-white/10 space-y-3">
+                      <Disc className="h-8 w-8 text-white/20 mx-auto" />
+                      <div className="text-sm font-bold text-white/80">No episodes created yet</div>
+                      <p className="text-xs text-white/50 max-w-xs mx-auto">
+                        Ready to make radio history? Click "New Episode" to start building your ordered timeline.
+                      </p>
+                    </GlassCard>
+                  ) : (
+                    <div className="grid gap-3">
+                      {(episodes[currentShow.id] || []).map((ep) => (
+                        <GlassCard
+                          key={ep.id}
+                          className="p-4 flex items-center justify-between gap-4 hover:border-white/10 transition-colors"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-white text-sm">{ep.title}</span>
+                              <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-black uppercase tracking-widest font-mono ${
+                                ep.status === "published" ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" :
+                                ep.status === "scheduled" ? "bg-cyan-500/10 border border-cyan-500/20 text-cyan-300" :
+                                "bg-yellow-500/10 border border-yellow-500/20 text-yellow-300"
+                              }`}>
+                                {ep.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/40 mt-1 max-w-xl truncate">{ep.description}</p>
+                            <div className="text-[9px] font-mono font-bold text-white/30 mt-2 flex items-center gap-3">
+                              <span>DURATION: {Math.round(ep.duration_seconds / 60)} MINS</span>
+                              <span>CREATED: {new Date(ep.created_at).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              setCurrentEpisode(ep);
+                              setLoading(true);
+                              try {
+                                if (isSupabaseConfigured && supabase) {
+                                  const { data, error } = await supabase
+                                    .from("tradio_show_blocks")
+                                    .select("*")
+                                    .eq("episode_id", ep.id)
+                                    .order("sort_order", { ascending: true });
+                                  if (error) throw error;
+                                  setEpisodeBlocks(data || []);
+                                }
+                                setSubView("editor");
+                              } catch (e: any) {
+                                toast.error("Timeline loading failed: " + e.message);
+                              } finally {
+                                setLoading(false);
+                              }
+                            }}
+                            className="rounded-xl border border-purple-500/20 bg-purple-500/5 px-4 py-2 text-xs font-bold text-purple-300 hover:bg-purple-500/10 transition-colors"
+                          >
+                            Open Console
+                          </button>
+                        </GlassCard>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 4. CREATE EPISODE FLOW */}
+            {subView === "create-episode" && currentShow && (
+              <div className="max-w-xl mx-auto animate-scale-in">
+                <GlassCard className="p-6 md:p-8 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-white">Create New Episode</h3>
+                    <p className="text-xs text-white/55 mt-1">
+                      Under Show Lane: <span className="text-purple-300 font-bold">{currentShow.title}</span>
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleSaveEpisode} className="space-y-4">
+                    <Field label="Episode Title">
+                      <input
+                        className={inputClass}
+                        value={newEpTitle}
+                        onChange={(e) => setNewEpisodeTitle(e.target.value)}
+                        placeholder="e.g. Episode 4: Late Night Deep Dives"
+                        required
+                      />
+                    </Field>
+
+                    <Field label="Episode Description / Concept">
+                      <textarea
+                        className={`${inputClass} h-24 resize-none`}
+                        value={newEpDesc}
+                        onChange={(e) => setNewEpisodeDesc(e.target.value)}
+                        placeholder="Brief summary of what this episode covers..."
+                      />
+                    </Field>
+
+                    <div className="bg-purple-500/10 border border-purple-500/20 p-4 rounded-2xl flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-purple-300 shrink-0 mt-0.5 animate-pulse" />
+                      <div className="text-xs leading-relaxed text-purple-200">
+                        <span className="font-bold">AI Timeline Initialization:</span> Once created, Tradio's backend co-pilot will automatically construct a customized 30-minute block timeline matching your lane formats.
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-white/5">
+                      <button
+                        type="button"
+                        onClick={() => setSubView("show-detail")}
+                        className="rounded-full border border-white/10 hover:bg-white/5 px-6 py-2.5 text-xs font-semibold text-white/80"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white font-black px-6 py-2.5 text-xs uppercase tracking-widest hover:brightness-110 shadow-lg"
+                      >
+                        Build Episode
+                      </button>
+                    </div>
+                  </form>
+                </GlassCard>
+              </div>
+            )}
+
+            {/* 5. INTEGRATED EPISODE TIMELINE / BLOCKS EDITOR */}
+            {subView === "editor" && currentEpisode && currentShow && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Breadcrumb info */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.01] border border-white/5 p-4 rounded-3xl">
+                  <div>
+                    <div className="text-[10px] text-white/40 uppercase tracking-widest font-mono">
+                      Broadcast Studio Lane • {currentShow.title}
+                    </div>
+                    <h3 className="text-xl font-black text-white mt-1">{currentEpisode.title}</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white/50 bg-white/5 px-2.5 py-1 rounded-full font-mono">
+                      DURATION: {Math.round(episodeBlocks.reduce((acc, b) => acc + b.duration_seconds, 0) / 60)} MINS
+                    </span>
+                    <span className="text-[10px] text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-full font-mono font-bold uppercase">
+                      STATUS: {currentEpisode.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sub-panels Grid */}
+                <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+                  {/* Left: Ordered Timeline Blocks */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-white/45 uppercase tracking-widest font-mono">
+                        Episode Timeline blocks
+                      </h4>
+                    </div>
+
+                    <div className="space-y-3">
+                      {episodeBlocks.map((block, index) => {
+                        const isSelected = editingBlock?.id === block.id;
+                        return (
+                          <GlassCard
+                            key={block.id}
+                            className={`p-4 border-[0.5px] transition-all relative ${
+                              isSelected ? "border-purple-400/40 bg-purple-500/5 shadow-[0_0_15px_rgba(168,85,247,0.15)]" : "border-white/10"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3.5">
+                                <div className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-white/5 border border-white/10 text-purple-300">
+                                  {block.block_type === "intro" ? <Mic2 className="h-5 w-5" /> :
+                                   block.block_type === "song" ? <Music className="h-5 w-5" /> :
+                                   block.block_type === "ad" ? <Megaphone className="h-5 w-5" /> :
+                                   block.block_type === "producer_spotlight" ? <Sparkles className="h-5 w-5" /> :
+                                   <Radio className="h-5 w-5" />}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-sm">{block.title}</span>
+                                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">
+                                      {block.block_type.replace(/_/g, " ")}
+                                    </span>
+                                    {block.block_type === "song" && (
+                                      <span className={`rounded-full px-1.5 py-0.5 text-[7px] font-mono font-bold uppercase tracking-wider ${
+                                        block.clearance_status === "cleared" ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-300"
+                                      }`}>
+                                        {block.clearance_status}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-white/55 mt-1 leading-relaxed">{block.description || "No notes."}</p>
+                                  {block.script_text && (
+                                    <div className="text-[11px] font-mono text-cyan-300 italic bg-cyan-950/10 border-l border-cyan-400/30 pl-2 py-1 mt-2.5 max-w-lg line-clamp-2">
+                                      "{block.script_text}"
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Controls */}
+                              <div className="flex items-center gap-1.5 self-center shrink-0">
+                                <button
+                                  onClick={() => handleMoveBlock(index, "up")}
+                                  disabled={index === 0}
+                                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] text-white/45 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                                  title="Move Up"
+                                >
+                                  <ArrowUp className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => handleMoveBlock(index, "down")}
+                                  disabled={index === episodeBlocks.length - 1}
+                                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-white/5 bg-white/[0.02] text-white/45 hover:text-white hover:bg-white/5 disabled:opacity-20"
+                                  title="Move Down"
+                                >
+                                  <ArrowDown className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingBlock(block);
+                                    setEditingScriptText(block.script_text || "");
+                                  }}
+                                  className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-purple-300 hover:bg-purple-500/10"
+                                >
+                                  Edit script
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBlock(block.id, index)}
+                                  className="h-8 w-8 flex items-center justify-center rounded-lg border border-red-500/10 bg-red-500/5 text-red-400/65 hover:text-red-400 hover:bg-red-500/10"
+                                  title="Remove Block"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center gap-4 text-[9px] font-mono text-white/35 font-semibold">
+                              <span>START: {Math.round(block.start_time_seconds / 60)} MINS</span>
+                              <span>DURATION: {block.duration_seconds} SECS</span>
+                              <span>VOLUME: {Math.round(block.volume_level * 100)}%</span>
+                            </div>
+                          </GlassCard>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right Panel: Host Script, Drops, Ads, Schedule & Review */}
+                  <div className="space-y-6">
+                    {/* Block Script Editor Panel */}
+                    {editingBlock && (
+                      <GlassCard className="p-5 border-purple-500/20 bg-gradient-to-b from-[#1b092a] to-transparent space-y-4 animate-scale-in">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                            <Mic2 className="h-4 w-4 text-purple-300" /> Host Script teleprompter
+                          </h4>
+                          <button onClick={() => setEditingBlock(null)} className="text-white/40 hover:text-white">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-white/50">
+                          Editing Script for: <span className="text-purple-300 font-bold">{editingBlock.title}</span>
+                        </div>
+
+                        <textarea
+                          className={`${inputClass} h-32 resize-none text-xs leading-relaxed font-mono text-cyan-300`}
+                          value={editingScriptText}
+                          onChange={(e) => setEditingScriptText(e.target.value)}
+                          placeholder="Write the teleprompter/script content for this segment..."
+                        />
+
+                        <div className="flex justify-between items-center">
+                          <button
+                            type="button"
+                            onClick={handleAIRegenerateScript}
+                            disabled={generatingScript}
+                            className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20 transition-all flex items-center gap-1 disabled:opacity-40"
+                          >
+                            <Sparkles className="h-3 w-3 animate-pulse" /> {generatingScript ? "Generative AI..." : "Regenerate Script with AI"}
+                          </button>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => setEditingBlock(null)}
+                              className="rounded-xl border border-white/10 px-3 py-1.5 text-[10px] font-semibold text-white/60"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleSaveBlockScript}
+                              className="rounded-xl bg-purple-500 hover:bg-purple-600 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-white"
+                            >
+                              Save Script
+                            </button>
+                          </div>
+                        </div>
+                      </GlassCard>
+                    )}
+
+                    {/* Station Drops area */}
+                    <GlassCard className="p-4 space-y-3">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                        <Disc className="h-4 w-4 text-purple-300 animate-spin" style={{ animationDuration: "5s" }} /> STATION DROPS & SFX
+                      </h4>
+                      <div className="space-y-2">
+                        {stationDrops.map((drop) => (
+                          <div key={drop.id} className="p-2.5 rounded-xl border border-white/5 bg-white/[0.01] flex items-center justify-between text-xs hover:border-white/10 transition-colors">
+                            <span className="font-bold text-white/80 truncate">{drop.title}</span>
+                            <button
+                              onClick={() => {
+                                toast.success(`Playing preview for "${drop.title}" 🔊`);
+                              }}
+                              className="p-1 rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-300 hover:bg-purple-500/25"
+                              title="Play preview sfx"
+                            >
+                              <Play className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </GlassCard>
+
+                    {/* Ad read manager */}
+                    <GlassCard className="p-4 space-y-3">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                        <Megaphone className="h-4 w-4 text-cyan-300" /> SPONSOR AD SLOTS
+                      </h4>
+                      <p className="text-[10px] text-white/55 leading-relaxed">
+                        Insert sponsor reads into your ad blocks. Select filled provider models.
+                      </p>
+                      <button
+                        onClick={async () => {
+                          const adReadText = await generateAdRead({
+                            adProvider: "Trey TV Luxury Watches",
+                            durationSeconds: 30,
+                            tone: currentShow.host_mode ?? "cinematic",
+                          });
+                          toast.message("AI Ad Read draft saved to clipboard!", { description: adReadText });
+                        }}
+                        className="w-full text-center py-2 rounded-xl border border-dashed border-cyan-400/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/10"
+                      >
+                        Generate 30s Sponsor Read Script
+                      </button>
+                    </GlassCard>
+
+                    {/* Readiness Checklist / Review Panel */}
+                    <GlassCard className="p-5 space-y-4">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono">
+                        Episode Readiness Checklist
+                      </h4>
+
+                      <div className="space-y-2">
+                        {readinessCheck.ready ? (
+                          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-xs flex items-start gap-2">
+                            <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold">Clear for Broadcast:</span> Everything matches scheduling constraints. Music clearances are confirmed.
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-300 text-xs flex items-start gap-2">
+                            <BadgeAlert className="h-4 w-4 shrink-0 mt-0.5" />
+                            <div>
+                              <span className="font-bold">Checks Flagged:</span> Please review the warning signals before publishing.
+                            </div>
+                          </div>
+                        )}
+
+                        {readinessCheck.warnings.map((warn, i) => (
+                          <div key={i} className="text-[10px] text-white/60 bg-white/[0.01] p-2 rounded-lg border border-white/5 flex items-start gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-400 shrink-0 mt-1.5" />
+                            <span>{warn}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Schedule Panel and Trigger */}
+                      <div className="pt-3 border-t border-white/5 space-y-3">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-white/45 font-mono">
+                          Schedule Intent
+                        </div>
+                        <div className="grid gap-2 text-xs">
+                          <input
+                            type="datetime-local"
+                            className={inputClass}
+                            value={scheduleStartTime}
+                            onChange={(e) => setScheduleStartTime(e.target.value)}
+                            title="Schedule Time"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="pt-2 flex flex-col gap-2">
+                        <button
+                          onClick={() => handlePublishEpisode("published")}
+                          disabled={!readinessCheck.ready}
+                          className="w-full text-center py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black uppercase tracking-widest disabled:opacity-40 shadow-md"
+                        >
+                          Publish Now (Live Feed)
+                        </button>
+                        <button
+                          onClick={() => handlePublishEpisode("scheduled")}
+                          disabled={!readinessCheck.ready || !scheduleStartTime}
+                          className="w-full text-center py-2.5 rounded-full border border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-xs font-black uppercase tracking-widest disabled:opacity-40"
+                        >
+                          Schedule Slot
                         </button>
                       </div>
-                    </form>
-                  )}
-                </GlassCard>
+                    </GlassCard>
+                  </div>
+                </div>
               </div>
             )}
           </div>

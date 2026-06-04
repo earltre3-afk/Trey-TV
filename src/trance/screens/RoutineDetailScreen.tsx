@@ -14,7 +14,8 @@ import { tranceRoutineService, tranceLeaderboardService } from "../services";
 import { shouldUseFixtures } from "../services/config";
 
 const RoutineDetailScreen: React.FC = () => {
-  const { id } = useParams();
+  const { routineId } = useParams<{ routineId: string }>();
+  const id = routineId;
   const navigate = useNavigate();
 
   const [r, setR] = React.useState<any>(null);

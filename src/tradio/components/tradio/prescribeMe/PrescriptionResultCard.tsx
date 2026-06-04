@@ -114,12 +114,11 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
           {prescription.description}
         </p>
 
-        {/* Privacy-safedynamic reasoning based on answers */}
         <div className="mt-2.5 sm:mt-3.5 border-t border-white/5 pt-2 sm:pt-2.5 text-[10px] text-white/50 italic bg-[#0d0914]/40 p-2 sm:p-2.5 rounded-xl border border-white/[0.04]">
           <strong className="text-purple-300/80 not-italic font-bold font-mono text-[9px] uppercase tracking-wider block mb-0.5">
             Diagnostic Sound Source:
           </strong>
-          “{prescription.reason}”
+          "{prescription.reason}"
         </div>
 
         {/* User ratings and quick CTA */}
@@ -165,14 +164,14 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
 
           <button
             onClick={onCtaClick}
-            className="flex-1 h-8 px-4 rounded-xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-500 text-white font-black text-[10px] uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] hover:scale-[1.02] transition-all flex items-center justify-center gap-1"
+            className="flex-1 min-w-0 h-8 px-3 rounded-xl bg-gradient-to-r from-purple-500 via-fuchsia-500 to-cyan-500 text-white font-black text-[10px] uppercase tracking-wider shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:shadow-[0_0_25px_rgba(6,182,212,0.5)] hover:scale-[1.02] transition-all flex items-center justify-center gap-1"
           >
             {prescription.ctaType === "start_radio" ? (
               <Disc className="h-3.5 w-3.5 animate-spin" style={{ animationDuration: "4s" }} />
             ) : (
               <ArrowRight className="h-3.5 w-3.5" />
             )}
-            {prescription.primaryCtaLabel}
+            <span className="min-w-0 truncate">{prescription.primaryCtaLabel}</span>
           </button>
         </div>
       </div>
@@ -223,7 +222,7 @@ export const PrescriptionResultCard: React.FC<PrescriptionResultCardProps> = ({
       </div>
 
       {/* Secondary CTAs */}
-      <div className="grid grid-cols-2 gap-1.5 sm:gap-2 pt-1">
+      <div className={`grid gap-1.5 sm:gap-2 pt-1 ${onOpenForge ? "grid-cols-2" : "grid-cols-1"}`}>
         {onOpenForge && (
           <button
             onClick={onOpenForge}

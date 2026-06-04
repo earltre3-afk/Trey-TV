@@ -606,7 +606,42 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
   });
 
   return (
-    <div className="px-3 pb-24">
+    <div
+      className="w-full text-white flex flex-col overflow-hidden relative trey-screen-enter"
+      style={{
+        height: "100dvh",
+        background: `
+          radial-gradient(ellipse 80% 50% at 50% 0%, rgba(157,78,221,0.15) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 40% at 50% 100%, rgba(157,78,221,0.12) 0%, transparent 60%),
+          linear-gradient(180deg, #050409 0%, #020104 100%)
+        `,
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
+      {/* ambient neon halos — violet top-left, pink top-right, magenta bottom */}
+      <div
+        className="pointer-events-none absolute -top-32 -left-24 w-[360px] h-[360px] rounded-full"
+        style={{
+          background: "radial-gradient(closest-side, oklch(0.72 0.26 300 / 0.35), transparent 70%)",
+          filter: "blur(20px)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -top-24 -right-24 w-[320px] h-[320px] rounded-full"
+        style={{
+          background: "radial-gradient(closest-side, oklch(0.74 0.22 350 / 0.25), transparent 70%)",
+          filter: "blur(20px)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute -bottom-20 left-1/2 -translate-x-1/2 w-[420px] h-[260px] rounded-full"
+        style={{
+          background: "radial-gradient(closest-side, oklch(0.70 0.27 0 / 0.22), transparent 70%)",
+          filter: "blur(24px)",
+        }}
+      />
+
       <style>{`
         @keyframes truno-pop { 0% { transform: scale(0.92); filter: brightness(1); } 45% { transform: scale(1.1); filter: brightness(1.4); } 100% { transform: scale(1); filter: brightness(1); } }
         @keyframes truno-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-3px); } }
@@ -615,423 +650,464 @@ const MatchScreen: React.FC<Props> = ({ onNavigate, identity, roomId = null, mod
         @keyframes truno-thinking { 0%, 100% { opacity: 0.35; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-2px); } }
       `}</style>
 
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              clearSequencer();
-              onNavigate("exit");
-            }}
-            className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center"
-            aria-label="Back to Trey TV Games"
-          >
-            <ChevronDown className="rotate-90 text-zinc-300" size={16} />
-          </button>
-          <div className="rounded-xl bg-zinc-950/80 border border-zinc-800 px-3 py-1.5">
-            <div className="flex items-center gap-1.5">
-              <Trophy size={12} className="text-amber-400" />
-              <span className="text-[10px] text-zinc-400 font-semibold">Room ID</span>
-            </div>
-            <span className="text-sm font-bold text-white">{roomCode}</span>
-          </div>
-        </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
+      {/* COMPACT CINEMATIC HEADER */}
+      <header
+        className="shrink-0 z-20 backdrop-blur-2xl border-b relative"
+        style={{
+          background: "linear-gradient(180deg, rgba(8,17,31,0.92), rgba(8,17,31,0.78))",
+          borderColor: "rgba(157,78,221,0.3)",
+          boxShadow: "0 6px 24px rgba(0,0,0,0.4)",
+        }}
+      >
+        <div className="px-3 py-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
-              onClick={handleLeaveMatch}
-              className="min-h-10 px-3 sm:px-4 py-2 rounded-xl border border-pink-500/50 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-500/10"
+              onClick={() => {
+                clearSequencer();
+                onNavigate("exit");
+              }}
+              className="w-9 h-9 rounded-xl bg-zinc-900/80 border border-zinc-850 flex items-center justify-center"
+              aria-label="Back to Trey TV Games"
             >
-              Leave Match
+              <ChevronDown className="rotate-90 text-zinc-300" size={16} />
             </button>
-            <button
-              onClick={() => setNotice("Table menu is coming soon.")}
-              className="w-9 h-9 rounded-full bg-zinc-900/80 border border-zinc-800 flex items-center justify-center"
-            >
-              <MoreVertical size={16} className="text-zinc-300" />
-            </button>
-          </div>
-
-          {actionLog.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-zinc-950/80 border border-zinc-800 rounded-full p-1 shadow-md max-w-[260px] sm:max-w-xs animate-[truno-pop_0.35s_ease-out]">
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider px-1 shrink-0">
-                Moves:
-              </span>
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                {actionLog.slice(0, 2).map((item, i) => {
-                  const dotColor =
-                    item.tone === "effect"
-                      ? "bg-fuchsia-400"
-                      : item.tone === "draw" || item.tone === "keep"
-                        ? "bg-purple-400"
-                        : item.tone === "play"
-                          ? "bg-cyan-400"
-                          : "bg-zinc-400";
-                  return (
-                    <div key={item.id} className="flex items-center gap-1 shrink-0 text-[10px]">
-                      {i > 0 && <span className="text-zinc-800 font-bold">|</span>}
-                      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                      <span className="text-zinc-300 max-w-[90px] truncate" title={item.text}>
-                        {item.text}
-                      </span>
-                    </div>
-                  );
-                })}
+            <div className="rounded-xl bg-zinc-950/80 border border-zinc-850 px-3 py-1.5">
+              <div className="flex items-center gap-1.5">
+                <Trophy size={12} className="text-amber-400" />
+                <span className="text-[10px] text-zinc-400 font-semibold">Room ID</span>
               </div>
+              <span className="text-sm font-bold text-white">{roomCode}</span>
             </div>
-          )}
-        </div>
-      </div>
-
-      <div
-        className={`mx-auto max-w-full w-fit rounded-full bg-zinc-950/80 border px-4 py-1.5 mb-4 flex items-center gap-3 ${myTurn ? "border-emerald-400/50 shadow-[0_0_22px_rgba(52,211,153,0.25)]" : "border-fuchsia-500/30"}`}
-      >
-        <span className="text-xs font-bold text-fuchsia-300">{tableLabel}</span>
-        <span className="text-xs text-zinc-500">|</span>
-        <span className="text-xs text-zinc-300 truncate">{turnNotice || state.message}</span>
-      </div>
-
-      <div className="relative aspect-square max-w-md mx-auto">
-        <div
-          className="absolute inset-0 rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, transparent 35%, rgba(157,78,221,0.15) 50%, transparent 65%)",
-          }}
-        />
-        <div className="absolute inset-8 rounded-full border border-purple-500/30" />
-        <div className="absolute inset-16 rounded-full border border-fuchsia-500/20" />
-        <div className="absolute inset-24 rounded-full border border-blue-500/20" />
-
-        {state.players.map((player, index) => (
-          <TablePlayer
-            key={player.id}
-            player={player}
-            relativeIndex={(index - bottomSeat + state.players.length) % state.players.length}
-            playerCount={state.players.length}
-            active={activePlayer?.id === player.id}
-            thinking={thinkingPlayerId === player.id}
-            pulsing={pulsePlayerId === player.id || tableEffect?.targetPlayerId === player.id}
-            isYou={player.id === me.id}
-            avatar={player.id === me.id ? currentUser.avatar : undefined}
-          />
-        ))}
-
-        <div className="absolute inset-0 flex items-center justify-center gap-3">
-          <div key={drawPulse} className={drawPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}>
-            <TrunoCard
-              card={{ id: "deck", color: "black", symbol: "wild", label: "W" }}
-              faceDown
-              size="md"
-            />
           </div>
-          {top && (
-            <div
-              key={`${top.id}:${discardPulse}`}
-              className={discardPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}
-            >
-              <TrunoCard card={top} size="md" playable />
-            </div>
-          )}
-        </div>
-
-        {tableEffect && (
-          <div
-            className={`pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)}`}
-          >
-            <span className="inline-flex items-center gap-2">
-              {tableEffect.tone === "wild" || tableEffect.tone === "win" ? (
-                <Sparkles size={18} />
-              ) : null}
-              {tableEffect.label}
-            </span>
-          </div>
-        )}
-
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-1/4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-950/80 border border-zinc-800">
-          <span className="text-[10px] text-zinc-400">Current Color</span>
-          <div
-            className={`w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] ${colorClass(state.currentColor)}`}
-          />
-          <span className="text-[10px] text-zinc-500">|</span>
-          <RotateCw
-            size={12}
-            className={`text-cyan-300 ${state.direction === -1 ? "-scale-x-100" : ""}`}
-          />
-          <span className="text-[10px] text-zinc-300">
-            {state.direction === 1 ? "Clockwise" : "Counter"}
-          </span>
-        </div>
-
-        {/* Premium Wild Card Color Picker Modal Overlay */}
-        {pendingWildCardId && (
-          <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-full bg-zinc-950/90 backdrop-blur-md border border-purple-500/30 p-6 text-center animate-[truno-pop_0.3s_ease-out]">
-            <div className="text-amber-300 text-xs font-black tracking-[0.24em] mb-1">
-              WILD CARD
-            </div>
-            <div className="text-white text-lg font-black mb-4">CHOOSE PILE COLOR</div>
-            <div className="grid grid-cols-2 gap-3 w-48">
-              <button
-                onClick={() => handleSelectWildColor("red")}
-                className="min-h-12 rounded-2xl border border-red-500/50 bg-red-500/20 text-red-200 font-bold hover:bg-red-500/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(239,68,68,0.25)] flex items-center justify-center"
-              >
-                Red
-              </button>
-              <button
-                onClick={() => handleSelectWildColor("blue")}
-                className="min-h-12 rounded-2xl border border-cyan-400/50 bg-cyan-400/20 text-cyan-200 font-bold hover:bg-cyan-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.25)] flex items-center justify-center"
-              >
-                Blue
-              </button>
-              <button
-                onClick={() => handleSelectWildColor("green")}
-                className="min-h-12 rounded-2xl border border-emerald-400/50 bg-emerald-400/20 text-emerald-200 font-bold hover:bg-emerald-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(52,211,153,0.25)] flex items-center justify-center"
-              >
-                Green
-              </button>
-              <button
-                onClick={() => handleSelectWildColor("yellow")}
-                className="min-h-12 rounded-2xl border border-amber-300/50 bg-amber-300/20 text-amber-200 font-bold hover:bg-amber-300/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(251,191,36,0.25)] flex items-center justify-center"
-              >
-                Yellow
-              </button>
-            </div>
-            <button
-              onClick={() => setPendingWildCardId(null)}
-              className="mt-4 text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition"
-            >
-              Cancel Play
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="mt-2 flex items-center justify-center gap-2 text-xs">
-        <button
-          className={`min-h-9 flex items-center gap-1.5 px-3 py-1 rounded-full border font-bold ${myTurn ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.2)]" : botIsThinking ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200" : "bg-zinc-900/80 border-zinc-800 text-zinc-400"}`}
-        >
-          <ChevronDown size={14} className="rotate-180" /> {waitingLabel}
-        </button>
-        <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300">
-          <Clock size={12} /> Turn {state.turn}
-        </span>
-      </div>
-
-      {state.phase === "ended" && (
-        <div className="mt-3 rounded-3xl border border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-zinc-950 p-4 text-center shadow-[0_0_34px_rgba(251,191,36,0.14)]">
-          <div className="mx-auto mb-2 w-12 h-12 rounded-full border border-amber-400/60 bg-amber-400/15 flex items-center justify-center text-amber-200">
-            <Trophy size={24} />
-          </div>
-          <div className="text-[10px] font-black tracking-[0.24em] text-amber-300">
-            TABLE COMPLETE
-          </div>
-          <div className="mt-1 text-xl font-black text-white">
-            {winner?.id === me.id
-              ? "You win the table"
-              : `${winner?.name ?? "A player"} wins the table`}
-          </div>
-          <p className="mt-1 text-xs text-zinc-400">
-            Start a clean rematch when everyone is ready.
-          </p>
-          <div
-            className={`mt-4 grid gap-2 ${roomId ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}
-          >
-            <button
-              onClick={handlePlayAgain}
-              className="min-h-11 rounded-2xl border border-emerald-400/50 bg-emerald-500/10 text-emerald-200 text-sm font-black hover:bg-emerald-500/15"
-            >
-              Play Again
-            </button>
-            <button
-              onClick={handleBackToTruno}
-              className="min-h-11 rounded-2xl border border-fuchsia-500/45 bg-fuchsia-500/10 text-fuchsia-200 text-sm font-black hover:bg-fuchsia-500/15"
-            >
-              Back to Truno
-            </button>
-            {roomId && (
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleLeaveMatch}
-                className="min-h-11 rounded-2xl border border-pink-500/45 bg-pink-500/10 text-pink-200 text-sm font-black hover:bg-pink-500/15"
+                className="min-h-9 px-3 sm:px-4 py-1.5 rounded-xl border border-pink-500/50 text-pink-300 text-xs sm:text-sm font-bold hover:bg-pink-500/10"
               >
-                Leave Room
+                Leave Match
               </button>
+              <button
+                onClick={() => setNotice("Table menu is coming soon.")}
+                className="w-9 h-9 rounded-xl bg-zinc-900/80 border border-zinc-850 flex items-center justify-center"
+              >
+                <MoreVertical size={16} className="text-zinc-300" />
+              </button>
+            </div>
+
+            {actionLog.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-zinc-950/80 border border-zinc-850 rounded-full p-1 shadow-md max-w-[260px] sm:max-w-xs animate-[truno-pop_0.35s_ease-out]">
+                <span className="text-[9px] font-black text-zinc-500 uppercase tracking-wider px-1 shrink-0">
+                  Moves:
+                </span>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  {actionLog.slice(0, 2).map((item, i) => {
+                    const dotColor =
+                      item.tone === "effect"
+                        ? "bg-fuchsia-400"
+                        : item.tone === "draw" || item.tone === "keep"
+                          ? "bg-purple-400"
+                          : item.tone === "play"
+                            ? "bg-cyan-400"
+                            : "bg-zinc-400";
+                    return (
+                      <div key={item.id} className="flex items-center gap-1 shrink-0 text-[10px]">
+                        {i > 0 && <span className="text-zinc-800 font-bold">|</span>}
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                        <span className="text-zinc-300 max-w-[90px] truncate" title={item.text}>
+                          {item.text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </div>
-      )}
+      </header>
 
-      {notice && (
-        <div className="mt-3 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-2 text-center text-xs text-fuchsia-200">
-          {notice}
+      <main className="flex-1 min-h-0 relative flex flex-col items-center justify-center p-3 overflow-y-auto no-scrollbar">
+        <div
+          className={`mx-auto max-w-full w-fit rounded-full bg-zinc-950/80 border px-4 py-1 mb-2.5 flex items-center gap-3 ${myTurn ? "border-emerald-400/50 shadow-[0_0_22px_rgba(52,211,153,0.25)]" : "border-fuchsia-500/30"}`}
+        >
+          <span className="text-[10px] font-bold text-fuchsia-300">{tableLabel}</span>
+          <span className="text-[10px] text-zinc-500">|</span>
+          <span className="text-[10px] text-zinc-300 truncate">{turnNotice || state.message}</span>
         </div>
-      )}
 
-      <div
-        className="mt-3 relative flex justify-center items-end overflow-visible"
-        style={{ height: 150 }}
-      >
-        {me.hand.map((c, i) => {
-          const mid = Math.floor(me.hand.length / 2);
-          const offset = i - mid;
-          const isSel = selected === c.id;
-          const playable = myTurn && isPlayableCard(c, state);
-          const remoteFocused = tvRemoteMode && remoteTarget === "hand" && isSel;
-          const invalid = invalidCardId === c.id;
-          return (
-            <div
-              key={c.id}
-              className={`absolute transition-transform duration-200 ${invalid ? "animate-[truno-shake_0.35s_ease-in-out]" : ""}`}
-              style={{
-                transform: `translateX(${offset * handSpread}px) translateY(${Math.abs(offset) * 3}px) rotate(${offset * 4}deg) ${isSel ? "translateY(-28px) scale(1.12)" : ""}`,
-                zIndex: isSel ? 100 : 10 + i,
-              }}
-            >
-              {isSel && (
-                <div
-                  className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider whitespace-nowrap ${remoteFocused ? "border-amber-300/70 bg-amber-400/20 text-amber-100" : "border-cyan-300/50 bg-cyan-400/15 text-cyan-100"}`}
-                >
-                  {remoteFocused ? "TV FOCUS" : "SELECTED"}
-                </div>
-              )}
+        <div className="relative aspect-square w-full max-w-[342px] sm:max-w-md mx-auto rounded-full ombre-border trey-bullshit-felt flex items-center justify-center">
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[220px] h-[220px] rounded-full z-[1]"
+            style={{
+              background:
+                "radial-gradient(circle, oklch(0.92 0.04 90 / 0.12) 0%, oklch(0.84 0.16 215 / 0.08) 35%, transparent 70%)",
+              filter: "blur(4px)",
+            }}
+          />
+          {/* Conic rotating spotlight */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-conic-light opacity-[0.08] z-[1] rounded-full"
+            style={{
+              background:
+                "conic-gradient(from 0deg, transparent 0%, rgba(157,78,221,0.2) 25%, transparent 40%, rgba(255,0,128,0.15) 65%, transparent 80%)",
+              transformOrigin: "center center",
+            }}
+          />
+          {/* Drifting atmospheric smoke */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-smoke opacity-[0.22] z-[1] rounded-full"
+            style={{
+              backgroundImage: "radial-gradient(circle at 40% 60%, rgba(157,78,221,0.15), transparent 60%)",
+              mixBlendMode: "screen",
+            }}
+          />
+          <span className="sparkle z-[2]" style={{ top: "18%", left: "22%", animationDelay: "0s" }} />
+          <span className="sparkle z-[2]" style={{ top: "30%", right: "18%", animationDelay: "1.4s" }} />
+          <span className="sparkle z-[2]" style={{ bottom: "28%", left: "30%", animationDelay: "2.6s" }} />
+          <span className="sparkle z-[2]" style={{ bottom: "35%", right: "26%", animationDelay: "0.8s" }} />
+
+          <div className="absolute inset-4 rounded-full border border-purple-500/18 z-[1]" />
+          <div className="absolute inset-10 rounded-full border border-fuchsia-500/12 z-[1]" />
+          <div className="absolute inset-16 rounded-full border border-blue-500/10 z-[1]" />
+
+          {state.players.map((player, index) => (
+            <TablePlayer
+              key={player.id}
+              player={player}
+              relativeIndex={(index - bottomSeat + state.players.length) % state.players.length}
+              playerCount={state.players.length}
+              active={activePlayer?.id === player.id}
+              thinking={thinkingPlayerId === player.id}
+              pulsing={pulsePlayerId === player.id || tableEffect?.targetPlayerId === player.id}
+              isYou={player.id === me.id}
+              avatar={player.id === me.id ? currentUser.avatar : undefined}
+            />
+          ))}
+
+          <div className="absolute inset-0 flex items-center justify-center gap-3 z-[3]">
+            <div key={drawPulse} className={drawPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}>
               <TrunoCard
-                card={c}
-                size="sm"
-                playable={playable}
-                onClick={() => handleCardTap(c.id)}
-                selected={isSel}
-                className={`${playable ? "ring-2 ring-cyan-300/25" : ""} ${remoteFocused ? "ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""} ${invalid ? "ring-4 ring-pink-400/70" : ""}`}
+                card={{ id: "deck", color: "black", symbol: "wild", label: "W" }}
+                faceDown
+                size="xs"
               />
             </div>
-          );
-        })}
-      </div>
-
-      {isPendingDrawPlayMe ? (
-        <div className="mt-4 grid grid-cols-2 gap-3 rounded-3xl border border-emerald-500/35 bg-emerald-950/15 p-3 backdrop-blur-sm shadow-[0_0_25px_rgba(52,211,153,0.1)] animate-[truno-pop_0.35s_ease-out]">
-          <button
-            onClick={() => commitMove({ type: "keep", playerId: me.id })}
-            disabled={state.phase === "ended"}
-            className="min-h-14 rounded-2xl border border-purple-500/40 bg-zinc-950/80 text-purple-300 font-bold text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 transition"
-          >
-            Keep Card & Pass
-          </button>
-          <button
-            onClick={() => attemptPlayCard(state.pendingDrawPlayCardId!)}
-            disabled={state.phase === "ended"}
-            className="min-h-14 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-teal-600 transition shadow-[0_0_20px_rgba(52,211,153,0.3)] animate-pulse"
-          >
-            <Play size={15} /> Place Down
-          </button>
-        </div>
-      ) : (
-        <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl border border-zinc-800/80 bg-black/35 p-2 backdrop-blur-sm">
-          <button
-            onClick={handleDraw}
-            disabled={!myTurn || state.phase === "ended"}
-            className={`min-h-14 rounded-2xl border border-purple-500/30 bg-zinc-950/80 py-3 text-purple-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-purple-500/10 hover:border-purple-500/50 active:scale-95 transition-all duration-200 disabled:opacity-35 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === "draw" ? "ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""}`}
-          >
-            <Plus size={16} /> Draw
-          </button>
-          <button
-            onClick={handleCallTruno}
-            disabled={!myTurn || state.phase === "ended"}
-            className="min-h-14 rounded-2xl py-3 font-black text-xs sm:text-sm relative overflow-hidden group active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
-            <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
-            <div className="relative">
-              <div className="text-white text-base leading-none">CALL TRUNO</div>
-              <div className="text-[9px] text-fuchsia-100 mt-0.5">If you have 1 card left</div>
-            </div>
-          </button>
-          <button
-            onClick={handlePlay}
-            disabled={!canPlaySelected || state.phase === "ended"}
-            className={`min-h-14 rounded-2xl border py-3 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 ${canPlaySelected ? "border-cyan-400 bg-cyan-950/20 text-cyan-200 hover:bg-cyan-900/25 shadow-[0_0_22px_rgba(34,211,238,0.45)] animate-pulse" : "border-zinc-850 bg-zinc-900/50 text-zinc-600 cursor-not-allowed"}`}
-          >
-            <Play size={15} /> Play Card
-          </button>
-        </div>
-      )}
-
-      <div className="mt-3 flex items-center justify-between">
-        <button
-          onClick={() => setVoice(!voice)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800"
-        >
-          <div
-            className={`w-7 h-7 rounded-full ${voice ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-zinc-800"} flex items-center justify-center`}
-          >
-            <Mic size={14} className={voice ? "text-emerald-300" : "text-zinc-500"} />
-          </div>
-          <span className="text-xs text-zinc-300">
-            Voice:{" "}
-            <span className={voice ? "text-emerald-300 font-bold" : "text-zinc-500"}>
-              {voice ? "On" : "Off"}
-            </span>
-          </span>
-        </button>
-        <button
-          onClick={() => setChat(!chat)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-zinc-950/70 border border-zinc-800"
-        >
-          <div
-            className={`w-7 h-7 rounded-full ${chat ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-zinc-800"} flex items-center justify-center`}
-          >
-            <MessageSquare size={14} className={chat ? "text-cyan-300" : "text-zinc-500"} />
-          </div>
-          <span className="text-xs text-zinc-300">
-            Chat:{" "}
-            <span className={chat ? "text-cyan-300 font-bold" : "text-zinc-500"}>
-              {chat ? "On" : "Off"}
-            </span>
-          </span>
-        </button>
-      </div>
-
-      {chat && (
-        <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-zinc-300">Table Chat</span>
-            <span className="text-[10px] text-zinc-500">
-              {roomId ? "Persistence coming soon" : "Local only"}
-            </span>
-          </div>
-          <div className="space-y-1.5 max-h-32 overflow-y-auto">
-            {localChat.length === 0 ? (
-              <p className="text-xs text-zinc-500 py-4 text-center">No chat messages yet.</p>
-            ) : (
-              localChat.map((msg, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <img
-                    src={currentUser.avatar || avatarFor(me.name)}
-                    alt={me.name}
-                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[11px] font-bold text-fuchsia-300">{me.name}</span>
-                    <p className="text-[11px] text-zinc-300 truncate">{msg}</p>
-                  </div>
-                </div>
-              ))
+            {top && (
+              <div
+                key={`${top.id}:${discardPulse}`}
+                className={discardPulse ? "animate-[truno-pop_0.45s_ease-out]" : ""}
+              >
+                <TrunoCard card={top} size="xs" playable />
+              </div>
             )}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              value={chatDraft}
-              onChange={(e) => setChatDraft(e.target.value)}
-              placeholder="Say something..."
-              className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500/50"
-            />
-            <button
-              onClick={handleSendChat}
-              className="w-8 h-8 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center"
+
+          {tableEffect && (
+            <div
+              className={`pointer-events-none absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 px-5 py-2 rounded-full border text-xl font-black tracking-widest animate-[truno-float_0.9s_ease-out_both] ${effectClass(tableEffect.tone)} z-[4]`}
             >
-              <Send size={12} className="text-fuchsia-300" />
+              <span className="inline-flex items-center gap-2">
+                {tableEffect.tone === "wild" || tableEffect.tone === "win" ? (
+                  <Sparkles size={18} />
+                ) : null}
+                {tableEffect.label}
+              </span>
+            </div>
+          )}
+
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-[14%] flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-950/85 border border-zinc-800/80 shadow-md z-[3]">
+            <span className="text-[9px] text-zinc-400 font-bold uppercase tracking-wider">Color</span>
+            <div
+              className={`w-3.5 h-3.5 rounded-full shadow-[0_0_10px_currentColor] ${colorClass(state.currentColor)}`}
+            />
+            <span className="text-[9px] text-zinc-500">|</span>
+            <RotateCw
+              size={10}
+              className={`text-cyan-300 ${state.direction === -1 ? "-scale-x-100" : ""}`}
+            />
+            <span className="text-[9px] text-zinc-300 font-medium">
+              {state.direction === 1 ? "CW" : "CCW"}
+            </span>
+          </div>
+
+          {pendingWildCardId && (
+            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-full bg-zinc-950/90 backdrop-blur-md border border-purple-500/30 p-6 text-center animate-[truno-pop_0.3s_ease-out]">
+              <div className="text-amber-300 text-xs font-black tracking-[0.24em] mb-1">
+                WILD CARD
+              </div>
+              <div className="text-white text-lg font-black mb-4">CHOOSE PILE COLOR</div>
+              <div className="grid grid-cols-2 gap-3 w-48">
+                <button
+                  onClick={() => handleSelectWildColor("red")}
+                  className="min-h-12 rounded-2xl border border-red-500/50 bg-red-500/20 text-red-200 font-bold hover:bg-red-500/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(239,68,68,0.25)] flex items-center justify-center"
+                >
+                  Red
+                </button>
+                <button
+                  onClick={() => handleSelectWildColor("blue")}
+                  className="min-h-12 rounded-2xl border border-cyan-400/50 bg-cyan-400/20 text-cyan-200 font-bold hover:bg-cyan-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(34,211,238,0.25)] flex items-center justify-center"
+                >
+                  Blue
+                </button>
+                <button
+                  onClick={() => handleSelectWildColor("green")}
+                  className="min-h-12 rounded-2xl border border-emerald-400/50 bg-emerald-400/20 text-emerald-200 font-bold hover:bg-emerald-400/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(52,211,153,0.25)] flex items-center justify-center"
+                >
+                  Green
+                </button>
+                <button
+                  onClick={() => handleSelectWildColor("yellow")}
+                  className="min-h-12 rounded-2xl border border-amber-300/50 bg-amber-300/20 text-amber-200 font-bold hover:bg-amber-300/35 hover:scale-105 active:scale-95 transition shadow-[0_0_15px_rgba(251,191,36,0.25)] flex items-center justify-center"
+                >
+                  Yellow
+                </button>
+              </div>
+              <button
+                onClick={() => setPendingWildCardId(null)}
+                className="mt-4 text-xs font-semibold text-zinc-500 hover:text-zinc-300 transition"
+              >
+                Cancel Play
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* COMPACT PREMIUM FOOTER PANEL */}
+      <footer
+        className="shrink-0 z-30 backdrop-blur-2xl border-t px-3 pt-2 pb-3 relative"
+        style={{
+          background: "linear-gradient(180deg, rgba(5,7,13,0.96), rgba(5,7,13,0.99))",
+          borderColor: "rgba(157,78,221,0.35)",
+          boxShadow: "0 -14px 36px rgba(157,78,221,0.18), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}
+      >
+        <div className="flex items-center justify-center gap-2 text-xs mb-1">
+          <button
+            className={`min-h-8 flex items-center gap-1.5 px-3 py-0.5 rounded-full border font-bold text-[10px] ${myTurn ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300 shadow-[0_0_18px_rgba(52,211,153,0.2)]" : botIsThinking ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-200" : "bg-zinc-900/80 border-zinc-800 text-zinc-400"}`}
+          >
+            <ChevronDown size={12} className="rotate-180" /> {waitingLabel}
+          </button>
+          <span className="flex items-center gap-1 px-3 py-0.5 rounded-full bg-zinc-900/80 border border-zinc-800 text-zinc-300 text-[10px]">
+            <Clock size={10} /> Turn {state.turn}
+          </span>
+        </div>
+
+        {state.phase === "ended" && (
+          <div className="my-2 rounded-2xl border border-amber-500/50 bg-gradient-to-br from-amber-500/15 via-fuchsia-500/10 to-zinc-950 p-3 text-center shadow-[0_0_34px_rgba(251,191,36,0.14)]">
+            <div className="mx-auto mb-1 w-10 h-10 rounded-full border border-amber-400/60 bg-amber-400/15 flex items-center justify-center text-amber-200">
+              <Trophy size={20} />
+            </div>
+            <div className="text-[9px] font-black tracking-[0.24em] text-amber-300">
+              TABLE COMPLETE
+            </div>
+            <div className="mt-0.5 text-base font-black text-white">
+              {winner?.id === me.id
+                ? "You win the table"
+                : `${winner?.name ?? "A player"} wins the table`}
+            </div>
+            <div
+              className={`mt-2.5 grid gap-2 ${roomId ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2"}`}
+            >
+              <button
+                onClick={handlePlayAgain}
+                className="min-h-9 rounded-xl border border-emerald-400/50 bg-emerald-500/10 text-emerald-200 text-xs font-black hover:bg-emerald-500/15"
+              >
+                Play Again
+              </button>
+              <button
+                onClick={handleBackToTruno}
+                className="min-h-9 rounded-xl border border-fuchsia-500/45 bg-fuchsia-500/10 text-fuchsia-200 text-xs font-black hover:bg-fuchsia-500/15"
+              >
+                Back to Truno
+              </button>
+              {roomId && (
+                <button
+                  onClick={handleLeaveMatch}
+                  className="min-h-9 rounded-xl border border-pink-500/45 bg-pink-500/10 text-pink-200 text-xs font-black hover:bg-pink-500/15"
+                >
+                  Leave Room
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {notice && (
+          <div className="my-1.5 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1.5 text-center text-xs text-fuchsia-200">
+            {notice}
+          </div>
+        )}
+
+        <div
+          className="relative flex justify-center items-end overflow-visible"
+          style={{ height: 100 }}
+        >
+          {me.hand.map((c, i) => {
+            const mid = Math.floor(me.hand.length / 2);
+            const offset = i - mid;
+            const isSel = selected === c.id;
+            const playable = myTurn && isPlayableCard(c, state);
+            const remoteFocused = tvRemoteMode && remoteTarget === "hand" && isSel;
+            const invalid = invalidCardId === c.id;
+            return (
+              <div
+                key={c.id}
+                className={`absolute transition-transform duration-200 ${invalid ? "animate-[truno-shake_0.35s_ease-in-out]" : ""}`}
+                style={{
+                  transform: `translateX(${offset * handSpread}px) translateY(${Math.abs(offset) * 1.5}px) rotate(${offset * 3}deg) ${isSel ? "translateY(-22px) scale(1.1)" : ""}`,
+                  zIndex: isSel ? 100 : 10 + i,
+                }}
+              >
+                {isSel && (
+                  <div
+                    className={`absolute -top-7 left-1/2 -translate-x-1/2 rounded-full border px-2 py-0.5 text-[9px] font-black tracking-wider whitespace-nowrap ${remoteFocused ? "border-amber-300/70 bg-amber-400/20 text-amber-100" : "border-cyan-300/50 bg-cyan-400/15 text-cyan-100"}`}
+                  >
+                    {remoteFocused ? "TV FOCUS" : "SELECTED"}
+                  </div>
+                )}
+                <TrunoCard
+                  card={c}
+                  size="sm"
+                  playable={playable}
+                  onClick={() => handleCardTap(c.id)}
+                  selected={isSel}
+                  className={`${playable ? "ring-2 ring-cyan-300/25" : ""} ${remoteFocused ? "ring-4 ring-amber-300/80 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""} ${invalid ? "ring-4 ring-pink-400/70" : ""}`}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {isPendingDrawPlayMe ? (
+          <div className="mt-2.5 grid grid-cols-2 gap-3 rounded-2xl border border-emerald-500/35 bg-emerald-950/15 p-2 backdrop-blur-sm shadow-[0_0_25px_rgba(52,211,153,0.1)] animate-[truno-pop_0.35s_ease-out]">
+            <button
+              onClick={() => commitMove({ type: "keep", playerId: me.id })}
+              disabled={state.phase === "ended"}
+              className="min-h-12 rounded-xl border border-purple-500/40 bg-zinc-950/80 text-purple-300 font-bold text-xs flex items-center justify-center gap-2 hover:bg-purple-500/10 transition"
+            >
+              Keep Card & Pass
+            </button>
+            <button
+              onClick={() => attemptPlayCard(state.pendingDrawPlayCardId!)}
+              disabled={state.phase === "ended"}
+              className="min-h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-xs flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-teal-600 transition shadow-[0_0_20px_rgba(52,211,153,0.3)] animate-pulse"
+            >
+              <Play size={12} /> Place Down
             </button>
           </div>
+        ) : (
+          <div className="mt-2.5 grid grid-cols-3 gap-2 rounded-2xl border border-zinc-800/80 bg-black/35 p-1.5 backdrop-blur-sm">
+            <button
+              onClick={handleDraw}
+              disabled={!myTurn || state.phase === "ended"}
+              className={`min-h-12 rounded-xl border border-purple-500/30 bg-zinc-950/80 py-2 text-purple-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 hover:bg-purple-500/10 hover:border-purple-500/50 active:scale-95 transition-all duration-200 disabled:opacity-35 disabled:saturate-50 disabled:cursor-not-allowed ${tvRemoteMode && remoteTarget === "draw" ? "ring-4 ring-amber-300/70 shadow-[0_0_28px_rgba(251,191,36,0.45)]" : ""}`}
+            >
+              <Plus size={14} /> Draw
+            </button>
+            <button
+              onClick={handleCallTruno}
+              disabled={!myTurn || state.phase === "ended"}
+              className="min-h-12 rounded-xl py-2 font-black text-[10px] sm:text-xs relative overflow-hidden group active:scale-95 transition-all duration-200 disabled:opacity-40 disabled:saturate-50 disabled:cursor-not-allowed"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600" />
+              <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 blur-md opacity-70 group-hover:opacity-100" />
+              <div className="relative">
+                <div className="text-white text-[11px] font-extrabold leading-none">CALL TRUNO</div>
+                <div className="text-[8px] text-fuchsia-100 mt-0.5">If 1 card left</div>
+              </div>
+            </button>
+            <button
+              onClick={handlePlay}
+              disabled={!canPlaySelected || state.phase === "ended"}
+              className={`min-h-12 rounded-xl border py-2 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all duration-300 active:scale-95 ${canPlaySelected ? "border-cyan-400 bg-cyan-950/20 text-cyan-200 hover:bg-cyan-900/25 shadow-[0_0_22px_rgba(34,211,238,0.45)] animate-pulse" : "border-zinc-850 bg-zinc-900/50 text-zinc-600 cursor-not-allowed"}`}
+            >
+              <Play size={13} /> Play Card
+            </button>
+          </div>
+        )}
+
+        <div className="mt-2 flex items-center justify-between">
+          <button
+            onClick={() => setVoice(!voice)}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-950/70 border border-zinc-800"
+          >
+            <div
+              className={`w-5.5 h-5.5 rounded-full ${voice ? "bg-emerald-500/20 border border-emerald-500/50" : "bg-zinc-800"} flex items-center justify-center`}
+            >
+              <Mic size={11} className={voice ? "text-emerald-300" : "text-zinc-500"} />
+            </div>
+            <span className="text-[10px] text-zinc-300">
+              Voice:{" "}
+              <span className={voice ? "text-emerald-300 font-bold" : "text-zinc-500"}>
+                {voice ? "On" : "Off"}
+              </span>
+            </span>
+          </button>
+          <button
+            onClick={() => setChat(!chat)}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-950/70 border border-zinc-800"
+          >
+            <div
+              className={`w-5.5 h-5.5 rounded-full ${chat ? "bg-cyan-500/20 border border-cyan-500/50" : "bg-zinc-800"} flex items-center justify-center`}
+            >
+              <MessageSquare size={11} className={chat ? "text-cyan-300" : "text-zinc-500"} />
+            </div>
+            <span className="text-[10px] text-zinc-300">
+              Chat:{" "}
+              <span className={chat ? "text-cyan-300 font-bold" : "text-zinc-500"}>
+                {chat ? "On" : "Off"}
+              </span>
+            </span>
+          </button>
         </div>
-      )}
+
+        {chat && (
+          <div className="mt-2 rounded-xl border border-zinc-800 bg-zinc-950/80 backdrop-blur-xl p-2.5">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold text-zinc-300">Table Chat</span>
+              <span className="text-[8px] text-zinc-500">
+                {roomId ? "Persistence coming soon" : "Local only"}
+              </span>
+            </div>
+            <div className="space-y-1.5 max-h-24 overflow-y-auto">
+              {localChat.length === 0 ? (
+                <p className="text-[10px] text-zinc-500 py-2 text-center">No chat messages yet.</p>
+              ) : (
+                localChat.map((msg, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <img
+                      src={currentUser.avatar || avatarFor(me.name)}
+                      alt={me.name}
+                      className="w-5.5 h-5.5 rounded-full object-cover flex-shrink-0"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-bold text-fuchsia-300">{me.name}</span>
+                      <p className="text-[10px] text-zinc-300 truncate">{msg}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <input
+                value={chatDraft}
+                onChange={(e) => setChatDraft(e.target.value)}
+                placeholder="Say something..."
+                className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-2 py-1 text-[10px] text-white placeholder-zinc-500 outline-none focus:border-fuchsia-500/50"
+              />
+              <button
+                onClick={handleSendChat}
+                className="w-7 h-7 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/40 flex items-center justify-center"
+              >
+                <Send size={10} className="text-fuchsia-300" />
+              </button>
+            </div>
+          </div>
+        )}
+      </footer>
     </div>
   );
 };
@@ -1065,10 +1141,13 @@ const TablePlayer: React.FC<{
       <div className="flex flex-col items-center">
         <div className="relative">
           {active && (
-            <div className="absolute -inset-2 rounded-full border border-emerald-300/50 animate-[truno-ring_1.45s_ease-in-out_infinite]" />
+            <>
+              <div className="neon-ring-soft" />
+              <div className="neon-ring" />
+            </>
           )}
           <div
-            className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? "ring-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.58)]" : "ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]"}`}
+            className={`w-14 h-14 rounded-full overflow-hidden ring-2 transition ${active ? "ring-transparent shadow-[0_0_30px_rgba(52,211,153,0.58)]" : "ring-fuchsia-500/60 shadow-[0_0_20px_rgba(255,0,128,0.45)]"}`}
           >
             <img
               src={avatar || avatarFor(player.name)}
