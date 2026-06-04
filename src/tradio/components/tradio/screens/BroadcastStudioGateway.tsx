@@ -166,6 +166,34 @@ import {
 } from "../services/broadcastModerationService";
 import { subscribeToLiveRoomEvents } from "../services/broadcastLiveRoomRealtime";
 
+import {
+  TradioLiveMicSession,
+  TradioLiveMicParticipant,
+  TradioLiveCallRequest,
+  TradioLiveSfxDrop,
+  LiveMicMode,
+  BackgroundAudioMode,
+} from "../types/broadcastLiveMicTypes";
+import {
+  getOrCreateLiveMicSession,
+  startLiveMicSession,
+  endLiveMicSession,
+  generateHostAudioToken,
+  generateParticipantAudioToken,
+  submitCallInRequest,
+  approveCallRequest,
+  rejectCallRequest,
+  muteParticipant,
+  unmuteParticipant,
+  removeParticipant,
+  listLiveParticipants,
+  listCallRequests,
+  logMicSessionEvent,
+} from "../services/broadcastLiveMicService";
+import { subscribeToLiveMicEvents } from "../services/broadcastLiveMicRealtime";
+import { triggerSfxDrop, listSfxDrops } from "../services/broadcastSfxService";
+import { getAudioProvider, AudioParticipant } from "../services/broadcastLiveAudioProvider";
+
 // Standard class for customized custom-styled premium inputs
 const inputClass =
   "w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-cyan-400/50 focus:bg-white/[0.02]";
@@ -857,6 +885,22 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   // Rate limiting / slow mode state
   const [lastSentTime, setLastSentTime] = useState<number>(0);
 
+  // Pass 8: Live Mic States
+  const [liveMicSession, setLiveMicSession] = useState<TradioLiveMicSession | null>(null);
+  const [liveMicParticipants, setLiveMicParticipants] = useState<TradioLiveMicParticipant[]>([]);
+  const [liveCallRequests, setLiveCallRequests] = useState<TradioLiveCallRequest[]>([]);
+  const [liveSfxDrops, setLiveSfxDrops] = useState<TradioLiveSfxDrop[]>([]);
+  const [audioParticipants, setAudioParticipants] = useState<AudioParticipant[]>([]);
+  const [isHostSpeaking, setIsHostSpeaking] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(false);
+  const [sfxEventsLog, setSfxEventsLog] = useState<string[]>([]);
+  const [myCallRequest, setMyCallRequest] = useState<TradioLiveCallRequest | null>(null);
+  const [callInNote, setCallInNote] = useState("");
+  const [isCallInModalOpen, setIsCallInModalOpen] = useState(false);
+  const [micMode, setMicMode] = useState<LiveMicMode>("host_only");
+  const [bgAudioMode, setBgAudioMode] = useState<BackgroundAudioMode>("duck_on_host");
+  const [isConnectingAudio, setIsConnectingAudio] = useState(false);
+
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       supabase.auth.getUser().then(({ data }) => {
@@ -1314,7 +1358,343 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Pass 8: Player Volume Ducking Trigger
+  const { volume, setVolume } = usePlayer();
+  const [originalVolume, setOriginalVolume] = useState(1.0);
+
+  useEffect(() => {
+    if (bgAudioMode === "duck_on_host") {
+      if (isHostSpeaking) {
+        setOriginalVolume(volume > 0.2 ? volume : 1.0);
+        setVolume(0.15); // Duck background volume
+      } else {
+        setVolume(originalVolume); // Restore original volume
+      }
+    }
+  }, [isHostSpeaking, bgAudioMode, volume, setVolume, originalVolume]);
+
+  // Pass 8: Live Mic Session Initialization & Realtime Sync
+  useEffect(() => {
+    let sub: { unsubscribe: () => void } | null = null;
+    let provider = getAudioProvider("local_dev_stub"); // default or livekit
+
+    async function initLiveMic() {
+      if (!liveRoom || !selectedChannel) return;
+      try {
+        setLoading(true);
+        // 1. Resolve or create live mic session
+        const session = await getOrCreateLiveMicSession(
+          liveRoom.id,
+          selectedChannel.id,
+          liveRoom.queue_id,
+          liveRoom.show_id,
+          liveRoom.episode_id
+        );
+        setLiveMicSession(session);
+        setMicMode(session.mic_mode);
+        setBgAudioMode(session.background_audio_mode);
+
+        // 2. Load initial logs/participants/requests
+        const parts = await listLiveParticipants(session.id);
+        setLiveMicParticipants(parts);
+
+        const reqs = await listCallRequests(session.id);
+        setLiveCallRequests(reqs);
+
+        const drops = await listSfxDrops(liveRoom.id);
+        setLiveSfxDrops(drops);
+
+        // 3. Connect to Audio Provider
+        provider = getAudioProvider(session.provider);
+        provider.onStreamStateChanged((speakers) => {
+          setAudioParticipants(speakers);
+        });
+
+        provider.onVolumeDuckingTriggered((shouldDuck) => {
+          setIsHostSpeaking(shouldDuck);
+        });
+
+        // 4. Subscribe to Realtime Postgres Changes
+        sub = subscribeToLiveMicEvents(session.id, (event) => {
+          switch (event.type) {
+            case "session_updated":
+              setLiveMicSession(event.session);
+              setMicMode(event.session.mic_mode);
+              setBgAudioMode(event.session.background_audio_mode);
+              break;
+            case "participant_inserted":
+              setLiveMicParticipants((prev) => {
+                const filtered = prev.filter((p) => p.id !== event.participant.id);
+                return [...filtered, event.participant];
+              });
+              setSfxEventsLog((prev) => [
+                `[${new Date().toLocaleTimeString()}] Speaker Joined: ${
+                  event.participant.display_name || "Guest"
+                }`,
+                ...prev,
+              ]);
+              break;
+            case "participant_updated":
+              setLiveMicParticipants((prev) =>
+                prev.map((p) => (p.id === event.participant.id ? event.participant : p))
+              );
+              break;
+            case "call_request_inserted":
+              setLiveCallRequests((prev) => {
+                const filtered = prev.filter((r) => r.id !== event.request.id);
+                return [...filtered, event.request];
+              });
+              if (selectedChannel.owner_user_id === currentUserId) {
+                toast("New Listener Call-In Request in Queue! 📞");
+              }
+              break;
+            case "call_request_updated":
+              setLiveCallRequests((prev) =>
+                prev.map((r) => (r.id === event.request.id ? event.request : r))
+              );
+              if (event.request.requester_user_id === currentUserId) {
+                setMyCallRequest(event.request);
+                if (event.request.request_status === "approved") {
+                  toast.success("Host approved your call-in request! You are now live. 🎙️🎉");
+                } else if (event.request.request_status === "rejected") {
+                  toast.error("Call-in request declined by host.");
+                }
+              }
+              break;
+            case "sfx_triggered":
+              setSfxEventsLog((prev) => [
+                `[${new Date().toLocaleTimeString()}] Sound Drop Triggered: ID ${
+                  event.event.sfx_drop_id
+                }`,
+                ...prev,
+              ]);
+              break;
+          }
+        });
+      } catch (err: any) {
+        console.error("Failed to initialize live mic module:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    initLiveMic();
+
+    return () => {
+      if (sub) sub.unsubscribe();
+      provider.leaveRoom();
+      setLiveMicSession(null);
+      setLiveMicParticipants([]);
+      setLiveCallRequests([]);
+      setAudioParticipants([]);
+      setIsHostSpeaking(false);
+      setMicEnabled(false);
+    };
+  }, [liveRoom, selectedChannel, currentUserId]);
+
+  // Live Mic Control Methods
+  const handleStartLiveMic = async () => {
+    if (!liveMicSession || !selectedChannel) return;
+    try {
+      setIsConnectingAudio(true);
+      // 1. Activate session
+      await startLiveMicSession(liveMicSession.id, micMode, bgAudioMode);
+
+      // 2. Generate and connect token
+      const token = await generateHostAudioToken(liveMicSession.id);
+      const provider = getAudioProvider(liveMicSession.provider);
+      await provider.joinRoom(liveMicSession.provider_room_name || `room-${liveMicSession.room_id}`, token);
+
+      setMicEnabled(true);
+      await provider.setMicrophoneEnabled(true);
+      await logMicSessionEvent(liveMicSession.id, liveMicSession.room_id, selectedChannel.id, "session_started");
+      toast.success("Tradio Live Mic STARTED successfully! You are broadcasting live. 🎤📻");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to start Live Mic: " + err.message);
+    } finally {
+      setIsConnectingAudio(false);
+    }
+  };
+
+  const handleEndLiveMic = async () => {
+    if (!liveMicSession || !selectedChannel) return;
+    try {
+      setIsConnectingAudio(true);
+      await endLiveMicSession(liveMicSession.id);
+      const provider = getAudioProvider(liveMicSession.provider);
+      await provider.leaveRoom();
+      setMicEnabled(false);
+      await logMicSessionEvent(liveMicSession.id, liveMicSession.room_id, selectedChannel.id, "session_ended");
+      toast.success("Live Mic ended. Scheduled broadcast back to full volume.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to end Live Mic: " + err.message);
+    } finally {
+      setIsConnectingAudio(false);
+    }
+  };
+
+  const handleToggleMic = async () => {
+    if (!liveMicSession) return;
+    try {
+      const nextState = !micEnabled;
+      setMicEnabled(nextState);
+      const provider = getAudioProvider(liveMicSession.provider);
+      await provider.setMicrophoneEnabled(nextState);
+      await logMicSessionEvent(
+        liveMicSession.id,
+        liveMicSession.room_id,
+        liveMicSession.channel_id,
+        nextState ? "participant_unmuted" : "participant_muted"
+      );
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to toggle microphone: " + err.message);
+    }
+  };
+
+  const handleTriggerSfx = async (drop: TradioLiveSfxDrop) => {
+    if (!liveMicSession || !selectedChannel) return;
+    try {
+      await triggerSfxDrop(liveMicSession.id, liveMicSession.room_id, selectedChannel.id, drop);
+      toast.success(`Triggered SFX: ${drop.title}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to trigger drop: " + err.message);
+    }
+  };
+
+  const handleRequestCallIn = async () => {
+    if (!liveMicSession || !selectedChannel) return;
+    try {
+      setIsConnectingAudio(true);
+      const req = await submitCallInRequest(
+        liveMicSession.id,
+        liveMicSession.room_id,
+        selectedChannel.id,
+        callInNote,
+        liveMicSession.queue_id
+      );
+      setMyCallRequest(req);
+      setIsCallInModalOpen(false);
+      toast.success("Call-in request submitted! Waiting in queue for Host approval. 📞⏱️");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to submit request: " + err.message);
+    } finally {
+      setIsConnectingAudio(false);
+    }
+  };
+
+  const handleApproveCall = async (requestId: string) => {
+    try {
+      await approveCallRequest(requestId);
+      // Reload queue lists
+      if (liveMicSession) {
+        const reqs = await listCallRequests(liveMicSession.id);
+        setLiveCallRequests(reqs);
+        const parts = await listLiveParticipants(liveMicSession.id);
+        setLiveMicParticipants(parts);
+      }
+      toast.success("Caller APPROVED to speak! Seat added.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to approve caller: " + err.message);
+    }
+  };
+
+  const handleRejectCall = async (requestId: string, reason: string = "Declined by Host") => {
+    try {
+      await rejectCallRequest(requestId, reason);
+      if (liveMicSession) {
+        const reqs = await listCallRequests(liveMicSession.id);
+        setLiveCallRequests(reqs);
+      }
+      toast.success("Caller declined.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to reject caller: " + err.message);
+    }
+  };
+
+  const handleMuteParticipant = async (partId: string) => {
+    try {
+      await muteParticipant(partId);
+      if (liveMicSession) {
+        const parts = await listLiveParticipants(liveMicSession.id);
+        setLiveMicParticipants(parts);
+      }
+      toast.success("Speaker muted.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to mute speaker: " + err.message);
+    }
+  };
+
+  const handleUnmuteParticipant = async (partId: string) => {
+    try {
+      await unmuteParticipant(partId);
+      if (liveMicSession) {
+        const parts = await listLiveParticipants(liveMicSession.id);
+        setLiveMicParticipants(parts);
+      }
+      toast.success("Speaker unmuted.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to unmute speaker: " + err.message);
+    }
+  };
+
+  const handleRemoveParticipant = async (partId: string) => {
+    try {
+      await removeParticipant(partId);
+      if (liveMicSession) {
+        const parts = await listLiveParticipants(liveMicSession.id);
+        setLiveMicParticipants(parts);
+      }
+      toast.success("Speaker kicked and removed from live mic session.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to remove speaker: " + err.message);
+    }
+  };
+
+  const handleJoinApprovedStream = async () => {
+    if (!liveMicSession) return;
+    try {
+      setIsConnectingAudio(true);
+      const token = await generateParticipantAudioToken(liveMicSession.id);
+      const provider = getAudioProvider(liveMicSession.provider);
+      await provider.joinRoom(liveMicSession.provider_room_name || `room-${liveMicSession.room_id}`, token);
+      await provider.setMicrophoneEnabled(true);
+      setMicEnabled(true);
+      toast.success("Successfully joined the live host broadcast! Speak into your microphone now. 🎙️🎉");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to connect audio stream: " + err.message);
+    } finally {
+      setIsConnectingAudio(false);
+    }
+  };
+
+  const handleLeaveApprovedStream = async () => {
+    if (!liveMicSession) return;
+    try {
+      setIsConnectingAudio(true);
+      const provider = getAudioProvider(liveMicSession.provider);
+      await provider.leaveRoom();
+      setMicEnabled(false);
+      toast.success("Left caller audio stream.");
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setIsConnectingAudio(false);
+    }
+  };
 
   // Save new show
   const handleSaveShow = async (e: React.FormEvent) => {
@@ -1609,6 +1989,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     if (currentEpisode) {
       triggerReadinessCheck();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeBlocks, currentEpisode]);
 
   // Publish / Schedule
@@ -4351,6 +4732,325 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                         ) : (
                           <div className="p-3 text-center rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[10px] font-mono uppercase tracking-widest">
                             Chat is disabled by station host.
+                          </div>
+                        )}
+                      </GlassCard>
+                    )}
+
+                    {/* TRADIO LIVE MIC - PASS 8 */}
+                    {liveRoom && liveMicSession && (
+                      <GlassCard className="p-5 border-cyan-500/25 bg-gradient-to-b from-[#09151e] via-[#020508] to-black space-y-4">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                          <div>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-lime-400/40 bg-lime-500/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-lime-300 font-mono">
+                              <Mic2 className="h-3 w-3 animate-pulse" /> Tradio Live Mic
+                            </span>
+                            <h4 className="text-sm font-black text-white mt-1.5 uppercase tracking-widest font-mono flex items-center gap-2">
+                              Live host mic + call-ins
+                              {liveMicSession.session_status === "live" && (
+                                <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
+                              )}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-[8px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                              liveMicSession.session_status === "live"
+                                ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 animate-pulse"
+                                : "bg-white/10 border border-white/10 text-white/40"
+                            }`}>
+                              {liveMicSession.session_status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* HOST CONTROLS PANEL */}
+                        {(selectedChannel.owner_user_id === currentUserId || role === "admin") ? (
+                          <div className="space-y-4">
+                            {/* Controls Button row */}
+                            <div className="flex flex-wrap gap-2">
+                              {liveMicSession.session_status !== "live" ? (
+                                <button
+                                  onClick={handleStartLiveMic}
+                                  disabled={isConnectingAudio}
+                                  className="flex-1 rounded-full bg-gradient-to-r from-lime-400 to-emerald-500 text-black font-black px-5 py-2.5 text-xs uppercase tracking-widest hover:brightness-110 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-lg animate-pulse"
+                                >
+                                  <Mic2 className="h-4 w-4" />
+                                  {isConnectingAudio ? "Connecting..." : "Go Live on Mic"}
+                                </button>
+                              ) : (
+                                <div className="w-full flex gap-2">
+                                  <button
+                                    onClick={handleToggleMic}
+                                    className={`flex-1 rounded-full px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${
+                                      micEnabled
+                                        ? "bg-lime-400 text-black border-lime-400 hover:bg-lime-300"
+                                        : "bg-rose-500/10 border-rose-500/30 text-rose-300 hover:bg-rose-500/20"
+                                    }`}
+                                  >
+                                    {micEnabled ? <Mic2 className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                                    {micEnabled ? "Mic is Live" : "Mic is Muted"}
+                                  </button>
+                                  <button
+                                    onClick={handleEndLiveMic}
+                                    disabled={isConnectingAudio}
+                                    className="rounded-full bg-rose-500 hover:bg-rose-600 text-white font-black px-5 py-2.5 text-xs uppercase tracking-widest disabled:opacity-50 transition-all"
+                                  >
+                                    End Mic
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {liveMicSession.session_status === "live" && (
+                              <div className="space-y-3 p-3.5 bg-white/[0.01] border border-white/5 rounded-2xl animate-fade-in text-xs">
+                                {/* Configuration details */}
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  <div>
+                                    <label className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                      Mic Mode
+                                    </label>
+                                    <select
+                                      value={micMode}
+                                      onChange={async (e) => {
+                                        const mode = e.target.value as any;
+                                        setMicMode(mode);
+                                        // Update session
+                                        if (isSupabaseConfigured && supabase) {
+                                          await supabase.from("tradio_live_mic_sessions").update({ mic_mode: mode }).eq("id", liveMicSession.id);
+                                        }
+                                      }}
+                                      className={`${selectClass} !py-2 !px-3 !rounded-xl text-xs mt-1 bg-black/60`}
+                                    >
+                                      <option value="host_only">Host Only</option>
+                                      <option value="host_plus_cohost">Host + Co-Host Seats</option>
+                                      <option value="call_in_queue">Listener Call-In Queue</option>
+                                      <option value="open_stage_locked">Open Stage (Locked)</option>
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                      Playout Background Audio Mode
+                                    </label>
+                                    <select
+                                      value={bgAudioMode}
+                                      onChange={async (e) => {
+                                        const mode = e.target.value as any;
+                                        setBgAudioMode(mode);
+                                        if (isSupabaseConfigured && supabase) {
+                                          await supabase.from("tradio_live_mic_sessions").update({ background_audio_mode: mode }).eq("id", liveMicSession.id);
+                                        }
+                                      }}
+                                      className={`${selectClass} !py-2 !px-3 !rounded-xl text-xs mt-1 bg-black/60`}
+                                    >
+                                      <option value="duck_on_host">Ducking background volume</option>
+                                      <option value="keep_full_volume">Keep background at full volume</option>
+                                      <option value="pause_on_host">Pause when Host speaks</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Active Speakers */}
+                                <div className="space-y-1.5 pt-2 border-t border-white/5">
+                                  <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                    Speaker Seats ({audioParticipants.length + 1})
+                                  </span>
+                                  <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02]">
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                                        <span className="font-bold text-white">DJ Trey (You)</span>
+                                        <span className="text-[7px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold uppercase">Host</span>
+                                      </div>
+                                      <span className="text-[10px] font-mono text-white/50">{micEnabled ? "Speaking 🎙️" : "Muted"}</span>
+                                    </div>
+
+                                    {liveMicParticipants.filter(p => p.participant_role !== "host" && p.participant_status !== "left" && p.participant_status !== "removed").map(p => (
+                                      <div key={p.id} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02]">
+                                        <div className="flex items-center gap-2">
+                                          <div className={`h-2 w-2 rounded-full ${p.participant_status === "live" ? "bg-emerald-500 animate-pulse" : "bg-yellow-500"}`} />
+                                          <span className="font-bold text-white">{p.display_name || "Guest speaker"}</span>
+                                          <span className="text-[7px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.5 rounded font-mono font-bold uppercase">{p.participant_role}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <button
+                                            onClick={() => p.is_muted_by_host ? handleUnmuteParticipant(p.id) : handleMuteParticipant(p.id)}
+                                            className="text-[9px] font-mono bg-white/5 px-2 py-1 rounded hover:bg-white/10 uppercase"
+                                          >
+                                            {p.is_muted_by_host ? "Unmute" : "Mute"}
+                                          </button>
+                                          <button
+                                            onClick={() => handleRemoveParticipant(p.id)}
+                                            className="text-[9px] font-mono bg-rose-500/10 text-rose-300 px-2 py-1 rounded hover:bg-rose-500/20 uppercase"
+                                          >
+                                            Kick
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Call Queue if call_in_queue mode is active */}
+                                {micMode === "call_in_queue" && (
+                                  <div className="space-y-2 pt-2 border-t border-white/5">
+                                    <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                      Listener Call-In Queue ({liveCallRequests.length})
+                                    </span>
+                                    {liveCallRequests.length === 0 ? (
+                                      <p className="text-[10px] text-white/40 italic">No listeners waiting to call in.</p>
+                                    ) : (
+                                      <div className="space-y-1.5">
+                                        {liveCallRequests.map(req => (
+                                          <div key={req.id} className="p-2.5 bg-black/40 border border-white/5 rounded-xl space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                              <span className="font-bold text-purple-300 font-mono text-[9px] uppercase">
+                                                Requester: {req.requester_user_id ? "Authenticated Listener" : "Anonymous"}
+                                              </span>
+                                              <div className="flex gap-1.5">
+                                                <button
+                                                  onClick={() => handleApproveCall(req.id)}
+                                                  className="bg-emerald-500 text-black font-mono font-bold text-[8px] uppercase px-2 py-0.5 rounded"
+                                                >
+                                                  Approve
+                                                </button>
+                                                <button
+                                                  onClick={() => handleRejectCall(req.id)}
+                                                  className="bg-rose-500/20 text-rose-300 font-mono font-bold text-[8px] uppercase px-2 py-0.5 rounded"
+                                                >
+                                                  Decline
+                                                </button>
+                                              </div>
+                                            </div>
+                                            {req.request_note && (
+                                              <p className="text-[10px] text-white/70 italic bg-white/5 p-1.5 rounded font-mono">
+                                                " {req.request_note} "
+                                              </p>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* SFX board drop panel */}
+                                <div className="space-y-2 pt-2 border-t border-white/5">
+                                  <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                    Broadcaster SFX Sound Board
+                                  </span>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {liveSfxDrops.map(drop => (
+                                      <button
+                                        key={drop.id}
+                                        onClick={() => handleTriggerSfx(drop)}
+                                        className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/20 hover:border-purple-400/40 text-[10px] font-mono font-bold text-purple-300 text-left flex items-center justify-between group"
+                                      >
+                                        <span>{drop.title}</span>
+                                        <Play className="h-3 w-3 fill-purple-300 opacity-30 group-hover:opacity-100 transition-opacity" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Event logs list */}
+                                <div className="space-y-1.5 pt-2 border-t border-white/5">
+                                  <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">
+                                    Live Session Event Log
+                                  </span>
+                                  <div className="max-h-24 overflow-y-auto bg-black/60 rounded-xl p-2 border border-white/5 font-mono text-[9px] text-white/50 space-y-1">
+                                    {sfxEventsLog.length === 0 && <p className="italic">Waiting for logs...</p>}
+                                    {sfxEventsLog.map((log, i) => (
+                                      <div key={i}>{log}</div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          /* LISTENER PANEL VIEW */
+                          <div className="space-y-4">
+                            {liveMicSession.session_status === "live" ? (
+                              <div className="space-y-4">
+                                <div className="p-4 rounded-3xl bg-lime-500/10 border border-lime-400/30 flex items-center justify-between gap-4 animate-pulse">
+                                  <div>
+                                    <span className="text-[8px] font-mono font-bold text-lime-400 uppercase tracking-widest">HOST MICROPHONE ACTIVE</span>
+                                    <h5 className="font-black text-white text-sm mt-1 leading-snug">The DJ is speaking live over the air waves!</h5>
+                                  </div>
+                                  <Mic2 className="h-6 w-6 text-lime-400" />
+                                </div>
+
+                                {/* Request call in action if mic mode permits call ins */}
+                                {liveMicSession.mic_mode === "call_in_queue" && (
+                                  <div className="p-3 bg-white/[0.01] border border-white/5 rounded-2xl space-y-3">
+                                    {!myCallRequest ? (
+                                      <div className="space-y-2">
+                                        <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">Listener Interactive Call-Ins</span>
+                                        <p className="text-[10px] text-white/60 leading-relaxed">The host is accepting audience call-ins right now! Ask to call in and speak live.</p>
+
+                                        <div className="flex gap-2">
+                                          <input
+                                            type="text"
+                                            className={`${inputClass} !py-2 !rounded-xl text-xs`}
+                                            placeholder="What do you want to say to the DJ?..."
+                                            value={callInNote}
+                                            onChange={(e) => setCallInNote(e.target.value)}
+                                          />
+                                          <button
+                                            onClick={handleRequestCallIn}
+                                            className="rounded-xl bg-purple-500 text-white font-bold text-xs px-4 hover:bg-purple-400 transition-all flex items-center justify-center shrink-0 font-mono uppercase"
+                                          >
+                                            Request
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-2 font-mono text-xs">
+                                        <div className="flex items-center justify-between">
+                                          <span className="block text-[8px] font-mono font-bold text-white/45 uppercase tracking-widest">Request Status</span>
+                                          <span className={`px-2 py-0.5 rounded text-[8px] uppercase font-bold ${
+                                            myCallRequest.request_status === "approved"
+                                              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 animate-pulse"
+                                              : myCallRequest.request_status === "rejected"
+                                              ? "bg-rose-500/10 border border-rose-500/20 text-rose-300"
+                                              : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 animate-pulse"
+                                          }`}>
+                                            {myCallRequest.request_status}
+                                          </span>
+                                        </div>
+
+                                        {myCallRequest.request_status === "pending" && (
+                                          <p className="text-[10px] text-white/50">You are currently waiting in the host queue. Ensure your microphone is ready!</p>
+                                        )}
+
+                                        {myCallRequest.request_status === "approved" && (
+                                          <div className="space-y-2 pt-1">
+                                            <p className="text-[10px] text-emerald-300">You are APPROVED to speak! Connect your microphone now.</p>
+                                            <div className="flex gap-2">
+                                              <button
+                                                onClick={handleJoinApprovedStream}
+                                                className="flex-1 rounded-full bg-emerald-500 text-black font-black py-2 text-[10px] uppercase tracking-wider hover:bg-emerald-400"
+                                              >
+                                                Connect Stream
+                                              </button>
+                                              <button
+                                                onClick={handleLeaveApprovedStream}
+                                                className="rounded-full bg-rose-500/20 text-rose-300 font-black px-4 py-2 text-[10px] uppercase tracking-wider"
+                                              >
+                                                Leave
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-white/45 italic text-center py-4 font-mono uppercase tracking-widest">Host Live Mic is Offline</p>
+                            )}
                           </div>
                         )}
                       </GlassCard>

@@ -20,8 +20,8 @@
  *   - Otherwise → "user"
  */
 
-import { Outlet, createFileRoute, useRouterState } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { Outlet, createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 import { useProfile, useRelationshipStatus, useTopThree } from "@/hooks/use-profile";
 import { currentUser } from "@/lib/mock-data";
@@ -52,8 +52,15 @@ function PublicProfileRoute() {
   const { profile: dbProfile, loading } = useProfile(uid);
 
   // Load relationship status and Top 3 for authenticated users
+  const navigate = useNavigate();
   const { status: relationshipStatus } = useRelationshipStatus(dbProfile?.id || "");
   const { topThree } = useTopThree(dbProfile?.id || "");
+
+  useEffect(() => {
+    if (!loading && dbProfile?.public_profile_uid && dbProfile.public_profile_uid !== uid) {
+      navigate({ to: "/u/$uid", params: { uid: dbProfile.public_profile_uid }, replace: true });
+    }
+  }, [dbProfile, loading, navigate, uid]);
 
   // ── Determine who is viewing ──────────────────────────────────────────
   const isOwnProfile = !isGuest && authUser?.uid === uid;
