@@ -30,6 +30,7 @@ import BottomNav, { TabKey } from "./BottomNav";
 import MiniPlayer from "./MiniPlayer";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
 import HomeScreen from "./screens/Home";
+import NowPlayingScreen from "./screens/NowPlaying";
 import type { StationsDestination } from "./screens/StationsHub";
 import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
@@ -43,8 +44,6 @@ const RouteMePage = lazy(() => import("../route-me/RouteMePage"));
 const BuildStationScreen = lazy(() => import("./screens/BuildStation"));
 const ArtistStationScreen = lazy(() => import("./screens/ArtistStation"));
 const InstantReleaseScreen = lazy(() => import("./screens/InstantRelease"));
-const loadNowPlayingScreen = () => import("./screens/NowPlaying");
-const NowPlayingScreen = lazy(loadNowPlayingScreen);
 const CommunityScreen = lazy(() => import("./screens/Community"));
 const ScheduleScreen = lazy(() => import("./screens/Schedule"));
 const ArtistHubScreen = lazy(() => import("./screens/ArtistHub"));
@@ -219,22 +218,6 @@ const SCREEN_LABELS: { key: ScreenKey; label: string; group: string }[] = [
   { key: "routeMe", label: "Route Me", group: "Universe" },
 ];
 
-function NowPlayingModalFallback() {
-  return (
-    <div className="flex h-[100dvh] w-full items-center justify-center bg-[#050508] px-6 text-white">
-      <div className="flex w-full max-w-sm flex-col items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.55)]">
-        <div className="size-12 rounded-full border-2 border-cyan-300/20 border-t-cyan-300 animate-spin" />
-        <div>
-          <div className="text-sm font-black uppercase tracking-[0.26em] text-white">
-            Opening Player
-          </div>
-          <div className="mt-2 text-xs text-white/55">Loading the Tradio controls.</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const FEATURE_SHORTCUTS: {
   key: ScreenKey;
   label: string;
@@ -312,14 +295,11 @@ export const TradioShellContent: React.FC = () => {
     return { kind: "tab", tab: "home" };
   });
   const [playerOpen, setPlayerOpen] = useState(false);
-  const [hasLoadedPlayer, setHasLoadedPlayer] = useState(false);
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [songWarRole, setSongWarRole] = useState<SongWarRole>("fan");
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const openPlayer = useCallback(() => {
-    void loadNowPlayingScreen();
-    setHasLoadedPlayer(true);
     setPrescriptionOpen(false);
     setPlayerOpen(true);
   }, []);
@@ -328,13 +308,6 @@ export const TradioShellContent: React.FC = () => {
     setNavOpen(false);
     setPlayerOpen(false);
     setPrescriptionOpen(true);
-  }, []);
-
-  useEffect(() => {
-    const preloadTimer = window.setTimeout(() => {
-      void loadNowPlayingScreen();
-    }, 1200);
-    return () => window.clearTimeout(preloadTimer);
   }, []);
 
   useEffect(() => {
@@ -1200,18 +1173,12 @@ export const TradioShellContent: React.FC = () => {
         )}
 
         {/* Now playing modal */}
-        {hasLoadedPlayer && (
+        {playerOpen && (
           <div
-            className={`fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl transition-all duration-300 ease-out ${
-              playerOpen
-                ? "opacity-100 pointer-events-auto translate-y-0"
-                : "opacity-0 pointer-events-none translate-y-12"
-            }`}
+            className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in"
           >
             <div className="w-full min-h-screen">
-              <Suspense fallback={<NowPlayingModalFallback />}>
-                <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
-              </Suspense>
+              <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
             </div>
           </div>
         )}

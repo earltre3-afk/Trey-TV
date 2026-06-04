@@ -41,7 +41,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDailyZodiacReading } from "@/lib/zodiac.server";
 import { zodiacSymbol } from "@/lib/zodiac";
 import { ReadingOfTheDay } from "@/components/zodiac";
-import { preloadTradioModule } from "@/tradio/preload";
 
 const TREY_TV_BOX_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
 const TREY_ORIGIN_HERO_VIDEO_URL =
@@ -68,13 +67,6 @@ export const Route = createFileRoute("/")({
 
 function WatchNow() {
   const { isGuest } = useAuth();
-
-  useEffect(() => {
-    const warmup = window.setTimeout(() => {
-      void preloadTradioModule();
-    }, 250);
-    return () => window.clearTimeout(warmup);
-  }, []);
 
   return isGuest ? <GuestWatchNow /> : <SignedInWatchNow />;
 }
@@ -122,16 +114,12 @@ function GuestWatchNow() {
         <div className="glass-strong border-b border-white/10 px-4 py-3 flex items-center justify-between">
           <Logo className="h-9" />
           <div className="flex items-center gap-2">
-            <Link
-              to="/tradio"
-              preload="intent"
-              onPointerEnter={() => void preloadTradioModule()}
-              onFocus={() => void preloadTradioModule()}
-              onTouchStart={() => void preloadTradioModule()}
+            <a
+              href="/tradio"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
-            </Link>
+            </a>
             <Link
               to="/login"
               className="px-3 py-1.5 rounded-lg text-xs font-semibold liquid-glass border border-white/15"
@@ -162,16 +150,12 @@ function GuestWatchNow() {
         <div className="absolute inset-x-0 top-0 z-20 p-5 flex items-center justify-between">
           <Logo className="h-12" />
           <div className="flex items-center gap-2">
-            <Link
-              to="/tradio"
-              preload="intent"
-              onPointerEnter={() => void preloadTradioModule()}
-              onFocus={() => void preloadTradioModule()}
-              onTouchStart={() => void preloadTradioModule()}
+            <a
+              href="/tradio"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
-            </Link>
+            </a>
             <Link
               to="/login"
               className="hidden sm:inline px-3 py-1.5 rounded-lg text-xs font-semibold liquid-glass border border-white/15"

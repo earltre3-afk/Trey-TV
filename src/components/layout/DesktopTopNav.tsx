@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import {
   Home,
@@ -30,7 +30,6 @@ import { currentUser } from "@/lib/mock-data";
 import { useNotifications } from "@/lib/notifications-store";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
-import { preloadTradioModule } from "@/tradio/preload";
 
 type NavLink = { to: string; icon?: typeof Home; label: string; badge?: number };
 
@@ -80,13 +79,6 @@ export function DesktopTopNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { unreadCount } = useNotifications();
 
-  useEffect(() => {
-    const warmup = window.setTimeout(() => {
-      void preloadTradioModule();
-    }, 250);
-    return () => window.clearTimeout(warmup);
-  }, []);
-
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
   const links = isGuest ? guestLinks : signedInLinks;
   const profileUid = user?.uid ?? currentUser.uid;
@@ -108,19 +100,13 @@ export function DesktopTopNav() {
         <nav className="flex items-center gap-1 flex-1 min-w-0">
           {links.map((l) => {
             const active = isActive(l.to);
-            return (
-              <Link
-                key={l.to}
-                to={l.to}
-                preload="intent"
-                onPointerEnter={l.to === "/tradio" ? () => void preloadTradioModule() : undefined}
-                onFocus={l.to === "/tradio" ? () => void preloadTradioModule() : undefined}
-                className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition ${
-                  active
-                    ? "text-foreground font-semibold bg-white/5 ring-1 ring-white/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                }`}
-              >
+            const className = `relative inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition ${
+              active
+                ? "text-foreground font-semibold bg-white/5 ring-1 ring-white/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+            }`;
+            const content = (
+              <>
                 {l.to === "/tradio" ? (
                   <span className="relative size-4 inline-flex items-center justify-center shrink-0">
                     <span className="absolute inset-0 rounded-full bg-purple-500/25 blur-[2px] animate-pulse" />
@@ -162,6 +148,20 @@ export function DesktopTopNav() {
                 {active && (
                   <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-primary shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
                 )}
+              </>
+            );
+
+            if (l.to === "/tradio") {
+              return (
+                <a key={l.to} href="/tradio" className={className}>
+                  {content}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={l.to} to={l.to} preload="intent" className={className}>
+                {content}
               </Link>
             );
           })}
