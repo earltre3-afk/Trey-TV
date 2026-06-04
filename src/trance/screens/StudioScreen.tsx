@@ -34,7 +34,8 @@ const folders = [
 const assetTypes = ["Rehearsal Video", "Counts", "Formation Notes", "Mirror Practice"];
 
 const StudioScreen: React.FC = () => {
-  const { id } = useParams();
+  const { studioId } = useParams<{ studioId: string }>();
+  const id = studioId;
   const s = studios.find((x) => x.id === id) || studios[0];
   const [tab, setTab] = React.useState("Library");
 

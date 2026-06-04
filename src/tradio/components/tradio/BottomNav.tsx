@@ -44,6 +44,7 @@ export const BottomNav: React.FC<{
   active: TabKey;
   onChange: (t: TabKey) => void;
   onOpenForge?: () => void;
+  onOpenPlayer?: () => void;
   onOpenScreens?: () => void;
   onSetScreen?: (key: string) => void;
   currentMode?: TradioMode;
@@ -52,12 +53,13 @@ export const BottomNav: React.FC<{
   active,
   onChange,
   onOpenForge,
+  onOpenPlayer,
   onOpenScreens,
   onSetScreen,
   currentMode = "fan",
   currentRoleLabel = "Listener",
 }) => {
-  const { playStation, currentTrack, isPlaying } = usePlayer();
+  const { playStation, currentTrack, currentSource, isPlaying } = usePlayer();
   const { identity } = useTradioIdentity();
 
   // Luxurious Popout state
@@ -87,6 +89,33 @@ export const BottomNav: React.FC<{
       window.removeEventListener("open-prescription-popout", handleOpenPopout);
     };
   }, []);
+
+  const startPrescriptionRadio = () => {
+    playStation(
+      {
+        id: "ai-radio-for-you-live-signal",
+        type: "station",
+        label: "Prescription Radio",
+        title: "Prescription Radio For You",
+        subtitle: "Personal live mix",
+        image: IMG.aiSphere,
+        isLive: true,
+        listenerCount: 18400,
+      },
+      [
+        {
+          ...TRACKS.aiRadio,
+          sourceType: "station",
+          sourceLabel: "Prescription Radio",
+          isLive: true,
+        },
+        TRACKS.midnightVelvet,
+        TRACKS.fallingForYou,
+        TRACKS.sixAmThoughts,
+      ],
+    );
+    onOpenPlayer?.();
+  };
 
   const startHold = (e: React.MouseEvent | React.TouchEvent) => {
     // Prevent default context menu triggers
@@ -142,17 +171,7 @@ export const BottomNav: React.FC<{
       setHoldProgress(0);
 
       if (isClick) {
-        // Simple fast click/tap triggers normal live Prescription play!
-        playStation({
-          id: "ai-radio-for-you",
-          type: "station",
-          label: "AI Station",
-          title: "Prescription Radio For You",
-          subtitle: "Personal live mix",
-          image: IMG.aiSphere,
-          isLive: true,
-          listenerCount: 18400,
-        });
+        startPrescriptionRadio();
       }
     }
   };
@@ -200,7 +219,11 @@ export const BottomNav: React.FC<{
     );
   };
 
-  const isAiPlaying = isPlaying && currentTrack?.id === "ai-radio-for-you-live-signal";
+  const isAiPlaying =
+    isPlaying &&
+    (currentSource?.id === "ai-radio-for-you-live-signal" ||
+      currentTrack?.id === "ai-radio" ||
+      currentTrack?.id === "ai-radio-for-you-live-signal");
 
   return (
     <div className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 relative">
@@ -211,6 +234,7 @@ export const BottomNav: React.FC<{
           currentMode={currentMode}
           currentRoleLabel={currentRoleLabel}
           onOpenForge={onOpenForge}
+          onOpenPlayer={onOpenPlayer}
           onSetScreen={onSetScreen}
         />
       )}

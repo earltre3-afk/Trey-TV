@@ -15,6 +15,7 @@ import { ArrowLeft, ArrowUpDown, Crown, Info, Loader2, RotateCw, Spade } from "l
 import { GamePlayerSeat } from "../shared/GamePlayerSeat";
 import { TreyCard } from "../shared/TreyCard";
 import { AVATAR_SEAT_NORM } from "../pixi/pixiLayout";
+import { PixiSpadesTableLazy } from "../pixi/PixiGameTables";
 
 import { useRealtimeRoom } from "@/features/games/hooks/useRealtimeRoom";
 import { PlayerIdentity } from "@/features/games/lib/services/identity";
@@ -742,6 +743,23 @@ const SpadesView: React.FC<ViewProps> = ({
                 "radial-gradient(80% 60% at 20% 110%, oklch(0.84 0.14 82 / 0.18) 0%, transparent 60%), radial-gradient(80% 60% at 90% 0%, oklch(0.84 0.16 215 / 0.16) 0%, transparent 60%)",
             }}
           />
+          {/* Conic rotating spotlight */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-conic-light opacity-[0.09]"
+            style={{
+              background:
+                "conic-gradient(from 0deg, transparent 0%, rgba(0,183,255,0.18) 25%, transparent 40%, rgba(255,200,87,0.14) 65%, transparent 80%)",
+              transformOrigin: "center center",
+            }}
+          />
+          {/* Drifting atmospheric smoke */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-smoke opacity-[0.25]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 40% 60%, rgba(0,183,255,0.14), transparent 60%)",
+              mixBlendMode: "screen",
+            }}
+          />
           {/* Grain */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -801,44 +819,18 @@ const SpadesView: React.FC<ViewProps> = ({
             style={{ bottom: "35%", right: "26%", animationDelay: "0.8s" }}
           />
 
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[180px] h-[160px]">
-            {state.trick.map((t, i) => {
-              const relSeat = (t.seat - mySeat + 4) % 4;
-              const slot =
-                relSeat === 0
-                  ? { x: 0, y: 46, r: 0 }
-                  : relSeat === 1
-                    ? { x: -46, y: 8, r: -14 }
-                    : relSeat === 2
-                      ? { x: 0, y: -42, r: -6 }
-                      : { x: 46, y: 8, r: 14 };
-              return (
-                <EliteCard
-                  key={`${t.seat}-${t.cardId}-${i}`}
-                  cardId={t.cardId}
-                  size="md"
-                  style={{
-                    position: "absolute",
-                    left: "50%",
-                    top: "50%",
-                    transform: `translate(-50%, -50%) translate(${slot.x}px, ${slot.y}px) rotate(${slot.r}deg)`,
-                    zIndex: i + 1,
-                  }}
-                />
-              );
-            })}
-            {state.trick.length < 4 && (
-              <div
-                className="absolute left-1/2 top-1/2 w-[46px] h-[66px] rounded-[9px]"
-                style={{
-                  transform: "translate(-50%, -50%) translateY(46px)",
-                  border: "1px dashed oklch(0.84 0.16 215 / 0.55)",
-                  background: "oklch(0.84 0.16 215 / 0.06)",
-                  boxShadow: "0 0 14px oklch(0.84 0.16 215 / 0.25)",
-                }}
-              />
-            )}
-          </div>
+          <PixiSpadesTableLazy
+            hands={state.players.map((p) => p.hand)}
+            trick={state.trick}
+            mySeat={mySeat}
+            currentSeat={state.currentSeat}
+            winnerSeat={winnerFlash}
+            selectedCardId={selected}
+            legalCards={yourLegal}
+            accent="#00B7FF"
+            eventKey={`${state.round}:${state.phase}:${state.currentSeat}:${state.trick.length}`}
+            renderHand={false}
+          />
 
           {/* ── Player seat overlays — positioned at AVATAR_SEAT_NORM, NOT at card stack positions ── */}
           <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
@@ -848,26 +840,8 @@ const SpadesView: React.FC<ViewProps> = ({
               const player = state.players[seat];
               const norm = AVATAR_SEAT_NORM[pos as keyof typeof AVATAR_SEAT_NORM];
               const isMyTeam = seat % 2 === mySeat % 2;
-              // FannedBacks offset relative to avatar norm (as fraction of table dims)
-              const fanDx = pos === "top" ? -0.13 : pos === "left" ? 0.12 : -0.12;
-              const fanDy = pos === "top" ? 0.02 : 0.0;
-              const fanRotate = pos === "top" ? -18 : pos === "left" ? 70 : -70;
-              const cardCount = Math.min(player.hand.length, 7);
               return (
                 <React.Fragment key={seat}>
-                  {/* Card back fan */}
-                  {cardCount > 0 && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: `${(norm.y + fanDy) * 100}%`,
-                        left: `${(norm.x + fanDx) * 100}%`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                    >
-                      <FannedBacks count={cardCount} rotate={fanRotate} />
-                    </div>
-                  )}
                   {/* Avatar + name chip */}
                   <div
                     style={{

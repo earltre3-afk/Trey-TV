@@ -173,6 +173,24 @@ export const TranceShell: React.FC<{
       <div className="absolute bottom-0 left-1/3 w-96 h-96 rounded-full bg-purple-600/20 blur-[120px]" />
     </div>
 
+    {/* Cinematic rotating spotlight */}
+    <div
+      className="pointer-events-none fixed inset-0 trey-conic-light opacity-[0.05]"
+      style={{
+        background:
+          "conic-gradient(from 0deg, transparent 0%, rgba(168,85,247,0.18) 25%, transparent 40%, rgba(0,183,255,0.14) 65%, transparent 80%)",
+        transformOrigin: "center center",
+      }}
+    />
+    {/* Drifting atmospheric smoke */}
+    <div
+      className="pointer-events-none fixed inset-0 trey-smoke opacity-[0.2]"
+      style={{
+        backgroundImage: "radial-gradient(circle at 40% 60%, rgba(168,85,247,0.15), transparent 60%)",
+        mixBlendMode: "screen",
+      }}
+    />
+
     <div
       className={cn(
         // Full-bleed on mobile, fluid wide canvas on desktop (capped only on

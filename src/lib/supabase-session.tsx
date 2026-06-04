@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isTreyOwnerEmail, TREY_OWNER_EMAIL } from "@/lib/trey-owner";
@@ -61,7 +54,10 @@ function getStoredSupabaseAuthState() {
     if (!raw) continue;
 
     try {
-      const parsed = JSON.parse(raw) as { expires_at?: number; currentSession?: { expires_at?: number } };
+      const parsed = JSON.parse(raw) as {
+        expires_at?: number;
+        currentSession?: { expires_at?: number };
+      };
       const expiresAt = parsed.expires_at ?? parsed.currentSession?.expires_at;
       if (!expiresAt) return { hasToken: true, isExpired: true };
       return { hasToken: true, isExpired: expiresAt * 1000 <= Date.now() + 30_000 };
@@ -123,6 +119,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     let sub: any = null;
     let cancelled = false;
     let initialLoadSettled = false;
+    let bootstrapInProgress = true;
 
     const finishInitialLoad = () => {
       if (cancelled || initialLoadSettled) return;
@@ -147,11 +144,28 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
         }
 
         if (event === "INITIAL_SESSION") {
-          if (s?.user || !hasTesterAutoLogin) finishInitialLoad();
+          if (s?.user || !hasTesterAutoLogin) {
+            bootstrapInProgress = false;
+            finishInitialLoad();
+          }
           return;
         }
 
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        if (event === "SIGNED_IN") {
+          bootstrapInProgress = false;
+          finishInitialLoad();
+        }
+
+        if (event === "SIGNED_OUT") {
+          if (!hasTesterAutoLogin || !bootstrapInProgress || initialLoadSettled) {
+            bootstrapInProgress = false;
+            finishInitialLoad();
+          }
+          return;
+        }
+
+        if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+          bootstrapInProgress = false;
           finishInitialLoad();
         }
       });
@@ -169,6 +183,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
     const bootstrapTimeout = shouldBootstrapStoredSession
       ? setTimeout(() => {
           const storedAuth = getStoredSupabaseAuthState();
+          bootstrapInProgress = false;
           if (storedAuth.hasToken) {
             void recoverStaleSupabaseAuth();
             setSession(null);
@@ -190,6 +205,7 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
           .then(async ({ data }) => {
             if (cancelled) return;
             if (data.session?.user) {
+              bootstrapInProgress = false;
               setSession(data.session);
               deferAdminLoad(data.session.user.id, data.session.user.email);
               finishInitialLoad();
@@ -201,10 +217,12 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
               const { error } = await signInAsTesterAdmin();
               if (cancelled) return;
               if (error) console.error("Tester admin auto-login failed:", error.message);
+              bootstrapInProgress = false;
               finishInitialLoad();
               return;
             }
 
+            bootstrapInProgress = false;
             setSession(null);
             finishInitialLoad();
           })
@@ -222,10 +240,12 @@ export function SupabaseSessionProvider({ children }: { children: ReactNode }) {
               if (cancelled) return;
               if (error) console.error("Tester admin auto-login failed:", error.message);
             }
+            bootstrapInProgress = false;
             finishInitialLoad();
           });
       } catch (err) {
         console.error("Critical error in getSession setup:", err);
+        bootstrapInProgress = false;
         setSession(null);
         finishInitialLoad();
       }

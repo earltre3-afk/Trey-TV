@@ -1,16 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  Sparkles,
-  X,
-  Activity,
-  Info,
-  Radio,
-  Sliders,
-  ChevronRight,
-  RefreshCw,
-  Compass,
-  Play,
-} from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Sparkles, X, Activity, Info, Radio, Compass } from "lucide-react";
 import type { TradioMode, Prescription, UserAnswers, DailyUsageState } from "./prescribeMeTypes";
 import {
   getDailyUsageState,
@@ -21,7 +10,7 @@ import {
 import { PrescribeMeQuestionFlow } from "./PrescribeMeQuestionFlow";
 import { PrescriptionResultCard } from "./PrescriptionResultCard";
 import { usePlayer } from "@/tradio/contexts/PlayerContext";
-import { IMG } from "../data";
+import { IMG, TRACKS } from "../data";
 import { PolicyLinkInline } from "../legal/LegalPrimitives";
 
 interface PrescriptionRadioPopoverProps {
@@ -29,6 +18,7 @@ interface PrescriptionRadioPopoverProps {
   currentMode?: TradioMode;
   currentRoleLabel?: string;
   onOpenForge?: () => void;
+  onOpenPlayer?: () => void;
   onSetScreen?: (key: string) => void;
 }
 
@@ -37,6 +27,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
   currentMode = "fan",
   currentRoleLabel = "Listener",
   onOpenForge,
+  onOpenPlayer,
   onSetScreen,
 }) => {
   const { playStation } = usePlayer();
@@ -53,6 +44,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
   // Synthesizing Loading state
   const [synthStep, setSynthStep] = useState("");
+  const synthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Parent/Child conceptual signals state
   const [sources, setSources] = useState({
@@ -65,12 +57,22 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
     setDailyUsage(getDailyUsageState(userId));
   }, [flowState]);
 
+  useEffect(() => {
+    return () => {
+      if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
+    };
+  }, []);
+
   const handleStartFlow = () => {
     if (dailyUsage.prescriptionsLeftToday <= 0) return;
+    if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
+    setSynthStep("");
+    setActivePrescription(null);
     setFlowState("questions");
   };
 
   const handleQuestionComplete = (answers: UserAnswers) => {
+    if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
     setActiveAnswers(answers);
     setFlowState("synthesizing");
 
@@ -82,24 +84,32 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
       "Formulating custom Rx music prescription!",
     ];
 
-    let currentStep = 0;
-    const interval = setInterval(() => {
+    setSynthStep(steps[0]);
+    let currentStep = 1;
+    synthIntervalRef.current = setInterval(() => {
       if (currentStep < steps.length) {
         setSynthStep(steps[currentStep]);
         currentStep++;
       } else {
-        clearInterval(interval);
+        if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
+        synthIntervalRef.current = null;
 
         // Execute prescription deduction and generation
         const res = executeNewPrescription(userId, currentMode, answers);
         if (res.success && res.prescription) {
           setActivePrescription(res.prescription);
+          setDailyUsage({
+            prescriptionsLeftToday: res.leftCount,
+            lastPrescription: res.prescription,
+            savedPrescriptions: [],
+          });
           setFlowState("result");
         } else {
+          setDailyUsage(getDailyUsageState(userId));
           setFlowState("welcome");
         }
       }
-    }, 700);
+    }, 360);
   };
 
   const handleViewLastPrescription = () => {
@@ -120,16 +130,36 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
     if (activePrescription.ctaType === "start_radio") {
       // Symmetrical launch sequence for Prescription Radio
-      playStation({
-        id: "ai-radio-for-you-live-signal",
-        type: "station",
-        label: "Prescription Radio",
-        title: activePrescription.title,
-        subtitle: "Synthesized Live Formula",
-        image: IMG.aiSphere,
-        isLive: true,
-        listenerCount: 18400,
-      });
+      playStation(
+        {
+          id: "ai-radio-for-you-live-signal",
+          type: "station",
+          label: "Prescription Radio",
+          title: activePrescription.title,
+          subtitle: "Synthesized Live Formula",
+          image: IMG.aiSphere,
+          isLive: true,
+          listenerCount: 18400,
+        },
+        [
+          {
+            ...TRACKS.aiRadio,
+            title: activePrescription.title,
+            station: "Prescription Radio",
+            sourceType: "station",
+            sourceLabel: "Prescription Radio",
+            isLive: true,
+          },
+          TRACKS.midnightVelvet,
+          TRACKS.fallingForYou,
+          TRACKS.sixAmThoughts,
+        ],
+      );
+      onOpenPlayer?.();
+      onClose();
+    } else if (activePrescription.ctaType === "open_forge") {
+      if (onOpenForge) onOpenForge();
+      else onSetScreen?.("build");
       onClose();
     } else {
       // Route to destination screen keys
@@ -150,9 +180,12 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
   };
 
   const handleDebugReset = () => {
+    if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
+    synthIntervalRef.current = null;
     const fresh = debugResetDailyLimit(userId);
     setDailyUsage(fresh);
     setActivePrescription(null);
+    setSynthStep("");
     setFlowState("welcome");
   };
 
@@ -166,7 +199,10 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
 
       {/* Luxury Integrated Pop-out Cabinet */}
       <div
-        className="fixed bottom-[96px] left-1/2 w-[92vw] max-w-[390px] max-h-[calc(100vh-140px)] z-[101] rounded-[24px] sm:rounded-[32px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 backdrop-blur-3xl p-4 sm:p-5 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] flex flex-col gap-3 sm:gap-4 overflow-y-auto scrollbar-none animate-emerge-from-button text-left luxury-grain sm:left-auto sm:right-6 sm:bottom-[105px] sm:w-[420px] sm:max-h-[calc(100vh-140px)] sm:animate-slide-up-modal sm:translate-x-0"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tradio Prescribe Me"
+        className="fixed bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] left-1/2 z-[101] flex max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] w-[calc(100vw_-_1rem)] max-w-[390px] -translate-x-1/2 flex-col gap-3 overflow-y-auto overscroll-contain rounded-[24px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 p-3.5 text-left shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] backdrop-blur-3xl scrollbar-none luxury-grain animate-emerge-from-button sm:right-6 sm:left-auto sm:w-[420px] sm:max-w-[420px] sm:translate-x-0 sm:rounded-[32px] sm:p-5 sm:bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] sm:max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] sm:animate-slide-up-modal"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Triangular Anchor Tail pointing to bottom nav center orb */}
@@ -230,6 +266,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close Prescribe Me"
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
                 <X className="h-4 w-4" />
@@ -271,6 +308,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close Prescribe Me"
                 className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
                 <X className="h-4 w-4" />

@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   Settings as SettingsIcon,
   Send,
-  Users,
 } from "lucide-react";
 import { profile, IMG } from "../mockData";
 import { useTV } from "../TVContext";

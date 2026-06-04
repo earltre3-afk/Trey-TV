@@ -1,7 +1,6 @@
 import React from "react";
 import { TVFrame } from "../components/TVFrame";
 import { GlassPanel, FocusButton } from "../components/Primitives";
-import { ContentRow } from "../components/Rows";
 import {
   profile,
   badges,
@@ -157,7 +156,7 @@ export const ProfileScreen: React.FC = () => {
             </button>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {musicVideos.slice(0, 3).map((v, i) => (
+            {musicVideos.slice(0, 3).map((v) => (
               <button
                 key={v.id}
                 className="group relative rounded-xl overflow-hidden outline-none focus:scale-[1.05] focus:shadow-[0_0_24px_rgba(255,43,214,0.6)] transition-all"

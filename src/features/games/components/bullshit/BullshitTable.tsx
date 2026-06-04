@@ -558,6 +558,23 @@ const BSView: React.FC<ViewProps> = ({
               boxShadow: "0 0 18px oklch(0.72 0.26 300 / 0.20)",
             }}
           />
+          {/* Conic rotating spotlight */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-conic-light opacity-[0.09] z-[1]"
+            style={{
+              background:
+                "conic-gradient(from 0deg, transparent 0%, rgba(168,85,247,0.18) 25%, transparent 40%, rgba(0,183,255,0.14) 65%, transparent 80%)",
+              transformOrigin: "center center",
+            }}
+          />
+          {/* Drifting atmospheric smoke */}
+          <div
+            className="pointer-events-none absolute inset-0 trey-smoke opacity-[0.24] z-[1]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 40% 60%, rgba(168,85,247,0.15), transparent 60%)",
+              mixBlendMode: "screen",
+            }}
+          />
           {/* Sparkles */}
           <span
             className="sparkle z-[2]"

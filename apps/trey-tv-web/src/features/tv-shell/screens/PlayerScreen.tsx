@@ -1,6 +1,6 @@
 import React from "react";
 import { TreyLogo } from "../components/Logo";
-import { Pause, Rewind, FastForward, Subtitles, SkipForward, Plus, ArrowLeft } from "lucide-react";
+import { Pause, Rewind, Subtitles, SkipForward, Plus, ArrowLeft } from "lucide-react";
 import { IMG } from "../mockData";
 import { useTV } from "../TVContext";
 

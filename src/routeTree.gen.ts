@@ -73,6 +73,7 @@ import { Route as LiveIdRouteImport } from './routes/live.$id'
 import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-deletion'
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as GamesTrunoRouteImport } from './routes/games.truno'
+import { Route as GamesTreynounRouteImport } from './routes/games.treynoun'
 import { Route as GamesSpadesRouteImport } from './routes/games.spades'
 import { Route as GamesInteractiveStoriesRouteImport } from './routes/games.interactive-stories'
 import { Route as GamesBullshitRouteImport } from './routes/games.bullshit'
@@ -460,6 +461,11 @@ const LegalSlugRoute = LegalSlugRouteImport.update({
 const GamesTrunoRoute = GamesTrunoRouteImport.update({
   id: '/truno',
   path: '/truno',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesTreynounRoute = GamesTreynounRouteImport.update({
+  id: '/treynoun',
+  path: '/treynoun',
   getParentRoute: () => GamesRoute,
 } as any)
 const GamesSpadesRoute = GamesSpadesRouteImport.update({
@@ -895,6 +901,7 @@ export interface FileRoutesByFullPath {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
@@ -1024,6 +1031,7 @@ export interface FileRoutesByTo {
   '/games/blackjack': typeof GamesBlackjackRoute
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/spades': typeof GamesSpadesRoute
+  '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
@@ -1158,6 +1166,7 @@ export interface FileRoutesById {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
   '/legal/data-deletion': typeof LegalDataDeletionRoute
@@ -1293,6 +1302,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
@@ -1422,6 +1432,7 @@ export interface FileRouteTypes {
     | '/games/blackjack'
     | '/games/bullshit'
     | '/games/spades'
+    | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
@@ -1555,6 +1566,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
     | '/legal/data-deletion'
@@ -2113,6 +2125,13 @@ declare module '@tanstack/react-router' {
       path: '/truno'
       fullPath: '/games/truno'
       preLoaderRoute: typeof GamesTrunoRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/treynoun': {
+      id: '/games/treynoun'
+      path: '/treynoun'
+      fullPath: '/games/treynoun'
+      preLoaderRoute: typeof GamesTreynounRouteImport
       parentRoute: typeof GamesRoute
     }
     '/games/spades': {
@@ -2769,6 +2788,7 @@ interface GamesRouteChildren {
   GamesBullshitRoute: typeof GamesBullshitRoute
   GamesInteractiveStoriesRoute: typeof GamesInteractiveStoriesRouteWithChildren
   GamesSpadesRoute: typeof GamesSpadesRoute
+  GamesTreynounRoute: typeof GamesTreynounRoute
   GamesTrunoRoute: typeof GamesTrunoRoute
   GamesIndexRoute: typeof GamesIndexRoute
 }
@@ -2778,6 +2798,7 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesBullshitRoute: GamesBullshitRoute,
   GamesInteractiveStoriesRoute: GamesInteractiveStoriesRouteWithChildren,
   GamesSpadesRoute: GamesSpadesRoute,
+  GamesTreynounRoute: GamesTreynounRoute,
   GamesTrunoRoute: GamesTrunoRoute,
   GamesIndexRoute: GamesIndexRoute,
 }

@@ -1,4 +1,4 @@
-export type TradioMode = "fan" | "artist" | "producer" | "dj" | "admin" | "owner";
+export type TradioMode = "listener" | "fan" | "artist" | "producer" | "dj" | "admin" | "owner";
 
 export interface QuestionOption {
   label: string;

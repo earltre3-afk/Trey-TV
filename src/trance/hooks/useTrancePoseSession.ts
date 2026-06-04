@@ -113,7 +113,7 @@ export function useTrancePoseSession(mode: "Learn" | "Practice" | "Performance")
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 640, height: 480 },
+        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false,
       });
     } catch (err) {

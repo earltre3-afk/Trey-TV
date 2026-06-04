@@ -88,6 +88,7 @@ const BattleReplayScreen = lazy(() =>
 );
 import type { SongWarRole } from "./songwars/types";
 import { MOCK_BATTLES, MOCK_REPLAYS } from "./songwars/data";
+import { ACTIVE_USER } from "./data";
 
 const SCREEN_ICONS: Record<ScreenKey, React.ComponentType<{ className?: string }>> = {
   home: Home,
@@ -1162,9 +1163,10 @@ export const TradioShellContent: React.FC = () => {
               active={tab}
               onChange={handleTab}
               onOpenForge={() => setView({ kind: "build" })}
+              onOpenPlayer={openPlayer}
               onOpenScreens={() => setNavOpen(true)}
               onSetScreen={(key) => setScreen(key as ScreenKey)}
-              currentMode={currentMode as any}
+              currentMode={currentMode}
               currentRoleLabel={currentRoleLabel}
             />
           </div>
@@ -1189,7 +1191,7 @@ export const TradioShellContent: React.FC = () => {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="flex h-[min(92dvh,760px)] w-full flex-col overflow-hidden rounded-t-[32px] border border-white/10 liquid-glass !bg-none shadow-premium-lg animate-scale-in"
+              className="flex h-[min(92dvh,760px)] w-full max-w-full md:max-w-[640px] flex-col overflow-hidden rounded-t-[32px] border border-white/10 liquid-glass !bg-none shadow-premium-lg animate-scale-in"
             >
               <div className="flex shrink-0 items-start justify-between px-6 pb-4 pt-6">
                 <div>
@@ -1206,7 +1208,7 @@ export const TradioShellContent: React.FC = () => {
                   <X className="size-5 text-white" />
                 </button>
               </div>
-              <div className="shrink-0 px-6 pb-4">
+              <div className="shrink-0 px-6 pb-2">
                 <Link
                   to="/"
                   onClick={() => setNavOpen(false)}
@@ -1299,8 +1301,45 @@ export const TradioShellContent: React.FC = () => {
                   <ChevronRight className="size-4 text-muted-foreground/50 transition-transform group-hover:translate-x-1" />
                 </button>
               </div>
+              {/* Premium Promotional Block */}
+              <div className="shrink-0 px-6 pt-2">
+                <div className="p-3 rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple flex items-center gap-3">
+                  <Sparkles className="size-6 text-purple-300 animate-pulse shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white">Tradio Broadcast Suite</div>
+                    <div className="text-[10px] text-white/60">
+                      Unlock premium AI show planning & live broadcast slots.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profile Card Section */}
+              <div className="shrink-0 px-6 pt-3 pb-1">
+                <div className="p-3 rounded-2xl border border-white/10 liquid-glass flex items-center gap-3">
+                  <div className="relative size-10 rounded-full shrink-0 overflow-hidden border border-white/15">
+                    <img
+                      src={identity?.avatar_url || ACTIVE_USER.avatar}
+                      alt=""
+                      className="size-10 rounded-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-white text-xs">
+                      {identity?.display_name || ACTIVE_USER.name}
+                    </div>
+                    <div className="text-[10px] text-white/45 truncate">
+                      @{identity?.username || "listener"}
+                    </div>
+                    <div className="mt-1 inline-flex items-center gap-1 text-[8px] px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider font-mono font-bold">
+                      {currentRoleLabel || "Listener"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Legal footer links */}
-              <div className="shrink-0 border-t border-white/8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4">
+              <div className="shrink-0 border-t border-white/8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
                 <LegalFooterLinks onOpen={openLegal} />
               </div>
             </div>
