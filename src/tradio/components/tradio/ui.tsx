@@ -111,6 +111,7 @@ export const AIPill: React.FC<{ label?: string; onClick?: () => void }> = ({
 }) => (
   <button
     onClick={onClick}
+    aria-label={label}
     className="group relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center select-none active:scale-95 transition-all duration-300"
   >
     {/* Soft pulsing aura */}
@@ -120,7 +121,7 @@ export const AIPill: React.FC<{ label?: string; onClick?: () => void }> = ({
     <div className="relative h-10 w-10 sm:h-11 sm:w-11">
       <img
         src={aiBallCutout}
-        alt="Prescription Radio"
+        alt=""
         className="h-full w-full object-contain pointer-events-none [filter:drop-shadow(0_0_8px_rgba(176,38,255,0.55))] transition-transform duration-700 animate-slow-spin group-hover:scale-110 group-hover:animate-orb-spin"
       />
     </div>

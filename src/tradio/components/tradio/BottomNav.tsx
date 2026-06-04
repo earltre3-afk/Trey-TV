@@ -1,24 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  Home,
-  Search,
-  Library,
-  Radio,
-  Sparkles,
-  X,
-  Sliders,
-  Activity,
-  Check,
-  Play,
-  Volume2,
-  User,
-} from "lucide-react";
+import React from "react";
+import { Home, Library, Radio, Search, User } from "lucide-react";
 import { usePlayer } from "@/tradio/contexts/PlayerContext";
 import { useTradioIdentity } from "./auth/useTradioIdentity";
 import { hasAnyRole } from "./auth/roleUtils";
-import { TRACKS, IMG } from "./data";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
-import { PrescriptionRadioPopover } from "./prescribeMe/PrescriptionRadioPopover";
 import type { TradioMode } from "./prescribeMe/prescribeMeTypes";
 
 export type TabKey = "home" | "stations" | "search" | "library" | "studio" | "profile";
@@ -45,136 +30,14 @@ export const BottomNav: React.FC<{
   onChange: (t: TabKey) => void;
   onOpenForge?: () => void;
   onOpenPlayer?: () => void;
+  onOpenPrescription?: () => void;
   onOpenScreens?: () => void;
   onSetScreen?: (key: string) => void;
   currentMode?: TradioMode;
   currentRoleLabel?: string;
-}> = ({
-  active,
-  onChange,
-  onOpenForge,
-  onOpenPlayer,
-  onOpenScreens,
-  onSetScreen,
-  currentMode = "fan",
-  currentRoleLabel = "Listener",
-}) => {
-  const { playStation, currentTrack, currentSource, isPlaying } = usePlayer();
+}> = ({ active, onChange, onOpenPrescription }) => {
+  const { currentTrack, currentSource, isPlaying } = usePlayer();
   const { identity } = useTradioIdentity();
-
-  // Luxurious Popout state
-  const [showPopout, setShowPopout] = useState(false);
-
-  // Long-press hold state
-  const [isHolding, setIsHolding] = useState(false);
-  const [holdProgress, setHoldProgress] = useState(0);
-
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isHoldingRef = useRef(false);
-
-  // Clear timers on unmount
-  useEffect(() => {
-    return () => {
-      if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    };
-  }, []);
-
-  // Listen for external open popout triggers
-  useEffect(() => {
-    const handleOpenPopout = () => setShowPopout(true);
-    window.addEventListener("open-prescription-popout", handleOpenPopout);
-    return () => {
-      window.removeEventListener("open-prescription-popout", handleOpenPopout);
-    };
-  }, []);
-
-  const startPrescriptionRadio = () => {
-    playStation(
-      {
-        id: "ai-radio-for-you-live-signal",
-        type: "station",
-        label: "Prescription Radio",
-        title: "Prescription Radio For You",
-        subtitle: "Personal live mix",
-        image: IMG.aiSphere,
-        isLive: true,
-        listenerCount: 18400,
-      },
-      [
-        {
-          ...TRACKS.aiRadio,
-          sourceType: "station",
-          sourceLabel: "Prescription Radio",
-          isLive: true,
-        },
-        TRACKS.midnightVelvet,
-        TRACKS.fallingForYou,
-        TRACKS.sixAmThoughts,
-      ],
-    );
-    onOpenPlayer?.();
-  };
-
-  const startHold = (e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent default context menu triggers
-    if (showPopout) return;
-
-    isHoldingRef.current = true;
-    setIsHolding(true);
-    setHoldProgress(0);
-
-    const startTime = Date.now();
-    const duration = 650; // Deluxe deliberate hold duration
-
-    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-
-    progressIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const pct = Math.min(100, (elapsed / duration) * 100);
-      setHoldProgress(pct);
-      if (pct >= 100) {
-        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      }
-    }, 16);
-
-    holdTimerRef.current = setTimeout(() => {
-      // Hold complete - trigger luxurious premium integrated popout menu!
-      setShowPopout(true);
-      setIsHolding(false);
-      isHoldingRef.current = false;
-      setHoldProgress(0);
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-
-      // Vibrate if mobile supports it
-      if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate(15);
-      }
-    }, duration);
-  };
-
-  const endHold = (e: React.MouseEvent | React.TouchEvent, isClick: boolean) => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
-    }
-
-    if (isHoldingRef.current) {
-      isHoldingRef.current = false;
-      setIsHolding(false);
-      setHoldProgress(0);
-
-      if (isClick) {
-        startPrescriptionRadio();
-      }
-    }
-  };
 
   const hasProfileAccess = hasAnyRole(identity, ["artist", "producer", "dj", "admin", "owner"]);
   const leftTabs = TABS.filter((t) => t.key === "home" || t.key === "stations");
@@ -227,87 +90,25 @@ export const BottomNav: React.FC<{
 
   return (
     <div className="px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 relative">
-      {/* Luxurious Popout */}
-      {showPopout && (
-        <PrescriptionRadioPopover
-          onClose={() => setShowPopout(false)}
-          currentMode={currentMode}
-          currentRoleLabel={currentRoleLabel}
-          onOpenForge={onOpenForge}
-          onOpenPlayer={onOpenPlayer}
-          onSetScreen={onSetScreen}
-        />
-      )}
-
-      {/* Main Nav Bar Grid */}
       <div className="relative flex items-end justify-between rounded-3xl border-[0.5px] border-white/12 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08070d]/90 to-[#040409]/95 backdrop-blur-[34px] px-2 py-3 shadow-[0_30px_70px_rgba(0,0,0,0.9),inset_0_1.5px_2px_rgba(255,255,255,0.14),inset_0_-1px_12px_rgba(0,0,0,0.6)] sm:px-3 sm:py-3.5">
         {leftTabs.map(renderTabButton)}
 
-        {/* Prescription Radio center orb tab */}
         <button
-          onMouseDown={startHold}
-          onMouseUp={(e) => endHold(e, true)}
-          onMouseLeave={(e) => endHold(e, false)}
-          onTouchStart={(e) => {
-            // Keep normal scrolling but prevent zoom double tap and default click delay
-            startHold(e);
-          }}
-          onTouchEnd={(e) => {
-            endHold(e, true);
-          }}
-          onTouchCancel={(e) => {
-            endHold(e, false);
-          }}
-          className="group relative flex flex-1 flex-col items-center gap-1.5 py-2 select-none transition-all duration-300"
+          type="button"
+          onClick={onOpenPrescription}
+          aria-label="Open Tradio Prescribe Me"
+          className="group relative flex flex-1 flex-col items-center gap-1.5 py-2 select-none transition-all duration-300 active:scale-95"
         >
           <div className="relative flex h-10 w-10 items-center justify-center">
-            {/* Soft pulsing aura */}
             <span className="absolute inset-0 rounded-full bg-purple-500/25 blur-lg animate-pulse-orb-slow" />
-
-            {/* Expanding signal ring while live */}
-            {isAiPlaying && !isHolding && (
+            {isAiPlaying && (
               <span className="absolute inset-0 rounded-full border border-cyan-300/40 animate-wave-expand animate-pulse-orb z-0" />
             )}
-
-            {/* Interactive Hold Circular Ring */}
-            {isHolding && (
-              <svg className="absolute h-12 w-12 -rotate-90 pointer-events-none z-20">
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  fill="none"
-                  stroke="rgba(255, 255, 255, 0.08)"
-                  strokeWidth="2"
-                />
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  fill="none"
-                  stroke="url(#hold-gradient)"
-                  strokeWidth="2"
-                  strokeDasharray={2 * Math.PI * 20}
-                  strokeDashoffset={2 * Math.PI * 20 - (holdProgress / 100) * (2 * Math.PI * 20)}
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="hold-gradient" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#d946ef" />
-                    <stop offset="100%" stopColor="#22d3ee" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            )}
-
-            {/* The ball — background-removed cutout, just the glowing sphere */}
-            <div className="relative h-10 w-10 z-10">
+            <div className="relative z-10 h-10 w-10">
               <img
                 src={aiBallCutout}
-                alt="Prescription Radio"
+                alt=""
                 className={`h-full w-full object-contain pointer-events-none [filter:drop-shadow(0_0_8px_rgba(176,38,255,0.55))] transition-transform duration-700 ${
-                  isHolding ? "scale-[0.82]" : ""
-                } ${
                   isAiPlaying
                     ? "animate-orb-spin"
                     : "animate-slow-spin group-hover:scale-110 group-hover:animate-orb-spin"

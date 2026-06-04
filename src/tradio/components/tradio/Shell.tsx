@@ -71,6 +71,7 @@ import { AccessRequestsProvider } from "./auth/AccessRequestsContext";
 import { MessengerBridgeProvider } from "../universe/MessengerBridgeProvider";
 import { useMessengerBridge } from "../universe/MessengerBridgeContext";
 import { TradioMessengerBell } from "../universe/TradioMessengerBridge";
+import { PrescriptionRadioPopover } from "./prescribeMe/PrescriptionRadioPopover";
 const SongWarsHub = lazy(() =>
   import("./songwars/views/SongWarsHub").then((m) => ({ default: m.SongWarsHub })),
 );
@@ -312,13 +313,21 @@ export const TradioShellContent: React.FC = () => {
   });
   const [playerOpen, setPlayerOpen] = useState(false);
   const [hasLoadedPlayer, setHasLoadedPlayer] = useState(false);
+  const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [songWarRole, setSongWarRole] = useState<SongWarRole>("fan");
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const openPlayer = useCallback(() => {
     void loadNowPlayingScreen();
     setHasLoadedPlayer(true);
+    setPrescriptionOpen(false);
     setPlayerOpen(true);
+  }, []);
+
+  const openPrescription = useCallback(() => {
+    setNavOpen(false);
+    setPlayerOpen(false);
+    setPrescriptionOpen(true);
   }, []);
 
   useEffect(() => {
@@ -380,15 +389,18 @@ export const TradioShellContent: React.FC = () => {
   useEffect(() => {
     const handleOpenNav = () => setNavOpen(true);
     const handleOpenMessenger = () => messengerBridge?.openPreview();
+    const handleOpenPrescription = () => openPrescription();
 
     window.addEventListener("open-tradio-nav", handleOpenNav);
     window.addEventListener("open-tradio-messenger", handleOpenMessenger);
+    window.addEventListener("open-prescription-popout", handleOpenPrescription);
 
     return () => {
       window.removeEventListener("open-tradio-nav", handleOpenNav);
       window.removeEventListener("open-tradio-messenger", handleOpenMessenger);
+      window.removeEventListener("open-prescription-popout", handleOpenPrescription);
     };
-  }, [messengerBridge]);
+  }, [messengerBridge, openPrescription]);
 
   useEffect(() => {
     if (!navOpen) return;
@@ -413,6 +425,18 @@ export const TradioShellContent: React.FC = () => {
       document.documentElement.style.overflow = previousRootOverflow;
     };
   }, [playerOpen]);
+
+  useEffect(() => {
+    if (!prescriptionOpen) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, [prescriptionOpen]);
 
   useEffect(() => {
     const resetScroll = () => {
@@ -983,7 +1007,7 @@ export const TradioShellContent: React.FC = () => {
               Trey TV Messenger
             </div>
             <div className="truncate text-[10px] text-white/40 mt-0.5 group-hover:text-white/55 transition-colors duration-300">
-              Messages live in Trey TV · preview only
+              Messages live in Trey TV - preview only
             </div>
           </button>
         </div>
@@ -1003,7 +1027,7 @@ export const TradioShellContent: React.FC = () => {
               className="group flex w-full items-start gap-3.5 rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-transparent p-3.5 text-left transition-all duration-500 hover:translate-x-1.5 hover:border-purple-500/25 hover:bg-purple-500/[0.03] hover:shadow-[0_10px_20px_-10px_rgba(168,85,247,0.15)]"
             >
               <div className="size-9 rounded-xl grid place-items-center bg-white/[0.03] border border-white/[0.04] text-purple-300/80 transition-all duration-500 group-hover:scale-105 group-hover:bg-purple-500/15 group-hover:border-purple-500/25 group-hover:text-purple-200 shrink-0">
-                <Icon className="size-4.5 transition-transform duration-500 group-hover:rotate-6" />
+                <Icon className="h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-6" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className="block text-xs font-bold text-white/85 group-hover:text-purple-200 transition-colors duration-300">
@@ -1105,12 +1129,13 @@ export const TradioShellContent: React.FC = () => {
               onClick={() => {
                 window.dispatchEvent(new CustomEvent("open-tradio-nav"));
               }}
+              aria-label="Open Tradio screens"
               className="group relative flex h-8 w-8 items-center justify-center select-none active:scale-95 transition-all duration-300"
             >
               <span className="absolute inset-0 rounded-full bg-purple-500/25 blur-md animate-pulse-orb-slow" />
               <div className="relative h-8 w-8">
                 <img
-                  alt="Prescription Radio"
+                  alt=""
                   className="h-full w-full object-contain pointer-events-none [filter:drop-shadow(0_0_8px_rgba(176,38,255,0.55))] transition-transform duration-700 animate-slow-spin group-hover:scale-110 group-hover:animate-orb-spin"
                   src={aiBallCutout}
                 />
@@ -1148,7 +1173,7 @@ export const TradioShellContent: React.FC = () => {
               active={tab}
               onChange={handleTab}
               onOpenForge={() => setView({ kind: "build" })}
-              onOpenPlayer={openPlayer}
+              onOpenPrescription={openPrescription}
               onOpenScreens={() => setNavOpen(true)}
               onSetScreen={(key) => setScreen(key as ScreenKey)}
               currentMode={currentMode}
@@ -1156,6 +1181,23 @@ export const TradioShellContent: React.FC = () => {
             />
           </div>
         </div>
+
+        {prescriptionOpen && (
+          <PrescriptionRadioPopover
+            onClose={() => setPrescriptionOpen(false)}
+            currentMode={currentMode}
+            currentRoleLabel={currentRoleLabel}
+            onOpenForge={() => {
+              setPrescriptionOpen(false);
+              setView({ kind: "build" });
+            }}
+            onOpenPlayer={openPlayer}
+            onSetScreen={(key) => {
+              setPrescriptionOpen(false);
+              setScreen(key as ScreenKey);
+            }}
+          />
+        )}
 
         {/* Now playing modal */}
         {hasLoadedPlayer && (
