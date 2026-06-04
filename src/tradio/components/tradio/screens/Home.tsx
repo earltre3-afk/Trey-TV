@@ -135,11 +135,13 @@ export const HomeScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-5 pb-5 lg:space-y-6 lg:pb-6">
-      <TopBar onProfileClick={() => onOpenProfile?.("host", "Jordan")} />
+    <div className="flex flex-col gap-5 pb-5 lg:gap-6 lg:pb-6 [&>*]:order-10">
+      <div className="order-1">
+        <TopBar onProfileClick={() => onOpenProfile?.("host", "Jordan")} />
+      </div>
 
       {/* Greeting & Search Group */}
-      <div className="px-4 sm:px-6 lg:px-10 flex flex-col gap-4 sm:gap-5">
+      <div className="order-2 px-4 sm:px-6 lg:px-10 flex flex-col gap-4 sm:gap-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-2">
@@ -173,7 +175,7 @@ export const HomeScreen: React.FC<Props> = ({
       </div>
 
       {/* Sleek Tradio Pathway Dock */}
-      <div className="px-4 sm:px-6 lg:px-10 animate-fade-in">
+      <div className="order-4 px-4 sm:px-6 lg:px-10 animate-fade-in">
         <GlassCard className="p-4 liquid-glass border-white/10 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.015] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -255,7 +257,7 @@ export const HomeScreen: React.FC<Props> = ({
         </GlassCard>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-10">
+      <div className="order-5 px-4 sm:px-6 lg:px-10">
         <PrescriptionRail
           compact
           title="Prescribe My Music"
@@ -264,7 +266,7 @@ export const HomeScreen: React.FC<Props> = ({
       </div>
 
       {/* Premium Creative Action Hub (Minimalist and compact, replaces 3 bulky boxes) */}
-      <div className="px-4 sm:px-6 lg:px-10">
+      <div className="order-3 px-4 sm:px-6 lg:px-10">
         <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
           {/* Action 1: Universe Router */}
           <GlassCard
