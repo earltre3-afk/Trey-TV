@@ -72,8 +72,8 @@ export function useProfile(publicUid: string) {
           .select(
             "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile, profile_song_id, profile_preferences",
           )
-          .eq("public_profile_uid", publicUid)
-          .single();
+          .or(`public_profile_uid.eq.${publicUid},site_uid.eq.${publicUid}`)
+          .maybeSingle();
 
         if (error) {
           throw error;
@@ -108,7 +108,7 @@ export function useProfile(publicUid: string) {
 
         if (mounted) {
           setProfile({
-            ...(data as SupabaseProfile),
+            ...(data as any as SupabaseProfile),
             follower_count: followersResult.count ?? 0,
             following_count: followingResult.count ?? 0,
             post_count: postsResult.count ?? 0,
