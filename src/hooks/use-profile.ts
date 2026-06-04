@@ -79,7 +79,7 @@ export function useProfile(publicUid: string) {
           throw error;
         }
 
-        const profileId = (data as any).id as string | undefined;
+        const profileId = data?.id as string | undefined;
         const [followersResult, followingResult, postsResult, subscribersResult] = isUuid(profileId)
           ? await Promise.all([
               supabase
@@ -107,13 +107,17 @@ export function useProfile(publicUid: string) {
             ];
 
         if (mounted) {
-          setProfile({
-            ...(data as any as SupabaseProfile),
-            follower_count: followersResult.count ?? 0,
-            following_count: followingResult.count ?? 0,
-            post_count: postsResult.count ?? 0,
-            subscriber_count: subscribersResult.count ?? 0,
-          });
+          setProfile(
+            data
+              ? {
+                  ...(data as any as SupabaseProfile),
+                  follower_count: followersResult.count ?? 0,
+                  following_count: followingResult.count ?? 0,
+                  post_count: postsResult.count ?? 0,
+                  subscriber_count: subscribersResult.count ?? 0,
+                }
+              : null,
+          );
           setError(null);
         }
       } catch (err) {

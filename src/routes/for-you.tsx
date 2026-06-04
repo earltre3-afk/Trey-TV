@@ -89,7 +89,7 @@ function Home() {
             typeof window !== "undefined" &&
             (window.location.search.includes("demo=1") ||
               localStorage.getItem("treytv_demo") === "true" ||
-              process.env.NODE_ENV === "development");
+              import.meta.env.DEV);
           const isMockFollow =
             isDemoMode &&
             p.creator &&

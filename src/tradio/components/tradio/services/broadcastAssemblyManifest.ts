@@ -32,7 +32,7 @@ export function buildEpisodeTimelineManifest(
         end_time_seconds: start + duration,
         fade_in_seconds: Number(b.fade_in_seconds) || 0,
         fade_out_seconds: Number(b.fade_out_seconds) || 0,
-        volume_level: Number(b.volume_level) !== undefined ? Number(b.volume_level) : 1.0,
+        volume_level: (b.volume_level !== undefined && b.volume_level !== null) ? Number(b.volume_level) : 1.0,
         rights_status: (b as any).rights_status || b.metadata?.rights_status || "unclear",
         approval_status: b.approval_status || "pending",
         metadata: b.metadata || {},

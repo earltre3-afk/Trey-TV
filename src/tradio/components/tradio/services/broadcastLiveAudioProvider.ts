@@ -110,7 +110,10 @@ export class LiveKitProviderImpl implements LiveAudioProvider {
     });
 
     // Connect
-    const livekitUrl = process.env.LIVEKIT_URL || "ws://localhost:7880";
+    const livekitUrl =
+      (typeof process !== "undefined" ? process.env?.LIVEKIT_URL : undefined) ||
+      import.meta.env.VITE_LIVEKIT_URL ||
+      "ws://localhost:7880";
     await room.connect(livekitUrl, token);
     this.participants.clear();
 
@@ -299,7 +302,10 @@ const providers: Record<string, LiveAudioProvider> = {
 
 export function getAudioProvider(name: string = "livekit"): LiveAudioProvider {
   // If LiveKit credentials are empty, default to local dev stub fallback
-  const isUrlConfigured = Boolean(process.env.LIVEKIT_URL);
+  const isUrlConfigured = Boolean(
+    (typeof process !== "undefined" ? process.env?.LIVEKIT_URL : undefined) ||
+      import.meta.env.VITE_LIVEKIT_URL,
+  );
   if (name === "livekit" && !isUrlConfigured) {
     console.log("[Audio Provider] LiveKit not configured. Falling back to local_dev_stub.");
     return providers.local_dev_stub;
