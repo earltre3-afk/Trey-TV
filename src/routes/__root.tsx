@@ -26,11 +26,12 @@ import { GuideProvider } from "@/lib/guide-store";
 import { MusicReviewProvider } from "@/lib/music-review-store";
 import { CurrentUserSync } from "@/components/CurrentUserSync";
 import { GiftBurstHost } from "@/components/gifts/GiftBurst";
-import { WelcomeSplash } from "@/components/splash/WelcomeSplash";
 import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
 import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
 import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
+import { PlayerProvider, usePlayer } from "@/tradio/contexts/PlayerContext";
+import { Play, Pause, Volume2, VolumeX, Music, Maximize2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
 
@@ -175,7 +176,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
-  const showWelcomeSplash = pathname === "/";
   const isImmersivePrescribeMe = pathname.startsWith("/prescribe-me");
   const isImmersiveGameRoom = pathname.startsWith("/games");
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
@@ -229,38 +229,40 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SupabaseSessionProvider>
-        <AuthProvider>
-          <FollowProvider>
-            <CurrentUserSync />
-            <ActivityProvider>
-              <SubmissionsProvider>
-                <FeedProvider>
-                  <CommentsProvider>
-                    <MessagesProvider>
-                      <GuideProvider>
-                        <MusicReviewProvider>
-                          {showWelcomeSplash && <WelcomeSplash onDone={() => undefined} />}
-                          <AuthGuard>
-                            <FoldableLayoutManager>
-                              <Outlet />
-                            </FoldableLayoutManager>
-                          </AuthGuard>
-                          {!hideGlobalMobileChrome && <BottomNav />}
-                          {!hideGlobalMobileChrome && <TreyIWidget />}
-                          <GiftBurstHost />
-                          <GlobalMediaCastButton />
-                          <Toaster />
-                        </MusicReviewProvider>
-                      </GuideProvider>
-                    </MessagesProvider>
-                  </CommentsProvider>
-                </FeedProvider>
-              </SubmissionsProvider>
-            </ActivityProvider>
-          </FollowProvider>
-        </AuthProvider>
-      </SupabaseSessionProvider>
+      <PlayerProvider>
+        <SupabaseSessionProvider>
+          <AuthProvider>
+            <FollowProvider>
+              <CurrentUserSync />
+              <ActivityProvider>
+                <SubmissionsProvider>
+                  <FeedProvider>
+                    <CommentsProvider>
+                      <MessagesProvider>
+                        <GuideProvider>
+                          <MusicReviewProvider>
+                            <AuthGuard>
+                              <FoldableLayoutManager>
+                                <Outlet />
+                              </FoldableLayoutManager>
+                            </AuthGuard>
+                            {!hideGlobalMobileChrome && <BottomNav />}
+                            {!hideGlobalMobileChrome && <TreyIWidget />}
+                            {!hideGlobalMobileChrome && <OPlayer />}
+                            <GiftBurstHost />
+                            <GlobalMediaCastButton />
+                            <Toaster />
+                          </MusicReviewProvider>
+                        </GuideProvider>
+                      </MessagesProvider>
+                    </CommentsProvider>
+                  </FeedProvider>
+                </SubmissionsProvider>
+              </ActivityProvider>
+            </FollowProvider>
+          </AuthProvider>
+        </SupabaseSessionProvider>
+      </PlayerProvider>
     </QueryClientProvider>
   );
 }
@@ -495,4 +497,73 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function OPlayer() {
+  const { currentItem, isPlaying, toggle, muted, toggleMute } = usePlayer();
+  const navigate = useNavigate();
+
+  if (!currentItem) return null;
+
+  const cover = currentItem.coverUrl || currentItem.art;
+
+  return (
+    <div
+      className="fixed bottom-[calc(5rem_+_env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[45] w-[calc(100%_-_1.5rem)] max-w-md md:bottom-6 md:right-6 md:left-auto md:translate-x-0 rounded-full border border-primary/25 bg-black/80 backdrop-blur-xl p-2 flex items-center justify-between gap-3 shadow-lg"
+      style={{
+        boxShadow: "0 8px 32px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
+      }}
+    >
+      <div
+        className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+        onClick={() => navigate({ to: "/tradio" })}
+      >
+        <div className="relative size-10 shrink-0 rounded-full overflow-hidden border border-white/10 bg-zinc-900 flex items-center justify-center">
+          {cover ? (
+            <img
+              src={cover}
+              alt=""
+              className={`size-full object-cover rounded-full ${isPlaying ? "animate-[spin_10s_linear_infinite]" : ""}`}
+            />
+          ) : (
+            <Music className="size-4 text-purple-300" />
+          )}
+          <div className="absolute inset-0 bg-black/10 rounded-full" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-black text-white truncate pr-2">{currentItem.title}</div>
+          <div className="text-[10px] text-white/55 truncate pr-2">
+            Tradio • {currentItem.artist}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={toggleMute}
+          aria-label={muted ? "Unmute" : "Mute"}
+          title={muted ? "Unmute" : "Mute"}
+          className="size-8 rounded-full border border-white/5 bg-white/[0.05] text-white/80 flex items-center justify-center active:scale-90 transition-transform"
+        >
+          {muted ? <VolumeX className="size-3.5 text-rose-300" /> : <Volume2 className="size-3.5" />}
+        </button>
+        <button
+          onClick={toggle}
+          aria-label={isPlaying ? "Pause" : "Play"}
+          title={isPlaying ? "Pause" : "Play"}
+          className="size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_10px_var(--color-primary)] active:scale-90 transition-transform"
+        >
+          {isPlaying ? <Pause className="size-3.5 fill-current" /> : <Play className="size-3.5 fill-current ml-0.5" />}
+        </button>
+        <button
+          onClick={() => navigate({ to: "/tradio" })}
+          aria-label="Maximize player"
+          title="Maximize player"
+          className="size-8 rounded-full border border-white/5 bg-white/[0.05] text-purple-200 flex items-center justify-center active:scale-90 transition-transform"
+        >
+          <Maximize2 className="size-3.5" />
+        </button>
+      </div>
+    </div>
+  );
 }

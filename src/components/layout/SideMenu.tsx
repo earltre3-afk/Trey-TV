@@ -31,6 +31,7 @@ import { currentUser } from "@/lib/mock-data";
 import { VerifiedBadge } from "@/components/brand/Badge";
 import { useAuth } from "@/lib/auth";
 import { useSupabaseSession } from "@/lib/supabase-session";
+import { preloadTradioModule } from "@/tradio/preload";
 
 type Item = {
   icon: typeof Home;
@@ -190,10 +191,8 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
   const visibleCreatorItems = isCreator
     ? creatorItems
     : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
-  // Tradio and Trance require a signed-in Trey TV account — hide them from guests.
-  const visibleItems = isGuest
-    ? items.filter((i) => i.to !== "/tradio" && i.to !== "/trance")
-    : items;
+  // Keep Tradio public and instant; Trance remains signed-in only.
+  const visibleItems = isGuest ? items.filter((i) => i.to !== "/trance") : items;
 
   return (
     <>
@@ -231,7 +230,14 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <Link
                 key={i.label}
                 to={i.to}
-                onClick={onClose}
+                preload={i.to === "/tradio" ? "intent" : undefined}
+                onClick={() => {
+                  if (i.to === "/tradio") void preloadTradioModule();
+                  onClose();
+                }}
+                onPointerEnter={i.to === "/tradio" ? () => void preloadTradioModule() : undefined}
+                onFocus={i.to === "/tradio" ? () => void preloadTradioModule() : undefined}
+                onTouchStart={i.to === "/tradio" ? () => void preloadTradioModule() : undefined}
                 style={{ animationDelay: `${idx * 50}ms` }}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-2xl transition-all duration-300 hover:translate-x-1 ${open ? "animate-rise" : ""} ${i.active ? "bg-primary/10 ring-1 ring-primary/40 glow-gold" : "hover:bg-white/5"}`}
               >
