@@ -1,5 +1,5 @@
 import React from "react";
-import { Cast, Play, Pause, Radio } from "lucide-react";
+import { Cast, Play, Pause, Radio, Pin } from "lucide-react";
 import { IMG, TRACKS } from "./data";
 import { EqIcon } from "./ui";
 import { usePlayer } from "@/tradio/contexts/PlayerContext";
@@ -23,6 +23,8 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = "" }) => {
     progress,
     play,
     startCast,
+    isMounted,
+    mountPlayer,
   } = usePlayer();
 
   // Fallback display when nothing is playing yet (so the shell never looks empty)
@@ -111,6 +113,19 @@ export const MiniPlayer: React.FC<Props> = ({ onOpen, className = "" }) => {
           isPlaying={isPlaying}
           className={`hidden h-5 w-5 transition-all duration-300 sm:flex ${isPlaying ? "opacity-100" : "opacity-50"}`}
         />
+        {currentItem && !isMounted && (
+          <button
+            aria-label="Mount player"
+            title="Mount player as floating widget"
+            onClick={(e) => {
+              e.stopPropagation();
+              mountPlayer();
+            }}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-amber-200 transition-all duration-300 hover:border-amber-300/35 hover:bg-amber-400/10 active:scale-95 shrink-0"
+          >
+            <Pin className="h-4 w-4" />
+          </button>
+        )}
         <button
           aria-label="Cast Tradio music"
           title="Cast Tradio music"

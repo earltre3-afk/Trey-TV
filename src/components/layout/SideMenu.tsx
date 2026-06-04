@@ -40,6 +40,7 @@ type Item = {
   to: string;
   color: string;
   active?: boolean;
+  params?: Record<string, string>;
 };
 
 const items: Item[] = [
@@ -138,49 +139,50 @@ const items: Item[] = [
   { icon: Award, label: "Apply", sub: "Become a creator", to: "/apply", color: "text-primary" },
 ];
 
-const creatorItems: Item[] = [
-  {
-    icon: Crown,
-    label: "Creator Hub",
-    sub: "Manage Your Brand",
-    to: "/creator-hub",
-    color: "text-primary",
-  },
-  {
-    icon: Upload,
-    label: "My Submissions",
-    sub: "Approval status & feedback",
-    to: "/creator-studio/submissions",
-    color: "text-[oklch(0.82_0.16_85)]",
-  },
-  {
-    icon: BarChart3,
-    label: "Analytics",
-    sub: "Track Your Growth",
-    to: "/analytics",
-    color: "text-[oklch(0.65_0.22_300)]",
-  },
-  {
-    icon: Pencil,
-    label: "Edit Profile",
-    sub: "Polish your presence",
-    to: "/edit-profile",
-    color: "text-[oklch(0.7_0.25_340)]",
-  },
-  {
-    icon: Settings,
-    label: "Settings",
-    sub: "Account & Preferences",
-    to: "/settings",
-    color: "text-[oklch(0.82_0.15_215)]",
-  },
-];
-
 export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, isGuest, isCreator, isAdmin, signOut } = useAuth();
   const { signOutSupabase } = useSupabaseSession();
   const nav = useNavigate();
   const profile = user ?? currentUser;
+
+  const creatorMenuItems: Item[] = [
+    {
+      icon: Crown,
+      label: "Creator Hub",
+      sub: "Manage Your Brand",
+      to: "/creator-hub",
+      color: "text-primary",
+    },
+    {
+      icon: Upload,
+      label: "My Submissions",
+      sub: "Approval status & feedback",
+      to: "/creator-studio/submissions",
+      color: "text-[oklch(0.82_0.16_85)]",
+    },
+    {
+      icon: BarChart3,
+      label: "Analytics",
+      sub: "Track Your Growth",
+      to: "/analytics",
+      color: "text-[oklch(0.65_0.22_300)]",
+    },
+    {
+      icon: Pencil,
+      label: "Edit Profile",
+      sub: "Polish your presence",
+      to: "/u/$uid/edit-profile",
+      params: { uid: profile.uid },
+      color: "text-[oklch(0.7_0.25_340)]",
+    },
+    {
+      icon: Settings,
+      label: "Settings",
+      sub: "Account & Preferences",
+      to: "/settings",
+      color: "text-[oklch(0.82_0.15_215)]",
+    },
+  ];
 
   const handleSignOut = async () => {
     signOut();
@@ -189,8 +191,8 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
     nav({ to: "/login" });
   };
   const visibleCreatorItems = isCreator
-    ? creatorItems
-    : creatorItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
+    ? creatorMenuItems
+    : creatorMenuItems.filter((i) => i.label === "Edit Profile" || i.label === "Settings");
   // Keep Tradio public and instant; Trance remains signed-in only.
   const visibleItems = isGuest ? items.filter((i) => i.to !== "/trance") : items;
 
@@ -230,6 +232,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
               <Link
                 key={i.label}
                 to={i.to}
+                params={i.params}
                 preload={i.to === "/tradio" ? "intent" : undefined}
                 onClick={() => {
                   if (i.to === "/tradio") void preloadTradioModule();
@@ -266,10 +269,11 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
           <div className="my-4 mx-5 h-px bg-white/10" />
 
           <div className="px-3 space-y-1">
-            {visibleCreatorItems.map((i, idx) => (
+            {creatorMenuItems.map((i, idx) => (
               <Link
                 key={i.label}
                 to={i.to}
+                params={i.params}
                 onClick={onClose}
                 style={{ animationDelay: `${(idx + items.length) * 50}ms` }}
                 className={`group flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-white/5 hover:translate-x-1 transition-all duration-300 ${open ? "animate-rise" : ""}`}

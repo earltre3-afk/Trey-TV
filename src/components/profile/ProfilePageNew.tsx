@@ -750,7 +750,8 @@ export function ProfilePageNew({
                         label: "Edit Profile",
                         icon: Pencil,
                         color: GOLD,
-                        to: "/edit-profile",
+                        to: "/u/$uid/edit-profile",
+                        params: { uid: profile.uid },
                         onClick: () => setMoreMenuOpen(false),
                       },
                       {
@@ -1053,7 +1054,8 @@ export function ProfilePageNew({
             {showOwnerControls && (
               <div className="mt-2 flex justify-center items-center gap-2">
                 <Link
-                  to="/edit-profile"
+                  to="/u/$uid/edit-profile"
+                  params={{ uid: profile.uid }}
                   className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
                   style={{
                     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08),0 6px 18px rgba(0,0,0,0.45)",
@@ -1069,7 +1071,8 @@ export function ProfilePageNew({
             {showCreatorControls && (
               <div className="mt-2 flex justify-center items-center gap-2">
                 <Link
-                  to="/edit-profile"
+                  to="/u/$uid/edit-profile"
+                  params={{ uid: profile.uid }}
                   className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
                   style={{
                     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08),0 6px 18px rgba(0,0,0,0.45)",
@@ -2230,7 +2233,8 @@ export function ProfilePageNew({
                       You haven't selected your Top 3 Friends yet.
                     </p>
                     <Link
-                      to="/edit-profile"
+                      to="/u/$uid/edit-profile"
+                      params={{ uid: profile.uid }}
                       className="inline-flex items-center gap-1 text-[11px] px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/40 hover:bg-primary/25 transition"
                     >
                       <Plus className="w-3 h-3" /> Add Top 3 Friends

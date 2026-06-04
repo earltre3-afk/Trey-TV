@@ -61,7 +61,8 @@ export function NormalUserProfileModules({ profile, isOwner, viewerRole, topThre
             </div>
           </div>
           <Link
-            to="/edit-profile"
+            to="/u/$uid/edit-profile"
+            params={{ uid: profile.uid }}
             className="text-xs text-primary font-semibold shrink-0 hover:underline"
           >
             Edit →

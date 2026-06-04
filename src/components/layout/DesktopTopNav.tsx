@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import {
+  Menu,
   Home,
   Compass,
   CalendarDays,
@@ -65,7 +66,7 @@ const moreLinks: readonly NavLink[] = [
   { to: "/apply", icon: Award, label: "Apply" },
 ];
 
-export function DesktopTopNav() {
+export function DesktopTopNav({ onMenuClick }: { onMenuClick?: () => void }) {
   const { isGuest, user, signOut } = useAuth();
   const { signOutSupabase } = useSupabaseSession();
   const { pathname } = useLocation();
@@ -95,6 +96,15 @@ export function DesktopTopNav() {
   return (
     <header className="hidden lg:block sticky top-0 z-40 w-full glass-strong border-b border-white/5">
       <div className="relative mx-auto max-w-[1400px] 2xl:max-w-[1600px] px-6 xl:px-10 h-16 flex items-center gap-6">
+        {onMenuClick ? (
+          <button
+            onClick={onMenuClick}
+            aria-label="Open menu"
+            className="size-10 grid place-items-center rounded-xl glass hover:bg-white/5 transition"
+          >
+            <Menu className="size-5" />
+          </button>
+        ) : null}
         {/* Logo */}
         <Link to="/" className="relative shrink-0 group" aria-label="Trey TV home">
           <span

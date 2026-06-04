@@ -31,6 +31,11 @@ import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
 import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
 import { PlayerProvider, usePlayer } from "@/tradio/contexts/PlayerContext";
+import { MediaInterruptionProvider, useMediaInterruption } from "@/tradio/contexts/MediaInterruptionProvider";
+import { AudioDuckingProvider, useAudioDucking } from "@/tradio/contexts/AudioDuckingProvider";
+import { MountedPlayer } from "@/tradio/components/tradio/MountedPlayer";
+import { setNotificationDuckingCallbacks } from "@/tradio/lib/notificationDuckingHelper";
+import { setMediaInterruptionCallbacks } from "@/tradio/lib/mediaInterruptionHelper";
 import { Play, Pause, Volume2, VolumeX, Music, Maximize2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
@@ -229,40 +234,47 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PlayerProvider>
-        <SupabaseSessionProvider>
-          <AuthProvider>
-            <FollowProvider>
-              <CurrentUserSync />
-              <ActivityProvider>
-                <SubmissionsProvider>
-                  <FeedProvider>
-                    <CommentsProvider>
-                      <MessagesProvider>
-                        <GuideProvider>
-                          <MusicReviewProvider>
-                            <AuthGuard>
-                              <FoldableLayoutManager>
-                                <Outlet />
-                              </FoldableLayoutManager>
-                            </AuthGuard>
-                            {!hideGlobalMobileChrome && <BottomNav />}
-                            {!hideGlobalMobileChrome && <TreyIWidget />}
-                            {!hideGlobalMobileChrome && <OPlayer />}
-                            <GiftBurstHost />
-                            <GlobalMediaCastButton />
-                            <Toaster />
-                          </MusicReviewProvider>
-                        </GuideProvider>
-                      </MessagesProvider>
-                    </CommentsProvider>
-                  </FeedProvider>
-                </SubmissionsProvider>
-              </ActivityProvider>
-            </FollowProvider>
-          </AuthProvider>
-        </SupabaseSessionProvider>
-      </PlayerProvider>
+      <MediaInterruptionProvider>
+        <AudioDuckingProvider>
+          <PlayerProvider>
+            <SupabaseSessionProvider>
+              <AuthProvider>
+                <FollowProvider>
+                  <CurrentUserSync />
+                  <ActivityProvider>
+                    <SubmissionsProvider>
+                      <FeedProvider>
+                        <CommentsProvider>
+                          <MessagesProvider>
+                            <GuideProvider>
+                              <MusicReviewProvider>
+                                <AuthGuard>
+                                  <FoldableLayoutManager>
+                                    <Outlet />
+                                  </FoldableLayoutManager>
+                                </AuthGuard>
+                                {!hideGlobalMobileChrome && <BottomNav />}
+                                {!hideGlobalMobileChrome && <TreyIWidget />}
+                                {!hideGlobalMobileChrome && <OPlayer />}
+                                <GiftBurstHost />
+                                <GlobalMediaCastButton />
+                                <MountedPlayer />
+                                <NotificationDuckingWirer />
+                                <MediaInterruptionWirer />
+                                <Toaster />
+                              </MusicReviewProvider>
+                            </GuideProvider>
+                          </MessagesProvider>
+                        </CommentsProvider>
+                      </FeedProvider>
+                    </SubmissionsProvider>
+                  </ActivityProvider>
+                </FollowProvider>
+              </AuthProvider>
+            </SupabaseSessionProvider>
+          </PlayerProvider>
+        </AudioDuckingProvider>
+      </MediaInterruptionProvider>
     </QueryClientProvider>
   );
 }
@@ -497,6 +509,68 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   return <>{children}</>;
+}
+
+function NotificationDuckingWirer() {
+  const { beginDuck, endDuck } = useAudioDucking();
+
+  useEffect(() => {
+    setNotificationDuckingCallbacks(
+      () => beginDuck("notification"),
+      () => endDuck("notification"),
+    );
+    return () => {
+      setNotificationDuckingCallbacks(null, null);
+    };
+  }, [beginDuck, endDuck]);
+
+  return null;
+}
+
+function MediaInterruptionWirer() {
+  const { beginInterruption, endInterruption, isInterrupted } = useMediaInterruption();
+  const {
+    pause,
+    resume,
+    isPlaying,
+    isMounted,
+    wasAutoPausedByInterruption,
+    setWasAutoPausedByInterruption,
+  } = usePlayer();
+
+  useEffect(() => {
+    setMediaInterruptionCallbacks(
+      (reason) => {
+        if (isPlaying && !wasAutoPausedByInterruption) {
+          setWasAutoPausedByInterruption(true);
+          pause();
+        }
+        beginInterruption(reason);
+      },
+      (reason) => {
+        endInterruption(reason);
+      },
+    );
+    return () => {
+      setMediaInterruptionCallbacks(null, null);
+    };
+  }, [
+    beginInterruption,
+    endInterruption,
+    isPlaying,
+    pause,
+    wasAutoPausedByInterruption,
+    setWasAutoPausedByInterruption,
+  ]);
+
+  useEffect(() => {
+    if (!isInterrupted && wasAutoPausedByInterruption && isMounted) {
+      setWasAutoPausedByInterruption(false);
+      resume();
+    }
+  }, [isInterrupted, wasAutoPausedByInterruption, isMounted, resume, setWasAutoPausedByInterruption]);
+
+  return null;
 }
 
 function OPlayer() {

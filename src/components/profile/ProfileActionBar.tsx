@@ -130,7 +130,8 @@ export function ProfileActionBar({
     return (
       <div className="flex flex-wrap gap-2">
         <Link
-          to="/edit-profile"
+          to="/u/$uid/edit-profile"
+          params={{ uid: profile.uid }}
           id="edit-profile-btn-bar"
           className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press"
         >

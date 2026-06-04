@@ -55,7 +55,7 @@ export function AppShell({
       onTouchEnd={onTouchEnd}
     >
       {/* Desktop top navigation (lg+) */}
-      <DesktopTopNav />
+      <DesktopTopNav onMenuClick={() => setMenuOpen(true)} />
 
       <div
         className={`relative mx-auto w-full max-w-none ${
@@ -80,9 +80,7 @@ export function AppShell({
         </main>
       </div>
 
-      <div className="lg:hidden">
-        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
-      </div>
+      <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );
 }

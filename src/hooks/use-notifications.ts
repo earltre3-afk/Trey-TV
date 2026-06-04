@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getNotificationDuckingCallbacks } from "@/tradio/lib/notificationDuckingHelper";
 
 export const NOTIFICATION_SOUND_URL = "/sounds/trey-notification.m4a";
 
@@ -34,7 +35,9 @@ export function getNotificationSoundEnabled(userId?: string | null) {
 export function playNotificationSound({
   enabled,
   userId,
-}: { enabled?: boolean; userId?: string | null } = {}) {
+  onDuck,
+  onUnduck,
+}: { enabled?: boolean; userId?: string | null; onDuck?: () => void; onUnduck?: () => void } = {}) {
   if (enabled === false || !getNotificationSoundEnabled(userId) || typeof Audio === "undefined") {
     return;
   }
@@ -44,7 +47,32 @@ export function playNotificationSound({
 
   const audio = new Audio(NOTIFICATION_SOUND_URL);
   audio.volume = 0.55;
+
+  if (onDuck) onDuck();
+
+  audio.addEventListener(
+    "ended",
+    () => {
+      if (onUnduck) onUnduck();
+    },
+    { once: true },
+  );
+
+  audio.addEventListener(
+    "error",
+    () => {
+      if (onUnduck) onUnduck();
+    },
+    { once: true },
+  );
+
+  const timeoutId = window.setTimeout(() => {
+    if (onUnduck) onUnduck();
+  }, 3000);
+
   audio.play().catch((err) => {
+    window.clearTimeout(timeoutId);
+    if (onUnduck) onUnduck();
     console.warn("Failed to play notification sound:", err);
   });
 }
@@ -219,7 +247,13 @@ export function useNotifications() {
           },
           () => {
             fetchForUser(userId);
-            playNotificationSound({ enabled: soundEnabledRef.current, userId });
+            const { onDuck, onUnduck } = getNotificationDuckingCallbacks();
+            playNotificationSound({
+              enabled: soundEnabledRef.current,
+              userId,
+              onDuck: onDuck || undefined,
+              onUnduck: onUnduck || undefined,
+            });
           },
         )
         .subscribe();

@@ -8,6 +8,7 @@ import React, {
   useState,
 } from "react";
 import { requestMediaCast, stopMediaCast } from "@/lib/cast/media-cast";
+import { useAudioDucking } from "./AudioDuckingProvider";
 
 export type PlaybackSourceType =
   | "song"
@@ -179,6 +180,11 @@ export interface PlaybackContext {
   stopCast: () => void | Promise<void>;
   enhancerPreset: string;
   setEnhancerPreset: (preset: string) => void;
+  isMounted: boolean;
+  mountPlayer: () => void;
+  unmountPlayer: () => void;
+  wasAutoPausedByInterruption: boolean;
+  setWasAutoPausedByInterruption: (value: boolean) => void;
 }
 
 interface PlayOptions {
@@ -334,6 +340,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bufferTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasRealMediaRef = useRef(false);
+  const { duckLevel } = useAudioDucking();
 
   // --- Web Audio API DSP Song Enhancer ---
   const [enhancerPreset, setEnhancerPresetState] = useState<string>("commercial_master");
@@ -461,6 +468,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [liked, setLiked] = useState<Set<string>>(new Set());
   const [saved, setSaved] = useState<Set<string>>(new Set());
   const [activeCastDevice, setActiveCastDevice] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [wasAutoPausedByInterruption, setWasAutoPausedByInterruption] = useState(false);
 
   const isCasting = activeCastDevice !== null;
 
@@ -484,6 +493,17 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const stopCast = useCallback(async () => {
     await stopMediaCast();
     setActiveCastDevice(null);
+  }, []);
+
+  const mountPlayer = useCallback(() => {
+    if (!currentItem) return;
+    setIsMounted(true);
+  }, [currentItem]);
+
+  const unmountPlayer = useCallback(() => {
+    setIsMounted(false);
+    setStatus("paused");
+    setWasAutoPausedByInterruption(false);
   }, []);
 
   const isBuffering = status === "buffering";
@@ -737,9 +757,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = muted ? 0 : volume;
+    const effectiveVolume = muted ? 0 : volume * duckLevel;
+    audio.volume = effectiveVolume;
     audio.muted = muted;
-  }, [muted, volume]);
+  }, [muted, volume, duckLevel]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -883,6 +904,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       stopCast,
       enhancerPreset,
       setEnhancerPreset,
+      isMounted,
+      mountPlayer,
+      unmountPlayer,
+      wasAutoPausedByInterruption,
+      setWasAutoPausedByInterruption,
       playItem,
       playStation,
       playQueue,
@@ -935,6 +961,11 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       stopCast,
       enhancerPreset,
       setEnhancerPreset,
+      isMounted,
+      mountPlayer,
+      unmountPlayer,
+      wasAutoPausedByInterruption,
+      setWasAutoPausedByInterruption,
       playItem,
       playStation,
       playQueue,

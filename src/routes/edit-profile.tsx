@@ -176,11 +176,29 @@ const accentVariableFor = (hex: string) => {
   return hex;
 };
 
-function EditProfile() {
+export function EditProfile() {
   const { user, updateUser, signIn } = useAuth();
   const { user: supabaseUser } = useSupabaseAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const params = Route.useParams() as { uid?: string };
+  const routeUid = params.uid;
+
+  useEffect(() => {
+    if (routeUid) {
+      if (!user) {
+        signIn("creator");
+        return;
+      }
+      if (user.uid !== routeUid) {
+        nav({ to: "/u/$uid/edit-profile", params: { uid: user.uid }, replace: true });
+        return;
+      }
+    } else if (user) {
+      nav({ to: "/u/$uid/edit-profile", params: { uid: user.uid }, replace: true });
+    }
+  }, [routeUid, user, nav, signIn]);
+
   const base = user ?? {
     ...currentUser,
     role: "creator" as const,

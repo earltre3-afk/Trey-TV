@@ -119,6 +119,7 @@ import { Route as AdminContentApprovalRouteImport } from './routes/admin.content
 import { Route as AdminAuditLogRouteImport } from './routes/admin.audit-log'
 import { Route as AdminApplicationsRouteImport } from './routes/admin.applications'
 import { Route as GamesInteractiveStoriesIndexRouteImport } from './routes/games.interactive-stories.index'
+import { Route as UUidEditProfileRouteImport } from './routes/u.$uid.edit-profile'
 import { Route as UUidChannelRouteImport } from './routes/u.$uid.channel'
 import { Route as TranceStudiosStudioIdRouteImport } from './routes/trance.studios.$studioId'
 import { Route as TranceRoutinesRoutineIdRouteImport } from './routes/trance.routines.$routineId'
@@ -696,6 +697,11 @@ const GamesInteractiveStoriesIndexRoute =
     path: '/',
     getParentRoute: () => GamesInteractiveStoriesRoute,
   } as any)
+const UUidEditProfileRoute = UUidEditProfileRouteImport.update({
+  id: '/edit-profile',
+  path: '/edit-profile',
+  getParentRoute: () => UUidRoute,
+} as any)
 const UUidChannelRoute = UUidChannelRouteImport.update({
   id: '/channel',
   path: '/channel',
@@ -940,6 +946,7 @@ export interface FileRoutesByFullPath {
   '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
   '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/u/$uid/edit-profile': typeof UUidEditProfileRoute
   '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
   '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
@@ -1070,6 +1077,7 @@ export interface FileRoutesByTo {
   '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
   '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/u/$uid/edit-profile': typeof UUidEditProfileRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
   '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
@@ -1205,6 +1213,7 @@ export interface FileRoutesById {
   '/trance/routines/$routineId': typeof TranceRoutinesRoutineIdRoute
   '/trance/studios/$studioId': typeof TranceStudiosStudioIdRouteWithChildren
   '/u/$uid/channel': typeof UUidChannelRoute
+  '/u/$uid/edit-profile': typeof UUidEditProfileRoute
   '/games/interactive-stories/': typeof GamesInteractiveStoriesIndexRoute
   '/api/fwd/oauth/authorize': typeof ApiFwdOauthAuthorizeRoute
   '/games/interactive-stories/$storySlug/branches': typeof GamesInteractiveStoriesStorySlugBranchesRoute
@@ -1341,6 +1350,7 @@ export interface FileRouteTypes {
     | '/trance/routines/$routineId'
     | '/trance/studios/$studioId'
     | '/u/$uid/channel'
+    | '/u/$uid/edit-profile'
     | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
     | '/games/interactive-stories/$storySlug/branches'
@@ -1471,6 +1481,7 @@ export interface FileRouteTypes {
     | '/trance/routines/$routineId'
     | '/trance/studios/$studioId'
     | '/u/$uid/channel'
+    | '/u/$uid/edit-profile'
     | '/games/interactive-stories'
     | '/api/fwd/oauth/authorize'
     | '/games/interactive-stories/$storySlug/branches'
@@ -1605,6 +1616,7 @@ export interface FileRouteTypes {
     | '/trance/routines/$routineId'
     | '/trance/studios/$studioId'
     | '/u/$uid/channel'
+    | '/u/$uid/edit-profile'
     | '/games/interactive-stories/'
     | '/api/fwd/oauth/authorize'
     | '/games/interactive-stories/$storySlug/branches'
@@ -2449,6 +2461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GamesInteractiveStoriesIndexRouteImport
       parentRoute: typeof GamesInteractiveStoriesRoute
     }
+    '/u/$uid/edit-profile': {
+      id: '/u/$uid/edit-profile'
+      path: '/edit-profile'
+      fullPath: '/u/$uid/edit-profile'
+      preLoaderRoute: typeof UUidEditProfileRouteImport
+      parentRoute: typeof UUidRoute
+    }
     '/u/$uid/channel': {
       id: '/u/$uid/channel'
       path: '/channel'
@@ -2915,10 +2934,12 @@ const TvRouteWithChildren = TvRoute._addFileChildren(TvRouteChildren)
 
 interface UUidRouteChildren {
   UUidChannelRoute: typeof UUidChannelRoute
+  UUidEditProfileRoute: typeof UUidEditProfileRoute
 }
 
 const UUidRouteChildren: UUidRouteChildren = {
   UUidChannelRoute: UUidChannelRoute,
+  UUidEditProfileRoute: UUidEditProfileRoute,
 }
 
 const UUidRouteWithChildren = UUidRoute._addFileChildren(UUidRouteChildren)

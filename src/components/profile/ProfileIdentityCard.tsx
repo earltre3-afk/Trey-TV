@@ -94,7 +94,8 @@ export function ProfileIdentityCard({ profile, profileType, viewerRole, isOwner,
       <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
         {isOwner ? (
           <Link
-            to="/edit-profile"
+            to="/u/$uid/edit-profile"
+            params={{ uid: profile.uid }}
             id="edit-profile-btn-mobile"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-primary text-primary-foreground glow-gold tilt-press"
           >

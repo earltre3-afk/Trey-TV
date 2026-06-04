@@ -64,6 +64,9 @@ const LegalCenter = lazy(() =>
 const LegalAdminDashboard = lazy(() => import("./legal/LegalAdminDashboard"));
 import { LegalFooterLinks } from "./legal/LegalPrimitives";
 import { PlayerProvider } from "@/tradio/contexts/PlayerContext";
+import { MediaInterruptionProvider } from "@/tradio/contexts/MediaInterruptionProvider";
+import { AudioDuckingProvider } from "@/tradio/contexts/AudioDuckingProvider";
+import { MountedPlayer } from "./MountedPlayer";
 import { AIPill, GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from "./ui";
 import { ModeSwitcher } from "./auth/components";
 import { TradioIdentityProvider, useTradioIdentity } from "./auth/useTradioIdentity";

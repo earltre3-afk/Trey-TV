@@ -68,7 +68,7 @@ export function useProfile(publicUid: string) {
         setLoading(true);
         const supabase = createBrowserClient();
         const { data, error } = await supabase
-          .from("profiles")
+          .from<SupabaseProfile>("profiles")
           .select(
             "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile, profile_song_id, profile_preferences",
           )
@@ -79,7 +79,7 @@ export function useProfile(publicUid: string) {
           throw error;
         }
 
-        const profileId = data?.id as string | undefined;
+        const profileId = data?.id;
         const [followersResult, followingResult, postsResult, subscribersResult] = isUuid(profileId)
           ? await Promise.all([
               supabase

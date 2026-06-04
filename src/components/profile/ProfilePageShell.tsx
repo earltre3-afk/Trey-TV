@@ -627,7 +627,8 @@ export function ProfilePageShell({
 
               {isOwner && (
                 <Link
-                  to="/edit-profile"
+                  to="/u/$uid/edit-profile"
+                  params={{ uid: profile.uid }}
                   aria-label="Edit profile"
                   className="pixel-plus-pulse absolute -right-2 -top-2 z-10 flex size-9 items-center justify-center rounded-full border-2 border-white/80 bg-white text-black shadow-[0_0_18px_rgba(255,255,255,0.85)] transition-transform hover:scale-110 active:scale-95"
                 >
@@ -694,7 +695,8 @@ export function ProfilePageShell({
                   label="Edit"
                   icon={ImageIcon}
                   color="#A855F7"
-                  to="/edit-profile"
+                  to="/u/$uid/edit-profile"
+                  params={{ uid: profile.uid }}
                   primary
                 />
               )}

@@ -868,7 +868,7 @@ export function ProfilePage({
                 <button
                   type="button"
                   onClick={() => {
-                    window.location.href = "/edit-profile";
+                    window.location.href = `/u/${profile.uid}/edit-profile`;
                   }}
                   className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
                   style={{
