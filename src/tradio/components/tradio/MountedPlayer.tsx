@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import * as React from "react";
 import { X, Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { usePlayer } from "@/tradio/contexts/PlayerContext";
 import { TradioImage } from "./NoCoverVisualizer";
@@ -21,13 +21,13 @@ export const MountedPlayer: React.FC = () => {
     toggleMute,
   } = player;
 
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setIsVisible(true);
   }, []);
 
-  const handleClose = useCallback(() => {
+  const handleClose = React.useCallback(() => {
     setIsVisible(false);
     setTimeout(() => {
       unmountPlayer();
@@ -38,11 +38,12 @@ export const MountedPlayer: React.FC = () => {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ease-out ${
+      className={`fixed inset-x-4 bottom-4 z-50 mx-auto max-w-sm md:inset-x-auto md:right-4 transition-all duration-300 ease-out ${
         isVisible
           ? "opacity-100 translate-y-0 scale-100"
           : "opacity-0 translate-y-4 scale-95 pointer-events-none"
       }`}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 1rem)" }}
       role="region"
       aria-label="Mounted Tradio Player"
     >
@@ -53,8 +54,9 @@ export const MountedPlayer: React.FC = () => {
             <div className="aspect-square rounded-lg overflow-hidden bg-slate-800/50">
               {currentItem.art || currentItem.coverUrl ? (
                 <TradioImage
-                  src={currentItem.art || currentItem.coverUrl}
-                  alt={currentItem.title}
+                  src={currentItem.art || currentItem.coverUrl || undefined}
+                  title={currentItem.title}
+                  artist={currentItem.artist}
                   className="w-full h-full object-cover"
                 />
               ) : (

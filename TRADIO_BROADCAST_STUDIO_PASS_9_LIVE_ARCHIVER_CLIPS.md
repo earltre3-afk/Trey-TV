@@ -1,10 +1,12 @@
-# Tradio Broadcast Studio Pass 9: Live Recording + Replay Clips + Show Archiver
+# Tradio Broadcast Studio Pass 9 + Pass 9B: Live Recording + Replay Clips + Show Archiver (PRODUCTION COMPLETE)
 
 ## Overview
 
-Pass 9 extends Tradio Broadcast Studio with an **opt-in live recording, replay clip generation, and show archiving system**. Hosts can record approved live mic sessions, review recordings, create highlight clips, and publish approved clips to public replay libraries after review.
+Pass 9 + Pass 9B extends Tradio Broadcast Studio with a **production-grade opt-in live recording, replay clip generation, and show archiving system**. Hosts can record approved live mic sessions, review recordings, create highlight clips with FFmpeg rendering, and publish approved clips to public replay libraries after admin review.
 
-This pass **builds on** Passes 1-8 without replacing, weakening, or bypassing existing:
+**Pass 9B Completion Status:** All production requirements implemented ✅
+
+This system **builds on** Passes 1-8 without replacing, weakening, or bypassing existing:
 - AI Program Director
 - Script revision system
 - Locked block behavior
@@ -596,44 +598,102 @@ None in this pass. All additions are additive:
 7. **Rights Validation**: Rights snapshots stored but not auto-enforced. Future: automated rights-check before publish.
 8. **Playlist/Compilation**: Clips are independent. Future: curated replay playlists.
 
+## Pass 9B: Production Completion (ALL COMPLETED)
+
+**Pass 9B adds to Pass 9:**
+
+### Real FFmpeg Clip Rendering ✅
+- `src/lib/trey-i/broadcastClipRenderer.server.ts` (224 lines)
+- FFmpeg availability detection at runtime
+- Audio trim validation (5s min, 1h max)
+- MP3 export to Supabase storage
+- Status progression: draft → rendering → rendered/failed
+- Graceful failure (never fakes success)
+- Temporary file cleanup
+- Background job creation
+
+### Creator Archive Dashboard UI ✅
+- `src/tradio/components/tradio/screens/CreatorArchiveDashboard.tsx` (362 lines)
+- Recording list with status badges and duration
+- Clip library with status and visibility
+- Clip creation form with trim editor
+- Tag management (mood, genre, audience)
+- Error states and loading indicators
+
+### Admin Review / Moderation UI ✅
+- `src/tradio/components/tradio/screens/AdminClipReviewDashboard.tsx` (320 lines)
+- Pending clip review queue
+- Consent/rights/engagement snapshots
+- Approve, reject, hide, archive actions
+- Review notes and error display
+- Admin-only enforcement
+
+### Public Replay / Highlight Library UI ✅
+- `src/tradio/components/tradio/screens/PublicReplayLibrary.tsx` (206 lines)
+- Public published clips only (RLS enforced)
+- Mood/genre tag filtering
+- Channel and show attribution
+- Playback integration with existing player
+- Responsive grid layout
+
+### Publishing Gate Enforcement (Server-Side) ✅
+- `src/lib/trey-i/broadcastPublishingGates.server.ts` (178 lines)
+- 8 validation gates (user, render status, storage, review, rights, consent, visibility)
+- Detailed error messages
+- Warning system for manual review
+- Server-side only (no UI bypass)
+
+### Recording Consent Enforcement in Live Mic ✅
+- `src/lib/trey-i/broadcastConsentEnforcement.server.ts` (186 lines)
+- Check if recording active
+- Block callers without consent
+- Allow passive listening
+- Prevent speaker token grant
+- Consent snapshot finalization
+
+### Highlight Candidate Detection ✅
+- `src/lib/trey-i/broadcastHighlightDetector.server.ts` (396 lines)
+- Detection from 6 event types (reactions, chat, polls, call-ins, SFX, mic events)
+- Non-AI baseline scoring
+- Source event tracking
+- Confidence scores
+- Prepared for AI enhancement
+
 ## Recommended Next Pass (Pass 10)
 
-1. **FFmpeg Integration**: Finish clip rendering with actual audio trimming
-2. **Background Jobs**: Implement job worker for waveform, transcription, clip rendering
-3. **AI Highlight Detection**: Wire Trey-I or external AI service for smart segment naming/captions
-4. **Admin Review UI**: Dashboard for pending clips, moderation controls
-5. **Creator Archive Dashboard**: Creator-facing clip library, analytics, publishing UI
-6. **Replay Library UI**: Public/unlisted clip browsing and playback
-7. **Call-In Clip Auto-Marking**: Automatic segment creation for call-in moments
-8. **Rights Validation Rules**: Automated check before clip publishing based on participant consent
-9. **Prescribe Me Integration**: Wire metadata to Prescribe Me recommendation engine
-10. **Analytics Dashboard**: Recording/clip metrics for creators
+1. **Background Job Worker**: Async processing for clip rendering, waveform, transcription
+2. **AI Highlight Detection**: Wire Trey-I for smart segment naming/captions
+3. **Call-In Clip Auto-Marking**: Automatic segment creation
+4. **Analytics Dashboard**: Recording/clip metrics for creators
+5. **Prescribe Me Integration**: Wire metadata to recommendation engine
+6. **Waveform Generation**: Visual audio display for trim editor
+7. **UI Polish**: Mobile optimization, accessibility enhancements
+8. **Notification Integration**: Alert creators when clips are approved
 
 ## Summary
 
-**Pass 9 delivers**:
+**Pass 9 + Pass 9B Delivers** (PRODUCTION COMPLETE):
 - ✅ Opt-in recording foundation
-- ✅ Consent & disclosure model
+- ✅ Consent & disclosure model with enforcement
 - ✅ Provider-neutral recording adapter
-- ✅ Clip creation workflow (draft → review → publish)
-- ✅ Segment detection from existing events
+- ✅ Real FFmpeg clip rendering
+- ✅ Creator Archive Dashboard UI
+- ✅ Admin Review / Moderation UI
+- ✅ Public Replay / Highlight Library UI
+- ✅ Publishing gate validation (server-side)
+- ✅ Recording consent enforcement
+- ✅ Highlight candidate detection
 - ✅ RLS-protected database schema
-- ✅ Server-side signed URL generation
-- ✅ Highlight candidate scoring
+- ✅ Server-side signed URLs
 - ✅ Prescribe Me metadata preparation
-- ✅ Error handling for unavailable providers
-- ✅ No breaking changes to Passes 1-8
 
 **Does NOT**:
 - ❌ Record by default
-- ❌ Bypass existing access controls
+- ❌ Bypass access controls
 - ❌ Replace player/MiniPlayer
 - ❌ Publish clips automatically
 - ❌ Expose private storage paths
 - ❌ Break existing Tradio playback
+- ❌ Fake successful operations
 
-Production-ready for:
-- Creator opt-in to recording
-- Clip creation and review workflows
-- Publishing to private/unlisted/public libraries
-- Integration with existing Tradio systems
+**Production-ready**: Creator recording, clip creation & review, admin moderation, public playback, full consent model, auditability

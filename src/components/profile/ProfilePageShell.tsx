@@ -182,6 +182,7 @@ function PixelLinkButton({
   icon: Icon,
   color,
   to,
+  params,
   primary,
   disabled,
 }: {
@@ -189,6 +190,7 @@ function PixelLinkButton({
   icon: any;
   color: string;
   to: string;
+  params?: Record<string, string>;
   primary?: boolean;
   disabled?: boolean;
 }) {
@@ -199,6 +201,7 @@ function PixelLinkButton({
   return (
     <Link
       to={to as any}
+      params={params as any}
       className="group relative flex flex-col items-center gap-0.5 overflow-hidden rounded-xl border px-2 py-2 text-[10px] font-bold transition hover:scale-[1.03] active:scale-95"
       style={{
         color: primary ? "#0a0a0a" : color,

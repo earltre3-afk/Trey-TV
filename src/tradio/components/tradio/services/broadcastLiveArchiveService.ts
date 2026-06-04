@@ -90,7 +90,7 @@ export function canCreateClip(recordingStatus: RecordingStatus): boolean {
 export function getClipStatusTransitions(currentStatus: ClipStatus): ClipStatus[] {
   const transitions: Record<ClipStatus, ClipStatus[]> = {
     draft: ['rendering', 'pending_review', 'archived'],
-    rendering: ['rendered', 'failed', 'canceled'],
+    rendering: ['rendered', 'failed'],
     rendered: ['pending_review', 'archived'],
     pending_review: ['approved', 'rejected', 'archived'],
     approved: ['published', 'hidden', 'archived'],

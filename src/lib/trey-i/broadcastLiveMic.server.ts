@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { AccessToken } from "livekit-server-sdk";
+import { canCallerReceiveSpeakerTokenServer } from "./broadcastConsentEnforcement.server";
 import {
   TradioLiveMicSession,
   TradioLiveMicParticipant,
@@ -310,6 +311,19 @@ export const createParticipantLiveMicTokenServer = createServerFn({ method: "POS
 
       if (!isApproved) {
         return { success: false, error: "Speaker seat not yet active/approved." };
+      }
+
+      // CONSENT ENFORCEMENT: Check if recording is active and caller has accepted consent
+      const consentCheckResult = await canCallerReceiveSpeakerTokenServer({
+        session_id: input.sessionId,
+        caller_id: input.userId || input.anonymousSessionId || "",
+      });
+
+      if (!consentCheckResult.allowed) {
+        return {
+          success: false,
+          error: consentCheckResult.reason || "Recording consent required before speaking."
+        };
       }
 
       if (!isLiveKitConfigured()) {

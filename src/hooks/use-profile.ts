@@ -67,8 +67,8 @@ export function useProfile(publicUid: string) {
       try {
         setLoading(true);
         const supabase = createBrowserClient();
-        const { data, error } = await supabase
-          .from<SupabaseProfile>("profiles")
+        const { data, error } = await (supabase as any)
+          .from("profiles")
           .select(
             "id, public_profile_uid, display_name, username, avatar_url, banner_url, bio, location, link_url, tagline, pronouns, birthday, favorite_genres, favorite_creators, social_instagram, social_tiktok, social_youtube, profile_visibility, show_location, show_birthday, created_at, profile_accent_color, zodiac_sun_sign, zodiac_moon_sign, zodiac_rising_sign, zodiac_is_cusp, zodiac_cusp_label, zodiac_badge_key, zodiac_public_opt_in, birth_chart_json, role, creator_status, gif_of_day_url, gif_of_day_poster_url, gif_of_day_caption, show_fwd_gifs_on_profile, profile_song_id, profile_preferences",
           )
@@ -79,7 +79,8 @@ export function useProfile(publicUid: string) {
           throw error;
         }
 
-        const profileId = data?.id;
+        const profileRow = data as SupabaseProfile | null;
+        const profileId = profileRow?.id;
         const [followersResult, followingResult, postsResult, subscribersResult] = isUuid(profileId)
           ? await Promise.all([
               supabase
@@ -108,9 +109,9 @@ export function useProfile(publicUid: string) {
 
         if (mounted) {
           setProfile(
-            data
+            profileRow
               ? {
-                  ...(data as any as SupabaseProfile),
+                  ...profileRow,
                   follower_count: followersResult.count ?? 0,
                   following_count: followingResult.count ?? 0,
                   post_count: postsResult.count ?? 0,

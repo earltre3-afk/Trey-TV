@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
+import { CreatorArchiveDashboard } from "./CreatorArchiveDashboard";
+import { AdminClipReviewDashboard } from "./AdminClipReviewDashboard";
+import { PublicReplayLibrary } from "./PublicReplayLibrary";
+import { useTradioIdentity } from "../auth/useTradioIdentity";
 import {
   Radio,
   Sparkles,
@@ -43,6 +47,7 @@ import {
 import { TopBar, GlassCard, PrimaryButton, SecondaryButton, Chip, Waveform } from "../ui";
 import { ACTIVE_USER, IMG, ALL_STATIONS } from "../data";
 import { AccessGate } from "../auth/components";
+import { canAdminPlatform } from "../auth/roleUtils";
 import { isSupabaseConfigured, supabase } from "@/tradio/lib/supabaseClient";
 import { toast } from "sonner";
 import {
@@ -271,6 +276,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   initialTab,
 }) => {
   const player = usePlayer();
+  const { identity } = useTradioIdentity();
+  const currentUserId = identity?.user_id || '';
+  const isIdentityAdmin = canAdminPlatform(identity);
 
   // Helper: Play Channel stream/file live
   const handlePlayChannel = async (channel: TradioBroadcastChannel) => {
@@ -763,10 +771,13 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     | "timeline-preview"
     | "channel-detail"
     | "create-channel"
+    | "archive"
+    | "admin-clips"
+    | "public-library"
   >("dashboard");
 
   // Tab state on Dashboard
-  const [activeTab, setActiveTab] = useState<"shows" | "channels" | "admin-reviews">("shows");
+  const [activeTab, setActiveTab] = useState<"shows" | "channels" | "admin-reviews" | "archive">("shows");
 
   // Playout States
   const [channels, setChannels] = useState<TradioBroadcastChannel[]>([]);
@@ -865,7 +876,6 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   };
   const [loading, setLoading] = useState(false);
   const [role] = useState<string>("artist");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Live Room States
   const [liveRoom, setLiveRoom] = useState<TradioLiveRoom | null>(null);
@@ -900,14 +910,6 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   const [micMode, setMicMode] = useState<LiveMicMode>("host_only");
   const [bgAudioMode, setBgAudioMode] = useState<BackgroundAudioMode>("duck_on_host");
   const [isConnectingAudio, setIsConnectingAudio] = useState(false);
-
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      supabase.auth.getUser().then(({ data }) => {
-        setCurrentUserId(data?.user?.id || null);
-      });
-    }
-  }, []);
 
   useEffect(() => {
     if (!liveRoom) return;
@@ -2062,6 +2064,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
             else if (subView === "timeline-preview") setSubView("editor");
             else if (subView === "channel-detail") setSubView("dashboard");
             else if (subView === "create-channel") setSubView("dashboard");
+            else if (subView === "archive") setActiveTab("archive");
+            else if (subView === "admin-clips") setActiveTab("archive");
+            else if (subView === "public-library") setActiveTab("archive");
           }}
         />
 
@@ -2147,6 +2152,16 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                     }`}
                   >
                     Admin Reviews ({pendingReviews.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("archive")}
+                    className={`pb-3 relative transition-all ${
+                      activeTab === "archive"
+                        ? "text-green-300 font-bold border-b-2 border-green-400"
+                        : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    <Disc className="h-3 w-3 inline mr-1" /> Live Archive
                   </button>
                 </div>
 
@@ -2401,10 +2416,82 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                     )}
                   </div>
                 )}
+
+                {/* Archive Tab */}
+                {activeTab === "archive" && (
+                  <div className="space-y-4">
+                    <GlassCard className="p-6 border-green-500/20 bg-green-500/10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Disc className="h-6 w-6 text-green-300" />
+                        <div>
+                          <h3 className="font-bold text-green-300 text-lg">Live Archive & Replay</h3>
+                          <p className="text-xs text-white/60">Manage live recordings, create highlight clips, and publish replay archives</p>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-3 mt-4">
+                        <button
+                          onClick={() => setSubView("archive")}
+                          className="p-4 rounded-xl border border-green-500/30 bg-green-500/[0.08] hover:bg-green-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-green-300 text-sm">Creator Archive</h4>
+                          <p className="text-xs text-white/50 mt-1">Manage your recordings and clips</p>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isIdentityAdmin) {
+                              setSubView("admin-clips");
+                            } else {
+                              toast.error("Admin access required");
+                            }
+                          }}
+                          className="p-4 rounded-xl border border-orange-500/30 bg-orange-500/[0.08] hover:bg-orange-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-orange-300 text-sm">Clip Review</h4>
+                          <p className="text-xs text-white/50 mt-1">Review and approve clips (Admin)</p>
+                        </button>
+                        <button
+                          onClick={() => setSubView("public-library")}
+                          className="p-4 rounded-xl border border-blue-500/30 bg-blue-500/[0.08] hover:bg-blue-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-blue-300 text-sm">Public Replay Library</h4>
+                          <p className="text-xs text-white/50 mt-1">Browse published clips and replays</p>
+                        </button>
+                      </div>
+                    </GlassCard>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* 2. CREATE SHOW FORM */}
+            {/* 2. CREATOR ARCHIVE VIEW */}
+            {subView === "archive" && (
+              <CreatorArchiveDashboard
+                sessionId={selectedChannel?.id}
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                }}
+              />
+            )}
+
+            {/* 2A. ADMIN CLIP REVIEW VIEW */}
+            {subView === "admin-clips" && (
+              <AdminClipReviewDashboard
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                }}
+              />
+            )}
+
+            {/* 2B. PUBLIC REPLAY LIBRARY VIEW */}
+            {subView === "public-library" && (
+              <PublicReplayLibrary
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                }}
+              />
+            )}
+
+            {/* 3. CREATE SHOW FORM */}
             {subView === "create-show" && (
               <div className="max-w-2xl mx-auto animate-scale-in">
                 <GlassCard className="p-6 md:p-8 space-y-6">
