@@ -26,9 +26,12 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("@tanstack/react-start/server-entry").then(
-      (m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry),
-    );
+    // Import the concrete default server entry implementation directly,
+    // avoiding the virtual alias that maps @tanstack/react-start/server-entry
+    // back to this wrapper file in development mode.
+    serverEntryPromise = import(
+      "@tanstack/react-start/dist/default-entry/esm/server.js",
+    ).then((m) => (m as { default?: ServerEntry }).default ?? (m as unknown as ServerEntry));
   }
   return serverEntryPromise;
 }
