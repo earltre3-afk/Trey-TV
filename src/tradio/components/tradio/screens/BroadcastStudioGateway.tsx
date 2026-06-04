@@ -1314,6 +1314,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save new show
@@ -1609,6 +1610,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     if (currentEpisode) {
       triggerReadinessCheck();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeBlocks, currentEpisode]);
 
   // Publish / Schedule
