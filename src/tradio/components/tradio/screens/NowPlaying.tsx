@@ -197,6 +197,8 @@ export const NowPlayingScreen: React.FC<{ onClose: () => void }> = ({ onClose })
     isCasting,
     startCast,
     stopCast,
+    enhancerPreset,
+    setEnhancerPreset,
   } = usePlayer();
 
   const [activeTab, setActiveTab] = useState<DetailTab>("queue");
@@ -301,42 +303,87 @@ export const NowPlayingScreen: React.FC<{ onClose: () => void }> = ({ onClose })
         <DetailShell>
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <div className="text-sm font-semibold text-white">Sound</div>
-              <div className="text-xs text-white/50">Fast controls with no heavy DSP mount</div>
+              <div className="text-sm font-semibold text-white">Studio Master Enhancer</div>
+              <div className="text-xs text-white/50">Real-time Web Audio DSP mastering & tube warmers</div>
             </div>
-            <Sliders className="size-5 text-lime-200" />
+            <Sliders className="size-5 text-cyan-300 animate-pulse" />
           </div>
-          <div className="grid grid-cols-6 items-end gap-3">
-            {EQ_FREQS.map((freq, index) => (
-              <label
-                key={freq}
-                className="flex min-h-40 flex-col items-center justify-between gap-2"
-              >
-                <input
-                  aria-label={`${freq}Hz EQ`}
-                  type="range"
-                  min={-6}
-                  max={6}
-                  value={eqGains[index]}
-                  onChange={(event) => {
-                    const nextGains = [...eqGains];
-                    nextGains[index] = Number(event.currentTarget.value);
-                    setEqGains(nextGains);
-                  }}
-                  className="h-28 w-2 accent-cyan-300 [writing-mode:vertical-lr]"
-                />
-                <span className="text-[10px] font-bold text-white/45">{freq}</span>
-              </label>
-            ))}
+
+          <div className="space-y-2.5">
+            {[
+              {
+                id: "commercial_master",
+                label: "Commercial Master (Trey TV Edit)",
+                desc: "Adds analog tape saturation, 12kHz high-shelf air, and master dynamic limiting.",
+                badge: "STUDIO MASTER",
+                color: "border-cyan-500/30 bg-cyan-500/10 hover:border-cyan-400/40 text-cyan-100",
+                activeColor: "border-cyan-400 bg-cyan-500/20 shadow-[0_0_15px_rgba(34,211,238,0.25)] text-cyan-200",
+              },
+              {
+                id: "bass_boost",
+                label: "Club Sub Bass Boost",
+                desc: "Pumps deep sub-bass (80Hz) and glues transients for maximum club-ready punch.",
+                badge: "CLUB MODE",
+                color: "border-fuchsia-500/30 bg-fuchsia-500/10 hover:border-fuchsia-400/40 text-fuchsia-100",
+                activeColor: "border-fuchsia-400 bg-fuchsia-500/20 shadow-[0_0_15px_rgba(232,121,249,0.25)] text-fuchsia-200",
+              },
+              {
+                id: "vocal_presence",
+                label: "Acoustic Vocal Presence",
+                desc: "Filters low-end rumble and boosts 2.5kHz for razor-sharp acoustic vocal clarity.",
+                badge: "ACOUSTIC",
+                color: "border-amber-500/30 bg-amber-500/10 hover:border-amber-400/40 text-amber-100",
+                activeColor: "border-amber-400 bg-amber-500/20 shadow-[0_0_15px_rgba(251,191,36,0.25)] text-amber-200",
+              },
+              {
+                id: "off",
+                label: "Bypass (Dry)",
+                desc: "No mastering or enhancement. Unprocessed flat output directly from the source.",
+                badge: "DRY OUT",
+                color: "border-white/10 bg-white/[0.04] hover:border-white/20 text-white/70",
+                activeColor: "border-white/40 bg-white/[0.12] text-white",
+              },
+            ].map((preset) => {
+              const active = enhancerPreset === preset.id;
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => setEnhancerPreset(preset.id)}
+                  className={`w-full text-left p-3 rounded-xl border transition-all active:scale-[0.98] ${
+                    active ? preset.activeColor : preset.color
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-black uppercase tracking-wider">{preset.label}</span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-black/40 text-white/60">
+                      {preset.badge}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-white/55 leading-relaxed">{preset.desc}</p>
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-2">
-            <button className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/75">
-              Spatial Clean
-            </button>
-            <button className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-white/75">
-              Vocal Warmth
-            </button>
-          </div>
+
+          {enhancerPreset !== "off" && (
+            <div className="mt-4 p-3 rounded-xl border border-white/5 bg-black/40 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="relative flex size-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full size-2 bg-lime-500"></span>
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-white/60">
+                  DSP Mastering Engines Active
+                </span>
+              </div>
+              <div className="flex gap-0.5 items-end h-3">
+                <div className="w-0.5 bg-cyan-400 h-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                <div className="w-0.5 bg-cyan-400 h-1/2 animate-bounce" style={{ animationDelay: "0.4s" }} />
+                <div className="w-0.5 bg-cyan-400 h-3/4 animate-bounce" style={{ animationDelay: "0.2s" }} />
+                <div className="w-0.5 bg-cyan-400 h-full animate-bounce" style={{ animationDelay: "0.6s" }} />
+              </div>
+            </div>
+          )}
         </DetailShell>
       );
     }

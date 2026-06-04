@@ -34,6 +34,7 @@ export type AdSlotStatus = "pending" | "filled" | "empty";
 export interface TradioShow {
   id: string;
   user_id: string;
+  owner_user_id?: string | null;
   profile_id?: string | null;
   public_profile_uid?: string | null;
   trey_tv_uid?: string | null;
@@ -56,6 +57,7 @@ export interface TradioShowEpisode {
   id: string;
   show_id: string;
   user_id: string;
+  owner_user_id?: string | null;
   title: string;
   description?: string | null;
   cover_art?: string | null;
@@ -67,8 +69,10 @@ export interface TradioShowEpisode {
 
 export interface TradioShowBlock {
   id: string;
+  show_id?: string | null;
   episode_id: string;
   user_id: string;
+  owner_user_id?: string | null;
   block_type: BlockType;
   title: string;
   description?: string | null;
@@ -83,6 +87,7 @@ export interface TradioShowBlock {
   fade_out_seconds: number;
   approval_status: ApprovalStatus;
   clearance_status: ClearanceStatus;
+  rights_status?: RightsStatus | null;
   metadata: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -93,9 +98,15 @@ export interface TradioShowScript {
   episode_id: string;
   block_id?: string | null;
   user_id: string;
+  owner_user_id?: string | null;
+  script_type?: string | null;
+  prompt_input?: string | null;
   script_text: string;
+  revision_number?: number | null;
+  status?: "draft" | "final" | "deprecated";
   generated_by_ai: boolean;
   voice_id?: string | null;
+  metadata?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }

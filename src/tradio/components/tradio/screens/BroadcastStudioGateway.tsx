@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { usePlayer } from "../../../contexts/PlayerContext";
 import {
   Radio, Sparkles, ChevronRight, Lock, CheckCircle, Send, User, Shield, Users,
   Music, Mic2, Disc, Calendar, Flame, UploadCloud, Layers, AlertCircle,
@@ -17,8 +18,61 @@ import {
 import {
   generateShowRundown, generateHostScripts, generateStationDrop,
   generateAdRead, suggestMusicBlocks, validateShowReadiness,
-  renderVoiceWithProvider
+  renderVoiceWithProvider, generateTransitionScript, generateArtistSpotlight,
+  generateProducerSpotlight, generateEpisodeOutro, saveGeneratedRundownToBlocks,
+  saveGeneratedScriptRevision, validateEpisodeDraft
 } from "../services/broadcastService";
+import {
+  listAvailableVoices,
+  estimateVoiceRenderCost,
+  VOICE_STYLE_MODES
+} from "../services/broadcastVoiceProvider";
+import {
+  renderVoiceForBlock,
+  listVoiceRendersForBlock,
+  attachVoiceRenderToBlock,
+  renderStationDropVoice,
+  renderAdReadVoice,
+  listStationDrops
+} from "../services/broadcastVoiceService";
+import {
+  generateEpisodeAssemblyPreview,
+  listEpisodeAssembliesForEpisode,
+  validateTimeline,
+  markAssemblyReadyForReview
+} from "../services/broadcastAssemblyService";
+import {
+  TradioBroadcastChannel,
+  TradioBroadcastQueueItem,
+  TradioBroadcastReview,
+  ChannelNowPlaying,
+  ChannelType,
+  ChannelVisibility,
+  ChannelStatus
+} from "../types/broadcastPlayoutTypes";
+import {
+  createBroadcastChannel,
+  updateBroadcastChannel,
+  listMyBroadcastChannels,
+  listPublicBroadcastChannels,
+  getBroadcastChannelBySlug,
+  submitAssemblyForBroadcastReview,
+  approveBroadcastReview,
+  rejectBroadcastReview,
+  requestBroadcastChanges,
+  addAssemblyToBroadcastQueue,
+  updateBroadcastQueueItem,
+  removeBroadcastQueueItem,
+  reorderBroadcastQueue,
+  getNowPlayingForChannel,
+  getUpcomingBroadcastsForChannel,
+  getPublicPlaybackUrlForQueueItem,
+  listPendingReviews
+} from "../services/broadcastPlayoutService";
+import {
+  getChannelStreamDetails,
+  STREAM_PROVIDERS
+} from "../services/broadcastStreamProvider";
 
 // Standard class for customized custom-styled premium inputs
 const inputClass =
@@ -95,7 +149,227 @@ const MOCK_EPISODES: Record<string, TradioShowEpisode[]> = {
 };
 
 export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?: string }> = ({ onBack, initialTab }) => {
-  const [subView, setSubView] = useState<"dashboard" | "create-show" | "show-detail" | "create-episode" | "editor">("dashboard");
+  const player = usePlayer();
+
+  // Helper: Play Channel stream/file live
+  const handlePlayChannel = async (channel: TradioBroadcastChannel) => {
+    try {
+      const nowPlaying = await getNowPlayingForChannel(channel.slug);
+      if (nowPlaying && nowPlaying.streamUrl) {
+        player.play({
+          id: channel.id,
+          title: nowPlaying.episodeTitle || "Live Stream",
+          artist: nowPlaying.showTitle || channel.title,
+          src: nowPlaying.streamUrl,
+          isLive: true,
+          coverUrl: channel.cover_art_url || IMG.treyTrizzy,
+          sourceType: "station",
+          sourceLabel: "Broadcast Playout",
+        });
+        toast.success(`Broadcasting ${channel.title} live! 🎙️📻`);
+      } else {
+        toast.error("No active playout audio found for this channel. Schedule an approved episode first!");
+      }
+    } catch (e: any) {
+      toast.error("Failed to start channel playout: " + e.message);
+    }
+  };
+
+  const handleCreateChannel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newChannelTitle.trim() || !newChannelSlug.trim()) {
+      toast.error("Title and slug are required.");
+      return;
+    }
+    try {
+      setLoading(true);
+      await createBroadcastChannel({
+        title: newChannelTitle,
+        slug: newChannelSlug,
+        description: newChannelDesc,
+        channel_type: newChannelType,
+        visibility: newChannelVisibility,
+        cover_art_url: newChannelCover || undefined,
+        mood_tags: newChannelMoods ? newChannelMoods.split(",").map(t => t.trim()) : [],
+        genre_tags: newChannelGenres ? newChannelGenres.split(",").map(t => t.trim()) : [],
+        audience_tags: newChannelAudience ? newChannelAudience.split(",").map(t => t.trim()) : [],
+      });
+      toast.success("Broadcast Channel created successfully! 📻");
+      // Reset Form
+      setNewChannelTitle("");
+      setNewChannelSlug("");
+      setNewChannelDesc("");
+      setNewChannelCover("");
+      setNewChannelMoods("");
+      setNewChannelGenres("");
+      setNewChannelAudience("");
+
+      // Reload channels
+      const myChans = await listMyBroadcastChannels();
+      setChannels(myChans);
+      setSubView("dashboard");
+      setActiveTab("channels");
+    } catch (e: any) {
+      toast.error("Failed to create channel: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleScheduleBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleChannelId || !scheduleStart || !scheduleEnd) {
+      toast.error("Please fill in all scheduling fields.");
+      return;
+    }
+    if (!currentShow || !currentEpisode || assemblyHistory.length === 0) {
+      toast.error("No valid assembly exists for this episode.");
+      return;
+    }
+    try {
+      setLoading(true);
+      const latestAssembly = assemblyHistory[0];
+      await addAssemblyToBroadcastQueue(
+        scheduleChannelId,
+        currentShow.id,
+        currentEpisode.id,
+        latestAssembly.id,
+        new Date(scheduleStart).toISOString(),
+        new Date(scheduleEnd).toISOString(),
+        "America/Chicago",
+        scheduleIsLive,
+        scheduleIsReplay
+      );
+      toast.success("Broadcast successfully scheduled! 📅📻");
+      setShowScheduleModal(false);
+
+      // Refresh selected channel info if in channel detail view
+      if (selectedChannel && selectedChannel.id === scheduleChannelId) {
+        const q = await getUpcomingBroadcastsForChannel(selectedChannel.id);
+        setUpcomingBroadcasts(q);
+      }
+    } catch (e: any) {
+      toast.error("Failed to schedule broadcast: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChannelClick = async (channel: TradioBroadcastChannel) => {
+    setSelectedChannel(channel);
+    setSubView("channel-detail");
+    try {
+      setLoading(true);
+      const q = await getUpcomingBroadcastsForChannel(channel.id);
+      setUpcomingBroadcasts(q);
+
+      const nowPlaying = await getNowPlayingForChannel(channel.slug);
+      setActiveNowPlaying(nowPlaying);
+    } catch (e: any) {
+      toast.error("Failed to load channel details: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const [subView, setSubView] = useState<
+    | "dashboard"
+    | "create-show"
+    | "show-detail"
+    | "create-episode"
+    | "editor"
+    | "timeline-preview"
+    | "channel-detail"
+    | "create-channel"
+  >("dashboard");
+
+  // Tab state on Dashboard
+  const [activeTab, setActiveTab] = useState<"shows" | "channels" | "admin-reviews">("shows");
+
+  // Playout States
+  const [channels, setChannels] = useState<TradioBroadcastChannel[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<TradioBroadcastChannel | null>(null);
+  const [channelQueue, setChannelQueue] = useState<TradioBroadcastQueueItem[]>([]);
+  const [upcomingBroadcasts, setUpcomingBroadcasts] = useState<TradioBroadcastQueueItem[]>([]);
+  const [pendingReviews, setPendingReviews] = useState<any[]>([]);
+  const [activeNowPlaying, setActiveNowPlaying] = useState<ChannelNowPlaying | null>(null);
+  const [assemblyReview, setAssemblyReview] = useState<TradioBroadcastReview | null>(null);
+
+  // Form states for Create Channel
+  const [newChannelTitle, setNewChannelTitle] = useState("");
+  const [newChannelSlug, setNewChannelSlug] = useState("");
+  const [newChannelDesc, setNewChannelDesc] = useState("");
+  const [newChannelType, setNewChannelType] = useState<ChannelType>("radio");
+  const [newChannelVisibility, setNewChannelVisibility] = useState<ChannelVisibility>("public");
+  const [newChannelCover, setNewChannelCover] = useState("");
+  const [newChannelMoods, setNewChannelMoods] = useState("");
+  const [newChannelGenres, setNewChannelGenres] = useState("");
+  const [newChannelAudience, setNewChannelAudience] = useState("");
+
+  // Scheduling modal states
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleChannelId, setScheduleChannelId] = useState("");
+  const [scheduleStart, setScheduleStart] = useState("");
+  const [scheduleEnd, setScheduleEnd] = useState("");
+  const [scheduleIsLive, setScheduleIsLive] = useState(false);
+  const [scheduleIsReplay, setScheduleIsReplay] = useState(true);
+
+  // Timeline Preview / Assembler states
+  const [renderFormat, setRenderFormat] = useState<"mp3" | "wav">("mp3");
+  const [targetLoudness, setTargetLoudness] = useState<number>(-16);
+  const [crossfadeSec, setCrossfadeSec] = useState<number>(1.5);
+  const [normalizeVoice, setNormalizeVoice] = useState<boolean>(true);
+  const [includeWatermark, setIncludeWatermark] = useState<boolean>(true);
+  const [silenceBetween, setSilenceBetween] = useState<number>(0.5);
+  const [useBlockFade, setUseBlockFade] = useState<boolean>(true);
+  const [assemblingStatus, setAssemblingStatus] = useState<"idle" | "queued" | "assembling" | "completed" | "failed">("idle");
+  const [assemblyError, setAssemblyError] = useState<string | null>(null);
+  const [assemblyOutputUrl, setAssemblyOutputUrl] = useState<string | null>(null);
+  const [assemblyHistory, setAssemblyHistory] = useState<any[]>([]);
+  const [timelineValidation, setTimelineValidation] = useState<any>(null);
+
+  const handleGenerateAssembly = async (type: "preview" | "review" | "final_candidate") => {
+    if (!currentShow || !currentEpisode) return;
+    setAssemblingStatus("assembling");
+    setAssemblyError(null);
+    setAssemblyOutputUrl(null);
+    try {
+      const settings = {
+        output_format: renderFormat,
+        target_loudness_lufs: targetLoudness,
+        crossfade_seconds: crossfadeSec,
+        normalize_voice_clips: normalizeVoice,
+        include_draft_watermark: includeWatermark,
+        silence_between_blocks_seconds: silenceBetween,
+        use_block_fade_settings: useBlockFade,
+      };
+
+      const result = await generateEpisodeAssemblyPreview(
+        currentShow.id,
+        currentEpisode.id,
+        episodeBlocks,
+        settings,
+        type
+      );
+
+      if (result.assembly_status === "completed" && result.output_audio_url) {
+        setAssemblingStatus("completed");
+        setAssemblyOutputUrl(result.output_audio_url);
+        toast.success("Timeline Assembled Successfully! 🎙️📻");
+
+        // Refresh assembly history
+        const history = await listEpisodeAssembliesForEpisode(currentEpisode.id);
+        setAssemblyHistory(history);
+      } else {
+        setAssemblingStatus("failed");
+        setAssemblyError(result.render_error || "Unknown assembly rendering failure.");
+        toast.error("Assembly failed: " + (result.render_error || "Unknown error"));
+      }
+    } catch (e: any) {
+      setAssemblingStatus("failed");
+      setAssemblyError(e.message);
+      toast.error("Assembly failed: " + e.message);
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [role] = useState<string>("artist");
 
@@ -106,9 +380,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   const [currentEpisode, setCurrentEpisode] = useState<TradioShowEpisode | null>(null);
   const [episodeBlocks, setEpisodeBlocks] = useState<TradioShowBlock[]>([]);
   const [analytics, setAnalytics] = useState<Record<string, TradioShowAnalytics>>({});
-  const [stationDrops, setStationDrops] = useState<{ id: string; title: string; audio_url: string }[]>([
-    { id: "drop-1", title: "Trey TV Official Station ID", audio_url: "/audio/drops/id1.mp3" },
-    { id: "drop-2", title: "Midnight Atmospheric Drop", audio_url: "/audio/drops/id2.mp3" }
+  const [stationDrops, setStationDrops] = useState<any[]>([
+    { id: "drop-1", title: "Trey TV Official Station ID", audio_url: "/audio/drops/id1.mp3", duration_seconds: 4 },
+    { id: "drop-2", title: "Midnight Atmospheric Drop", audio_url: "/audio/drops/id2.mp3", duration_seconds: 5 }
   ]);
 
   // Form states for Create Show
@@ -132,6 +406,251 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   const [editingScriptText, setEditingScriptText] = useState("");
   const [generatingScript, setGeneratingScript] = useState(false);
 
+  // AI Program Director and Script modifiers states
+  const [revisions, setRevisions] = useState<Record<string, string[]>>({});
+
+  // Voice Renderer states
+  const [selectedVoice, setSelectedVoice] = useState("rachel");
+  const [selectedProvider, setSelectedVoiceProvider] = useState<"elevenlabs" | "openai" | "gemini" | "internal" | "manual_upload">("elevenlabs");
+  const [selectedStyleMode, setSelectedStyleMode] = useState("late-night-smooth");
+  const [voicePacing, setVoicePacing] = useState<number>(1.0);
+  const [voiceEnergy, setVoiceEnergy] = useState<number>(1.0);
+  const [voiceRenderStatus, setVoiceRenderStatus] = useState<"idle" | "rendering" | "completed" | "failed">("idle");
+  const [voiceRenderError, setVoiceRenderError] = useState<string | null>(null);
+  const [voiceRenderHistory, setVoiceRenderHistory] = useState<any[]>([]);
+  const [previewingRender, setPreviewingRender] = useState<string | null>(null);
+
+  // Reusable drop state
+  const [newDropText, setNewDropText] = useState("");
+  const [newDropVoice, setNewDropVoice] = useState("paul");
+  const [newDropProvider, setNewDropProvider] = useState<"elevenlabs" | "openai" | "gemini" | "internal">("elevenlabs");
+  const [renderingDrop, setRenderingDrop] = useState(false);
+
+  // Load block render history when editingBlock changes
+  useEffect(() => {
+    if (editingBlock) {
+      listVoiceRendersForBlock(editingBlock.id).then((history) => {
+        setVoiceRenderHistory(history);
+      });
+      setVoiceRenderStatus("idle");
+      setVoiceRenderError(null);
+      setPreviewingRender(null);
+    } else {
+      setVoiceRenderHistory([]);
+    }
+  }, [editingBlock]);
+
+  // Load custom station drops
+  const loadStationDropsList = async () => {
+    let userId = "00000000-0000-0000-0000-000000000000";
+    if (isSupabaseConfigured && supabase) {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) userId = data.user.id;
+    }
+    const drops = await listStationDrops(userId);
+    setStationDrops(drops);
+  };
+
+  useEffect(() => {
+    loadStationDropsList();
+  }, []);
+
+  const handleRenderVoice = async () => {
+    if (!editingBlock) return;
+    setVoiceRenderStatus("rendering");
+    setVoiceRenderError(null);
+    try {
+      let userId = "00000000-0000-0000-0000-000000000000";
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) userId = data.user.id;
+      }
+
+      const activeVoiceProfile = listAvailableVoices(selectedProvider).find(v => v.id === selectedVoice) || listAvailableVoices(selectedProvider)[0];
+
+      const renderInput = {
+        script_text: editingScriptText,
+        voice_provider: selectedProvider,
+        provider_voice_id: selectedVoice,
+        provider_model: selectedProvider === "openai" ? "tts-1" : selectedProvider === "elevenlabs" ? "eleven_monolingual_v1" : "gemini-2.5-flash-preview-tts",
+        voice_name: activeVoiceProfile?.name || selectedVoice,
+        style_mode: selectedStyleMode,
+        pacing: voicePacing,
+        energy: voiceEnergy,
+        show_id: currentShow?.id,
+        episode_id: currentEpisode?.id,
+        block_id: editingBlock.id,
+        owner_user_id: userId,
+      };
+
+      const result = await renderVoiceForBlock(editingBlock.id, renderInput);
+
+      if (result.render_status === "completed" && result.audio_url) {
+        setVoiceRenderStatus("completed");
+        setPreviewingRender(result.audio_url);
+        toast.success("Voice rendered successfully! Play below. 🎙️🔊");
+
+        // Refresh history
+        const history = await listVoiceRendersForBlock(editingBlock.id);
+        setVoiceRenderHistory(history);
+      } else {
+        setVoiceRenderStatus("failed");
+        setVoiceRenderError(result.render_error || "Unknown rendering error");
+        toast.error("Voice rendering failed: " + (result.render_error || "Unknown error"));
+      }
+    } catch (e: any) {
+      setVoiceRenderStatus("failed");
+      setVoiceRenderError(e.message);
+      toast.error("Rendering failed: " + e.message);
+    }
+  };
+
+  const handleAttachVoiceToBlock = async (audioUrl: string, renderId: string, durationSeconds: number) => {
+    if (!editingBlock) return;
+    try {
+      const success = await attachVoiceRenderToBlock(editingBlock.id, renderId, audioUrl, durationSeconds);
+      if (success) {
+        toast.success("Voice clip attached to block! 🔒🎙️");
+        // Update local block media_url & duration
+        setEpisodeBlocks(prev => prev.map(b => b.id === editingBlock.id ? { ...b, media_url: audioUrl, duration_seconds: durationSeconds } : b));
+      } else {
+        toast.error("Failed to attach voice clip");
+      }
+    } catch (e: any) {
+      toast.error("Attachment failed: " + e.message);
+    }
+  };
+
+  const handleCreateStationDrop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDropText.trim()) {
+      toast.error("Drop text is required");
+      return;
+    }
+    setRenderingDrop(true);
+    try {
+      let userId = "00000000-0000-0000-0000-000000000000";
+      if (isSupabaseConfigured && supabase) {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) userId = data.user.id;
+      }
+
+      const result = await renderStationDropVoice(
+        newDropText,
+        currentShow?.host_mode || "cinematic",
+        newDropVoice,
+        newDropProvider,
+        userId
+      );
+
+      if (result.render_status === "completed" && result.audio_url) {
+        toast.success("Station Drop created and added to library! 🎚️💿");
+        setNewDropText("");
+        loadStationDropsList();
+      } else {
+        toast.error("Failed to render station drop: " + (result.render_error || "Unknown error"));
+      }
+    } catch (e: any) {
+      toast.error("Failed to create station drop: " + e.message);
+    } finally {
+      setRenderingDrop(false);
+    }
+  };
+
+  const toggleBlockLock = async (id: string) => {
+    const updated = episodeBlocks.map((b) => {
+      if (b.id === id) {
+        const isLocked = !b.metadata?.locked;
+        const metadata = { ...b.metadata, locked: isLocked };
+        return { ...b, metadata };
+      }
+      return b;
+    });
+    setEpisodeBlocks(updated);
+
+    const block = updated.find((b) => b.id === id);
+    if (block && isSupabaseConfigured && supabase) {
+      try {
+        await supabase
+          .from("tradio_show_blocks")
+          .update({ metadata: block.metadata })
+          .eq("id", id);
+        toast.success(block.metadata.locked ? "Block script locked! 🔒" : "Block script unlocked. 🔓");
+      } catch (e: any) {
+        toast.error("Failed to save block lock state: " + e.message);
+      }
+    } else {
+      toast.success(block?.metadata?.locked ? "Block script locked locally! 🔒" : "Block script unlocked locally. 🔓");
+    }
+  };
+
+  const handleAIRegenerateScriptWithModifier = async (modifier: string) => {
+    if (!editingBlock) return;
+    setGeneratingScript(true);
+    try {
+      const generated = await generateHostScripts({
+        blockTitle: editingBlock.title,
+        blockType: editingBlock.block_type,
+        hostTone: currentShow?.host_mode ?? "cinematic",
+        promptNotes: editingBlock.description ?? "",
+        styleModifier: modifier,
+      });
+      setEditingScriptText(generated);
+      setRevisions((prev) => {
+        const list = prev[editingBlock.id] || [];
+        return { ...prev, [editingBlock.id]: [...list, generated] };
+      });
+      toast.success("AI Script adjusted successfully! ⚡");
+    } catch (e: any) {
+      toast.error("AI customization failed: " + e.message);
+    } finally {
+      setGeneratingScript(false);
+    }
+  };
+
+  const handleRegenerateFullRundown = async () => {
+    if (!currentShow || !currentEpisode) return;
+    setLoading(true);
+    try {
+      const { blocks: newBlocks } = await generateShowRundown({
+        title: currentShow.title,
+        showType: currentShow.show_type,
+        mood: currentShow.mood ?? "Chill",
+        durationMinutes: 30,
+        hostTone: currentShow.host_mode ?? "warm",
+        musicSourcePref: currentShow.music_source_pref ?? "Tradio catalog",
+        commercialBreaks: currentShow.ad_preference === "commercial" ? 1 : 0,
+        includeListenerRequests: true,
+        includeProducerSpotlight: true,
+        includeArtistPremiere: true,
+      });
+
+      const mergedBlocks: any[] = [];
+      const maxLen = Math.max(episodeBlocks.length, newBlocks.length);
+      for (let i = 0; i < maxLen; i++) {
+        const existing = episodeBlocks[i];
+        if (existing && existing.metadata?.locked) {
+          mergedBlocks.push(existing);
+        } else {
+          const fallback = newBlocks.find((nb) => !mergedBlocks.some((mb) => mb.title === nb.title));
+          if (fallback) {
+            mergedBlocks.push(fallback);
+          } else if (newBlocks[i]) {
+            mergedBlocks.push(newBlocks[i]);
+          }
+        }
+      }
+
+      const saved = await saveGeneratedRundownToBlocks(currentShow.id, currentEpisode.id, mergedBlocks);
+      setEpisodeBlocks(saved);
+      toast.success("Rundown regenerated! Locked scripts were preserved. 🔒✨");
+    } catch (e: any) {
+      toast.error("Regeneration failed: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Scheduling states
   const [scheduleStartTime, setScheduleStartTime] = useState("");
   const [scheduleTimezone, setScheduleTimezone] = useState("UTC");
@@ -141,8 +660,24 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
   const [readinessCheck, setReadinessCheck] = useState<{ ready: boolean; warnings: string[] }>({ ready: true, warnings: [] });
 
   // Load Data
+  const loadPlayoutData = async () => {
+    try {
+      const myChannels = await listMyBroadcastChannels();
+      setChannels(myChannels);
+
+      const pReviews = await listPendingReviews();
+      setPendingReviews(pReviews);
+    } catch (e: any) {
+      console.warn("Failed to load playout data: ", e.message);
+    }
+  };
+
   const loadData = async () => {
-    if (!isSupabaseConfigured || !supabase) return;
+    if (!isSupabaseConfigured || !supabase) {
+      // offline fallback
+      await loadPlayoutData();
+      return;
+    }
     setLoading(true);
     try {
       const { data: showsData, error: showsError } = await supabase
@@ -170,6 +705,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
           setEpisodes(epMap);
         }
       }
+      await loadPlayoutData();
     } catch (e: any) {
       console.error(e);
       toast.error("Failed to load show data: " + e.message);
@@ -540,6 +1076,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
             else if (subView === "show-detail") setSubView("dashboard");
             else if (subView === "create-episode") setSubView("show-detail");
             else if (subView === "editor") setSubView("show-detail");
+            else if (subView === "timeline-preview") setSubView("editor");
+            else if (subView === "channel-detail") setSubView("dashboard");
+            else if (subView === "create-channel") setSubView("dashboard");
           }}
         />
 
@@ -552,7 +1091,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
 
         {!loading && (
           <div className="px-4 sm:px-6 lg:px-10">
-            {/* 1. DASHBOARD VIEW */}
+            {/* 1. TABBED DASHBOARD VIEW */}
             {subView === "dashboard" && (
               <div className="space-y-8 animate-fade-in">
                 {/* Dashboard Hero */}
@@ -573,74 +1112,266 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                         "Your sound is not a post. It is programming." Design, schedule, and live broadcast highly atmospheric radio shows with generative AI.
                       </p>
                     </div>
-                    <button
-                      onClick={() => setSubView("create-show")}
-                      className="rounded-full bg-gradient-to-r from-fuchsia-500 via-purple-600 to-cyan-500 text-white font-black px-6 py-3 text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(168,85,247,0.4)] whitespace-nowrap"
-                    >
-                      <Plus className="h-3.5 w-3.5 inline mr-1.5" /> Create Show Lane
-                    </button>
+                    <div className="flex gap-3 shrink-0">
+                      <button
+                        onClick={() => setSubView("create-show")}
+                        className="rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-black px-5 py-3 text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] whitespace-nowrap"
+                      >
+                        <Plus className="h-3.5 w-3.5 inline mr-1.5" /> Create Show
+                      </button>
+                      <button
+                        onClick={() => setSubView("create-channel")}
+                        className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-5 py-3 text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)] whitespace-nowrap"
+                      >
+                        <Radio className="h-3.5 w-3.5 inline mr-1.5" /> Create Channel
+                      </button>
+                    </div>
                   </div>
                 </GlassCard>
 
-                {/* Grid for Show Lanes */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-black text-white/40 uppercase tracking-widest font-mono">
-                      Your Broadcast Lanes
-                    </h3>
-                  </div>
+                {/* Tab Selectors */}
+                <div className="flex border-b border-white/10 gap-6 font-mono text-[10px] font-black tracking-widest uppercase">
+                  <button
+                    onClick={() => setActiveTab("shows")}
+                    className={`pb-3 relative transition-all ${
+                      activeTab === "shows" ? "text-purple-300 font-bold border-b-2 border-purple-500" : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    Show Lanes ({shows.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("channels")}
+                    className={`pb-3 relative transition-all ${
+                      activeTab === "channels" ? "text-cyan-300 font-bold border-b-2 border-cyan-400" : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    Broadcast Channels ({channels.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("admin-reviews")}
+                    className={`pb-3 relative transition-all ${
+                      activeTab === "admin-reviews" ? "text-yellow-300 font-bold border-b-2 border-yellow-400" : "text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    Admin Reviews ({pendingReviews.length})
+                  </button>
+                </div>
 
-                  {shows.length === 0 ? (
-                    <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
-                      <Mic2 className="h-8 w-8 text-white/20 mx-auto" />
-                      <div className="text-sm font-bold text-white/80">No lanes created yet</div>
-                      <p className="text-xs text-white/50 max-w-xs mx-auto">
-                        Create your first official show lane to start compiling episodes and scheduling broadcasts.
-                      </p>
-                    </GlassCard>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {shows.map((show) => {
-                        const showEps = episodes[show.id] || [];
-                        return (
-                          <GlassCard
-                            key={show.id}
-                            className="p-5 flex flex-col justify-between hover:border-purple-500/30 hover:bg-white/[0.01] transition-all group cursor-pointer"
-                            onClick={() => {
-                              setCurrentShow(show);
-                              setSubView("show-detail");
-                            }}
-                          >
-                            <div>
-                              <div className="flex items-start justify-between">
-                                <span className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono">
-                                  {show.show_type.replace(/-/g, " ")}
-                                </span>
-                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest font-mono ${
-                                  show.status === "published" ? "bg-emerald-500/15 border border-emerald-500/20 text-emerald-300" : "bg-yellow-500/15 border border-yellow-500/20 text-yellow-300"
-                                }`}>
-                                  {show.status}
+                {/* Tab Conditionally Rendered Content */}
+                {activeTab === "shows" && (
+                  <div className="space-y-4">
+                    {shows.length === 0 ? (
+                      <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
+                        <Mic2 className="h-8 w-8 text-white/20 mx-auto" />
+                        <div className="text-sm font-bold text-white/80">No lanes created yet</div>
+                        <p className="text-xs text-white/50 max-w-xs mx-auto">
+                          Create your first official show lane to start compiling episodes.
+                        </p>
+                      </GlassCard>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {shows.map((show) => {
+                          const showEps = episodes[show.id] || [];
+                          return (
+                            <GlassCard
+                              key={show.id}
+                              className="p-5 flex flex-col justify-between hover:border-purple-500/30 hover:bg-white/[0.01] transition-all group cursor-pointer"
+                              onClick={() => {
+                                setCurrentShow(show);
+                                setSubView("show-detail");
+                              }}
+                            >
+                              <div>
+                                <div className="flex items-start justify-between">
+                                  <span className="rounded-full border border-cyan-400/20 bg-cyan-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono">
+                                    {show.show_type.replace(/-/g, " ")}
+                                  </span>
+                                  <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest font-mono ${
+                                    show.status === "published" ? "bg-emerald-500/15 border border-emerald-500/20 text-emerald-300" : "bg-yellow-500/15 border border-yellow-500/20 text-yellow-300"
+                                  }`}>
+                                    {show.status}
+                                  </span>
+                                </div>
+                                <h4 className="mt-4 font-black text-white text-lg group-hover:text-purple-300 transition-colors">
+                                  {show.title}
+                                </h4>
+                                <p className="mt-1 text-xs text-white/50 line-clamp-2">
+                                  {show.description || "No description provided."}
+                                </p>
+                              </div>
+                              <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-mono font-bold text-white/40">
+                                <span>Mood: <span className="text-purple-300">{show.mood || "Atmospheric"}</span></span>
+                                <span className="flex items-center gap-1 text-cyan-300">
+                                  {showEps.length} EPISODES <ChevronRight className="h-3 w-3" />
                                 </span>
                               </div>
-                              <h4 className="mt-4 font-black text-white text-lg group-hover:text-purple-300 transition-colors">
-                                {show.title}
+                            </GlassCard>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "channels" && (
+                  <div className="space-y-4">
+                    {channels.length === 0 ? (
+                      <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
+                        <Radio className="h-8 w-8 text-white/20 mx-auto" />
+                        <div className="text-sm font-bold text-white/80">No channels created yet</div>
+                        <p className="text-xs text-white/50 max-w-xs mx-auto">
+                          Create your first public or private channel to program scheduled audio broadcasts.
+                        </p>
+                      </GlassCard>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {channels.map((chan) => (
+                          <GlassCard
+                            key={chan.id}
+                            className="p-5 flex flex-col justify-between hover:border-cyan-500/30 hover:bg-white/[0.01] transition-all group cursor-pointer"
+                          >
+                            <div onClick={() => handleChannelClick(chan)}>
+                              <div className="flex items-start justify-between">
+                                <span className="rounded-full border border-purple-400/20 bg-purple-500/10 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-purple-300 font-mono">
+                                  {chan.channel_type.replace(/_/g, " ")}
+                                </span>
+                                <span className={`rounded-full px-2 py-0.5 text-[8px] font-black uppercase tracking-widest font-mono ${
+                                  chan.status === "active" ? "bg-emerald-500/15 border border-emerald-500/20 text-emerald-300" : "bg-white/10 border border-white/10 text-white/40"
+                                }`}>
+                                  {chan.status}
+                                </span>
+                              </div>
+                              <h4 className="mt-4 font-black text-white text-lg group-hover:text-cyan-300 transition-colors">
+                                {chan.title}
                               </h4>
                               <p className="mt-1 text-xs text-white/50 line-clamp-2">
-                                {show.description || "No description provided."}
+                                {chan.description || "No description provided."}
                               </p>
+
+                              {/* Display Tags */}
+                              <div className="flex flex-wrap gap-1 mt-3">
+                                {chan.mood_tags.map(m => (
+                                  <span key={m} className="px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-white/45 font-mono">#{m}</span>
+                                ))}
+                                {chan.genre_tags.map(g => (
+                                  <span key={g} className="px-1.5 py-0.5 rounded bg-white/5 text-[9px] text-cyan-400/60 font-mono">#{g}</span>
+                                ))}
+                              </div>
                             </div>
-                            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] font-mono font-bold text-white/40">
-                              <span>Mood: <span className="text-purple-300">{show.mood || "Atmospheric"}</span></span>
-                              <span className="flex items-center gap-1 text-cyan-300">
-                                {showEps.length} EPISODES <ChevronRight className="h-3 w-3" />
-                              </span>
+
+                            <div className="mt-5 pt-3 border-t border-white/5 flex items-center justify-between">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePlayChannel(chan);
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-full transition-all"
+                              >
+                                <Play className="h-3 w-3 fill-emerald-300" /> Listen Live
+                              </button>
+                              <button
+                                onClick={() => handleChannelClick(chan)}
+                                className="text-[10px] font-mono font-bold text-cyan-300 hover:text-cyan-400 flex items-center gap-0.5"
+                              >
+                                Manage Channel <ChevronRight className="h-3 w-3" />
+                              </button>
                             </div>
                           </GlassCard>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "admin-reviews" && (
+                  <div className="space-y-4">
+                    {pendingReviews.length === 0 ? (
+                      <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
+                        <CheckCircle className="h-8 w-8 text-white/20 mx-auto" />
+                        <div className="text-sm font-bold text-white/80">All reviews cleared!</div>
+                        <p className="text-xs text-white/50 max-w-xs mx-auto">
+                          There are currently no pending broadcast submissions waiting for approval.
+                        </p>
+                      </GlassCard>
+                    ) : (
+                      <div className="space-y-3">
+                        {pendingReviews.map((rev) => (
+                          <GlassCard key={rev.id} className="p-5 border-yellow-500/20 bg-yellow-500/[0.01]">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div>
+                                <span className="rounded-full bg-yellow-500/15 border border-yellow-500/30 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-yellow-300 font-mono">
+                                  Pending PD Review
+                                </span>
+                                <h4 className="mt-2 font-black text-white text-base">
+                                  {rev.episode?.title || "Draft Episode"}
+                                </h4>
+                                <p className="text-xs text-white/50 mt-1 font-mono">
+                                  Submitted by: <span className="text-purple-300">{rev.requester?.email || "Creator"}</span> • {new Date(rev.created_at).toLocaleDateString()}
+                                </p>
+                                {rev.review_notes && (
+                                  <p className="mt-3 p-3 bg-white/5 rounded-xl text-xs text-white/70 font-mono italic">
+                                    " {rev.review_notes} "
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex gap-2 self-center shrink-0">
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await approveBroadcastReview(rev.id, "Audio compiles and passes full rights clearance checks.");
+                                      toast.success("Broadcast Review APPROVED! 📻🏆");
+                                      const pReviews = await listPendingReviews();
+                                      setPendingReviews(pReviews);
+                                    } catch (e: any) {
+                                      toast.error("Failed: " + e.message);
+                                    }
+                                  }}
+                                  className="rounded-full bg-emerald-500 text-black font-black px-4 py-2 text-[10px] uppercase tracking-wider hover:brightness-110 transition-all"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const reason = prompt("Enter change request notes:");
+                                    if (reason === null) return;
+                                    try {
+                                      await requestBroadcastChanges(rev.id, reason);
+                                      toast.success("Changes requested.");
+                                      const pReviews = await listPendingReviews();
+                                      setPendingReviews(pReviews);
+                                    } catch (e: any) {
+                                      toast.error("Failed: " + e.message);
+                                    }
+                                  }}
+                                  className="rounded-full bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 font-black px-4 py-2 text-[10px] uppercase tracking-wider hover:bg-yellow-500/30 transition-all"
+                                >
+                                  Changes Request
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const reason = prompt("Enter rejection reason:");
+                                    if (reason === null) return;
+                                    try {
+                                      await rejectBroadcastReview(rev.id, reason);
+                                      toast.success("Submission rejected.");
+                                      const pReviews = await listPendingReviews();
+                                      setPendingReviews(pReviews);
+                                    } catch (e: any) {
+                                      toast.error("Failed: " + e.message);
+                                    }
+                                  }}
+                                  className="rounded-full bg-red-500/10 border border-red-500/30 text-red-300 font-black px-4 py-2 text-[10px] uppercase tracking-wider hover:bg-red-500/20 transition-all"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          </GlassCard>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -965,6 +1696,21 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                     <span className="text-[10px] text-cyan-300 bg-cyan-500/10 px-2.5 py-1 rounded-full font-mono font-bold uppercase">
                       STATUS: {currentEpisode.status}
                     </span>
+                    <button
+                      onClick={async () => {
+                        setSubView("timeline-preview");
+                        // Trigger manifest build and validation
+                        const validation = await validateTimeline(currentEpisode.id, episodeBlocks, role);
+                        setTimelineValidation(validation);
+                        // Load assembly history
+                        listEpisodeAssembliesForEpisode(currentEpisode.id).then((history) => {
+                          setAssemblyHistory(history);
+                        });
+                      }}
+                      className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-4 py-1.5 text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all flex items-center gap-1 shadow-md font-mono"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Timeline Preview Console
+                    </button>
                   </div>
                 </div>
 
@@ -972,10 +1718,16 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                 <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
                   {/* Left: Ordered Timeline Blocks */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                       <h4 className="text-xs font-black text-white/45 uppercase tracking-widest font-mono">
                         Episode Timeline blocks
                       </h4>
+                      <button
+                        onClick={handleRegenerateFullRundown}
+                        className="rounded-full border border-purple-500/35 bg-purple-500/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-purple-300 hover:bg-purple-500/20 active:scale-95 transition-all flex items-center gap-1 shadow-[0_0_15px_rgba(168,85,247,0.15)]"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" /> Regenerate Full Rundown
+                      </button>
                     </div>
 
                     <div className="space-y-3">
@@ -1039,9 +1791,26 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                                   <ArrowDown className="h-3.5 w-3.5" />
                                 </button>
                                 <button
+                                  onClick={() => toggleBlockLock(block.id)}
+                                  className={`h-8 w-8 flex items-center justify-center rounded-lg border transition-all ${
+                                    block.metadata?.locked
+                                      ? "border-yellow-500/30 bg-yellow-500/10 text-yellow-300 shadow-[0_0_10px_rgba(234,179,8,0.2)] animate-pulse"
+                                      : "border-white/5 bg-white/[0.02] text-white/40 hover:text-white"
+                                  }`}
+                                  title={block.metadata?.locked ? "Script Locked" : "Lock Script"}
+                                >
+                                  {block.metadata?.locked ? <Lock className="h-3.5 w-3.5" /> : <Settings className="h-3.5 w-3.5" />}
+                                </button>
+                                <button
                                   onClick={() => {
                                     setEditingBlock(block);
                                     setEditingScriptText(block.script_text || "");
+                                    setRevisions((prev) => {
+                                      if (!prev[block.id]) {
+                                        return { ...prev, [block.id]: [block.script_text || ""] };
+                                      }
+                                      return prev;
+                                    });
                                   }}
                                   className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest text-purple-300 hover:bg-purple-500/10"
                                 >
@@ -1091,6 +1860,72 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           placeholder="Write the teleprompter/script content for this segment..."
                         />
 
+                        {/* AI STYLE MODIFIERS */}
+                        <div className="space-y-1.5">
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-white/35 font-mono">
+                            AI Style Modifiers (Single Tap)
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              { label: "Shorter", modifier: "Make it short, concise, under 40 words." },
+                              { label: "Funnier", modifier: "Add witty, lighthearted humor and dry jokes." },
+                              { label: "Professional", modifier: "Deliver an articulate, formal, traditional broadcast tone." },
+                              { label: "More Street", modifier: "Apply street-polished, cultural tastemaker vocabulary and slick delivery rules." },
+                              { label: "Emotional", modifier: "Speak from the heart with deep emotional connection, appreciating the art." },
+                              { label: "Hype / High Energy", modifier: "Deliver hyper high energy, active hype, commanding the club vibe." }
+                            ].map((preset) => (
+                              <button
+                                key={preset.label}
+                                type="button"
+                                disabled={generatingScript}
+                                onClick={() => handleAIRegenerateScriptWithModifier(preset.modifier)}
+                                className="px-2.5 py-1 rounded-lg border border-white/5 bg-white/[0.03] text-[9px] font-bold text-white/70 hover:bg-white/5 active:scale-95 transition-all whitespace-nowrap"
+                              >
+                                {preset.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* REVISION HISTORY */}
+                        {revisions[editingBlock.id] && revisions[editingBlock.id].length > 1 && (
+                          <div className="p-2.5 rounded-xl border border-white/5 bg-black/30 flex items-center justify-between gap-3 text-xs leading-none">
+                            <span className="text-[10px] text-white/45 uppercase font-mono font-bold">
+                              REVISIONS HISTORY ({revisions[editingBlock.id].length} Drafts)
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const list = revisions[editingBlock.id];
+                                  const currentIdx = list.indexOf(editingScriptText);
+                                  if (currentIdx > 0) {
+                                    setEditingScriptText(list[currentIdx - 1]);
+                                    toast.message(`Loaded prior revision #${currentIdx}`);
+                                  }
+                                }}
+                                className="h-6 px-1.5 rounded bg-white/5 text-[9px] font-black uppercase text-white/70 active:scale-90"
+                              >
+                                Prev
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const list = revisions[editingBlock.id];
+                                  const currentIdx = list.indexOf(editingScriptText);
+                                  if (currentIdx !== -1 && currentIdx < list.length - 1) {
+                                    setEditingScriptText(list[currentIdx + 1]);
+                                    toast.message(`Loaded revision #${currentIdx + 2}`);
+                                  }
+                                }}
+                                className="h-6 px-1.5 rounded bg-white/5 text-[9px] font-black uppercase text-white/70 active:scale-90"
+                              >
+                                Next
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex justify-between items-center">
                           <button
                             type="button"
@@ -1115,6 +1950,204 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                             </button>
                           </div>
                         </div>
+
+                        {/* TRADIO VOICE RENDERER SUB-PANEL */}
+                        <div className="pt-4 mt-4 border-t border-white/10 space-y-4">
+                          <div className="flex items-center gap-1.5 text-xs font-black text-white/80 uppercase tracking-widest font-mono">
+                            <Volume2 className="h-4 w-4 text-cyan-300 animate-pulse" /> Tradio Voice Renderer
+                          </div>
+
+                          {/* Provider and Voice Selector */}
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="Voice Provider">
+                              <select
+                                className={selectClass}
+                                value={selectedProvider}
+                                onChange={(e) => {
+                                  const p = e.target.value as any;
+                                  setSelectedVoiceProvider(p);
+                                  // Update selected voice automatically to the first one available for this provider
+                                  const available = listAvailableVoices(p);
+                                  if (available.length > 0) {
+                                    setSelectedVoice(available[0].id);
+                                  }
+                                }}
+                              >
+                                <option value="elevenlabs">ElevenLabs Premium</option>
+                                <option value="openai">OpenAI TTS</option>
+                                <option value="gemini">Gemini Live Voice</option>
+                                <option value="internal">Local FM Synthesizer</option>
+                                <option value="manual_upload">Manual Audio Upload</option>
+                              </select>
+                            </Field>
+
+                            <Field label="Voice Name">
+                              <select
+                                className={selectClass}
+                                value={selectedVoice}
+                                onChange={(e) => setSelectedVoice(e.target.value)}
+                                disabled={selectedProvider === "manual_upload"}
+                              >
+                                {listAvailableVoices(selectedProvider).map((v) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+                          </div>
+
+                          {/* Style, Pacing, and Energy Controls */}
+                          {selectedProvider !== "manual_upload" && (
+                            <>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <Field label="Style / Tone Mode">
+                                  <select
+                                    className={selectClass}
+                                    value={selectedStyleMode}
+                                    onChange={(e) => setSelectedStyleMode(e.target.value)}
+                                  >
+                                    {VOICE_STYLE_MODES.map((style) => (
+                                      <option key={style.id} value={style.id}>
+                                        {style.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </Field>
+                                <div className="text-[10px] text-white/40 flex items-center justify-start italic pt-4">
+                                  {VOICE_STYLE_MODES.find(s => s.id === selectedStyleMode)?.description}
+                                </div>
+                              </div>
+
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1">
+                                  <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                                    Pacing / Speed ({voicePacing}x)
+                                  </span>
+                                  <input
+                                    type="range"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.1"
+                                    value={voicePacing}
+                                    onChange={(e) => setVoicePacing(parseFloat(e.target.value))}
+                                    className="w-full accent-cyan-400 cursor-pointer bg-white/10 rounded-lg appearance-none h-1"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                                    Energy / Vocal Drive ({voiceEnergy}x)
+                                  </span>
+                                  <input
+                                    type="range"
+                                    min="0.5"
+                                    max="1.5"
+                                    step="0.1"
+                                    value={voiceEnergy}
+                                    onChange={(e) => setVoiceEnergy(parseFloat(e.target.value))}
+                                    className="w-full accent-cyan-400 cursor-pointer bg-white/10 rounded-lg appearance-none h-1"
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Cost Estimate & Actions */}
+                          <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-[11px] font-mono">
+                            <span className="text-white/45 uppercase font-bold">Estimated Cost:</span>
+                            <span className="text-cyan-300 font-bold">
+                              {estimateVoiceRenderCost(editingScriptText, selectedProvider)} Credits
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              disabled={voiceRenderStatus === "rendering" || !editingScriptText.trim()}
+                              onClick={handleRenderVoice}
+                              className="flex-1 text-center py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-black uppercase tracking-widest disabled:opacity-40 hover:brightness-110 active:scale-95 transition-all shadow-md"
+                            >
+                              {voiceRenderStatus === "rendering" ? "Rendering Voice..." : "Render Voice"}
+                            </button>
+
+                            {previewingRender && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const audio = new Audio(previewingRender);
+                                  audio.play();
+                                  toast.success("Playing preview... 🔊");
+                                }}
+                                className="px-4 py-2.5 rounded-xl border border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-xs font-black uppercase tracking-widest hover:bg-cyan-500/20 active:scale-95 transition-all"
+                              >
+                                Preview Play
+                              </button>
+                            )}
+
+                            {previewingRender && (
+                              <button
+                                type="button"
+                                onClick={() => handleAttachVoiceToBlock(previewingRender, "active", Math.max(3, Math.round(editingScriptText.length / 15)))}
+                                className="px-4 py-2.5 rounded-xl bg-purple-600 text-white text-xs font-black uppercase tracking-widest hover:bg-purple-700 active:scale-95 transition-all"
+                              >
+                                Attach Voice
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Error Display */}
+                          {voiceRenderStatus === "failed" && voiceRenderError && (
+                            <div className="p-2.5 rounded-xl bg-red-500/15 border border-red-500/20 text-red-300 text-[11px] font-mono flex items-start gap-1.5 leading-relaxed">
+                              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                              <div>
+                                <span className="font-bold">Rendering Failed:</span> {voiceRenderError}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Voice Render History */}
+                          {voiceRenderHistory.length > 0 && (
+                            <div className="space-y-2">
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-white/35 font-mono">
+                                Voice Render History for this block
+                              </span>
+                              <div className="max-h-24 overflow-y-auto space-y-1.5 pr-1">
+                                {voiceRenderHistory.map((h, idx) => (
+                                  <div key={h.id || idx} className="p-2 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-[11px]">
+                                    <div className="truncate pr-2">
+                                      <span className="font-bold text-white/70 capitalize font-mono text-[10px]">{h.voice_provider} • {h.voice_name || h.provider_voice_id || "Voice"}</span>
+                                      <span className="block text-[9px] text-white/40 font-mono mt-0.5">{h.duration_seconds}s • {h.mime_type}</span>
+                                    </div>
+                                    <div className="flex gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          if (h.audio_url) {
+                                            const audio = new Audio(h.audio_url);
+                                            audio.play();
+                                            toast.success("Playing historical render... 🔊");
+                                          }
+                                        }}
+                                        className="h-6 w-6 flex items-center justify-center rounded bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
+                                        title="Play clip"
+                                      >
+                                        <Play className="h-3.5 w-3.5" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAttachVoiceToBlock(h.audio_url || "", h.id, h.duration_seconds || 4)}
+                                        className="h-6 px-1.5 rounded bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 text-[9px] font-black uppercase tracking-widest"
+                                        title="Attach this render"
+                                      >
+                                        Attach
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </GlassCard>
                     )}
 
@@ -1123,21 +2156,103 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                       <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
                         <Disc className="h-4 w-4 text-purple-300 animate-spin" style={{ animationDuration: "5s" }} /> STATION DROPS & SFX
                       </h4>
-                      <div className="space-y-2">
-                        {stationDrops.map((drop) => (
-                          <div key={drop.id} className="p-2.5 rounded-xl border border-white/5 bg-white/[0.01] flex items-center justify-between text-xs hover:border-white/10 transition-colors">
-                            <span className="font-bold text-white/80 truncate">{drop.title}</span>
-                            <button
-                              onClick={() => {
-                                toast.success(`Playing preview for "${drop.title}" 🔊`);
-                              }}
-                              className="p-1 rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-300 hover:bg-purple-500/25"
-                              title="Play preview sfx"
-                            >
-                              <Play className="h-3 w-3" />
-                            </button>
+
+                      {/* Creator Input */}
+                      <form onSubmit={handleCreateStationDrop} className="space-y-2 pt-2 border-t border-white/5">
+                        <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                          Create Custom Station Drop
+                        </span>
+                        <input
+                          className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-white outline-none transition placeholder:text-white/35 focus:border-cyan-400/50"
+                          value={newDropText}
+                          onChange={(e) => setNewDropText(e.target.value)}
+                          placeholder="e.g. You are locked into Tradio."
+                        />
+
+                        <div className="grid gap-2 grid-cols-2">
+                          <select
+                            className="w-full rounded-xl border border-white/10 bg-black/50 px-2 py-1.5 text-[10px] text-white outline-none transition cursor-pointer"
+                            value={newDropProvider}
+                            onChange={(e) => {
+                              const p = e.target.value as any;
+                              setNewDropProvider(p);
+                              const available = listAvailableVoices(p);
+                              if (available.length > 0) {
+                                setNewDropVoice(available[0].id);
+                              }
+                            }}
+                          >
+                            <option value="elevenlabs">ElevenLabs</option>
+                            <option value="openai">OpenAI TTS</option>
+                            <option value="gemini">Gemini</option>
+                            <option value="internal">Local FM</option>
+                          </select>
+
+                          <select
+                            className="w-full rounded-xl border border-white/10 bg-black/50 px-2 py-1.5 text-[10px] text-white outline-none transition cursor-pointer"
+                            value={newDropVoice}
+                            onChange={(e) => setNewDropVoice(e.target.value)}
+                          >
+                            {listAvailableVoices(newDropProvider).map((v) => (
+                              <option key={v.id} value={v.id}>
+                                {v.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={renderingDrop || !newDropText.trim()}
+                          className="w-full text-center py-2 rounded-xl bg-gradient-to-r from-purple-500 to-fuchsia-600 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+                        >
+                          {renderingDrop ? "Rendering..." : "Render & Save Drop"}
+                        </button>
+                      </form>
+
+                      {/* Display Drops */}
+                      <div className="space-y-2 pt-2 border-t border-white/5">
+                        <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                          Station Drop Library
+                        </span>
+                        {stationDrops.length === 0 ? (
+                          <div className="text-[10px] text-white/35 italic py-1">No custom station drops.</div>
+                        ) : (
+                          <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                            {stationDrops.map((drop) => (
+                              <div key={drop.id} className="p-2.5 rounded-xl border border-white/5 bg-white/[0.01] flex items-center justify-between text-xs hover:border-white/10 transition-colors">
+                                <div className="truncate pr-2">
+                                  <span className="font-bold text-white/80 block truncate">{drop.title}</span>
+                                  <span className="text-[9px] text-white/40 font-mono">{drop.duration_seconds}s • cleared</span>
+                                </div>
+                                <div className="flex gap-1 shrink-0">
+                                  <button
+                                    onClick={() => {
+                                      if (drop.audio_url) {
+                                        const audio = new Audio(drop.audio_url);
+                                        audio.play();
+                                        toast.success(`Playing preview for "${drop.title}" 🔊`);
+                                      }
+                                    }}
+                                    className="p-1 rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-300 hover:bg-purple-500/25"
+                                    title="Play preview sfx"
+                                  >
+                                    <Play className="h-3 w-3" />
+                                  </button>
+                                  {editingBlock && (
+                                    <button
+                                      onClick={() => handleAttachVoiceToBlock(drop.audio_url, drop.id, drop.duration_seconds || 4)}
+                                      className="px-1.5 py-0.5 rounded bg-purple-600/30 text-purple-300 hover:bg-purple-600/40 text-[9px] font-mono uppercase"
+                                      title="Attach this drop"
+                                    >
+                                      Attach
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                     </GlassCard>
 
@@ -1147,21 +2262,51 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                         <Megaphone className="h-4 w-4 text-cyan-300" /> SPONSOR AD SLOTS
                       </h4>
                       <p className="text-[10px] text-white/55 leading-relaxed">
-                        Insert sponsor reads into your ad blocks. Select filled provider models.
+                        Insert sponsor reads into your ad blocks. Select filled provider models and render draft audio.
                       </p>
-                      <button
-                        onClick={async () => {
-                          const adReadText = await generateAdRead({
-                            adProvider: "Trey TV Luxury Watches",
-                            durationSeconds: 30,
-                            tone: currentShow.host_mode ?? "cinematic",
-                          });
-                          toast.message("AI Ad Read draft saved to clipboard!", { description: adReadText });
-                        }}
-                        className="w-full text-center py-2 rounded-xl border border-dashed border-cyan-400/20 bg-cyan-500/5 text-[10px] font-black uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/10"
-                      >
-                        Generate 30s Sponsor Read Script
-                      </button>
+
+                      {/* Render Ad Read controls */}
+                      <div className="space-y-2 pt-2 border-t border-white/5">
+                        <div className="grid gap-2 grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const text = await generateAdRead({
+                                adProvider: "Trey TV Luxury Watches",
+                                durationSeconds: 30,
+                                tone: currentShow.host_mode ?? "cinematic",
+                              });
+                              setEditingScriptText(text);
+                              toast.success("Sponsor ad read drafted into editor! 📻");
+                            }}
+                            className="w-full text-center py-1.5 rounded-xl border border-dashed border-cyan-400/20 bg-cyan-500/5 text-[9px] font-bold uppercase text-cyan-300 hover:bg-cyan-500/10"
+                          >
+                            Draft Luxury Watch Read
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const text = await generateAdRead({
+                                adProvider: "Tradio Premium Club",
+                                durationSeconds: 30,
+                                tone: currentShow.host_mode ?? "hype",
+                              });
+                              setEditingScriptText(text);
+                              toast.success("Sponsor ad read drafted into editor! 📻");
+                            }}
+                            className="w-full text-center py-1.5 rounded-xl border border-dashed border-cyan-400/20 bg-cyan-500/5 text-[9px] font-bold uppercase text-cyan-300 hover:bg-cyan-500/10"
+                          >
+                            Draft Premium Club Read
+                          </button>
+                        </div>
+
+                        {editingBlock?.block_type === "ad" && (
+                          <div className="p-2.5 bg-cyan-950/20 border border-cyan-500/20 rounded-xl text-[10px] text-cyan-200">
+                            <span className="font-bold">Active Ad Block:</span> You can write/generate your sponsor script above, render it using the Tradio Voice Renderer, and click "Attach" to link it directly to this slot.
+                          </div>
+                        )}
+                      </div>
                     </GlassCard>
 
                     {/* Readiness Checklist / Review Panel */}
@@ -1231,6 +2376,903 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                     </GlassCard>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 6. TIMELINE PREVIEW & ASSEMBLY VIEW */}
+            {subView === "timeline-preview" && currentEpisode && currentShow && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/[0.01] border border-white/5 p-5 rounded-[2rem] shadow-lg">
+                  <div>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono">
+                      <Layers className="h-3 w-3" /> Timeline Preview Console
+                    </span>
+                    <h3 className="text-2xl font-black text-white mt-2">{currentEpisode.title}</h3>
+                    <p className="text-xs text-white/50 mt-1 max-w-xl">
+                      Audit your timeline, check rights, configure render options, and generate a full episode preview candidate.
+                    </p>
+                  </div>
+                  <div className="flex gap-2 self-center shrink-0">
+                    <button
+                      onClick={() => setSubView("editor")}
+                      className="rounded-full border border-white/10 hover:bg-white/5 px-5 py-2 text-xs font-semibold text-white/80"
+                    >
+                      Return to Editor
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const validation = await validateTimeline(currentEpisode.id, episodeBlocks, role);
+                        setTimelineValidation(validation);
+                        toast.success("Timeline clearances updated! 🔍");
+                      }}
+                      className="rounded-full border border-cyan-400/30 bg-cyan-500/10 px-5 py-2 text-xs font-mono font-bold uppercase tracking-widest text-cyan-300 hover:bg-cyan-500/20"
+                    >
+                      Re-Audit Manifest
+                    </button>
+                  </div>
+                </div>
+
+                {/* Main Content Grid */}
+                <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+
+                  {/* Left: Manifest Block Cards list */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-black text-white/45 uppercase tracking-widest font-mono flex items-center gap-1">
+                      <Clock className="h-4 w-4" /> Ordered Segment Sequence
+                    </h4>
+
+                    {/* Overall Warnings Banner */}
+                    {timelineValidation && !timelineValidation.ready && (
+                      <div className="p-4 bg-yellow-500/15 border border-yellow-500/30 rounded-3xl text-yellow-300 text-xs space-y-2">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <AlertCircle className="h-4 w-4" /> Assembly Clearance Blockers:
+                        </div>
+                        <ul className="list-disc pl-5 space-y-1 text-white/70 font-mono text-[10px]">
+                          {timelineValidation.warnings.map((w: string, idx: number) => (
+                            <li key={idx}>{w}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      {episodeBlocks.map((block, idx) => {
+                        const isMissing = timelineValidation?.missing_audio_blocks.includes(block.id);
+                        const isRightsIssue = timelineValidation?.rights_issue_blocks.includes(block.id);
+
+                        return (
+                          <GlassCard
+                            key={block.id}
+                            className={`p-4 border-[0.5px] relative transition-all ${
+                              isMissing ? "border-red-500/20 bg-red-500/[0.01]" :
+                              isRightsIssue ? "border-yellow-500/20 bg-yellow-500/[0.01]" :
+                              "border-white/5 bg-white/[0.005]"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                <div className="h-8 w-8 text-xs font-mono font-bold flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/50">
+                                  #{idx + 1}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-white text-sm">{block.title}</span>
+                                    <span className="rounded-full bg-white/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                                      {block.block_type.replace(/_/g, " ")}
+                                    </span>
+                                    {block.metadata?.locked && (
+                                      <span className="text-[8px] text-yellow-300 bg-yellow-500/10 px-1.5 py-0.5 rounded-full uppercase font-mono font-bold">
+                                        🔒 Locked
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <p className="text-xs text-white/45 mt-1 leading-relaxed">{block.description || "No notes."}</p>
+
+                                  {/* Badges for status */}
+                                  <div className="flex flex-wrap gap-2 mt-2.5">
+                                    {isMissing ? (
+                                      <span className="rounded-full bg-red-500/10 border border-red-500/20 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-red-300 font-mono flex items-center gap-1">
+                                        ⚠️ Missing Audio Source
+                                      </span>
+                                    ) : block.media_url ? (
+                                      <span className="rounded-full bg-cyan-500/10 border border-cyan-400/20 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono flex items-center gap-1">
+                                        🔊 Audio Rendered
+                                      </span>
+                                    ) : (
+                                      <span className="rounded-full bg-white/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">
+                                        No Audio (Script Only)
+                                      </span>
+                                    )}
+
+                                    {block.block_type === "song" && (
+                                      <span className={`rounded-full px-2 py-0.5 text-[8px] font-mono font-bold uppercase tracking-widest ${
+                                        block.clearance_status === "cleared" ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-300" : "bg-yellow-500/10 border border-yellow-500/20 text-yellow-300"
+                                      }`}>
+                                        Clearance: {block.clearance_status}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Per-block audio actions */}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {block.media_url ? (
+                                  <button
+                                    onClick={() => {
+                                      const audio = new Audio(block.media_url || undefined);
+                                      audio.play();
+                                      toast.success(`Previewing block #${idx + 1}... 🔊`);
+                                    }}
+                                    className="h-8 w-8 flex items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20"
+                                    title="Preview Audio Block"
+                                  >
+                                    <Play className="h-3.5 w-3.5" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      setEditingBlock(block);
+                                      setEditingScriptText(block.script_text || "");
+                                      setSubView("editor");
+                                      toast.message("Redirected to script editor");
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg border border-dashed border-white/10 hover:border-white/20 text-[9px] font-black uppercase tracking-widest text-white/45"
+                                  >
+                                    Fix / Render
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 pt-2 border-t border-white/5 flex justify-between text-[9px] font-mono font-bold text-white/30">
+                              <span>EST. START: {Math.round(episodeBlocks.slice(0, idx).reduce((acc, current) => acc + current.duration_seconds, 0) / 60)}m {episodeBlocks.slice(0, idx).reduce((acc, current) => acc + current.duration_seconds, 0) % 60}s</span>
+                              <span>DURATION: {block.duration_seconds}s</span>
+                              <span>FADES: in {block.fade_in_seconds || 0}s / out {block.fade_out_seconds || 0}s</span>
+                            </div>
+                          </GlassCard>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right: Render Settings & Assembly Actions */}
+                  <div className="space-y-6">
+                    {/* 1. Render settings configuration card */}
+                    <GlassCard className="p-5 border-white/10 space-y-4">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                        <Settings className="h-4 w-4 text-cyan-300" /> Assembly Settings
+                      </h4>
+
+                      <div className="space-y-3 pt-2">
+                        <Field label="Output Format">
+                          <select
+                            className={selectClass}
+                            value={renderFormat}
+                            onChange={(e) => setRenderFormat(e.target.value as any)}
+                          >
+                            <option value="mp3">MPEG-3 (.mp3) - Preferred</option>
+                            <option value="wav">Waveform PCM (.wav) - HD</option>
+                          </select>
+                        </Field>
+
+                        <Field label="Target Loudness Standards">
+                          <select
+                            className={selectClass}
+                            value={targetLoudness}
+                            onChange={(e) => setTargetLoudness(parseInt(e.target.value))}
+                          >
+                            <option value="-16">Podcast Preview (-16 LUFS) (Recommended)</option>
+                            <option value="-14">Radio/FM Standard (-14 LUFS)</option>
+                            <option value="-23">EBU R128 Broadcast (-23 LUFS)</option>
+                          </select>
+                        </Field>
+
+                        <div className="grid gap-3 grid-cols-2">
+                          <div className="space-y-1">
+                            <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                              Silence Between Segments
+                            </span>
+                            <input
+                              type="number"
+                              className={`${inputClass} !py-1.5 !px-3 font-mono text-xs`}
+                              step="0.1"
+                              min="0"
+                              max="5"
+                              value={silenceBetween}
+                              onChange={(e) => setSilenceBetween(parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                              Default Crossfades (s)
+                            </span>
+                            <input
+                              type="number"
+                              className={`${inputClass} !py-1.5 !px-3 font-mono text-xs`}
+                              step="0.1"
+                              min="0"
+                              max="10"
+                              value={crossfadeSec}
+                              onChange={(e) => setCrossfadeSec(parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Toggles */}
+                        <div className="space-y-2.5 pt-2 border-t border-white/5">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="accent-cyan-400"
+                              checked={normalizeVoice}
+                              onChange={(e) => setNormalizeVoice(e.target.checked)}
+                            />
+                            <span className="text-[10px] text-white/70 font-semibold font-mono uppercase">
+                              Normalize host voiceovers
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="accent-cyan-400"
+                              checked={includeWatermark}
+                              onChange={(e) => setIncludeWatermark(e.target.checked)}
+                            />
+                            <span className="text-[10px] text-white/70 font-semibold font-mono uppercase">
+                              Embed "Draft Preview" watermark
+                            </span>
+                          </label>
+
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="accent-cyan-400"
+                              checked={useBlockFade}
+                              onChange={(e) => setUseBlockFade(e.target.checked)}
+                            />
+                            <span className="text-[10px] text-white/70 font-semibold font-mono uppercase">
+                              Respect block fade faders
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </GlassCard>
+
+                    {/* 2. Primary Assembly triggers */}
+                    <GlassCard className="p-5 border-cyan-500/20 bg-gradient-to-br from-[#0c1822] via-[#040910] to-black space-y-4">
+                      <div>
+                        <h4 className="text-xs font-black text-white/90 uppercase tracking-widest font-mono">
+                          Tradio Timeline Assembler
+                        </h4>
+                        <p className="text-[10px] text-white/40 mt-1 leading-relaxed">
+                          Compile your entire block sequence into a single high-fidelity review audio.
+                        </p>
+                      </div>
+
+                      {/* Current Assembly Status display */}
+                      {assemblingStatus !== "idle" && (
+                        <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl space-y-2 text-xs">
+                          <div className="flex items-center justify-between font-mono">
+                            <span className="text-white/45 font-bold uppercase">Status:</span>
+                            <span className={`font-black uppercase tracking-wider ${
+                              assemblingStatus === "assembling" ? "text-cyan-400 animate-pulse" :
+                              assemblingStatus === "completed" ? "text-emerald-400" :
+                              assemblingStatus === "failed" ? "text-red-400" :
+                              "text-white"
+                            }`}>
+                              {assemblingStatus}
+                            </span>
+                          </div>
+
+                          {assemblingStatus === "assembling" && (
+                            <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                              <div className="bg-gradient-to-r from-cyan-400 to-blue-500 h-full w-[65%] animate-pulse" />
+                            </div>
+                          )}
+
+                          {assemblingStatus === "completed" && assemblyOutputUrl && (
+                            <div className="pt-2 border-t border-white/5 space-y-2.5">
+                              <span className="block text-[8px] font-black uppercase tracking-widest text-white/45 font-mono">
+                                Player: Assembled Preview Candidate
+                              </span>
+                              <audio
+                                controls
+                                src={assemblyOutputUrl}
+                                className="w-full accent-cyan-400 h-8"
+                              />
+                              <div className="flex gap-1.5 pt-1">
+                                <a
+                                  href={assemblyOutputUrl}
+                                  download={`assembled-${currentEpisode.id}.mp3`}
+                                  className="flex-1 text-center py-1.5 rounded-lg border border-cyan-400/30 bg-cyan-500/10 text-cyan-300 text-[10px] font-bold uppercase tracking-wider"
+                                >
+                                  Download Program
+                                </a>
+                                <div className="mt-4 pt-3 border-t border-white/5 space-y-3 flex-1 flex flex-col">
+                                  <div className="flex items-center justify-between text-[10px] font-mono">
+                                    <span className="text-white/45 uppercase font-bold">Review Status:</span>
+                                    <span className="text-yellow-400 font-black uppercase font-mono">Pending Approval</span>
+                                  </div>
+
+                                  <div className="flex gap-2 w-full">
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        if (assemblyHistory.length > 0) {
+                                          try {
+                                            await submitAssemblyForBroadcastReview(
+                                              null,
+                                              currentShow.id,
+                                              currentEpisode.id,
+                                              assemblyHistory[0].id,
+                                              "Requesting official broadcast approval."
+                                            );
+                                            toast.success("Submitted for Professional Broadcast review! 📻🏆");
+                                            const p = await listPendingReviews();
+                                            setPendingReviews(p);
+                                          } catch (err: any) {
+                                            toast.error(err.message);
+                                          }
+                                        }
+                                      }}
+                                      className="flex-1 text-center py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-[9px] font-bold uppercase tracking-widest"
+                                    >
+                                      Submit Review
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (assemblyHistory.length > 0) {
+                                          setScheduleChannelId(channels[0]?.id || "");
+                                          setScheduleStart(new Date().toISOString().slice(0, 16));
+                                          setScheduleEnd(new Date(Date.now() + 1800 * 1000).toISOString().slice(0, 16));
+                                          setShowScheduleModal(true);
+                                        } else {
+                                          toast.error("Assemble a broadcast candidate first!");
+                                        }
+                                      }}
+                                      className="flex-1 text-center py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-black text-[9px] font-black uppercase tracking-widest shadow-md"
+                                    >
+                                      Schedule Live
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {assemblingStatus === "failed" && assemblyError && (
+                            <div className="text-[10px] font-mono text-red-300 italic leading-relaxed pt-1 border-t border-white/5">
+                              Error: {assemblyError}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-2 pt-1">
+                        <button
+                          type="button"
+                          disabled={assemblingStatus === "assembling"}
+                          onClick={() => handleGenerateAssembly("preview")}
+                          className="w-full text-center py-2.5 rounded-full bg-gradient-to-r from-cyan-500 via-cyan-600 to-blue-600 text-white text-xs font-black uppercase tracking-widest shadow-lg disabled:opacity-40"
+                        >
+                          Generate Assembly Preview
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={assemblingStatus === "assembling" || (timelineValidation && !timelineValidation.ready)}
+                          onClick={() => handleGenerateAssembly("final_candidate")}
+                          className="w-full text-center py-2.5 rounded-full border border-purple-400/40 bg-purple-500/15 text-purple-300 text-xs font-black uppercase tracking-widest disabled:opacity-30"
+                          title={timelineValidation && !timelineValidation.ready ? "Fix manifest warnings to enable final compilation" : ""}
+                        >
+                          Assemble Final Broadcast Candidate
+                        </button>
+                      </div>
+                    </GlassCard>
+
+                    {/* 3. Assembly Renders History list */}
+                    {assemblyHistory.length > 0 && (
+                      <GlassCard className="p-4 space-y-3">
+                        <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono">
+                          Assembly Render Logs
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                          {assemblyHistory.map((a, index) => (
+                            <div key={a.id || index} className="p-2.5 rounded-xl border border-white/5 bg-white/[0.01] flex items-center justify-between text-xs font-mono leading-none">
+                              <div>
+                                <span className="font-bold text-white/70 block capitalize">{a.assembly_type} render</span>
+                                <span className="text-[9px] text-white/40 block mt-1">{a.duration_seconds}s • {a.block_count} blocks • {new Date(a.created_at).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex gap-1.5">
+                                {a.output_audio_url && (
+                                  <button
+                                    onClick={() => {
+                                      const audio = new Audio(a.output_audio_url);
+                                      audio.play();
+                                      toast.success("Playing historical assembly... 🔊");
+                                    }}
+                                    className="h-6 w-6 flex items-center justify-center rounded bg-cyan-500/10 text-cyan-300"
+                                    title="Play assembly preview"
+                                  >
+                                    <Play className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </GlassCard>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 7. CREATE CHANNEL FLOW */}
+            {subView === "create-channel" && (
+              <div className="max-w-2xl mx-auto animate-scale-in">
+                <GlassCard className="p-6 md:p-8 space-y-6">
+                  <div>
+                    <h3 className="text-xl font-black text-white">Create Broadcast Channel</h3>
+                    <p className="text-xs text-white/55 mt-1 leading-relaxed">
+                      Establish a public or private Tradio frequency. Program your assembled episodes and let listeners tune in live.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleCreateChannel} className="space-y-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Channel Title">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="e.g. Trey FM Street Anthems"
+                          value={newChannelTitle}
+                          onChange={(e) => {
+                            setNewChannelTitle(e.target.value);
+                            setNewChannelSlug(e.target.value.toLowerCase().replace(/[^a-z0-8]+/g, "-").replace(/(^-|-$)/g, ""));
+                          }}
+                        />
+                      </Field>
+
+                      <Field label="Channel Slug (Frequency slug)">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="e.g. street-anthems"
+                          value={newChannelSlug}
+                          onChange={(e) => setNewChannelSlug(e.target.value)}
+                        />
+                      </Field>
+                    </div>
+
+                    <Field label="Description">
+                      <textarea
+                        rows={3}
+                        className={`${inputClass} resize-none`}
+                        placeholder="Atmospheric rap loops and exclusive beat playouts curated live by Trey TV creators."
+                        value={newChannelDesc}
+                        onChange={(e) => setNewChannelDesc(e.target.value)}
+                      />
+                    </Field>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Field label="Channel Format Type">
+                        <select
+                          className={selectClass}
+                          value={newChannelType}
+                          onChange={(e) => setNewChannelType(e.target.value as ChannelType)}
+                        >
+                          <option value="radio">Radio Station</option>
+                          <option value="artist_station">Artist Station</option>
+                          <option value="dj_station">DJ Station</option>
+                          <option value="producer_station">Producer Station</option>
+                          <option value="talk_station">Talk Station</option>
+                          <option value="discovery_station">Discovery & Premire Station</option>
+                          <option value="event_station">Event Station</option>
+                        </select>
+                      </Field>
+
+                      <Field label="Visibility / Access Gating">
+                        <select
+                          className={selectClass}
+                          value={newChannelVisibility}
+                          onChange={(e) => setNewChannelVisibility(e.target.value as ChannelVisibility)}
+                        >
+                          <option value="public">Public (Everyone can tune in)</option>
+                          <option value="private">Private (Only owner/admins can access)</option>
+                          <option value="unlisted">Unlisted (Must have link)</option>
+                        </select>
+                      </Field>
+                    </div>
+
+                    <Field label="Cover Art Image URL">
+                      <input
+                        type="text"
+                        className={inputClass}
+                        placeholder="https://unsplash.com/..."
+                        value={newChannelCover}
+                        onChange={(e) => setNewChannelCover(e.target.value)}
+                      />
+                    </Field>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <Field label="Mood Tags (comma sep)">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="chill, atmospheric"
+                          value={newChannelMoods}
+                          onChange={(e) => setNewChannelMoods(e.target.value)}
+                        />
+                      </Field>
+
+                      <Field label="Genre Tags (comma sep)">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="lofi, hiphop"
+                          value={newChannelGenres}
+                          onChange={(e) => setNewChannelGenres(e.target.value)}
+                        />
+                      </Field>
+
+                      <Field label="Target Audience">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          placeholder="late night drivers"
+                          value={newChannelAudience}
+                          onChange={(e) => setNewChannelAudience(e.target.value)}
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setSubView("dashboard")}
+                        className="rounded-full border border-white/10 px-6 py-2.5 text-xs font-semibold text-white/70 hover:bg-white/5"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-6 py-2.5 text-xs uppercase tracking-widest hover:brightness-110 shadow-lg"
+                      >
+                        Create Frequency
+                      </button>
+                    </div>
+                  </form>
+                </GlassCard>
+              </div>
+            )}
+
+            {/* 8. CHANNEL DETAIL & SCHEDULING MANAGER SCREEN */}
+            {subView === "channel-detail" && selectedChannel && (
+              <div className="space-y-8 animate-fade-in">
+                {/* Header card */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white/[0.01] border border-white/5 p-6 rounded-[2rem] shadow-xl">
+                  <div>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-cyan-300 font-mono">
+                      <Radio className="h-3 w-3 animate-pulse" /> Channel Console
+                    </span>
+                    <h3 className="text-2xl font-black text-white mt-2">{selectedChannel.title}</h3>
+                    <p className="text-xs text-white/50 mt-1 max-w-xl">
+                      {selectedChannel.description || "No description provided."}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => setSubView("dashboard")}
+                      className="rounded-full border border-white/10 hover:bg-white/5 px-5 py-2 text-xs font-semibold text-white/80"
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      onClick={() => handlePlayChannel(selectedChannel)}
+                      className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black px-5 py-2 text-xs uppercase tracking-widest shadow-md flex items-center gap-1"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-white" /> Tune In
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+                  {/* Left: Queue planyout list */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black text-white/45 uppercase tracking-widest font-mono flex items-center gap-1">
+                        <Calendar className="h-4 w-4" /> Broadcast Program Schedule Queue
+                      </h4>
+                      <span className="text-[10px] font-mono text-cyan-400 font-bold">
+                        {upcomingBroadcasts.length} SLOTS QUEUED
+                      </span>
+                    </div>
+
+                    {upcomingBroadcasts.length === 0 ? (
+                      <GlassCard className="p-8 text-center space-y-3 border-dashed border-white/10">
+                        <Calendar className="h-8 w-8 text-white/20 mx-auto" />
+                        <div className="text-sm font-bold text-white/80">Schedule is empty</div>
+                        <p className="text-xs text-white/50 max-w-xs mx-auto">
+                          Choose an episode with a compiled assembly in Show Lanes and schedule it here.
+                        </p>
+                      </GlassCard>
+                    ) : (
+                      <div className="space-y-3">
+                        {upcomingBroadcasts.map((item, idx) => {
+                          const startStr = item.scheduled_start_at ? new Date(item.scheduled_start_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
+                          const endStr = item.scheduled_end_at ? new Date(item.scheduled_end_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "N/A";
+                          return (
+                            <GlassCard key={item.id} className="p-4 border-white/5 bg-white/[0.005]">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 text-xs font-mono font-bold flex flex-col items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-300">
+                                    <span className="text-[8px] opacity-60">SLOT</span>
+                                    <span>#{idx + 1}</span>
+                                  </div>
+                                  <div>
+                                    <h5 className="font-bold text-white text-sm">
+                                      {(item as any).show?.title || "Tradio Show"}
+                                    </h5>
+                                    <p className="text-xs text-white/55 mt-0.5">
+                                      {(item as any).episode?.title || "Scheduled Episode"}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-2 font-mono text-[9px] font-bold text-white/45">
+                                      <span className="text-cyan-400">{startStr} - {endStr}</span>
+                                      <span>•</span>
+                                      <span className="capitalize">{item.queue_status}</span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  {/* Sort reordering controls */}
+                                  <button
+                                    disabled={idx === 0}
+                                    onClick={async () => {
+                                      const order = upcomingBroadcasts.map(b => b.id);
+                                      const temp = order[idx];
+                                      order[idx] = order[idx - 1];
+                                      order[idx - 1] = temp;
+                                      await reorderBroadcastQueue(selectedChannel.id, order);
+                                      const q = await getUpcomingBroadcastsForChannel(selectedChannel.id);
+                                      setUpcomingBroadcasts(q);
+                                    }}
+                                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30"
+                                    title="Move Up"
+                                  >
+                                    <ArrowUp className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    disabled={idx === upcomingBroadcasts.length - 1}
+                                    onClick={async () => {
+                                      const order = upcomingBroadcasts.map(b => b.id);
+                                      const temp = order[idx];
+                                      order[idx] = order[idx + 1];
+                                      order[idx + 1] = temp;
+                                      await reorderBroadcastQueue(selectedChannel.id, order);
+                                      const q = await getUpcomingBroadcastsForChannel(selectedChannel.id);
+                                      setUpcomingBroadcasts(q);
+                                    }}
+                                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 disabled:opacity-30"
+                                    title="Move Down"
+                                  >
+                                    <ArrowDown className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm("Remove this item from the playout queue?")) {
+                                        await removeBroadcastQueueItem(item.id);
+                                        const q = await getUpcomingBroadcastsForChannel(selectedChannel.id);
+                                        setUpcomingBroadcasts(q);
+                                        toast.success("Broadcast program removed.");
+                                      }
+                                    }}
+                                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 hover:bg-red-500/20"
+                                    title="Remove from schedule"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </GlassCard>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Playout State / Config */}
+                  <div className="space-y-6">
+                    <GlassCard className="p-5 border-cyan-500/15 space-y-4">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                        <Globe className="h-4 w-4 text-cyan-300 animate-pulse" /> Live Now Playing
+                      </h4>
+
+                      {activeNowPlaying && activeNowPlaying.queueItem ? (
+                        <div className="space-y-3 pt-1">
+                          <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl">
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-400/35 bg-emerald-500/15 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-emerald-200">
+                              <Radio className="h-2 w-2 animate-ping" /> Currently Broadcasting
+                            </span>
+                            <h5 className="font-bold text-white text-base mt-2.5">{activeNowPlaying.showTitle}</h5>
+                            <p className="text-xs text-white/60 mt-0.5">{activeNowPlaying.episodeTitle}</p>
+                            <p className="text-[10px] text-white/40 font-mono mt-1">Duration: {activeNowPlaying.durationSeconds}s</p>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handlePlayChannel(selectedChannel)}
+                              className="flex-1 text-center py-2 rounded-lg bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest shadow-md"
+                            >
+                              Play Along Live
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center p-6 bg-white/[0.01] border border-white/5 rounded-2xl text-xs space-y-2">
+                          <Radio className="h-6 w-6 text-white/20 mx-auto" />
+                          <div className="font-bold text-white/70">Playout Offline / Looping Fallback</div>
+                          <p className="text-[10px] text-white/40 max-w-[180px] mx-auto">
+                            No scheduled show is active at this hour. Playing looping baseline drops.
+                          </p>
+                        </div>
+                      )}
+                    </GlassCard>
+
+                    <GlassCard className="p-5 space-y-4">
+                      <h4 className="text-xs font-black text-white/80 uppercase tracking-widest font-mono flex items-center gap-1.5">
+                        <Settings className="h-4 w-4 text-purple-300" /> Channel Properties
+                      </h4>
+
+                      <div className="space-y-3 text-xs pt-1">
+                        <div>
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">Slug</span>
+                          <span className="font-mono text-purple-300 font-bold block mt-1">/{selectedChannel.slug}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">Format</span>
+                          <span className="capitalize block mt-1">{selectedChannel.channel_type.replace(/_/g, " ")}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">Visibility</span>
+                          <span className="capitalize block mt-1">{selectedChannel.visibility}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[8px] font-black uppercase tracking-widest text-white/40 font-mono">Channel Status</span>
+                          <select
+                            className={`${selectClass} !py-2 !px-3 font-mono text-xs mt-1`}
+                            value={selectedChannel.status}
+                            onChange={async (e) => {
+                              try {
+                                const nextChan = await updateBroadcastChannel(selectedChannel.id, { status: e.target.value as any });
+                                setSelectedChannel(nextChan);
+                                toast.success(`Channel status set to: ${e.target.value}`);
+                              } catch (err: any) {
+                                toast.error(err.message);
+                              }
+                            }}
+                          >
+                            <option value="draft">Draft (Private)</option>
+                            <option value="active">Active (Online)</option>
+                            <option value="paused">Paused (Muted)</option>
+                            <option value="hidden">Hidden</option>
+                            <option value="archived">Archived</option>
+                          </select>
+                        </div>
+                      </div>
+                    </GlassCard>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9. SCHEDULE BROADCAST MODAL (overlay popup) */}
+            {showScheduleModal && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                <GlassCard className="p-6 md:p-8 max-w-md w-full space-y-6 relative border-cyan-400/25 shadow-2xl">
+                  <button
+                    onClick={() => setShowScheduleModal(false)}
+                    className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+
+                  <div>
+                    <h3 className="text-xl font-black text-white flex items-center gap-1.5">
+                      <Calendar className="h-5 w-5 text-cyan-300" /> Schedule Episode Playout
+                    </h3>
+                    <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                      Program your final compiled assembly onto a public channel queue. Timezone defaulted to America/Chicago.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleScheduleBroadcast} className="space-y-4">
+                    <Field label="Select Channel / Frequency">
+                      <select
+                        className={selectClass}
+                        value={scheduleChannelId}
+                        onChange={(e) => setScheduleChannelId(e.target.value)}
+                        required
+                      >
+                        <option value="">-- Choose Channel --</option>
+                        {channels.map(c => (
+                          <option key={c.id} value={c.id}>{c.title}</option>
+                        ))}
+                      </select>
+                    </Field>
+
+                    <div className="grid gap-4 grid-cols-2">
+                      <Field label="Scheduled Start">
+                        <input
+                          type="datetime-local"
+                          className={inputClass}
+                          value={scheduleStart}
+                          onChange={(e) => setScheduleStart(e.target.value)}
+                          required
+                        />
+                      </Field>
+
+                      <Field label="Scheduled End">
+                        <input
+                          type="datetime-local"
+                          className={inputClass}
+                          value={scheduleEnd}
+                          onChange={(e) => setScheduleEnd(e.target.value)}
+                          required
+                        />
+                      </Field>
+                    </div>
+
+                    <div className="space-y-2.5 pt-2 border-t border-white/5">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="accent-cyan-400"
+                          checked={scheduleIsLive}
+                          onChange={(e) => setScheduleIsLive(e.target.checked)}
+                        />
+                        <span className="text-[10px] text-white/70 font-semibold font-mono uppercase">
+                          Set as Live Booking Slot
+                        </span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="accent-cyan-400"
+                          checked={scheduleIsReplay}
+                          onChange={(e) => setScheduleIsReplay(e.target.checked)}
+                        />
+                        <span className="text-[10px] text-white/70 font-semibold font-mono uppercase">
+                          Eligible for automatic replays
+                        </span>
+                      </label>
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowScheduleModal(false)}
+                        className="rounded-full border border-white/10 px-5 py-2 text-xs font-semibold text-white/70 hover:bg-white/5"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-6 py-2"
+                      >
+                        Schedule Slot
+                      </button>
+                    </div>
+                  </form>
+                </GlassCard>
               </div>
             )}
           </div>

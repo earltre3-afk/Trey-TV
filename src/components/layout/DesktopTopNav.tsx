@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import {
   Home,
@@ -30,6 +30,7 @@ import { currentUser } from "@/lib/mock-data";
 import { useNotifications } from "@/lib/notifications-store";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
+import { preloadTradioModule } from "@/tradio/preload";
 
 type NavLink = { to: string; icon?: typeof Home; label: string; badge?: number };
 
@@ -38,7 +39,7 @@ const guestLinks: readonly NavLink[] = [
   { to: "/explore", icon: Compass, label: "Discover" },
   { to: "/guide", icon: CalendarDays, label: "Guide" },
   { to: "/games", label: "Games" },
-  // Tradio requires a signed-in Trey TV account — hidden for guests.
+  { to: "/tradio", icon: Music, label: "Tradio" },
 ];
 
 const signedInLinks: readonly NavLink[] = [
@@ -79,6 +80,13 @@ export function DesktopTopNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { unreadCount } = useNotifications();
 
+  useEffect(() => {
+    const warmup = window.setTimeout(() => {
+      void preloadTradioModule();
+    }, 250);
+    return () => window.clearTimeout(warmup);
+  }, []);
+
   const isActive = (p: string) => (p === "/" ? pathname === "/" : pathname.startsWith(p));
   const links = isGuest ? guestLinks : signedInLinks;
   const profileUid = user?.uid ?? currentUser.uid;
@@ -105,6 +113,8 @@ export function DesktopTopNav() {
                 key={l.to}
                 to={l.to}
                 preload="intent"
+                onPointerEnter={l.to === "/tradio" ? () => void preloadTradioModule() : undefined}
+                onFocus={l.to === "/tradio" ? () => void preloadTradioModule() : undefined}
                 className={`relative inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition ${
                   active
                     ? "text-foreground font-semibold bg-white/5 ring-1 ring-white/10"

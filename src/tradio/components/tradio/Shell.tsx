@@ -29,12 +29,12 @@ import { hasAnyRole } from "./auth/roleUtils";
 import BottomNav, { TabKey } from "./BottomNav";
 import MiniPlayer from "./MiniPlayer";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
+import HomeScreen from "./screens/Home";
 import type { StationsDestination } from "./screens/StationsHub";
 import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 
-const HomeScreen = lazy(() => import("./screens/Home"));
 const SearchScreen = lazy(() => import("./screens/Search"));
 const LibraryScreen = lazy(() => import("./screens/Library"));
 const StudioScreen = lazy(() => import("./screens/Studio"));
@@ -311,11 +311,13 @@ export const TradioShellContent: React.FC = () => {
     return { kind: "tab", tab: "home" };
   });
   const [playerOpen, setPlayerOpen] = useState(false);
+  const [hasLoadedPlayer, setHasLoadedPlayer] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [songWarRole, setSongWarRole] = useState<SongWarRole>("fan");
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const openPlayer = useCallback(() => {
     void loadNowPlayingScreen();
+    setHasLoadedPlayer(true);
     setPlayerOpen(true);
   }, []);
 
@@ -1133,24 +1135,7 @@ export const TradioShellContent: React.FC = () => {
           className="tradio-responsive-main flex-1 overflow-y-auto pb-[calc(13rem_+_env(safe-area-inset-bottom))] lg:pb-12"
         >
           <TradioLiveNowBar />
-          <Suspense
-            fallback={
-              <div className="flex flex-col items-center justify-center p-16 min-h-[320px] text-center animate-pulse">
-                <div className="relative mb-4">
-                  <span
-                    aria-hidden="true"
-                    className="absolute -inset-3 rounded-full bg-fuchsia-500/15 blur-lg animate-pulse"
-                  />
-                  <div className="size-12 rounded-full border-2 border-fuchsia-500/20 border-t-fuchsia-500 animate-spin" />
-                </div>
-                <p className="text-[10px] text-fuchsia-400 font-mono tracking-[0.25em] uppercase">
-                  Tuning Signal...
-                </p>
-              </div>
-            }
-          >
-            {renderScreen()}
-          </Suspense>
+          <Suspense fallback={null}>{renderScreen()}</Suspense>
         </div>
 
         {/* Mobile mini player + bottom nav stack */}
@@ -1173,8 +1158,14 @@ export const TradioShellContent: React.FC = () => {
         </div>
 
         {/* Now playing modal */}
-        {playerOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in">
+        {hasLoadedPlayer && (
+          <div
+            className={`fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl transition-all duration-300 ease-out ${
+              playerOpen
+                ? "opacity-100 pointer-events-auto translate-y-0"
+                : "opacity-0 pointer-events-none translate-y-12"
+            }`}
+          >
             <div className="w-full min-h-screen">
               <Suspense fallback={<NowPlayingModalFallback />}>
                 <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
@@ -1186,12 +1177,12 @@ export const TradioShellContent: React.FC = () => {
         {/* Mobile nav drawer with all screens */}
         {navOpen && (
           <div
-            className="fixed inset-0 z-[80] flex items-end justify-center overflow-hidden overscroll-contain bg-black/85 backdrop-blur-xl lg:hidden animate-fade-in"
+            className="fixed inset-0 z-[80] flex items-start justify-center overflow-hidden overscroll-contain bg-black/85 backdrop-blur-xl lg:hidden animate-fade-in pt-4"
             onClick={() => setNavOpen(false)}
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="flex h-[min(92dvh,760px)] w-full max-w-full md:max-w-[640px] flex-col overflow-hidden rounded-t-[32px] border border-white/10 liquid-glass !bg-none shadow-premium-lg animate-scale-in"
+              className="flex h-[min(92dvh,760px)] w-full max-w-full md:max-w-[640px] flex-col overflow-hidden rounded-b-[32px] border border-white/10 liquid-glass !bg-none shadow-premium-lg animate-scale-in mt-4"
             >
               <div className="flex shrink-0 items-start justify-between px-6 pb-4 pt-6">
                 <div>
@@ -1201,6 +1192,7 @@ export const TradioShellContent: React.FC = () => {
                   <div className="text-xs text-white/50 mt-1">Jump to any Tradio module</div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setNavOpen(false)}
                   aria-label="Close"
                   className="size-9 grid place-items-center rounded-full glass shrink-0 transition-transform active:scale-95"
@@ -1303,7 +1295,14 @@ export const TradioShellContent: React.FC = () => {
               </div>
               {/* Premium Promotional Block */}
               <div className="shrink-0 px-6 pt-2">
-                <div className="p-3 rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView({ kind: "broadcastStudio" });
+                    setNavOpen(false);
+                  }}
+                  className="w-full rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple flex items-center gap-3 p-3 text-left transition hover:-translate-y-[1px] hover:border-white/20"
+                >
                   <Sparkles className="size-6 text-purple-300 animate-pulse shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-white">Tradio Broadcast Suite</div>
@@ -1311,7 +1310,8 @@ export const TradioShellContent: React.FC = () => {
                       Unlock premium AI show planning & live broadcast slots.
                     </div>
                   </div>
-                </div>
+                  <ChevronRight className="size-4 text-white/70" />
+                </button>
               </div>
 
               {/* Profile Card Section */}
@@ -1352,15 +1352,13 @@ export const TradioShellContent: React.FC = () => {
 
 export const TradioShell: React.FC = () => {
   return (
-    <PlayerProvider>
-      <TradioIdentityProvider>
-        <AccessRequestsProvider>
-          <MessengerBridgeProvider>
-            <TradioShellContent />
-          </MessengerBridgeProvider>
-        </AccessRequestsProvider>
-      </TradioIdentityProvider>
-    </PlayerProvider>
+    <TradioIdentityProvider>
+      <AccessRequestsProvider>
+        <MessengerBridgeProvider>
+          <TradioShellContent />
+        </MessengerBridgeProvider>
+      </AccessRequestsProvider>
+    </TradioIdentityProvider>
   );
 };
 

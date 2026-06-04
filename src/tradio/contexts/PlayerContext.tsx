@@ -177,6 +177,8 @@ export interface PlaybackContext {
   activeCastDevice: string | null;
   startCast: (deviceId?: string) => void | Promise<void>;
   stopCast: () => void | Promise<void>;
+  enhancerPreset: string;
+  setEnhancerPreset: (preset: string) => void;
 }
 
 interface PlayOptions {
@@ -240,12 +242,209 @@ const createQueue = (items: PlaybackItem[], source?: PlaybackSource): PlaybackQu
   items: items.map(normalizePlaybackItem),
 });
 
+export const ENHANCER_PRESETS: Record<
+  string,
+  {
+    lowGain: number;
+    midGain: number;
+    highGain: number;
+    compThreshold: number;
+    compKnee: number;
+    compRatio: number;
+    compAttack: number;
+    compRelease: number;
+    gain: number;
+    saturation: number;
+    label: string;
+    description: string;
+  }
+> = {
+  off: {
+    lowGain: 0,
+    midGain: 0,
+    highGain: 0,
+    compThreshold: 0,
+    compKnee: 30,
+    compRatio: 1,
+    compAttack: 0.03,
+    compRelease: 0.1,
+    gain: 1.0,
+    saturation: 0,
+    label: "Bypass (Dry)",
+    description: "No enhancer processing, flat dry signal output.",
+  },
+  commercial_master: {
+    lowGain: 4.2, // Premium warm weight
+    midGain: 1.5, // Crisp vocal push
+    highGain: 6.2, // Crystal clear sparkle & air
+    compThreshold: -15, // Smooth master limiter glue
+    compKnee: 12,
+    compRatio: 4.0,
+    compAttack: 0.015,
+    compRelease: 0.08,
+    gain: 1.32, // Commercial volume boost
+    saturation: 18, // Rich tape saturation harmonics
+    label: "Commercial Master (Trey TV Master)",
+    description: "Rich tube tape saturation, high-shelf clarity, and professional master limiter for premium commercial loudness.",
+  },
+  bass_boost: {
+    lowGain: 8.5, // Massive sub weight
+    midGain: -1.2,
+    highGain: 3.2,
+    compThreshold: -11,
+    compKnee: 15,
+    compRatio: 3.5,
+    compAttack: 0.035,
+    compRelease: 0.12,
+    gain: 1.08,
+    saturation: 12,
+    label: "Club Sub Bass Boost",
+    description: "Pumps deep sub-bass and glues transients for maximum club-ready punch.",
+  },
+  vocal_presence: {
+    lowGain: -1.8, // Low-end rumble filter
+    midGain: 5.5, // Direct acoustic focus
+    highGain: 4.0,
+    compThreshold: -17,
+    compKnee: 8,
+    compRatio: 3.8,
+    compAttack: 0.01,
+    compRelease: 0.09,
+    gain: 1.18,
+    saturation: 10,
+    label: "Acoustic Vocal Presence",
+    description: "Cleans out low-end rumble and centers the vocal performance directly in front of the soundstage.",
+  },
+};
+
+const makeDistortionCurve = (amount: number) => {
+  const k = typeof amount === "number" ? amount : 50;
+  const n_samples = 44100;
+  const curve = new Float32Array(n_samples);
+  for (let i = 0; i < n_samples; ++i) {
+    const x = (i * 2) / n_samples - 1;
+    curve[i] = ((3 + k) * x * 20 * (Math.PI / 180)) / (Math.PI + k * Math.abs(x));
+  }
+  return curve;
+};
+
 const Ctx = createContext<PlaybackContext | null>(null);
 
 export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const bufferTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasRealMediaRef = useRef(false);
+
+  // --- Web Audio API DSP Song Enhancer ---
+  const [enhancerPreset, setEnhancerPresetState] = useState<string>("commercial_master");
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const compressorNodeRef = useRef<DynamicsCompressorNode | null>(null);
+  const lowShelfNodeRef = useRef<BiquadFilterNode | null>(null);
+  const midPeakingNodeRef = useRef<BiquadFilterNode | null>(null);
+  const highShelfNodeRef = useRef<BiquadFilterNode | null>(null);
+  const saturationNodeRef = useRef<WaveShaperNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+
+  const applyPreset = useCallback((preset: string) => {
+    const config = ENHANCER_PRESETS[preset];
+    if (!config) return;
+
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
+
+    const t = ctx.currentTime;
+
+    // EQ Gains (using linearRampToValueAtTime to safely allow 0 and prevent audio pops)
+    lowShelfNodeRef.current?.gain.linearRampToValueAtTime(config.lowGain, t + 0.15);
+    midPeakingNodeRef.current?.gain.linearRampToValueAtTime(config.midGain, t + 0.15);
+    highShelfNodeRef.current?.gain.linearRampToValueAtTime(config.highGain, t + 0.15);
+
+    // Compressor/Limiter master settings
+    if (compressorNodeRef.current) {
+      compressorNodeRef.current.threshold.linearRampToValueAtTime(config.compThreshold, t + 0.1);
+      compressorNodeRef.current.knee.linearRampToValueAtTime(config.compKnee, t + 0.1);
+      compressorNodeRef.current.ratio.linearRampToValueAtTime(config.compRatio, t + 0.1);
+      compressorNodeRef.current.attack.linearRampToValueAtTime(config.compAttack, t + 0.1);
+      compressorNodeRef.current.release.linearRampToValueAtTime(config.compRelease, t + 0.1);
+    }
+
+    // Harmonic Soft-Clipping Saturation Curve
+    if (saturationNodeRef.current) {
+      saturationNodeRef.current.curve = config.saturation > 0 ? makeDistortionCurve(config.saturation) : null;
+    }
+
+    // Level-matched compensation gain
+    gainNodeRef.current?.gain.linearRampToValueAtTime(config.gain, t + 0.15);
+  }, []);
+
+  const initWebAudio = useCallback(() => {
+    if (audioContextRef.current) {
+      if (audioContextRef.current.state === "suspended") {
+        void audioContextRef.current.resume();
+      }
+      return;
+    }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const ctx = new AudioContextClass();
+      audioContextRef.current = ctx;
+
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+
+      const lowShelf = ctx.createBiquadFilter();
+      lowShelf.type = "lowshelf";
+      lowShelf.frequency.value = 80;
+      lowShelfNodeRef.current = lowShelf;
+
+      const midPeaking = ctx.createBiquadFilter();
+      midPeaking.type = "peaking";
+      midPeaking.frequency.value = 2500;
+      midPeaking.Q.value = 1.0;
+      midPeakingNodeRef.current = midPeaking;
+
+      const highShelf = ctx.createBiquadFilter();
+      highShelf.type = "highshelf";
+      highShelf.frequency.value = 12000;
+      highShelfNodeRef.current = highShelf;
+
+      const saturation = ctx.createWaveShaper();
+      saturation.oversample = "4x";
+      saturationNodeRef.current = saturation;
+
+      const compressor = ctx.createDynamicsCompressor();
+      compressorNodeRef.current = compressor;
+
+      const gainNode = ctx.createGain();
+      gainNodeRef.current = gainNode;
+
+      // Connect Signal Path: Source -> LowShelf -> MidPeaking -> HighShelf -> Saturation -> Compressor -> Gain -> Output Destination
+      source.connect(lowShelf);
+      lowShelf.connect(midPeaking);
+      midPeaking.connect(highShelf);
+      highShelf.connect(saturation);
+      saturation.connect(compressor);
+      compressor.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      // Apply initial preset parameters
+      applyPreset(enhancerPreset);
+    } catch (err) {
+      console.warn("[Tradio DSP] Web Audio API context not started or blocked by browser policy.", err);
+    }
+  }, [applyPreset, enhancerPreset]);
+
+  const setEnhancerPreset = useCallback((preset: string) => {
+    setEnhancerPresetState(preset);
+    applyPreset(preset);
+  }, [applyPreset]);
+
   const [currentItem, setCurrentItem] = useState<PlaybackItem | null>(null);
   const [currentSource, setCurrentSource] = useState<PlaybackSource | null>(null);
   const [playbackQueue, setPlaybackQueue] = useState<PlaybackQueue>(() => createQueue([]));
@@ -619,6 +818,27 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     [],
   );
 
+  // Automatically pause Tradio playback if another audio/video media element starts playing on the page
+  useEffect(() => {
+    const handleGlobalPlay = (event: Event) => {
+      const target = event.target as HTMLMediaElement;
+      if (!target) return;
+
+      const isMedia = target.tagName === "AUDIO" || target.tagName === "VIDEO";
+      const isOurAudio = target === audioRef.current;
+
+      if (isMedia && !isOurAudio) {
+        console.log("[Tradio Player] Background pause triggered by page media event.");
+        pause();
+      }
+    };
+
+    document.addEventListener("play", handleGlobalPlay, true);
+    return () => {
+      document.removeEventListener("play", handleGlobalPlay, true);
+    };
+  }, [pause]);
+
   const session = useMemo<PlaybackSession>(
     () => ({
       id: currentItem ? `session-${currentItem.id}` : "session-idle",
@@ -661,6 +881,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       activeCastDevice,
       startCast,
       stopCast,
+      enhancerPreset,
+      setEnhancerPreset,
       playItem,
       playStation,
       playQueue,
@@ -711,6 +933,8 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       activeCastDevice,
       startCast,
       stopCast,
+      enhancerPreset,
+      setEnhancerPreset,
       playItem,
       playStation,
       playQueue,
@@ -744,6 +968,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         data-is-music="true"
         data-castable="true"
         preload="metadata"
+        crossOrigin="anonymous"
         onLoadedMetadata={(event) => {
           const nextDuration = event.currentTarget.duration;
           if (Number.isFinite(nextDuration)) setDuration(nextDuration);
@@ -751,7 +976,10 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         onCanPlay={() => {
           if (status === "buffering") setStatus("playing");
         }}
-        onPlaying={() => setStatus("playing")}
+        onPlaying={() => {
+          setStatus("playing");
+          initWebAudio();
+        }}
         onPause={() => {
           if (status === "playing") setStatus("paused");
         }}
@@ -765,7 +993,19 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }}
         onEnded={() => nextRef.current()}
         onError={() => {
-          if (currentItem?.src) setStatus("error");
+          if (currentItem?.src) {
+            const audio = audioRef.current;
+            if (audio && audio.crossOrigin === "anonymous") {
+              // Graceful fallback if CORS anonymous is blocked on external servers:
+              // Strip CORS, reload, and bypass DSP so audio still plays safely!
+              console.warn("[Tradio Enhancer] CORS anonymous restriction hit. Falling back to raw audio.");
+              audio.removeAttribute("crossOrigin");
+              audio.load();
+              audio.play().catch(() => setStatus("error"));
+            } else {
+              setStatus("error");
+            }
+          }
         }}
       />
     </Ctx.Provider>
