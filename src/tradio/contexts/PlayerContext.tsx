@@ -242,6 +242,15 @@ const createQueue = (items: PlaybackItem[], source?: PlaybackSource): PlaybackQu
   items: items.map(normalizePlaybackItem),
 });
 
+const isCorsSafeAudioSource = (src: string): boolean => {
+  try {
+    const url = new URL(src, window.location.href);
+    return url.protocol === "blob:" || url.protocol === "data:" || url.origin === window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
 export const ENHANCER_PRESETS: Record<
   string,
   {
@@ -334,6 +343,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const bufferTimer = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hasRealMediaRef = useRef(false);
+  const webAudioEligibleRef = useRef(false);
 
   // --- Web Audio API DSP Song Enhancer ---
   const [enhancerPreset, setEnhancerPresetState] = useState<string>("commercial_master");
@@ -379,6 +389,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, []);
 
   const initWebAudio = useCallback(() => {
+    if (!webAudioEligibleRef.current) return;
     if (audioContextRef.current) {
       if (audioContextRef.current.state === "suspended") {
         void audioContextRef.current.resume();
@@ -723,8 +734,18 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (!currentItem?.src) {
       audio.pause();
       audio.removeAttribute("src");
+      audio.removeAttribute("crossOrigin");
+      webAudioEligibleRef.current = false;
       audio.load();
       return;
+    }
+
+    const shouldUseCors = isCorsSafeAudioSource(currentItem.src);
+    webAudioEligibleRef.current = shouldUseCors;
+    if (shouldUseCors) {
+      audio.crossOrigin = "anonymous";
+    } else {
+      audio.removeAttribute("crossOrigin");
     }
 
     if (audio.src !== new URL(currentItem.src, window.location.href).toString()) {
@@ -968,7 +989,6 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         data-is-music="true"
         data-castable="true"
         preload="metadata"
-        crossOrigin="anonymous"
         onLoadedMetadata={(event) => {
           const nextDuration = event.currentTarget.duration;
           if (Number.isFinite(nextDuration)) setDuration(nextDuration);
@@ -978,7 +998,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }}
         onPlaying={() => {
           setStatus("playing");
-          initWebAudio();
+          if (webAudioEligibleRef.current) initWebAudio();
         }}
         onPause={() => {
           if (status === "playing") setStatus("paused");
@@ -999,6 +1019,7 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               // Graceful fallback if CORS anonymous is blocked on external servers:
               // Strip CORS, reload, and bypass DSP so audio still plays safely!
               console.warn("[Tradio Enhancer] CORS anonymous restriction hit. Falling back to raw audio.");
+              webAudioEligibleRef.current = false;
               audio.removeAttribute("crossOrigin");
               audio.load();
               audio.play().catch(() => setStatus("error"));
