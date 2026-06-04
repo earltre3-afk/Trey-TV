@@ -202,15 +202,11 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         role="dialog"
         aria-modal="true"
         aria-label="Tradio Prescribe Me"
-        className="fixed bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] left-1/2 z-[101] flex max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] w-[calc(100vw_-_1rem)] max-w-[390px] -translate-x-1/2 flex-col gap-3 overflow-y-auto overscroll-contain rounded-[24px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 p-3.5 text-left shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] backdrop-blur-3xl scrollbar-none luxury-grain animate-emerge-from-button sm:right-6 sm:left-auto sm:w-[420px] sm:max-w-[420px] sm:translate-x-0 sm:rounded-[32px] sm:p-5 sm:bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] sm:max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] sm:animate-slide-up-modal"
+        className="fixed bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] left-1/2 z-[101] flex max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] w-[calc(100vw_-_1rem)] max-w-[390px] -translate-x-1/2 flex-col gap-3 overflow-y-auto overscroll-contain rounded-[24px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 p-3.5 text-left shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] backdrop-blur-3xl scrollbar-none luxury-grain animate-emerge-from-button sm:right-6 sm:left-auto sm:w-[420px] sm:max-w-[420px] sm:translate-x-0 sm:rounded-[32px] sm:p-5 sm:bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] sm:max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] sm:animate-slide-up-modal lg:bottom-6 lg:max-h-[calc(100dvh_-_3rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Triangular Anchor Tail pointing to bottom nav center orb */}
         <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-white/12 bg-[#05050a]/92 backdrop-blur-3xl z-[-1] pointer-events-none sm:hidden" />
-        {/* Glowing Background Neon Aura */}
-        <div className="absolute -top-32 -left-16 h-48 w-46 bg-gradient-to-br from-purple-600/30 to-fuchsia-600/5 blur-[50px] pointer-events-none rounded-full" />
-        <div className="absolute -bottom-32 -right-16 h-48 w-46 bg-gradient-to-tr from-cyan-500/25 to-purple-600/5 blur-[50px] pointer-events-none rounded-full" />
-
         {/* Diagonal Shimmer Scan Lines */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
 

@@ -1,5 +1,5 @@
 import { Menu, Search, Bell, LogIn } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 import { Logo } from "@/components/brand/Logo";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
@@ -8,7 +8,6 @@ import { NotificationsPopover } from "./NotificationsPopover";
 import { CreatorGoldNavButton } from "@/components/creator/CreatorGoldNavButton";
 import { useNotifications } from "@/lib/notifications-store";
 import { useAuth } from "@/lib/auth";
-import { preloadTradioModule } from "@/tradio/preload";
 
 const tabs = [
   { id: "watch-now", label: "Watch Now" },
@@ -39,12 +38,6 @@ export function AppHeader({
   const profileUid = user?.uid ?? currentUser.uid;
   const profileAvatar = user?.avatar ?? currentUser.avatar;
 
-  useEffect(() => {
-    const warmup = window.setTimeout(() => {
-      void preloadTradioModule();
-    }, 250);
-    return () => window.clearTimeout(warmup);
-  }, []);
   // Keep Tradio public and instant; Trance remains signed-in only.
   const visibleTabs = isGuest ? tabs.filter((t) => t.id !== "trance") : tabs;
   const computed =
@@ -150,7 +143,6 @@ export function AppHeader({
       >
         {visibleTabs.map((t) => {
           const active = computed === t.id;
-          const warmTradio = t.id === "tradio" ? () => void preloadTradioModule() : undefined;
           const handleClick = () => {
             if (t.id === "watch-now") navigate({ to: "/" });
             if (t.id === "for-you") navigate({ to: "/for-you" });
@@ -160,8 +152,11 @@ export function AppHeader({
             if (t.id === "rewards") navigate({ to: "/rewards" });
             if (t.id === "games") navigate({ to: "/games" });
             if (t.id === "tradio") {
-              void preloadTradioModule();
-              navigate({ to: "/tradio" });
+              onTabChange?.(t.id);
+              if (!location.pathname.startsWith("/tradio")) {
+                window.location.assign("/tradio");
+              }
+              return;
             }
             if (t.id === "trance") navigate({ to: "/trance" });
             onTabChange?.(t.id);
@@ -170,9 +165,6 @@ export function AppHeader({
             <button
               key={t.id}
               onClick={handleClick}
-              onPointerEnter={warmTradio}
-              onFocus={warmTradio}
-              onTouchStart={warmTradio}
               className={`relative px-3 py-2 text-sm whitespace-nowrap transition inline-flex items-center gap-1.5 ${
                 active
                   ? "text-primary font-semibold"
