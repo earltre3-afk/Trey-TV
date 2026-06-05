@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import { usePlayer } from "../../../contexts/PlayerContext";
 import { CreatorArchiveDashboard } from "./CreatorArchiveDashboard";
 import { AdminClipReviewDashboard } from "./AdminClipReviewDashboard";
+import { AdminPostShowReviewDashboard } from "./AdminPostShowReviewDashboard";
 import { PublicReplayLibrary } from "./PublicReplayLibrary";
+import { PostShowProducerDashboard } from "./PostShowProducerDashboard";
 import { useTradioIdentity } from "../auth/useTradioIdentity";
 import {
   Radio,
@@ -773,7 +775,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     | "create-channel"
     | "archive"
     | "admin-clips"
+    | "admin-post-show"
     | "public-library"
+    | "post-show"
   >("dashboard");
 
   // Tab state on Dashboard
@@ -2066,7 +2070,9 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
             else if (subView === "create-channel") setSubView("dashboard");
             else if (subView === "archive") setActiveTab("archive");
             else if (subView === "admin-clips") setActiveTab("archive");
+            else if (subView === "admin-post-show") setActiveTab("archive");
             else if (subView === "public-library") setActiveTab("archive");
+            else if (subView === "post-show") setActiveTab("archive");
           }}
         />
 
@@ -2428,7 +2434,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           <p className="text-xs text-white/60">Manage live recordings, create highlight clips, and publish replay archives</p>
                         </div>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-3 mt-4">
+                      <div className="grid gap-3 md:grid-cols-5 mt-4">
                         <button
                           onClick={() => setSubView("archive")}
                           className="p-4 rounded-xl border border-green-500/30 bg-green-500/[0.08] hover:bg-green-500/15 transition-all text-left"
@@ -2448,6 +2454,29 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                         >
                           <h4 className="font-bold text-orange-300 text-sm">Clip Review</h4>
                           <p className="text-xs text-white/50 mt-1">Review and approve clips (Admin)</p>
+                        </button>
+                        <button
+                          onClick={() => setSubView("post-show")}
+                          className="p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/[0.08] hover:bg-yellow-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-yellow-300 text-sm flex items-center gap-1">
+                            <Sparkles className="w-4 h-4" />
+                            Post-Show Producer
+                          </h4>
+                          <p className="text-xs text-white/50 mt-1">AI-powered asset generation</p>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (isIdentityAdmin) {
+                              setSubView("admin-post-show");
+                            } else {
+                              toast.error("Admin access required");
+                            }
+                          }}
+                          className="p-4 rounded-xl border border-pink-500/30 bg-pink-500/[0.08] hover:bg-pink-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-pink-300 text-sm">Post-Show Review</h4>
+                          <p className="text-xs text-white/50 mt-1">Review generated producer assets</p>
                         </button>
                         <button
                           onClick={() => setSubView("public-library")}
@@ -2482,9 +2511,27 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
               />
             )}
 
+            {/* 2AA. ADMIN POST-SHOW REVIEW VIEW */}
+            {subView === "admin-post-show" && (
+              <AdminPostShowReviewDashboard
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                }}
+              />
+            )}
+
             {/* 2B. PUBLIC REPLAY LIBRARY VIEW */}
             {subView === "public-library" && (
               <PublicReplayLibrary
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                }}
+              />
+            )}
+
+            {/* 2C. POST-SHOW PRODUCER VIEW */}
+            {subView === "post-show" && (
+              <PostShowProducerDashboard
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
                 }}
