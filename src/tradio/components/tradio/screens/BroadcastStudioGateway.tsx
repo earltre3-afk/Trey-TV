@@ -5,6 +5,7 @@ import { AdminClipReviewDashboard } from "./AdminClipReviewDashboard";
 import { AdminPostShowReviewDashboard } from "./AdminPostShowReviewDashboard";
 import { PublicReplayLibrary } from "./PublicReplayLibrary";
 import { PostShowProducerDashboard } from "./PostShowProducerDashboard";
+import { DistributionDeskDashboard } from "./DistributionDeskDashboard";
 import { useTradioIdentity } from "../auth/useTradioIdentity";
 import {
   Radio,
@@ -778,6 +779,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     | "admin-post-show"
     | "public-library"
     | "post-show"
+    | "distribution"
   >("dashboard");
 
   // Tab state on Dashboard
@@ -2073,6 +2075,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
             else if (subView === "admin-post-show") setActiveTab("archive");
             else if (subView === "public-library") setActiveTab("archive");
             else if (subView === "post-show") setActiveTab("archive");
+            else if (subView === "distribution") setActiveTab("archive");
           }}
         />
 
@@ -2434,7 +2437,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           <p className="text-xs text-white/60">Manage live recordings, create highlight clips, and publish replay archives</p>
                         </div>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-5 mt-4">
+                      <div className="grid gap-3 md:grid-cols-6 mt-4">
                         <button
                           onClick={() => setSubView("archive")}
                           className="p-4 rounded-xl border border-green-500/30 bg-green-500/[0.08] hover:bg-green-500/15 transition-all text-left"
@@ -2464,6 +2467,16 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                             Post-Show Producer
                           </h4>
                           <p className="text-xs text-white/50 mt-1">AI-powered asset generation</p>
+                        </button>
+                        <button
+                          onClick={() => setSubView("distribution")}
+                          className="p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/[0.08] hover:bg-cyan-500/15 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-cyan-200 text-sm flex items-center gap-1">
+                            <Megaphone className="w-4 h-4" />
+                            Distribution Desk
+                          </h4>
+                          <p className="text-xs text-white/50 mt-1">Queue social, newsletter, push, and site drafts</p>
                         </button>
                         <button
                           onClick={() => {
@@ -2498,6 +2511,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                 sessionId={selectedChannel?.id}
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
+                  if (view === "distribution") setSubView("distribution");
                 }}
               />
             )}
@@ -2534,6 +2548,17 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
               <PostShowProducerDashboard
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
+                  if (view === "distribution") setSubView("distribution");
+                }}
+              />
+            )}
+
+            {/* 2D. DISTRIBUTION DESK VIEW */}
+            {subView === "distribution" && (
+              <DistributionDeskDashboard
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                  if (view === "post-show") setSubView("post-show");
                 }}
               />
             )}
