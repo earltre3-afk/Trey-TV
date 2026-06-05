@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Play, Plus, Clock, AlertCircle, Check, X, Edit2 } from 'lucide-react';
+import { Play, Plus, Clock, AlertCircle, Check, X, Edit2, Megaphone } from 'lucide-react';
 import { createServerFn } from "@tanstack/react-start";
 import { listRecordingsForSessionServer, publishHighlightClipWithGatesServer } from '@/lib/trey-i/broadcastLiveArchive.server';
 import type { LiveRecording, HighlightClip } from '../types/broadcastArchiveTypes';
@@ -148,9 +148,20 @@ export const CreatorArchiveDashboard: React.FC<CreatorArchiveDashboardProps> = (
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-gradient-gold">Archive Dashboard</h1>
-        <p className="text-muted-foreground">Manage your recordings, create clips, and publish highlights</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-gradient-gold">Archive Dashboard</h1>
+          <p className="text-muted-foreground">Manage your recordings, create clips, and publish highlights</p>
+        </div>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('distribution')}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15"
+          >
+            <Megaphone className="size-4" />
+            Distribution Desk
+          </button>
+        )}
       </div>
 
       {/* Error Display */}
@@ -311,6 +322,15 @@ export const CreatorArchiveDashboard: React.FC<CreatorArchiveDashboardProps> = (
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-2 border-t border-white/10">
+                    {onNavigate && (
+                      <button
+                        onClick={() => onNavigate('distribution')}
+                        className="flex-1 px-3 py-2 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-200 text-sm font-semibold transition-colors"
+                      >
+                        <Megaphone className="size-4 inline mr-2" />
+                        Draft Promo
+                      </button>
+                    )}
                     {clip.clip_status === 'draft' && (
                       <>
                         <button className="flex-1 px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-semibold transition-colors">

@@ -13,6 +13,7 @@ import {
   Eye,
   FileText,
   Loader,
+  Megaphone,
   Plus,
   Send,
   ShieldCheck,
@@ -88,7 +89,7 @@ const PLATFORM_OPTIONS: PostShowPlatform[] = [
   'generic',
 ];
 
-export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ recording_id }) => {
+export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ recording_id, onNavigate }) => {
   const [activeRecordingId, setActiveRecordingId] = useState<string | null>(recording_id ?? null);
   const [recordingOptions, setRecordingOptions] = useState<PostShowRecordingOption[]>([]);
   const [loadingRecordings, setLoadingRecordings] = useState(true);
@@ -553,15 +554,26 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-6 w-6 text-yellow-400" />
-          <h1 className="text-3xl font-bold">Post-Show Producer</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-6 w-6 text-yellow-400" />
+            <h1 className="text-3xl font-bold">Post-Show Producer</h1>
+          </div>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Generate private drafts, keep useful follow-up topics, submit assets for review, and
+            publish only after approval.
+          </p>
         </div>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Generate private drafts, keep useful follow-up topics, submit assets for review, and
-          publish only after approval.
-        </p>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('distribution')}
+            className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15"
+          >
+            <Megaphone className="h-4 w-4" />
+            Distribution Desk
+          </button>
+        )}
       </div>
 
       <section className="rounded-lg border border-white/10 bg-white/[0.03] p-4">
@@ -785,6 +797,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
               onCreateNewsletterDraft={() => handleCreateDraft(asset, 'newsletter')}
               onCreatePushDraft={() => handleCreateDraft(asset, 'push')}
               onPreparePrescribeMe={() => handlePreparePrescribeMe(asset)}
+              onOpenDistribution={() => onNavigate?.('distribution')}
               publisherBusy={publisherBusyId?.startsWith(`${asset.id}:`) ?? false}
             />
           ))}
@@ -824,6 +837,7 @@ function AssetCard({
   onCreateNewsletterDraft,
   onCreatePushDraft,
   onPreparePrescribeMe,
+  onOpenDistribution,
   publisherBusy,
 }: {
   asset: PostShowAsset;
@@ -849,6 +863,7 @@ function AssetCard({
   onCreateNewsletterDraft: () => void;
   onCreatePushDraft: () => void;
   onPreparePrescribeMe: () => void;
+  onOpenDistribution?: () => void;
   publisherBusy: boolean;
 }) {
   const canSubmitReview = ['draft', 'generated', 'edited'].includes(asset.asset_status);
@@ -969,6 +984,7 @@ function AssetCard({
                 onCreateNewsletterDraft={onCreateNewsletterDraft}
                 onCreatePushDraft={onCreatePushDraft}
                 onPreparePrescribeMe={onPreparePrescribeMe}
+                onOpenDistribution={onOpenDistribution}
                 publisherBusy={publisherBusy}
                 canApplyTarget={canApplyTarget}
                 canSaveSocial={canSaveSocial}
@@ -994,6 +1010,7 @@ function PostShowPublisherControls({
   onCreateNewsletterDraft,
   onCreatePushDraft,
   onPreparePrescribeMe,
+  onOpenDistribution,
   publisherBusy,
   canApplyTarget,
   canSaveSocial,
@@ -1010,6 +1027,7 @@ function PostShowPublisherControls({
   onCreateNewsletterDraft: () => void;
   onCreatePushDraft: () => void;
   onPreparePrescribeMe: () => void;
+  onOpenDistribution?: () => void;
   publisherBusy: boolean;
   canApplyTarget: boolean;
   canSaveSocial: boolean;
@@ -1092,6 +1110,15 @@ function PostShowPublisherControls({
         >
           Prepare Prescribe Me
         </button>
+        {onOpenDistribution && (
+          <button
+            onClick={onOpenDistribution}
+            disabled={publisherBusy}
+            className="rounded-lg border border-cyan-400/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-100 disabled:opacity-50"
+          >
+            Open Distribution Desk
+          </button>
+        )}
       </div>
 
       {prescribePreview.length > 0 && (
