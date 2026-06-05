@@ -72,6 +72,28 @@ export type PostShowRunType =
 // Editor types
 export type PostShowEditorType = 'ai' | 'human' | 'admin';
 
+export type PostShowApplicationType =
+  | 'clip_title'
+  | 'clip_caption'
+  | 'replay_blurb'
+  | 'episode_description'
+  | 'social_draft'
+  | 'newsletter_draft'
+  | 'push_copy_draft'
+  | 'seo_description'
+  | 'thumbnail_prompt'
+  | 'cover_prompt'
+  | 'prescribe_me_metadata';
+
+export type PostShowApplicationStatus =
+  | 'draft'
+  | 'applied'
+  | 'pending_review'
+  | 'approved'
+  | 'rejected'
+  | 'reverted'
+  | 'archived';
+
 // Database row types
 export interface PostShowAsset {
   id: string;
@@ -138,6 +160,26 @@ export interface PostShowAssetRevision {
   prompt_input: PostShowJsonObject;
   metadata: PostShowJsonObject;
   created_at: string;
+}
+
+export interface PostShowApplication {
+  id: string;
+  owner_user_id: string;
+  asset_id: string;
+  clip_id?: string | null;
+  recording_id?: string | null;
+  episode_id?: string | null;
+  queue_id?: string | null;
+  channel_id?: string | null;
+  application_type: PostShowApplicationType;
+  application_status: PostShowApplicationStatus;
+  target_field?: string | null;
+  previous_value?: string | null;
+  applied_value: string;
+  applied_metadata: PostShowJsonObject;
+  created_at: string;
+  applied_at?: string | null;
+  updated_at: string;
 }
 
 // Source snapshot structure
@@ -238,4 +280,71 @@ export interface ArchivePostShowAssetInput {
 export interface PublishPostShowAssetInput {
   asset_id: string;
   visibility: PostShowAssetVisibility;
+}
+
+export interface PostShowPublisherTarget {
+  id: string;
+  target_type: 'clip' | 'episode';
+  label: string;
+  visibility?: string | null;
+  status?: string | null;
+  current_title?: string | null;
+  current_description?: string | null;
+  current_caption?: string | null;
+  recording_id?: string | null;
+  episode_id?: string | null;
+  channel_id?: string | null;
+  queue_id?: string | null;
+}
+
+export interface ApplyPostShowAssetToClipInput {
+  asset_id: string;
+  clip_id: string;
+  application_type?: PostShowApplicationType;
+}
+
+export interface ApplyPostShowAssetToEpisodeInput {
+  asset_id: string;
+  episode_id: string;
+  application_type?: PostShowApplicationType;
+}
+
+export interface CreatePostShowDraftFromAssetInput {
+  asset_id: string;
+  recording_id?: string;
+  clip_id?: string;
+  episode_id?: string;
+  queue_id?: string;
+  channel_id?: string;
+}
+
+export interface CreatePrescribeMeMetadataFromAssetInput extends CreatePostShowDraftFromAssetInput {}
+
+export interface ListPostShowApplicationsInput {
+  recording_id?: string;
+  clip_id?: string;
+  episode_id?: string;
+  application_status?: PostShowApplicationStatus;
+  review_queue?: boolean;
+}
+
+export interface ReviewPostShowApplicationInput {
+  application_id: string;
+  review_notes?: string;
+}
+
+export interface RejectPostShowApplicationInput {
+  application_id: string;
+  rejection_reason: string;
+}
+
+export interface PublicPostShowAppliedAsset {
+  id: string;
+  asset_id: string;
+  application_type: PostShowApplicationType;
+  target_field?: string | null;
+  applied_value: string;
+  applied_metadata: PostShowJsonObject;
+  applied_at?: string | null;
+  updated_at: string;
 }

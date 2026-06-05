@@ -3,15 +3,24 @@
  * Public-facing interface for browsing and playing published clips
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Calendar, Clock } from 'lucide-react';
 import { createServerFn } from "@tanstack/react-start";
+import { publicPostShowApplicationVisible } from '@/lib/trey-i/broadcastPostShowPublisher';
+import type {
+  PostShowApplication,
+  PublicPostShowAppliedAsset,
+} from '@/lib/trey-i/broadcastPostShowTypes';
 import type { HighlightClip } from '../types/broadcastArchiveTypes';
+
+type PublicReplayClip = HighlightClip & {
+  post_show_applications?: PublicPostShowAppliedAsset[];
+};
 
 // Wrap server function for client-safe access
 const loadPublicClipsClient = createServerFn({ method: "GET" })
   .inputValidator((input: { channelId?: string }) => input)
-  .handler(async ({ data: input }) => {
+  .handler(async ({ data: input }): Promise<{ data: any[]; error?: string }> => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     let query = (supabaseAdmin as any)
       .from('tradio_live_highlight_clips')
@@ -24,7 +33,42 @@ const loadPublicClipsClient = createServerFn({ method: "GET" })
     }
 
     const { data, error } = await query.order('published_at', { ascending: false });
-    return { data: data || [], error: error?.message };
+    if (error) return { data: [], error: error.message };
+
+    const clips = (data || []) as PublicReplayClip[];
+    const clipIds = clips.map((clip) => clip.id);
+    if (clipIds.length === 0) return { data: clips as any[] };
+
+    const { data: applicationRows } = await (supabaseAdmin as any)
+      .from('tradio_post_show_applications')
+      .select(
+        'id, asset_id, clip_id, application_type, application_status, target_field, applied_value, applied_metadata, applied_at, updated_at',
+      )
+      .in('clip_id', clipIds)
+      .in('application_status', ['applied', 'approved'])
+      .order('updated_at', { ascending: false });
+
+    const applicationsByClip = new Map<string, PostShowApplication[]>();
+    for (const application of (applicationRows || []) as PostShowApplication[]) {
+      if (!application.clip_id) continue;
+      if (
+        !publicPostShowApplicationVisible({
+          applicationStatus: application.application_status,
+          applicationType: application.application_type,
+          targetVisibility: 'public',
+          targetStatus: 'published',
+        })
+      ) {
+        continue;
+      }
+      const existing = applicationsByClip.get(application.clip_id) ?? [];
+      existing.push(application);
+      applicationsByClip.set(application.clip_id, existing);
+    }
+
+    return {
+      data: clips.map((clip) => applyPublicPostShowCopy(clip, applicationsByClip.get(clip.id) ?? [])) as any[],
+    };
   });
 
 interface PublicReplayLibraryProps {
@@ -34,21 +78,20 @@ interface PublicReplayLibraryProps {
 }
 
 export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channelId, onPlayClip, onNavigate }) => {
-  const [clips, setClips] = useState<HighlightClip[]>([]);
+  const [clips, setClips] = useState<PublicReplayClip[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [allTags, setAllTags] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadPublicClips();
-  }, [channelId]);
-
-  const loadPublicClips = async () => {
+  const loadPublicClips = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await loadPublicClipsClient({ data: { channelId } });
+      const result = (await loadPublicClipsClient({ data: { channelId } })) as {
+        data?: PublicReplayClip[];
+        error?: string;
+      };
       if (!result.error && result.data) {
-        setClips(result.data as HighlightClip[]);
+        setClips(result.data as PublicReplayClip[]);
 
         // Collect all tags
         const tags = new Set<string>();
@@ -63,7 +106,11 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
     } finally {
       setLoading(false);
     }
-  };
+  }, [channelId]);
+
+  useEffect(() => {
+    loadPublicClips();
+  }, [loadPublicClips]);
 
   const filteredClips = filterTag
     ? clips.filter(
@@ -167,6 +214,11 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
                   {clip.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{clip.description}</p>
                   )}
+                  {clip.caption && (
+                    <p className="mt-2 rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-xs text-white/60 line-clamp-2">
+                      {clip.caption}
+                    </p>
+                  )}
                 </div>
 
                 {/* Metadata */}
@@ -211,3 +263,44 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
 };
 
 export default PublicReplayLibrary;
+
+function applyPublicPostShowCopy(
+  clip: PublicReplayClip,
+  applications: PostShowApplication[],
+): PublicReplayClip {
+  const next: PublicReplayClip = { ...clip, post_show_applications: applications.map(toPublicAsset) };
+  const appliedFields = new Set<string>();
+
+  for (const application of applications) {
+    if (application.application_type === 'clip_title' && !appliedFields.has('title')) {
+      next.title = application.applied_value;
+      appliedFields.add('title');
+    }
+    if (
+      (application.application_type === 'replay_blurb' || application.application_type === 'seo_description') &&
+      !appliedFields.has('description')
+    ) {
+      next.description = application.applied_value;
+      appliedFields.add('description');
+    }
+    if (application.application_type === 'clip_caption' && !appliedFields.has('caption')) {
+      next.caption = application.applied_value;
+      appliedFields.add('caption');
+    }
+  }
+
+  return next;
+}
+
+function toPublicAsset(application: PostShowApplication): PublicPostShowAppliedAsset {
+  return {
+    id: application.id,
+    asset_id: application.asset_id,
+    application_type: application.application_type,
+    target_field: application.target_field ?? null,
+    applied_value: application.applied_value,
+    applied_metadata: application.applied_metadata,
+    applied_at: application.applied_at ?? null,
+    updated_at: application.updated_at,
+  };
+}
