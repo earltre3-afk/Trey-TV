@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Copy,
   Eye,
+  FileText,
   Loader,
   Plus,
   Send,
@@ -27,10 +28,27 @@ import {
   publishPostShowAssetServer,
   updatePostShowAssetServer,
 } from '@/lib/trey-i/broadcastPostShow.server';
+import {
+  applyPostShowAssetToClip,
+  applyPostShowAssetToEpisode,
+  createNewsletterDraftFromAsset,
+  createPrescribeMeMetadataFromAsset,
+  createPushCopyDraftFromAsset,
+  createSocialDraftFromAsset,
+  listPostShowApplications,
+  listPostShowTargetsForRecording,
+} from '@/lib/trey-i/broadcastPostShowPublisher.server';
+import {
+  buildSafePrescribeMeMetadata,
+  resolvePostShowApplicationType,
+} from '@/lib/trey-i/broadcastPostShowPublisher';
 import type {
+  PostShowApplication,
+  PostShowApplicationType,
   PostShowAsset,
   PostShowAssetType,
   PostShowPlatform,
+  PostShowPublisherTarget,
 } from '@/lib/trey-i/broadcastPostShowTypes';
 
 interface PostShowProducerProps {
@@ -54,7 +72,9 @@ const ASSET_TYPES: PostShowAssetType[] = [
   'episode_description',
   'replay_blurb',
   'thumbnail_prompt',
+  'cover_prompt',
   'seo_description',
+  'push_notification_copy',
   'follow_up_topic',
 ];
 
@@ -88,6 +108,10 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
   const [manualBody, setManualBody] = useState('');
   const [savingManual, setSavingManual] = useState(false);
   const [selectedTopicIds, setSelectedTopicIds] = useState<Set<string>>(new Set());
+  const [applications, setApplications] = useState<PostShowApplication[]>([]);
+  const [targets, setTargets] = useState<PostShowPublisherTarget[]>([]);
+  const [selectedTargetByAsset, setSelectedTargetByAsset] = useState<Record<string, string>>({});
+  const [publisherBusyId, setPublisherBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (recording_id) {
@@ -146,6 +170,37 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
   useEffect(() => {
     loadAssets();
   }, [loadAssets]);
+
+  const loadPublisherState = useCallback(async () => {
+    if (!activeRecordingId) {
+      setApplications([]);
+      setTargets([]);
+      return;
+    }
+
+    const [applicationResult, targetResult] = await Promise.all([
+      listPostShowApplications({ data: { recording_id: activeRecordingId } }),
+      listPostShowTargetsForRecording({ data: { recording_id: activeRecordingId } }),
+    ]);
+
+    if (applicationResult.error) {
+      toast.error(applicationResult.error);
+      setApplications([]);
+    } else {
+      setApplications(applicationResult.applications);
+    }
+
+    if (targetResult.error) {
+      toast.error(targetResult.error);
+      setTargets([]);
+    } else {
+      setTargets(targetResult.targets);
+    }
+  }, [activeRecordingId]);
+
+  useEffect(() => {
+    loadPublisherState();
+  }, [loadPublisherState]);
 
   const followUpAssets = useMemo(
     () => assets.filter((asset) => asset.asset_type === 'follow_up_topic'),
@@ -304,6 +359,128 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
       }
     } catch {
       toast.error('Publish failed');
+    }
+  };
+
+  const refreshPublisher = async () => {
+    await Promise.all([loadAssets(), loadPublisherState()]);
+  };
+
+  const targetOptionsForAsset = (asset: PostShowAsset): PostShowPublisherTarget[] => {
+    const applicationType = resolvePostShowApplicationType(asset.asset_type);
+    if (applicationType === 'clip_title' || applicationType === 'clip_caption' || applicationType === 'replay_blurb') {
+      return targets.filter((target) => target.target_type === 'clip');
+    }
+    if (applicationType === 'episode_description' || applicationType === 'seo_description') {
+      return targets.filter((target) => target.target_type === 'episode');
+    }
+    if (applicationType === 'prescribe_me_metadata') {
+      return targets;
+    }
+    return [];
+  };
+
+  const selectedTargetForAsset = (asset: PostShowAsset): PostShowPublisherTarget | null => {
+    const options = targetOptionsForAsset(asset);
+    if (options.length === 0) return null;
+    const selectedId = selectedTargetByAsset[asset.id] ?? options[0]?.id;
+    return options.find((target) => target.id === selectedId) ?? options[0] ?? null;
+  };
+
+  const handleApplyAssetToTarget = async (asset: PostShowAsset) => {
+    const target = selectedTargetForAsset(asset);
+    if (!target) {
+      toast.error('No eligible target available for this asset');
+      return;
+    }
+
+    setPublisherBusyId(`${asset.id}:apply`);
+    try {
+      const applicationType = resolvePostShowApplicationType(asset.asset_type);
+      const result =
+        target.target_type === 'clip'
+          ? await applyPostShowAssetToClip({
+              data: {
+                asset_id: asset.id,
+                clip_id: target.id,
+                application_type: applicationType ?? undefined,
+              },
+            })
+          : await applyPostShowAssetToEpisode({
+              data: {
+                asset_id: asset.id,
+                episode_id: target.id,
+                application_type: applicationType ?? undefined,
+              },
+            });
+
+      if (result.success) {
+        toast.success(
+          result.application?.application_status === 'pending_review'
+            ? 'Application queued for review'
+            : 'Post-show copy applied',
+        );
+        await refreshPublisher();
+      } else {
+        toast.error(result.error || 'Apply failed');
+      }
+    } catch {
+      toast.error('Apply failed');
+    } finally {
+      setPublisherBusyId(null);
+    }
+  };
+
+  const handleCreateDraft = async (
+    asset: PostShowAsset,
+    draftType: 'social' | 'newsletter' | 'push',
+  ) => {
+    setPublisherBusyId(`${asset.id}:${draftType}`);
+    try {
+      const payload = { asset_id: asset.id, recording_id: activeRecordingId ?? undefined };
+      const result =
+        draftType === 'social'
+          ? await createSocialDraftFromAsset({ data: payload })
+          : draftType === 'newsletter'
+            ? await createNewsletterDraftFromAsset({ data: payload })
+            : await createPushCopyDraftFromAsset({ data: payload });
+
+      if (result.success) {
+        toast.success('Draft saved. Nothing was sent.');
+        await loadPublisherState();
+      } else {
+        toast.error(result.error || 'Draft save failed');
+      }
+    } catch {
+      toast.error('Draft save failed');
+    } finally {
+      setPublisherBusyId(null);
+    }
+  };
+
+  const handlePreparePrescribeMe = async (asset: PostShowAsset) => {
+    const target = selectedTargetForAsset(asset);
+    setPublisherBusyId(`${asset.id}:prescribe`);
+    try {
+      const result = await createPrescribeMeMetadataFromAsset({
+        data: {
+          asset_id: asset.id,
+          recording_id: activeRecordingId ?? undefined,
+          clip_id: target?.target_type === 'clip' ? target.id : undefined,
+          episode_id: target?.target_type === 'episode' ? target.id : undefined,
+        },
+      });
+
+      if (result.success) {
+        toast.success('Safe Prescribe Me metadata prepared');
+        await loadPublisherState();
+      } else {
+        toast.error(result.error || 'Prescribe Me preparation failed');
+      }
+    } catch {
+      toast.error('Prescribe Me preparation failed');
+    } finally {
+      setPublisherBusyId(null);
     }
   };
 
@@ -597,6 +774,18 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
               onSave={() => handleUpdateAsset(asset.id, editingTitle, editingText)}
               onSubmitReview={() => handleSubmitReview(asset)}
               onPublish={() => handlePublish(asset)}
+              applications={applications.filter((application) => application.asset_id === asset.id)}
+              targets={targetOptionsForAsset(asset)}
+              selectedTargetId={selectedTargetForAsset(asset)?.id ?? ''}
+              onSelectTarget={(targetId) =>
+                setSelectedTargetByAsset((current) => ({ ...current, [asset.id]: targetId }))
+              }
+              onApplyTarget={() => handleApplyAssetToTarget(asset)}
+              onCreateSocialDraft={() => handleCreateDraft(asset, 'social')}
+              onCreateNewsletterDraft={() => handleCreateDraft(asset, 'newsletter')}
+              onCreatePushDraft={() => handleCreateDraft(asset, 'push')}
+              onPreparePrescribeMe={() => handlePreparePrescribeMe(asset)}
+              publisherBusy={publisherBusyId?.startsWith(`${asset.id}:`) ?? false}
             />
           ))}
         </section>
@@ -626,6 +815,16 @@ function AssetCard({
   onSave,
   onSubmitReview,
   onPublish,
+  applications,
+  targets,
+  selectedTargetId,
+  onSelectTarget,
+  onApplyTarget,
+  onCreateSocialDraft,
+  onCreateNewsletterDraft,
+  onCreatePushDraft,
+  onPreparePrescribeMe,
+  publisherBusy,
 }: {
   asset: PostShowAsset;
   expanded: boolean;
@@ -641,9 +840,24 @@ function AssetCard({
   onSave: () => void;
   onSubmitReview: () => void;
   onPublish: () => void;
+  applications: PostShowApplication[];
+  targets: PostShowPublisherTarget[];
+  selectedTargetId: string;
+  onSelectTarget: (targetId: string) => void;
+  onApplyTarget: () => void;
+  onCreateSocialDraft: () => void;
+  onCreateNewsletterDraft: () => void;
+  onCreatePushDraft: () => void;
+  onPreparePrescribeMe: () => void;
+  publisherBusy: boolean;
 }) {
   const canSubmitReview = ['draft', 'generated', 'edited'].includes(asset.asset_status);
   const canPublish = asset.asset_status === 'approved';
+  const applicationType = resolvePostShowApplicationType(asset.asset_type);
+  const canApplyTarget = targets.length > 0 && applicationType !== null;
+  const canSaveSocial = asset.asset_type === 'social_post';
+  const canSaveNewsletter = asset.asset_type === 'newsletter_blurb';
+  const canSavePush = asset.asset_type === 'push_notification_copy';
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-700 bg-slate-900/40">
@@ -743,8 +957,163 @@ function AssetCard({
                   </button>
                 )}
               </div>
+
+              <PostShowPublisherControls
+                asset={asset}
+                applications={applications}
+                targets={targets}
+                selectedTargetId={selectedTargetId}
+                onSelectTarget={onSelectTarget}
+                onApplyTarget={onApplyTarget}
+                onCreateSocialDraft={onCreateSocialDraft}
+                onCreateNewsletterDraft={onCreateNewsletterDraft}
+                onCreatePushDraft={onCreatePushDraft}
+                onPreparePrescribeMe={onPreparePrescribeMe}
+                publisherBusy={publisherBusy}
+                canApplyTarget={canApplyTarget}
+                canSaveSocial={canSaveSocial}
+                canSaveNewsletter={canSaveNewsletter}
+                canSavePush={canSavePush}
+              />
             </>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PostShowPublisherControls({
+  asset,
+  applications,
+  targets,
+  selectedTargetId,
+  onSelectTarget,
+  onApplyTarget,
+  onCreateSocialDraft,
+  onCreateNewsletterDraft,
+  onCreatePushDraft,
+  onPreparePrescribeMe,
+  publisherBusy,
+  canApplyTarget,
+  canSaveSocial,
+  canSaveNewsletter,
+  canSavePush,
+}: {
+  asset: PostShowAsset;
+  applications: PostShowApplication[];
+  targets: PostShowPublisherTarget[];
+  selectedTargetId: string;
+  onSelectTarget: (targetId: string) => void;
+  onApplyTarget: () => void;
+  onCreateSocialDraft: () => void;
+  onCreateNewsletterDraft: () => void;
+  onCreatePushDraft: () => void;
+  onPreparePrescribeMe: () => void;
+  publisherBusy: boolean;
+  canApplyTarget: boolean;
+  canSaveSocial: boolean;
+  canSaveNewsletter: boolean;
+  canSavePush: boolean;
+}) {
+  const selectedTarget = targets.find((target) => target.id === selectedTargetId) ?? targets[0];
+  const currentPreview = selectedTarget ? previewCurrentTargetValue(asset.asset_type, selectedTarget) : null;
+  const prescribePreview = buildPrescribePreview(asset);
+
+  return (
+    <div className="space-y-3 rounded-lg border border-yellow-500/20 bg-yellow-500/[0.05] p-3">
+      <div className="flex items-center gap-2 text-sm font-semibold text-yellow-100">
+        <FileText className="h-4 w-4" />
+        Publisher
+      </div>
+
+      {canApplyTarget && (
+        <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <select
+              value={selectedTargetId}
+              onChange={(event) => onSelectTarget(event.target.value)}
+              className="min-w-0 rounded-lg border border-white/10 bg-slate-950/80 px-3 py-2 text-sm"
+            >
+              {targets.map((target) => (
+                <option key={target.id} value={target.id}>
+                  {target.target_type}: {target.label} ({target.status || 'draft'} / {target.visibility || 'private'})
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={onApplyTarget}
+              disabled={publisherBusy}
+              className="rounded-lg border border-yellow-400/40 bg-yellow-400/15 px-3 py-2 text-sm font-semibold text-yellow-100 disabled:opacity-50"
+            >
+              Apply
+            </button>
+          </div>
+          {currentPreview !== null && (
+            <div className="rounded border border-white/10 bg-black/20 p-2 text-xs text-white/60">
+              <span className="text-white/35">Current:</span> {currentPreview || 'Empty'}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {canSaveSocial && (
+          <button
+            onClick={onCreateSocialDraft}
+            disabled={publisherBusy}
+            className="rounded-lg border border-blue-400/35 bg-blue-400/10 px-3 py-2 text-xs font-semibold text-blue-100 disabled:opacity-50"
+          >
+            Save Social Draft
+          </button>
+        )}
+        {canSaveNewsletter && (
+          <button
+            onClick={onCreateNewsletterDraft}
+            disabled={publisherBusy}
+            className="rounded-lg border border-cyan-400/35 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-100 disabled:opacity-50"
+          >
+            Save Newsletter Draft
+          </button>
+        )}
+        {canSavePush && (
+          <button
+            onClick={onCreatePushDraft}
+            disabled={publisherBusy}
+            className="rounded-lg border border-fuchsia-400/35 bg-fuchsia-400/10 px-3 py-2 text-xs font-semibold text-fuchsia-100 disabled:opacity-50"
+          >
+            Save Push Draft
+          </button>
+        )}
+        <button
+          onClick={onPreparePrescribeMe}
+          disabled={publisherBusy}
+          className="rounded-lg border border-emerald-400/35 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-100 disabled:opacity-50"
+        >
+          Prepare Prescribe Me
+        </button>
+      </div>
+
+      {prescribePreview.length > 0 && (
+        <div className="flex flex-wrap gap-1 border-t border-white/10 pt-2">
+          {prescribePreview.map(([key, value]) => (
+            <span key={key} className="rounded bg-emerald-400/10 px-2 py-1 text-[11px] text-emerald-100/80">
+              {formatAssetType(key)}: {value}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {applications.length > 0 && (
+        <div className="space-y-1 border-t border-white/10 pt-2">
+          {applications.slice(0, 4).map((application) => (
+            <div key={application.id} className="flex items-center justify-between gap-2 text-xs text-white/55">
+              <span>{formatAssetType(application.application_type)}</span>
+              <span className="rounded bg-black/25 px-2 py-1 text-white/65">
+                {application.application_status}
+              </span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -777,6 +1146,30 @@ function formatMetadataValue(value: unknown): string {
   if (Array.isArray(value)) return value.join(', ');
   if (value && typeof value === 'object') return JSON.stringify(value);
   return String(value);
+}
+
+function buildPrescribePreview(asset: PostShowAsset): Array<[string, string]> {
+  const metadata = buildSafePrescribeMeMetadata(asset);
+  return ['mood_tags', 'genre_tags', 'audience_tags', 'energy', 'energy_level']
+    .map((key): [string, string] | null => {
+      const value = metadata[key];
+      if (Array.isArray(value) && value.length > 0) return [key, value.join(', ')];
+      if (typeof value === 'string' && value.trim()) return [key, value];
+      if (typeof value === 'number') return [key, String(value)];
+      return null;
+    })
+    .filter((entry): entry is [string, string] => entry !== null)
+    .slice(0, 5);
+}
+
+function previewCurrentTargetValue(assetType: PostShowAssetType, target: PostShowPublisherTarget): string | null {
+  if (assetType === 'clip_title') return target.current_title ?? '';
+  if (assetType === 'clip_caption') return target.current_caption ?? '';
+  if (assetType === 'replay_blurb') return target.current_description ?? '';
+  if (assetType === 'episode_description' || assetType === 'seo_description') {
+    return target.current_description ?? '';
+  }
+  return null;
 }
 
 function formatDuration(seconds: number): string {
