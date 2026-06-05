@@ -1178,7 +1178,10 @@ export const TradioShellContent: React.FC = () => {
             className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in"
           >
             <div className="w-full min-h-screen">
-              <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
+              <NowPlayingScreen
+                onClose={() => setPlayerOpen(false)}
+                onOpenPrescription={openPrescription}
+              />
             </div>
           </div>
         )}

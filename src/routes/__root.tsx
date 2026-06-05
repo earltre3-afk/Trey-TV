@@ -153,6 +153,62 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                if (window.__treyTradioEarlyNavInstalled) return;
+                window.__treyTradioEarlyNavInstalled = true;
+
+                function isPlainLeftClick(event) {
+                  return !event.defaultPrevented && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey;
+                }
+
+                function findTradioLink(target) {
+                  if (!target || !target.closest) return null;
+                  var link = target.closest('a[data-tradio-entry="true"],a[href="/tradio"]');
+                  if (!link) return null;
+                  try {
+                    var url = new URL(link.href, window.location.href);
+                    return url.origin === window.location.origin && url.pathname === "/tradio" ? link : null;
+                  } catch (error) {
+                    return null;
+                  }
+                }
+
+                function paintInstantTradioShell() {
+                  if (!document.body || document.getElementById("trey-tradio-instant-shell")) return;
+                  var shell = document.createElement("div");
+                  shell.id = "trey-tradio-instant-shell";
+                  shell.setAttribute("aria-hidden", "true");
+                  shell.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:linear-gradient(180deg,#0a0612,#050508 60%,#020204);color:white;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:18px;overflow:hidden;";
+                  shell.innerHTML = '<div style="height:100%;display:flex;flex-direction:column;gap:18px;"><div style="display:flex;align-items:center;justify-content:space-between;"><div style="font-size:12px;font-weight:900;letter-spacing:.32em;color:#f0abfc;">TRADIO</div><div style="font-size:10px;font-weight:800;letter-spacing:.18em;color:#c4b5fd;border:1px solid rgba(216,180,254,.24);border-radius:999px;padding:7px 10px;background:rgba(168,85,247,.12);">TREY TV</div></div><main style="display:flex;flex:1;flex-direction:column;justify-content:center;gap:16px;max-width:560px;margin:0 auto;width:100%;"><div style="font-size:13px;color:rgba(255,255,255,.58);">Good evening,</div><h1 style="margin:0;font-size:clamp(34px,11vw,58px);line-height:.95;font-weight:950;letter-spacing:-.03em;">Tradio Listener</h1><p style="margin:0;color:rgba(255,255,255,.7);font-size:15px;">Music that understands you.</p><div style="display:grid;gap:10px;margin-top:8px;"><div style="border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:14px;background:rgba(255,255,255,.055);box-shadow:0 18px 48px rgba(0,0,0,.45);"><div style="font-size:9px;font-weight:900;letter-spacing:.24em;color:#67e8f9;">UNIVERSE ROUTER</div><div style="margin-top:6px;font-size:21px;font-weight:950;">Route Me</div><div style="margin-top:4px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.58);">Answer Prescribe Me and route into Tradio.</div></div><div style="border:1px solid rgba(216,180,254,.18);border-radius:18px;padding:14px;background:rgba(168,85,247,.1);"><div style="font-size:9px;font-weight:900;letter-spacing:.24em;color:#d8b4fe;">PRESCRIPTION RADIO</div><div style="margin-top:6px;font-size:18px;font-weight:900;">Ready</div></div></div></main></div>';
+                  document.body.appendChild(shell);
+                }
+
+                function handleEarlyTradioClick(event) {
+                  if (window.__treyTvHydrated) return;
+                  if (!isPlainLeftClick(event)) return;
+                  var link = findTradioLink(event.target);
+                  if (!link || window.location.pathname === "/tradio") return;
+                  event.preventDefault();
+                  window.__treyTradioInstantNavAt = Date.now();
+                  paintInstantTradioShell();
+                  try {
+                    window.history.pushState({ __tradioInstant: true }, "", "/tradio");
+                    document.title = "Tradio · Trey TV";
+                    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+                    window.dispatchEvent(new CustomEvent("trey:tradio-instant-nav"));
+                  } catch (error) {
+                    window.location.href = "/tradio";
+                  }
+                }
+
+                document.addEventListener("click", handleEarlyTradioClick, true);
+              })();
+            `,
+          }}
+        />
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-QV9ZERGNP4" />
         <script
           dangerouslySetInnerHTML={{
@@ -183,6 +239,14 @@ function RootComponent() {
   const isImmersiveTrance = pathname.startsWith("/trance");
 
   const [foldMode, setFoldMode] = useState<string>("standard");
+
+  useEffect(() => {
+    (window as any).__treyTvHydrated = true;
+    document.getElementById("trey-tradio-instant-shell")?.remove();
+    return () => {
+      (window as any).__treyTvHydrated = false;
+    };
+  }, []);
 
   useEffect(() => {
     const checkFold = () => {

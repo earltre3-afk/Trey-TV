@@ -72,6 +72,9 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
       synthIntervalRef.current = null;
     }
     onClose();
+    window.setTimeout(() => {
+      closingRef.current = false;
+    }, 250);
   }, [onClose]);
 
   useEffect(() => {

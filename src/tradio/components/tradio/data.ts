@@ -1148,13 +1148,38 @@ export const ARTIST_STATIONS = [
   },
 ];
 
+const RELEASE_TRACKS_BY_ID: Record<string, Track> = {
+  "rel-trey-i-look-like": TRACKS.iLookLike,
+  "rel-trey-call-on": TRACKS.callOn,
+  "rel-1": TRACKS.instantDrop,
+  "rel-2": TRACKS.noLookingBack,
+  "rel-3": TRACKS.outOfOrbit,
+};
+
+const trackForRelease = (release: Release): Track => {
+  const exactTrack = RELEASE_TRACKS_BY_ID[release.id];
+  if (exactTrack) return exactTrack;
+
+  return {
+    ...TRACKS.instantDrop,
+    id: `release-${release.id}`,
+    title: release.title,
+    artist: release.artist,
+    art: release.artwork,
+    station: "Instant Releases",
+    sourceType: "instant_release",
+    sourceLabel: "Release",
+    isLive: false,
+  };
+};
+
 export const INSTANT_RELEASES = RELEASES.map((r) => ({
   id: r.id,
   title: r.title,
   artist: r.artist,
   released: r.releasedAt,
   img: r.artwork,
-  track: TRACKS.instantDrop,
+  track: trackForRelease(r),
 }));
 
 export const TRENDING = [
