@@ -6,6 +6,8 @@ import { AdminPostShowReviewDashboard } from "./AdminPostShowReviewDashboard";
 import { PublicReplayLibrary } from "./PublicReplayLibrary";
 import { PostShowProducerDashboard } from "./PostShowProducerDashboard";
 import { DistributionDeskDashboard } from "./DistributionDeskDashboard";
+import { CampaignIntelligenceDashboard } from "./CampaignIntelligenceDashboard";
+import { AdminCampaignIntelligenceDashboard } from "./AdminCampaignIntelligenceDashboard";
 import { useTradioIdentity } from "../auth/useTradioIdentity";
 import {
   Radio,
@@ -780,6 +782,8 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
     | "public-library"
     | "post-show"
     | "distribution"
+    | "campaign"
+    | "admin-campaign"
   >("dashboard");
 
   // Tab state on Dashboard
@@ -2076,6 +2080,8 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
             else if (subView === "public-library") setActiveTab("archive");
             else if (subView === "post-show") setActiveTab("archive");
             else if (subView === "distribution") setActiveTab("archive");
+            else if (subView === "campaign") setActiveTab("archive");
+            else if (subView === "admin-campaign") setActiveTab("archive");
           }}
         />
 
@@ -2437,7 +2443,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           <p className="text-xs text-white/60">Manage live recordings, create highlight clips, and publish replay archives</p>
                         </div>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-6 mt-4">
+                      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 mt-4">
                         <button
                           onClick={() => setSubView("archive")}
                           className="p-4 rounded-xl border border-green-500/30 bg-green-500/[0.08] hover:bg-green-500/15 transition-all text-left"
@@ -2479,6 +2485,16 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           <p className="text-xs text-white/50 mt-1">Queue social, newsletter, push, and site drafts</p>
                         </button>
                         <button
+                          onClick={() => setSubView("campaign")}
+                          className="p-4 rounded-lg border border-green-400/30 bg-green-400/[0.06] hover:bg-green-400/12 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-green-200 text-sm flex items-center gap-1">
+                            <BarChart3 className="w-4 h-4" />
+                            Campaign Intelligence
+                          </h4>
+                          <p className="text-xs text-white/50 mt-1">Review performance evidence and next actions</p>
+                        </button>
+                        <button
                           onClick={() => {
                             if (isIdentityAdmin) {
                               setSubView("admin-post-show");
@@ -2498,6 +2514,22 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                           <h4 className="font-bold text-blue-300 text-sm">Public Replay Library</h4>
                           <p className="text-xs text-white/50 mt-1">Browse published clips and replays</p>
                         </button>
+                        <button
+                          onClick={() => {
+                            if (isIdentityAdmin) {
+                              setSubView("admin-campaign");
+                            } else {
+                              toast.error("Admin access required");
+                            }
+                          }}
+                          className="p-4 rounded-lg border border-amber-400/30 bg-amber-400/[0.06] hover:bg-amber-400/12 transition-all text-left"
+                        >
+                          <h4 className="font-bold text-amber-200 text-sm flex items-center gap-1">
+                            <Shield className="w-4 h-4" />
+                            Campaign Admin
+                          </h4>
+                          <p className="text-xs text-white/50 mt-1">Search aggregate creator and channel analytics</p>
+                        </button>
                       </div>
                     </GlassCard>
                   </div>
@@ -2512,6 +2544,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
                   if (view === "distribution") setSubView("distribution");
+                  if (view === "campaign") setSubView("campaign");
                 }}
               />
             )}
@@ -2549,6 +2582,7 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
                   if (view === "distribution") setSubView("distribution");
+                  if (view === "campaign") setSubView("campaign");
                 }}
               />
             )}
@@ -2559,8 +2593,25 @@ export const BroadcastStudioGateway: React.FC<{ onBack: () => void; initialTab?:
                 onNavigate={(view) => {
                   if (view === "back") setActiveTab("archive");
                   if (view === "post-show") setSubView("post-show");
+                  if (view === "campaign") setSubView("campaign");
                 }}
               />
+            )}
+
+            {/* 2E. CAMPAIGN INTELLIGENCE VIEW */}
+            {subView === "campaign" && (
+              <CampaignIntelligenceDashboard
+                onNavigate={(view) => {
+                  if (view === "back") setActiveTab("archive");
+                  if (view === "distribution") setSubView("distribution");
+                  if (view === "post-show") setSubView("post-show");
+                }}
+              />
+            )}
+
+            {/* 2F. ADMIN CAMPAIGN ANALYTICS VIEW */}
+            {subView === "admin-campaign" && (
+              <AdminCampaignIntelligenceDashboard />
             )}
 
             {/* 3. CREATE SHOW FORM */}

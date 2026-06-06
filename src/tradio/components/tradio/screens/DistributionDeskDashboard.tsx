@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Archive,
+  BarChart3,
   Bell,
   BellOff,
   CalendarClock,
@@ -327,12 +328,21 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
         </div>
         <div className="flex flex-wrap gap-2">
           {onNavigate && (
-            <button
-              onClick={() => onNavigate('post-show')}
-              className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white/75 hover:bg-white/[0.08]"
-            >
-              Post-Show Producer
-            </button>
+            <>
+              <button
+                onClick={() => onNavigate('campaign')}
+                className="inline-flex items-center gap-2 rounded-lg border border-green-400/25 bg-green-400/10 px-3 py-2 text-sm font-semibold text-green-100 hover:bg-green-400/15"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Campaign
+              </button>
+              <button
+                onClick={() => onNavigate('post-show')}
+                className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white/75 hover:bg-white/[0.08]"
+              >
+                Post-Show Producer
+              </button>
+            </>
           )}
           <button
             onClick={refresh}

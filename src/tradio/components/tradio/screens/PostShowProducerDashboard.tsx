@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
   Archive,
+  BarChart3,
   Check,
   ChevronDown,
   Copy,
@@ -566,13 +567,22 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
           </p>
         </div>
         {onNavigate && (
-          <button
-            onClick={() => onNavigate('distribution')}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15"
-          >
-            <Megaphone className="h-4 w-4" />
-            Distribution Desk
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => onNavigate('campaign')}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-400/30 bg-green-400/10 px-3 py-2 text-sm font-semibold text-green-100 hover:bg-green-400/15"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Campaign
+            </button>
+            <button
+              onClick={() => onNavigate('distribution')}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/15"
+            >
+              <Megaphone className="h-4 w-4" />
+              Distribution Desk
+            </button>
+          </div>
         )}
       </div>
 
