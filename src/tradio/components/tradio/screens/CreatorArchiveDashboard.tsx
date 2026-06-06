@@ -3,7 +3,7 @@
  * Interface for hosts to manage recordings, create clips, and publish archives
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Plus, Clock, AlertCircle, Check, X, Edit2, Megaphone, BarChart3 } from 'lucide-react';
 import { createServerFn } from "@tanstack/react-start";
 import { listRecordingsForSessionServer, publishHighlightClipWithGatesServer } from '@/lib/trey-i/broadcastLiveArchive.server';
@@ -13,7 +13,7 @@ import { useTradioIdentity } from '../auth/useTradioIdentity';
 
 // Wrap server function for client-safe access
 const loadRecordingsClient = createServerFn({ method: "POST" })
-  .inputValidator((input: { session_id?: string; limit?: number }) => input)
+  .inputValidator((input: { accessToken: string; session_id?: string; limit?: number }) => input)
   .handler(async ({ data: input }) => {
     return await listRecordingsForSessionServer(input);
   });
@@ -35,16 +35,17 @@ export const CreatorArchiveDashboard: React.FC<CreatorArchiveDashboardProps> = (
   const [activeTab, setActiveTab] = useState<'recordings' | 'clips' | 'create'>('recordings');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadRecordings();
-  }, [sessionId]);
-
-  const loadRecordings = async () => {
+  const loadRecordings = useCallback(async () => {
     setLoading(true);
     setError(null);
-      try {
+    try {
+      if (!session?.access_token) {
+        setError('Not authenticated');
+        return;
+      }
       const result = await loadRecordingsClient({
         data: {
+          accessToken: session.access_token,
           session_id: sessionId,
           limit: 50,
         },
@@ -60,7 +61,11 @@ export const CreatorArchiveDashboard: React.FC<CreatorArchiveDashboardProps> = (
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.access_token, sessionId]);
+
+  useEffect(() => {
+    loadRecordings();
+  }, [loadRecordings]);
 
   const handlePublishClip = async (clipId: string) => {
     try {

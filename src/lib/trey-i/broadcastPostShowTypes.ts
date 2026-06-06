@@ -1,6 +1,7 @@
 /**
  * Tradio Post-Show Producer types (Pass 10)
  */
+import type { TradioAuthenticatedInput } from './tradioServerAuth';
 
 export type PostShowJsonValue =
   | string
@@ -230,7 +231,7 @@ export interface PostShowAIPackageResponse {
 }
 
 // Generation request
-export interface GeneratePostShowPackageInput {
+export interface GeneratePostShowPackageInput extends TradioAuthenticatedInput {
   source_type: 'recording' | 'clip' | 'episode' | 'queue_item';
   source_id: string;
   asset_types: PostShowAssetType[];
@@ -239,7 +240,7 @@ export interface GeneratePostShowPackageInput {
 }
 
 // Manual asset creation request
-export interface CreatePostShowAssetInput {
+export interface CreatePostShowAssetInput extends TradioAuthenticatedInput {
   recording_id: string;
   asset_type: PostShowAssetType;
   title?: string;
@@ -249,7 +250,7 @@ export interface CreatePostShowAssetInput {
 }
 
 // Update asset request
-export interface UpdatePostShowAssetInput {
+export interface UpdatePostShowAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   title?: string;
   body?: string;
@@ -259,25 +260,25 @@ export interface UpdatePostShowAssetInput {
 }
 
 // Approve asset request
-export interface ApprovePostShowAssetInput {
+export interface ApprovePostShowAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   moderation_notes?: string;
 }
 
 // Reject asset request
-export interface RejectPostShowAssetInput {
+export interface RejectPostShowAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   rejection_reason: string;
 }
 
 // Archive asset request
-export interface ArchivePostShowAssetInput {
+export interface ArchivePostShowAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   moderation_notes?: string;
 }
 
 // Publish asset request
-export interface PublishPostShowAssetInput {
+export interface PublishPostShowAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   visibility: PostShowAssetVisibility;
 }
@@ -297,19 +298,19 @@ export interface PostShowPublisherTarget {
   queue_id?: string | null;
 }
 
-export interface ApplyPostShowAssetToClipInput {
+export interface ApplyPostShowAssetToClipInput extends TradioAuthenticatedInput {
   asset_id: string;
   clip_id: string;
   application_type?: PostShowApplicationType;
 }
 
-export interface ApplyPostShowAssetToEpisodeInput {
+export interface ApplyPostShowAssetToEpisodeInput extends TradioAuthenticatedInput {
   asset_id: string;
   episode_id: string;
   application_type?: PostShowApplicationType;
 }
 
-export interface CreatePostShowDraftFromAssetInput {
+export interface CreatePostShowDraftFromAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   recording_id?: string;
   clip_id?: string;
@@ -320,7 +321,7 @@ export interface CreatePostShowDraftFromAssetInput {
 
 export interface CreatePrescribeMeMetadataFromAssetInput extends CreatePostShowDraftFromAssetInput {}
 
-export interface ListPostShowApplicationsInput {
+export interface ListPostShowApplicationsInput extends TradioAuthenticatedInput {
   recording_id?: string;
   clip_id?: string;
   episode_id?: string;
@@ -328,12 +329,12 @@ export interface ListPostShowApplicationsInput {
   review_queue?: boolean;
 }
 
-export interface ReviewPostShowApplicationInput {
+export interface ReviewPostShowApplicationInput extends TradioAuthenticatedInput {
   application_id: string;
   review_notes?: string;
 }
 
-export interface RejectPostShowApplicationInput {
+export interface RejectPostShowApplicationInput extends TradioAuthenticatedInput {
   application_id: string;
   rejection_reason: string;
 }

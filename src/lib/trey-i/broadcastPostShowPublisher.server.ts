@@ -23,6 +23,11 @@ import type {
   RejectPostShowApplicationInput,
   ReviewPostShowApplicationInput,
 } from './broadcastPostShowTypes';
+import {
+  verifyTradioAccessToken,
+  type TradioAuthenticatedInput,
+  type TradioServerAuthClient,
+} from './tradioServerAuth';
 
 const supabase = supabaseAdmin;
 
@@ -66,12 +71,16 @@ interface EpisodeRow {
   metadata?: PostShowJsonObject | null;
 }
 
-async function currentUser(): Promise<{ user?: AuthUser; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated' };
-  return { user: { id: user.id } };
+async function currentUser(accessToken: string): Promise<{ user?: AuthUser; error?: string }> {
+  try {
+    const { verifiedUserId } = await verifyTradioAccessToken(
+      accessToken,
+      supabase as unknown as TradioServerAuthClient,
+    );
+    return { user: { id: verifiedUserId } };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Not authenticated' };
+  }
 }
 
 async function ensureAdmin(userId: string): Promise<boolean> {
@@ -360,7 +369,7 @@ async function createDraftApplication(
   input: CreatePostShowDraftFromAssetInput,
   applicationType: PostShowApplicationType,
 ): Promise<{ success: boolean; application?: PostShowApplication; error?: string }> {
-  const { user, error: authError } = await currentUser();
+  const { user, error: authError } = await currentUser(input.accessToken);
   if (!user) return { success: false, error: authError };
 
   const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -392,7 +401,7 @@ export const applyPostShowAssetToClip = createServerFn({ method: 'POST' })
   .inputValidator((input: ApplyPostShowAssetToClipInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; application?: PostShowApplication; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -454,7 +463,7 @@ export const applyPostShowAssetToEpisode = createServerFn({ method: 'POST' })
   .inputValidator((input: ApplyPostShowAssetToEpisodeInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; application?: PostShowApplication; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -527,7 +536,7 @@ export const createPrescribeMeMetadataFromAsset = createServerFn({ method: 'POST
   .inputValidator((input: CreatePrescribeMeMetadataFromAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; application?: PostShowApplication; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -612,7 +621,7 @@ export const listPostShowApplications = createServerFn({ method: 'POST' })
   .inputValidator((input: ListPostShowApplicationsInput) => input)
   .handler(async ({ data: input }): Promise<{ applications: PostShowApplication[]; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { applications: [], error: authError };
 
       const isAdmin = await ensureAdmin(user.id);
@@ -640,15 +649,16 @@ export const listPostShowApplications = createServerFn({ method: 'POST' })
     }
   });
 
-export const listPendingPostShowApplicationsForReview = createServerFn({ method: 'GET' })
-  .handler(async (): Promise<{ applications: PostShowApplication[]; error?: string }> => {
-    return listPostShowApplications({ data: { review_queue: true } });
+export const listPendingPostShowApplicationsForReview = createServerFn({ method: 'POST' })
+  .inputValidator((input: TradioAuthenticatedInput) => input)
+  .handler(async ({ data: input }): Promise<{ applications: PostShowApplication[]; error?: string }> => {
+    return listPostShowApplications({ data: { accessToken: input.accessToken, review_queue: true } });
   });
 
 export const submitPostShowApplicationForReview = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewPostShowApplicationInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
-    const { user, error: authError } = await currentUser();
+    const { user, error: authError } = await currentUser(input.accessToken);
     if (!user) return { success: false, error: authError };
 
     const { data: application, error } = await (supabase as any)
@@ -674,7 +684,7 @@ export const approvePostShowApplication = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewPostShowApplicationInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { success: false, error: 'Admin access required' };
@@ -750,7 +760,7 @@ export const approvePostShowApplication = createServerFn({ method: 'POST' })
 export const rejectPostShowApplication = createServerFn({ method: 'POST' })
   .inputValidator((input: RejectPostShowApplicationInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
-    const { user, error: authError } = await currentUser();
+    const { user, error: authError } = await currentUser(input.accessToken);
     if (!user) return { success: false, error: authError };
     const isAdmin = await ensureAdmin(user.id);
     if (!isAdmin) return { success: false, error: 'Admin access required' };
@@ -766,7 +776,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewPostShowApplicationInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { data: application, error } = await (supabase as any)
@@ -918,10 +928,10 @@ export const getPublicPostShowAssetsForEpisode = createServerFn({ method: 'POST'
   });
 
 export const listPostShowTargetsForRecording = createServerFn({ method: 'POST' })
-  .inputValidator((input: { recording_id: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { recording_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ targets: PostShowPublisherTarget[]; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { targets: [], error: authError };
 
       const { data: recording, error: recordingError } = await (supabase as any)

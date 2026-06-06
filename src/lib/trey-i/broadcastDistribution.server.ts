@@ -31,17 +31,26 @@ import type {
 } from './broadcastDistributionTypes';
 import type { PostShowApplication, PostShowAsset, PostShowJsonObject } from './broadcastPostShowTypes';
 import { recordDistributionMetricForOwner } from './broadcastCampaign.server';
+import {
+  verifyTradioAccessToken,
+  type TradioAuthenticatedInput,
+  type TradioServerAuthClient,
+} from './tradioServerAuth';
 
 const supabase = supabaseAdmin;
 
 type AuthUser = { id: string };
 
-async function currentUser(): Promise<{ user?: AuthUser; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated' };
-  return { user: { id: user.id } };
+async function currentUser(accessToken: string): Promise<{ user?: AuthUser; error?: string }> {
+  try {
+    const { verifiedUserId } = await verifyTradioAccessToken(
+      accessToken,
+      supabase as unknown as TradioServerAuthClient,
+    );
+    return { user: { id: verifiedUserId } };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Not authenticated' };
+  }
 }
 
 async function ensureAdmin(userId: string): Promise<boolean> {
@@ -193,7 +202,7 @@ export const createDistributionDraftFromAsset = createServerFn({ method: 'POST' 
   .inputValidator((input: CreateDistributionDraftFromAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -224,7 +233,7 @@ export const createDistributionDraftFromApplication = createServerFn({ method: '
   .inputValidator((input: CreateDistributionDraftFromApplicationInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
       const { application, asset, error: appError } = await fetchApplicationForOwner(input.application_id, user.id);
@@ -267,7 +276,7 @@ export const createDistributionDraftManually = createServerFn({ method: 'POST' }
   .inputValidator((input: CreateDistributionDraftManualInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       if (!input.body.trim()) return { success: false, error: 'Draft body is required' };
 
@@ -316,7 +325,7 @@ export const updateDistributionDraft = createServerFn({ method: 'POST' })
   .inputValidator((input: UpdateDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -356,7 +365,7 @@ export const markDistributionDraftReady = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -394,7 +403,7 @@ export const submitDistributionDraftForReview = createServerFn({ method: 'POST' 
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -415,7 +424,7 @@ export const approveDistributionDraft = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { success: false, error: 'Admin access required' };
@@ -442,7 +451,7 @@ export const rejectDistributionDraft = createServerFn({ method: 'POST' })
   .inputValidator((input: RejectDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { success: false, error: 'Admin access required' };
@@ -466,7 +475,7 @@ export const archiveDistributionDraft = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError, isAdmin } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -488,7 +497,7 @@ export const markDistributionDraftUsed = createServerFn({ method: 'POST' })
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -510,7 +519,7 @@ export const incrementDistributionDraftCopyCount = createServerFn({ method: 'POS
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -534,7 +543,7 @@ export const scheduleDistributionDraftReminder = createServerFn({ method: 'POST'
   .inputValidator((input: ScheduleDistributionDraftReminderInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -556,7 +565,7 @@ export const cancelDistributionDraftReminder = createServerFn({ method: 'POST' }
   .inputValidator((input: ReviewDistributionDraftInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; draft?: DistributionDraft; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
       const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);
       if (!draft) return { success: false, error: draftError };
@@ -575,7 +584,7 @@ export const listDistributionDrafts = createServerFn({ method: 'POST' })
   .inputValidator((input: ListDistributionDraftsInput) => input)
   .handler(async ({ data: input }): Promise<{ drafts: DistributionDraft[]; error?: string }> => {
     try {
-      const { user, error: authError } = await currentUser();
+      const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { drafts: [], error: authError };
       const isAdmin = await ensureAdmin(user.id);
       if (input.review_queue && !isAdmin) return { drafts: [], error: 'Admin access required' };
@@ -605,26 +614,27 @@ export const listDistributionDrafts = createServerFn({ method: 'POST' })
   });
 
 export const listDistributionDraftsForClip = createServerFn({ method: 'POST' })
-  .inputValidator((input: { clip_id: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { clip_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ drafts: DistributionDraft[]; error?: string }> => {
-    return listDistributionDrafts({ data: { clip_id: input.clip_id } });
+    return listDistributionDrafts({ data: { accessToken: input.accessToken, clip_id: input.clip_id } });
   });
 
 export const listDistributionDraftsForEpisode = createServerFn({ method: 'POST' })
-  .inputValidator((input: { episode_id: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { episode_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ drafts: DistributionDraft[]; error?: string }> => {
-    return listDistributionDrafts({ data: { episode_id: input.episode_id } });
+    return listDistributionDrafts({ data: { accessToken: input.accessToken, episode_id: input.episode_id } });
   });
 
-export const listPendingDistributionDraftReviews = createServerFn({ method: 'GET' })
-  .handler(async (): Promise<{ drafts: DistributionDraft[]; error?: string }> => {
-    return listDistributionDrafts({ data: { review_queue: true } });
+export const listPendingDistributionDraftReviews = createServerFn({ method: 'POST' })
+  .inputValidator((input: TradioAuthenticatedInput) => input)
+  .handler(async ({ data: input }): Promise<{ drafts: DistributionDraft[]; error?: string }> => {
+    return listDistributionDrafts({ data: { accessToken: input.accessToken, review_queue: true } });
   });
 
 export const buildDistributionSourceSnapshot = createServerFn({ method: 'POST' })
-  .inputValidator((input: { asset_id: string; application_id?: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { asset_id: string; application_id?: string }) => input)
   .handler(async ({ data: input }): Promise<{ snapshot: PostShowJsonObject; error?: string }> => {
-    const { user, error: authError } = await currentUser();
+    const { user, error: authError } = await currentUser(input.accessToken);
     if (!user) return { snapshot: {}, error: authError };
 
     const { asset, error: assetError } = await fetchAssetForOwner(input.asset_id, user.id);
@@ -641,9 +651,9 @@ export const buildDistributionSourceSnapshot = createServerFn({ method: 'POST' }
   });
 
 export const buildPrescribeMeSignalsFromDistributionDraft = createServerFn({ method: 'POST' })
-  .inputValidator((input: { draft_id: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { draft_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ signals: PostShowJsonObject; error?: string }> => {
-    const { user, error: authError } = await currentUser();
+    const { user, error: authError } = await currentUser(input.accessToken);
     if (!user) return { signals: {}, error: authError };
 
     const { draft, error: draftError } = await fetchDraftForUser(input.draft_id, user.id);

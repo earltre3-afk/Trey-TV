@@ -32,7 +32,8 @@ interface AdminPostShowReviewDashboardProps {
 }
 
 export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboardProps> = () => {
-  const { identity } = useTradioIdentity();
+  const { identity, session } = useTradioIdentity();
+  const accessToken = session?.access_token ?? '';
   const isAdmin = canAdminPlatform(identity);
   const [assets, setAssets] = useState<PostShowAsset[]>([]);
   const [applications, setApplications] = useState<PostShowApplication[]>([]);
@@ -50,7 +51,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
   >('source');
 
   const loadQueue = useCallback(async () => {
-    if (!isAdmin) {
+    if (!isAdmin || !accessToken) {
       setLoading(false);
       return;
     }
@@ -58,9 +59,9 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setLoading(true);
     try {
       const [assetResult, applicationResult, distributionResult] = await Promise.all([
-        listPendingPostShowAssetsForReviewServer(),
-        listPendingPostShowApplicationsForReview(),
-        listPendingDistributionDraftReviews(),
+        listPendingPostShowAssetsForReviewServer({ data: { accessToken } }),
+        listPendingPostShowApplicationsForReview({ data: { accessToken } }),
+        listPendingDistributionDraftReviews({ data: { accessToken } }),
       ]);
 
       if (assetResult.error) {
@@ -94,7 +95,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     } finally {
       setLoading(false);
     }
-  }, [isAdmin]);
+  }, [accessToken, isAdmin]);
 
   useEffect(() => {
     loadQueue();
@@ -144,7 +145,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await approvePostShowAssetServer({
-        data: { asset_id: selectedAsset.id, moderation_notes: moderationNotes },
+        data: { accessToken, asset_id: selectedAsset.id, moderation_notes: moderationNotes },
       });
       if (result.success) {
         toast.success('Post-show asset approved');
@@ -167,7 +168,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await rejectPostShowAssetServer({
-        data: { asset_id: selectedAsset.id, rejection_reason: moderationNotes },
+        data: { accessToken, asset_id: selectedAsset.id, rejection_reason: moderationNotes },
       });
       if (result.success) {
         toast.success('Post-show asset rejected');
@@ -185,7 +186,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await archivePostShowAssetServer({
-        data: { asset_id: selectedAsset.id, moderation_notes: moderationNotes },
+        data: { accessToken, asset_id: selectedAsset.id, moderation_notes: moderationNotes },
       });
       if (result.success) {
         toast.success('Post-show asset archived');
@@ -203,7 +204,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await approvePostShowApplication({
-        data: { application_id: selectedApplication.id, review_notes: applicationNotes },
+        data: { accessToken, application_id: selectedApplication.id, review_notes: applicationNotes },
       });
       if (result.success) {
         toast.success('Application approved');
@@ -226,7 +227,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await rejectPostShowApplication({
-        data: { application_id: selectedApplication.id, rejection_reason: applicationNotes },
+        data: { accessToken, application_id: selectedApplication.id, rejection_reason: applicationNotes },
       });
       if (result.success) {
         toast.success('Application rejected');
@@ -244,7 +245,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await approveDistributionDraft({
-        data: { draft_id: selectedDistributionDraft.id, review_notes: distributionNotes },
+        data: { accessToken, draft_id: selectedDistributionDraft.id, review_notes: distributionNotes },
       });
       if (result.success) {
         toast.success('Distribution draft approved');
@@ -266,7 +267,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await rejectDistributionDraft({
-        data: { draft_id: selectedDistributionDraft.id, rejection_reason: distributionNotes },
+        data: { accessToken, draft_id: selectedDistributionDraft.id, rejection_reason: distributionNotes },
       });
       if (result.success) {
         toast.success('Distribution draft rejected');
@@ -284,7 +285,7 @@ export const AdminPostShowReviewDashboard: React.FC<AdminPostShowReviewDashboard
     setActioning(true);
     try {
       const result = await archiveDistributionDraft({
-        data: { draft_id: selectedDistributionDraft.id, review_notes: distributionNotes },
+        data: { accessToken, draft_id: selectedDistributionDraft.id, review_notes: distributionNotes },
       });
       if (result.success) {
         toast.success('Distribution draft archived');

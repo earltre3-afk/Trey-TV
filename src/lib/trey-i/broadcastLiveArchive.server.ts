@@ -15,14 +15,38 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { publishClipWithGatesServer } from './broadcastPublishingGates.server';
+import {
+  verifyTradioAccessToken,
+  type TradioAuthenticatedInput,
+  type TradioServerAuthClient,
+} from './tradioServerAuth';
 
 const supabase = supabaseAdmin;
+
+async function verifiedUserId(accessToken: string): Promise<string | null> {
+  try {
+    return (
+      await verifyTradioAccessToken(
+        accessToken,
+        supabase as unknown as TradioServerAuthClient,
+      )
+    ).verifiedUserId;
+  } catch {
+    return null;
+  }
+}
+
+async function isAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabase.rpc('is_admin', { _user_id: userId });
+  return data === true;
+}
 
 /**
  * Create a new recording instance for a live mic session
  * Only called server-side when host explicitly enables recording
  */
 export async function createLiveRecordingServer(input: {
+  accessToken: string;
   session_id: string;
   room_id: string;
   channel_id: string;
@@ -32,10 +56,17 @@ export async function createLiveRecordingServer(input: {
   assembly_id?: string;
   recording_type?: string;
 }): Promise<{ id: string; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { id: '', error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { id: '', error: 'Not authenticated' };
+
+  const { data: channel } = await (supabase as any)
+    .from('tradio_broadcast_channels')
+    .select('owner_user_id')
+    .eq('id', input.channel_id)
+    .single();
+  if (!channel || (channel.owner_user_id !== userId && !(await isAdmin(userId)))) {
+    return { id: '', error: 'Not authorized' };
+  }
 
   const {
     data,
@@ -43,7 +74,7 @@ export async function createLiveRecordingServer(input: {
   } = await (supabase as any)
     .from('tradio_live_recordings')
     .insert({
-      owner_user_id: user.id,
+      owner_user_id: userId,
       session_id: input.session_id,
       room_id: input.room_id,
       channel_id: input.channel_id,
@@ -69,6 +100,7 @@ export async function createLiveRecordingServer(input: {
  * Called when provider confirms recording started/stopped/completed
  */
 export async function updateRecordingStatusServer(input: {
+  accessToken: string;
   recording_id: string;
   status: string;
   duration_seconds?: number;
@@ -77,10 +109,8 @@ export async function updateRecordingStatusServer(input: {
   storage_path?: string;
   error?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { success: false, error: 'Not authenticated' };
 
   const updateData: Record<string, unknown> = {
     recording_status: input.status,
@@ -107,7 +137,7 @@ export async function updateRecordingStatusServer(input: {
     .from('tradio_live_recordings')
     .update(updateData)
     .eq('id', input.recording_id)
-    .eq('owner_user_id', user.id);
+    .eq('owner_user_id', userId);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -221,6 +251,7 @@ export async function createRecordingSegmentServer(input: {
  * Create a highlight clip from a recording
  */
 export async function createHighlightClipServer(input: {
+  accessToken: string;
   recording_id: string;
   segment_id?: string;
   session_id: string;
@@ -237,10 +268,17 @@ export async function createHighlightClipServer(input: {
   genre_tags?: string[];
   audience_tags?: string[];
 }): Promise<{ id: string; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { id: '', error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { id: '', error: 'Not authenticated' };
+
+  const { data: recording } = await (supabase as any)
+    .from('tradio_live_recordings')
+    .select('owner_user_id, session_id, room_id, channel_id, queue_id, show_id, episode_id')
+    .eq('id', input.recording_id)
+    .single();
+  if (!recording || recording.owner_user_id !== userId) {
+    return { id: '', error: 'Not authorized' };
+  }
 
   const {
     data,
@@ -248,15 +286,15 @@ export async function createHighlightClipServer(input: {
   } = await (supabase as any)
     .from('tradio_live_highlight_clips')
     .insert({
-      owner_user_id: user.id,
+      owner_user_id: userId,
       recording_id: input.recording_id,
       segment_id: input.segment_id,
-      session_id: input.session_id,
-      room_id: input.room_id,
-      channel_id: input.channel_id,
-      queue_id: input.queue_id,
-      show_id: input.show_id,
-      episode_id: input.episode_id,
+      session_id: recording.session_id,
+      room_id: recording.room_id,
+      channel_id: recording.channel_id,
+      queue_id: recording.queue_id,
+      show_id: recording.show_id,
+      episode_id: recording.episode_id,
       title: input.title,
       description: input.description,
       start_time_seconds: input.start_time_seconds,
@@ -279,6 +317,7 @@ export async function createHighlightClipServer(input: {
  * Update clip metadata and status
  */
 export async function updateHighlightClipServer(input: {
+  accessToken: string;
   clip_id: string;
   title?: string;
   description?: string;
@@ -289,10 +328,17 @@ export async function updateHighlightClipServer(input: {
   genre_tags?: string[];
   audience_tags?: string[];
 }): Promise<{ success: boolean; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { success: false, error: 'Not authenticated' };
+  if (
+    (input.clip_status !== undefined && input.clip_status !== 'draft')
+    || (input.visibility !== undefined && input.visibility !== 'private')
+  ) {
+    return {
+      success: false,
+      error: 'Publishing must use the gated publish flow; rendering and review statuses use dedicated server actions',
+    };
+  }
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -311,7 +357,7 @@ export async function updateHighlightClipServer(input: {
     .from('tradio_live_highlight_clips')
     .update(updateData)
     .eq('id', input.clip_id)
-    .eq('owner_user_id', user.id);
+    .eq('owner_user_id', userId);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -321,13 +367,12 @@ export async function updateHighlightClipServer(input: {
  * Submit clip for review/approval
  */
 export async function submitClipForReviewServer(input: {
+  accessToken: string;
   clip_id: string;
   review_notes?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { success: false, error: 'Not authenticated' };
 
   const { error } = await (supabase as any)
     .from('tradio_live_highlight_clips')
@@ -337,7 +382,7 @@ export async function submitClipForReviewServer(input: {
       updated_at: new Date().toISOString(),
     })
     .eq('id', input.clip_id)
-    .eq('owner_user_id', user.id);
+    .eq('owner_user_id', userId);
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -347,47 +392,36 @@ export async function submitClipForReviewServer(input: {
  * Publish approved clip (admin/creator)
  */
 export async function publishHighlightClipServer(input: {
+  accessToken: string;
   clip_id: string;
   visibility?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not authenticated' };
-
-  const { error } = await (supabase as any)
-    .from('tradio_live_highlight_clips')
-    .update({
-      clip_status: 'published',
-      visibility: input.visibility || 'public',
-      published_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', input.clip_id)
-    .eq('owner_user_id', user.id);
-
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { success: false, error: 'Not authenticated' };
+  return publishClipWithGatesServer({
+    clip_id: input.clip_id,
+    verifiedUserId: userId,
+    visibility: input.visibility || 'public',
+  });
 }
 
 /**
  * Get signed URL for private recording playback (review only)
  */
 export async function getSignedRecordingPlaybackUrlServer(input: {
+  accessToken: string;
   recording_id: string;
   expiresIn?: number;
 }): Promise<{ url?: string; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { error: 'Not authenticated' };
 
   // Fetch recording to verify ownership/permissions
   const { data: recording, error: fetchError } = await (supabase as any)
     .from('tradio_live_recordings')
     .select('storage_path')
     .eq('id', input.recording_id)
-    .eq('owner_user_id', user.id)
+    .eq('owner_user_id', userId)
     .single();
 
   if (fetchError || !recording?.storage_path) {
@@ -408,19 +442,22 @@ export async function getSignedRecordingPlaybackUrlServer(input: {
  */
 export async function getSignedClipPlaybackUrlServer(input: {
   clip_id: string;
+  accessToken?: string;
 }): Promise<{ url?: string; error?: string }> {
   const { data: clip, error: fetchError } = await (supabase as any)
     .from('tradio_live_highlight_clips')
-    .select('audio_url, clip_status, visibility')
+    .select('audio_url, clip_status, visibility, owner_user_id')
     .eq('id', input.clip_id)
     .single();
 
   if (fetchError) return { error: 'Clip not found' };
 
   // Only serve publicly published clips or auth-owned clips
-  if (clip.clip_status !== 'published' && clip.visibility !== 'public') {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: 'Not authorized' };
+  if (clip.clip_status !== 'published' || clip.visibility !== 'public') {
+    const userId = await verifiedUserId(input.accessToken ?? '');
+    if (!userId || (clip.owner_user_id !== userId && !(await isAdmin(userId)))) {
+      return { error: 'Not authorized' };
+    }
   }
 
   // If audio_url is a signed URL or public path, return it
@@ -436,19 +473,18 @@ export async function getSignedClipPlaybackUrlServer(input: {
  * List recordings for a session or creator
  */
 export async function listRecordingsForSessionServer(input: {
+  accessToken: string;
   session_id?: string;
   limit?: number;
   offset?: number;
 }): Promise<{ recordings: any[]; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { recordings: [], error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { recordings: [], error: 'Not authenticated' };
 
   let query = (supabase as any)
     .from('tradio_live_recordings')
     .select('*')
-    .eq('owner_user_id', user.id);
+    .eq('owner_user_id', userId);
 
   if (input.session_id) {
     query = query.eq('session_id', input.session_id);
@@ -473,20 +509,36 @@ export async function listRecordingsForSessionServer(input: {
  * Create an archive job (for background processing)
  */
 export async function createArchiveJobServer(input: {
+  accessToken: string;
   recording_id?: string;
   clip_id?: string;
   job_type: string;
   input_payload?: Record<string, unknown>;
 }): Promise<{ id: string; error?: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { id: '', error: 'Not authenticated' };
+  const userId = await verifiedUserId(input.accessToken);
+  if (!userId) return { id: '', error: 'Not authenticated' };
+
+  if (input.recording_id) {
+    const { data: recording } = await (supabase as any)
+      .from('tradio_live_recordings')
+      .select('owner_user_id')
+      .eq('id', input.recording_id)
+      .single();
+    if (!recording || recording.owner_user_id !== userId) return { id: '', error: 'Not authorized' };
+  }
+  if (input.clip_id) {
+    const { data: clip } = await (supabase as any)
+      .from('tradio_live_highlight_clips')
+      .select('owner_user_id')
+      .eq('id', input.clip_id)
+      .single();
+    if (!clip || clip.owner_user_id !== userId) return { id: '', error: 'Not authorized' };
+  }
 
   const { data, error } = await (supabase as any)
     .from('tradio_live_archive_jobs')
     .insert({
-      owner_user_id: user.id,
+      owner_user_id: userId,
       recording_id: input.recording_id,
       clip_id: input.clip_id,
       job_type: input.job_type,
@@ -513,19 +565,15 @@ export async function createArchiveJobServer(input: {
  * - Spoofed user_id cannot publish someone else's clip
  */
 export const publishHighlightClipWithGatesServer = createServerFn({ method: "POST" })
-  .inputValidator((input: { clip_id: string; accessToken: string; visibility?: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { clip_id: string; visibility?: string }) => input)
   .handler(async ({ data: input }) => {
-    // Verify the access token and derive verified user
-    const { data: authData, error: authError } = await supabase.auth.getUser(input.accessToken);
-
-    if (authError || !authData.user) {
+    const userId = await verifiedUserId(input.accessToken);
+    if (!userId) {
       return {
         success: false,
         error: 'Invalid or expired access token',
       };
     }
-
-    const verifiedUserId = authData.user.id;
 
     // Call publishing gates which will:
     // - Verify user owns the clip (Gate 1)
@@ -537,7 +585,7 @@ export const publishHighlightClipWithGatesServer = createServerFn({ method: "POS
     // - Verify visibility transition (Gate 7)
     return await publishClipWithGatesServer({
       clip_id: input.clip_id,
-      verifiedUserId,
+      verifiedUserId: userId,
       visibility: input.visibility || 'public',
     });
   });

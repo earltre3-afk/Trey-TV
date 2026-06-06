@@ -47,7 +47,7 @@ export const MountedPlayer: React.FC = () => {
       role="region"
       aria-label="Mounted Tradio Player"
     >
-      <div className="w-80 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/50 shadow-2xl overflow-hidden backdrop-blur-xl">
+      <div className="w-[calc(100vw-2rem)] max-w-80 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/50 shadow-2xl overflow-hidden backdrop-blur-xl sm:w-80">
         <div className="p-4 space-y-3">
           {/* Artwork */}
           <div className="relative group">

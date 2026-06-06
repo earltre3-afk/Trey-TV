@@ -52,6 +52,7 @@ import type {
   PostShowPlatform,
   PostShowPublisherTarget,
 } from '@/lib/trey-i/broadcastPostShowTypes';
+import { useTradioIdentity } from '../auth/useTradioIdentity';
 
 interface PostShowProducerProps {
   recording_id?: string;
@@ -91,6 +92,8 @@ const PLATFORM_OPTIONS: PostShowPlatform[] = [
 ];
 
 export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ recording_id, onNavigate }) => {
+  const { session } = useTradioIdentity();
+  const accessToken = session?.access_token ?? '';
   const [activeRecordingId, setActiveRecordingId] = useState<string | null>(recording_id ?? null);
   const [recordingOptions, setRecordingOptions] = useState<PostShowRecordingOption[]>([]);
   const [loadingRecordings, setLoadingRecordings] = useState(true);
@@ -124,8 +127,9 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
   const loadRecordings = useCallback(async () => {
     setLoadingRecordings(true);
     try {
+      if (!accessToken) return;
       const result = await listPostShowRecordingsServer({
-        data: { limit: 25 },
+        data: { accessToken, limit: 25 },
       });
       if (result.error) {
         toast.error(result.error);
@@ -139,7 +143,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     } finally {
       setLoadingRecordings(false);
     }
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     loadRecordings();
@@ -154,8 +158,9 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
 
     setLoading(true);
     try {
+      if (!accessToken) return;
       const result = await listPostShowAssetsForRecordingServer({
-        data: { recording_id: activeRecordingId },
+        data: { accessToken, recording_id: activeRecordingId },
       });
       if (!result.error) {
         setAssets(result.assets);
@@ -167,7 +172,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     } finally {
       setLoading(false);
     }
-  }, [activeRecordingId]);
+  }, [accessToken, activeRecordingId]);
 
   useEffect(() => {
     loadAssets();
@@ -179,10 +184,11 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
       setTargets([]);
       return;
     }
+    if (!accessToken) return;
 
     const [applicationResult, targetResult] = await Promise.all([
-      listPostShowApplications({ data: { recording_id: activeRecordingId } }),
-      listPostShowTargetsForRecording({ data: { recording_id: activeRecordingId } }),
+      listPostShowApplications({ data: { accessToken, recording_id: activeRecordingId } }),
+      listPostShowTargetsForRecording({ data: { accessToken, recording_id: activeRecordingId } }),
     ]);
 
     if (applicationResult.error) {
@@ -198,7 +204,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     } else {
       setTargets(targetResult.targets);
     }
-  }, [activeRecordingId]);
+  }, [accessToken, activeRecordingId]);
 
   useEffect(() => {
     loadPublisherState();
@@ -229,6 +235,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await generatePostShowPackageServer({
         data: {
+          accessToken,
           source_type: 'recording',
           source_id: activeRecordingId,
           asset_types: Array.from(selectedTypes),
@@ -268,6 +275,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await createPostShowAssetServer({
         data: {
+          accessToken,
           recording_id: activeRecordingId,
           asset_type: manualType,
           platform: manualPlatform,
@@ -295,6 +303,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await updatePostShowAssetServer({
         data: {
+          accessToken,
           asset_id: assetId,
           title: newTitle,
           body: newBody,
@@ -326,6 +335,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await updatePostShowAssetServer({
         data: {
+          accessToken,
           asset_id: asset.id,
           asset_status: 'pending_review',
           visibility: 'private',
@@ -348,6 +358,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await publishPostShowAssetServer({
         data: {
+          accessToken,
           asset_id: asset.id,
           visibility: 'public',
         },
@@ -403,6 +414,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
         target.target_type === 'clip'
           ? await applyPostShowAssetToClip({
               data: {
+                accessToken,
                 asset_id: asset.id,
                 clip_id: target.id,
                 application_type: applicationType ?? undefined,
@@ -410,6 +422,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
             })
           : await applyPostShowAssetToEpisode({
               data: {
+                accessToken,
                 asset_id: asset.id,
                 episode_id: target.id,
                 application_type: applicationType ?? undefined,
@@ -439,7 +452,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
   ) => {
     setPublisherBusyId(`${asset.id}:${draftType}`);
     try {
-      const payload = { asset_id: asset.id, recording_id: activeRecordingId ?? undefined };
+      const payload = { accessToken, asset_id: asset.id, recording_id: activeRecordingId ?? undefined };
       const result =
         draftType === 'social'
           ? await createSocialDraftFromAsset({ data: payload })
@@ -466,6 +479,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
     try {
       const result = await createPrescribeMeMetadataFromAsset({
         data: {
+          accessToken,
           asset_id: asset.id,
           recording_id: activeRecordingId ?? undefined,
           clip_id: target?.target_type === 'clip' ? target.id : undefined,
@@ -497,6 +511,7 @@ export const PostShowProducerDashboard: React.FC<PostShowProducerProps> = ({ rec
         Array.from(selectedTopicIds).map((assetId) =>
           updatePostShowAssetServer({
             data: {
+              accessToken,
               asset_id: assetId,
               asset_status: 'edited',
               visibility: 'private',

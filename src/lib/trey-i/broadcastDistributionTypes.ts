@@ -1,4 +1,5 @@
 import type { PostShowAssetType, PostShowJsonObject, PostShowJsonValue } from './broadcastPostShowTypes';
+import type { TradioAuthenticatedInput } from './tradioServerAuth';
 
 export type DistributionDraftType =
   | 'tiktok_caption'
@@ -99,7 +100,7 @@ export interface DistributionDraftFormatted {
   metadata: DistributionDraftMetadata;
 }
 
-export interface CreateDistributionDraftFromAssetInput {
+export interface CreateDistributionDraftFromAssetInput extends TradioAuthenticatedInput {
   asset_id: string;
   draft_type: DistributionDraftType;
   platform: DistributionPlatform;
@@ -110,13 +111,13 @@ export interface CreateDistributionDraftFromAssetInput {
   channel_id?: string;
 }
 
-export interface CreateDistributionDraftFromApplicationInput {
+export interface CreateDistributionDraftFromApplicationInput extends TradioAuthenticatedInput {
   application_id: string;
   draft_type: DistributionDraftType;
   platform: DistributionPlatform;
 }
 
-export interface CreateDistributionDraftManualInput {
+export interface CreateDistributionDraftManualInput extends TradioAuthenticatedInput {
   draft_type: DistributionDraftType;
   platform: DistributionPlatform;
   title?: string;
@@ -129,7 +130,7 @@ export interface CreateDistributionDraftManualInput {
   channel_id?: string;
 }
 
-export interface UpdateDistributionDraftInput {
+export interface UpdateDistributionDraftInput extends TradioAuthenticatedInput {
   draft_id: string;
   draft_type?: DistributionDraftType;
   platform?: DistributionPlatform;
@@ -139,22 +140,22 @@ export interface UpdateDistributionDraftInput {
   scheduled_for?: string | null;
 }
 
-export interface ReviewDistributionDraftInput {
+export interface ReviewDistributionDraftInput extends TradioAuthenticatedInput {
   draft_id: string;
   review_notes?: string;
 }
 
-export interface RejectDistributionDraftInput {
+export interface RejectDistributionDraftInput extends TradioAuthenticatedInput {
   draft_id: string;
   rejection_reason: string;
 }
 
-export interface ScheduleDistributionDraftReminderInput {
+export interface ScheduleDistributionDraftReminderInput extends TradioAuthenticatedInput {
   draft_id: string;
   scheduled_for: string;
 }
 
-export interface ListDistributionDraftsInput {
+export interface ListDistributionDraftsInput extends TradioAuthenticatedInput {
   asset_id?: string;
   application_id?: string;
   clip_id?: string;

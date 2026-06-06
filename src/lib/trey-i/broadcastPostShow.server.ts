@@ -23,6 +23,11 @@ import type {
   ArchivePostShowAssetInput,
   PublishPostShowAssetInput,
 } from './broadcastPostShowTypes';
+import {
+  verifyTradioAccessToken,
+  type TradioAuthenticatedInput,
+  type TradioServerAuthClient,
+} from './tradioServerAuth';
 
 const supabase = supabaseAdmin;
 
@@ -50,6 +55,18 @@ function buildSourceReference(input: GeneratePostShowPackageInput | { source_typ
 async function ensureAdmin(userId: string): Promise<boolean> {
   const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: userId });
   return isAdmin === true;
+}
+
+async function currentUser(accessToken: string): Promise<{ id: string } | null> {
+  try {
+    const { verifiedUserId } = await verifyTradioAccessToken(
+      accessToken,
+      supabase as unknown as TradioServerAuthClient,
+    );
+    return { id: verifiedUserId };
+  } catch {
+    return null;
+  }
 }
 
 interface RecordingDurationRow {
@@ -86,6 +103,7 @@ function sanitizePublicMetadata(metadata: unknown): PostShowJsonObject {
 export async function buildPostShowSourceSnapshot(
   sourceType: 'recording' | 'clip' | 'episode' | 'queue_item',
   sourceId: string,
+  verifiedUserId: string,
 ): Promise<{ snapshot: PostShowSourceSnapshot; error?: string }> {
   try {
     const snapshot: PostShowSourceSnapshot = {};
@@ -93,11 +111,12 @@ export async function buildPostShowSourceSnapshot(
     if (sourceType === 'recording') {
       const { data: recording } = await (supabase as any)
         .from('tradio_live_recordings')
-        .select('duration_seconds, recording_type, session_id, tradio_broadcast_channels(title), tradio_shows(title)')
+        .select('owner_user_id, duration_seconds, recording_type, session_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
         .single();
 
       if (!recording) return { snapshot: {}, error: 'Recording not found' };
+      if (recording.owner_user_id !== verifiedUserId) return { snapshot: {}, error: 'Not authorized' };
 
       snapshot.recording_duration_seconds = recording.duration_seconds;
       snapshot.channel_title = (recording.tradio_broadcast_channels as any)?.title;
@@ -119,11 +138,12 @@ export async function buildPostShowSourceSnapshot(
     } else if (sourceType === 'clip') {
       const { data: clip } = await (supabase as any)
         .from('tradio_live_highlight_clips')
-        .select('title, duration_seconds, mood_tags, genre_tags, audience_tags, recording_id, tradio_broadcast_channels(title), tradio_shows(title)')
+        .select('owner_user_id, title, duration_seconds, mood_tags, genre_tags, audience_tags, recording_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
         .single();
 
       if (!clip) return { snapshot: {}, error: 'Clip not found' };
+      if (clip.owner_user_id !== verifiedUserId) return { snapshot: {}, error: 'Not authorized' };
 
       snapshot.clip_title = clip.title;
       snapshot.clip_duration_seconds = clip.duration_seconds;
@@ -149,11 +169,12 @@ export async function buildPostShowSourceSnapshot(
     } else if (sourceType === 'episode') {
       const { data: episode } = await (supabase as any)
         .from('tradio_show_episodes')
-        .select('title, tradio_shows(title), tradio_broadcast_channels(title)')
+        .select('owner_user_id, title, tradio_shows(title), tradio_broadcast_channels(title)')
         .eq('id', sourceId)
         .single();
 
       if (!episode) return { snapshot: {}, error: 'Episode not found' };
+      if (episode.owner_user_id !== verifiedUserId) return { snapshot: {}, error: 'Not authorized' };
 
       snapshot.episode_title = episode.title;
       snapshot.show_title = (episode.tradio_shows as any)?.title;
@@ -180,11 +201,12 @@ export async function buildPostShowSourceSnapshot(
     } else if (sourceType === 'queue_item') {
       const { data: item } = await (supabase as any)
         .from('tradio_broadcast_queue')
-        .select('tradio_broadcast_channels(title), tradio_shows(title)')
+        .select('owner_user_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
         .single();
 
       if (!item) return { snapshot: {}, error: 'Queue item not found' };
+      if (item.owner_user_id !== verifiedUserId) return { snapshot: {}, error: 'Not authorized' };
 
       snapshot.channel_title = (item.tradio_broadcast_channels as any)?.title;
       snapshot.show_title = (item.tradio_shows as any)?.title;
@@ -293,13 +315,14 @@ export const generatePostShowPackageServer = createServerFn({ method: "POST" })
     provider_unavailable?: boolean;
   }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       // Build source snapshot
       const { snapshot, error: snapError } = await buildPostShowSourceSnapshot(
         input.source_type,
         input.source_id,
+        user.id,
       );
 
       if (snapError) {
@@ -460,7 +483,7 @@ export const createPostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: CreatePostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; asset?: PostShowAsset; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       if (!input.body.trim()) {
@@ -477,7 +500,7 @@ export const createPostShowAssetServer = createServerFn({ method: "POST" })
         return { success: false, error: 'Not authorized' };
       }
 
-      const { snapshot } = await buildPostShowSourceSnapshot('recording', input.recording_id);
+      const { snapshot } = await buildPostShowSourceSnapshot('recording', input.recording_id, user.id);
 
       const { data: asset, error } = await (supabase as any)
         .from('tradio_post_show_assets')
@@ -513,7 +536,7 @@ export const updatePostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: UpdatePostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       // Verify ownership
@@ -599,7 +622,7 @@ export const approvePostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: ApprovePostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       // Check admin status
@@ -637,7 +660,7 @@ export const rejectPostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: RejectPostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       // Check admin status
@@ -674,7 +697,7 @@ export const archivePostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: ArchivePostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       const isAdmin = await ensureAdmin(user.id);
@@ -708,7 +731,7 @@ export const publishPostShowAssetServer = createServerFn({ method: "POST" })
   .inputValidator((input: PublishPostShowAssetInput) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
       const { data: asset } = await (supabase as any)
@@ -750,10 +773,11 @@ export const publishPostShowAssetServer = createServerFn({ method: "POST" })
 /**
  * List generated and pending post-show assets for admin review.
  */
-export const listPendingPostShowAssetsForReviewServer = createServerFn({ method: "GET" })
-  .handler(async (): Promise<{ assets: PostShowAsset[]; error?: string }> => {
+export const listPendingPostShowAssetsForReviewServer = createServerFn({ method: "POST" })
+  .inputValidator((input: TradioAuthenticatedInput) => input)
+  .handler(async ({ data: input }): Promise<{ assets: PostShowAsset[]; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { assets: [], error: 'Not authenticated' };
 
       const isAdmin = await ensureAdmin(user.id);
@@ -822,7 +846,7 @@ export const listPublicPostShowAssetsServer = createServerFn({ method: "POST" })
  * List post-show assets for a recording
  */
 export const listPostShowRecordingsServer = createServerFn({ method: "POST" })
-  .inputValidator((input: { limit?: number }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { limit?: number }) => input)
   .handler(async ({ data: input }): Promise<{
     recordings: Array<{
       id: string;
@@ -836,7 +860,7 @@ export const listPostShowRecordingsServer = createServerFn({ method: "POST" })
     error?: string;
   }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { recordings: [], error: 'Not authenticated' };
 
       const { data, error } = await (supabase as any)
@@ -854,10 +878,10 @@ export const listPostShowRecordingsServer = createServerFn({ method: "POST" })
   });
 
 export const listPostShowAssetsForRecordingServer = createServerFn({ method: "POST" })
-  .inputValidator((input: { recording_id: string }) => input)
+  .inputValidator((input: TradioAuthenticatedInput & { recording_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ assets: PostShowAsset[]; error?: string }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await currentUser(input.accessToken);
       if (!user) return { assets: [], error: 'Not authenticated' };
 
       // Check user owns recording

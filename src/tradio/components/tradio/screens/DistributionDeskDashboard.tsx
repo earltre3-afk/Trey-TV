@@ -47,6 +47,7 @@ import type {
   DistributionPlatform,
 } from '@/lib/trey-i/broadcastDistributionTypes';
 import type { PostShowApplication, PostShowAsset } from '@/lib/trey-i/broadcastPostShowTypes';
+import { useTradioIdentity } from '../auth/useTradioIdentity';
 
 interface DistributionDeskDashboardProps {
   recording_id?: string;
@@ -65,6 +66,8 @@ type SourceMode = 'asset' | 'application' | 'manual';
 const SAFE_ASSET_STATUSES = new Set(['draft', 'generated', 'edited', 'approved', 'published']);
 
 export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps> = ({ recording_id, onNavigate }) => {
+  const { session } = useTradioIdentity();
+  const accessToken = session?.access_token ?? '';
   const [recordings, setRecordings] = useState<RecordingOption[]>([]);
   const [activeRecordingId, setActiveRecordingId] = useState<string | null>(recording_id ?? null);
   const [assets, setAssets] = useState<PostShowAsset[]>([]);
@@ -108,20 +111,24 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
   const copiedTotal = drafts.reduce((sum, draft) => sum + draft.copied_count, 0);
 
   const loadRecordings = useCallback(async () => {
-    const result = await listPostShowRecordingsServer({ data: { limit: 25 } });
+    if (!accessToken) return;
+    const result = await listPostShowRecordingsServer({ data: { accessToken, limit: 25 } });
     if (result.error) {
       setError(result.error);
       return;
     }
     setRecordings(result.recordings);
     setActiveRecordingId((current) => current ?? recording_id ?? result.recordings[0]?.id ?? null);
-  }, [recording_id]);
+  }, [accessToken, recording_id]);
 
   const loadSourcesAndDrafts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const draftInput = activeRecordingId ? { recording_id: activeRecordingId } : {};
+      if (!accessToken) return;
+      const draftInput = activeRecordingId
+        ? { accessToken, recording_id: activeRecordingId }
+        : { accessToken };
       const draftResult = await listDistributionDrafts({ data: draftInput });
       if (draftResult.error) setError(draftResult.error);
       setDrafts(draftResult.drafts);
@@ -134,8 +141,8 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
       }
 
       const [assetResult, appResult] = await Promise.all([
-        listPostShowAssetsForRecordingServer({ data: { recording_id: activeRecordingId } }),
-        listPostShowApplications({ data: { recording_id: activeRecordingId } }),
+        listPostShowAssetsForRecordingServer({ data: { accessToken, recording_id: activeRecordingId } }),
+        listPostShowApplications({ data: { accessToken, recording_id: activeRecordingId } }),
       ]);
       if (assetResult.error) setError(assetResult.error);
       if (appResult.error) setError(appResult.error);
@@ -148,7 +155,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
     } finally {
       setLoading(false);
     }
-  }, [activeRecordingId]);
+  }, [accessToken, activeRecordingId]);
 
   useEffect(() => {
     loadRecordings();
@@ -184,6 +191,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
     setBusy('create');
     try {
       const common = {
+        accessToken,
         draft_type: draftType,
         platform,
         recording_id: activeRecordingId ?? undefined,
@@ -199,6 +207,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
           : sourceMode === 'application'
             ? await createDistributionDraftFromApplication({
                 data: {
+                  accessToken,
                   draft_type: draftType,
                   platform,
                   application_id: selectedApplicationId,
@@ -236,6 +245,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
     try {
       const result = await updateDistributionDraft({
         data: {
+          accessToken,
           draft_id: selectedDraft.id,
           title: editorTitle,
           body: editorBody,
@@ -258,7 +268,9 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
     setBusy(`copy:${selectedDraft.id}`);
     try {
       await navigator.clipboard.writeText(selectedDraft.body);
-      const result = await incrementDistributionDraftCopyCount({ data: { draft_id: selectedDraft.id } });
+      const result = await incrementDistributionDraftCopyCount({
+        data: { accessToken, draft_id: selectedDraft.id },
+      });
       if (!result.success) {
         toast.error(result.error || 'Copy tracking failed');
         return;
@@ -296,6 +308,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
     await runDraftAction('Reminder scheduled', () =>
       scheduleDistributionDraftReminder({
         data: {
+          accessToken,
           draft_id: selectedDraft.id,
           scheduled_for: new Date(reminderAt).toISOString(),
         },
@@ -305,7 +318,9 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
 
   const loadPrescribeSignals = async () => {
     if (!selectedDraft) return;
-    const result = await buildPrescribeMeSignalsFromDistributionDraft({ data: { draft_id: selectedDraft.id } });
+    const result = await buildPrescribeMeSignalsFromDistributionDraft({
+      data: { accessToken, draft_id: selectedDraft.id },
+    });
     if (result.error) {
       toast.error(result.error);
       return;
@@ -578,7 +593,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
                 </ActionButton>
                 <ActionButton
                   icon={<CheckCircle2 className="h-4 w-4" />}
-                  onClick={() => runDraftAction('Draft marked ready', () => markDistributionDraftReady({ data: { draft_id: selectedDraft.id } }))}
+                  onClick={() => runDraftAction('Draft marked ready', () => markDistributionDraftReady({ data: { accessToken, draft_id: selectedDraft.id } }))}
                   disabled={!!busy}
                 >
                   Ready
@@ -587,7 +602,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
                   icon={<ShieldCheck className="h-4 w-4" />}
                   onClick={() =>
                     runDraftAction('Submitted for review', () =>
-                      submitDistributionDraftForReview({ data: { draft_id: selectedDraft.id, review_notes: reviewNotes } }),
+                      submitDistributionDraftForReview({ data: { accessToken, draft_id: selectedDraft.id, review_notes: reviewNotes } }),
                     )
                   }
                   disabled={!!busy}
@@ -598,7 +613,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
                   icon={<SendToBack className="h-4 w-4" />}
                   onClick={() =>
                     runDraftAction('Marked used', () =>
-                      markDistributionDraftUsed({ data: { draft_id: selectedDraft.id, review_notes: reviewNotes } }),
+                      markDistributionDraftUsed({ data: { accessToken, draft_id: selectedDraft.id, review_notes: reviewNotes } }),
                     )
                   }
                   disabled={!!busy}
@@ -609,7 +624,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
                   icon={<Archive className="h-4 w-4" />}
                   onClick={() =>
                     runDraftAction('Draft archived', () =>
-                      archiveDistributionDraft({ data: { draft_id: selectedDraft.id, review_notes: reviewNotes } }),
+                      archiveDistributionDraft({ data: { accessToken, draft_id: selectedDraft.id, review_notes: reviewNotes } }),
                     )
                   }
                   disabled={!!busy}
@@ -638,7 +653,7 @@ export const DistributionDeskDashboard: React.FC<DistributionDeskDashboardProps>
                       icon={<BellOff className="h-4 w-4" />}
                       onClick={() =>
                         runDraftAction('Reminder canceled', () =>
-                          cancelDistributionDraftReminder({ data: { draft_id: selectedDraft.id } }),
+                          cancelDistributionDraftReminder({ data: { accessToken, draft_id: selectedDraft.id } }),
                         )
                       }
                       disabled={!!busy}
