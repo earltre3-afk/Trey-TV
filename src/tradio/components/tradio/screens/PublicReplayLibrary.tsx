@@ -6,6 +6,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Calendar, Clock } from 'lucide-react';
 import { createServerFn } from "@tanstack/react-start";
+import { recordPublicClipPlayMetric } from '@/lib/trey-i/broadcastCampaign.server';
+import { usePlayer } from '../../../contexts/PlayerContext';
 import {
   collectVisiblePublicApplications,
   PUBLIC_REPLAY_CLIP_COLUMNS,
@@ -70,6 +72,7 @@ interface PublicReplayLibraryProps {
 }
 
 export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channelId, onPlayClip, onNavigate }) => {
+  const player = usePlayer();
   const [clips, setClips] = useState<PublicReplayClip[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterTag, setFilterTag] = useState<string | null>(null);
@@ -103,6 +106,39 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
   useEffect(() => {
     loadPublicClips();
   }, [loadPublicClips]);
+
+  const handlePlayClip = useCallback(
+    (clip: PublicReplayClip) => {
+      if (onPlayClip) {
+        onPlayClip(clip);
+      } else if (clip.audio_url) {
+        player.play({
+          id: clip.id,
+          title: clip.title,
+          artist: 'Tradio Replay',
+          src: clip.audio_url,
+          coverUrl: clip.cover_art_url,
+          duration: clip.duration_seconds ?? undefined,
+          sourceType: 'clip',
+          sourceLabel: 'Replay Highlight',
+          isLive: false,
+        });
+      }
+
+      if (typeof window === 'undefined' || !clip.audio_url) return;
+      const storageKey = `tradio-campaign-clip-play:${clip.id}`;
+      if (window.sessionStorage.getItem(storageKey)) return;
+      window.sessionStorage.setItem(storageKey, '1');
+      void recordPublicClipPlayMetric({ data: { clip_id: clip.id } })
+        .then((result) => {
+          if (!result.success) window.sessionStorage.removeItem(storageKey);
+        })
+        .catch(() => {
+          window.sessionStorage.removeItem(storageKey);
+        });
+    },
+    [onPlayClip, player],
+  );
 
   const filteredClips = filterTag
     ? clips.filter(
@@ -176,10 +212,11 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClips.map((clip) => (
-            <div
+            <button
+              type="button"
               key={clip.id}
-              className="group rounded-2xl border border-white/10 bg-white/[0.02] hover:border-primary/30 hover:bg-white/[0.05] transition-all overflow-hidden cursor-pointer"
-              onClick={() => onPlayClip?.(clip)}
+              className="group overflow-hidden rounded-lg border border-white/10 bg-white/[0.02] text-left transition-all hover:border-primary/30 hover:bg-white/[0.05]"
+              onClick={() => handlePlayClip(clip)}
             >
               {/* Cover Art / Play Button */}
               <div className="relative aspect-square bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden">
@@ -246,7 +283,7 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
                   </div>
                 )}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}

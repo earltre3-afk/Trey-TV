@@ -92,6 +92,11 @@ const SOURCE_COPY: Record<string, { label: string; detail: string; accent: strin
     detail: "Archived Tradio event",
     accent: "border-violet-300/30 bg-violet-400/10 text-violet-100",
   },
+  clip: {
+    label: "Highlight",
+    detail: "Published Tradio clip",
+    accent: "border-green-300/30 bg-green-400/10 text-green-100",
+  },
 };
 
 const LYRIC_LINES: Record<string, Array<{ line: string; start: number; end: number }>> = {

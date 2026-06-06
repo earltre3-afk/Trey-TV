@@ -19,7 +19,8 @@ export type PlaybackSourceType =
   | "dj_mix"
   | "live_show"
   | "song_war_round"
-  | "replay";
+  | "replay"
+  | "clip";
 
 export type PlaybackMode = "normal" | "repeat_one" | "repeat_all";
 export type PlaybackStatus =
@@ -213,6 +214,7 @@ const buildSourceForItem = (item: PlaybackItem, override?: PlaybackSource): Play
     live_show: "Live Show",
     song_war_round: "Song War",
     replay: "Replay",
+    clip: "Highlight",
   };
 
   return {

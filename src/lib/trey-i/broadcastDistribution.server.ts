@@ -30,6 +30,7 @@ import type {
   UpdateDistributionDraftInput,
 } from './broadcastDistributionTypes';
 import type { PostShowApplication, PostShowAsset, PostShowJsonObject } from './broadcastPostShowTypes';
+import { recordDistributionMetricForOwner } from './broadcastCampaign.server';
 
 const supabase = supabaseAdmin;
 
@@ -376,6 +377,13 @@ export const markDistributionDraftReady = createServerFn({ method: 'POST' })
       );
       const result = await updateDraft(input.draft_id, { ...patch, review_notes: input.review_notes ?? draft.review_notes }, user.id);
       if (!result.draft) return { success: false, error: result.error };
+      if (draft.draft_status !== 'used' && draft.metadata.marked_used !== true) {
+        await recordDistributionMetricForOwner({
+          owner_user_id: user.id,
+          draft: result.draft,
+          metric_type: 'draft_marked_used',
+        });
+      }
       return { success: true, draft: result.draft };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Ready update failed' };
@@ -511,6 +519,11 @@ export const incrementDistributionDraftCopyCount = createServerFn({ method: 'POS
       const patch = createDistributionCopyPatch(draft);
       const result = await updateDraft(input.draft_id, patch, user.id);
       if (!result.draft) return { success: false, error: result.error };
+      await recordDistributionMetricForOwner({
+        owner_user_id: user.id,
+        draft: result.draft,
+        metric_type: 'draft_copied',
+      });
       return { success: true, draft: result.draft };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Copy tracking failed' };
