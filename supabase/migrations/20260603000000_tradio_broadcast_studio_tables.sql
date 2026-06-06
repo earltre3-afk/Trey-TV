@@ -8,7 +8,7 @@
 -- 1) tradio_shows
 create table if not exists public.tradio_shows (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   profile_id uuid,
   public_profile_uid text,
   trey_tv_uid text,
@@ -27,7 +27,7 @@ create table if not exists public.tradio_shows (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists idx_tradio_shows_user on public.tradio_shows(user_id);
+create index if not exists idx_tradio_shows_user on public.tradio_shows(owner_user_id);
 create index if not exists idx_tradio_shows_status on public.tradio_shows(status);
 
 drop trigger if exists trg_tradio_shows_updated_at on public.tradio_shows;
@@ -39,27 +39,27 @@ alter table public.tradio_shows enable row level security;
 
 create policy "tradio_shows_select"
   on public.tradio_shows for select
-  using (status = 'published' or auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (status = 'published' or auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_shows_insert"
   on public.tradio_shows for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_shows_update"
   on public.tradio_shows for update
-  using (auth.uid() = user_id or public.is_admin(auth.uid()))
-  with check (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()))
+  with check (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_shows_delete"
   on public.tradio_shows for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 2) tradio_show_episodes
 create table if not exists public.tradio_show_episodes (
   id uuid primary key default gen_random_uuid(),
   show_id uuid not null references public.tradio_shows(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   description text,
   cover_art text,
@@ -70,7 +70,7 @@ create table if not exists public.tradio_show_episodes (
 );
 
 create index if not exists idx_tradio_show_episodes_show on public.tradio_show_episodes(show_id);
-create index if not exists idx_tradio_show_episodes_user on public.tradio_show_episodes(user_id);
+create index if not exists idx_tradio_show_episodes_user on public.tradio_show_episodes(owner_user_id);
 
 drop trigger if exists trg_tradio_show_episodes_updated_at on public.tradio_show_episodes;
 create trigger trg_tradio_show_episodes_updated_at
@@ -81,27 +81,27 @@ alter table public.tradio_show_episodes enable row level security;
 
 create policy "tradio_show_episodes_select"
   on public.tradio_show_episodes for select
-  using (status = 'published' or auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (status = 'published' or auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_show_episodes_insert"
   on public.tradio_show_episodes for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_show_episodes_update"
   on public.tradio_show_episodes for update
-  using (auth.uid() = user_id or public.is_admin(auth.uid()))
-  with check (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()))
+  with check (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_show_episodes_delete"
   on public.tradio_show_episodes for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 3) tradio_show_blocks
 create table if not exists public.tradio_show_blocks (
   id uuid primary key default gen_random_uuid(),
   episode_id uuid not null references public.tradio_show_episodes(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   block_type text not null check (block_type in ('intro', 'station_drop', 'voiceover', 'song', 'ad', 'interview', 'producer_spotlight', 'artist_spotlight', 'submission_block', 'silence', 'transition', 'outro')),
   title text not null,
   description text,
@@ -134,23 +134,23 @@ alter table public.tradio_show_blocks enable row level security;
 create policy "tradio_show_blocks_select"
   on public.tradio_show_blocks for select
   using (
-    auth.uid() = user_id 
+    auth.uid() = owner_user_id
     or public.is_admin(auth.uid()) 
     or exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.status = 'published')
   );
 
 create policy "tradio_show_blocks_insert"
   on public.tradio_show_blocks for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_show_blocks_update"
   on public.tradio_show_blocks for update
-  using (auth.uid() = user_id or public.is_admin(auth.uid()))
-  with check (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()))
+  with check (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_show_blocks_delete"
   on public.tradio_show_blocks for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 4) tradio_show_scripts
@@ -158,7 +158,7 @@ create table if not exists public.tradio_show_scripts (
   id uuid primary key default gen_random_uuid(),
   episode_id uuid not null references public.tradio_show_episodes(id) on delete cascade,
   block_id uuid references public.tradio_show_blocks(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   script_text text not null,
   generated_by_ai boolean not null default false,
   voice_id text,
@@ -171,23 +171,23 @@ alter table public.tradio_show_scripts enable row level security;
 create policy "tradio_show_scripts_select"
   on public.tradio_show_scripts for select
   using (
-    auth.uid() = user_id 
+    auth.uid() = owner_user_id
     or public.is_admin(auth.uid()) 
     or exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.status = 'published')
   );
 
 create policy "tradio_show_scripts_insert"
   on public.tradio_show_scripts for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_show_scripts_update"
   on public.tradio_show_scripts for update
-  using (auth.uid() = user_id or public.is_admin(auth.uid()))
-  with check (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()))
+  with check (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 create policy "tradio_show_scripts_delete"
   on public.tradio_show_scripts for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 5) tradio_voice_renders
@@ -195,7 +195,7 @@ create table if not exists public.tradio_voice_renders (
   id uuid primary key default gen_random_uuid(),
   episode_id uuid not null references public.tradio_show_episodes(id) on delete cascade,
   block_id uuid references public.tradio_show_blocks(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   provider text not null,
   voice_id text not null,
   audio_url text not null,
@@ -209,24 +209,24 @@ alter table public.tradio_voice_renders enable row level security;
 create policy "tradio_voice_renders_select"
   on public.tradio_voice_renders for select
   using (
-    auth.uid() = user_id 
+    auth.uid() = owner_user_id
     or public.is_admin(auth.uid()) 
     or exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.status = 'published')
   );
 
 create policy "tradio_voice_renders_insert"
   on public.tradio_voice_renders for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_voice_renders_delete"
   on public.tradio_voice_renders for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 6) tradio_station_drops
 create table if not exists public.tradio_station_drops (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   audio_url text not null,
   duration_seconds integer not null default 0,
@@ -243,11 +243,11 @@ create policy "tradio_station_drops_select"
 
 create policy "tradio_station_drops_insert"
   on public.tradio_station_drops for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_station_drops_delete"
   on public.tradio_station_drops for delete
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 7) tradio_broadcast_slots
@@ -271,15 +271,15 @@ create policy "tradio_broadcast_slots_select"
 
 create policy "tradio_broadcast_slots_insert"
   on public.tradio_broadcast_slots for insert
-  with check (exists (select 1 from public.tradio_shows s where s.id = show_id and s.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  with check (exists (select 1 from public.tradio_shows s where s.id = show_id and s.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 create policy "tradio_broadcast_slots_update"
   on public.tradio_broadcast_slots for update
-  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 create policy "tradio_broadcast_slots_delete"
   on public.tradio_broadcast_slots for delete
-  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 
 -- 8) tradio_ad_slots
@@ -302,11 +302,11 @@ create policy "tradio_ad_slots_select"
 
 create policy "tradio_ad_slots_insert"
   on public.tradio_ad_slots for insert
-  with check (exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  with check (exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 create policy "tradio_ad_slots_update"
   on public.tradio_ad_slots for update
-  using (exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  using (exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 
 -- 9) tradio_music_submissions
@@ -314,7 +314,7 @@ create table if not exists public.tradio_music_submissions (
   id uuid primary key default gen_random_uuid(),
   episode_id uuid not null references public.tradio_show_episodes(id) on delete cascade,
   block_id uuid references public.tradio_show_blocks(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
   artist text not null,
   audio_url text not null,
@@ -327,15 +327,15 @@ alter table public.tradio_music_submissions enable row level security;
 
 create policy "tradio_music_submissions_select"
   on public.tradio_music_submissions for select
-  using (auth.uid() = user_id or public.is_admin(auth.uid()) or exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.status = 'published'));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()) or exists (select 1 from public.tradio_show_episodes e where e.id = episode_id and e.status = 'published'));
 
 create policy "tradio_music_submissions_insert"
   on public.tradio_music_submissions for insert
-  with check (auth.uid() = user_id);
+  with check (auth.uid() = owner_user_id);
 
 create policy "tradio_music_submissions_update"
   on public.tradio_music_submissions for update
-  using (auth.uid() = user_id or public.is_admin(auth.uid()));
+  using (auth.uid() = owner_user_id or public.is_admin(auth.uid()));
 
 
 -- 10) tradio_show_analytics
@@ -359,7 +359,7 @@ alter table public.tradio_show_analytics enable row level security;
 
 create policy "tradio_show_analytics_select"
   on public.tradio_show_analytics for select
-  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.user_id = auth.uid()) or public.is_admin(auth.uid()));
+  using (exists (select 1 from public.tradio_shows s where s.id = show_id and s.owner_user_id = auth.uid()) or public.is_admin(auth.uid()));
 
 create policy "tradio_show_analytics_insert"
   on public.tradio_show_analytics for insert

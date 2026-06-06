@@ -6,25 +6,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Play, Calendar, Clock } from 'lucide-react';
 import { createServerFn } from "@tanstack/react-start";
-import { publicPostShowApplicationVisible } from '@/lib/trey-i/broadcastPostShowPublisher';
+import {
+  collectVisiblePublicApplications,
+  PUBLIC_REPLAY_CLIP_COLUMNS,
+  toPublicReplayClip,
+  type PublicReplayClip,
+} from '@/lib/trey-i/broadcastPublicReplayRules';
 import type {
   PostShowApplication,
-  PublicPostShowAppliedAsset,
 } from '@/lib/trey-i/broadcastPostShowTypes';
-import type { HighlightClip } from '../types/broadcastArchiveTypes';
-
-type PublicReplayClip = HighlightClip & {
-  post_show_applications?: PublicPostShowAppliedAsset[];
-};
 
 // Wrap server function for client-safe access
 const loadPublicClipsClient = createServerFn({ method: "GET" })
   .inputValidator((input: { channelId?: string }) => input)
-  .handler(async ({ data: input }): Promise<{ data: any[]; error?: string }> => {
+  .handler(async ({ data: input }): Promise<{ data: PublicReplayClip[]; error?: string }> => {
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     let query = (supabaseAdmin as any)
       .from('tradio_live_highlight_clips')
-      .select('*')
+      .select(PUBLIC_REPLAY_CLIP_COLUMNS)
       .eq('visibility', 'public')
       .eq('clip_status', 'published');
 
@@ -35,9 +34,11 @@ const loadPublicClipsClient = createServerFn({ method: "GET" })
     const { data, error } = await query.order('published_at', { ascending: false });
     if (error) return { data: [], error: error.message };
 
-    const clips = (data || []) as PublicReplayClip[];
-    const clipIds = clips.map((clip) => clip.id);
-    if (clipIds.length === 0) return { data: clips as any[] };
+    const clipRows = (data || []) as Array<Record<string, unknown>>;
+    const clipIds = clipRows
+      .map((clip) => (typeof clip.id === 'string' ? clip.id : ''))
+      .filter(Boolean);
+    if (clipIds.length === 0) return { data: clipRows.map((clip) => toPublicReplayClip(clip)) };
 
     const { data: applicationRows } = await (supabaseAdmin as any)
       .from('tradio_post_show_applications')
@@ -48,32 +49,23 @@ const loadPublicClipsClient = createServerFn({ method: "GET" })
       .in('application_status', ['applied', 'approved'])
       .order('updated_at', { ascending: false });
 
-    const applicationsByClip = new Map<string, PostShowApplication[]>();
-    for (const application of (applicationRows || []) as PostShowApplication[]) {
-      if (!application.clip_id) continue;
-      if (
-        !publicPostShowApplicationVisible({
-          applicationStatus: application.application_status,
-          applicationType: application.application_type,
-          targetVisibility: 'public',
-          targetStatus: 'published',
-        })
-      ) {
-        continue;
-      }
-      const existing = applicationsByClip.get(application.clip_id) ?? [];
-      existing.push(application);
-      applicationsByClip.set(application.clip_id, existing);
-    }
+    const applicationsByClip = collectVisiblePublicApplications(
+      (applicationRows || []) as PostShowApplication[],
+    );
 
     return {
-      data: clips.map((clip) => applyPublicPostShowCopy(clip, applicationsByClip.get(clip.id) ?? [])) as any[],
+      data: clipRows.map((clip) =>
+        toPublicReplayClip(
+          clip,
+          applicationsByClip.get(typeof clip.id === 'string' ? clip.id : '') ?? [],
+        ),
+      ),
     };
   });
 
 interface PublicReplayLibraryProps {
   channelId?: string;
-  onPlayClip?: (clip: HighlightClip) => void;
+  onPlayClip?: (clip: PublicReplayClip) => void;
   onNavigate?: (view: string) => void;
 }
 
@@ -95,7 +87,7 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
 
         // Collect all tags
         const tags = new Set<string>();
-        result.data.forEach((clip: HighlightClip) => {
+        result.data.forEach((clip: PublicReplayClip) => {
           clip.mood_tags?.forEach((tag: string) => tags.add(tag));
           clip.genre_tags?.forEach((tag: string) => tags.add(tag));
         });
@@ -263,44 +255,3 @@ export const PublicReplayLibrary: React.FC<PublicReplayLibraryProps> = ({ channe
 };
 
 export default PublicReplayLibrary;
-
-function applyPublicPostShowCopy(
-  clip: PublicReplayClip,
-  applications: PostShowApplication[],
-): PublicReplayClip {
-  const next: PublicReplayClip = { ...clip, post_show_applications: applications.map(toPublicAsset) };
-  const appliedFields = new Set<string>();
-
-  for (const application of applications) {
-    if (application.application_type === 'clip_title' && !appliedFields.has('title')) {
-      next.title = application.applied_value;
-      appliedFields.add('title');
-    }
-    if (
-      (application.application_type === 'replay_blurb' || application.application_type === 'seo_description') &&
-      !appliedFields.has('description')
-    ) {
-      next.description = application.applied_value;
-      appliedFields.add('description');
-    }
-    if (application.application_type === 'clip_caption' && !appliedFields.has('caption')) {
-      next.caption = application.applied_value;
-      appliedFields.add('caption');
-    }
-  }
-
-  return next;
-}
-
-function toPublicAsset(application: PostShowApplication): PublicPostShowAppliedAsset {
-  return {
-    id: application.id,
-    asset_id: application.asset_id,
-    application_type: application.application_type,
-    target_field: application.target_field ?? null,
-    applied_value: application.applied_value,
-    applied_metadata: application.applied_metadata,
-    applied_at: application.applied_at ?? null,
-    updated_at: application.updated_at,
-  };
-}
