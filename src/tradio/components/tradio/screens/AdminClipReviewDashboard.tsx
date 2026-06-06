@@ -3,147 +3,98 @@
  * Interface for admins to review, approve, and moderate clips
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Check, X, Eye, Archive, AlertCircle, ChevronDown } from 'lucide-react';
-import { createServerFn } from "@tanstack/react-start";
+import {
+  loadPendingClipsForReviewServer,
+  reviewClipForAdminServer,
+} from '@/lib/trey-i/broadcastClipReview.server';
+import type { AdminClipReviewStatus } from '@/lib/trey-i/broadcastClipReviewRules';
+import { useTradioIdentity } from '../auth/useTradioIdentity';
 import type { HighlightClip } from '../types/broadcastArchiveTypes';
-
-// Wrap server functions for client-safe access
-const loadPendingClipsClient = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data, error } = await (supabaseAdmin as any)
-      .from('tradio_live_highlight_clips')
-      .select('*')
-      .eq('clip_status', 'pending_review')
-      .order('created_at', { ascending: true });
-    return { data: data || [], error: error?.message };
-  });
-
-const approveClipClient = createServerFn({ method: "POST" })
-  .inputValidator((input: { clipId: string; reviewNotes?: string }) => input)
-  .handler(async ({ data: input }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await (supabaseAdmin as any)
-      .from('tradio_live_highlight_clips')
-      .update({
-        clip_status: 'approved',
-        review_notes: input.reviewNotes || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.clipId);
-    return { success: !error, error: error?.message };
-  });
-
-const rejectClipClient = createServerFn({ method: "POST" })
-  .inputValidator((input: { clipId: string; reviewNotes?: string }) => input)
-  .handler(async ({ data: input }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await (supabaseAdmin as any)
-      .from('tradio_live_highlight_clips')
-      .update({
-        clip_status: 'rejected',
-        review_notes: input.reviewNotes || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.clipId);
-    return { success: !error, error: error?.message };
-  });
-
-const hideClipClient = createServerFn({ method: "POST" })
-  .inputValidator((input: { clipId: string; reviewNotes?: string }) => input)
-  .handler(async ({ data: input }) => {
-    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { error } = await (supabaseAdmin as any)
-      .from('tradio_live_highlight_clips')
-      .update({
-        clip_status: 'hidden',
-        review_notes: input.reviewNotes || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', input.clipId);
-    return { success: !error, error: error?.message };
-  });
 
 interface AdminClipReviewDashboardProps {
   onNavigate?: (view: string) => void;
 }
 
 export const AdminClipReviewDashboard: React.FC<AdminClipReviewDashboardProps> = () => {
+  const { session } = useTradioIdentity();
+  const accessToken = session?.access_token ?? '';
   const [pendingClips, setPendingClips] = useState<HighlightClip[]>([]);
   const [selectedClip, setSelectedClip] = useState<HighlightClip | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedSnapshots, setExpandedSnapshots] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [actioning, setActioning] = useState(false);
 
-  useEffect(() => {
-    loadPendingClips();
-  }, []);
-
-  const loadPendingClips = async () => {
+  const loadPendingClips = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const result = await loadPendingClipsClient();
+      if (!accessToken) {
+        setPendingClips([]);
+        setSelectedClip(null);
+        setError('Admin sign-in required to review clips.');
+        return;
+      }
+
+      const result = (await loadPendingClipsForReviewServer({ data: { accessToken } })) as {
+        data?: HighlightClip[];
+        error?: string;
+      };
       if (!result.error && result.data) {
-        setPendingClips(result.data);
+        setPendingClips(result.data as HighlightClip[]);
         if (result.data.length > 0) {
-          setSelectedClip(result.data[0]);
+          setSelectedClip(result.data[0] as HighlightClip);
+        } else {
+          setSelectedClip(null);
         }
+      } else if (result.error) {
+        setError(result.error);
+        setPendingClips([]);
+        setSelectedClip(null);
       }
     } catch (err) {
       console.error('Failed to load pending clips:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load pending clips');
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken]);
 
-  const handleApprove = async () => {
+  useEffect(() => {
+    loadPendingClips();
+  }, [loadPendingClips]);
+
+  const handleReview = async (status: AdminClipReviewStatus) => {
     if (!selectedClip) return;
-    setActioning(true);
-
-    try {
-      const result = await approveClipClient({ data: { clipId: selectedClip.id, reviewNotes } });
-
-      if (result.success) {
-        setPendingClips(pendingClips.filter((c) => c.id !== selectedClip.id));
-        setSelectedClip(pendingClips.find((c) => c.id !== selectedClip.id) || null);
-        setReviewNotes('');
-      }
-    } finally {
-      setActioning(false);
+    if (!accessToken) {
+      setError('Admin sign-in required to review clips.');
+      return;
     }
-  };
-
-  const handleReject = async () => {
-    if (!selectedClip) return;
     setActioning(true);
+    setError(null);
 
     try {
-      const result = await rejectClipClient({ data: { clipId: selectedClip.id, reviewNotes } });
+      const result = (await reviewClipForAdminServer({
+        data: {
+          accessToken,
+          clipId: selectedClip.id,
+          reviewNotes,
+          status,
+        },
+      })) as { success?: boolean; error?: string };
 
       if (result.success) {
         setPendingClips(pendingClips.filter((c) => c.id !== selectedClip.id));
         setSelectedClip(pendingClips.find((c) => c.id !== selectedClip.id) || null);
         setReviewNotes('');
+      } else {
+        setError(result.error || 'Failed to review clip');
       }
-    } finally {
-      setActioning(false);
-    }
-  };
-
-  const handleHide = async () => {
-    if (!selectedClip) return;
-    setActioning(true);
-
-    try {
-      const result = await hideClipClient({ data: { clipId: selectedClip.id, reviewNotes } });
-
-      if (result.success) {
-        setPendingClips(pendingClips.filter((c) => c.id !== selectedClip.id));
-        setSelectedClip(pendingClips.find((c) => c.id !== selectedClip.id) || null);
-        setReviewNotes('');
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to review clip');
     } finally {
       setActioning(false);
     }
@@ -172,9 +123,19 @@ export const AdminClipReviewDashboard: React.FC<AdminClipReviewDashboardProps> =
 
       {pendingClips.length === 0 ? (
         <div className="p-8 rounded-2xl border border-dashed border-white/10 text-center">
-          <Check className="size-12 text-green-400 mx-auto mb-3 opacity-50" />
-          <p className="text-foreground font-semibold">All caught up!</p>
-          <p className="text-sm text-muted-foreground mt-1">No pending clips to review</p>
+          {error ? (
+            <>
+              <AlertCircle className="size-12 text-orange-300 mx-auto mb-3 opacity-70" />
+              <p className="text-foreground font-semibold">Clip review unavailable</p>
+              <p className="text-sm text-muted-foreground mt-1">{error}</p>
+            </>
+          ) : (
+            <>
+              <Check className="size-12 text-green-400 mx-auto mb-3 opacity-50" />
+              <p className="text-foreground font-semibold">All caught up!</p>
+              <p className="text-sm text-muted-foreground mt-1">No pending clips to review</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid lg:grid-cols-3 gap-6">
@@ -313,7 +274,7 @@ export const AdminClipReviewDashboard: React.FC<AdminClipReviewDashboardProps> =
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={handleApprove}
+                    onClick={() => handleReview('approved')}
                     disabled={actioning}
                     className="px-4 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-300 font-semibold transition-colors disabled:opacity-50"
                   >
@@ -321,7 +282,7 @@ export const AdminClipReviewDashboard: React.FC<AdminClipReviewDashboardProps> =
                     Approve
                   </button>
                   <button
-                    onClick={handleReject}
+                    onClick={() => handleReview('rejected')}
                     disabled={actioning}
                     className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 font-semibold transition-colors disabled:opacity-50"
                   >
@@ -329,7 +290,7 @@ export const AdminClipReviewDashboard: React.FC<AdminClipReviewDashboardProps> =
                     Reject
                   </button>
                   <button
-                    onClick={handleHide}
+                    onClick={() => handleReview('hidden')}
                     disabled={actioning}
                     className="col-span-2 px-4 py-2 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 font-semibold transition-colors disabled:opacity-50"
                   >
