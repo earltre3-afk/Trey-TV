@@ -217,7 +217,9 @@ function PublicProfileRoute() {
     };
   }, [dbProfile, loading, uid, authUser, isGuest, isOwnProfile, role, isApprovedCreator]);
 
-  if (pathname.endsWith("/channel")) {
+  const profilePath = `/u/${uid}`;
+  const normalizedPath = pathname.replace(/\/$/, "");
+  if (normalizedPath.toLowerCase() !== profilePath.toLowerCase()) {
     return <Outlet />;
   }
 

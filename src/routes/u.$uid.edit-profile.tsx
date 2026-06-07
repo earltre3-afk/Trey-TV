@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { EditProfile } from "./edit-profile";
 
 export const Route = createFileRoute("/u/$uid/edit-profile")({
-  component: EditProfile,
+  component: EditProfileUidRoute,
   head: ({ params }) => ({
     meta: [
       { title: `Edit Profile - ${params.uid} - Trey TV` },
@@ -13,3 +13,9 @@ export const Route = createFileRoute("/u/$uid/edit-profile")({
     ],
   }),
 });
+
+function EditProfileUidRoute() {
+  const { uid } = Route.useParams();
+
+  return <EditProfile routeUid={uid} />;
+}

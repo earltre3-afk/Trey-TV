@@ -865,11 +865,9 @@ export function ProfilePage({
             {/* ============ EDIT PROFILE + VIEW PUBLIC (owner only) ============ */}
             {showSelfControls && (
               <div className="mt-2 flex justify-center items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.location.href = `/u/${profile.uid}/edit-profile`;
-                  }}
+                <Link
+                  to="/u/$uid/edit-profile"
+                  params={{ uid: profile.uid }}
                   className="group relative inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-[0.16em] text-white/90 border border-white/15 bg-white/[0.04] backdrop-blur-md hover:bg-white/[0.08] hover:border-white/25 active:scale-95 transition"
                   style={{
                     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.45)",
@@ -877,7 +875,7 @@ export function ProfilePage({
                 >
                   <Pencil className="w-3.5 h-3.5" style={{ color: GOLD }} />
                   <span>Edit Profile</span>
-                </button>
+                </Link>
 
                 <Link
                   to={profileUrl as any}

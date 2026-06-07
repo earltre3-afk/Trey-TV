@@ -74,6 +74,7 @@ import { MessengerBridgeProvider } from "../universe/MessengerBridgeProvider";
 import { useMessengerBridge } from "../universe/MessengerBridgeContext";
 import { TradioMessengerBell } from "../universe/TradioMessengerBridge";
 import { PrescriptionRadioPopover } from "./prescribeMe/PrescriptionRadioPopover";
+import { resolveTradioDeviceBodyClass, TRADIO_DEVICE_BODY_CLASSES } from "./deviceCompatibility";
 const SongWarsHub = lazy(() =>
   import("./songwars/views/SongWarsHub").then((m) => ({ default: m.SongWarsHub })),
 );
@@ -314,36 +315,13 @@ export const TradioShellContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const deviceBodyClasses = [
-      "device-foldable-folded",
-      "device-foldable-unfolded",
-      "device-tablet",
-      "device-tv-cinema",
-    ];
-
     const detectDevice = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const aspect = w / h;
 
       // Clean previous classes
-      document.body.classList.remove(...deviceBodyClasses);
-
-      let bodyClass = "";
-
-      if (w < 340 && h > 500) {
-        // Motorola Razr folded front screen or Galaxy Fold outer screen
-        bodyClass = "device-foldable-folded";
-      } else if (w >= 500 && w < 920 && aspect >= 0.85 && aspect <= 1.25) {
-        // Square unfolding ratio: Galaxy Fold inner, Google Duo, etc.
-        bodyClass = "device-foldable-unfolded";
-      } else if (w >= 500 && w < 1024) {
-        // iPads and standard Android tablets
-        bodyClass = "device-tablet";
-      } else if (w >= 1800) {
-        // Smart TVs, 4K monitors, ultrawides
-        bodyClass = "device-tv-cinema";
-      }
+      document.body.classList.remove(...TRADIO_DEVICE_BODY_CLASSES);
+      const bodyClass = resolveTradioDeviceBodyClass(w, h);
 
       if (bodyClass) {
         document.body.classList.add(bodyClass);
@@ -356,7 +334,7 @@ export const TradioShellContent: React.FC = () => {
     window.addEventListener("resize", detectDevice);
     return () => {
       window.removeEventListener("resize", detectDevice);
-      document.body.classList.remove(...deviceBodyClasses);
+      document.body.classList.remove(...TRADIO_DEVICE_BODY_CLASSES);
     };
   }, []);
 

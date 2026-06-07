@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -43,7 +44,7 @@ import { AnimatedBanner } from "@/components/profile/AnimatedBanner";
 import { TopThreeEditor } from "@/components/profile/TopThreeEditor";
 import { useGoBack } from "@/hooks/use-go-back";
 import { ACCENT_COLORS, applyAccentColor, isValidHexColor } from "@/hooks/use-accent-color";
-import { useAuth } from "@/lib/auth";
+import { type SessionUser, useAuth } from "@/lib/auth";
 import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
 import { currentUser } from "@/lib/mock-data";
 import { createBrowserClient } from "@/lib/supabase-browser";
@@ -57,6 +58,10 @@ import treyTvLogo from "@/assets/trey-tv-logo.png";
 import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
+import {
+  resolveEditProfileRouteAccess,
+  shouldReinitializeEditProfileDraft,
+} from "@/lib/editProfileIdentity";
 
 const SELECTABLE_SONGS = [
   {
@@ -166,50 +171,14 @@ type ProfileDraft = {
   musicOrder: string[];
 };
 
-const accentVariableFor = (hex: string) => {
-  const match = ACCENT_COLORS.find((accent) => accent.hex.toLowerCase() === hex.toLowerCase());
-  if (!match) return hex;
-  if (match.id === "gold") return "var(--gold)";
-  if (match.id === "magenta" || match.id === "pink") return "var(--magenta)";
-  if (match.id === "cyan" || match.id === "teal" || match.id === "blue") return "var(--cyan)";
-  if (match.id === "purple") return "var(--purple)";
-  return hex;
+type EditProfileProps = {
+  routeUid?: string;
 };
 
-export function EditProfile() {
-  const { user, updateUser, signIn } = useAuth();
-  const { user: supabaseUser } = useSupabaseAuth();
-  const nav = useNavigate();
-  const qc = useQueryClient();
-  const params = Route.useParams() as { uid?: string };
-  const routeUid = params.uid;
-
-  useEffect(() => {
-    if (routeUid) {
-      if (!user) {
-        signIn("creator");
-        return;
-      }
-      if (user.uid !== routeUid) {
-        nav({ to: "/u/$uid/edit-profile", params: { uid: user.uid }, replace: true });
-        return;
-      }
-    } else if (user) {
-      nav({ to: "/u/$uid/edit-profile", params: { uid: user.uid }, replace: true });
-    }
-  }, [routeUid, user, nav, signIn]);
-
-  const base = user ?? {
-    ...currentUser,
-    role: "creator" as const,
-    banner: "",
-    accent: "#FFC857" as const,
-    rewards: { points: 0, tier: "GOLD" as const },
-  };
-  const [profileUid, setProfileUid] = useState(base.uid);
+const createProfileDraft = (base: SessionUser): ProfileDraft => {
   const baseAccent = isValidHexColor((base as any).accent) ? (base as any).accent : "#FFC857";
 
-  const [draft, setDraft] = useState<ProfileDraft>({
+  return {
     name: base.name,
     handle: base.handle,
     bio: base.bio,
@@ -231,7 +200,73 @@ export function EditProfile() {
     accent: baseAccent,
     profileSongId: resolveOwnerProfileSongId(base.uid, base.profileSongId || null) || "",
     musicOrder: resolveOwnerMusicOrder(base.uid, base.profilePreferences?.music_order || null) || [],
-  });
+  };
+};
+
+const createGifOfDayDraft = (base: SessionUser): FwdGifPayload | null => {
+  if (!base.gifOfDayUrl) return null;
+
+  return {
+    gif_id: base.gifOfDayId || "",
+    url: base.gifOfDayUrl,
+    preview_url: base.gifOfDayPosterUrl ?? undefined,
+    title: undefined,
+  };
+};
+
+const accentVariableFor = (hex: string) => {
+  const match = ACCENT_COLORS.find((accent) => accent.hex.toLowerCase() === hex.toLowerCase());
+  if (!match) return hex;
+  if (match.id === "gold") return "var(--gold)";
+  if (match.id === "magenta" || match.id === "pink") return "var(--magenta)";
+  if (match.id === "cyan" || match.id === "teal" || match.id === "blue") return "var(--cyan)";
+  if (match.id === "purple") return "var(--purple)";
+  return hex;
+};
+
+export function EditProfile({ routeUid }: EditProfileProps = {}) {
+  const { user, updateUser, signIn, authReady } = useAuth();
+  const { user: supabaseUser } = useSupabaseAuth();
+  const nav = useNavigate();
+  const qc = useQueryClient();
+  const routeAccess = useMemo(
+    () => resolveEditProfileRouteAccess(routeUid, user?.uid ?? ""),
+    [routeUid, user?.uid],
+  );
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    if (!user) {
+      signIn("creator");
+      return;
+    }
+
+    if (routeAccess.status === "redirect_to_owner" && routeAccess.canonicalUid) {
+      nav({
+        to: "/u/$uid/edit-profile",
+        params: { uid: routeAccess.canonicalUid },
+        replace: true,
+      });
+    }
+  }, [authReady, user, routeAccess, nav, signIn]);
+
+  const base = useMemo<SessionUser>(
+    () =>
+      user ??
+      ({
+        ...currentUser,
+        role: "creator" as const,
+        banner: "",
+        accent: "#FFC857" as const,
+        rewards: { points: 0, tier: "GOLD" as const },
+      } as SessionUser),
+    [user],
+  );
+  const [profileUid, setProfileUid] = useState(base.uid);
+  const draftOwnerUid = useRef(base.uid);
+
+  const [draft, setDraft] = useState<ProfileDraft>(() => createProfileDraft(base));
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -239,50 +274,26 @@ export function EditProfile() {
   const [bannerUpload, setBannerUpload] = useState<File | null>(null);
   const [topThreeOpen, setTopThreeOpen] = useState(false);
   const markUsed = useMarkFwdGifUsed();
-  const [gifOfDay, setGifOfDay] = useState<FwdGifPayload | null>(() => {
-    if (base.gifOfDayUrl) {
-      return {
-        gif_id: base.gifOfDayId || "",
-        url: base.gifOfDayUrl,
-        preview_url: base.gifOfDayPosterUrl ?? undefined,
-        title: undefined,
-      };
-    }
-    return null;
-  });
+  const [gifOfDay, setGifOfDay] = useState<FwdGifPayload | null>(() => createGifOfDayDraft(base));
   const [gifOfDayCaption, setGifOfDayCaption] = useState(() => base.gifOfDayCaption ?? "");
   const [showGifOfDayPicker, setShowGifOfDayPicker] = useState(false);
   const avatarFile = useRef<HTMLInputElement | null>(null);
   const bannerFile = useRef<HTMLInputElement | null>(null);
-  const goBack = useGoBack(`/u/${base.uid}`);
+  const goBack = useGoBack(`/u/${profileUid || routeUid || base.uid}`);
 
   useEffect(() => {
-    if (base.uid) setProfileUid(base.uid);
-    if (base.gifOfDayUrl) {
-      setGifOfDay({
-        gif_id: base.gifOfDayId || "",
-        url: base.gifOfDayUrl,
-        preview_url: base.gifOfDayPosterUrl ?? undefined,
-        title: undefined,
-      });
-      setGifOfDayCaption(base.gifOfDayCaption ?? "");
+    if (!shouldReinitializeEditProfileDraft(draftOwnerUid.current, base.uid)) {
+      return;
     }
-    if (base) {
-      setDraft((d) => ({
-        ...d,
-        profileSongId:
-          d.profileSongId ||
-          resolveOwnerProfileSongId(base.uid, (base as any).profileSongId || null) ||
-          "",
-        musicOrder: d.musicOrder.length
-          ? d.musicOrder
-          : resolveOwnerMusicOrder(
-              base.uid,
-              ((base as any).profilePreferences?.music_order as string[] | undefined) || null,
-            ) || [],
-      }));
-    }
-  }, [base.uid, base.gifOfDayUrl, base.gifOfDayId, base.gifOfDayPosterUrl, base.gifOfDayCaption, base]);
+
+    draftOwnerUid.current = base.uid;
+    setProfileUid(base.uid);
+    setDraft(createProfileDraft(base));
+    setGifOfDay(createGifOfDayDraft(base));
+    setGifOfDayCaption(base.gifOfDayCaption ?? "");
+    setAvatarUpload(null);
+    setBannerUpload(null);
+  }, [base]);
 
   useEffect(() => {
     if (isValidHexColor(draft.accent)) applyAccentColor(draft.accent);
@@ -354,6 +365,21 @@ export function EditProfile() {
   const save = async () => {
     if (saving) return;
 
+    if (routeAccess.status === "pending") {
+      toast.error("Your profile is still loading. Try again in a moment.");
+      return;
+    }
+
+    if (routeAccess.status === "redirect_to_owner") {
+      toast.error("Opening your own edit profile page.");
+      nav({
+        to: "/u/$uid/edit-profile",
+        params: { uid: routeAccess.canonicalUid },
+        replace: true,
+      });
+      return;
+    }
+
     if (!isValidHexColor(draft.accent)) {
       toast.error("Choose a valid profile accent color.");
       return;
@@ -376,13 +402,20 @@ export function EditProfile() {
           persistedBanner = uploaded.url;
         }
 
-        const { data: existingProfile } = await (supabase as any)
+        const { data: existingProfile, error: existingProfileError } = await (supabase as any)
           .from("profiles")
           .select("public_profile_uid")
           .eq("id", supabaseUser.id)
           .maybeSingle();
+        if (existingProfileError) throw existingProfileError;
 
         const existingPublicUid = existingProfile?.public_profile_uid as string | null | undefined;
+        if (routeUid && isPublicProfileUid(existingPublicUid) && existingPublicUid !== routeUid) {
+          toast.error("This edit page belongs to a different profile. Redirecting to yours.");
+          nav({ to: "/u/$uid/edit-profile", params: { uid: existingPublicUid }, replace: true });
+          return;
+        }
+
         const profileUpdate: any = {
           display_name: draft.name,
           username: draft.handle,

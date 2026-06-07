@@ -30,6 +30,7 @@ import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
 import { useAccentColor } from "@/hooks/use-accent-color";
 import { FollowProvider } from "@/lib/follow-store";
 import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
+import { shouldUseFoldableLayout } from "@/components/foldable/foldableRouting";
 import { PlayerProvider, usePlayer } from "@/tradio/contexts/PlayerContext";
 import { MediaInterruptionProvider, useMediaInterruption } from "@/tradio/contexts/MediaInterruptionProvider";
 import { AudioDuckingProvider, useAudioDucking } from "@/tradio/contexts/AudioDuckingProvider";
@@ -242,6 +243,7 @@ function RootComponent() {
   const isFocusedAuthSurface = pathname.startsWith("/oauth/consent");
   const isImmersiveTradio = pathname.startsWith("/tradio");
   const isImmersiveTrance = pathname.startsWith("/trance");
+  const useFoldableLayout = shouldUseFoldableLayout(pathname);
 
   const [foldMode, setFoldMode] = useState<string>("standard");
 
@@ -313,9 +315,13 @@ function RootComponent() {
                             <GuideProvider>
                               <MusicReviewProvider>
                                 <AuthGuard>
-                                  <FoldableLayoutManager>
+                                  {useFoldableLayout ? (
+                                    <FoldableLayoutManager>
+                                      <Outlet />
+                                    </FoldableLayoutManager>
+                                  ) : (
                                     <Outlet />
-                                  </FoldableLayoutManager>
+                                  )}
                                 </AuthGuard>
                                 {!hideGlobalMobileChrome && <BottomNav />}
                                 {!hideGlobalMobileChrome && <TreyIWidget />}
