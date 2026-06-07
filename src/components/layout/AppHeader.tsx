@@ -151,13 +151,7 @@ export function AppHeader({
             if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
             if (t.id === "rewards") navigate({ to: "/rewards" });
             if (t.id === "games") navigate({ to: "/games" });
-            if (t.id === "tradio") {
-              onTabChange?.(t.id);
-              if (!location.pathname.startsWith("/tradio")) {
-                window.location.assign("/tradio");
-              }
-              return;
-            }
+            if (t.id === "tradio") navigate({ to: "/tradio" });
             if (t.id === "trance") navigate({ to: "/trance" });
             onTabChange?.(t.id);
           };
