@@ -253,11 +253,11 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
                 </>
               );
 
-
               return (
                 <Link
                   key={i.label}
                   to={i.to}
+                  preload="intent"
                   onClick={onClose}
                   style={style}
                   className={className}

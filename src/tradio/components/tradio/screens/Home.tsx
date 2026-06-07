@@ -135,11 +135,13 @@ export const HomeScreen: React.FC<Props> = ({
   };
 
   return (
-    <div className="space-y-8 pb-6 lg:space-y-6">
-      <TopBar onProfileClick={() => onOpenProfile?.("host", "Jordan")} />
+    <div className="flex flex-col gap-5 pb-5 lg:gap-6 lg:pb-6 [&>*]:order-10">
+      <div className="!order-1">
+        <TopBar onProfileClick={() => onOpenProfile?.("host", "Jordan")} />
+      </div>
 
       {/* Greeting & Search Group */}
-      <div className="px-4 sm:px-6 lg:px-10 flex flex-col gap-5">
+      <div className="!order-2 px-4 sm:px-6 lg:px-10 flex flex-col gap-4 sm:gap-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-2">
@@ -173,7 +175,7 @@ export const HomeScreen: React.FC<Props> = ({
       </div>
 
       {/* Sleek Tradio Pathway Dock */}
-      <div className="px-4 sm:px-6 lg:px-10 animate-fade-in">
+      <div className="!order-4 px-4 sm:px-6 lg:px-10 animate-fade-in">
         <GlassCard className="p-4 liquid-glass border-white/10 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.015] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -255,27 +257,28 @@ export const HomeScreen: React.FC<Props> = ({
         </GlassCard>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-10">
+      <div className="!order-5 px-4 sm:px-6 lg:px-10">
         <PrescriptionRail
+          compact
           title="Prescribe My Music"
           subtitle="AI picked these stations for your current energy using Tradio listening signals."
         />
       </div>
 
       {/* Premium Creative Action Hub (Minimalist and compact, replaces 3 bulky boxes) */}
-      <div className="px-4 sm:px-6 lg:px-10">
-        <div className="grid gap-4 md:grid-cols-3">
+      <div className="!order-3 px-4 sm:px-6 lg:px-10">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
           {/* Action 1: Universe Router */}
           <GlassCard
             glow
-            className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]"
+            className="p-4 sm:p-5 flex flex-col gap-3 sm:justify-between hover-lift relative overflow-hidden group min-h-0 sm:min-h-[170px]"
           >
             <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-cyan-400/10 blur-2xl group-hover:bg-cyan-400/15 transition-all duration-700 pointer-events-none" />
             <div>
               <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-cyan-300">
                 <Route className="h-3 w-3" /> Universe Router
               </span>
-              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+              <h3 className="mt-2 text-base font-black tracking-tight text-white group-hover:text-cyan-300 transition-colors sm:mt-2.5">
                 Route Me
               </h3>
               <p className="mt-1 text-[11px] leading-relaxed text-white/50">
@@ -287,7 +290,7 @@ export const HomeScreen: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={onOpenRouteMe}
-                className="mt-4 w-full h-8 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/40 text-cyan-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95"
+                className="mt-0 w-full h-8 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 hover:border-cyan-500/40 text-cyan-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 sm:mt-4"
               >
                 Launch Router
               </button>
@@ -297,14 +300,14 @@ export const HomeScreen: React.FC<Props> = ({
           {/* Action 2: Live Music Review */}
           <GlassCard
             glow
-            className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]"
+            className="p-4 sm:p-5 flex flex-col gap-3 sm:justify-between hover-lift relative overflow-hidden group min-h-0 sm:min-h-[170px]"
           >
             <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-fuchsia-500/10 blur-2xl group-hover:bg-fuchsia-500/15 transition-all duration-700 pointer-events-none" />
             <div>
               <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-fuchsia-300">
                 <Radio className="h-3 w-3 animate-pulse" /> Live Feature
               </span>
-              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-fuchsia-300 transition-colors">
+              <h3 className="mt-2 text-base font-black tracking-tight text-white group-hover:text-fuchsia-300 transition-colors sm:mt-2.5">
                 Live Music Review
               </h3>
               <p className="mt-1 text-[11px] leading-relaxed text-white/50">
@@ -314,7 +317,7 @@ export const HomeScreen: React.FC<Props> = ({
             </div>
             <Link
               to="/music-review"
-              className="mt-4 w-full h-8 rounded-lg bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 text-fuchsia-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 flex items-center justify-center"
+              className="mt-0 w-full h-8 rounded-lg bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/20 hover:border-fuchsia-500/40 text-fuchsia-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 flex items-center justify-center sm:mt-4"
             >
               Submit Track
             </Link>
@@ -323,7 +326,7 @@ export const HomeScreen: React.FC<Props> = ({
           {/* Action 3: Prescription Radio (Minimalist Hero) */}
           <GlassCard
             glow
-            className="p-5 flex flex-col justify-between hover-lift relative overflow-hidden group min-h-[170px]"
+            className="p-4 sm:p-5 flex flex-col gap-3 sm:justify-between hover-lift relative overflow-hidden group min-h-0 sm:min-h-[170px]"
           >
             <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-purple-500/15 blur-2xl group-hover:bg-purple-500/25 transition-all duration-700 pointer-events-none" />
             {/* Small glowing animated micro-sphere emblem at the top right corner */}
@@ -338,7 +341,7 @@ export const HomeScreen: React.FC<Props> = ({
               <span className="inline-flex items-center gap-1.5 text-[8px] font-black uppercase tracking-[0.2em] text-purple-300">
                 <Sparkles className="h-3 w-3" /> Live Synthetic Radio
               </span>
-              <h3 className="mt-2.5 text-base font-black tracking-tight text-white group-hover:text-purple-300 transition-colors">
+              <h3 className="mt-2 text-base font-black tracking-tight text-white group-hover:text-purple-300 transition-colors sm:mt-2.5">
                 Prescription Radio
               </h3>
               <p className="mt-1 text-[11px] leading-relaxed text-white/50">
@@ -365,7 +368,7 @@ export const HomeScreen: React.FC<Props> = ({
                   },
                 )
               }
-              className="mt-4 w-full h-8 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95"
+              className="mt-0 w-full h-8 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 hover:border-purple-500/40 text-purple-300 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 sm:mt-4"
             >
               Tune In Live
             </button>

@@ -16,6 +16,7 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  Sparkles,
   Sliders,
   Trash2,
   Volume2,
@@ -171,7 +172,10 @@ function DetailShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const NowPlayingScreen: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+export const NowPlayingScreen: React.FC<{
+  onClose: () => void;
+  onOpenPrescription?: () => void;
+}> = ({ onClose, onOpenPrescription }) => {
   const {
     currentItem,
     currentSource,
@@ -272,6 +276,11 @@ export const NowPlayingScreen: React.FC<{ onClose: () => void }> = ({ onClose })
     void Promise.resolve(stopCast()).catch((error) => {
       console.warn("[Tradio] Cast could not be stopped", error);
     });
+  };
+
+  const handleOpenPrescription = () => {
+    onClose();
+    window.requestAnimationFrame(() => onOpenPrescription?.());
   };
 
   const renderDetail = () => {
@@ -555,14 +564,26 @@ export const NowPlayingScreen: React.FC<{ onClose: () => void }> = ({ onClose })
             Now Playing
           </div>
         </div>
-        <button
-          onClick={handleShare}
-          aria-label="Share track"
-          title="Share track"
-          className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/80 active:scale-95"
-        >
-          <Share2 className="size-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenPrescription && (
+            <button
+              onClick={handleOpenPrescription}
+              aria-label="Open Prescribe Me"
+              title="Open Prescribe Me"
+              className="grid size-10 place-items-center rounded-full border border-purple-300/25 bg-purple-400/10 text-purple-100 shadow-[0_0_18px_rgba(168,85,247,0.18)] active:scale-95"
+            >
+              <Sparkles className="size-4" />
+            </button>
+          )}
+          <button
+            onClick={handleShare}
+            aria-label="Share track"
+            title="Share track"
+            className="grid size-10 place-items-center rounded-full border border-white/10 bg-white/[0.05] text-white/80 active:scale-95"
+          >
+            <Share2 className="size-4" />
+          </button>
+        </div>
       </header>
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6 lg:px-8">

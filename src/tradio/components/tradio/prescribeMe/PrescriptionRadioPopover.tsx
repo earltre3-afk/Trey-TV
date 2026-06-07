@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Sparkles, X, Activity, Info, Radio, Compass } from "lucide-react";
 import type { TradioMode, Prescription, UserAnswers, DailyUsageState } from "./prescribeMeTypes";
 import {
@@ -45,6 +45,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
   // Synthesizing Loading state
   const [synthStep, setSynthStep] = useState("");
   const synthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const closingRef = useRef(false);
 
   // Parent/Child conceptual signals state
   const [sources, setSources] = useState({
@@ -62,6 +63,28 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
       if (synthIntervalRef.current) clearInterval(synthIntervalRef.current);
     };
   }, []);
+
+  const handleClose = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    if (synthIntervalRef.current) {
+      clearInterval(synthIntervalRef.current);
+      synthIntervalRef.current = null;
+    }
+    onClose();
+    window.setTimeout(() => {
+      closingRef.current = false;
+    }, 250);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") handleClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleClose]);
 
   const handleStartFlow = () => {
     if (dailyUsage.prescriptionsLeftToday <= 0) return;
@@ -156,11 +179,11 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         ],
       );
       onOpenPlayer?.();
-      onClose();
+      handleClose();
     } else if (activePrescription.ctaType === "open_forge") {
       if (onOpenForge) onOpenForge();
       else onSetScreen?.("build");
-      onClose();
+      handleClose();
     } else {
       // Route to destination screen keys
       if (onSetScreen) {
@@ -175,7 +198,7 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
           onSetScreen(dest);
         }
       }
-      onClose();
+      handleClose();
     }
   };
 
@@ -193,8 +216,9 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
     <>
       {/* Premium Backdrop Blur Overlay */}
       <div
-        className="fixed inset-0 z-[100] bg-black/35 backdrop-blur-sm animate-fade-in cursor-default"
-        onClick={onClose}
+        className="fixed inset-0 z-[100] cursor-pointer bg-black/55 sm:bg-black/45 sm:backdrop-blur-sm sm:animate-fade-in"
+        onPointerDown={handleClose}
+        onClick={handleClose}
       />
 
       {/* Luxury Integrated Pop-out Cabinet */}
@@ -202,13 +226,25 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
         role="dialog"
         aria-modal="true"
         aria-label="Tradio Prescribe Me"
-        className="fixed bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] left-1/2 z-[101] flex max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] w-[calc(100vw_-_1rem)] max-w-[390px] -translate-x-1/2 flex-col gap-3 overflow-y-auto overscroll-contain rounded-[24px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/85 via-[#08060d]/90 to-[#040409]/95 p-3.5 text-left shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] backdrop-blur-3xl scrollbar-none luxury-grain animate-emerge-from-button sm:right-6 sm:left-auto sm:w-[420px] sm:max-w-[420px] sm:translate-x-0 sm:rounded-[32px] sm:p-5 sm:bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] sm:max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] sm:animate-slide-up-modal lg:bottom-6 lg:max-h-[calc(100dvh_-_3rem)]"
+        className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-[101] flex max-h-[min(86dvh,720px)] flex-col gap-3 overflow-y-auto overscroll-contain rounded-[24px] border-[0.5px] border-white/15 bg-gradient-to-b from-[#0e0e1a]/96 via-[#08060d]/97 to-[#040409]/99 p-3.5 text-left shadow-[0_18px_42px_rgba(0,0,0,0.9),0_0_24px_rgba(168,85,247,0.16),inset_0_1.5px_2.5px_rgba(255,255,255,0.16)] scrollbar-none luxury-grain sm:inset-x-auto sm:right-6 sm:bottom-[calc(10.75rem_+_env(safe-area-inset-bottom))] sm:w-[420px] sm:max-w-[420px] sm:rounded-[32px] sm:p-5 sm:max-h-[calc(100dvh_-_12rem_-_env(safe-area-inset-bottom))] sm:shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_55px_rgba(168,85,247,0.25),inset_0_1.5px_2.5px_rgba(255,255,255,0.2)] sm:backdrop-blur-3xl sm:animate-slide-up-modal lg:bottom-6 lg:max-h-[calc(100dvh_-_3rem)]"
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          type="button"
+          onPointerDown={handleClose}
+          onClick={handleClose}
+          aria-label="Close Tradio Prescribe Me"
+          className="sticky right-0 top-0 z-20 ml-auto flex h-10 w-fit shrink-0 touch-manipulation items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-3 text-[10px] font-black uppercase tracking-wider text-white/80 shadow-[0_12px_28px_rgba(0,0,0,0.45)] backdrop-blur-xl transition active:scale-95 sm:hidden"
+        >
+          <X className="h-4 w-4" />
+          Close
+        </button>
+
         {/* Triangular Anchor Tail pointing to bottom nav center orb */}
         <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 border-r border-b border-white/12 bg-[#05050a]/92 backdrop-blur-3xl z-[-1] pointer-events-none sm:hidden" />
         {/* Diagonal Shimmer Scan Lines */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none" />
+        <div className="absolute inset-0 hidden bg-gradient-to-r from-transparent via-white/[0.04] to-transparent -skew-x-12 translate-x-[-150%] animate-shimmer-sweep pointer-events-none sm:block" />
 
         {/* POP-OUT STAGES */}
 
@@ -261,9 +297,10 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                 </div>
               </div>
               <button
-                onClick={onClose}
-                aria-label="Close Prescribe Me"
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
+                onPointerDown={handleClose}
+                onClick={handleClose}
+                aria-label="Close Tradio Prescribe Me"
+                className="h-8 w-8 touch-manipulation rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -303,9 +340,10 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
                 </div>
               </div>
               <button
-                onClick={onClose}
-                aria-label="Close Prescribe Me"
-                className="h-8 w-8 rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
+                onPointerDown={handleClose}
+                onClick={handleClose}
+                aria-label="Close Tradio Prescribe Me"
+                className="h-8 w-8 touch-manipulation rounded-full bg-white/5 border border-white/12 hover:border-white/25 text-white/50 hover:text-white transition-all flex items-center justify-center active:scale-90"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -451,6 +489,14 @@ export const PrescriptionRadioPopover: React.FC<PrescriptionRadioPopoverProps> =
             </div>
           </>
         )}
+        <button
+          type="button"
+          onPointerDown={handleClose}
+          onClick={handleClose}
+          className="sticky bottom-0 z-20 mt-1 h-11 w-full shrink-0 touch-manipulation rounded-2xl border border-white/12 bg-white/[0.06] text-xs font-black uppercase tracking-widest text-white/75 backdrop-blur-xl transition active:scale-[0.99] sm:hidden"
+        >
+          Close Prescribe Me
+        </button>
       </div>
     </>
   );

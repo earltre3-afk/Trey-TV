@@ -31,6 +31,7 @@ import MiniPlayer from "./MiniPlayer";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
 import HomeScreen from "./screens/Home";
 import NowPlayingScreen from "./screens/NowPlaying";
+import RouteMePage from "../route-me/RouteMePage";
 import type { StationsDestination } from "./screens/StationsHub";
 import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
@@ -40,7 +41,6 @@ const SearchScreen = lazy(() => import("./screens/Search"));
 const LibraryScreen = lazy(() => import("./screens/Library"));
 const StudioScreen = lazy(() => import("./screens/Studio"));
 const StationsHub = lazy(() => import("./screens/StationsHub"));
-const RouteMePage = lazy(() => import("../route-me/RouteMePage"));
 const BuildStationScreen = lazy(() => import("./screens/BuildStation"));
 const ArtistStationScreen = lazy(() => import("./screens/ArtistStation"));
 const InstantReleaseScreen = lazy(() => import("./screens/InstantRelease"));
@@ -1181,7 +1181,10 @@ export const TradioShellContent: React.FC = () => {
             className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in"
           >
             <div className="w-full min-h-screen">
-              <NowPlayingScreen onClose={() => setPlayerOpen(false)} />
+              <NowPlayingScreen
+                onClose={() => setPlayerOpen(false)}
+                onOpenPrescription={openPrescription}
+              />
             </div>
           </div>
         )}

@@ -361,16 +361,28 @@ export const PrescriptionRail: React.FC<{
   return (
     <GlassCard
       glow
-      className="overflow-hidden p-5 relative border border-white/10 bg-gradient-to-r from-purple-950/15 via-black/40 to-cyan-950/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+      className={`overflow-hidden relative border border-white/10 bg-gradient-to-r from-purple-950/15 via-black/40 to-cyan-950/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] ${
+        compact ? "p-3.5 sm:p-5" : "p-5"
+      }`}
     >
       <div className="absolute -top-16 -left-16 h-32 w-32 bg-purple-500/10 blur-[40px] pointer-events-none rounded-full" />
       <div className="absolute -bottom-16 -right-16 h-32 w-32 bg-cyan-500/10 blur-[40px] pointer-events-none rounded-full" />
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+      <div
+        className={`flex flex-col sm:flex-row sm:items-center justify-between relative z-10 ${
+          compact ? "gap-3 sm:gap-4" : "gap-4"
+        }`}
+      >
         <div className="flex items-start gap-3.5">
-          <div className="relative h-11 w-11 rounded-full shrink-0 bg-gradient-to-br from-purple-500/20 to-cyan-500/10 border border-purple-500/30 flex items-center justify-center">
+          <div
+            className={`relative rounded-full shrink-0 bg-gradient-to-br from-purple-500/20 to-cyan-500/10 border border-purple-500/30 flex items-center justify-center ${
+              compact ? "h-9 w-9 sm:h-11 sm:w-11" : "h-11 w-11"
+            }`}
+          >
             <span className="absolute inset-0 bg-purple-500/20 blur-md animate-pulse" />
-            <Sparkles className="h-5 w-5 text-purple-300 animate-pulse-orb" />
+            <Sparkles
+              className={`${compact ? "h-4 w-4 sm:h-5 sm:w-5" : "h-5 w-5"} text-purple-300 animate-pulse-orb`}
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -381,16 +393,25 @@ export const PrescriptionRail: React.FC<{
                 Rx Console
               </span>
             </div>
-            <p className="mt-1 text-xs text-white/60 leading-relaxed max-w-xl">
-              {subtitle} Formulate and synthesize acoustic, licensing, and broadcast strategies
-              inside the bottom-anchored console.
+            <p
+              className={`max-w-xl text-white/60 ${
+                compact
+                  ? "mt-0.5 text-[11px] leading-snug sm:mt-1 sm:text-xs sm:leading-relaxed"
+                  : "mt-1 text-xs leading-relaxed"
+              }`}
+            >
+              {subtitle}
+              {!compact &&
+                " Formulate and synthesize acoustic, licensing, and broadcast strategies inside the bottom-anchored console."}
             </p>
           </div>
         </div>
 
         <button
           onClick={handleOpenConsole}
-          className="h-10 px-5 rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/25 border border-purple-500/35 hover:border-purple-400/60 text-white font-mono font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.1)] active:scale-95"
+          className={`rounded-xl bg-gradient-to-r from-purple-500/20 to-cyan-500/25 border border-purple-500/35 hover:border-purple-400/60 text-white font-mono font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.1)] active:scale-95 ${
+            compact ? "h-9 px-4 sm:h-10 sm:px-5" : "h-10 px-5"
+          }`}
         >
           <Sparkles className="h-3.5 w-3.5 text-purple-300" /> Tune Sound Formula
         </button>

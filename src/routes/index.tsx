@@ -116,6 +116,8 @@ function GuestWatchNow() {
           <div className="flex items-center gap-2">
             <Link
               to="/tradio"
+              preload="intent"
+              data-tradio-entry="true"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
@@ -152,6 +154,8 @@ function GuestWatchNow() {
           <div className="flex items-center gap-2">
             <Link
               to="/tradio"
+              preload="intent"
+              data-tradio-entry="true"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
