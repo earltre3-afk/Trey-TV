@@ -74,13 +74,11 @@ function WatchNow() {
 }
 
 function TreyOriginHeroMedia({ className }: { className: string }) {
-  const { isMobile } = useDeviceProfile();
-  
   return (
     <video
       aria-hidden="true"
       className={className}
-      autoPlay={!isMobile}
+      autoPlay
       muted
       loop
       playsInline
@@ -90,6 +88,7 @@ function TreyOriginHeroMedia({ className }: { className: string }) {
     </video>
   );
 }
+
 
 /* ============================================================
    GUEST EXPERIENCE

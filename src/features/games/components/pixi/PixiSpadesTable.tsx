@@ -133,7 +133,9 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
   const { cardW, cardH, cx, cy, w, h } = layout;
 
   // Clear all
+  scene.tweens = [];
   seatContainers.forEach((c) => c.removeChildren().forEach((ch) => ch.destroy()));
+
   centerContainer.removeChildren().forEach((c) => c.destroy());
   handContainer.removeChildren().forEach((c) => c.destroy());
 

@@ -182,7 +182,9 @@ function renderBJCards(scene: BJScene, props: PixiBJTableProps) {
   const { cardW, cardH, cx, h } = layout;
 
   // Clear
+  scene.tweens = [];
   dealerContainer.removeChildren().forEach((c) => c.destroy());
+
   playerContainer.removeChildren().forEach((c) => c.destroy());
   chipContainer.removeChildren().forEach((c) => c.destroy());
 

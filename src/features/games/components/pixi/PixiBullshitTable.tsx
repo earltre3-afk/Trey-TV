@@ -144,7 +144,9 @@ function renderBS(scene: BSScene, props: PixiBullshitProps) {
   const accent = accentNum(props.accent);
   const { cardW, cardH, cx, cy, w, h } = layout;
 
+  scene.tweens = [];
   pileContainer.removeChildren().forEach((c) => c.destroy());
+
   revealContainer.removeChildren().forEach((c) => c.destroy());
   handContainer.removeChildren().forEach((c) => c.destroy());
   opponentContainers.forEach((c) => c.removeChildren().forEach((ch) => ch.destroy()));

@@ -45,12 +45,14 @@ export interface Tween {
 
 /** Apply a linear interpolation tick to a tween. Returns true if still running. */
 export function tickTween(tween: Tween, dt: number): boolean {
+  if (tween.obj.destroyed) return false;
   if ((tween.delay ?? 0) > 0) {
     tween.delay = (tween.delay ?? 0) - dt;
     return true;
   }
   tween.elapsed += dt;
   const raw = Math.min(tween.elapsed / tween.duration, 1);
+
   const t = tween.easeFn(raw);
 
   const { obj, from, to } = tween;
