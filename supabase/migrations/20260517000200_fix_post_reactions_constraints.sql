@@ -11,7 +11,18 @@ alter table public.user_post_reactions
 alter table public.user_post_reactions
   drop constraint if exists user_post_reactions_post_id_user_id_reaction_type_key;
 
--- Add correct 2-column unique constraint so onConflict:"post_id,user_id" works
-alter table public.user_post_reactions
-  add constraint user_post_reactions_post_id_user_id_key
-  unique (post_id, user_id);
+-- Add correct 2-column unique constraint so onConflict:"post_id,user_id" works.
+-- Older baselines may already have this exact constraint.
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.user_post_reactions'::regclass
+      and conname = 'user_post_reactions_post_id_user_id_key'
+  ) then
+    alter table public.user_post_reactions
+      add constraint user_post_reactions_post_id_user_id_key
+      unique (post_id, user_id);
+  end if;
+end $$;

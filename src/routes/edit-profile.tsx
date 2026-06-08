@@ -45,7 +45,7 @@ import { TopThreeEditor } from "@/components/profile/TopThreeEditor";
 import { useGoBack } from "@/hooks/use-go-back";
 import { ACCENT_COLORS, applyAccentColor, isValidHexColor } from "@/hooks/use-accent-color";
 import { type SessionUser, useAuth } from "@/lib/auth";
-import { useAuth as useSupabaseAuth } from "@/hooks/use-auth";
+import { useSupabaseSession } from "@/lib/supabase-session";
 import { currentUser } from "@/lib/mock-data";
 import { createBrowserClient } from "@/lib/supabase-browser";
 import { uploadProfileMedia } from "@/lib/supabase-storage";
@@ -59,6 +59,8 @@ import { FwdGifPicker } from "@/components/fwd/FwdGifPicker";
 import type { FwdGifPayload } from "@/lib/fwd/picker";
 import { useMarkFwdGifUsed } from "@/lib/fwd-gif-api";
 import {
+  PROFILE_UPDATED_EVENT,
+  resolveEditProfilePersistenceIdentity,
   resolveEditProfileRouteAccess,
   shouldReinitializeEditProfileDraft,
 } from "@/lib/editProfileIdentity";
@@ -226,12 +228,21 @@ const accentVariableFor = (hex: string) => {
 
 export function EditProfile({ routeUid }: EditProfileProps = {}) {
   const { user, updateUser, signIn, authReady } = useAuth();
-  const { user: supabaseUser } = useSupabaseAuth();
+  const { user: supabaseAuthUser } = useSupabaseSession();
   const nav = useNavigate();
   const qc = useQueryClient();
   const routeAccess = useMemo(
     () => resolveEditProfileRouteAccess(routeUid, user?.uid ?? ""),
     [routeUid, user?.uid],
+  );
+  const persistenceIdentity = useMemo(
+    () =>
+      resolveEditProfilePersistenceIdentity({
+        authUserId: supabaseAuthUser?.id,
+        publicProfileUid: user?.uid,
+        routeUid,
+      }),
+    [routeUid, supabaseAuthUser?.id, user?.uid],
   );
 
   useEffect(() => {
@@ -385,34 +396,47 @@ export function EditProfile({ routeUid }: EditProfileProps = {}) {
       return;
     }
 
+    if (supabaseAuthUser && persistenceIdentity.status !== "ready") {
+      toast.error("Your signed-in profile is still syncing. Try again in a moment.");
+      return;
+    }
+
     setSaving(true);
     let persistedAvatar = draft.avatar;
     let persistedBanner = draft.banner;
     let savedPublicProfileUid = profileUid || base.uid;
 
     try {
-      if (supabaseUser) {
+      if (supabaseAuthUser && persistenceIdentity.status === "ready") {
         const supabase = createBrowserClient();
         if (avatarUpload) {
-          const uploaded = await uploadProfileMedia(supabaseUser.id!, avatarUpload, "avatar");
+          const uploaded = await uploadProfileMedia(
+            persistenceIdentity.authUserId,
+            avatarUpload,
+            "avatar",
+          );
           persistedAvatar = uploaded.url;
         }
         if (bannerUpload) {
-          const uploaded = await uploadProfileMedia(supabaseUser.id!, bannerUpload, "banner");
+          const uploaded = await uploadProfileMedia(
+            persistenceIdentity.authUserId,
+            bannerUpload,
+            "banner",
+          );
           persistedBanner = uploaded.url;
         }
 
         const { data: existingProfile, error: existingProfileError } = await (supabase as any)
           .from("profiles")
           .select("public_profile_uid")
-          .eq("id", supabaseUser.id)
+          .eq("id", persistenceIdentity.authUserId)
           .maybeSingle();
         if (existingProfileError) throw existingProfileError;
 
         const existingPublicUid = existingProfile?.public_profile_uid as string | null | undefined;
         if (routeUid && isPublicProfileUid(existingPublicUid) && existingPublicUid !== routeUid) {
           toast.error("This edit page belongs to a different profile. Redirecting to yours.");
-          nav({ to: "/u/$uid/edit-profile", params: { uid: existingPublicUid }, replace: true });
+          nav({ to: "/u/$uid/edit-profile", params: { uid: existingPublicUid as string }, replace: true });
           return;
         }
 
@@ -467,7 +491,7 @@ export function EditProfile({ routeUid }: EditProfileProps = {}) {
         const { data: savedProfile, error } = await (supabase as any)
           .from("profiles")
           .update(profileUpdate)
-          .eq("id", supabaseUser.id)
+          .eq("id", persistenceIdentity.authUserId)
           .select(
             "public_profile_uid, avatar_url, banner_url, display_name, username, bio, location, link_url, profile_accent_color, profile_song_id, profile_preferences",
           )
@@ -533,6 +557,11 @@ export function EditProfile({ routeUid }: EditProfileProps = {}) {
         targetId: savedPublicProfileUid,
         details: { handle: draft.handle, visibility: draft.profileVisibility },
       });
+      window.dispatchEvent(
+        new CustomEvent(PROFILE_UPDATED_EVENT, {
+          detail: { publicProfileUid: savedPublicProfileUid },
+        }),
+      );
       toast.success("Profile published");
       setTimeout(() => nav({ to: "/u/$uid", params: { uid: savedPublicProfileUid } }), 350);
     } catch (error) {

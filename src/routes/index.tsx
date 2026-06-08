@@ -41,6 +41,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getDailyZodiacReading } from "@/lib/zodiac.server";
 import { zodiacSymbol } from "@/lib/zodiac";
 import { ReadingOfTheDay } from "@/components/zodiac";
+import { AnimationViewport } from "@/components/AnimationViewport";
+import { useDeviceProfile } from "@/hooks/use-device-profile";
 
 const TREY_TV_BOX_APK_URL = "/downloads/trey-tv-streamingbox-debug.apk";
 const TREY_ORIGIN_HERO_VIDEO_URL =
@@ -72,11 +74,13 @@ function WatchNow() {
 }
 
 function TreyOriginHeroMedia({ className }: { className: string }) {
+  const { isMobile } = useDeviceProfile();
+  
   return (
     <video
       aria-hidden="true"
       className={className}
-      autoPlay
+      autoPlay={!isMobile}
       muted
       loop
       playsInline
@@ -117,7 +121,6 @@ function GuestWatchNow() {
             <Link
               to="/tradio"
               preload="intent"
-              data-tradio-entry="true"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
@@ -155,7 +158,6 @@ function GuestWatchNow() {
             <Link
               to="/tradio"
               preload="intent"
-              data-tradio-entry="true"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
@@ -177,7 +179,7 @@ function GuestWatchNow() {
 
         <div className="relative z-10 max-w-3xl mx-auto px-5 pt-[18vh] pb-24 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full liquid-glass border border-white/15 text-[11px] tracking-[0.22em] text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary animate-glow-pulse" /> THE CREATOR
+            <span className="size-1.5 rounded-full bg-primary animate-glow-pulse data-animate" /> THE CREATOR
             TELEVISION NETWORK
           </div>
           <h1 className="font-display mt-6 text-5xl sm:text-7xl font-black leading-[0.95] bg-gradient-to-b from-white to-white/70 bg-clip-text text-transparent drop-shadow-[0_4px_30px_oklch(0.82_0.16_85_/_0.4)]">
@@ -206,7 +208,7 @@ function GuestWatchNow() {
           <TvAppDownloadCta />
           <div className="mt-12 inline-flex flex-col items-center text-muted-foreground text-xs tracking-widest">
             <span>SCROLL TO EXPLORE</span>
-            <span className="mt-2 size-6 rounded-full border border-white/20 grid place-items-center animate-bounce">
+            <span className="mt-2 size-6 rounded-full border border-white/20 grid place-items-center animate-bounce data-animate">
               <ChevronRight className="size-3 rotate-90" />
             </span>
           </div>

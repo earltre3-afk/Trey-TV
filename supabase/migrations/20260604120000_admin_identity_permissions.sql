@@ -45,15 +45,15 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 
 -- Reconcile is_admin / is_owner to the active-row model.
-create or replace function public.is_admin(p_uid uuid)
+create or replace function public.is_admin(_user_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.admin_users where user_id = p_uid and revoked_at is null)
+  select exists (select 1 from public.admin_users where user_id = _user_id and revoked_at is null)
 $$;
 
-create or replace function public.is_owner(p_uid uuid)
+create or replace function public.is_owner(_user_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.admin_users
-                 where user_id = p_uid and role = 'owner' and revoked_at is null)
+                 where user_id = _user_id and role = 'owner' and revoked_at is null)
 $$;
 
 grant execute on function public.is_admin(uuid), public.is_owner(uuid),

@@ -184,7 +184,7 @@ interface TextOverlay {
 type StepType = "SELECT_TYPE" | "EDIT" | "PREVIEW";
 type PostDestinationType = "FEED_PROFILE" | "INBOX_MESSAGE";
 
-export function Composer() {
+export function Composer({ initialPostType }: { initialPostType?: string } = {}) {
   const navigate = useNavigate();
   const { posts, addPost } = useFeed();
   const { isGuest, user } = useAuth();

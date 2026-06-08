@@ -24,6 +24,10 @@ import { GameChatDrawer, ChatHeaderButton } from "../shared/GameChatDrawer";
 import treyTvLogo from "@/assets/trey-tv-logo.png";
 import { useTvRemoteInput, useTvRemoteMode } from "@/lib/tv/useTvRemoteInput";
 import { getGameSpadesDecision } from "@/lib/trey-i/vertex.server";
+import {
+  buildSpadesVisualEventKey,
+  getDisplayedSpadesTrick,
+} from "@/features/games/lib/spades/spadesPresentation";
 
 interface Props {
   onBack: () => void;
@@ -535,6 +539,14 @@ const SpadesView: React.FC<ViewProps> = ({
   }, [state.trick.length, state.lastTrickWinner]);
 
   const dealerSeat = (state.round - 1 + 3) % 4;
+  const displayedTrick = useMemo(
+    () => getDisplayedSpadesTrick(state),
+    [state.trick, state.lastTrick],
+  );
+  const visualEventKey = useMemo(
+    () => buildSpadesVisualEventKey(state, displayedTrick, winnerFlash),
+    [state.round, state.phase, state.currentSeat, displayedTrick, winnerFlash],
+  );
 
   // Map each absolute seat to a position label relative to mySeat
   const seatPositions = useMemo(() => {
@@ -821,14 +833,14 @@ const SpadesView: React.FC<ViewProps> = ({
 
           <PixiSpadesTableLazy
             hands={state.players.map((p) => p.hand)}
-            trick={state.trick}
+            trick={displayedTrick}
             mySeat={mySeat}
             currentSeat={state.currentSeat}
             winnerSeat={winnerFlash}
             selectedCardId={selected}
             legalCards={yourLegal}
             accent="#00B7FF"
-            eventKey={`${state.round}:${state.phase}:${state.currentSeat}:${state.trick.length}`}
+            eventKey={visualEventKey}
             renderHand={false}
           />
 

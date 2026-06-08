@@ -7,10 +7,15 @@ import { Composer } from "@/components/feed/Composer";
 export const Route = createFileRoute("/create")({
   component: Create,
   head: () => ({ meta: [{ title: "Create — Trey TV" }] }),
+  validateSearch: (search): { type?: string } => ({
+    type: (search.type as string) || undefined,
+  }),
 });
 
 function Create() {
   const goBack = useGoBack("/");
+  const { type } = Route.useSearch();
+
   return (
     <AppShell>
       <div className="space-y-4">
@@ -23,7 +28,7 @@ function Create() {
             <ArrowLeft className="size-4" />
           </button>
         </div>
-        <Composer />
+        <Composer initialPostType={type} />
       </div>
     </AppShell>
   );

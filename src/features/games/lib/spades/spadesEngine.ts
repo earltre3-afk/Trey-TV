@@ -17,6 +17,7 @@ export interface SpadesState {
   currentSeat: number; // seat to act
   leadSeat: number; // who led current trick
   trick: { seat: number; cardId: string }[]; // current trick in play order
+  lastTrick?: { seat: number; cardId: string }[]; // completed trick retained for presentation
   ledSuit: Suit | null;
   spadesBroken: boolean;
   teamScores: [number, number]; // teams 0 (seats 0+2), 1 (seats 1+3)
@@ -55,6 +56,7 @@ export function newSpadesGame(playerNames: string[], targetScore = 500): SpadesS
     currentSeat: 0,
     leadSeat: 0,
     trick: [],
+    lastTrick: [],
     ledSuit: null,
     spadesBroken: false,
     teamScores: [0, 0],
@@ -127,7 +129,10 @@ export function playCard(state: SpadesState, seat: number, cardId: string): Spad
   p.hand = p.hand.filter((c) => c !== cardId);
   next.trick.push({ seat, cardId });
   const c = getCard(cardId);
-  if (next.trick.length === 1) next.ledSuit = c.suit;
+  if (next.trick.length === 1) {
+    next.ledSuit = c.suit;
+    next.lastTrick = [];
+  }
   if (c.suit === "spades") next.spadesBroken = true;
 
   if (next.trick.length === 4) {
@@ -136,6 +141,7 @@ export function playCard(state: SpadesState, seat: number, cardId: string): Spad
     next.players[winnerSeat].tricksWon += 1;
     next.teamRoundTricks[teamOf(winnerSeat)] += 1;
     next.lastTrickWinner = winnerSeat;
+    next.lastTrick = [...next.trick];
     next.log.push(`${next.players[winnerSeat].name} wins the trick.`);
     next.trick = [];
     next.ledSuit = null;
@@ -228,6 +234,7 @@ export function startNextRound(state: SpadesState): SpadesState {
   next.teamRoundBids = [0, 0];
   next.teamRoundTricks = [0, 0];
   next.trick = [];
+  next.lastTrick = [];
   next.ledSuit = null;
   next.spadesBroken = false;
   next.round += 1;

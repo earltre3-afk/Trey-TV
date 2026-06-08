@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import {
+  isProfileUpdateForUid,
+  resolveEditProfilePersistenceIdentity,
   resolveEditProfileRouteAccess,
   shouldReinitializeEditProfileDraft,
 } from "./editProfileIdentity.ts";
@@ -42,4 +44,35 @@ test("reinitializes the draft when Supabase hydrates a different signed-in profi
   assert.equal(shouldReinitializeEditProfileDraft("4230000000000001", "4230000000000002"), true);
   assert.equal(shouldReinitializeEditProfileDraft("4230000000000001", "4230000000000001"), false);
   assert.equal(shouldReinitializeEditProfileDraft("", "4230000000000001"), true);
+});
+
+test("uses the Supabase auth UUID for persistence and the public UID for profile routing", () => {
+  assert.deepEqual(
+    resolveEditProfilePersistenceIdentity({
+      authUserId: "ca765d44-912d-4e5b-8b40-50330b78cbf7",
+      publicProfileUid: "4230000000000001",
+      routeUid: "4230000000000001",
+    }),
+    {
+      authUserId: "ca765d44-912d-4e5b-8b40-50330b78cbf7",
+      publicProfileUid: "4230000000000001",
+      status: "ready",
+    },
+  );
+});
+
+test("does not allow profile persistence before both signed-in identities are ready", () => {
+  assert.equal(
+    resolveEditProfilePersistenceIdentity({
+      authUserId: "",
+      publicProfileUid: "4230000000000001",
+      routeUid: "4230000000000001",
+    }).status,
+    "pending",
+  );
+});
+
+test("refreshes only the public profile that was just saved", () => {
+  assert.equal(isProfileUpdateForUid("4230000000000001", "4230000000000001"), true);
+  assert.equal(isProfileUpdateForUid("4230000000000001", "4230000000000002"), false);
 });

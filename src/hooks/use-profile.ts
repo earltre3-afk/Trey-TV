@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "../lib/supabase-browser";
 import type { RelationshipStatus, TopThreeEntry } from "../components/profile/ProfileTypes";
+import {
+  isProfileUpdateForUid,
+  PROFILE_UPDATED_EVENT,
+} from "../lib/editProfileIdentity";
 
 export interface SupabaseProfile {
   id: string;
@@ -143,6 +147,19 @@ export function useProfile(publicUid: string) {
       mounted = false;
     };
   }, [publicUid, refetchTick]);
+
+  useEffect(() => {
+    const handleProfileUpdated = (event: Event) => {
+      const updatedUid = (event as CustomEvent<{ publicProfileUid?: string }>).detail
+        ?.publicProfileUid;
+      if (isProfileUpdateForUid(publicUid, updatedUid)) {
+        setRefetchTick((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated);
+  }, [publicUid]);
 
   const refetch = () => {
     setRefetchTick((prev) => prev + 1);
