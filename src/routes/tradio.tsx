@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TradioShell } from "@/tradio/components/tradio/Shell";
+import { lazy, Suspense } from "react";
 import "@/tradio/tradio.css";
 
-/**
- * Tradio — the premium music world inside Trey TV (Phase A+B mount).
- *
- * Phase A+B = native route mount only. No live wiring yet to parent auth,
- * Messenger, notifications, Trey-I, or Signal Test (those are Phase C+).
- */
+const TradioShell = lazy(() =>
+  import("@/tradio/components/tradio/Shell").then((m) => ({ default: m.TradioShell })),
+);
 
 export const Route = createFileRoute("/tradio")({
   component: TradioRoute,
@@ -22,7 +19,15 @@ export const Route = createFileRoute("/tradio")({
 function TradioRoute() {
   return (
     <div className="tradio-root min-h-screen w-full bg-[#0A0A0F] text-white antialiased">
-      <TradioShell />
+      <Suspense
+        fallback={
+          <div className="flex min-h-screen items-center justify-center">
+            <div className="size-10 rounded-full border-2 border-white/15 border-t-primary animate-spin" />
+          </div>
+        }
+      >
+        <TradioShell />
+      </Suspense>
     </div>
   );
 }

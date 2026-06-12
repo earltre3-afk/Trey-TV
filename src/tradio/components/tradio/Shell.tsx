@@ -31,12 +31,12 @@ import MiniPlayer from "./MiniPlayer";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
 import HomeScreen from "./screens/Home";
 import NowPlayingScreen from "./screens/NowPlaying";
-import RouteMePage from "../route-me/RouteMePage";
 import type { StationsDestination } from "./screens/StationsHub";
 import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 
+const RouteMePage = lazy(() => import("../route-me/RouteMePage"));
 const SearchScreen = lazy(() => import("./screens/Search"));
 const LibraryScreen = lazy(() => import("./screens/Library"));
 const StudioScreen = lazy(() => import("./screens/Studio"));

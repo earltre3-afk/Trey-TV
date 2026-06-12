@@ -69,7 +69,7 @@ export default defineConfig({
       },
     },
     server: {
-      port: 48752,
+      port: 3000,
       host: true,
     },
   },

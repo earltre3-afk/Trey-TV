@@ -160,11 +160,9 @@ export function AppHeader({
           }`;
           if (t.id === "tradio") {
             return (
-              <Link
+              <button
                 key={t.id}
-                to="/tradio"
-                preload="intent"
-                onClick={() => onTabChange?.(t.id)}
+                onClick={handleClick}
                 className={tabClassName}
               >
                 <span className="relative size-3.5 inline-flex items-center justify-center shrink-0">
@@ -182,7 +180,7 @@ export function AppHeader({
                 {active && (
                   <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-primary shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
                 )}
-              </Link>
+              </button>
             );
           }
           return (

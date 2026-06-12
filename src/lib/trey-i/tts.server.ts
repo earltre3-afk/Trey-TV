@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GoogleGenAI, Modality } from "@google/genai";
+import { Modality } from "@google/genai";
+import { buildGeminiClient } from "./aiProvider.server";
 
 type TtsInput = {
   text: string;
@@ -14,14 +15,7 @@ const validateTtsInput = (input: TtsInput): TtsInput => ({
   text: typeof input?.text === "string" ? input.text : "",
 });
 
-function getApiKey(): string {
-  return (
-    process.env.GOOGLE_GENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim() ||
-    ""
-  );
-}
+
 
 function cleanForTts(text: string): string {
   return text
@@ -86,10 +80,7 @@ export const treyITts = createServerFn({ method: "POST" })
       const text = cleanForTts(data.text);
       if (!text) return { audioBase64: null };
 
-      const apiKey = getApiKey();
-      if (!apiKey) return { audioBase64: null };
-
-      const client = new GoogleGenAI({ apiKey });
+      const { genai: client } = buildGeminiClient();
       const response = await client.models.generateContent({
         model: process.env.GEMINI_TREYI_TTS_MODEL || DEFAULT_TTS_MODEL,
         contents: `Say in a warm, smooth, confident, premium, emotionally intelligent, and conversational voice: ${text}`,
