@@ -26,7 +26,7 @@ export function CreateBubbleArc() {
         position: 'fixed',
         inset: 0,
         pointerEvents: 'none',
-        zIndex: 60,
+        zIndex: 10000,
         opacity: isOpen ? 1 : 0,
         transition: 'opacity 220ms ease',
       }}
