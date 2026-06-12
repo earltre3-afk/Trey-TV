@@ -77,3 +77,6 @@ apps/trey-tv-web/node_modules/
 .vercel-pass*-backup-*/
 tmp-*
 *.png
+
+# Superpowers brainstorming mockups & session artifacts
+.superpowers/

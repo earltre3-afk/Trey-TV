@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { GoogleGenAI, Modality } from "@google/genai";
+import { Modality } from "@google/genai";
+import { buildGeminiClient } from "./aiProvider.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getVoiceRenderStoragePath, uploadVoiceRenderAudioServer } from "../../tradio/components/tradio/services/broadcastVoiceStorage";
 import { VoiceRenderInput, VoiceRenderResult, VoiceRenderStatus } from "../../tradio/components/tradio/types/broadcastVoiceTypes";
@@ -142,18 +143,8 @@ export const renderBroadcastVoiceServer = createServerFn({ method: "POST" })
 
       // ─── 3. GEMINI ───────────────────────────────────────────────────────
       else if (input.voice_provider === "gemini") {
-        const apiKey =
-          process.env.GOOGLE_GENAI_API_KEY?.trim() ||
-          process.env.GEMINI_API_KEY?.trim() ||
-          process.env.GOOGLE_API_KEY?.trim() ||
-          "";
-
-        if (!apiKey) {
-          throw new Error("Gemini provider is not configured on this server (Missing GEMINI_API_KEY).");
-        }
-
+        const { genai: client } = buildGeminiClient();
         const voiceName = input.provider_voice_id || "Algieba";
-        const client = new GoogleGenAI({ apiKey });
         const response = await client.models.generateContent({
           model: input.provider_model || "gemini-2.5-flash-preview-tts",
           contents: `Say in a natural, broadcasting-quality, smooth voice: ${input.script_text}`,
@@ -308,9 +299,7 @@ export const renderStationDropVoiceServer = createServerFn({ method: "POST" })
     let dropScript = input.dropText;
     try {
       const prompt = `Write a premium station drop for Tradio. Tone: ${input.hostTone}. Style guidelines: Incorporate "${input.dropText}". Return a short, punchy 1-2 sentence drop read. Do not return markdown, just raw text.`;
-      const client = new GoogleGenAI({
-        apiKey: process.env.GOOGLE_GENAI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() || ""
-      });
+      const { genai: client } = buildGeminiClient();
       const res = await client.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
@@ -343,9 +332,7 @@ export const renderAdReadVoiceServer = createServerFn({ method: "POST" })
     let adScript = "";
     try {
       const prompt = `Write a conversational, high-end 30-second sponsor ad read script for ${input.adProvider}. Delivery tone: ${input.tone}. Limit to exactly 60-70 words suitable for a ${input.durationSeconds}s read. Do not return markdown, just raw text.`;
-      const client = new GoogleGenAI({
-        apiKey: process.env.GOOGLE_GENAI_API_KEY?.trim() || process.env.GEMINI_API_KEY?.trim() || ""
-      });
+      const { genai: client } = buildGeminiClient();
       const res = await client.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,

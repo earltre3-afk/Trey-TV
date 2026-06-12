@@ -11,10 +11,11 @@ import {
   useLocation,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { LazyTreyIWidget } from "@/components/layout/LazyTreyIWidget";
+import { TreyIWidget } from "@/components/ai/TreyIWidget";
+import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { InstagramStylePostSheet } from "@/components/layout/InstagramStylePostSheet";
-import { PostSheetProvider, usePostSheet } from "@/lib/post-sheet-context";
+import { CreateBubbleArc } from "@/components/layout/CreateBubbleArc";
+import { CreateArcProvider } from "@/lib/create-arc-context";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { SupabaseSessionProvider, useSupabaseSession } from "@/lib/supabase-session";
 import { createBrowserClient } from "@/lib/supabase-browser";
@@ -192,7 +193,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <PostSheetProvider>
+      <CreateArcProvider>
         <RootContent
           isImmersivePrescribeMe={isImmersivePrescribeMe}
           isImmersiveGameRoom={isImmersiveGameRoom}
@@ -201,7 +202,7 @@ function RootComponent() {
           isImmersiveTrance={isImmersiveTrance}
           useFoldableLayout={useFoldableLayout}
         />
-      </PostSheetProvider>
+      </CreateArcProvider>
     </QueryClientProvider>
   );
 }
@@ -221,8 +222,14 @@ function RootContent({
   isImmersiveTrance: boolean;
   useFoldableLayout: boolean;
 }) {
-  const { isOpen, closePostSheet } = usePostSheet();
   const [foldMode, setFoldMode] = useState<string>("standard");
+
+  useEffect(() => {
+    (window as any).__treyTvHydrated = true;
+    return () => {
+      (window as any).__treyTvHydrated = false;
+    };
+  }, []);
 
   useEffect(() => {
     const checkFold = () => {
@@ -292,13 +299,14 @@ function RootContent({
                                 )}
                               </AuthGuard>
                               {!hideGlobalMobileChrome && <BottomNav />}
-                              {!hideGlobalMobileChrome && <LazyTreyIWidget />}
+                              {!hideGlobalMobileChrome && <TreyIWidget />}
                               {!hideGlobalMobileChrome && <OPlayer />}
+                              {!hideGlobalMobileChrome && <GlobalMediaCastButton />}
                               <GiftBurstHost />
                               <MountedPlayer />
                               <NotificationDuckingWirer />
                               <MediaInterruptionWirer />
-                              <InstagramStylePostSheet isOpen={isOpen} onClose={closePostSheet} />
+                              <CreateBubbleArc />
                               <Toaster />
                             </MusicReviewProvider>
                           </GuideProvider>

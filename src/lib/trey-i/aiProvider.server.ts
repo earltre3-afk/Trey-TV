@@ -12,41 +12,37 @@ export function getAIProviderName(): AIProviderName {
 
 // ─── Gemini Client Builder ───────────────────────────────────────────────────
 
-function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
-  const apiKey =
-    process.env.GOOGLE_GENAI_API_KEY?.trim() ||
-    process.env.GEMINI_API_KEY?.trim() ||
-    process.env.GOOGLE_API_KEY?.trim();
-
+export function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
   const project = process.env.VERTEX_PROJECT?.trim() || process.env.GOOGLE_CLOUD_PROJECT?.trim();
   const location =
     process.env.VERTEX_LOCATION?.trim() ||
     process.env.GOOGLE_CLOUD_LOCATION?.trim() ||
     "us-central1";
 
-  let hasServiceAccount = false;
   let googleAuthOptions: any = undefined;
 
   if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     try {
       const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
       googleAuthOptions = { credentials: creds };
-      if (creds.type === "service_account") {
-        hasServiceAccount = true;
-      }
     } catch (e) {
       console.warn("Failed to parse GOOGLE_APPLICATION_CREDENTIALS_JSON in AI Provider:", e);
     }
   }
 
-  // Prioritize Vertex AI only if we have a project AND a proper Service Account key
-  if (project && hasServiceAccount) {
+  const apiKey =
+    process.env.GOOGLE_GENAI_API_KEY?.trim() ||
+    process.env.GEMINI_API_KEY?.trim() ||
+    process.env.GOOGLE_API_KEY?.trim();
+
+  // If a Vertex AI project is configured, use Vertex AI with Application Default Credentials (ADC)
+  if (project) {
     return {
       genai: new GoogleGenAI({
         vertexai: true,
         project,
         location,
-        googleAuthOptions,
+        ...(googleAuthOptions ? { googleAuthOptions } : {}),
       } as any),
       model: "gemini-2.5-flash",
     };
@@ -57,12 +53,12 @@ function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
     return { genai: new GoogleGenAI({ apiKey }), model: "gemini-2.5-flash" };
   }
 
-  // Last resort: project and user credentials
-  if (project && googleAuthOptions) {
+  // Fallback if googleAuthOptions is set even if project isn't explicitly configured
+  if (googleAuthOptions) {
     return {
       genai: new GoogleGenAI({
         vertexai: true,
-        project,
+        project: undefined,
         location,
         googleAuthOptions,
       } as any),
@@ -71,7 +67,7 @@ function buildGeminiClient(): { genai: GoogleGenAI; model: string } {
   }
 
   throw new Error(
-    "Gemini Configuration Error: Neither GEMINI_API_KEY nor a valid VERTEX_PROJECT (GOOGLE_CLOUD_PROJECT) with service account credentials is configured.",
+    "Gemini Configuration Error: Neither GEMINI_API_KEY nor a valid VERTEX_PROJECT (GOOGLE_CLOUD_PROJECT) is configured.",
   );
 }
 
