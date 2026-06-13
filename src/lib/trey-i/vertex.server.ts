@@ -308,7 +308,7 @@ export const judgeSignalTest = createServerFn({ method: "POST" })
     // is the full fallback if the AI call fails.
     const local = calculateResult(data.answers, data.scenarios);
     try {
-      const prompt = `Below is the list of 20 scenarios from Trey TV's Natural Ability Test and the user's responses (either a multiple-choice ID or a custom text response):
+      const prompt = `Below is the list of ${data.scenarios.length} scenarios from Trey TV's Natural Ability Test and the user's responses (either a multiple-choice ID or a custom text response):
 ${JSON.stringify(data.answers)}
 
 Scenarios metadata for matching IDs and option bodies:
@@ -329,6 +329,16 @@ The 14 possible archetypes/abilities are:
 - Manifestor: The Reality Caller. Turns intention into reality.
 - Creative: The World Builder. Turns feelings, ideas, visuals into art.
 - Ungifted: The Unreadable. Hidden, blocked, outside known categories.
+
+Evaluation Basis:
+1. Examine each answer. If the user chose a multiple-choice option (A, B, or C), look up that choice in the provided scenarios metadata. Each choice has a primary archetype (+2 score) and a secondary archetype (+1 score) associated with it. Sum the scores for all selected choices.
+2. If the user provided a custom text response, analyze the semantics, tone, and content of their response. Categorize it to the archetype(s) that best fit their reasoning (e.g. creative actions to Creative, boundary/quitting actions to Reaper, caring/emotional actions to Empath/Healer, logical actions to Manifestor/Seer, etc.). Add matching points (+2 primary, +1 secondary).
+3. Determine the primaryAbility (highest score) and secondaryAbility (second-highest score).
+4. Determine signalStrength:
+   - "Strong": If the primary ability score is clearly higher than the secondary score (by at least 4 points).
+   - "Mixed": If the top two scores are very close (within 2 points).
+   - "Emerging": If scores are widely distributed across many different archetypes (at least 8 non-zero scores).
+   - "Unreadable": If the user is unreadable, blocked, or answers consist of mostly custom answers that have low relevance.
 
 Please analyze the user's personality patterns and choices to output a JSON object:
 {

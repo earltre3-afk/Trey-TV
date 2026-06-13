@@ -29,13 +29,13 @@ import { hasAnyRole } from "./auth/roleUtils";
 import BottomNav, { TabKey } from "./BottomNav";
 import MiniPlayer from "./MiniPlayer";
 import { TradioLiveNowBar } from "./TradioLiveNowBar";
-import HomeScreen from "./screens/Home";
-import NowPlayingScreen from "./screens/NowPlaying";
 import type { StationsDestination } from "./screens/StationsHub";
 import type { StudioDestination } from "./screens/Studio";
 import type { RoleProfileType } from "./auth/roleProfile";
 import aiBallCutout from "@/tradio/assets/ai-ball.png";
 
+const HomeScreen = lazy(() => import("./screens/Home"));
+const NowPlayingScreen = lazy(() => import("./screens/NowPlaying"));
 const RouteMePage = lazy(() => import("../route-me/RouteMePage"));
 const SearchScreen = lazy(() => import("./screens/Search"));
 const LibraryScreen = lazy(() => import("./screens/Library"));
@@ -61,20 +61,29 @@ const LegalCenter = lazy(() =>
   import("./legal/LegalCenter").then((m) => ({ default: m.LegalCenter })),
 );
 const LegalAdminDashboard = lazy(() => import("./legal/LegalAdminDashboard"));
-import { LegalFooterLinks } from "./legal/LegalPrimitives";
-import { PlayerProvider } from "@/tradio/contexts/PlayerContext";
-import { MediaInterruptionProvider } from "@/tradio/contexts/MediaInterruptionProvider";
-import { AudioDuckingProvider } from "@/tradio/contexts/AudioDuckingProvider";
-import { MountedPlayer } from "./MountedPlayer";
 import { AIPill, GlassCard, PrimaryButton, SecondaryButton, TradioLogo, Waveform } from "./ui";
-import { ModeSwitcher } from "./auth/components";
 import { TradioIdentityProvider, useTradioIdentity } from "./auth/useTradioIdentity";
 import { AccessRequestsProvider } from "./auth/AccessRequestsContext";
 import { MessengerBridgeProvider } from "../universe/MessengerBridgeProvider";
 import { useMessengerBridge } from "../universe/MessengerBridgeContext";
-import { TradioMessengerBell } from "../universe/TradioMessengerBridge";
-import { PrescriptionRadioPopover } from "./prescribeMe/PrescriptionRadioPopover";
 import { resolveTradioDeviceBodyClass, TRADIO_DEVICE_BODY_CLASSES } from "./deviceCompatibility";
+import { resolveTradioViewportLayout } from "./mobileMountStrategy";
+const LegalFooterLinks = lazy(() =>
+  import("./legal/LegalPrimitives").then((module) => ({ default: module.LegalFooterLinks })),
+);
+const ModeSwitcher = lazy(() =>
+  import("./auth/components").then((module) => ({ default: module.ModeSwitcher })),
+);
+const TradioMessengerBell = lazy(() =>
+  import("../universe/TradioMessengerBridge").then((module) => ({
+    default: module.TradioMessengerBell,
+  })),
+);
+const PrescriptionRadioPopover = lazy(() =>
+  import("./prescribeMe/PrescriptionRadioPopover").then((module) => ({
+    default: module.PrescriptionRadioPopover,
+  })),
+);
 const SongWarsHub = lazy(() =>
   import("./songwars/views/SongWarsHub").then((m) => ({ default: m.SongWarsHub })),
 );
@@ -302,6 +311,7 @@ export const TradioShellContent: React.FC = () => {
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [songWarRole, setSongWarRole] = useState<SongWarRole>("fan");
+  const [viewportLayout, setViewportLayout] = useState(() => resolveTradioViewportLayout(0));
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const openPlayer = useCallback(() => {
     setPrescriptionOpen(false);
@@ -318,6 +328,8 @@ export const TradioShellContent: React.FC = () => {
     const detectDevice = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
+
+      setViewportLayout(resolveTradioViewportLayout(w));
 
       // Clean previous classes
       document.body.classList.remove(...TRADIO_DEVICE_BODY_CLASSES);
@@ -873,207 +885,217 @@ export const TradioShellContent: React.FC = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="!fixed inset-y-0 left-0 z-40 hidden w-[300px] flex-col overflow-y-auto px-6 py-8 lg:flex !border-r border-white/10 shadow-lg">
-        <div className="absolute inset-0 -z-10 liquid-glass" />
-        <div className="mb-8 flex items-center justify-between rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.06] to-white/[0.01] p-5 shadow-[0_15px_35px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/15 transition-all duration-500">
-          <div>
-            <TradioLogo />
-            <div className="mt-1.5 text-xs text-white/55 font-medium leading-relaxed">
-              AI music network for the Trey TV universe
+      {viewportLayout.renderDesktopNav && (
+        <aside className="!fixed inset-y-0 left-0 z-40 hidden w-[300px] flex-col overflow-y-auto px-6 py-8 lg:flex !border-r border-white/10 shadow-lg">
+          <div className="absolute inset-0 -z-10 liquid-glass" />
+          <div className="mb-8 flex items-center justify-between rounded-3xl border border-white/[0.08] bg-gradient-to-b from-white/[0.06] to-white/[0.01] p-5 shadow-[0_15px_35px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/15 transition-all duration-500">
+            <div>
+              <TradioLogo />
+              <div className="mt-1.5 text-xs text-white/55 font-medium leading-relaxed">
+                AI music network for the Trey TV universe
+              </div>
             </div>
+            <AIPill />
           </div>
-          <AIPill />
-        </div>
 
-        <div className="mb-6 px-1 animate-fade-in">
-          <Link
-            to="/"
-            className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.01] py-3 text-xs font-black uppercase tracking-wider text-white/80 transition-all duration-300 hover:border-fuchsia-500/25 hover:bg-white/5 hover:translate-x-1 active:scale-[0.98]"
-          >
-            <Home className="h-4 w-4 text-fuchsia-400" />
-            Back to Trey TV
-          </Link>
-        </div>
+          <div className="mb-6 px-1 animate-fade-in">
+            <Link
+              to="/"
+              className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-white/[0.01] py-3 text-xs font-black uppercase tracking-wider text-white/80 transition-all duration-300 hover:border-fuchsia-500/25 hover:bg-white/5 hover:translate-x-1 active:scale-[0.98]"
+            >
+              <Home className="h-4 w-4 text-fuchsia-400" />
+              Back to Trey TV
+            </Link>
+          </div>
 
-        <nav className="space-y-3">
-          {PRIMARY_NAV.filter(
-            (nav) =>
-              nav.key !== "profile" ||
-              hasAnyRole(identity, ["artist", "producer", "dj", "admin", "owner"]),
-          ).map(({ key, label, hint, Icon }) => {
-            const isActive = tab === key;
-            const iconColor = NAV_COLORS[key] || "text-primary";
-            return (
-              <button
-                key={key}
-                onClick={() => handleTab(key)}
-                className={`group relative flex items-center gap-3.5 pl-5 pr-3.5 py-3 rounded-2xl transition-all duration-300 w-full text-left hover:translate-x-1.5 border ${
-                  isActive
-                    ? "bg-gradient-to-r from-primary/12 to-primary/4 border-primary/25 ring-1 ring-primary/15 shadow-[0_10px_25px_-5px_rgba(245,158,11,0.12)]"
-                    : "border-transparent hover:bg-white/[0.04] hover:border-white/[0.03]"
-                }`}
-              >
-                {/* Active glowing indicator pill */}
-                {isActive && (
-                  <div className="absolute left-1.5 top-3.5 bottom-3.5 w-[3px] rounded-full bg-primary shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-pulse" />
-                )}
-                <div
-                  className={`size-10 rounded-xl grid place-items-center transition-all duration-500 group-hover:scale-105 shrink-0 ${
+          <nav className="space-y-3">
+            {PRIMARY_NAV.filter(
+              (nav) =>
+                nav.key !== "profile" ||
+                hasAnyRole(identity, ["artist", "producer", "dj", "admin", "owner"]),
+            ).map(({ key, label, hint, Icon }) => {
+              const isActive = tab === key;
+              const iconColor = NAV_COLORS[key] || "text-primary";
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleTab(key)}
+                  className={`group relative flex items-center gap-3.5 pl-5 pr-3.5 py-3 rounded-2xl transition-all duration-300 w-full text-left hover:translate-x-1.5 border ${
                     isActive
-                      ? "bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(245,158,11,0.25)]"
-                      : "bg-white/[0.03] border border-white/[0.04] text-white/70 group-hover:bg-white/[0.07] group-hover:border-white/10 group-hover:text-white"
+                      ? "bg-gradient-to-r from-primary/12 to-primary/4 border-primary/25 ring-1 ring-primary/15 shadow-[0_10px_25px_-5px_rgba(245,158,11,0.12)]"
+                      : "border-transparent hover:bg-white/[0.04] hover:border-white/[0.03]"
                   }`}
                 >
-                  <Icon
-                    className={`size-5 transition-colors duration-300 ${isActive ? "text-primary" : "text-white/60 group-hover:text-white"}`}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
+                  {/* Active glowing indicator pill */}
+                  {isActive && (
+                    <div className="absolute left-1.5 top-3.5 bottom-3.5 w-[3px] rounded-full bg-primary shadow-[0_0_10px_rgba(245,158,11,0.8)] animate-pulse" />
+                  )}
                   <div
-                    className={`text-sm font-bold tracking-wide transition-colors duration-300 ${isActive ? "text-primary drop-shadow-[0_0_6px_rgba(245,158,11,0.25)]" : "text-white/80 group-hover:text-white"}`}
+                    className={`size-10 rounded-xl grid place-items-center transition-all duration-500 group-hover:scale-105 shrink-0 ${
+                      isActive
+                        ? "bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(245,158,11,0.25)]"
+                        : "bg-white/[0.03] border border-white/[0.04] text-white/70 group-hover:bg-white/[0.07] group-hover:border-white/10 group-hover:text-white"
+                    }`}
                   >
-                    {label}
+                    <Icon
+                      className={`size-5 transition-colors duration-300 ${isActive ? "text-primary" : "text-white/60 group-hover:text-white"}`}
+                    />
                   </div>
-                  <div className="text-[10px] text-white/40 group-hover:text-white/55 truncate leading-tight mt-0.5 transition-colors duration-300">
-                    {hint}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className={`text-sm font-bold tracking-wide transition-colors duration-300 ${isActive ? "text-primary drop-shadow-[0_0_6px_rgba(245,158,11,0.25)]" : "text-white/80 group-hover:text-white"}`}
+                    >
+                      {label}
+                    </div>
+                    <div className="text-[10px] text-white/40 group-hover:text-white/55 truncate leading-tight mt-0.5 transition-colors duration-300">
+                      {hint}
+                    </div>
                   </div>
-                </div>
-                {isActive ? (
-                  <span className="size-2 rounded-full bg-primary shadow-[0_0_10px_var(--gold)] animate-pulse shrink-0 mr-1" />
-                ) : (
-                  <ChevronRight className="size-4 text-white/30 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white/60 shrink-0" />
-                )}
-              </button>
-            );
-          })}
-        </nav>
+                  {isActive ? (
+                    <span className="size-2 rounded-full bg-primary shadow-[0_0_10px_var(--gold)] animate-pulse shrink-0 mr-1" />
+                  ) : (
+                    <ChevronRight className="size-4 text-white/30 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white/60 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
 
-        <div className="group mt-5 flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.04] to-transparent px-3.5 py-3.5 hover:border-fuchsia-500/20 hover:bg-fuchsia-500/[0.02] hover:shadow-[0_10px_20px_-10px_rgba(217,70,239,0.1)] transition-all duration-500">
-          <TradioMessengerBell
-            unreadCount={messengerBridge?.unreadCount ?? 0}
-            onClick={() => messengerBridge?.openPreview()}
-          />
-          <button
-            onClick={() => messengerBridge?.openPreview()}
-            className="min-w-0 flex-1 text-left"
-          >
-            <div className="text-xs font-bold text-white/95 group-hover:text-fuchsia-300 transition-colors duration-300">
-              Trey TV Messenger
-            </div>
-            <div className="truncate text-[10px] text-white/40 mt-0.5 group-hover:text-white/55 transition-colors duration-300">
-              Messages live in Trey TV - preview only
-            </div>
-          </button>
-        </div>
-
-        <div className="mt-5">
-          <ModeSwitcher />
-        </div>
-
-        <div className="mt-8 space-y-3">
-          <div className="px-1 text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
-            Launch pads
-          </div>
-          {FEATURE_SHORTCUTS.map(({ key, label, sub, Icon }) => (
+          <div className="group mt-5 flex items-center gap-3.5 rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.04] to-transparent px-3.5 py-3.5 hover:border-fuchsia-500/20 hover:bg-fuchsia-500/[0.02] hover:shadow-[0_10px_20px_-10px_rgba(217,70,239,0.1)] transition-all duration-500">
+            <Suspense fallback={null}>
+              <TradioMessengerBell
+                unreadCount={messengerBridge?.unreadCount ?? 0}
+                onClick={() => messengerBridge?.openPreview()}
+              />
+            </Suspense>
             <button
-              key={key}
-              onClick={() => setScreen(key)}
-              className="group flex w-full items-start gap-3.5 rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-transparent p-3.5 text-left transition-all duration-500 hover:translate-x-1.5 hover:border-purple-500/25 hover:bg-purple-500/[0.03] hover:shadow-[0_10px_20px_-10px_rgba(168,85,247,0.15)]"
+              onClick={() => messengerBridge?.openPreview()}
+              className="min-w-0 flex-1 text-left"
             >
-              <div className="size-9 rounded-xl grid place-items-center bg-white/[0.03] border border-white/[0.04] text-purple-300/80 transition-all duration-500 group-hover:scale-105 group-hover:bg-purple-500/15 group-hover:border-purple-500/25 group-hover:text-purple-200 shrink-0">
-                <Icon className="h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-6" />
+              <div className="text-xs font-bold text-white/95 group-hover:text-fuchsia-300 transition-colors duration-300">
+                Trey TV Messenger
               </div>
-              <div className="flex-1 min-w-0">
-                <span className="block text-xs font-bold text-white/85 group-hover:text-purple-200 transition-colors duration-300">
-                  {label}
-                </span>
-                <span className="block text-[10px] leading-normal text-white/40 mt-0.5 group-hover:text-white/50 transition-colors duration-300">
-                  {sub}
-                </span>
+              <div className="truncate text-[10px] text-white/40 mt-0.5 group-hover:text-white/55 transition-colors duration-300">
+                Messages live in Trey TV - preview only
               </div>
             </button>
-          ))}
-        </div>
-
-        <div className="mt-auto rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple p-4 flex flex-col gap-2 shadow-[0_15px_30px_rgba(168,85,247,0.08)] animate-fade-in">
-          <div className="flex items-center gap-2 text-xs font-bold text-[oklch(0.7_0.25_340)]">
-            <Sparkles className="h-4 w-4 text-[oklch(0.7_0.25_340)] animate-pulse" /> Desktop Mode
-            Active
           </div>
-          <p className="text-[11px] leading-relaxed text-white/60">
-            Wider canvas, persistent liquid navigation, and artist tools stay visible while the
-            player remains one tap away.
-          </p>
-        </div>
 
-        {/* Legal & Operations footer links */}
-        <div className="mt-4 border-t border-white/[0.06] pt-4">
-          <button
-            onClick={() => openLegal()}
-            className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/55 transition hover:text-white"
-          >
-            Legal & Operations Center
-          </button>
-          <LegalFooterLinks onOpen={openLegal} />
-        </div>
-      </aside>
+          <div className="mt-5">
+            <Suspense fallback={null}>
+              <ModeSwitcher />
+            </Suspense>
+          </div>
 
-      {/* Desktop right utility rail */}
-      <aside className="!fixed inset-y-0 right-0 z-30 hidden w-[360px] flex-col gap-5 overflow-y-auto p-6 xl:flex !border-l border-white/10 shadow-lg">
-        <div className="absolute inset-0 -z-10 liquid-glass" />
-        <GlassCard glow className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <div className="text-sm font-semibold text-white">Now on Tradio</div>
-              <div className="text-[11px] text-white/50">Persistent desktop player</div>
+          <div className="mt-8 space-y-3">
+            <div className="px-1 text-[11px] font-bold uppercase tracking-[0.15em] text-white/40">
+              Launch pads
             </div>
-            <span className="rounded-full border border-pink-500/30 bg-gradient-to-r from-pink-500/15 to-pink-500/3 px-3 py-1.5 text-[10px] font-bold text-pink-300 animate-pulse shadow-[0_0_15px_rgba(236,72,153,0.2)]">
-              LIVE
-            </span>
-          </div>
-          <MiniPlayer onOpen={openPlayer} className="px-0 pb-0" />
-        </GlassCard>
-
-        <GlassCard className="p-5">
-          <div className="mb-4 text-sm font-semibold text-white">Screen Map</div>
-          <div className="grid grid-cols-2 gap-2.5">
-            {SCREEN_LABELS.map((s) => (
+            {FEATURE_SHORTCUTS.map(({ key, label, sub, Icon }) => (
               <button
-                key={s.key}
-                onClick={() => setScreen(s.key)}
-                className="rounded-2xl border border-white/[0.04] bg-gradient-to-b from-white/[0.04] to-transparent p-3.5 text-left transition-all duration-500 hover:border-purple-500/25 hover:bg-purple-500/[0.04] hover:shadow-[0_8px_20px_-8px_rgba(168,85,247,0.25)] hover:-translate-y-[1px]"
+                key={key}
+                onClick={() => setScreen(key)}
+                className="group flex w-full items-start gap-3.5 rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.05] via-white/[0.01] to-transparent p-3.5 text-left transition-all duration-500 hover:translate-x-1.5 hover:border-purple-500/25 hover:bg-purple-500/[0.03] hover:shadow-[0_10px_20px_-10px_rgba(168,85,247,0.15)]"
               >
-                <span className="block text-xs font-semibold text-white">{s.label}</span>
-                <span className="mt-1 block text-[10px] text-white/45">{s.group}</span>
+                <div className="size-9 rounded-xl grid place-items-center bg-white/[0.03] border border-white/[0.04] text-purple-300/80 transition-all duration-500 group-hover:scale-105 group-hover:bg-purple-500/15 group-hover:border-purple-500/25 group-hover:text-purple-200 shrink-0">
+                  <Icon className="h-[18px] w-[18px] transition-transform duration-500 group-hover:rotate-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="block text-xs font-bold text-white/85 group-hover:text-purple-200 transition-colors duration-300">
+                    {label}
+                  </span>
+                  <span className="block text-[10px] leading-normal text-white/40 mt-0.5 group-hover:text-white/50 transition-colors duration-300">
+                    {sub}
+                  </span>
+                </div>
               </button>
             ))}
           </div>
-        </GlassCard>
 
-        <GlassCard className="overflow-hidden p-5">
-          <div className="text-sm font-semibold text-white">Release Pulse</div>
-          <div className="mt-5 space-y-3">
-            {[
-              ["Live listeners", "18.4K", "+22%"],
-              ["Instant drops", "47", "+9%"],
-              ["Fan saves", "92.1K", "+31%"],
-            ].map(([label, value, delta]) => (
-              <div
-                key={label}
-                className="flex items-center justify-between rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.03] to-transparent p-3.5 hover:border-white/12 hover:bg-white/[0.05] hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-500 hover:-translate-y-[1px]"
-              >
-                <div>
-                  <div className="text-[11px] text-white/50">{label}</div>
-                  <div className="text-xl font-bold text-white mt-1">{value}</div>
-                </div>
-                <div className="rounded-full bg-gradient-to-b from-emerald-500/15 to-emerald-500/2 px-3 py-1.5 text-[11px] font-semibold text-emerald-400 border border-emerald-500/10">
-                  {delta}
-                </div>
-              </div>
-            ))}
+          <div className="mt-auto rounded-2xl border border-[oklch(0.65_0.22_300_/_0.4)] bg-[linear-gradient(135deg,oklch(0.25_0.1_300_/_0.6),oklch(0.18_0.05_270_/_0.6))] glow-purple p-4 flex flex-col gap-2 shadow-[0_15px_30px_rgba(168,85,247,0.08)] animate-fade-in">
+            <div className="flex items-center gap-2 text-xs font-bold text-[oklch(0.7_0.25_340)]">
+              <Sparkles className="h-4 w-4 text-[oklch(0.7_0.25_340)] animate-pulse" /> Desktop Mode
+              Active
+            </div>
+            <p className="text-[11px] leading-relaxed text-white/60">
+              Wider canvas, persistent liquid navigation, and artist tools stay visible while the
+              player remains one tap away.
+            </p>
           </div>
-        </GlassCard>
-      </aside>
+
+          {/* Legal & Operations footer links */}
+          <div className="mt-4 border-t border-white/[0.06] pt-4">
+            <button
+              onClick={() => openLegal()}
+              className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/55 transition hover:text-white"
+            >
+              Legal & Operations Center
+            </button>
+            <Suspense fallback={null}>
+              <LegalFooterLinks onOpen={openLegal} />
+            </Suspense>
+          </div>
+        </aside>
+      )}
+
+      {/* Desktop right utility rail */}
+      {viewportLayout.renderUtilityRail && (
+        <aside className="!fixed inset-y-0 right-0 z-30 hidden w-[360px] flex-col gap-5 overflow-y-auto p-6 xl:flex !border-l border-white/10 shadow-lg">
+          <div className="absolute inset-0 -z-10 liquid-glass" />
+          <GlassCard glow className="p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-white">Now on Tradio</div>
+                <div className="text-[11px] text-white/50">Persistent desktop player</div>
+              </div>
+              <span className="rounded-full border border-pink-500/30 bg-gradient-to-r from-pink-500/15 to-pink-500/3 px-3 py-1.5 text-[10px] font-bold text-pink-300 animate-pulse shadow-[0_0_15px_rgba(236,72,153,0.2)]">
+                LIVE
+              </span>
+            </div>
+            <MiniPlayer onOpen={openPlayer} className="px-0 pb-0" />
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <div className="mb-4 text-sm font-semibold text-white">Screen Map</div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {SCREEN_LABELS.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setScreen(s.key)}
+                  className="rounded-2xl border border-white/[0.04] bg-gradient-to-b from-white/[0.04] to-transparent p-3.5 text-left transition-all duration-500 hover:border-purple-500/25 hover:bg-purple-500/[0.04] hover:shadow-[0_8px_20px_-8px_rgba(168,85,247,0.25)] hover:-translate-y-[1px]"
+                >
+                  <span className="block text-xs font-semibold text-white">{s.label}</span>
+                  <span className="mt-1 block text-[10px] text-white/45">{s.group}</span>
+                </button>
+              ))}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="overflow-hidden p-5">
+            <div className="text-sm font-semibold text-white">Release Pulse</div>
+            <div className="mt-5 space-y-3">
+              {[
+                ["Live listeners", "18.4K", "+22%"],
+                ["Instant drops", "47", "+9%"],
+                ["Fan saves", "92.1K", "+31%"],
+              ].map(([label, value, delta]) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between rounded-2xl border border-white/[0.04] bg-gradient-to-br from-white/[0.03] to-transparent p-3.5 hover:border-white/12 hover:bg-white/[0.05] hover:shadow-[0_8px_20px_rgba(0,0,0,0.25)] transition-all duration-500 hover:-translate-y-[1px]"
+                >
+                  <div>
+                    <div className="text-[11px] text-white/50">{label}</div>
+                    <div className="text-xl font-bold text-white mt-1">{value}</div>
+                  </div>
+                  <div className="rounded-full bg-gradient-to-b from-emerald-500/15 to-emerald-500/2 px-3 py-1.5 text-[11px] font-semibold text-emerald-400 border border-emerald-500/10">
+                    {delta}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </aside>
+      )}
 
       <main className="relative flex min-h-dvh w-full flex-col lg:pl-[300px] xl:pr-[360px]">
         {/* Universal Mobile Top Bar */}
@@ -1114,7 +1136,7 @@ export const TradioShellContent: React.FC = () => {
           className="tradio-responsive-main flex-1 overflow-y-auto pb-[calc(13rem_+_env(safe-area-inset-bottom))] lg:pb-12"
         >
           <TradioLiveNowBar />
-          <Suspense fallback={null}>{renderScreen()}</Suspense>
+          <Suspense fallback={<TradioScreenFallback />}>{renderScreen()}</Suspense>
         </div>
 
         {/* Mobile mini player + bottom nav stack */}
@@ -1137,32 +1159,34 @@ export const TradioShellContent: React.FC = () => {
         </div>
 
         {prescriptionOpen && (
-          <PrescriptionRadioPopover
-            onClose={() => setPrescriptionOpen(false)}
-            currentMode={currentMode}
-            currentRoleLabel={currentRoleLabel}
-            onOpenForge={() => {
-              setPrescriptionOpen(false);
-              setView({ kind: "build" });
-            }}
-            onOpenPlayer={openPlayer}
-            onSetScreen={(key) => {
-              setPrescriptionOpen(false);
-              setScreen(key as ScreenKey);
-            }}
-          />
+          <Suspense fallback={null}>
+            <PrescriptionRadioPopover
+              onClose={() => setPrescriptionOpen(false)}
+              currentMode={currentMode}
+              currentRoleLabel={currentRoleLabel}
+              onOpenForge={() => {
+                setPrescriptionOpen(false);
+                setView({ kind: "build" });
+              }}
+              onOpenPlayer={openPlayer}
+              onSetScreen={(key) => {
+                setPrescriptionOpen(false);
+                setScreen(key as ScreenKey);
+              }}
+            />
+          </Suspense>
         )}
 
         {/* Now playing modal */}
         {playerOpen && (
-          <div
-            className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in"
-          >
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-[#050508]/98 backdrop-blur-3xl animate-fade-in">
             <div className="w-full min-h-screen">
-              <NowPlayingScreen
-                onClose={() => setPlayerOpen(false)}
-                onOpenPrescription={openPrescription}
-              />
+              <Suspense fallback={<TradioScreenFallback />}>
+                <NowPlayingScreen
+                  onClose={() => setPlayerOpen(false)}
+                  onOpenPrescription={openPrescription}
+                />
+              </Suspense>
             </div>
           </div>
         )}
@@ -1333,7 +1357,9 @@ export const TradioShellContent: React.FC = () => {
 
               {/* Legal footer links */}
               <div className="shrink-0 border-t border-white/8 px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
-                <LegalFooterLinks onOpen={openLegal} />
+                <Suspense fallback={null}>
+                  <LegalFooterLinks onOpen={openLegal} />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -1342,6 +1368,15 @@ export const TradioShellContent: React.FC = () => {
     </div>
   );
 };
+
+const TradioScreenFallback: React.FC = () => (
+  <div className="flex min-h-[45dvh] items-center justify-center px-6 text-center">
+    <div>
+      <div className="text-xs font-black uppercase tracking-[0.28em] text-primary">Tradio</div>
+      <div className="mt-2 text-sm text-white/55">Tuning your signal...</div>
+    </div>
+  </div>
+);
 
 export const TradioShell: React.FC = () => {
   return (

@@ -21,6 +21,11 @@ export function buildSpadesVisualEventKey(
   displayedTrick: SpadesTrickCard[],
   winnerSeat: number | null,
 ): string {
-  const cards = displayedTrick.map(({ seat, cardId }) => `${seat}:${cardId}`).join(",");
+  const cards = displayedTrick
+    .map((tc) => {
+      const seat = tc.seat !== undefined ? tc.seat : (tc as any).seatIndex;
+      return `${seat}:${tc.cardId}`;
+    })
+    .join(",");
   return `${state.round}:${state.phase}:${state.currentSeat}:${cards}:winner-${winnerSeat ?? "none"}`;
 }

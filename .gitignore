@@ -80,3 +80,5 @@ tmp-*
 
 # Superpowers brainstorming mockups & session artifacts
 .superpowers/
+
+.vercel

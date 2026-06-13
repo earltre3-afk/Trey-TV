@@ -152,12 +152,19 @@ function participantLooksLikeAgent(
     metadata.agentName || metadata.agent_name || metadata.agent || metadata.livekitAgentName || "",
   ).toLowerCase();
 
+  // LiveKit ParticipantKind.AGENT = 4 (numeric enum).
+  // Agent identities are auto-generated as "agent-AJ_xxxx" and may not
+  // contain the registered agentName (e.g. "hayden-1f01").
+  const isAgentKind = kind === "4" || kind === "agent";
+  const hasAgentIdentityPrefix = identity.startsWith("agent-");
+
   return (
+    isAgentKind ||
+    hasAgentIdentityPrefix ||
     identity.includes(expected) ||
     name.includes(expected) ||
     metadataAgentName === expected ||
-    metadataAgentName.includes(expected) ||
-    kind.includes("agent")
+    metadataAgentName.includes(expected)
   );
 }
 

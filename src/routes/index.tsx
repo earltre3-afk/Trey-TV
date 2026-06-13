@@ -115,13 +115,12 @@ function GuestWatchNow() {
         <div className="glass-strong border-b border-white/10 px-4 py-3 flex items-center justify-between">
           <Logo className="h-9" />
           <div className="flex items-center gap-2">
-            <Link
-              to="/tradio"
-              preload="intent"
+            <a
+              href="/tradio"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
-            </Link>
+            </a>
             <Link
               to="/login"
               className="px-3 py-1.5 rounded-lg text-xs font-semibold liquid-glass border border-white/15"
@@ -152,13 +151,12 @@ function GuestWatchNow() {
         <div className="absolute inset-x-0 top-0 z-20 p-5 flex items-center justify-between">
           <Logo className="h-12" />
           <div className="flex items-center gap-2">
-            <Link
-              to="/tradio"
-              preload="intent"
+            <a
+              href="/tradio"
               className="px-3 py-1.5 rounded-lg text-xs font-bold liquid-glass border border-purple-300/25 text-purple-100"
             >
               Tradio
-            </Link>
+            </a>
             <Link
               to="/login"
               className="hidden sm:inline px-3 py-1.5 rounded-lg text-xs font-semibold liquid-glass border border-white/15"

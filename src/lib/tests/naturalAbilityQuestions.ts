@@ -681,4 +681,38 @@ export const SCENARIOS: Scenario[] = [
       },
     ],
   },
+  {
+    id: 21,
+    genre: "Creative",
+    title: "The Uncredited Masterpiece",
+    scenarioBody:
+      "You spent weeks helping a fellow creator polish their video or song, contributing the key hook that makes it stand out. When they post it, it goes viral, but they completely forget to tag you or credit your name. The comments are full of praise for 'their' brilliant hook.",
+    imageSrc: "/assets/signal-test/questions/21-uncredited-masterpiece.png",
+    imageAlt:
+      "A young adult sitting in a dim studio looking at a computer screen displaying a viral video with neon-lit social media notifications, feeling conflicted about not being credited.",
+    customOption: true,
+    choices: [
+      {
+        id: "A",
+        label: "Call it out publicly.",
+        body: "Leave a comment praising the work and casually mention your contribution. Let the audience see the truth.",
+        primary: "Prophet",
+        secondary: "Creative",
+      },
+      {
+        id: "B",
+        label: "Address it privately.",
+        body: "Text them directly to say you're happy it's doing well, but ask them to edit the description to include your credits.",
+        primary: "Manifestor",
+        secondary: "Charmer",
+      },
+      {
+        id: "C",
+        label: "Let it go, but learn.",
+        body: "Say nothing. It's a lesson learned about who to build with. Use the energy to create your own solo project next.",
+        primary: "Reaper",
+        secondary: "Alchemist",
+      },
+    ],
+  },
 ];

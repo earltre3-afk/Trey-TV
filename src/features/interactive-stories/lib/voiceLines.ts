@@ -211,8 +211,17 @@ export async function generateVoiceLine(
   voice?: StoryVoiceConfig | null,
 ): Promise<string | null> {
   if (voice?.voiceProvider === "none") return null;
-  if (!voice || voice.voiceProvider === "system" || !voice.voiceProvider) return null;
-  const key = cacheKey(characterId, text, voice);
+
+  // Resolve voice config to fallback to elevenlabs if provider is system, missing, or falsy
+  const resolvedVoice: StoryVoiceConfig = {
+    voiceProvider: voice?.voiceProvider && voice.voiceProvider !== "system" ? voice.voiceProvider : "elevenlabs",
+    voiceId: voice?.voiceId || null,
+    voiceName: voice?.voiceName || null,
+    audioStyle: voice?.audioStyle || null,
+    settings: voice?.settings || null,
+  };
+
+  const key = cacheKey(characterId, text, resolvedVoice);
   if (audioCache.has(key)) return audioCache.get(key)!;
 
   // Use raw fetch (binary response — supabase.functions.invoke would JSON-parse).
@@ -233,7 +242,7 @@ export async function generateVoiceLine(
       text,
       character_id: toVoiceId(characterId),
       story_character_id: characterId,
-      voice,
+      voice: resolvedVoice,
     }),
   });
   if (!resp.ok) throw new Error(`Voice request failed: ${resp.status}`);
@@ -265,6 +274,10 @@ function speakWithBrowserVoice(
     !("speechSynthesis" in window) ||
     typeof SpeechSynthesisUtterance === "undefined"
   ) {
+    return null;
+  }
+
+  if (opts.voice?.voiceProvider === "none") {
     return null;
   }
 

@@ -119,6 +119,9 @@ export async function findRoomByCode(code: string): Promise<RoomRow | null> {
     .from("game_rooms")
     .select("*")
     .eq("room_code", code.toUpperCase())
+    .in("status", ["waiting", "active"])
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
   if (error) throw error;
   return data as RoomRow | null;

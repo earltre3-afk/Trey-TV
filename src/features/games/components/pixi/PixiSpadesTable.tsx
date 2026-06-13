@@ -227,9 +227,14 @@ function renderSpades(scene: SpadesScene, props: PixiSpadesProps) {
     centerContainer.addChild(slotBg);
   });
 
-  props.trick.forEach(({ seat, cardId }) => {
+  props.trick.forEach((tc) => {
+    const seatVal = tc.seat !== undefined ? tc.seat : (tc as any).seatIndex;
+    if (seatVal === undefined || seatVal === null) return;
+    const seat = Number(seatVal);
     const relSeat = ((seat - props.mySeat + 4) % 4) as 0 | 1 | 2 | 3;
     const slot = trickSlots[relSeat];
+    if (!slot) return;
+    const cardId = tc.cardId;
     const card = makeCardSprite({
       cardW: cardW * 0.88,
       cardH: cardH * 0.88,
