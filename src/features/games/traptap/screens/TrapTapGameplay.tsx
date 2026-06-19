@@ -562,14 +562,26 @@ const TrapTapGameplay: React.FC<Props> = ({
       const leftCol = activeLaneColors[0];
       const rightCol = activeLaneColors[LANE_COUNT - 1];
 
-      // Inner thin lane lines
-      for (let i = 1; i < LANE_COUNT; i++) {
+      // Centered lane lines running down the middle of each lane, aligned with discs and receptor pads
+      for (let i = 0; i < LANE_COUNT; i++) {
         const col = activeLaneColors[i];
-        ctx.strokeStyle = rgba(col, 0.25);
+        const tx = topCenters[i];
+        const bx = botCenters[i];
+
+        // Glow line
+        ctx.strokeStyle = rgba(col, 0.15);
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(bx, H);
+        ctx.stroke();
+
+        // Core line
+        ctx.strokeStyle = rgba(col, 0.45);
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(topBoundaries[i], vanishY);
-        ctx.lineTo(botBoundaries[i], H);
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(bx, H);
         ctx.stroke();
       }
 
