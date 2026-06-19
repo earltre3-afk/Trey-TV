@@ -19,7 +19,7 @@ export const IMAGES = {
 export const ARTIST = 'Trey Trizzy';
 
 export const NOW_PLAYING = {
-  title: 'Back To Night',
+  title: 'June Nineteenth',
   artist: ARTIST,
   artwork: IMAGES.treyHero,
   progress: 0.38,
@@ -172,11 +172,11 @@ export const TOP_TRACK_QUEUE = TOP_TRACKS.map((t) => ({
 
 // "Back To Night" spotlight track, used by the hero CTA & default now-playing
 export const SPOTLIGHT_TRACK = {
-  id: 'spotlight-back-to-night',
-  title: 'Back To Night',
+  id: 'spotlight-june-nineteenth',
+  title: 'June Nineteenth',
   artist: ARTIST,
   artwork: IMAGES.treyHero,
-  src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+  src: '/assets/games/traptap/audio/june-nineteenth.m4a',
 };
 
 // Spotlight queue starts with Back To Night then continues into the playlist
