@@ -69,6 +69,8 @@ const TrapTapGameplay: React.FC<Props> = ({
 
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const laneRefs = useRef<Array<HTMLDivElement | null>>([]);
   const els = useRef<Record<string, HTMLElement | null>>({});
   // Mutable engine state (never triggers React renders).
@@ -216,13 +218,67 @@ const TrapTapGameplay: React.FC<Props> = ({
     const spawnParticles = (lane: number, j: Judgment) => {
       const g = eng.geo; if (!g) return;
       const x = g.botCenters[lane], y = g.hitY, col = activeLaneColors[lane];
-      const n = j === 'pp' ? 16 : j === 'p' ? 11 : 7;
-      for (let i = 0; i < n; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const sp = 80 + Math.random() * 220;
-        eng.particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0, max: 0.5 + Math.random() * 0.35, col, r: 1.5 + Math.random() * 2.5 });
+      
+      // Spawn different types of premium effects!
+      // 1. Radial Streaks (high-velocity laser streaks shooting outwards)
+      const numStreaks = j === 'pp' ? 12 : j === 'p' ? 8 : 4;
+      for (let i = 0; i < numStreaks; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 250 + Math.random() * 350;
+        eng.particles.push({
+          type: 'streak',
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 0,
+          max: 0.22 + Math.random() * 0.18,
+          col,
+          width: 1.5 + Math.random() * 2.0,
+          length: 12 + Math.random() * 18
+        });
       }
-      if (eng.particles.length > 260) eng.particles.splice(0, eng.particles.length - 260);
+
+      // 2. Floating Orbiters / Sparks (slower, floating sparks with deceleration/friction, no gravity)
+      const numSparks = j === 'pp' ? 14 : j === 'p' ? 9 : 5;
+      for (let i = 0; i < numSparks; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 100 + Math.random() * 150;
+        eng.particles.push({
+          type: 'spark',
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          drag: 0.88,
+          life: 0,
+          max: 0.4 + Math.random() * 0.35,
+          col,
+          r: 2.0 + Math.random() * 3.0
+        });
+      }
+
+      // 3. Shockwave Flash Ring (expanding circular ring)
+      eng.particles.push({
+        type: 'ring',
+        x, y,
+        life: 0,
+        max: 0.28,
+        col,
+        startR: recR * 0.6,
+        endR: recR * 3.5,
+        width: 3.5
+      });
+
+      // 4. Center Lens Flare Star
+      eng.particles.push({
+        type: 'lensflare',
+        x, y,
+        life: 0,
+        max: 0.22,
+        col,
+        maxSize: recR * 2.2
+      });
+
+      if (eng.particles.length > 300) eng.particles.splice(0, eng.particles.length - 300);
     };
 
     const activateFever = () => {
@@ -353,18 +409,27 @@ const TrapTapGameplay: React.FC<Props> = ({
     
     // Scale factor: tiny far away, full size close
     const perspScale = (p: number) => 0.08 + 0.92 * perspT(p);
-
-    // Draw a 3D cylindrical disc (puck) with thickness, reflection, and light gradients
     const drawDisc = (cx: number, cy: number, rx: number, squash: number, col: string, isFist: boolean) => {
       const ry = rx * squash; // squashed top face
       const thickness = rx * 0.35; // height of the 3D cylinder
       
+      // 0. Ambient shadow/glow on the road beneath the disc
+      const shadowY = cy + thickness;
+      const shGrad = ctx.createRadialGradient(cx, shadowY, 0, cx, shadowY, rx * 1.5);
+      shGrad.addColorStop(0, rgba(col, 0.45));
+      shGrad.addColorStop(0.5, rgba(col, 0.12));
+      shGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = shGrad;
+      ctx.beginPath();
+      ctx.ellipse(cx, shadowY, rx * 1.5, ry * 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
       // 1. Draw side wall (cylinder height extrusion)
       const sideGrad = ctx.createLinearGradient(cx - rx, cy, cx + rx, cy + thickness);
-      sideGrad.addColorStop(0, rgba(col, 0.25));
-      sideGrad.addColorStop(0.3, rgba(col, 0.65));
-      sideGrad.addColorStop(0.7, rgba(col, 0.85));
-      sideGrad.addColorStop(1, rgba(col, 0.25));
+      sideGrad.addColorStop(0, rgba(col, 0.28));
+      sideGrad.addColorStop(0.3, rgba(col, 0.68));
+      sideGrad.addColorStop(0.7, rgba(col, 0.88));
+      sideGrad.addColorStop(1, rgba(col, 0.28));
       ctx.fillStyle = sideGrad;
       
       ctx.beginPath();
@@ -375,20 +440,20 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
       
-      ctx.strokeStyle = rgba(col, 0.45);
+      ctx.strokeStyle = rgba(col, 0.55);
       ctx.lineWidth = Math.max(1, rx * 0.04);
       ctx.stroke();
 
       // 2. Draw top cap background
-      ctx.fillStyle = 'rgba(8, 4, 18, 0.95)';
+      ctx.fillStyle = 'rgba(8, 4, 18, 0.96)';
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // 3. Ambient face glow
       const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-      faceGlow.addColorStop(0, rgba(col, 0.55));
-      faceGlow.addColorStop(0.85, rgba(col, 0.12));
+      faceGlow.addColorStop(0, rgba(col, 0.6));
+      faceGlow.addColorStop(0.85, rgba(col, 0.15));
       faceGlow.addColorStop(1, rgba(col, 0));
       ctx.fillStyle = faceGlow;
       ctx.beginPath();
@@ -396,20 +461,27 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.fill();
 
       // 4. Bright outer glowing rim
-      ctx.strokeStyle = rgba(col, 0.95);
-      ctx.lineWidth = Math.max(1.8, rx * 0.08);
+      ctx.strokeStyle = rgba(col, 0.98);
+      ctx.lineWidth = Math.max(2.0, rx * 0.08);
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 5. Specular highlight accent on the rim
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-      ctx.lineWidth = Math.max(1, rx * 0.045);
+      // 5. Specular metallic sheen sweep on the face
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = rx * 0.07;
       ctx.beginPath();
-      ctx.ellipse(cx, cy, rx * 0.88, ry * 0.88, 0, Math.PI * 0.7, Math.PI * 1.3);
+      ctx.ellipse(cx, cy, rx * 0.72, ry * 0.72, Math.PI * 0.25, -Math.PI * 0.35, Math.PI * 0.15);
       ctx.stroke();
 
-      // 6. Center icon / star
+      // 6. Specular highlight accent on the top surface
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = Math.max(1, rx * 0.05);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - ry * 0.2, rx * 0.72, ry * 0.52, 0, Math.PI * 1.2, Math.PI * 1.8);
+      ctx.stroke();
+
+      // 7. Center icon / star
       if (isFist) {
         const fs = rx * 0.28;
         ctx.fillStyle = 'rgba(255,255,255,0.95)';
@@ -437,9 +509,9 @@ const TrapTapGameplay: React.FC<Props> = ({
       
       // 1. Ambient glow on the road beneath the receptor
       const ambGr = ctx.createRadialGradient(cx, cy + thickness, 0, cx, cy + thickness, pR * 2.8);
-      ambGr.addColorStop(0, rgba(col, 0.38 + fl * 0.45));
-      ambGr.addColorStop(0.4, rgba(col, 0.14 + fl * 0.18));
-      ambGr.addColorStop(1, rgba(col, 0));
+      ambGr.addColorStop(0, rgba(col, 0.42 + fl * 0.48));
+      ambGr.addColorStop(0.4, rgba(col, 0.16 + fl * 0.2));
+      ambGr.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = ambGr;
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, pR * 2.8, pRy * 2.8, 0, 0, Math.PI * 2);
@@ -447,10 +519,10 @@ const TrapTapGameplay: React.FC<Props> = ({
 
       // 2. Draw 3D side wall
       const wallGrad = ctx.createLinearGradient(cx - pR, cy, cx + pR, cy + thickness);
-      wallGrad.addColorStop(0, rgba(col, 0.18));
-      wallGrad.addColorStop(0.3, rgba(col, 0.58 + fl * 0.2));
-      wallGrad.addColorStop(0.7, rgba(col, 0.78 + fl * 0.2));
-      wallGrad.addColorStop(1, rgba(col, 0.18));
+      wallGrad.addColorStop(0, rgba(col, 0.2));
+      wallGrad.addColorStop(0.3, rgba(col, 0.6 + fl * 0.2));
+      wallGrad.addColorStop(0.7, rgba(col, 0.8 + fl * 0.2));
+      wallGrad.addColorStop(1, rgba(col, 0.2));
       ctx.fillStyle = wallGrad;
       
       ctx.beginPath();
@@ -461,20 +533,20 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
       
-      ctx.strokeStyle = rgba(col, 0.4 + fl * 0.3);
+      ctx.strokeStyle = rgba(col, 0.45 + fl * 0.3);
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // 3. Top cap background
-      ctx.fillStyle = 'rgba(6, 3, 15, 0.92)';
+      ctx.fillStyle = 'rgba(6, 3, 15, 0.94)';
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // 4. Top face circular radial glow
       const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, pR);
-      faceGlow.addColorStop(0, rgba(col, 0.55 + fl * 0.35));
-      faceGlow.addColorStop(0.85, rgba(col, 0.15 + fl * 0.15));
+      faceGlow.addColorStop(0, rgba(col, 0.6 + fl * 0.38));
+      faceGlow.addColorStop(0.85, rgba(col, 0.18 + fl * 0.18));
       faceGlow.addColorStop(1, rgba(col, 0));
       ctx.fillStyle = faceGlow;
       ctx.beginPath();
@@ -482,20 +554,20 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.fill();
 
       // 5. Thick outer glowing rim
-      ctx.strokeStyle = rgba(col, 0.9 + fl * 0.1);
+      ctx.strokeStyle = rgba(col, 0.92 + fl * 0.08);
       ctx.lineWidth = 3.5 + fl * 3;
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR * 0.95, pRy * 0.95, 0, 0, Math.PI * 2);
       ctx.stroke();
 
       // 6. Inner concentric rings
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR * 0.72, pRy * 0.72, 0, 0, Math.PI * 2);
       ctx.stroke();
       
-      ctx.strokeStyle = rgba(col, 0.3);
+      ctx.strokeStyle = rgba(col, 0.35);
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR * 0.48, pRy * 0.48, 0, 0, Math.PI * 2);
       ctx.stroke();
@@ -503,7 +575,7 @@ const TrapTapGameplay: React.FC<Props> = ({
       // 7. Center icon
       if (isJune) {
         const fs = pR * 0.22;
-        ctx.fillStyle = rgba(col, 0.75 + fl * 0.25);
+        ctx.fillStyle = rgba(col, 0.8 + fl * 0.2);
         ctx.beginPath();
         ctx.roundRect(cx - fs * 0.4, cy - fs * 0.45, fs * 0.8, fs * 0.55, fs * 0.12);
         ctx.fill();
@@ -512,15 +584,51 @@ const TrapTapGameplay: React.FC<Props> = ({
         drawStar(cx, cy, pR * 0.22, pRy * 0.22, col);
       }
 
+      // Floating hologram ring hovering above
+      const hoverY = cy - 10 - beatEnv * 6;
+      ctx.strokeStyle = rgba(col, 0.45 + beatEnv * 0.3);
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(cx, hoverY, pR * 0.85, pRy * 0.85, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // Connecting vertical laser lines from pad to floating ring
+      ctx.strokeStyle = rgba(col, 0.2 + beatEnv * 0.2);
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(cx - pR * 0.85, cy);
+      ctx.lineTo(cx - pR * 0.85, hoverY);
+      ctx.moveTo(cx + pR * 0.85, cy);
+      ctx.lineTo(cx + pR * 0.85, hoverY);
+      ctx.stroke();
+
       // Tap shockwave expansion
       if (fl > 0) {
-        ctx.strokeStyle = rgba(col, fl * 0.85);
-        ctx.lineWidth = 3 * fl;
-        const rippleR = pR * (1.0 + (1 - fl) * 1.5);
-        const rippleRy = pRy * (1.0 + (1 - fl) * 1.5);
+        const ringProgress = 1.0 + (1 - fl) * 2.2;
+        // Primary glowing ring
+        ctx.strokeStyle = rgba(col, fl * 0.9);
+        ctx.lineWidth = 4 * fl;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, rippleR, rippleRy, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, pR * ringProgress, pRy * ringProgress, 0, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Secondary offset chromatic ring
+        const altCol = isJune ? '#FFD700' : '#00B4FF';
+        ctx.strokeStyle = rgba(altCol, fl * 0.5);
+        ctx.lineWidth = 1.5 * fl;
+        ctx.beginPath();
+        ctx.ellipse(cx - 2 * fl, cy, pR * (ringProgress * 0.9), pRy * (ringProgress * 0.9), 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Inner shockwave glow
+        const innerGlow = ctx.createRadialGradient(cx, cy, pR * 0.5, cx, cy, pR * ringProgress);
+        innerGlow.addColorStop(0, 'rgba(0,0,0,0)');
+        innerGlow.addColorStop(0.8, rgba(col, fl * 0.15));
+        innerGlow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = innerGlow;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, pR * ringProgress, pRy * ringProgress, 0, 0, Math.PI * 2);
+        ctx.fill();
       }
     };
 
@@ -546,7 +654,31 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
 
-      // ── Draw perspective grid lines (scrolling beats) ──
+      // ── Draw horizon separator line and city background grid glow ──
+      const horGrad = ctx.createLinearGradient(0, vanishY, W, vanishY);
+      horGrad.addColorStop(0, 'rgba(0,0,0,0)');
+      horGrad.addColorStop(0.15, rgba(isJune ? '#E31B23' : '#FF0080', 0.28));
+      horGrad.addColorStop(0.5, '#ffffff');
+      horGrad.addColorStop(0.85, rgba(isJune ? '#00843D' : '#00B4FF', 0.28));
+      horGrad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.strokeStyle = horGrad;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(0, vanishY);
+      ctx.lineTo(W, vanishY);
+      ctx.stroke();
+
+      // Horizon diffuse background glow
+      const horizonGlow = ctx.createRadialGradient(W / 2, vanishY, 0, W / 2, vanishY, H * 0.18);
+      horizonGlow.addColorStop(0, rgba(isJune ? '#E31B23' : '#B026FF', 0.4));
+      horizonGlow.addColorStop(0.5, rgba(isJune ? '#FFD700' : '#00B4FF', 0.15));
+      horizonGlow.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = horizonGlow;
+      ctx.beginPath();
+      ctx.arc(W / 2, vanishY, H * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ── Draw perspective grid lines (scrolling beats as laser lines) ──
       const firstBeat = Math.ceil((t - eng.lead) / beat) * beat;
       for (let tb = firstBeat; tb < t + eng.lead; tb += beat) {
         const p = (t - (tb - eng.lead)) / eng.lead;
@@ -554,55 +686,149 @@ const TrapTapGameplay: React.FC<Props> = ({
         const ly = laneY(p);
         const lx1 = boundX(0, p);
         const lx2 = boundX(LANE_COUNT, p);
-        ctx.strokeStyle = rgba('#ffffff', 0.12 * Math.pow(p, 2));
-        ctx.lineWidth = 1.5;
+        
+        const glowOpacity = 0.22 * Math.pow(p, 2.5);
+        const gridCol = isJune ? '#FFD700' : '#B026FF';
+        
+        // Soft under-glow for laser line
+        ctx.strokeStyle = rgba(gridCol, glowOpacity);
+        ctx.lineWidth = 5 * p;
+        ctx.beginPath();
+        ctx.moveTo(lx1, ly);
+        ctx.lineTo(lx2, ly);
+        ctx.stroke();
+        
+        // Bright core line
+        ctx.strokeStyle = rgba('#ffffff', glowOpacity * 2.5);
+        ctx.lineWidth = 1.5 * p;
         ctx.beginPath();
         ctx.moveTo(lx1, ly);
         ctx.lineTo(lx2, ly);
         ctx.stroke();
       }
 
-      // ── Draw lane dividers and glowing side rails ──
-      // Centered lane lines running down the middle of each lane, aligned with discs and receptor pads.
-      // We project the bottom end to H so the line passes exactly through (botCenters[i], hitY) at the hit line.
-      // Far-left (0) and far-right (LANE_COUNT-1) are styled as thick glowing neon rails.
+      // ── Draw lane dividers and glowing 3D tubular side rails ──
+      // All boundary lines (edges and lane dividers) are rendered as glowing tubes to stay lit up
+      const drawRail = (i: number) => {
+        const col = i < LANE_COUNT ? activeLaneColors[i] : activeLaneColors[LANE_COUNT - 1];
+        const tx = topBoundaries[i];
+        const bx = botBoundaries[i];
+        const pbx = tx + (bx - tx) * ((H - vanishY) / (hitY - vanishY));
+        
+        // Aura glow
+        ctx.strokeStyle = rgba(col, 0.28);
+        ctx.lineWidth = 14;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(pbx, H);
+        ctx.stroke();
+        
+        // Outer core
+        ctx.strokeStyle = rgba(col, 0.6);
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(pbx, H);
+        ctx.stroke();
+        
+        // Main tubular body
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(pbx, H);
+        ctx.stroke();
+        
+        // Specular highlight line
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.0;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(pbx, H);
+        ctx.stroke();
+      };
+      
+      for (let i = 0; i <= LANE_COUNT; i++) {
+        drawRail(i);
+      }
+
+      // Draw center path guides down the middle of each lane
       for (let i = 0; i < LANE_COUNT; i++) {
         const col = activeLaneColors[i];
         const tx = topCenters[i];
         const bx = botCenters[i];
         const pbx = tx + (bx - tx) * ((H - vanishY) / (hitY - vanishY));
+        
+        ctx.strokeStyle = rgba(col, 0.12);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(tx, vanishY);
+        ctx.lineTo(pbx, H);
+        ctx.stroke();
+      }
 
-        if (i === 0 || i === LANE_COUNT - 1) {
-          // Style as a thick glowing side rail, centered on the lane notes
-          ctx.strokeStyle = rgba(col, 0.4);
-          ctx.lineWidth = 14;
+      // ── Draw 3D side pillars / light posts zooming by ──
+      const spacing = 0.8; // seconds spacing between pillars
+      const speed = difficulty.speed * (tun.current.noteSpeedMult || 1);
+      const pillarCount = 6;
+      const tPhase = (t * speed) % spacing;
+      for (let k = -1; k < pillarCount; k++) {
+        const p = (k * spacing + tPhase) / (spacing * (pillarCount - 2)); // normalized progress 0 to 1
+        if (p < 0 || p > 1.1) continue;
+        const ly = laneY(p);
+        const lScale = perspScale(p);
+        
+        // Left pillar location
+        const lx = boundX(0, p) - 25 * lScale;
+        // Right pillar location
+        const rx = boundX(LANE_COUNT, p) + 25 * lScale;
+        
+        const pilH = 45 * lScale;
+        const pilW = 6 * lScale;
+        
+        const drawPillar = (px: number, isLeft: boolean) => {
+          const col = isLeft ? activeLaneColors[0] : activeLaneColors[LANE_COUNT - 1];
+          const flareCol = isJune ? '#FFD700' : '#B026FF';
+          
+          // Pillar base shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
           ctx.beginPath();
-          ctx.moveTo(tx, vanishY);
-          ctx.lineTo(pbx, H);
-          ctx.stroke();
-
-          ctx.strokeStyle = col;
-          ctx.lineWidth = 4;
+          ctx.ellipse(px, ly, pilW * 1.8, pilW * 0.7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Glowing beam tube
+          const pilGrad = ctx.createLinearGradient(px, ly, px, ly - pilH);
+          pilGrad.addColorStop(0, rgba(col, 0.8));
+          pilGrad.addColorStop(0.5, rgba(col, 0.4));
+          pilGrad.addColorStop(1, rgba(flareCol, 0.95));
+          
+          ctx.fillStyle = pilGrad;
           ctx.beginPath();
-          ctx.moveTo(tx, vanishY);
-          ctx.lineTo(pbx, H);
-          ctx.stroke();
-        } else {
-          // Style as an inner lane guide
-          ctx.strokeStyle = rgba(col, 0.15);
-          ctx.lineWidth = 6;
+          ctx.roundRect(px - pilW / 2, ly - pilH, pilW, pilH, pilW / 2);
+          ctx.fill();
+          
+          // Specular highlight on post
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.lineWidth = pilW * 0.25;
           ctx.beginPath();
-          ctx.moveTo(tx, vanishY);
-          ctx.lineTo(pbx, H);
+          ctx.moveTo(px - pilW * 0.2, ly);
+          ctx.lineTo(px - pilW * 0.2, ly - pilH);
           ctx.stroke();
-
-          ctx.strokeStyle = rgba(col, 0.45);
-          ctx.lineWidth = 1.5;
+          
+          // Light cap aura glow
+          const capR = pilW * 1.6;
+          const capGrad = ctx.createRadialGradient(px, ly - pilH, 0, px, ly - pilH, capR * 2.8);
+          capGrad.addColorStop(0, '#ffffff');
+          capGrad.addColorStop(0.3, rgba(flareCol, 0.85));
+          capGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = capGrad;
           ctx.beginPath();
-          ctx.moveTo(tx, vanishY);
-          ctx.lineTo(pbx, H);
-          ctx.stroke();
-        }
+          ctx.arc(px, ly - pilH, capR * 2.8, 0, Math.PI * 2);
+          ctx.fill();
+        };
+        
+        drawPillar(lx, true);
+        drawPillar(rx, false);
       }
 
       // ── Draw hold trails ──
@@ -647,9 +873,22 @@ const TrapTapGameplay: React.FC<Props> = ({
           tGrad.addColorStop(1, rgba(col, n.holdActive ? 0.7 : 0.35));
           ctx.fillStyle = tGrad; ctx.fill();
 
+          // Techy Ladder/Mesh texture along the hold trail
+          ctx.strokeStyle = rgba('#ffffff', n.holdActive ? 0.25 : 0.08);
+          ctx.lineWidth = n.holdActive ? 2 : 1;
+          for (let s = 0; s <= numSteps; s += 2) {
+            const ly1 = leftPts[s].y;
+            const lx1 = leftPts[s].x;
+            const rx1 = rightPts[s].x;
+            ctx.beginPath();
+            ctx.moveTo(lx1, ly1);
+            ctx.lineTo(rx1, ly1);
+            ctx.stroke();
+          }
+
           // Borders
-          ctx.strokeStyle = rgba(col, n.holdActive ? 0.9 : 0.5);
-          ctx.lineWidth = n.holdActive ? 3 : 1.5;
+          ctx.strokeStyle = rgba(col, n.holdActive ? 0.95 : 0.55);
+          ctx.lineWidth = n.holdActive ? 3.5 : 1.8;
           ctx.beginPath();
           for (let s = 0; s <= numSteps; s++) { s === 0 ? ctx.moveTo(leftPts[s].x, leftPts[s].y) : ctx.lineTo(leftPts[s].x, leftPts[s].y); }
           ctx.stroke();
@@ -707,6 +946,34 @@ const TrapTapGameplay: React.FC<Props> = ({
         ctx.fillRect(botBoundaries[0], hitY - 3 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]), 6 * hf);
       }
 
+      // ── Draw 3D vertical beam projection when lane is tapped ──
+      for (let i = 0; i < LANE_COUNT; i++) {
+        const fl = Math.max(0, 1 - (now - eng.laneFlash[i]) / 220);
+        if (fl > 0.02) {
+          const col = activeLaneColors[i];
+          const x = botCenters[i];
+          const tx = topCenters[i];
+          const beamW = recR * 1.4 * fl;
+          const beamH = H * 0.45 * fl;
+          
+          const beamGrad = ctx.createLinearGradient(0, hitY, 0, hitY - beamH);
+          beamGrad.addColorStop(0, rgba(col, fl * 0.35));
+          beamGrad.addColorStop(0.5, rgba(col, fl * 0.12));
+          beamGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          
+          ctx.fillStyle = beamGrad;
+          ctx.beginPath();
+          const tScale = perspScale(1 - fl * 0.45);
+          const topW = beamW * tScale;
+          ctx.moveTo(x - beamW, hitY);
+          ctx.lineTo(tx - topW, hitY - beamH);
+          ctx.lineTo(tx + topW, hitY - beamH);
+          ctx.lineTo(x + beamW, hitY);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
       // ── Draw 3D disc notes ──
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
         const n = eng.chart[i];
@@ -730,12 +997,70 @@ const TrapTapGameplay: React.FC<Props> = ({
         drawReceptor(x, y, recR, col, fl, beatEnv);
       }
 
-      // Particles
+      // Premium Particles rendering (Streaks, Orbiters, Ring, and Flare)
       for (const pt of eng.particles) {
         const a = 1 - pt.life / pt.max;
-        ctx.fillStyle = rgba(pt.col, a);
-        ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r * a + 0.4, 0, Math.PI * 2); ctx.fill();
+        
+        if (pt.type === 'streak') {
+          // Draw a glowing streak line along its velocity vector
+          const vel = Math.sqrt(pt.vx * pt.vx + pt.vy * pt.vy);
+          if (vel === 0) continue;
+          const dx = pt.vx / vel;
+          const dy = pt.vy / vel;
+          const len = pt.length * a;
+          
+          ctx.strokeStyle = rgba(pt.col, a * 0.9);
+          ctx.lineWidth = pt.width * a;
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y);
+          ctx.lineTo(pt.x - dx * len, pt.y - dy * len);
+          ctx.stroke();
+          
+          // White core
+          ctx.strokeStyle = rgba('#ffffff', a);
+          ctx.lineWidth = pt.width * 0.4 * a;
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y);
+          ctx.lineTo(pt.x - dx * len * 0.6, pt.y - dy * len * 0.6);
+          ctx.stroke();
+        } 
+        else if (pt.type === 'spark') {
+          // Draw diamond shapes with glowing core
+          ctx.fillStyle = rgba(pt.col, a * 0.85);
+          ctx.shadowColor = pt.col;
+          ctx.shadowBlur = pt.r * 2.5 * a;
+          
+          const pr = pt.r * a;
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y - pr);
+          ctx.lineTo(pt.x + pr * 0.6, pt.y);
+          ctx.lineTo(pt.x, pt.y + pr);
+          ctx.lineTo(pt.x - pr * 0.6, pt.y);
+          ctx.closePath();
+          ctx.fill();
+          
+          // Core
+          ctx.fillStyle = rgba('#ffffff', a);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pr * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        } 
+        else if (pt.type === 'ring') {
+          // Draw expanding shockwave ring
+          const currentR = pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max);
+          ctx.strokeStyle = rgba(pt.col, a * 0.8);
+          ctx.lineWidth = pt.width * a;
+          ctx.beginPath();
+          ctx.ellipse(pt.x, pt.y, currentR, currentR * 0.35, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } 
+        else if (pt.type === 'lensflare') {
+          // Draw expanding central glowing star
+          const sz = pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI);
+          drawStar(pt.x, pt.y, sz, sz * 0.35, pt.col);
+        }
       }
+      ctx.shadowBlur = 0; // reset
     };
 
     // ---------- main loop ----------
@@ -815,7 +1140,12 @@ const TrapTapGameplay: React.FC<Props> = ({
       for (let i = eng.particles.length - 1; i >= 0; i--) {
         const pt = eng.particles[i]; pt.life += dt;
         if (pt.life >= pt.max) { eng.particles.splice(i, 1); continue; }
-        pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 520 * dt;
+        if (pt.drag) {
+          pt.vx *= Math.pow(pt.drag, dt * 60);
+          pt.vy *= Math.pow(pt.drag, dt * 60);
+        }
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
       }
 
       draw(t, now);
@@ -862,10 +1192,18 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     // ---------- begin / teardown ----------
     const begin = () => {
-      const audio = new Audio(song.audioUrl);
+      const audio = audioRef.current;
+      if (!audio) return;
       audio.volume = 0.92;
+      audio.currentTime = 0;
       eng.audio = audio;
-      audio.play().catch(() => {});
+      audio.play().catch((err) => {
+        console.error("TrapTap audio playback failed:", err);
+      });
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+      }
       eng.running = true;
       eng.countdownDone = false;
       eng.lastT = performance.now();
@@ -879,7 +1217,13 @@ const TrapTapGameplay: React.FC<Props> = ({
       eng.running = false;
       cancelAnimationFrame(eng.raf);
       clearTimeout(eng.countTimer);
-      if (eng.audio) { try { eng.audio.pause(); } catch { /* */ } eng.audio.onended = null; eng.audio = null; }
+      if (eng.audio) {
+        try { eng.audio.pause(); } catch { /* */ }
+        eng.audio = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
       if (rootRef.current) rootRef.current.style.filter = '';
     };
     eng.teardown = teardown;
@@ -1031,6 +1375,9 @@ const TrapTapGameplay: React.FC<Props> = ({
   const requestPause = () => {
     if (!E.current.running) return;
     E.current.audio?.pause();
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
     E.current.running = false;
     cancelAnimationFrame(E.current.raf);
     setPhase('paused');
@@ -1039,6 +1386,9 @@ const TrapTapGameplay: React.FC<Props> = ({
   const resume = () => {
     setPhase('playing');
     E.current.audio?.play().catch(() => {});
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
     E.current.running = true;
     E.current.lastT = performance.now();
     E.current.raf = requestAnimationFrame(E.current.loop);
@@ -1115,7 +1465,28 @@ const TrapTapGameplay: React.FC<Props> = ({
         .tt-fever-go{animation:ttFeverFlash 2.4s ease-out forwards}
       `}</style>
 
+      {isJune && (
+        <video
+          ref={videoRef}
+          src="/home/trey-origin-hero.mp4"
+          loop
+          muted
+          playsInline
+          autoPlay
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          style={{
+            zIndex: 0,
+            opacity: 0.25,
+          }}
+        />
+      )}
+
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" style={{ zIndex: 1 }} />
+      <audio
+        ref={audioRef}
+        src={song.audioUrl}
+        preload="auto"
+      />
 
       {/* lane hit zones */}
       <div className="absolute left-0 right-0 flex" style={{ top: '54%', bottom: '8%', zIndex: 2 }}>
