@@ -118,7 +118,7 @@ const TrapTapGameplay: React.FC<Props> = ({
     eng.geo = null;
     eng.keyHeld = [false, false, false, false];
 
-    // ---------- geometry (STRAIGHT VERTICAL LANES) ----------
+    // ---------- geometry (3D HIGHWAY PERSPECTIVE) ----------
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
@@ -126,14 +126,32 @@ const TrapTapGameplay: React.FC<Props> = ({
       canvas.height = Math.round(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const W = rect.width, H = rect.height;
-      const topY = H * 0.05, hitY = H * 0.785;
-      const playW = W * 0.88, margin = (W - playW) / 2, laneW = playW / LANE_COUNT;
-      // Straight lanes: same X at top and bottom
-      const centers: number[] = [];
+      const vanishY = H * 0.18;   // vanishing point near top
+      const hitY = H * 0.82;      // hit zone near bottom
+      const playW = W * 0.92;
+      const margin = (W - playW) / 2;
+      const laneW = playW / LANE_COUNT;
+      // Bottom lane centers (spread wide at the bottom)
+      const botCenters: number[] = [];
       for (let i = 0; i < LANE_COUNT; i++) {
-        centers.push(margin + laneW * (i + 0.5));
+        botCenters.push(margin + laneW * (i + 0.5));
       }
-      eng.geo = { W, H, topY, hitY, centers, laneW, recR: Math.min(laneW * 0.36, 40) };
+      // Top lane centers converge to center vanishing point
+      const topCenters: number[] = [];
+      const converge = 0.12; // how much lanes converge (0 = all at center, 1 = no converge)
+      for (let i = 0; i < LANE_COUNT; i++) {
+        topCenters.push(W / 2 + (botCenters[i] - W / 2) * converge);
+      }
+      // Lane boundaries for 3D coordinate mapping and grid rendering
+      const botBoundaries: number[] = [];
+      const topBoundaries: number[] = [];
+      for (let i = 0; i <= LANE_COUNT; i++) {
+        const bx = margin + laneW * i;
+        botBoundaries.push(bx);
+        topBoundaries.push(W / 2 + (bx - W / 2) * converge);
+      }
+      const recR = Math.min(laneW * 0.42, 48);
+      eng.geo = { W, H, vanishY, hitY, botCenters, topCenters, botBoundaries, topBoundaries, laneW, recR };
     };
     resize();
     window.addEventListener('resize', resize);
@@ -197,7 +215,7 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     const spawnParticles = (lane: number, j: Judgment) => {
       const g = eng.geo; if (!g) return;
-      const x = g.centers[lane], y = g.hitY, col = activeLaneColors[lane];
+      const x = g.botCenters[lane], y = g.hitY, col = activeLaneColors[lane];
       const n = j === 'pp' ? 16 : j === 'p' ? 11 : 7;
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
@@ -295,79 +313,295 @@ const TrapTapGameplay: React.FC<Props> = ({
     };
     eng.releaseLane = releaseLane;
 
-    // ---------- drawing ----------
-    const diamond = (x: number, y: number, s: number, fill: string) => {
-      ctx.fillStyle = fill; ctx.beginPath();
-      ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath(); ctx.fill();
+    // ---------- drawing (3D HIGHWAY) ----------
+    const drawStar = (cx: number, cy: number, rx: number, ry: number, col: string) => {
+      // 4-pointed squircle-like star inside notes and receptor pads matching reference
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = rgba(col, 1.0);
+      ctx.shadowBlur = rx * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - ry);
+      ctx.quadraticCurveTo(cx, cy, cx + rx, cy);
+      ctx.quadraticCurveTo(cx, cy, cx, cy + ry);
+      ctx.quadraticCurveTo(cx, cy, cx - rx, cy);
+      ctx.quadraticCurveTo(cx, cy, cx, cy - ry);
+      ctx.closePath();
+      ctx.fill();
+      ctx.shadowBlur = 0; // reset
     };
 
-    // Juneteenth note: raised fist silhouette diamond
-    const drawNote = (x: number, y: number, r: number, col: string) => {
-      const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 1.8);
-      gr.addColorStop(0, rgba(col, 0.55)); gr.addColorStop(0.6, rgba(col, 0.18)); gr.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(10,5,20,0.85)'; ctx.beginPath(); ctx.arc(x, y, r * 0.86, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = rgba(col, 0.95); ctx.lineWidth = Math.max(1.4, r * 0.12);
-      ctx.beginPath(); ctx.arc(x, y, r * 0.86, 0, Math.PI * 2); ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.arc(x, y, r * 0.55, 0, Math.PI * 2); ctx.stroke();
+    // 3D perspective helpers
+    // p: 0 = vanishing point (far away), 1 = hit line (right in front)
+    const perspT = (p: number) => Math.pow(Math.max(0, Math.min(1, p)), 1.5);
+    
+    const laneX = (lane: number, p: number) => {
+      const g = eng.geo; if (!g) return 0;
+      const w = perspT(p);
+      return g.topCenters[lane] + (g.botCenters[lane] - g.topCenters[lane]) * w;
+    };
+    
+    const boundX = (i: number, p: number) => {
+      const g = eng.geo; if (!g) return 0;
+      const w = perspT(p);
+      return g.topBoundaries[i] + (g.botBoundaries[i] - g.topBoundaries[i]) * w;
+    };
 
-      if (isJune) {
-        // Draw raised fist icon inside the note
-        const fs = r * 0.3;
-        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    const laneY = (p: number) => {
+      const g = eng.geo; if (!g) return 0;
+      return g.vanishY + (g.hitY - g.vanishY) * perspT(p);
+    };
+    
+    // Scale factor: tiny far away, full size close
+    const perspScale = (p: number) => 0.08 + 0.92 * perspT(p);
+
+    // Draw a 3D cylindrical disc (puck) with thickness, reflection, and light gradients
+    const drawDisc = (cx: number, cy: number, rx: number, squash: number, col: string, isFist: boolean) => {
+      const ry = rx * squash; // squashed top face
+      const thickness = rx * 0.35; // height of the 3D cylinder
+      
+      // 1. Draw side wall (cylinder height extrusion)
+      const sideGrad = ctx.createLinearGradient(cx - rx, cy, cx + rx, cy + thickness);
+      sideGrad.addColorStop(0, rgba(col, 0.25));
+      sideGrad.addColorStop(0.3, rgba(col, 0.65));
+      sideGrad.addColorStop(0.7, rgba(col, 0.85));
+      sideGrad.addColorStop(1, rgba(col, 0.25));
+      ctx.fillStyle = sideGrad;
+      
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + thickness, rx, ry, 0, 0, Math.PI);
+      ctx.lineTo(cx + rx, cy);
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI, true);
+      ctx.lineTo(cx - rx, cy + thickness);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.strokeStyle = rgba(col, 0.45);
+      ctx.lineWidth = Math.max(1, rx * 0.04);
+      ctx.stroke();
+
+      // 2. Draw top cap background
+      ctx.fillStyle = 'rgba(8, 4, 18, 0.95)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 3. Ambient face glow
+      const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+      faceGlow.addColorStop(0, rgba(col, 0.55));
+      faceGlow.addColorStop(0.85, rgba(col, 0.12));
+      faceGlow.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = faceGlow;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Bright outer glowing rim
+      ctx.strokeStyle = rgba(col, 0.95);
+      ctx.lineWidth = Math.max(1.8, rx * 0.08);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 5. Specular highlight accent on the rim
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = Math.max(1, rx * 0.045);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx * 0.88, ry * 0.88, 0, Math.PI * 0.7, Math.PI * 1.3);
+      ctx.stroke();
+
+      // 6. Center icon / star
+      if (isFist) {
+        const fs = rx * 0.28;
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
         ctx.beginPath();
-        // Fist shape — simplified raised fist
-        ctx.roundRect(x - fs * 0.4, y - fs * 0.6, fs * 0.8, fs * 0.7, fs * 0.12);
+        ctx.roundRect(cx - fs * 0.4, cy - fs * 0.5, fs * 0.8, fs * 0.6, fs * 0.12);
         ctx.fill();
-        // Wrist/arm
-        ctx.fillRect(x - fs * 0.22, y + fs * 0.1, fs * 0.44, fs * 0.5);
+        ctx.fillRect(cx - fs * 0.2, cy + fs * 0.1, fs * 0.4, fs * 0.45);
       } else {
-        diamond(x, y, r * 0.34, 'rgba(255,255,255,0.95)');
+        drawStar(cx, cy, rx * 0.26, ry * 0.26, col);
       }
     };
 
-    // Helper: perspective Y — notes start slow/small at the top and accelerate
-    // toward the player like rushing toward the camera from a distance.
-    const perspY = (p: number, topY: number, hitY: number) => {
-      const curved = Math.pow(Math.max(0, p), 1.6);
-      return topY + (hitY - topY) * curved;
+    // Draw the big 3D cylindrical receptor pad at the hit line
+    const drawReceptor = (cx: number, cy: number, R: number, col: string, fl: number, beatEnv: number) => {
+      const squash = 0.35; // flat perspective
+      const ry = R * squash;
+      
+      // Pulse animation based on beat and tap flash
+      const pulse = 1 + beatEnv * 0.04 + fl * 0.12;
+      const pR = R * pulse;
+      const pRy = ry * pulse;
+      
+      // Receptors depress (thickness decreases) when tapped!
+      const thickness = R * 0.42 * (1 - fl * 0.22);
+      
+      // 1. Ambient glow on the road beneath the receptor
+      const ambGr = ctx.createRadialGradient(cx, cy + thickness, 0, cx, cy + thickness, pR * 2.8);
+      ambGr.addColorStop(0, rgba(col, 0.38 + fl * 0.45));
+      ambGr.addColorStop(0.4, rgba(col, 0.14 + fl * 0.18));
+      ambGr.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = ambGr;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + thickness, pR * 2.8, pRy * 2.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Draw 3D side wall
+      const wallGrad = ctx.createLinearGradient(cx - pR, cy, cx + pR, cy + thickness);
+      wallGrad.addColorStop(0, rgba(col, 0.18));
+      wallGrad.addColorStop(0.3, rgba(col, 0.58 + fl * 0.2));
+      wallGrad.addColorStop(0.7, rgba(col, 0.78 + fl * 0.2));
+      wallGrad.addColorStop(1, rgba(col, 0.18));
+      ctx.fillStyle = wallGrad;
+      
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + thickness, pR, pRy, 0, 0, Math.PI);
+      ctx.lineTo(cx + pR, cy);
+      ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI, true);
+      ctx.lineTo(cx - pR, cy + thickness);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.strokeStyle = rgba(col, 0.4 + fl * 0.3);
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // 3. Top cap background
+      ctx.fillStyle = 'rgba(6, 3, 15, 0.92)';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Top face circular radial glow
+      const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, pR);
+      faceGlow.addColorStop(0, rgba(col, 0.55 + fl * 0.35));
+      faceGlow.addColorStop(0.85, rgba(col, 0.15 + fl * 0.15));
+      faceGlow.addColorStop(1, rgba(col, 0));
+      ctx.fillStyle = faceGlow;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Thick outer glowing rim
+      ctx.strokeStyle = rgba(col, 0.9 + fl * 0.1);
+      ctx.lineWidth = 3.5 + fl * 3;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR * 0.95, pRy * 0.95, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 6. Inner concentric rings
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR * 0.72, pRy * 0.72, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      ctx.strokeStyle = rgba(col, 0.3);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR * 0.48, pRy * 0.48, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 7. Center icon
+      if (isJune) {
+        const fs = pR * 0.22;
+        ctx.fillStyle = rgba(col, 0.75 + fl * 0.25);
+        ctx.beginPath();
+        ctx.roundRect(cx - fs * 0.4, cy - fs * 0.45, fs * 0.8, fs * 0.55, fs * 0.12);
+        ctx.fill();
+        ctx.fillRect(cx - fs * 0.2, cy + fs * 0.1, fs * 0.4, fs * 0.4);
+      } else {
+        drawStar(cx, cy, pR * 0.22, pRy * 0.22, col);
+      }
+
+      // Tap shockwave expansion
+      if (fl > 0) {
+        ctx.strokeStyle = rgba(col, fl * 0.85);
+        ctx.lineWidth = 3 * fl;
+        const rippleR = pR * (1.0 + (1 - fl) * 1.5);
+        const rippleRy = pRy * (1.0 + (1 - fl) * 1.5);
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rippleR, rippleRy, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     };
-    // Perspective scale: very small in the distance, full size at hit line
-    const perspScale = (p: number) => 0.15 + 0.85 * Math.pow(Math.max(0, p), 1.3);
-    // Perspective lane width (narrow far away, full width close)
-    const perspWidth = (p: number, laneW: number) => laneW * 0.35 * perspScale(p);
 
     const draw = (t: number, now: number) => {
       const g = eng.geo; if (!g) return;
-      const { W, H, topY, hitY, centers, laneW, recR } = g;
+      const { W, H, vanishY, hitY, botCenters, topCenters, botBoundaries, topBoundaries, laneW, recR } = g;
       ctx.clearRect(0, 0, W, H);
       const beat = 60 / song.bpm;
       const beatPhase = (t - (song.beatOffset || 0)) / beat;
       const beatEnv = Math.max(0, 1 - (beatPhase - Math.floor(beatPhase)));
 
-      // Draw straight vertical lane lines with perspective fade
-      for (let i = 0; i < LANE_COUNT; i++) {
-        const col = activeLaneColors[i];
-        const cx = centers[i];
-        // Gradient that fades at the top (far away) and brightens at bottom (close)
-        const lineGrad = ctx.createLinearGradient(cx, topY, cx, hitY);
-        lineGrad.addColorStop(0, rgba(col, 0.04));
-        lineGrad.addColorStop(0.5, rgba(col, eng.feverActive ? 0.2 : 0.12));
-        lineGrad.addColorStop(1, rgba(col, eng.feverActive ? 0.4 : 0.25));
-        ctx.strokeStyle = lineGrad;
-        ctx.lineWidth = 6;
-        ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx, hitY); ctx.stroke();
-        // Thin bright line
-        const thinGrad = ctx.createLinearGradient(cx, topY, cx, hitY);
-        thinGrad.addColorStop(0, rgba(col, 0.08));
-        thinGrad.addColorStop(1, rgba(col, eng.feverActive ? 0.95 : 0.7));
-        ctx.strokeStyle = thinGrad;
+      // ── Draw dark road surface background trapezoid ──
+      ctx.fillStyle = 'rgba(4, 2, 10, 0.72)';
+      ctx.beginPath();
+      ctx.moveTo(topBoundaries[0], vanishY);
+      ctx.lineTo(topBoundaries[LANE_COUNT], vanishY);
+      ctx.lineTo(botBoundaries[LANE_COUNT], H);
+      ctx.lineTo(botBoundaries[0], H);
+      ctx.closePath();
+      ctx.fill();
+
+      // ── Draw perspective grid lines (scrolling beats) ──
+      const firstBeat = Math.ceil((t - eng.lead) / beat) * beat;
+      for (let tb = firstBeat; tb < t + eng.lead; tb += beat) {
+        const p = (t - (tb - eng.lead)) / eng.lead;
+        if (p < 0 || p > 1) continue;
+        const ly = laneY(p);
+        const lx1 = boundX(0, p);
+        const lx2 = boundX(LANE_COUNT, p);
+        ctx.strokeStyle = rgba('#ffffff', 0.12 * Math.pow(p, 2));
         ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx, hitY); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(lx1, ly);
+        ctx.lineTo(lx2, ly);
+        ctx.stroke();
       }
 
-      // Draw hold trails with perspective scaling
+      // ── Draw lane dividers and glowing side rails ──
+      const leftCol = activeLaneColors[0];
+      const rightCol = activeLaneColors[LANE_COUNT - 1];
+
+      // Inner thin lane lines
+      for (let i = 1; i < LANE_COUNT; i++) {
+        const col = activeLaneColors[i];
+        ctx.strokeStyle = rgba(col, 0.25);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(topBoundaries[i], vanishY);
+        ctx.lineTo(botBoundaries[i], H);
+        ctx.stroke();
+      }
+
+      // Thick glowing side rail: Left
+      ctx.strokeStyle = rgba(leftCol, 0.4);
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.moveTo(topBoundaries[0], vanishY);
+      ctx.lineTo(botBoundaries[0], H);
+      ctx.stroke();
+      ctx.strokeStyle = leftCol;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(topBoundaries[0], vanishY);
+      ctx.lineTo(botBoundaries[0], H);
+      ctx.stroke();
+
+      // Thick glowing side rail: Right
+      ctx.strokeStyle = rgba(rightCol, 0.4);
+      ctx.lineWidth = 14;
+      ctx.beginPath();
+      ctx.moveTo(topBoundaries[LANE_COUNT], vanishY);
+      ctx.lineTo(botBoundaries[LANE_COUNT], H);
+      ctx.stroke();
+      ctx.strokeStyle = rightCol;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(topBoundaries[LANE_COUNT], vanishY);
+      ctx.lineTo(botBoundaries[LANE_COUNT], H);
+      ctx.stroke();
+
+      // ── Draw hold trails ──
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
         const n = eng.chart[i];
         if (n.time > t + eng.lead) break;
@@ -379,164 +613,117 @@ const TrapTapGameplay: React.FC<Props> = ({
           let pHead = (t - (n.time - eng.lead)) / eng.lead;
           if (n.holdHeadHit) pHead = 1.0;
           pHead = Math.max(0, Math.min(1.0, pHead));
-
           let pTail = (t - (endTime - eng.lead)) / eng.lead;
           pTail = Math.max(0, Math.min(1.0, pTail));
-
           if (pHead <= pTail) continue;
 
-          const cx = centers[n.lane];
           const col = activeLaneColors[n.lane];
-
-          // Perspective-curved positions
-          const headY = perspY(pHead, topY, hitY);
-          const tailY = perspY(pTail, topY, hitY);
-          const headW = perspWidth(pHead, laneW);
-          const tailW = perspWidth(pTail, laneW);
-
-          // Draw filled perspective-scaled trail (trapezoid — narrow top, wide bottom)
-          const numSteps = 12;
+          const numSteps = 14;
           const leftPts: { x: number; y: number }[] = [];
           const rightPts: { x: number; y: number }[] = [];
           for (let step = 0; step <= numSteps; step++) {
             const ratio = step / numSteps;
             const p = pTail + (pHead - pTail) * ratio;
-            const y = perspY(p, topY, hitY);
-            const w = perspWidth(p, laneW);
-            leftPts.push({ x: cx - w, y });
-            rightPts.push({ x: cx + w, y });
+            const cx = laneX(n.lane, p);
+            const cy = laneY(p);
+            const sc = perspScale(p);
+            const w = laneW * 0.28 * sc;
+            leftPts.push({ x: cx - w, y: cy });
+            rightPts.push({ x: cx + w, y: cy });
           }
 
+          // Filled trail
           ctx.beginPath();
           ctx.moveTo(leftPts[0].x, leftPts[0].y);
-          for (let step = 1; step <= numSteps; step++) ctx.lineTo(leftPts[step].x, leftPts[step].y);
-          for (let step = numSteps; step >= 0; step--) ctx.lineTo(rightPts[step].x, rightPts[step].y);
+          for (let s = 1; s <= numSteps; s++) ctx.lineTo(leftPts[s].x, leftPts[s].y);
+          for (let s = numSteps; s >= 0; s--) ctx.lineTo(rightPts[s].x, rightPts[s].y);
           ctx.closePath();
-
-          const trailGrad = ctx.createLinearGradient(cx, tailY, cx, headY);
-          trailGrad.addColorStop(0, rgba(col, 0.06));
-          trailGrad.addColorStop(1, rgba(col, n.holdActive ? 0.75 : 0.40));
-          ctx.fillStyle = trailGrad;
-          ctx.fill();
+          const tGrad = ctx.createLinearGradient(0, leftPts[0].y, 0, leftPts[numSteps].y);
+          tGrad.addColorStop(0, rgba(col, 0.05));
+          tGrad.addColorStop(1, rgba(col, n.holdActive ? 0.7 : 0.35));
+          ctx.fillStyle = tGrad; ctx.fill();
 
           // Borders
-          const borderAlpha = n.holdActive ? 0.95 : 0.55;
-          ctx.strokeStyle = rgba(col, borderAlpha);
-          ctx.lineWidth = n.holdActive ? 3 : 2;
+          ctx.strokeStyle = rgba(col, n.holdActive ? 0.9 : 0.5);
+          ctx.lineWidth = n.holdActive ? 3 : 1.5;
           ctx.beginPath();
-          ctx.moveTo(leftPts[0].x, leftPts[0].y);
-          for (let step = 1; step <= numSteps; step++) ctx.lineTo(leftPts[step].x, leftPts[step].y);
+          for (let s = 0; s <= numSteps; s++) { s === 0 ? ctx.moveTo(leftPts[s].x, leftPts[s].y) : ctx.lineTo(leftPts[s].x, leftPts[s].y); }
           ctx.stroke();
           ctx.beginPath();
-          ctx.moveTo(rightPts[0].x, rightPts[0].y);
-          for (let step = 1; step <= numSteps; step++) ctx.lineTo(rightPts[step].x, rightPts[step].y);
+          for (let s = 0; s <= numSteps; s++) { s === 0 ? ctx.moveTo(rightPts[s].x, rightPts[s].y) : ctx.lineTo(rightPts[s].x, rightPts[s].y); }
           ctx.stroke();
 
-          // Chevrons along the trail
-          const trailLen = headY - tailY;
-          const numChevrons = Math.max(2, Math.floor(trailLen / 36));
-          for (let c = 1; c <= numChevrons; c++) {
-            const ratio = c / (numChevrons + 1);
-            const p = pTail + (pHead - pTail) * ratio;
-            const cy = perspY(p, topY, hitY);
-            const cScale = perspScale(p);
-            const clw = laneW * 0.08 * cScale;
-            ctx.strokeStyle = `rgba(255,255,255,${0.3 + 0.5 * cScale})`;
-            ctx.lineWidth = 1 + cScale;
-            ctx.beginPath();
-            ctx.moveTo(cx - clw, cy - clw * 0.65);
-            ctx.lineTo(cx, cy + clw * 0.45);
-            ctx.lineTo(cx + clw, cy - clw * 0.65);
-            ctx.stroke();
-          }
-
-          // ── HOLD GLOW on perfect / active holds ──
+          // Hold glow at hit line
           if (n.holdActive) {
+            const hx = botCenters[n.lane];
             const glowPhase = (now / 120) % (Math.PI * 2);
             const glowPulse = 0.6 + 0.4 * Math.sin(glowPhase);
-            const glowR = recR * (1.4 + glowPulse * 0.6);
-            // Outer pulsing ring
-            const glowGr = ctx.createRadialGradient(cx, hitY, recR * 0.3, cx, hitY, glowR * 2);
-            glowGr.addColorStop(0, rgba(col, 0.45 * glowPulse));
-            glowGr.addColorStop(0.5, rgba(col, 0.18 * glowPulse));
-            glowGr.addColorStop(1, rgba(col, 0));
-            ctx.fillStyle = glowGr;
-            ctx.beginPath(); ctx.arc(cx, hitY, glowR * 2, 0, Math.PI * 2); ctx.fill();
-            // Bright expanding ring
-            ctx.strokeStyle = rgba(col, 0.7 * glowPulse);
-            ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.arc(cx, hitY, recR * (1.0 + glowPulse * 0.5), 0, Math.PI * 2); ctx.stroke();
-            // Inner hot core
-            ctx.strokeStyle = `rgba(255,255,255,${0.5 * glowPulse})`;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.arc(cx, hitY, recR * (0.6 + glowPulse * 0.2), 0, Math.PI * 2); ctx.stroke();
+            const glowR = recR * (1.5 + glowPulse * 0.7);
+            const gGr = ctx.createRadialGradient(hx, hitY, recR * 0.2, hx, hitY, glowR * 2);
+            gGr.addColorStop(0, rgba(col, 0.5 * glowPulse));
+            gGr.addColorStop(0.5, rgba(col, 0.2 * glowPulse));
+            gGr.addColorStop(1, rgba(col, 0));
+            ctx.fillStyle = gGr;
+            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 2, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = rgba(col, 0.8 * glowPulse); ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.ellipse(hx, hitY, recR * (1.0 + glowPulse * 0.4), recR * 0.35 * (1.0 + glowPulse * 0.4), 0, 0, Math.PI * 2); ctx.stroke();
           }
 
-          // Tail Release Cap (perspective-scaled)
-          const tailScale = perspScale(pTail);
-          const tailR = recR * 0.65 * tailScale;
-          if (tailR > 2) {
-            ctx.fillStyle = 'rgba(10,5,20,0.95)';
-            ctx.strokeStyle = rgba(col, 0.95);
-            ctx.lineWidth = Math.max(1.4, tailR * 0.12);
-            ctx.beginPath(); ctx.arc(cx, tailY, tailR * 0.78, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.arc(cx, tailY, tailR * 0.45, 0, Math.PI * 2); ctx.stroke();
+          // Tail cap (3D disc)
+          const tailSc = perspScale(pTail);
+          if (tailSc > 0.12) {
+            const tcx = laneX(n.lane, pTail);
+            const tcy = laneY(pTail);
+            const tr = recR * 0.55 * tailSc;
+            const tsq = 0.25 + 0.2 * tailSc;
+            ctx.fillStyle = 'rgba(8,4,18,0.9)';
+            ctx.beginPath(); ctx.ellipse(tcx, tcy, tr, tr * tsq, 0, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = rgba(col, 0.8); ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.ellipse(tcx, tcy, tr, tr * tsq, 0, 0, Math.PI * 2); ctx.stroke();
           }
         }
       }
 
-      // Draw hit line
-      const hf = Math.max(0, 1 - (now - eng.hitFlash) / 180);
-      ctx.strokeStyle = `rgba(255,255,255,${0.12 + hf * 0.6})`;
-      ctx.lineWidth = 2 + hf * 3;
-      ctx.beginPath(); ctx.moveTo(centers[0] - recR, hitY); ctx.lineTo(centers[LANE_COUNT - 1] + recR, hitY); ctx.stroke();
+      // ── Hit line flare ──
+      const hf = Math.max(0, 1 - (now - eng.hitFlash) / 250);
+      // Horizontal hit line
+      ctx.strokeStyle = `rgba(255,255,255,${0.08 + hf * 0.5})`;
+      ctx.lineWidth = 1.5 + hf * 4;
+      ctx.beginPath();
+      ctx.moveTo(botBoundaries[0], hitY);
+      ctx.lineTo(botBoundaries[LANE_COUNT], hitY);
+      ctx.stroke();
+      // Bright flare burst on hit
+      if (hf > 0.1) {
+        const flareGr = ctx.createLinearGradient(botBoundaries[0], hitY, botBoundaries[LANE_COUNT], hitY);
+        flareGr.addColorStop(0, `rgba(255,255,255,0)`);
+        flareGr.addColorStop(0.5, `rgba(255,255,255,${hf * 0.25})`);
+        flareGr.addColorStop(1, `rgba(255,255,255,0)`);
+        ctx.fillStyle = flareGr;
+        ctx.fillRect(botBoundaries[0], hitY - 3 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]), 6 * hf);
+      }
 
-      // Draw normal notes — perspective rush (accelerate toward the player)
+      // ── Draw 3D disc notes ──
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
         const n = eng.chart[i];
         if (n.time > t + eng.lead) break;
         if (n.hit || n.missed || n.holdHeadHit) continue;
         const p = (t - (n.time - eng.lead)) / eng.lead;
         if (p < 0 || p > 1.02) continue;
-        const x = centers[n.lane];
-        // Perspective curve — notes rush toward you from a distance
-        const y = perspY(p, topY, hitY);
-        const scale = perspScale(p);
-        drawNote(x, y, recR * scale, activeLaneColors[n.lane]);
+        const cx = laneX(n.lane, p);
+        const cy = laneY(p);
+        const sc = perspScale(p);
+        const noteR = recR * sc;
+        // Squash factor: very flat far away, rounder up close
+        const squash = 0.2 + 0.25 * sc;
+        drawDisc(cx, cy, noteR, squash, activeLaneColors[n.lane], isJune);
       }
 
-      // Draw lane receptors at hit line
+      // ── Draw 3D receptor pads at hit line ──
       for (let i = 0; i < LANE_COUNT; i++) {
-        const x = centers[i], y = hitY, col = activeLaneColors[i];
+        const x = botCenters[i], y = hitY, col = activeLaneColors[i];
         const fl = Math.max(0, 1 - (now - eng.laneFlash[i]) / 220);
-        const R = recR * (1 + beatEnv * 0.06 + fl * 0.22);
-        const gr = ctx.createRadialGradient(x, y, 0, x, y, R * 2.2);
-        gr.addColorStop(0, rgba(col, 0.5 + fl * 0.4));
-        gr.addColorStop(0.5, rgba(col, 0.16 + fl * 0.2));
-        gr.addColorStop(1, rgba(col, 0));
-        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, R * 2.2, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'rgba(6,3,14,0.78)'; ctx.beginPath(); ctx.arc(x, y, R * 0.82, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = rgba(col, 0.85); ctx.lineWidth = 2 + fl * 2;
-        ctx.beginPath(); ctx.arc(x, y, R * 0.9, 0, Math.PI * 2); ctx.stroke();
-        ctx.strokeStyle = rgba(col, 0.4); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.arc(x, y, R * 0.62, 0, Math.PI * 2); ctx.stroke();
-        if (isJune) {
-          // Raised fist inside receptor
-          const fs = R * 0.26;
-          ctx.fillStyle = rgba(col, 0.7 + fl * 0.3);
-          ctx.beginPath();
-          ctx.roundRect(x - fs * 0.4, y - fs * 0.6, fs * 0.8, fs * 0.7, fs * 0.12);
-          ctx.fill();
-          ctx.fillRect(x - fs * 0.22, y + fs * 0.1, fs * 0.44, fs * 0.5);
-        } else {
-          diamond(x, y, R * 0.26, rgba(col, 0.7 + fl * 0.3));
-        }
-        if (fl > 0) {
-          ctx.strokeStyle = rgba(col, fl * 0.6); ctx.lineWidth = 2;
-          ctx.beginPath(); ctx.arc(x, y, R * (1 + (1 - fl) * 1.1), 0, Math.PI * 2); ctx.stroke();
-        }
+        drawReceptor(x, y, recR, col, fl, beatEnv);
       }
 
       // Particles
@@ -592,7 +779,7 @@ const TrapTapGameplay: React.FC<Props> = ({
                 eng.score += Math.round(1.2 * comboMult() * (eng.feverActive ? 2 : 1) * difficulty.mult);
                 const g = eng.geo;
                 if (g) {
-                  const px = g.centers[n.lane] + (Math.random() - 0.5) * 20;
+                  const px = g.botCenters[n.lane] + (Math.random() - 0.5) * 20;
                   const py = g.hitY;
                   eng.particles.push({
                     x: px, y: py,
@@ -695,18 +882,31 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     const activePointers = new Map<number, number>();
 
-    const getLaneFromX = (clientX: number) => {
+    const getLaneFromXY = (clientX: number, clientY: number) => {
       const canvas = canvasRef.current;
       if (!canvas) return 0;
       const rect = canvas.getBoundingClientRect();
       const relativeX = clientX - rect.left;
-      const W = rect.width;
-      const playW = W * 0.88;
-      const margin = (W - playW) / 2;
-      const laneW = playW / LANE_COUNT;
-      const x = relativeX - margin;
-      const lane = Math.floor(x / laneW);
-      return Math.max(0, Math.min(LANE_COUNT - 1, lane));
+      const relativeY = clientY - rect.top;
+      
+      const g = eng.geo;
+      if (!g) return 0;
+      const { vanishY, H, topBoundaries, botBoundaries } = g;
+      
+      // Interpolate based on screen-space vertical coordinates
+      const t = Math.max(0, Math.min(1, (relativeY - vanishY) / (H - vanishY)));
+      
+      // Check which trapezoidal lane the touch coordinates fall within
+      for (let i = 0; i < LANE_COUNT; i++) {
+        const leftBound = topBoundaries[i] + (botBoundaries[i] - topBoundaries[i]) * t;
+        const rightBound = topBoundaries[i+1] + (botBoundaries[i+1] - topBoundaries[i+1]) * t;
+        if (relativeX >= leftBound && relativeX < rightBound) {
+          return i;
+        }
+      }
+      // Fallback: compare relative X to boundaries at target height
+      if (relativeX < topBoundaries[0] + (botBoundaries[0] - topBoundaries[0]) * t) return 0;
+      return LANE_COUNT - 1;
     };
 
     // ---------- inputs ----------
@@ -758,7 +958,7 @@ const TrapTapGameplay: React.FC<Props> = ({
       const moveFn = (e: PointerEvent) => {
         if (!activePointers.has(e.pointerId)) return;
         const oldLane = activePointers.get(e.pointerId);
-        const newLane = getLaneFromX(e.clientX);
+        const newLane = getLaneFromXY(e.clientX, e.clientY);
         if (oldLane !== newLane) {
           activePointers.set(e.pointerId, newLane);
           
