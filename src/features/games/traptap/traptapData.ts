@@ -18,17 +18,6 @@ const COVERS = {
 
 export const SONGS: TrapTapSong[] = [
   {
-    id: 'lmo',
-    title: 'LMO',
-    artist: 'Trey Trizzy',
-    bpm: 136,
-    duration: 196.51,
-    beatOffset: 2.932,
-    genre: 'TRAP R&B',
-    audioUrl: '/assets/games/traptap/audio/lmo.m4a',
-    coverArtUrl: COVERS.beyondReality,
-  },
-  {
     id: 'june-nineteenth',
     title: 'JUNE NINETEENTH',
     artist: 'Trey Trizzy',
@@ -38,6 +27,17 @@ export const SONGS: TrapTapSong[] = [
     genre: 'TRAP BLUES',
     audioUrl: '/assets/games/traptap/audio/june-nineteenth.m4a',
     coverArtUrl: COVERS.neonSkyline,
+  },
+  {
+    id: 'lmo',
+    title: 'LMO',
+    artist: 'Trey Trizzy',
+    bpm: 136,
+    duration: 196.51,
+    beatOffset: 2.932,
+    genre: 'TRAP R&B',
+    audioUrl: '/assets/games/traptap/audio/lmo.m4a',
+    coverArtUrl: COVERS.beyondReality,
   },
   {
     id: 'right-here',
