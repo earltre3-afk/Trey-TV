@@ -15,7 +15,7 @@ const TrapTapGame: React.FC = () => {
   const navigate = useNavigate();
   const [screen, setScreen] = useState<TrapTapScreen>('home');
   const [songIndex, setSongIndex] = useState(0);
-  const [diffIndex, setDiffIndex] = useState(2); // Hard
+  const [diffIndex, setDiffIndex] = useState(1); // Normal
   const [result, setResult] = useState<TrapTapResult | null>(null);
   // Remount key forces a fresh engine on retry / new run.
   const [runKey, setRunKey] = useState(0);

@@ -89,7 +89,10 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     const winScale = () => ({ Lenient: 1.4, Normal: 1, Strict: 0.7 }[tun.current.hitWindow] || 1);
     const offsetSec = () => (tun.current.audioOffsetMs || 0) / 1000;
-    const leadVal = () => 1.9 / (difficulty.speed * (tun.current.noteSpeedMult || 1));
+    // BPM-synced approach: notes arrive over exactly 4 beats so they're
+    // locked to the musical grid — if you know the song, you feel the rhythm.
+    const beatSec = 60 / song.bpm;
+    const leadVal = () => (beatSec * 4) / (difficulty.speed * (tun.current.noteSpeedMult || 1));
 
     const eng = E.current;
     eng.chart = buildChart(song, difficulty);
@@ -324,6 +327,17 @@ const TrapTapGameplay: React.FC<Props> = ({
       }
     };
 
+    // Helper: perspective Y — notes start slow/small at the top and accelerate
+    // toward the player like rushing toward the camera from a distance.
+    const perspY = (p: number, topY: number, hitY: number) => {
+      const curved = Math.pow(Math.max(0, p), 1.6);
+      return topY + (hitY - topY) * curved;
+    };
+    // Perspective scale: very small in the distance, full size at hit line
+    const perspScale = (p: number) => 0.15 + 0.85 * Math.pow(Math.max(0, p), 1.3);
+    // Perspective lane width (narrow far away, full width close)
+    const perspWidth = (p: number, laneW: number) => laneW * 0.35 * perspScale(p);
+
     const draw = (t: number, now: number) => {
       const g = eng.geo; if (!g) return;
       const { W, H, topY, hitY, centers, laneW, recR } = g;
@@ -332,21 +346,28 @@ const TrapTapGameplay: React.FC<Props> = ({
       const beatPhase = (t - (song.beatOffset || 0)) / beat;
       const beatEnv = Math.max(0, 1 - (beatPhase - Math.floor(beatPhase)));
 
-      // Draw straight vertical lane lines
+      // Draw straight vertical lane lines with perspective fade
       for (let i = 0; i < LANE_COUNT; i++) {
         const col = activeLaneColors[i];
         const cx = centers[i];
-        // Thick glow line
-        ctx.strokeStyle = rgba(col, eng.feverActive ? 0.3 : 0.18);
-        ctx.lineWidth = 7;
+        // Gradient that fades at the top (far away) and brightens at bottom (close)
+        const lineGrad = ctx.createLinearGradient(cx, topY, cx, hitY);
+        lineGrad.addColorStop(0, rgba(col, 0.04));
+        lineGrad.addColorStop(0.5, rgba(col, eng.feverActive ? 0.2 : 0.12));
+        lineGrad.addColorStop(1, rgba(col, eng.feverActive ? 0.4 : 0.25));
+        ctx.strokeStyle = lineGrad;
+        ctx.lineWidth = 6;
         ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx, hitY); ctx.stroke();
         // Thin bright line
-        ctx.strokeStyle = rgba(col, eng.feverActive ? 0.95 : 0.7);
-        ctx.lineWidth = 2;
+        const thinGrad = ctx.createLinearGradient(cx, topY, cx, hitY);
+        thinGrad.addColorStop(0, rgba(col, 0.08));
+        thinGrad.addColorStop(1, rgba(col, eng.feverActive ? 0.95 : 0.7));
+        ctx.strokeStyle = thinGrad;
+        ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(cx, hitY); ctx.stroke();
       }
 
-      // Draw hold trails (straight vertical, no lane crossing)
+      // Draw hold trails with perspective scaling
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
         const n = eng.chart[i];
         if (n.time > t + eng.lead) break;
@@ -355,12 +376,10 @@ const TrapTapGameplay: React.FC<Props> = ({
           const endTime = n.time + n.holdDuration;
           if (t > endTime + 0.15) continue;
 
-          // Progress of head (1.0 = at hit line, 0.0 = at top)
           let pHead = (t - (n.time - eng.lead)) / eng.lead;
           if (n.holdHeadHit) pHead = 1.0;
           pHead = Math.max(0, Math.min(1.0, pHead));
 
-          // Progress of tail
           let pTail = (t - (endTime - eng.lead)) / eng.lead;
           pTail = Math.max(0, Math.min(1.0, pTail));
 
@@ -369,51 +388,61 @@ const TrapTapGameplay: React.FC<Props> = ({
           const cx = centers[n.lane];
           const col = activeLaneColors[n.lane];
 
-          // Head and tail Y positions — straight linear interpolation
-          const headY = topY + (hitY - topY) * pHead;
-          const tailY = topY + (hitY - topY) * pTail;
+          // Perspective-curved positions
+          const headY = perspY(pHead, topY, hitY);
+          const tailY = perspY(pTail, topY, hitY);
+          const headW = perspWidth(pHead, laneW);
+          const tailW = perspWidth(pTail, laneW);
 
-          // Scale width by position (bigger near hit line for depth feel)
-          const headW = laneW * 0.35;
-          const tailW = laneW * 0.35;
+          // Draw filled perspective-scaled trail (trapezoid — narrow top, wide bottom)
+          const numSteps = 12;
+          const leftPts: { x: number; y: number }[] = [];
+          const rightPts: { x: number; y: number }[] = [];
+          for (let step = 0; step <= numSteps; step++) {
+            const ratio = step / numSteps;
+            const p = pTail + (pHead - pTail) * ratio;
+            const y = perspY(p, topY, hitY);
+            const w = perspWidth(p, laneW);
+            leftPts.push({ x: cx - w, y });
+            rightPts.push({ x: cx + w, y });
+          }
 
-          // Draw filled rectangle trail
           ctx.beginPath();
-          ctx.moveTo(cx - tailW, tailY);
-          ctx.lineTo(cx - headW, headY);
-          ctx.lineTo(cx + headW, headY);
-          ctx.lineTo(cx + tailW, tailY);
+          ctx.moveTo(leftPts[0].x, leftPts[0].y);
+          for (let step = 1; step <= numSteps; step++) ctx.lineTo(leftPts[step].x, leftPts[step].y);
+          for (let step = numSteps; step >= 0; step--) ctx.lineTo(rightPts[step].x, rightPts[step].y);
           ctx.closePath();
 
           const trailGrad = ctx.createLinearGradient(cx, tailY, cx, headY);
-          trailGrad.addColorStop(0, rgba(col, 0.12));
-          trailGrad.addColorStop(1, rgba(col, n.holdActive ? 0.75 : 0.45));
+          trailGrad.addColorStop(0, rgba(col, 0.06));
+          trailGrad.addColorStop(1, rgba(col, n.holdActive ? 0.75 : 0.40));
           ctx.fillStyle = trailGrad;
           ctx.fill();
 
-          // Draw left and right borders
-          const borderAlpha = n.holdActive ? 0.95 : 0.65;
+          // Borders
+          const borderAlpha = n.holdActive ? 0.95 : 0.55;
           ctx.strokeStyle = rgba(col, borderAlpha);
-          ctx.lineWidth = 2.5;
-
+          ctx.lineWidth = n.holdActive ? 3 : 2;
           ctx.beginPath();
-          ctx.moveTo(cx - tailW, tailY); ctx.lineTo(cx - headW, headY);
+          ctx.moveTo(leftPts[0].x, leftPts[0].y);
+          for (let step = 1; step <= numSteps; step++) ctx.lineTo(leftPts[step].x, leftPts[step].y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(rightPts[0].x, rightPts[0].y);
+          for (let step = 1; step <= numSteps; step++) ctx.lineTo(rightPts[step].x, rightPts[step].y);
           ctx.stroke();
 
-          ctx.beginPath();
-          ctx.moveTo(cx + tailW, tailY); ctx.lineTo(cx + headW, headY);
-          ctx.stroke();
-
-          // Chevrons pointing down along the straight trail
+          // Chevrons along the trail
           const trailLen = headY - tailY;
           const numChevrons = Math.max(2, Math.floor(trailLen / 36));
-          ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-          ctx.lineWidth = 2;
           for (let c = 1; c <= numChevrons; c++) {
             const ratio = c / (numChevrons + 1);
-            const cy = tailY + trailLen * ratio;
-            const clw = laneW * 0.08;
-
+            const p = pTail + (pHead - pTail) * ratio;
+            const cy = perspY(p, topY, hitY);
+            const cScale = perspScale(p);
+            const clw = laneW * 0.08 * cScale;
+            ctx.strokeStyle = `rgba(255,255,255,${0.3 + 0.5 * cScale})`;
+            ctx.lineWidth = 1 + cScale;
             ctx.beginPath();
             ctx.moveTo(cx - clw, cy - clw * 0.65);
             ctx.lineTo(cx, cy + clw * 0.45);
@@ -421,21 +450,40 @@ const TrapTapGameplay: React.FC<Props> = ({
             ctx.stroke();
           }
 
-          // Tail Release Cap
-          const tailR = recR * 0.65;
-          ctx.fillStyle = 'rgba(10,5,20,0.95)';
-          ctx.strokeStyle = rgba(col, 0.95);
-          ctx.lineWidth = Math.max(1.4, tailR * 0.12);
-          ctx.beginPath();
-          ctx.arc(cx, tailY, tailR * 0.78, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+          // ── HOLD GLOW on perfect / active holds ──
+          if (n.holdActive) {
+            const glowPhase = (now / 120) % (Math.PI * 2);
+            const glowPulse = 0.6 + 0.4 * Math.sin(glowPhase);
+            const glowR = recR * (1.4 + glowPulse * 0.6);
+            // Outer pulsing ring
+            const glowGr = ctx.createRadialGradient(cx, hitY, recR * 0.3, cx, hitY, glowR * 2);
+            glowGr.addColorStop(0, rgba(col, 0.45 * glowPulse));
+            glowGr.addColorStop(0.5, rgba(col, 0.18 * glowPulse));
+            glowGr.addColorStop(1, rgba(col, 0));
+            ctx.fillStyle = glowGr;
+            ctx.beginPath(); ctx.arc(cx, hitY, glowR * 2, 0, Math.PI * 2); ctx.fill();
+            // Bright expanding ring
+            ctx.strokeStyle = rgba(col, 0.7 * glowPulse);
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.arc(cx, hitY, recR * (1.0 + glowPulse * 0.5), 0, Math.PI * 2); ctx.stroke();
+            // Inner hot core
+            ctx.strokeStyle = `rgba(255,255,255,${0.5 * glowPulse})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(cx, hitY, recR * (0.6 + glowPulse * 0.2), 0, Math.PI * 2); ctx.stroke();
+          }
 
-          ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.arc(cx, tailY, tailR * 0.45, 0, Math.PI * 2);
-          ctx.stroke();
+          // Tail Release Cap (perspective-scaled)
+          const tailScale = perspScale(pTail);
+          const tailR = recR * 0.65 * tailScale;
+          if (tailR > 2) {
+            ctx.fillStyle = 'rgba(10,5,20,0.95)';
+            ctx.strokeStyle = rgba(col, 0.95);
+            ctx.lineWidth = Math.max(1.4, tailR * 0.12);
+            ctx.beginPath(); ctx.arc(cx, tailY, tailR * 0.78, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(cx, tailY, tailR * 0.45, 0, Math.PI * 2); ctx.stroke();
+          }
         }
       }
 
@@ -445,18 +493,17 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.lineWidth = 2 + hf * 3;
       ctx.beginPath(); ctx.moveTo(centers[0] - recR, hitY); ctx.lineTo(centers[LANE_COUNT - 1] + recR, hitY); ctx.stroke();
 
-      // Draw normal notes (straight vertical travel)
+      // Draw normal notes — perspective rush (accelerate toward the player)
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
         const n = eng.chart[i];
         if (n.time > t + eng.lead) break;
         if (n.hit || n.missed || n.holdHeadHit) continue;
         const p = (t - (n.time - eng.lead)) / eng.lead;
         if (p < 0 || p > 1.02) continue;
-        // Straight linear interpolation — no power curve winding
         const x = centers[n.lane];
-        const y = topY + (hitY - topY) * p;
-        // Scale notes slightly as they approach for visual depth
-        const scale = 0.5 + 0.5 * p;
+        // Perspective curve — notes rush toward you from a distance
+        const y = perspY(p, topY, hitY);
+        const scale = perspScale(p);
         drawNote(x, y, recR * scale, activeLaneColors[n.lane]);
       }
 
