@@ -25,7 +25,7 @@ export const SONGS: TrapTapSong[] = [
     duration: 273.09,
     beatOffset: 1.767,
     genre: 'TRAP BLUES',
-    audioUrl: '/assets/games/traptap/audio/june-nineteenth.m4a',
+    audioUrl: '/assets/games/traptap/audio/june-nineteenth.m4a?v=2',
     coverArtUrl: COVERS.neonSkyline,
   },
   {
