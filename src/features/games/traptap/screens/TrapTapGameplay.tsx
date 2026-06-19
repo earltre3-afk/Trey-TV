@@ -123,6 +123,7 @@ const TrapTapGameplay: React.FC<Props> = ({
     // ---------- geometry (3D HIGHWAY PERSPECTIVE) ----------
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
+      eng.canvasRect = rect;
       const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
@@ -371,10 +372,14 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     // ---------- drawing (3D HIGHWAY) ----------
     const drawStar = (cx: number, cy: number, rx: number, ry: number, col: string) => {
+      // Outer glow shape instead of slow shadowBlur
+      ctx.fillStyle = rgba(col, 0.4);
+      ctx.beginPath();
+      ctx.arc(cx, cy, rx * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
       // 4-pointed squircle-like star inside notes and receptor pads matching reference
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = rgba(col, 1.0);
-      ctx.shadowBlur = rx * 0.8;
       ctx.beginPath();
       ctx.moveTo(cx, cy - ry);
       ctx.quadraticCurveTo(cx, cy, cx + rx, cy);
@@ -383,7 +388,6 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.quadraticCurveTo(cx, cy, cx, cy - ry);
       ctx.closePath();
       ctx.fill();
-      ctx.shadowBlur = 0; // reset
     };
 
     // 3D perspective helpers
@@ -1025,12 +1029,16 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.stroke();
         } 
         else if (pt.type === 'spark') {
-          // Draw diamond shapes with glowing core
-          ctx.fillStyle = rgba(pt.col, a * 0.85);
-          ctx.shadowColor = pt.col;
-          ctx.shadowBlur = pt.r * 2.5 * a;
-          
           const pr = pt.r * a;
+          
+          // Draw outer glow (larger semi-transparent circle) instead of slow shadowBlur
+          ctx.fillStyle = rgba(pt.col, a * 0.25);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pr * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw diamond shapes
+          ctx.fillStyle = rgba(pt.col, a * 0.9);
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y - pr);
           ctx.lineTo(pt.x + pr * 0.6, pt.y);
@@ -1111,6 +1119,7 @@ const TrapTapGameplay: React.FC<Props> = ({
                   const px = g.botCenters[n.lane] + (Math.random() - 0.5) * 20;
                   const py = g.hitY;
                   eng.particles.push({
+                    type: 'spark',
                     x: px, y: py,
                     vx: (Math.random() - 0.5) * 110,
                     vy: -140 - Math.random() * 140,
@@ -1231,9 +1240,8 @@ const TrapTapGameplay: React.FC<Props> = ({
     const activePointers = new Map<number, number>();
 
     const getLaneFromXY = (clientX: number, clientY: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return 0;
-      const rect = canvas.getBoundingClientRect();
+      const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
+      if (!rect) return 0;
       const relativeX = clientX - rect.left;
       const relativeY = clientY - rect.top;
       
@@ -1285,8 +1293,18 @@ const TrapTapGameplay: React.FC<Props> = ({
         }
       }
     };
+    const onBlur = () => {
+      for (let i = 0; i < LANE_COUNT; i++) {
+        if (eng.keyHeld[i] || eng.laneHeld[i]) {
+          eng.keyHeld[i] = false;
+          eng.laneHeld[i] = false;
+          releaseLane(i);
+        }
+      }
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
 
     const laneHandlers: Array<{ el: HTMLDivElement; downFn: any; moveFn: any; upFn: any }> = [];
     laneRefs.current.forEach((el, lane) => {
@@ -1359,6 +1377,7 @@ const TrapTapGameplay: React.FC<Props> = ({
       window.removeEventListener('resize', resize);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
       laneHandlers.forEach(({ el, downFn, moveFn, upFn }) => {
         el.removeEventListener('pointerdown', downFn);
         el.removeEventListener('pointermove', moveFn);
