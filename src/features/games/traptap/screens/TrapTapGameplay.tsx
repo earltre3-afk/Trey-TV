@@ -559,59 +559,45 @@ const TrapTapGameplay: React.FC<Props> = ({
       }
 
       // ── Draw lane dividers and glowing side rails ──
-      const leftCol = activeLaneColors[0];
-      const rightCol = activeLaneColors[LANE_COUNT - 1];
-
-      // Centered lane lines running down the middle of each lane, aligned with discs and receptor pads
+      // Centered lane lines running down the middle of each lane, aligned with discs and receptor pads.
+      // Far-left (0) and far-right (LANE_COUNT-1) are styled as thick glowing neon rails.
       for (let i = 0; i < LANE_COUNT; i++) {
         const col = activeLaneColors[i];
         const tx = topCenters[i];
         const bx = botCenters[i];
 
-        // Glow line
-        ctx.strokeStyle = rgba(col, 0.15);
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(tx, vanishY);
-        ctx.lineTo(bx, H);
-        ctx.stroke();
+        if (i === 0 || i === LANE_COUNT - 1) {
+          // Style as a thick glowing side rail, centered on the lane notes
+          ctx.strokeStyle = rgba(col, 0.4);
+          ctx.lineWidth = 14;
+          ctx.beginPath();
+          ctx.moveTo(tx, vanishY);
+          ctx.lineTo(bx, H);
+          ctx.stroke();
 
-        // Core line
-        ctx.strokeStyle = rgba(col, 0.45);
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(tx, vanishY);
-        ctx.lineTo(bx, H);
-        ctx.stroke();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(tx, vanishY);
+          ctx.lineTo(bx, H);
+          ctx.stroke();
+        } else {
+          // Style as an inner lane guide
+          ctx.strokeStyle = rgba(col, 0.15);
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.moveTo(tx, vanishY);
+          ctx.lineTo(bx, H);
+          ctx.stroke();
+
+          ctx.strokeStyle = rgba(col, 0.45);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(tx, vanishY);
+          ctx.lineTo(bx, H);
+          ctx.stroke();
+        }
       }
-
-      // Thick glowing side rail: Left
-      ctx.strokeStyle = rgba(leftCol, 0.4);
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.moveTo(topBoundaries[0], vanishY);
-      ctx.lineTo(botBoundaries[0], H);
-      ctx.stroke();
-      ctx.strokeStyle = leftCol;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(topBoundaries[0], vanishY);
-      ctx.lineTo(botBoundaries[0], H);
-      ctx.stroke();
-
-      // Thick glowing side rail: Right
-      ctx.strokeStyle = rgba(rightCol, 0.4);
-      ctx.lineWidth = 14;
-      ctx.beginPath();
-      ctx.moveTo(topBoundaries[LANE_COUNT], vanishY);
-      ctx.lineTo(botBoundaries[LANE_COUNT], H);
-      ctx.stroke();
-      ctx.strokeStyle = rightCol;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(topBoundaries[LANE_COUNT], vanishY);
-      ctx.lineTo(botBoundaries[LANE_COUNT], H);
-      ctx.stroke();
 
       // ── Draw hold trails ──
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
