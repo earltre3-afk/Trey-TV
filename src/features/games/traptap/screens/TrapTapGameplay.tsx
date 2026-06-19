@@ -533,12 +533,16 @@ const TrapTapGameplay: React.FC<Props> = ({
       const beatEnv = Math.max(0, 1 - (beatPhase - Math.floor(beatPhase)));
 
       // ── Draw dark road surface background trapezoid ──
+      // Project the boundaries to the bottom H of the canvas so the road borders stay straight relative to the lanes
+      const pBoundLeft = topBoundaries[0] + (botBoundaries[0] - topBoundaries[0]) * ((H - vanishY) / (hitY - vanishY));
+      const pBoundRight = topBoundaries[LANE_COUNT] + (botBoundaries[LANE_COUNT] - topBoundaries[LANE_COUNT]) * ((H - vanishY) / (hitY - vanishY));
+
       ctx.fillStyle = 'rgba(4, 2, 10, 0.72)';
       ctx.beginPath();
       ctx.moveTo(topBoundaries[0], vanishY);
       ctx.lineTo(topBoundaries[LANE_COUNT], vanishY);
-      ctx.lineTo(botBoundaries[LANE_COUNT], H);
-      ctx.lineTo(botBoundaries[0], H);
+      ctx.lineTo(pBoundRight, H);
+      ctx.lineTo(pBoundLeft, H);
       ctx.closePath();
       ctx.fill();
 
@@ -560,11 +564,13 @@ const TrapTapGameplay: React.FC<Props> = ({
 
       // ── Draw lane dividers and glowing side rails ──
       // Centered lane lines running down the middle of each lane, aligned with discs and receptor pads.
+      // We project the bottom end to H so the line passes exactly through (botCenters[i], hitY) at the hit line.
       // Far-left (0) and far-right (LANE_COUNT-1) are styled as thick glowing neon rails.
       for (let i = 0; i < LANE_COUNT; i++) {
         const col = activeLaneColors[i];
         const tx = topCenters[i];
         const bx = botCenters[i];
+        const pbx = tx + (bx - tx) * ((H - vanishY) / (hitY - vanishY));
 
         if (i === 0 || i === LANE_COUNT - 1) {
           // Style as a thick glowing side rail, centered on the lane notes
@@ -572,14 +578,14 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.lineWidth = 14;
           ctx.beginPath();
           ctx.moveTo(tx, vanishY);
-          ctx.lineTo(bx, H);
+          ctx.lineTo(pbx, H);
           ctx.stroke();
 
           ctx.strokeStyle = col;
           ctx.lineWidth = 4;
           ctx.beginPath();
           ctx.moveTo(tx, vanishY);
-          ctx.lineTo(bx, H);
+          ctx.lineTo(pbx, H);
           ctx.stroke();
         } else {
           // Style as an inner lane guide
@@ -587,14 +593,14 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.lineWidth = 6;
           ctx.beginPath();
           ctx.moveTo(tx, vanishY);
-          ctx.lineTo(bx, H);
+          ctx.lineTo(pbx, H);
           ctx.stroke();
 
           ctx.strokeStyle = rgba(col, 0.45);
           ctx.lineWidth = 1.5;
           ctx.beginPath();
           ctx.moveTo(tx, vanishY);
-          ctx.lineTo(bx, H);
+          ctx.lineTo(pbx, H);
           ctx.stroke();
         }
       }
@@ -889,10 +895,11 @@ const TrapTapGameplay: React.FC<Props> = ({
       
       const g = eng.geo;
       if (!g) return 0;
-      const { vanishY, H, topBoundaries, botBoundaries } = g;
+      const { vanishY, H, hitY, topBoundaries, botBoundaries } = g;
       
       // Interpolate based on screen-space vertical coordinates
-      const t = Math.max(0, Math.min(1, (relativeY - vanishY) / (H - vanishY)));
+      // Map depth relative to hitY since our road guides pass through botBoundaries at hitY.
+      const t = Math.max(0, (relativeY - vanishY) / (hitY - vanishY));
       
       // Check which trapezoidal lane the touch coordinates fall within
       for (let i = 0; i < LANE_COUNT; i++) {
