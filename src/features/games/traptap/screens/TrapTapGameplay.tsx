@@ -1374,6 +1374,103 @@ const TrapTapGameplay: React.FC<Props> = ({
       }
     };
 
+    // ---------- Safari specific touch event listeners to bypass pointer event gestures ----------
+    const onTouchStart = (e: TouchEvent) => {
+      if (!eng.running) return;
+      e.preventDefault(); // blocks pinch-zoom, double-tap zoom, scrolling
+      
+      const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
+      if (!rect) return;
+      
+      const newHeld = [false, false, false, false];
+      const oldHeld = [...eng.laneHeld];
+      activePointers.clear();
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const relativeY = touch.clientY - rect.top;
+        const H = rect.height;
+        if (relativeY < H * 0.35) continue;
+        
+        const lane = getLaneFromXY(touch.clientX, touch.clientY);
+        activePointers.set(touch.identifier, lane);
+        newHeld[lane] = true;
+      }
+      
+      for (let i = 0; i < LANE_COUNT; i++) {
+        const isNowHeld = newHeld[i] || eng.keyHeld[i];
+        eng.laneHeld[i] = isNowHeld;
+        if (isNowHeld && !oldHeld[i]) {
+          pressLane(i);
+        }
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!eng.running) return;
+      e.preventDefault(); // blocks scroll gestures completely on mobile Safari
+      
+      const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
+      if (!rect) return;
+      
+      const newHeld = [false, false, false, false];
+      const oldHeld = [...eng.laneHeld];
+      activePointers.clear();
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const relativeY = touch.clientY - rect.top;
+        const H = rect.height;
+        if (relativeY < H * 0.35) continue;
+        
+        const lane = getLaneFromXY(touch.clientX, touch.clientY);
+        activePointers.set(touch.identifier, lane);
+        newHeld[lane] = true;
+      }
+      
+      for (let i = 0; i < LANE_COUNT; i++) {
+        const isNowHeld = newHeld[i] || eng.keyHeld[i];
+        eng.laneHeld[i] = isNowHeld;
+        
+        if (isNowHeld && !oldHeld[i]) {
+          pressLane(i);
+        } else if (!isNowHeld && oldHeld[i]) {
+          releaseLane(i);
+        }
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!eng.running) return;
+      e.preventDefault();
+      
+      const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
+      if (!rect) return;
+      
+      const newHeld = [false, false, false, false];
+      const oldHeld = [...eng.laneHeld];
+      activePointers.clear();
+      
+      for (let i = 0; i < e.touches.length; i++) {
+        const touch = e.touches[i];
+        const relativeY = touch.clientY - rect.top;
+        const H = rect.height;
+        if (relativeY < H * 0.35) continue;
+        
+        const lane = getLaneFromXY(touch.clientX, touch.clientY);
+        activePointers.set(touch.identifier, lane);
+        newHeld[lane] = true;
+      }
+      
+      for (let i = 0; i < LANE_COUNT; i++) {
+        const isNowHeld = newHeld[i] || eng.keyHeld[i];
+        eng.laneHeld[i] = isNowHeld;
+        if (!isNowHeld && oldHeld[i]) {
+          releaseLane(i);
+        }
+      }
+    };
+
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', onBlur);
@@ -1382,6 +1479,14 @@ const TrapTapGameplay: React.FC<Props> = ({
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
+
+    const rootEl = rootRef.current;
+    if (rootEl) {
+      rootEl.addEventListener('touchstart', onTouchStart, { passive: false });
+      rootEl.addEventListener('touchmove', onTouchMove, { passive: false });
+      rootEl.addEventListener('touchend', onTouchEnd, { passive: false });
+      rootEl.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    }
 
     return () => {
       window.removeEventListener('resize', resize);
@@ -1393,6 +1498,12 @@ const TrapTapGameplay: React.FC<Props> = ({
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
+      if (rootEl) {
+        rootEl.removeEventListener('touchstart', onTouchStart);
+        rootEl.removeEventListener('touchmove', onTouchMove);
+        rootEl.removeEventListener('touchend', onTouchEnd);
+        rootEl.removeEventListener('touchcancel', onTouchEnd);
+      }
       teardown();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
