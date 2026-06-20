@@ -91,6 +91,11 @@ export interface GenerateOptions {
    * providers rely on prompt instructions + caller-side validation.
    */
   responseSchema?: Record<string, unknown>;
+  /**
+   * Optional thinking budget configuration for Gemini 2.5 models.
+   * If set to 0, thinking process will be disabled (fast direct response).
+   */
+  thinkingBudget?: number;
 }
 
 export interface GenerateVisionOptions extends GenerateOptions {
@@ -187,14 +192,22 @@ export async function aiGenerateText(options: GenerateOptions): Promise<{ text: 
 
   // Default: gemini
   const { genai, model } = buildGeminiClient();
+  const geminiConfig: Record<string, any> = {
+    systemInstruction,
+    temperature,
+    maxOutputTokens: maxTokens,
+  };
+
+  if (options.thinkingBudget !== undefined) {
+    geminiConfig.thinkingConfig = { thinkingBudget: options.thinkingBudget };
+  } else if (maxTokens && maxTokens < 1024) {
+    geminiConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
+
   const result = await genai.models.generateContent({
     model,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    config: {
-      systemInstruction,
-      temperature,
-      maxOutputTokens: maxTokens,
-    } as Record<string, unknown>,
+    config: geminiConfig,
   });
 
   const text =
@@ -324,22 +337,36 @@ export async function aiGenerateJson<T>(options: GenerateOptions): Promise<T> {
 
   // Default: gemini
   const { genai, model } = buildGeminiClient();
+  const geminiConfig: Record<string, any> = {
+    systemInstruction,
+    temperature,
+    maxOutputTokens: maxTokens,
+    responseMimeType: "application/json",
+    ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
+  };
+
+  if (options.thinkingBudget !== undefined) {
+    geminiConfig.thinkingConfig = { thinkingBudget: options.thinkingBudget };
+  } else if (maxTokens && maxTokens < 1024) {
+    geminiConfig.thinkingConfig = { thinkingBudget: 0 };
+  }
+
   const result = await genai.models.generateContent({
     model,
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    config: {
-      systemInstruction,
-      temperature,
-      maxOutputTokens: maxTokens,
-      responseMimeType: "application/json",
-      ...(options.responseSchema ? { responseSchema: options.responseSchema } : {}),
-    } as any,
+    config: geminiConfig,
   });
 
   const text =
     (result as any).text ?? (result as any).candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
-  return JSON.parse(sanitize(text)) as T;
+  try {
+    return JSON.parse(sanitize(text)) as T;
+  } catch (parseErr) {
+    console.error("[aiGenerateJson] JSON Parse Error. Raw Text was:", JSON.stringify(text));
+    console.error("[aiGenerateJson] Full Gemini Result:", JSON.stringify(result, null, 2));
+    throw parseErr;
+  }
 }
 
 // 3. Vision Generation (Image-to-JSON)
