@@ -66,6 +66,7 @@ const TrapTapGameplay: React.FC<Props> = ({
   onExit,
 }) => {
   const [phase, setPhase] = useState<'ready' | 'playing' | 'paused'>('ready');
+  const [errorState, setErrorState] = useState<string | null>(null);
   const isJune = isJuneteenthSong(song);
   const laneColors = isJune ? JUNETEENTH_LANE_COLORS : LANE_COLORS;
 
@@ -419,24 +420,19 @@ const TrapTapGameplay: React.FC<Props> = ({
       const ry = rx * squash; // squashed top face
       const thickness = rx * 0.35; // height of the 3D cylinder
       
-      // 0. Ambient shadow/glow on the road beneath the disc
+      // 0. Ambient shadow/glow on the road beneath the disc (translucent ellipse instead of radial gradient)
       const shadowY = cy + thickness;
-      const shGrad = ctx.createRadialGradient(cx, shadowY, 0, cx, shadowY, rx * 1.5);
-      shGrad.addColorStop(0, rgba(col, 0.45));
-      shGrad.addColorStop(0.5, rgba(col, 0.12));
-      shGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = shGrad;
+      ctx.fillStyle = rgba(col, 0.14);
       ctx.beginPath();
       ctx.ellipse(cx, shadowY, rx * 1.5, ry * 1.5, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = rgba(col, 0.35);
+      ctx.beginPath();
+      ctx.ellipse(cx, shadowY, rx * 0.75, ry * 0.75, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      // 1. Draw side wall (cylinder height extrusion)
-      const sideGrad = ctx.createLinearGradient(cx - rx, cy, cx + rx, cy + thickness);
-      sideGrad.addColorStop(0, rgba(col, 0.28));
-      sideGrad.addColorStop(0.3, rgba(col, 0.68));
-      sideGrad.addColorStop(0.7, rgba(col, 0.88));
-      sideGrad.addColorStop(1, rgba(col, 0.28));
-      ctx.fillStyle = sideGrad;
+      // 1. Draw side wall (cylinder height extrusion - solid darker color instead of linear gradient)
+      ctx.fillStyle = rgba(col, 0.78);
       
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, rx, ry, 0, 0, Math.PI);
@@ -456,14 +452,14 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3. Ambient face glow
-      const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-      faceGlow.addColorStop(0, rgba(col, 0.6));
-      faceGlow.addColorStop(0.85, rgba(col, 0.15));
-      faceGlow.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = faceGlow;
+      // 3. Ambient face glow (layered ellipses instead of radial gradient)
+      ctx.fillStyle = rgba(col, 0.16);
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = rgba(col, 0.45);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // 4. Bright outer glowing rim
@@ -513,23 +509,18 @@ const TrapTapGameplay: React.FC<Props> = ({
       // Receptors depress (thickness decreases) when tapped!
       const thickness = R * 0.42 * (1 - fl * 0.22);
       
-      // 1. Ambient glow on the road beneath the receptor
-      const ambGr = ctx.createRadialGradient(cx, cy + thickness, 0, cx, cy + thickness, pR * 2.8);
-      ambGr.addColorStop(0, rgba(col, 0.42 + fl * 0.48));
-      ambGr.addColorStop(0.4, rgba(col, 0.16 + fl * 0.2));
-      ambGr.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = ambGr;
+      // 1. Ambient glow on the road beneath the receptor (layered ellipses instead of radial gradient)
+      ctx.fillStyle = rgba(col, (0.15 + fl * 0.18));
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, pR * 2.8, pRy * 2.8, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = rgba(col, (0.35 + fl * 0.35));
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + thickness, pR * 1.4, pRy * 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      // 2. Draw 3D side wall
-      const wallGrad = ctx.createLinearGradient(cx - pR, cy, cx + pR, cy + thickness);
-      wallGrad.addColorStop(0, rgba(col, 0.2));
-      wallGrad.addColorStop(0.3, rgba(col, 0.6 + fl * 0.2));
-      wallGrad.addColorStop(0.7, rgba(col, 0.8 + fl * 0.2));
-      wallGrad.addColorStop(1, rgba(col, 0.2));
-      ctx.fillStyle = wallGrad;
+      // 2. Draw 3D side wall (solid color instead of linear gradient)
+      ctx.fillStyle = rgba(col, 0.65 + fl * 0.2);
       
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, pR, pRy, 0, 0, Math.PI);
@@ -549,14 +540,14 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Top face circular radial glow
-      const faceGlow = ctx.createRadialGradient(cx, cy, 0, cx, cy, pR);
-      faceGlow.addColorStop(0, rgba(col, 0.6 + fl * 0.38));
-      faceGlow.addColorStop(0.85, rgba(col, 0.18 + fl * 0.18));
-      faceGlow.addColorStop(1, rgba(col, 0));
-      ctx.fillStyle = faceGlow;
+      // 4. Top face circular radial glow (layered ellipses instead of radial gradient)
+      ctx.fillStyle = rgba(col, (0.16 + fl * 0.16));
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = rgba(col, (0.45 + fl * 0.3));
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, pR * 0.72, pRy * 0.72, 0, 0, Math.PI * 2);
       ctx.fill();
 
       // 5. Thick outer glowing rim
@@ -626,12 +617,8 @@ const TrapTapGameplay: React.FC<Props> = ({
         ctx.ellipse(cx - 2 * fl, cy, pR * (ringProgress * 0.9), pRy * (ringProgress * 0.9), 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Inner shockwave glow
-        const innerGlow = ctx.createRadialGradient(cx, cy, pR * 0.5, cx, cy, pR * ringProgress);
-        innerGlow.addColorStop(0, 'rgba(0,0,0,0)');
-        innerGlow.addColorStop(0.8, rgba(col, fl * 0.15));
-        innerGlow.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = innerGlow;
+        // Inner shockwave glow (layered ellipse instead of radial gradient)
+        ctx.fillStyle = rgba(col, fl * 0.08);
         ctx.beginPath();
         ctx.ellipse(cx, cy, pR * ringProgress, pRy * ringProgress, 0, 0, Math.PI * 2);
         ctx.fill();
@@ -660,28 +647,34 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.closePath();
       ctx.fill();
 
-      // ── Draw horizon separator line and city background grid glow ──
-      const horGrad = ctx.createLinearGradient(0, vanishY, W, vanishY);
-      horGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      horGrad.addColorStop(0.15, rgba(isJune ? '#E31B23' : '#FF0080', 0.28));
-      horGrad.addColorStop(0.5, '#ffffff');
-      horGrad.addColorStop(0.85, rgba(isJune ? '#00843D' : '#00B4FF', 0.28));
-      horGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.strokeStyle = horGrad;
-      ctx.lineWidth = 2.5;
+      // ── Draw horizon separator line and city background grid glow (layered translucency instead of gradients)
+      ctx.strokeStyle = rgba(isJune ? '#E31B23' : '#FF0080', 0.35);
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(0, vanishY);
+      ctx.lineTo(W, vanishY);
+      ctx.stroke();
+      
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(0, vanishY);
       ctx.lineTo(W, vanishY);
       ctx.stroke();
 
-      // Horizon diffuse background glow
-      const horizonGlow = ctx.createRadialGradient(W / 2, vanishY, 0, W / 2, vanishY, H * 0.18);
-      horizonGlow.addColorStop(0, rgba(isJune ? '#E31B23' : '#B026FF', 0.4));
-      horizonGlow.addColorStop(0.5, rgba(isJune ? '#FFD700' : '#00B4FF', 0.15));
-      horizonGlow.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = horizonGlow;
+      // Horizon diffuse background glow (layered circles instead of radial gradient)
+      const glowRad = H * 0.18;
+      ctx.fillStyle = rgba(isJune ? '#E31B23' : '#B026FF', 0.18);
       ctx.beginPath();
-      ctx.arc(W / 2, vanishY, H * 0.18, 0, Math.PI * 2);
+      ctx.arc(W / 2, vanishY, glowRad, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = rgba(isJune ? '#FFD700' : '#00B4FF', 0.12);
+      ctx.beginPath();
+      ctx.arc(W / 2, vanishY, glowRad * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.beginPath();
+      ctx.arc(W / 2, vanishY, glowRad * 0.25, 0, Math.PI * 2);
       ctx.fill();
 
       // ── Draw perspective grid lines (scrolling beats as laser lines) ──
@@ -802,15 +795,15 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.ellipse(px, ly, pilW * 1.8, pilW * 0.7, 0, 0, Math.PI * 2);
           ctx.fill();
           
-          // Glowing beam tube
-          const pilGrad = ctx.createLinearGradient(px, ly, px, ly - pilH);
-          pilGrad.addColorStop(0, rgba(col, 0.8));
-          pilGrad.addColorStop(0.5, rgba(col, 0.4));
-          pilGrad.addColorStop(1, rgba(flareCol, 0.95));
-          
-          ctx.fillStyle = pilGrad;
+          // Glowing beam tube (solid translucent layers instead of linear gradient)
+          ctx.fillStyle = rgba(col, 0.65);
           ctx.beginPath();
           ctx.roundRect(px - pilW / 2, ly - pilH, pilW, pilH, pilW / 2);
+          ctx.fill();
+
+          ctx.fillStyle = rgba(flareCol, 0.9);
+          ctx.beginPath();
+          ctx.roundRect(px - pilW / 2, ly - pilH, pilW, pilH * 0.35, pilW / 2);
           ctx.fill();
           
           // Specular highlight on post
@@ -821,16 +814,14 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.lineTo(px - pilW * 0.2, ly - pilH);
           ctx.stroke();
           
-          // Light cap aura glow
+          // Light cap aura glow (layered circles instead of radial gradient)
           const capR = pilW * 1.6;
-          const capGrad = ctx.createRadialGradient(px, ly - pilH, 0, px, ly - pilH, capR * 2.8);
-          capGrad.addColorStop(0, '#ffffff');
-          capGrad.addColorStop(0.3, rgba(flareCol, 0.85));
-          capGrad.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.fillStyle = capGrad;
-          ctx.beginPath();
-          ctx.arc(px, ly - pilH, capR * 2.8, 0, Math.PI * 2);
-          ctx.fill();
+          ctx.fillStyle = rgba(flareCol, 0.28);
+          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 2.8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = rgba(flareCol, 0.6);
+          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 1.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 0.65, 0, Math.PI * 2); ctx.fill();
         };
         
         drawPillar(lx, true);
@@ -868,16 +859,14 @@ const TrapTapGameplay: React.FC<Props> = ({
             rightPts.push({ x: cx + w, y: cy });
           }
 
-          // Filled trail
+          // Filled trail (solid translucent instead of linear gradient)
           ctx.beginPath();
           ctx.moveTo(leftPts[0].x, leftPts[0].y);
           for (let s = 1; s <= numSteps; s++) ctx.lineTo(leftPts[s].x, leftPts[s].y);
           for (let s = numSteps; s >= 0; s--) ctx.lineTo(rightPts[s].x, rightPts[s].y);
           ctx.closePath();
-          const tGrad = ctx.createLinearGradient(0, leftPts[0].y, 0, leftPts[numSteps].y);
-          tGrad.addColorStop(0, rgba(col, 0.05));
-          tGrad.addColorStop(1, rgba(col, n.holdActive ? 0.7 : 0.35));
-          ctx.fillStyle = tGrad; ctx.fill();
+          ctx.fillStyle = rgba(col, n.holdActive ? 0.45 : 0.16);
+          ctx.fill();
 
           // Techy Ladder/Mesh texture along the hold trail
           ctx.strokeStyle = rgba('#ffffff', n.holdActive ? 0.25 : 0.08);
@@ -902,18 +891,20 @@ const TrapTapGameplay: React.FC<Props> = ({
           for (let s = 0; s <= numSteps; s++) { s === 0 ? ctx.moveTo(rightPts[s].x, rightPts[s].y) : ctx.lineTo(rightPts[s].x, rightPts[s].y); }
           ctx.stroke();
 
-          // Hold glow at hit line
+          // Hold glow at hit line (layered translucency instead of radial gradient)
           if (n.holdActive) {
             const hx = botCenters[n.lane];
             const glowPhase = (now / 120) % (Math.PI * 2);
             const glowPulse = 0.6 + 0.4 * Math.sin(glowPhase);
             const glowR = recR * (1.5 + glowPulse * 0.7);
-            const gGr = ctx.createRadialGradient(hx, hitY, recR * 0.2, hx, hitY, glowR * 2);
-            gGr.addColorStop(0, rgba(col, 0.5 * glowPulse));
-            gGr.addColorStop(0.5, rgba(col, 0.2 * glowPulse));
-            gGr.addColorStop(1, rgba(col, 0));
-            ctx.fillStyle = gGr;
+            
+            ctx.fillStyle = rgba(col, 0.14 * glowPulse);
             ctx.beginPath(); ctx.arc(hx, hitY, glowR * 2, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = rgba(col, 0.32 * glowPulse);
+            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 1.0, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = rgba('#ffffff', 0.45 * glowPulse);
+            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 0.4, 0, Math.PI * 2); ctx.fill();
+            
             ctx.strokeStyle = rgba(col, 0.8 * glowPulse); ctx.lineWidth = 2.5;
             ctx.beginPath(); ctx.ellipse(hx, hitY, recR * (1.0 + glowPulse * 0.4), recR * 0.35 * (1.0 + glowPulse * 0.4), 0, 0, Math.PI * 2); ctx.stroke();
           }
@@ -942,14 +933,12 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.moveTo(botBoundaries[0], hitY);
       ctx.lineTo(botBoundaries[LANE_COUNT], hitY);
       ctx.stroke();
-      // Bright flare burst on hit
+      // Bright flare burst on hit (solid translucent bars instead of linear gradient)
       if (hf > 0.1) {
-        const flareGr = ctx.createLinearGradient(botBoundaries[0], hitY, botBoundaries[LANE_COUNT], hitY);
-        flareGr.addColorStop(0, `rgba(255,255,255,0)`);
-        flareGr.addColorStop(0.5, `rgba(255,255,255,${hf * 0.25})`);
-        flareGr.addColorStop(1, `rgba(255,255,255,0)`);
-        ctx.fillStyle = flareGr;
+        ctx.fillStyle = `rgba(255, 255, 255, ${hf * 0.14})`;
         ctx.fillRect(botBoundaries[0], hitY - 3 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]), 6 * hf);
+        ctx.fillStyle = `rgba(255, 255, 255, ${hf * 0.35})`;
+        ctx.fillRect(botBoundaries[0] + (botBoundaries[LANE_COUNT] - botBoundaries[0]) * 0.3, hitY - 1 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]) * 0.4, 2 * hf);
       }
 
       // ── Draw 3D vertical beam projection when lane is tapped ──
@@ -962,12 +951,8 @@ const TrapTapGameplay: React.FC<Props> = ({
           const beamW = recR * 1.4 * fl;
           const beamH = H * 0.45 * fl;
           
-          const beamGrad = ctx.createLinearGradient(0, hitY, 0, hitY - beamH);
-          beamGrad.addColorStop(0, rgba(col, fl * 0.35));
-          beamGrad.addColorStop(0.5, rgba(col, fl * 0.12));
-          beamGrad.addColorStop(1, 'rgba(0,0,0,0)');
-          
-          ctx.fillStyle = beamGrad;
+          // Tap vertical beam (solid translucent instead of linear gradient)
+          ctx.fillStyle = rgba(col, fl * 0.18);
           ctx.beginPath();
           const tScale = perspScale(1 - fl * 0.45);
           const topW = beamW * tScale;
@@ -1076,93 +1061,99 @@ const TrapTapGameplay: React.FC<Props> = ({
     // ---------- main loop ----------
     const loop = (now: number) => {
       if (!eng.running) return;
-      const dt = Math.min(0.05, (now - eng.lastT) / 1000); eng.lastT = now;
-      const audio = eng.audio;
-      if (!audio) { eng.raf = requestAnimationFrame(loop); return; }
-      eng.lead = leadVal();
-      const at = audio.currentTime;
-      const t = at + offsetSec();
-      const missWin = 0.18 * winScale();
+      try {
+        const dt = Math.min(0.05, (now - eng.lastT) / 1000); eng.lastT = now;
+        const audio = eng.audio;
+        if (!audio) { eng.raf = requestAnimationFrame(loop); return; }
+        eng.lead = leadVal();
+        const at = audio.currentTime;
+        const t = at + offsetSec();
+        const missWin = 0.18 * winScale();
 
-      while (eng.startIdx < eng.chart.length) {
-        const n = eng.chart[eng.startIdx];
-        if (n.hit || n.missed) { eng.startIdx++; continue; }
-        if (t > n.time + missWin) {
-          if (n.holdDuration && n.holdActive) break;
-          if (n.holdDuration && n.holdReleasedEarly) { eng.startIdx++; continue; }
-          n.missed = true; registerMiss(); eng.startIdx++; continue;
+        while (eng.startIdx < eng.chart.length) {
+          const n = eng.chart[eng.startIdx];
+          if (n.hit || n.missed) { eng.startIdx++; continue; }
+          if (t > n.time + missWin) {
+            if (n.holdDuration && n.holdActive) break;
+            if (n.holdDuration && n.holdReleasedEarly) { eng.startIdx++; continue; }
+            n.missed = true; registerMiss(); eng.startIdx++; continue;
+          }
+          break;
         }
-        break;
-      }
 
-      // Process hold ticks and success/fails
-      for (let i = eng.startIdx; i < eng.chart.length; i++) {
-        const n = eng.chart[i];
-        if (n.time > t + eng.lead) break;
-        if (n.holdDuration && n.holdActive) {
-          const endTime = n.time + n.holdDuration;
-          if (t >= endTime) {
-            n.holdActive = false;
-            n.hit = true;
-            spawnParticles(n.lane, 'pp');
-          } else {
-            // Hold notes stay in their own lane — check only n.lane
-            if (!eng.laneHeld[n.lane]) {
+        // Process hold ticks and success/fails
+        for (let i = eng.startIdx; i < eng.chart.length; i++) {
+          const n = eng.chart[i];
+          if (n.time > t + eng.lead) break;
+          if (n.holdDuration && n.holdActive) {
+            const endTime = n.time + n.holdDuration;
+            if (t >= endTime) {
               n.holdActive = false;
-              n.holdReleasedEarly = true;
-              n.missed = true;
-              registerMiss();
+              n.hit = true;
+              spawnParticles(n.lane, 'pp');
             } else {
-              // Tick score
-              if (Math.random() < 0.22) {
-                eng.score += Math.round(1.2 * comboMult() * (eng.feverActive ? 2 : 1) * difficulty.mult);
-                const g = eng.geo;
-                if (g) {
-                  const px = g.botCenters[n.lane] + (Math.random() - 0.5) * 20;
-                  const py = g.hitY;
-                  eng.particles.push({
-                    type: 'spark',
-                    x: px, y: py,
-                    vx: (Math.random() - 0.5) * 110,
-                    vy: -140 - Math.random() * 140,
-                    life: 0, max: 0.35 + Math.random() * 0.25,
-                    col: activeLaneColors[n.lane], r: 1.2 + Math.random() * 2.2
-                  });
+              // Hold notes stay in their own lane — check only n.lane
+              if (!eng.laneHeld[n.lane]) {
+                n.holdActive = false;
+                n.holdReleasedEarly = true;
+                n.missed = true;
+                registerMiss();
+              } else {
+                // Tick score
+                if (Math.random() < 0.22) {
+                  eng.score += Math.round(1.2 * comboMult() * (eng.feverActive ? 2 : 1) * difficulty.mult);
+                  const g = eng.geo;
+                  if (g) {
+                    const px = g.botCenters[n.lane] + (Math.random() - 0.5) * 20;
+                    const py = g.hitY;
+                    eng.particles.push({
+                      type: 'spark',
+                      x: px, y: py,
+                      vx: (Math.random() - 0.5) * 110,
+                      vy: -140 - Math.random() * 140,
+                      life: 0, max: 0.35 + Math.random() * 0.25,
+                      col: activeLaneColors[n.lane], r: 1.2 + Math.random() * 2.2
+                    });
+                  }
                 }
               }
             }
           }
         }
-      }
 
-      if (eng.feverActive && t >= eng.feverUntil) deactivateFever();
-      if (eng.feverActive) eng.feverFill = Math.max(0, eng.feverFill - dt / 8);
+        if (eng.feverActive && t >= eng.feverUntil) deactivateFever();
+        if (eng.feverActive) eng.feverFill = Math.max(0, eng.feverFill - dt / 8);
 
-      if (els.current.feverFill) (els.current.feverFill as HTMLElement).style.width = (eng.feverFill * 100).toFixed(1) + '%';
-      if (els.current.bolt) {
-        const ready = eng.feverFill >= 1 || eng.feverActive;
-        const b = els.current.bolt as HTMLElement;
-        b.style.color = ready ? '#ffd23f' : 'rgba(255,255,255,.35)';
-        b.style.filter = ready ? 'drop-shadow(0 0 8px #ffd23f)' : '';
-      }
-      if (els.current.progress) (els.current.progress as HTMLElement).style.width = Math.min(100, (at / song.duration) * 100).toFixed(2) + '%';
-      setText('time', formatTime(at) + ' / ' + formatTime(song.duration));
-
-      for (let i = eng.particles.length - 1; i >= 0; i--) {
-        const pt = eng.particles[i]; pt.life += dt;
-        if (pt.life >= pt.max) { eng.particles.splice(i, 1); continue; }
-        if (pt.drag) {
-          pt.vx *= Math.pow(pt.drag, dt * 60);
-          pt.vy *= Math.pow(pt.drag, dt * 60);
+        if (els.current.feverFill) (els.current.feverFill as HTMLElement).style.width = (eng.feverFill * 100).toFixed(1) + '%';
+        if (els.current.bolt) {
+          const ready = eng.feverFill >= 1 || eng.feverActive;
+          const b = els.current.bolt as HTMLElement;
+          b.style.color = ready ? '#ffd23f' : 'rgba(255,255,255,.35)';
+          b.style.filter = ready ? 'drop-shadow(0 0 8px #ffd23f)' : '';
         }
-        pt.x += pt.vx * dt;
-        pt.y += pt.vy * dt;
+        if (els.current.progress) (els.current.progress as HTMLElement).style.width = Math.min(100, (at / song.duration) * 100).toFixed(2) + '%';
+        setText('time', formatTime(at) + ' / ' + formatTime(song.duration));
+
+        for (let i = eng.particles.length - 1; i >= 0; i--) {
+          const pt = eng.particles[i]; pt.life += dt;
+          if (pt.life >= pt.max) { eng.particles.splice(i, 1); continue; }
+          if (pt.drag) {
+            pt.vx *= Math.pow(pt.drag, dt * 60);
+            pt.vy *= Math.pow(pt.drag, dt * 60);
+          }
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+        }
+
+        draw(t, now);
+
+        if (at >= song.duration - 0.05) { finish(); return; }
+        eng.raf = requestAnimationFrame(loop);
+      } catch (err: any) {
+        console.error("TrapTap loop error:", err);
+        setErrorState(err?.stack || err?.message || String(err));
+        teardown();
       }
-
-      draw(t, now);
-
-      if (at >= song.duration - 0.05) { finish(); return; }
-      eng.raf = requestAnimationFrame(loop);
     };
     eng.loop = loop;
 
@@ -1308,6 +1299,7 @@ const TrapTapGameplay: React.FC<Props> = ({
       e.preventDefault();
     };
     const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return; // touch is handled exclusively by TouchEvents
       if (!eng.running) return;
       
       const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
@@ -1329,6 +1321,7 @@ const TrapTapGameplay: React.FC<Props> = ({
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return; // touch is handled exclusively by TouchEvents
       if (!activePointers.has(e.pointerId)) return;
       const oldLane = activePointers.get(e.pointerId);
       const newLane = getLaneFromXY(e.clientX, e.clientY);
@@ -1355,6 +1348,7 @@ const TrapTapGameplay: React.FC<Props> = ({
     };
 
     const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return; // touch is handled exclusively by TouchEvents
       if (!activePointers.has(e.pointerId)) return;
       const oldLane = activePointers.get(e.pointerId);
       activePointers.delete(e.pointerId);
@@ -1377,25 +1371,40 @@ const TrapTapGameplay: React.FC<Props> = ({
     // ---------- Safari specific touch event listeners to bypass pointer event gestures ----------
     const onTouchStart = (e: TouchEvent) => {
       if (!eng.running) return;
-      e.preventDefault(); // blocks pinch-zoom, double-tap zoom, scrolling
       
       const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
       if (!rect) return;
       
-      const newHeld = [false, false, false, false];
-      const oldHeld = [...eng.laneHeld];
-      activePointers.clear();
-      
+      // Only call preventDefault if touch is in the gameplay area (below 35% height) to keep top buttons clickable
+      let inGameplayArea = false;
       for (let i = 0; i < e.touches.length; i++) {
         const touch = e.touches[i];
+        const relativeY = touch.clientY - rect.top;
+        if (relativeY >= rect.height * 0.35) {
+          inGameplayArea = true;
+          break;
+        }
+      }
+      if (inGameplayArea) {
+        e.preventDefault();
+      }
+      
+      const oldHeld = [...eng.laneHeld];
+      
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
         const relativeY = touch.clientY - rect.top;
         const H = rect.height;
         if (relativeY < H * 0.35) continue;
         
         const lane = getLaneFromXY(touch.clientX, touch.clientY);
         activePointers.set(touch.identifier, lane);
-        newHeld[lane] = true;
       }
+      
+      const newHeld = [false, false, false, false];
+      activePointers.forEach((lane) => {
+        newHeld[lane] = true;
+      });
       
       for (let i = 0; i < LANE_COUNT; i++) {
         const isNowHeld = newHeld[i] || eng.keyHeld[i];
@@ -1408,59 +1417,63 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     const onTouchMove = (e: TouchEvent) => {
       if (!eng.running) return;
-      e.preventDefault(); // blocks scroll gestures completely on mobile Safari
       
       const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
-      if (!rect) return;
-      
-      const newHeld = [false, false, false, false];
-      const oldHeld = [...eng.laneHeld];
-      activePointers.clear();
-      
-      for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        const relativeY = touch.clientY - rect.top;
-        const H = rect.height;
-        if (relativeY < H * 0.35) continue;
-        
-        const lane = getLaneFromXY(touch.clientX, touch.clientY);
-        activePointers.set(touch.identifier, lane);
-        newHeld[lane] = true;
-      }
-      
-      for (let i = 0; i < LANE_COUNT; i++) {
-        const isNowHeld = newHeld[i] || eng.keyHeld[i];
-        eng.laneHeld[i] = isNowHeld;
-        
-        if (isNowHeld && !oldHeld[i]) {
-          pressLane(i);
-        } else if (!isNowHeld && oldHeld[i]) {
-          releaseLane(i);
+      if (rect) {
+        let inGameplayArea = false;
+        for (let i = 0; i < e.touches.length; i++) {
+          const touch = e.touches[i];
+          const relativeY = touch.clientY - rect.top;
+          if (relativeY >= rect.height * 0.35) {
+            inGameplayArea = true;
+            break;
+          }
+        }
+        if (inGameplayArea) {
+          e.preventDefault(); // blocks scroll gestures completely in gameplay area on mobile Safari
         }
       }
+      // Touch lane latching: we preserve the mapping set on touchstart to prevent minor finger wiggles from triggering releases.
     };
 
     const onTouchEnd = (e: TouchEvent) => {
       if (!eng.running) return;
-      e.preventDefault();
       
       const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
-      if (!rect) return;
+      if (rect) {
+        let inGameplayArea = false;
+        for (let i = 0; i < e.touches.length; i++) {
+          const touch = e.touches[i];
+          const relativeY = touch.clientY - rect.top;
+          if (relativeY >= rect.height * 0.35) {
+            inGameplayArea = true;
+            break;
+          }
+        }
+        for (let i = 0; i < e.changedTouches.length; i++) {
+          const touch = e.changedTouches[i];
+          const relativeY = touch.clientY - rect.top;
+          if (relativeY >= rect.height * 0.35) {
+            inGameplayArea = true;
+            break;
+          }
+        }
+        if (inGameplayArea) {
+          e.preventDefault();
+        }
+      }
+      
+      const oldHeld = [...eng.laneHeld];
+      
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        activePointers.delete(touch.identifier);
+      }
       
       const newHeld = [false, false, false, false];
-      const oldHeld = [...eng.laneHeld];
-      activePointers.clear();
-      
-      for (let i = 0; i < e.touches.length; i++) {
-        const touch = e.touches[i];
-        const relativeY = touch.clientY - rect.top;
-        const H = rect.height;
-        if (relativeY < H * 0.35) continue;
-        
-        const lane = getLaneFromXY(touch.clientX, touch.clientY);
-        activePointers.set(touch.identifier, lane);
+      activePointers.forEach((lane) => {
         newHeld[lane] = true;
-      }
+      });
       
       for (let i = 0; i < LANE_COUNT; i++) {
         const isNowHeld = newHeld[i] || eng.keyHeld[i];
@@ -1731,6 +1744,16 @@ const TrapTapGameplay: React.FC<Props> = ({
           <button onClick={resume} style={{ width: 220, padding: 15, borderRadius: 15, cursor: 'pointer', fontWeight: 800, letterSpacing: '.12em', border: 'none', color: '#fff', background: resumeBtnGrad, boxShadow: resumeBtnShadow }}>RESUME</button>
           <button onClick={endNow} style={{ width: 220, padding: 15, borderRadius: 15, cursor: 'pointer', fontWeight: 800, letterSpacing: '.12em', color: isJune ? '#FFD700' : '#ff8fc6', background: isJune ? 'rgba(227,27,35,.08)' : 'rgba(255,0,128,.08)', border: `1px solid ${isJune ? 'rgba(227,27,35,.25)' : 'rgba(255,0,128,.25)'}` }}>END SONG</button>
           <button onClick={onExit} style={{ width: 220, padding: 15, borderRadius: 15, cursor: 'pointer', fontWeight: 800, letterSpacing: '.12em', color: 'rgba(255,255,255,.8)', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.16)' }}>QUIT TO GAMES</button>
+        </div>
+      )}
+
+      {/* error overlay */}
+      {errorState && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 z-[999] text-center" style={{ background: 'rgba(12,2,4,0.96)', backdropFilter: 'blur(10px)', gap: 16 }}>
+          <div style={{ fontSize: 64 }}>⚠️</div>
+          <div style={{ fontWeight: 900, fontSize: 24, color: '#ff3b6b' }}>GAME ENGINE CRASHED</div>
+          <div style={{ fontFamily: 'monospace', fontSize: 12, background: 'rgba(0,0,0,0.6)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,59,107,0.25)', maxWidth: '90%', overflow: 'auto', maxHeight: '50vh', textAlign: 'left', whiteSpace: 'pre-wrap', color: '#ffb3c1' }}>{errorState}</div>
+          <button onClick={() => { setErrorState(null); onExit(); }} style={{ padding: '14px 32px', borderRadius: 14, cursor: 'pointer', border: 'none', background: '#ff3b6b', color: '#fff', fontWeight: 800, letterSpacing: '.08em', boxShadow: '0 0 20px rgba(255,59,107,0.4)' }}>RETURN TO MENU</button>
         </div>
       )}
     </div>
