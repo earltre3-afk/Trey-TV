@@ -1031,7 +1031,7 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.stroke();
         } 
         else if (pt.type === 'spark') {
-          const pr = Math.max(0, pt.r * a);
+          const pr = Math.max(0, pt.r * a) || 0;
           
           // Draw outer glow (larger semi-transparent circle) instead of slow shadowBlur
           ctx.fillStyle = rgba(pt.col, a * 0.25);
@@ -1057,7 +1057,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         } 
         else if (pt.type === 'ring') {
           // Draw expanding shockwave ring
-          const currentR = Math.max(0, pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max));
+          const currentR = Math.max(0, pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max)) || 0;
           ctx.strokeStyle = rgba(pt.col, a * 0.8);
           ctx.lineWidth = pt.width * a;
           ctx.beginPath();
@@ -1066,7 +1066,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         } 
         else if (pt.type === 'lensflare') {
           // Draw expanding central glowing star
-          const sz = Math.max(0, pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI));
+          const sz = Math.max(0, pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI)) || 0;
           drawStar(pt.x, pt.y, sz, sz * 0.35, pt.col);
         }
       }
@@ -1304,9 +1304,13 @@ const TrapTapGameplay: React.FC<Props> = ({
         }
       }
     };
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+    };
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('blur', onBlur);
+    window.addEventListener('contextmenu', onContextMenu);
 
     const laneHandlers: Array<{ el: HTMLDivElement; downFn: any; moveFn: any; upFn: any }> = [];
     laneRefs.current.forEach((el, lane) => {
@@ -1380,6 +1384,7 @@ const TrapTapGameplay: React.FC<Props> = ({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      window.removeEventListener('contextmenu', onContextMenu);
       laneHandlers.forEach(({ el, downFn, moveFn, upFn }) => {
         el.removeEventListener('pointerdown', downFn);
         el.removeEventListener('pointermove', moveFn);
@@ -1473,6 +1478,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         color: '#fff',
         background: isJune ? JUNETEENTH_BG : DEFAULT_BG,
         fontFamily: "'Inter',system-ui,sans-serif",
+        touchAction: 'none',
       }}
     >
       <style>{`
@@ -1502,7 +1508,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         />
       )}
 
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" style={{ zIndex: 1 }} />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" style={{ zIndex: 1, touchAction: 'none' }} />
       <audio
         ref={audioRef}
         src={song.audioUrl}
@@ -1510,9 +1516,9 @@ const TrapTapGameplay: React.FC<Props> = ({
       />
 
       {/* lane hit zones */}
-      <div className="absolute left-0 right-0 flex" style={{ top: '54%', bottom: '8%', zIndex: 2 }}>
+      <div className="absolute left-0 right-0 flex" style={{ top: '54%', bottom: '8%', zIndex: 2, touchAction: 'none' }}>
         {Array.from({ length: LANE_COUNT }).map((_, i) => (
-          <div key={i} ref={(el) => { laneRefs.current[i] = el; }} className="flex-1 h-full" />
+          <div key={i} ref={(el) => { laneRefs.current[i] = el; }} className="flex-1 h-full" style={{ touchAction: 'none' }} />
         ))}
       </div>
 
