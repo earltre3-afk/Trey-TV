@@ -12,6 +12,7 @@ import {
   ArrowUp,
   Share2,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 import { TranceShell, TranceTopBar, TranceLogo } from "../components/shell";
 import {
@@ -28,6 +29,8 @@ import { useAuth } from "../auth/AuthContext";
 import { TranceAccountButton } from "../auth/TranceAccountButton";
 import { tranceBadgeService, tranceScoringService } from "../services";
 import { shouldUseFixtures } from "../services/config";
+import { tranceProfileService } from "../services/tranceProfileService";
+import type { CalibrationProfile } from "../types";
 
 const ProfileScreen: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +39,8 @@ const ProfileScreen: React.FC = () => {
   const [profileBadges, setProfileBadges] = React.useState<any[]>([]);
   const [profileScores, setProfileScores] = React.useState<any[]>([]);
   const [loadingDb, setLoadingDb] = React.useState(true);
+  const [calibrationProfile, setCalibrationProfile] = React.useState<CalibrationProfile | null | undefined>(undefined);
+  const [clearingCalibration, setClearingCalibration] = React.useState(false);
 
   const favorites = [
     { title: "No Limit", status: "MASTERED", img: IMG.r2, color: "text-cyan-300" },
@@ -75,6 +80,39 @@ const ProfileScreen: React.FC = () => {
       active = false;
     };
   }, [dancer?.id]);
+
+  React.useEffect(() => {
+    if (!dancer?.id || !isAuthed) return;
+    let active = true;
+    tranceProfileService
+      .getCalibrationProfile(dancer.id)
+      .then((p) => {
+        if (active) setCalibrationProfile(p);
+      })
+      .catch(() => {
+        if (active) setCalibrationProfile(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [dancer?.id, isAuthed]);
+
+  const handleResetCalibration = async () => {
+    if (!dancer?.id || clearingCalibration) return;
+    const confirmed = window.confirm(
+      "This will run you through calibration again next time you practice.",
+    );
+    if (!confirmed) return;
+    setClearingCalibration(true);
+    try {
+      await tranceProfileService.clearCalibrationProfile(dancer.id);
+      setCalibrationProfile(null);
+    } catch (err) {
+      console.error("Failed to clear calibration profile:", err);
+    } finally {
+      setClearingCalibration(false);
+    }
+  };
 
   return (
     <TranceShell>
@@ -313,6 +351,33 @@ const ProfileScreen: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Calibration reset */}
+      {isAuthed && calibrationProfile && (
+        <div className="mt-4 mb-6">
+          <TranceGlassCard className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-black text-white uppercase">Trance Calibration</div>
+                <div className="text-[10px] text-white/50 mt-0.5">
+                  {calibrationProfile.assignedLevel.charAt(0).toUpperCase() +
+                    calibrationProfile.assignedLevel.slice(1)}{" "}
+                  · Calibrated{" "}
+                  {new Date(calibrationProfile.completedAt).toLocaleDateString()}
+                </div>
+              </div>
+              <button
+                onClick={handleResetCalibration}
+                disabled={clearingCalibration}
+                className="flex items-center gap-1.5 text-[10px] font-black text-fuchsia-400 uppercase disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                {clearingCalibration ? "Resetting…" : "Reset"}
+              </button>
+            </div>
+          </TranceGlassCard>
+        </div>
+      )}
     </TranceShell>
   );
 };
