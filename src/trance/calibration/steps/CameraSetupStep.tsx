@@ -33,7 +33,7 @@ export function CameraSetupStep({ pose, onReady }: CameraSetupStepProps) {
     pose.warnings.length === 0 ||
     !pose.warnings.some((w) => w.message.includes("distance") || w.message.includes("far") || w.message.includes("close"));
 
-  const allGood = bodyVisible === true && lightingOk === true && distanceOk;
+  const allGood = bodyVisible === true && lightingOk === true && distanceOk === true;
 
   const isError =
     pose.status === "unavailable" || pose.status === "permission_denied";
@@ -89,10 +89,10 @@ export function CameraSetupStep({ pose, onReady }: CameraSetupStepProps) {
           {[
             { label: "Full body visible", ok: bodyVisible },
             { label: "Lighting OK", ok: lightingOk },
-            { label: "Distance OK", ok: distanceOk || pose.status !== "tracking" ? distanceOk : undefined },
+            { label: "Distance OK", ok: pose.status === "tracking" ? distanceOk : undefined },
           ].map(({ label, ok }) => (
             <div key={label} className="flex items-center gap-3">
-              <StatusDot ok={pose.status === "tracking" ? ok : undefined} />
+              <StatusDot ok={ok} />
               <span className="text-sm font-semibold text-white/80">{label}</span>
             </div>
           ))}
