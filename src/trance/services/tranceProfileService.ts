@@ -1,8 +1,11 @@
 import { supabase } from "@/lib/supabase";
-import { DancerProfile, ChoreographerProfile } from "../types";
+import { DancerProfile, ChoreographerProfile, CalibrationProfile } from "../types";
 import { dancer as devDancer, choreographers as devChoreographers } from "../data/devFixtures";
 import { rowToProfile } from "../auth/tranceAuthBridge";
 import { assertConfigured, shouldUseFixtures } from "./config";
+
+// DB: trance_profiles requires a nullable JSONB column:
+// ALTER TABLE trance_profiles ADD COLUMN IF NOT EXISTS calibration_profile JSONB;
 
 export const tranceProfileService = {
   getDancerProfile: async (id: string): Promise<DancerProfile> => {
@@ -199,6 +202,50 @@ export const tranceProfileService = {
       .delete()
       .eq("follower_id", userId)
       .eq("choreographer_id", creatorId);
+
+    if (error) throw error;
+  },
+
+  getCalibrationProfile: async (userId: string): Promise<CalibrationProfile | null> => {
+    assertConfigured("ProfileService");
+    if (shouldUseFixtures()) return null;
+
+    const { data, error } = await supabase
+      .from("trance_profiles")
+      .select("calibration_profile")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return (data?.calibration_profile as CalibrationProfile | null) ?? null;
+  },
+
+  saveCalibrationProfile: async (userId: string, profile: CalibrationProfile): Promise<void> => {
+    assertConfigured("ProfileService");
+    if (shouldUseFixtures()) {
+      console.log("[Dev Mode] Mock save calibration profile:", profile);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("trance_profiles")
+      .update({ calibration_profile: profile })
+      .eq("id", userId);
+
+    if (error) throw error;
+  },
+
+  clearCalibrationProfile: async (userId: string): Promise<void> => {
+    assertConfigured("ProfileService");
+    if (shouldUseFixtures()) {
+      console.log("[Dev Mode] Mock clear calibration profile for user", userId);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("trance_profiles")
+      .update({ calibration_profile: null })
+      .eq("id", userId);
 
     if (error) throw error;
   },
