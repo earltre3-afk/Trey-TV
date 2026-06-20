@@ -32,9 +32,11 @@ const KEY_MAP: Record<string, number> = {
   ArrowLeft: 0, ArrowDown: 1, ArrowUp: 2, ArrowRight: 3,
 };
 
-function rgba(hex: string, a: number): string {
+function rgba(hex: string | undefined | null, a: number): string {
+  if (!hex || typeof hex !== 'string') return `rgba(255, 255, 255, ${a})`;
   const h = hex.replace('#', '');
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  if (isNaN(n)) return `rgba(255, 255, 255, ${a})`;
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }
 
@@ -1029,7 +1031,7 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.stroke();
         } 
         else if (pt.type === 'spark') {
-          const pr = pt.r * a;
+          const pr = Math.max(0, pt.r * a);
           
           // Draw outer glow (larger semi-transparent circle) instead of slow shadowBlur
           ctx.fillStyle = rgba(pt.col, a * 0.25);
@@ -1055,7 +1057,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         } 
         else if (pt.type === 'ring') {
           // Draw expanding shockwave ring
-          const currentR = pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max);
+          const currentR = Math.max(0, pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max));
           ctx.strokeStyle = rgba(pt.col, a * 0.8);
           ctx.lineWidth = pt.width * a;
           ctx.beginPath();
@@ -1064,7 +1066,7 @@ const TrapTapGameplay: React.FC<Props> = ({
         } 
         else if (pt.type === 'lensflare') {
           // Draw expanding central glowing star
-          const sz = pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI);
+          const sz = Math.max(0, pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI));
           drawStar(pt.x, pt.y, sz, sz * 0.35, pt.col);
         }
       }
