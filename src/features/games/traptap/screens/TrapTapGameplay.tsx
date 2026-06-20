@@ -1307,77 +1307,81 @@ const TrapTapGameplay: React.FC<Props> = ({
     const onContextMenu = (e: MouseEvent) => {
       e.preventDefault();
     };
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.addEventListener('blur', onBlur);
-    window.addEventListener('contextmenu', onContextMenu);
+    const onPointerDown = (e: PointerEvent) => {
+      if (!eng.running) return;
+      
+      const rect = eng.canvasRect || (canvasRef.current ? canvasRef.current.getBoundingClientRect() : null);
+      if (!rect) return;
+      
+      const relativeY = e.clientY - rect.top;
+      const H = rect.height;
+      if (relativeY < H * 0.35) return; // Ignore HUD/pause area touches
+      
+      const lane = getLaneFromXY(e.clientX, e.clientY);
+      activePointers.set(e.pointerId, lane);
+      
+      const newHeld = [false, false, false, false];
+      activePointers.forEach((l) => { newHeld[l] = true; });
+      for (let i = 0; i < LANE_COUNT; i++) {
+        eng.laneHeld[i] = newHeld[i] || eng.keyHeld[i];
+      }
+      pressLane(lane);
+    };
 
-    const laneHandlers: Array<{ el: HTMLDivElement; downFn: any; moveFn: any; upFn: any }> = [];
-    laneRefs.current.forEach((el, lane) => {
-      if (!el) return;
-      const downFn = (e: PointerEvent) => {
-        e.preventDefault();
-        try { el.setPointerCapture(e.pointerId); } catch {}
-        activePointers.set(e.pointerId, lane);
+    const onPointerMove = (e: PointerEvent) => {
+      if (!activePointers.has(e.pointerId)) return;
+      const oldLane = activePointers.get(e.pointerId);
+      const newLane = getLaneFromXY(e.clientX, e.clientY);
+      if (oldLane !== newLane) {
+        activePointers.set(e.pointerId, newLane);
         
         const newHeld = [false, false, false, false];
         activePointers.forEach((l) => { newHeld[l] = true; });
         for (let i = 0; i < LANE_COUNT; i++) {
           eng.laneHeld[i] = newHeld[i] || eng.keyHeld[i];
         }
-        pressLane(lane);
-      };
 
-      const moveFn = (e: PointerEvent) => {
-        if (!activePointers.has(e.pointerId)) return;
-        const oldLane = activePointers.get(e.pointerId);
-        const newLane = getLaneFromXY(e.clientX, e.clientY);
-        if (oldLane !== newLane) {
-          activePointers.set(e.pointerId, newLane);
-          
-          const newHeld = [false, false, false, false];
-          activePointers.forEach((l) => { newHeld[l] = true; });
-          for (let i = 0; i < LANE_COUNT; i++) {
-            eng.laneHeld[i] = newHeld[i] || eng.keyHeld[i];
-          }
-
-          let otherHoldingOld = eng.keyHeld[oldLane!];
-          activePointers.forEach((l, id) => {
-            if (id !== e.pointerId && l === oldLane) otherHoldingOld = true;
-          });
-          if (!otherHoldingOld) {
-            releaseLane(oldLane!);
-          }
+        let otherHoldingOld = eng.keyHeld[oldLane!];
+        activePointers.forEach((l, id) => {
+          if (id !== e.pointerId && l === oldLane) otherHoldingOld = true;
+        });
+        if (!otherHoldingOld) {
+          releaseLane(oldLane!);
         }
-      };
+        
+        // Also press the new lane when sliding into it (e.g. for slide notes/holds)
+        pressLane(newLane);
+      }
+    };
 
-      const upFn = (e: PointerEvent) => {
-        e.preventDefault();
-        try { el.releasePointerCapture(e.pointerId); } catch {}
-        const oldLane = activePointers.get(e.pointerId);
-        activePointers.delete(e.pointerId);
+    const onPointerUp = (e: PointerEvent) => {
+      if (!activePointers.has(e.pointerId)) return;
+      const oldLane = activePointers.get(e.pointerId);
+      activePointers.delete(e.pointerId);
 
-        const newHeld = [false, false, false, false];
-        activePointers.forEach((l) => { newHeld[l] = true; });
-        for (let i = 0; i < LANE_COUNT; i++) {
-          eng.laneHeld[i] = newHeld[i] || eng.keyHeld[i];
+      const newHeld = [false, false, false, false];
+      activePointers.forEach((l) => { newHeld[l] = true; });
+      for (let i = 0; i < LANE_COUNT; i++) {
+        eng.laneHeld[i] = newHeld[i] || eng.keyHeld[i];
+      }
+
+      if (oldLane !== undefined) {
+        let otherHoldingOld = eng.keyHeld[oldLane];
+        activePointers.forEach((l) => { if (l === oldLane) otherHoldingOld = true; });
+        if (!otherHoldingOld) {
+          releaseLane(oldLane);
         }
+      }
+    };
 
-        if (oldLane !== undefined) {
-          let otherHoldingOld = eng.keyHeld[oldLane];
-          activePointers.forEach((l) => { if (l === oldLane) otherHoldingOld = true; });
-          if (!otherHoldingOld) {
-            releaseLane(oldLane);
-          }
-        }
-      };
-
-      el.addEventListener('pointerdown', downFn);
-      el.addEventListener('pointermove', moveFn);
-      el.addEventListener('pointerup', upFn);
-      el.addEventListener('pointercancel', upFn);
-      laneHandlers.push({ el, downFn, moveFn, upFn });
-    });
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('contextmenu', onContextMenu);
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
 
     return () => {
       window.removeEventListener('resize', resize);
@@ -1385,12 +1389,10 @@ const TrapTapGameplay: React.FC<Props> = ({
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
       window.removeEventListener('contextmenu', onContextMenu);
-      laneHandlers.forEach(({ el, downFn, moveFn, upFn }) => {
-        el.removeEventListener('pointerdown', downFn);
-        el.removeEventListener('pointermove', moveFn);
-        el.removeEventListener('pointerup', upFn);
-        el.removeEventListener('pointercancel', upFn);
-      });
+      window.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
       teardown();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
