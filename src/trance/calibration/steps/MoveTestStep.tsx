@@ -30,6 +30,9 @@ export function MoveTestStep({ pose, move, onRecordFrame, onComplete }: MoveTest
   const onCompleteRef = React.useRef(onComplete);
   onCompleteRef.current = onComplete;
 
+  const onRecordFrameRef = React.useRef(onRecordFrame);
+  onRecordFrameRef.current = onRecordFrame;
+
   // Preview phase timer
   React.useEffect(() => {
     if (phase !== "preview") return;
@@ -64,7 +67,7 @@ export function MoveTestStep({ pose, move, onRecordFrame, onComplete }: MoveTest
       });
       // Record frame from current confidence
       const c = pose.confidence;
-      onRecordFrame({
+      onRecordFrameRef.current({
         bodyConfidence: c?.bodyConfidence ?? 0,
         visibleRatio: c?.visibleRatio ?? 0,
         lightingOk: c?.lightingOk ?? false,
@@ -72,7 +75,7 @@ export function MoveTestStep({ pose, move, onRecordFrame, onComplete }: MoveTest
       });
     }, 80);
     return () => clearInterval(interval);
-  }, [phase, pose.confidence, onRecordFrame]);
+  }, [phase, pose.confidence]);
 
   // Auto-advance when done
   React.useEffect(() => {
