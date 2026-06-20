@@ -21,6 +21,31 @@ export type DanceStyle =
 export type EnergyLevel = "Chill" | "Medium" | "High" | "Explosive";
 export type SessionMode = "Learn" | "Practice" | "Performance";
 
+export type CalibrationLevel = "beginner" | "intermediate" | "advanced";
+export type CalibrationTrackingQuality = "poor" | "ok" | "good" | "excellent";
+
+export interface CalibrationProfile {
+  completed: true;
+  version: 1;
+  completedAt: string;
+  deviceType: "mobile";
+  selectedLevel: CalibrationLevel;
+  assignedLevel: CalibrationLevel;
+  scores: {
+    timing: number;
+    bodyControl: number;
+    range: number;
+    camera: number;
+  };
+  trackingQuality: CalibrationTrackingQuality;
+}
+
+export interface HandoffToken {
+  routineId: string;
+  mode: "practice";
+  exp: number;
+}
+
 export type RoutineVisibility = "Public" | "Private" | "Studio-only" | "Link-only";
 export type Visibility = RoutineVisibility; // alias for compatibility
 
@@ -59,6 +84,7 @@ export interface DancerProfile extends TranceUser {
   bio: string;
   cover: string;
   memberNumber?: number; // #001 pioneer
+  calibrationProfile?: CalibrationProfile;
 }
 
 export interface ChoreographerProfile extends TranceUser {
