@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { db } from '@/lib/db';
 import {
   buildSafePrescribeMeMetadata,
   canApplyPostShowAsset,
@@ -28,8 +29,6 @@ import {
   type TradioAuthenticatedInput,
   type TradioServerAuthClient,
 } from './tradioServerAuth';
-
-const supabase = supabaseAdmin;
 
 type AuthUser = { id: string };
 
@@ -75,7 +74,7 @@ async function currentUser(accessToken: string): Promise<{ user?: AuthUser; erro
   try {
     const { verifiedUserId } = await verifyTradioAccessToken(
       accessToken,
-      supabase as unknown as TradioServerAuthClient,
+      supabaseAdmin as unknown as TradioServerAuthClient,
     );
     return { user: { id: verifiedUserId } };
   } catch (error) {
@@ -84,12 +83,12 @@ async function currentUser(accessToken: string): Promise<{ user?: AuthUser; erro
 }
 
 async function ensureAdmin(userId: string): Promise<boolean> {
-  const { data: isAdmin } = await supabase.rpc('is_admin', { _user_id: userId });
+  const { data: isAdmin } = await db.rpc('is_admin', { _user_id: userId });
   return isAdmin === true;
 }
 
 async function fetchAssetForOwner(assetId: string, userId: string): Promise<{ asset?: PostShowAsset; error?: string }> {
-  const { data: asset, error } = await (supabase as any)
+  const { data: asset, error } = await db
     .from('tradio_post_show_assets')
     .select('*')
     .eq('id', assetId)
@@ -105,7 +104,7 @@ async function fetchAssetForOwner(assetId: string, userId: string): Promise<{ as
 }
 
 async function fetchClipForOwner(clipId: string, userId: string): Promise<{ clip?: ClipRow; error?: string }> {
-  const { data: clip, error } = await (supabase as any)
+  const { data: clip, error } = await db
     .from('tradio_live_highlight_clips')
     .select(
       'id, owner_user_id, recording_id, episode_id, queue_id, channel_id, title, description, caption, visibility, clip_status, mood_tags, genre_tags, audience_tags, metadata',
@@ -119,7 +118,7 @@ async function fetchClipForOwner(clipId: string, userId: string): Promise<{ clip
 }
 
 async function fetchEpisodeForOwner(episodeId: string, userId: string): Promise<{ episode?: EpisodeRow; error?: string }> {
-  const { data: episode, error } = await (supabase as any)
+  const { data: episode, error } = await db
     .from('tradio_show_episodes')
     .select('id, owner_user_id, title, description, visibility, status, metadata')
     .eq('id', episodeId)
@@ -255,7 +254,7 @@ async function insertApplication(input: {
   queueId?: string | null;
   channelId?: string | null;
 }): Promise<{ application?: PostShowApplication; error?: string }> {
-  const { data, error } = await (supabase as any)
+  const { data, error } = await db
     .from('tradio_post_show_applications')
     .insert({
       owner_user_id: input.ownerUserId,
@@ -285,7 +284,7 @@ async function updateApplicationStatus(
   status: PostShowApplication['application_status'],
   metadataPatch: PostShowJsonObject = {},
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: current } = await (supabase as any)
+  const { data: current } = await db
     .from('tradio_post_show_applications')
     .select('applied_metadata')
     .eq('id', applicationId)
@@ -296,7 +295,7 @@ async function updateApplicationStatus(
     ...metadataPatch,
   };
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_post_show_applications')
     .update({
       application_status: status,
@@ -326,7 +325,7 @@ async function applyClipPlan(clip: ClipRow, plan: TargetWritePlan): Promise<{ su
   }
   updateData.updated_at = new Date().toISOString();
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_live_highlight_clips')
     .update(updateData)
     .eq('id', clip.id)
@@ -355,7 +354,7 @@ async function applyEpisodePlan(
   }
   updateData.updated_at = new Date().toISOString();
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_show_episodes')
     .update(updateData)
     .eq('id', episode.id)
@@ -627,7 +626,7 @@ export const listPostShowApplications = createServerFn({ method: 'POST' })
       const isAdmin = await ensureAdmin(user.id);
       if (input.review_queue && !isAdmin) return { applications: [], error: 'Admin access required' };
 
-      let query = (supabase as any)
+      let query = db
         .from('tradio_post_show_applications')
         .select('*')
         .order('created_at', { ascending: false });
@@ -661,7 +660,7 @@ export const submitPostShowApplicationForReview = createServerFn({ method: 'POST
     const { user, error: authError } = await currentUser(input.accessToken);
     if (!user) return { success: false, error: authError };
 
-    const { data: application, error } = await (supabase as any)
+    const { data: application, error } = await db
       .from('tradio_post_show_applications')
       .select('id, owner_user_id, application_status, applied_metadata')
       .eq('id', input.application_id)
@@ -689,7 +688,7 @@ export const approvePostShowApplication = createServerFn({ method: 'POST' })
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { success: false, error: 'Admin access required' };
 
-      const { data: application, error } = await (supabase as any)
+      const { data: application, error } = await db
         .from('tradio_post_show_applications')
         .select('*')
         .eq('id', input.application_id)
@@ -702,7 +701,7 @@ export const approvePostShowApplication = createServerFn({ method: 'POST' })
       }
 
       if (app.clip_id && app.target_field) {
-        const { data: clip } = await (supabase as any)
+        const { data: clip } = await db
           .from('tradio_live_highlight_clips')
           .select('id, owner_user_id, metadata')
           .eq('id', app.clip_id)
@@ -725,7 +724,7 @@ export const approvePostShowApplication = createServerFn({ method: 'POST' })
       }
 
       if (app.episode_id && app.target_field) {
-        const { data: episode } = await (supabase as any)
+        const { data: episode } = await db
           .from('tradio_show_episodes')
           .select('id, owner_user_id, metadata')
           .eq('id', app.episode_id)
@@ -779,7 +778,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
       const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { success: false, error: authError };
 
-      const { data: application, error } = await (supabase as any)
+      const { data: application, error } = await db
         .from('tradio_post_show_applications')
         .select('*')
         .eq('id', input.application_id)
@@ -800,7 +799,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
 
       const previousValue = app.previous_value ?? '';
       if (app.clip_id && app.target_field) {
-        const { data: clip } = await (supabase as any)
+        const { data: clip } = await db
           .from('tradio_live_highlight_clips')
           .select('id, owner_user_id, metadata')
           .eq('id', app.clip_id)
@@ -812,7 +811,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
             ? { metadata: { ...((clip.metadata ?? {}) as PostShowJsonObject), prescribe_me: parsePreviousJson(previousValue) } }
             : { [app.target_field]: previousValue };
 
-        const { error: updateError } = await (supabase as any)
+        const { error: updateError } = await db
           .from('tradio_live_highlight_clips')
           .update({ ...updateData, updated_at: new Date().toISOString() })
           .eq('id', app.clip_id)
@@ -821,7 +820,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
       }
 
       if (app.episode_id && app.target_field) {
-        const { data: episode } = await (supabase as any)
+        const { data: episode } = await db
           .from('tradio_show_episodes')
           .select('id, owner_user_id, metadata')
           .eq('id', app.episode_id)
@@ -833,7 +832,7 @@ export const revertPostShowApplication = createServerFn({ method: 'POST' })
             ? { metadata: { ...((episode.metadata ?? {}) as PostShowJsonObject), prescribe_me: parsePreviousJson(previousValue) } }
             : { [app.target_field]: previousValue };
 
-        const { error: updateError } = await (supabase as any)
+        const { error: updateError } = await db
           .from('tradio_show_episodes')
           .update({ ...updateData, updated_at: new Date().toISOString() })
           .eq('id', app.episode_id)
@@ -855,7 +854,7 @@ export const getPublicPostShowAssetsForClip = createServerFn({ method: 'POST' })
   .inputValidator((input: { clip_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ assets: PublicPostShowAppliedAsset[]; error?: string }> => {
     try {
-      const { data: clip } = await (supabase as any)
+      const { data: clip } = await db
         .from('tradio_live_highlight_clips')
         .select('id, visibility, clip_status')
         .eq('id', input.clip_id)
@@ -864,7 +863,7 @@ export const getPublicPostShowAssetsForClip = createServerFn({ method: 'POST' })
         return { assets: [] };
       }
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await db
         .from('tradio_post_show_applications')
         .select('id, asset_id, application_type, application_status, target_field, applied_value, applied_metadata, applied_at, updated_at')
         .eq('clip_id', input.clip_id)
@@ -893,7 +892,7 @@ export const getPublicPostShowAssetsForEpisode = createServerFn({ method: 'POST'
   .inputValidator((input: { episode_id: string }) => input)
   .handler(async ({ data: input }): Promise<{ assets: PublicPostShowAppliedAsset[]; error?: string }> => {
     try {
-      const { data: episode } = await (supabase as any)
+      const { data: episode } = await db
         .from('tradio_show_episodes')
         .select('id, visibility, status')
         .eq('id', input.episode_id)
@@ -902,7 +901,7 @@ export const getPublicPostShowAssetsForEpisode = createServerFn({ method: 'POST'
         return { assets: [] };
       }
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await db
         .from('tradio_post_show_applications')
         .select('id, asset_id, application_type, application_status, target_field, applied_value, applied_metadata, applied_at, updated_at')
         .eq('episode_id', input.episode_id)
@@ -934,7 +933,7 @@ export const listPostShowTargetsForRecording = createServerFn({ method: 'POST' }
       const { user, error: authError } = await currentUser(input.accessToken);
       if (!user) return { targets: [], error: authError };
 
-      const { data: recording, error: recordingError } = await (supabase as any)
+      const { data: recording, error: recordingError } = await db
         .from('tradio_live_recordings')
         .select('id, owner_user_id, episode_id, channel_id, queue_id')
         .eq('id', input.recording_id)
@@ -944,7 +943,7 @@ export const listPostShowTargetsForRecording = createServerFn({ method: 'POST' }
 
       const targets: PostShowPublisherTarget[] = [];
 
-      const { data: clips } = await (supabase as any)
+      const { data: clips } = await db
         .from('tradio_live_highlight_clips')
         .select('id, title, description, caption, visibility, clip_status, recording_id, episode_id, channel_id, queue_id')
         .eq('recording_id', input.recording_id)
@@ -969,7 +968,7 @@ export const listPostShowTargetsForRecording = createServerFn({ method: 'POST' }
       }
 
       if (recording.episode_id) {
-        const { data: episode } = await (supabase as any)
+        const { data: episode } = await db
           .from('tradio_show_episodes')
           .select('id, title, description, visibility, status')
           .eq('id', recording.episode_id)

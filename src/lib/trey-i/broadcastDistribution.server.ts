@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { db } from '@/lib/db';
 import {
   appendDistributionEvent,
   buildDistributionSourceSnapshot as buildSafeDistributionSourceSnapshot,
@@ -37,15 +38,13 @@ import {
   type TradioServerAuthClient,
 } from './tradioServerAuth';
 
-const supabase = supabaseAdmin;
-
 type AuthUser = { id: string };
 
 async function currentUser(accessToken: string): Promise<{ user?: AuthUser; error?: string }> {
   try {
     const { verifiedUserId } = await verifyTradioAccessToken(
       accessToken,
-      supabase as unknown as TradioServerAuthClient,
+      supabaseAdmin as unknown as TradioServerAuthClient,
     );
     return { user: { id: verifiedUserId } };
   } catch (error) {
@@ -54,12 +53,12 @@ async function currentUser(accessToken: string): Promise<{ user?: AuthUser; erro
 }
 
 async function ensureAdmin(userId: string): Promise<boolean> {
-  const { data: isAdmin } = await supabase.rpc('is_admin', { _user_id: userId });
+  const { data: isAdmin } = await db.rpc('is_admin', { _user_id: userId });
   return isAdmin === true;
 }
 
 async function fetchAssetForOwner(assetId: string, userId: string): Promise<{ asset?: PostShowAsset; error?: string }> {
-  const { data: asset, error } = await (supabase as any)
+  const { data: asset, error } = await db
     .from('tradio_post_show_assets')
     .select('*')
     .eq('id', assetId)
@@ -78,7 +77,7 @@ async function fetchApplicationForOwner(
   applicationId: string,
   userId: string,
 ): Promise<{ application?: PostShowApplication; asset?: PostShowAsset | null; error?: string }> {
-  const { data: application, error } = await (supabase as any)
+  const { data: application, error } = await db
     .from('tradio_post_show_applications')
     .select('*')
     .eq('id', applicationId)
@@ -91,7 +90,7 @@ async function fetchApplicationForOwner(
     return { error: 'Rejected, archived, or reverted applications cannot create distribution drafts.' };
   }
 
-  const { data: asset } = await (supabase as any)
+  const { data: asset } = await db
     .from('tradio_post_show_assets')
     .select('*')
     .eq('id', app.asset_id)
@@ -108,7 +107,7 @@ async function fetchDraftForUser(
   draftId: string,
   userId: string,
 ): Promise<{ draft?: DistributionDraft; isAdmin?: boolean; error?: string }> {
-  const { data: draft, error } = await (supabase as any)
+  const { data: draft, error } = await db
     .from('tradio_distribution_drafts')
     .select('*')
     .eq('id', draftId)
@@ -141,7 +140,7 @@ async function insertDistributionDraft(input: {
   channelId?: string | null;
 }): Promise<{ draft?: DistributionDraft; error?: string }> {
   const now = new Date().toISOString();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await db
     .from('tradio_distribution_drafts')
     .insert({
       owner_user_id: input.ownerUserId,
@@ -187,7 +186,7 @@ async function updateDraft(
     updated_at: patch.updated_at ?? new Date().toISOString(),
   };
 
-  let query = (supabase as any)
+  let query = db
     .from('tradio_distribution_drafts')
     .update(updateData)
     .eq('id', draftId);
@@ -589,7 +588,7 @@ export const listDistributionDrafts = createServerFn({ method: 'POST' })
       const isAdmin = await ensureAdmin(user.id);
       if (input.review_queue && !isAdmin) return { drafts: [], error: 'Admin access required' };
 
-      let query = (supabase as any)
+      let query = db
         .from('tradio_distribution_drafts')
         .select('*')
         .order('updated_at', { ascending: false });

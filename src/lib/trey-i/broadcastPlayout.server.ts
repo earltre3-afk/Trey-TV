@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db } from "@/lib/db";
 import {
   TradioBroadcastChannel,
   TradioBroadcastQueueItem,
@@ -8,7 +9,7 @@ import {
   ChannelNowPlaying,
   ReviewStatus,
   QueueStatus
-} from "../../tradio/components/tradio/types/broadcastPlayoutTypes";
+} from "../tradio-broadcast/types/broadcastPlayoutTypes";
 
 /**
  * Server Function: Schedules an episode assembly on a channel's broadcast queue.
@@ -31,7 +32,7 @@ export const scheduleBroadcastItemServer = createServerFn({ method: "POST" })
   .handler(async ({ data: input }): Promise<{ success: boolean; queueItem?: any; error?: string }> => {
     try {
       // 1. Validate Assembly Readiness
-      const { data: assembly, error: assemblyError } = await (supabaseAdmin as any)
+      const { data: assembly, error: assemblyError } = await db
         .from("tradio_episode_assemblies")
         .select("*")
         .eq("id", input.assemblyId)
@@ -76,7 +77,7 @@ export const scheduleBroadcastItemServer = createServerFn({ method: "POST" })
         metadata: input.metadata || {},
       };
 
-      const { data: queueItem, error: queueError } = await (supabaseAdmin as any)
+      const { data: queueItem, error: queueError } = await db
         .from("tradio_broadcast_queue")
         .insert(insertPayload)
         .select()
@@ -117,7 +118,7 @@ export const submitAssemblyForBroadcastReviewServer = createServerFn({ method: "
         review_notes: input.reviewNotes || "",
       };
 
-      const { data: review, error } = await (supabaseAdmin as any)
+      const { data: review, error } = await db
         .from("tradio_broadcast_reviews")
         .insert(insertPayload)
         .select()
@@ -128,7 +129,7 @@ export const submitAssemblyForBroadcastReviewServer = createServerFn({ method: "
       }
 
       // Also update episode status to needs_review
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_show_episodes")
         .update({ status: "needs_review" })
         .eq("id", input.episodeId);
@@ -155,7 +156,7 @@ export const approveBroadcastItemServer = createServerFn({ method: "POST" })
   .handler(async ({ data: input }): Promise<{ success: boolean; review?: any; error?: string }> => {
     try {
       // 1. Verify admin privilege
-      const { data: isAdmin, error: adminErr } = await supabaseAdmin.rpc("is_admin", {
+      const { data: isAdmin, error: adminErr } = await db.rpc("is_admin", {
         _user_id: input.reviewerUserId,
       });
 
@@ -164,7 +165,7 @@ export const approveBroadcastItemServer = createServerFn({ method: "POST" })
       }
 
       // 2. Fetch current review details to get episode_id and assembly_id
-      const { data: reviewDetails, error: fetchErr } = await (supabaseAdmin as any)
+      const { data: reviewDetails, error: fetchErr } = await db
         .from("tradio_broadcast_reviews")
         .select("*")
         .eq("id", input.reviewId)
@@ -184,7 +185,7 @@ export const approveBroadcastItemServer = createServerFn({ method: "POST" })
         updated_at: new Date().toISOString(),
       };
 
-      const { data: updatedReview, error: updateErr } = await (supabaseAdmin as any)
+      const { data: updatedReview, error: updateErr } = await db
         .from("tradio_broadcast_reviews")
         .update(updatePayload)
         .eq("id", input.reviewId)
@@ -203,14 +204,14 @@ export const approveBroadcastItemServer = createServerFn({ method: "POST" })
         nextEpisodeStatus = "draft";
       }
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_show_episodes")
         .update({ status: nextEpisodeStatus })
         .eq("id", reviewDetails.episode_id);
 
       // If approved, and we have a channel/queue entry, we can approve it in the queue too
       if (reviewDetails.queue_id && input.status === "approved") {
-        await (supabaseAdmin as any)
+        await db
           .from("tradio_broadcast_queue")
           .update({ queue_status: "scheduled" })
           .eq("id", reviewDetails.queue_id);
@@ -230,7 +231,7 @@ export const resolveNowPlayingServer = createServerFn({ method: "POST" })
   .handler(async ({ data: input }): Promise<ChannelNowPlaying | null> => {
     try {
       // 1. Fetch channel by slug
-      const { data: channel, error: channelErr } = await (supabaseAdmin as any)
+      const { data: channel, error: channelErr } = await db
         .from("tradio_broadcast_channels")
         .select("*")
         .eq("slug", input.channelSlug)
@@ -243,7 +244,7 @@ export const resolveNowPlayingServer = createServerFn({ method: "POST" })
       const nowStr = new Date().toISOString();
 
       // 2. Fetch currently playing or scheduled queue items spanning 'now'
-      const { data: currentQueueItems, error: queueErr } = await (supabaseAdmin as any)
+      const { data: currentQueueItems, error: queueErr } = await db
         .from("tradio_broadcast_queue")
         .select("*, show:tradio_shows(title), episode:tradio_show_episodes(title, duration_seconds), assembly:tradio_episode_assemblies(output_storage_path, duration_seconds)")
         .eq("channel_id", channel.id)
@@ -257,7 +258,7 @@ export const resolveNowPlayingServer = createServerFn({ method: "POST" })
       // 3. Fallback: If no scheduled items are active right now, get the most recently completed/scheduled queue item
       // to play in fallback/loop mode, so playout never goes fully silent!
       if (!activeItem) {
-        const { data: recentCompleted, error: completedErr } = await (supabaseAdmin as any)
+        const { data: recentCompleted, error: completedErr } = await db
           .from("tradio_broadcast_queue")
           .select("*, show:tradio_shows(title), episode:tradio_show_episodes(title, duration_seconds), assembly:tradio_episode_assemblies(output_storage_path, duration_seconds)")
           .eq("channel_id", channel.id)
@@ -335,7 +336,7 @@ export const getSignedBroadcastPlaybackUrlServer = createServerFn({ method: "POS
   .inputValidator((input: { queueItemId: string }) => input)
   .handler(async ({ data: input }): Promise<{ signedUrl: string | null; error?: string }> => {
     try {
-      const { data: item, error } = await (supabaseAdmin as any)
+      const { data: item, error } = await db
         .from("tradio_broadcast_queue")
         .select("*, assembly:tradio_episode_assemblies(output_storage_path)")
         .eq("id", input.queueItemId)
@@ -396,7 +397,7 @@ export const createPlayoutEventServer = createServerFn({ method: "POST" })
         metadata: input.metadata || {},
       };
 
-      const { data: event, error } = await (supabaseAdmin as any)
+      const { data: event, error } = await db
         .from("tradio_playout_events")
         .insert(insertPayload)
         .select()

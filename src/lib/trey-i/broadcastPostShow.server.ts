@@ -5,6 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { db } from '@/lib/db';
 import { aiGenerateJson, getAIProviderName } from './aiProvider.server';
 import {
   buildPostShowGenerationPrompt,
@@ -29,8 +30,6 @@ import {
   type TradioServerAuthClient,
 } from './tradioServerAuth';
 
-const supabase = supabaseAdmin;
-
 const AI_PROVIDER_UNAVAILABLE_COPY =
   'AI provider unavailable. Continue manually; no AI output was generated.';
 
@@ -53,7 +52,7 @@ function buildSourceReference(input: GeneratePostShowPackageInput | { source_typ
 }
 
 async function ensureAdmin(userId: string): Promise<boolean> {
-  const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: userId });
+  const { data: isAdmin } = await db.rpc("is_admin", { _user_id: userId });
   return isAdmin === true;
 }
 
@@ -61,7 +60,7 @@ async function currentUser(accessToken: string): Promise<{ id: string } | null> 
   try {
     const { verifiedUserId } = await verifyTradioAccessToken(
       accessToken,
-      supabase as unknown as TradioServerAuthClient,
+      supabaseAdmin as unknown as TradioServerAuthClient,
     );
     return { id: verifiedUserId };
   } catch {
@@ -109,7 +108,7 @@ export async function buildPostShowSourceSnapshot(
     const snapshot: PostShowSourceSnapshot = {};
 
     if (sourceType === 'recording') {
-      const { data: recording } = await (supabase as any)
+      const { data: recording } = await db
         .from('tradio_live_recordings')
         .select('owner_user_id, duration_seconds, recording_type, session_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
@@ -124,7 +123,7 @@ export async function buildPostShowSourceSnapshot(
       snapshot.live_mode = recording.recording_type === 'live_session';
 
       // Fetch segments
-      const { data: segments } = await (supabase as any)
+      const { data: segments } = await db
         .from('tradio_live_recording_segments')
         .select('segment_type')
         .eq('recording_id', sourceId);
@@ -136,7 +135,7 @@ export async function buildPostShowSourceSnapshot(
       // Fetch events for this session
       await enrichSnapshotFromEvents(snapshot, recording.session_id);
     } else if (sourceType === 'clip') {
-      const { data: clip } = await (supabase as any)
+      const { data: clip } = await db
         .from('tradio_live_highlight_clips')
         .select('owner_user_id, title, duration_seconds, mood_tags, genre_tags, audience_tags, recording_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
@@ -155,7 +154,7 @@ export async function buildPostShowSourceSnapshot(
 
       // Fetch recording for additional context
       if (clip.recording_id) {
-        const { data: recording } = await (supabase as any)
+        const { data: recording } = await db
           .from('tradio_live_recordings')
           .select('session_id, duration_seconds')
           .eq('id', clip.recording_id)
@@ -167,7 +166,7 @@ export async function buildPostShowSourceSnapshot(
         }
       }
     } else if (sourceType === 'episode') {
-      const { data: episode } = await (supabase as any)
+      const { data: episode } = await db
         .from('tradio_show_episodes')
         .select('owner_user_id, title, tradio_shows(title), tradio_broadcast_channels(title)')
         .eq('id', sourceId)
@@ -181,7 +180,7 @@ export async function buildPostShowSourceSnapshot(
       snapshot.channel_title = (episode.tradio_broadcast_channels as any)?.title;
 
       // Fetch associated recordings
-      const { data: recordings } = await (supabase as any)
+      const { data: recordings } = await db
         .from('tradio_live_recordings')
         .select('duration_seconds, session_id')
         .eq('episode_id', sourceId);
@@ -199,7 +198,7 @@ export async function buildPostShowSourceSnapshot(
         }
       }
     } else if (sourceType === 'queue_item') {
-      const { data: item } = await (supabase as any)
+      const { data: item } = await db
         .from('tradio_broadcast_queue')
         .select('owner_user_id, tradio_broadcast_channels(title), tradio_shows(title)')
         .eq('id', sourceId)
@@ -227,7 +226,7 @@ export async function buildPostShowSourceSnapshot(
 async function enrichSnapshotFromEvents(snapshot: PostShowSourceSnapshot, sessionId: string): Promise<void> {
   try {
     // Fetch reactions
-    const { data: reactions } = await (supabase as any)
+    const { data: reactions } = await db
       .from('tradio_broadcast_reactions')
       .select('reaction_type')
       .eq('session_id', sessionId);
@@ -245,7 +244,7 @@ async function enrichSnapshotFromEvents(snapshot: PostShowSourceSnapshot, sessio
     }
 
     // Fetch chat messages
-    const { data: chat } = await (supabase as any)
+    const { data: chat } = await db
       .from('tradio_live_chat_messages')
       .select('id')
       .eq('session_id', sessionId);
@@ -255,7 +254,7 @@ async function enrichSnapshotFromEvents(snapshot: PostShowSourceSnapshot, sessio
     }
 
     // Fetch polls
-    const { data: polls } = await (supabase as any)
+    const { data: polls } = await db
       .from('tradio_live_polls')
       .select('question, top_option, top_percentage')
       .eq('session_id', sessionId);
@@ -269,7 +268,7 @@ async function enrichSnapshotFromEvents(snapshot: PostShowSourceSnapshot, sessio
     }
 
     // Fetch call-in moments
-    const { data: callIns } = await (supabase as any)
+    const { data: callIns } = await db
       .from('tradio_live_call_requests')
       .select('duration_seconds')
       .eq('session_id', sessionId)
@@ -283,7 +282,7 @@ async function enrichSnapshotFromEvents(snapshot: PostShowSourceSnapshot, sessio
     }
 
     // Fetch SFX events
-    const { data: sfx } = await (supabase as any)
+    const { data: sfx } = await db
       .from('tradio_live_sfx_events')
       .select('sfx_name')
       .eq('session_id', sessionId);
@@ -333,7 +332,7 @@ export const generatePostShowPackageServer = createServerFn({ method: "POST" })
       const sourceRefs = buildSourceReference(input);
 
       // Create run record
-      const { data: run, error: runError } = await (supabase as any)
+      const { data: run, error: runError } = await db
         .from('tradio_post_show_runs')
         .insert({
           owner_user_id: user.id,
@@ -421,7 +420,7 @@ export const generatePostShowPackageServer = createServerFn({ method: "POST" })
         const assets = [...generatedAssets, ...followUpAssets];
 
         if (assets.length > 0) {
-          const { error: insertError } = await (supabase as any)
+          const { error: insertError } = await db
             .from('tradio_post_show_assets')
             .insert(assets);
 
@@ -429,7 +428,7 @@ export const generatePostShowPackageServer = createServerFn({ method: "POST" })
         }
 
         // Update run as completed
-        await (supabase as any)
+        await db
           .from('tradio_post_show_runs')
           .update({
             run_status: 'completed',
@@ -445,7 +444,7 @@ export const generatePostShowPackageServer = createServerFn({ method: "POST" })
         return { success: true, run_id: run.id };
       } catch (aiError) {
         // Mark run as failed
-        await (supabase as any)
+        await db
           .from('tradio_post_show_runs')
           .update({
             run_status: 'failed',
@@ -490,7 +489,7 @@ export const createPostShowAssetServer = createServerFn({ method: "POST" })
         return { success: false, error: 'Manual asset body is required' };
       }
 
-      const { data: recording } = await (supabase as any)
+      const { data: recording } = await db
         .from('tradio_live_recordings')
         .select('id, owner_user_id')
         .eq('id', input.recording_id)
@@ -502,7 +501,7 @@ export const createPostShowAssetServer = createServerFn({ method: "POST" })
 
       const { snapshot } = await buildPostShowSourceSnapshot('recording', input.recording_id, user.id);
 
-      const { data: asset, error } = await (supabase as any)
+      const { data: asset, error } = await db
         .from('tradio_post_show_assets')
         .insert({
           owner_user_id: user.id,
@@ -540,7 +539,7 @@ export const updatePostShowAssetServer = createServerFn({ method: "POST" })
       if (!user) return { success: false, error: 'Not authenticated' };
 
       // Verify ownership
-      const { data: asset } = await (supabase as any)
+      const { data: asset } = await db
         .from('tradio_post_show_assets')
         .select('id, owner_user_id, title, body, asset_status')
         .eq('id', input.asset_id)
@@ -559,7 +558,7 @@ export const updatePostShowAssetServer = createServerFn({ method: "POST" })
       }
 
       // Get previous revision
-      const { data: lastRevision } = await (supabase as any)
+      const { data: lastRevision } = await db
         .from('tradio_post_show_asset_revisions')
         .select('revision_number')
         .eq('asset_id', input.asset_id)
@@ -570,7 +569,7 @@ export const updatePostShowAssetServer = createServerFn({ method: "POST" })
       const nextRevisionNumber = (lastRevision?.revision_number || 0) + 1;
 
       // Create revision
-      await (supabase as any)
+      await db
         .from('tradio_post_show_asset_revisions')
         .insert({
           asset_id: input.asset_id,
@@ -601,7 +600,7 @@ export const updatePostShowAssetServer = createServerFn({ method: "POST" })
         updateData.visibility = 'private';
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await db
         .from('tradio_post_show_assets')
         .update(updateData)
         .eq('id', input.asset_id)
@@ -630,7 +629,7 @@ export const approvePostShowAssetServer = createServerFn({ method: "POST" })
       if (!isAdmin) return { success: false, error: 'Admin access required' };
 
       // Update asset
-      const { error } = await (supabase as any)
+      const { error } = await db
         .from('tradio_post_show_assets')
         .update({
           asset_status: 'approved',
@@ -668,7 +667,7 @@ export const rejectPostShowAssetServer = createServerFn({ method: "POST" })
       if (!isAdmin) return { success: false, error: 'Admin access required' };
 
       // Update asset
-      const { error } = await (supabase as any)
+      const { error } = await db
         .from('tradio_post_show_assets')
         .update({
           asset_status: 'rejected',
@@ -703,7 +702,7 @@ export const archivePostShowAssetServer = createServerFn({ method: "POST" })
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { success: false, error: 'Admin access required' };
 
-      const { error } = await (supabase as any)
+      const { error } = await db
         .from('tradio_post_show_assets')
         .update({
           asset_status: 'archived',
@@ -734,7 +733,7 @@ export const publishPostShowAssetServer = createServerFn({ method: "POST" })
       const user = await currentUser(input.accessToken);
       if (!user) return { success: false, error: 'Not authenticated' };
 
-      const { data: asset } = await (supabase as any)
+      const { data: asset } = await db
         .from('tradio_post_show_assets')
         .select('id, owner_user_id, asset_status')
         .eq('id', input.asset_id)
@@ -752,7 +751,7 @@ export const publishPostShowAssetServer = createServerFn({ method: "POST" })
         return { success: false, error: 'Publish visibility must be public or unlisted' };
       }
 
-      const { error } = await (supabase as any)
+      const { error } = await db
         .from('tradio_post_show_assets')
         .update({
           asset_status: 'published',
@@ -783,7 +782,7 @@ export const listPendingPostShowAssetsForReviewServer = createServerFn({ method:
       const isAdmin = await ensureAdmin(user.id);
       if (!isAdmin) return { assets: [], error: 'Admin access required' };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await db
         .from('tradio_post_show_assets')
         .select('*')
         .in('asset_status', ['generated', 'pending_review'])
@@ -803,7 +802,7 @@ export const listPublicPostShowAssetsServer = createServerFn({ method: "POST" })
   .inputValidator((input: { recording_id?: string; clip_id?: string }) => input)
   .handler(async ({ data: input }): Promise<{ assets: PostShowAsset[]; error?: string }> => {
     try {
-      let query = (supabase as any)
+      let query = db
         .from('tradio_post_show_assets')
         .select(
           'id, owner_user_id, asset_type, asset_status, visibility, title, body, platform, tone, language, metadata, approved_at, published_at, created_at, updated_at',
@@ -863,7 +862,7 @@ export const listPostShowRecordingsServer = createServerFn({ method: "POST" })
       const user = await currentUser(input.accessToken);
       if (!user) return { recordings: [], error: 'Not authenticated' };
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await db
         .from('tradio_live_recordings')
         .select('id, recording_status, duration_seconds, created_at, channel_id, show_id, episode_id')
         .eq('owner_user_id', user.id)
@@ -885,7 +884,7 @@ export const listPostShowAssetsForRecordingServer = createServerFn({ method: "PO
       if (!user) return { assets: [], error: 'Not authenticated' };
 
       // Check user owns recording
-      const { data: recording } = await (supabase as any)
+      const { data: recording } = await db
         .from('tradio_live_recordings')
         .select('owner_user_id')
         .eq('id', input.recording_id)
@@ -895,7 +894,7 @@ export const listPostShowAssetsForRecordingServer = createServerFn({ method: "PO
         return { assets: [], error: 'Not authorized' };
       }
 
-      const { data: assets } = await (supabase as any)
+      const { data: assets } = await db
         .from('tradio_post_show_assets')
         .select('*')
         .eq('recording_id', input.recording_id)

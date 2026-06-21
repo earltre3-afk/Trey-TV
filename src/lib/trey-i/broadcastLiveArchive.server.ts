@@ -14,6 +14,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { db } from '@/lib/db';
 import { publishClipWithGatesServer } from './broadcastPublishingGates.server';
 import {
   verifyTradioAccessToken,
@@ -21,14 +22,12 @@ import {
   type TradioServerAuthClient,
 } from './tradioServerAuth';
 
-const supabase = supabaseAdmin;
-
 async function verifiedUserId(accessToken: string): Promise<string | null> {
   try {
     return (
       await verifyTradioAccessToken(
         accessToken,
-        supabase as unknown as TradioServerAuthClient,
+        supabaseAdmin as unknown as TradioServerAuthClient,
       )
     ).verifiedUserId;
   } catch {
@@ -37,7 +36,7 @@ async function verifiedUserId(accessToken: string): Promise<string | null> {
 }
 
 async function isAdmin(userId: string): Promise<boolean> {
-  const { data } = await supabase.rpc('is_admin', { _user_id: userId });
+  const { data } = await db.rpc('is_admin', { _user_id: userId });
   return data === true;
 }
 
@@ -59,7 +58,7 @@ export async function createLiveRecordingServer(input: {
   const userId = await verifiedUserId(input.accessToken);
   if (!userId) return { id: '', error: 'Not authenticated' };
 
-  const { data: channel } = await (supabase as any)
+  const { data: channel } = await db
     .from('tradio_broadcast_channels')
     .select('owner_user_id')
     .eq('id', input.channel_id)
@@ -71,7 +70,7 @@ export async function createLiveRecordingServer(input: {
   const {
     data,
     error,
-  } = await (supabase as any)
+  } = await db
     .from('tradio_live_recordings')
     .insert({
       owner_user_id: userId,
@@ -133,7 +132,7 @@ export async function updateRecordingStatusServer(input: {
     updateData.metadata = { error_details: input.error };
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_live_recordings')
     .update(updateData)
     .eq('id', input.recording_id)
@@ -157,7 +156,7 @@ export async function createRecordingConsentServer(input: {
   const {
     data,
     error,
-  } = await (supabase as any)
+  } = await db
     .from('tradio_live_recording_consents')
     .insert({
       session_id: input.session_id,
@@ -194,7 +193,7 @@ export async function updateRecordingConsentServer(input: {
     updateData.declined_at = new Date().toISOString();
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_live_recording_consents')
     .update(updateData)
     .eq('id', input.consent_id);
@@ -223,7 +222,7 @@ export async function createRecordingSegmentServer(input: {
   const {
     data,
     error,
-  } = await (supabase as any)
+  } = await db
     .from('tradio_live_recording_segments')
     .insert({
       recording_id: input.recording_id,
@@ -271,7 +270,7 @@ export async function createHighlightClipServer(input: {
   const userId = await verifiedUserId(input.accessToken);
   if (!userId) return { id: '', error: 'Not authenticated' };
 
-  const { data: recording } = await (supabase as any)
+  const { data: recording } = await db
     .from('tradio_live_recordings')
     .select('owner_user_id, session_id, room_id, channel_id, queue_id, show_id, episode_id')
     .eq('id', input.recording_id)
@@ -283,7 +282,7 @@ export async function createHighlightClipServer(input: {
   const {
     data,
     error,
-  } = await (supabase as any)
+  } = await db
     .from('tradio_live_highlight_clips')
     .insert({
       owner_user_id: userId,
@@ -353,7 +352,7 @@ export async function updateHighlightClipServer(input: {
   if (input.genre_tags) updateData.genre_tags = input.genre_tags;
   if (input.audience_tags) updateData.audience_tags = input.audience_tags;
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_live_highlight_clips')
     .update(updateData)
     .eq('id', input.clip_id)
@@ -374,7 +373,7 @@ export async function submitClipForReviewServer(input: {
   const userId = await verifiedUserId(input.accessToken);
   if (!userId) return { success: false, error: 'Not authenticated' };
 
-  const { error } = await (supabase as any)
+  const { error } = await db
     .from('tradio_live_highlight_clips')
     .update({
       clip_status: 'pending_review',
@@ -417,7 +416,7 @@ export async function getSignedRecordingPlaybackUrlServer(input: {
   if (!userId) return { error: 'Not authenticated' };
 
   // Fetch recording to verify ownership/permissions
-  const { data: recording, error: fetchError } = await (supabase as any)
+  const { data: recording, error: fetchError } = await db
     .from('tradio_live_recordings')
     .select('storage_path')
     .eq('id', input.recording_id)
@@ -429,7 +428,7 @@ export async function getSignedRecordingPlaybackUrlServer(input: {
   }
 
   // Generate signed URL for private storage (5 hours default)
-  const { data, error } = await supabase.storage
+  const { data, error } = await supabaseAdmin.storage
     .from('tradio')
     .createSignedUrl(recording.storage_path, input.expiresIn || 18000);
 
@@ -444,7 +443,7 @@ export async function getSignedClipPlaybackUrlServer(input: {
   clip_id: string;
   accessToken?: string;
 }): Promise<{ url?: string; error?: string }> {
-  const { data: clip, error: fetchError } = await (supabase as any)
+  const { data: clip, error: fetchError } = await db
     .from('tradio_live_highlight_clips')
     .select('audio_url, clip_status, visibility, owner_user_id')
     .eq('id', input.clip_id)
@@ -481,7 +480,7 @@ export async function listRecordingsForSessionServer(input: {
   const userId = await verifiedUserId(input.accessToken);
   if (!userId) return { recordings: [], error: 'Not authenticated' };
 
-  let query = (supabase as any)
+  let query = db
     .from('tradio_live_recordings')
     .select('*')
     .eq('owner_user_id', userId);
@@ -519,7 +518,7 @@ export async function createArchiveJobServer(input: {
   if (!userId) return { id: '', error: 'Not authenticated' };
 
   if (input.recording_id) {
-    const { data: recording } = await (supabase as any)
+    const { data: recording } = await db
       .from('tradio_live_recordings')
       .select('owner_user_id')
       .eq('id', input.recording_id)
@@ -527,7 +526,7 @@ export async function createArchiveJobServer(input: {
     if (!recording || recording.owner_user_id !== userId) return { id: '', error: 'Not authorized' };
   }
   if (input.clip_id) {
-    const { data: clip } = await (supabase as any)
+    const { data: clip } = await db
       .from('tradio_live_highlight_clips')
       .select('owner_user_id')
       .eq('id', input.clip_id)
@@ -535,7 +534,7 @@ export async function createArchiveJobServer(input: {
     if (!clip || clip.owner_user_id !== userId) return { id: '', error: 'Not authorized' };
   }
 
-  const { data, error } = await (supabase as any)
+  const { data, error } = await db
     .from('tradio_live_archive_jobs')
     .insert({
       owner_user_id: userId,

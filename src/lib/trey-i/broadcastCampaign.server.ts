@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
+import { db } from '@/lib/db';
 import {
   buildCampaignInsightSummary as buildCampaignInsightSummaryRules,
   normalizeManualCampaignMetric,
@@ -30,7 +31,6 @@ import type {
   ManualCampaignMetricInput,
 } from './broadcastCampaignTypes';
 
-const supabase = supabaseAdmin as any;
 const campaignAuthClient = supabaseAdmin as unknown as CampaignAuthClient;
 
 type CampaignAccessInput = {
@@ -407,7 +407,7 @@ export async function recordDistributionMetricForOwner(input: {
   metric_type: 'draft_copied' | 'draft_marked_used';
 }): Promise<void> {
   try {
-    const { error } = await supabase.from('tradio_campaign_metrics').insert({
+    const { error } = await db.from('tradio_campaign_metrics').insert({
       owner_user_id: input.owner_user_id,
       channel_id: input.draft.channel_id ?? null,
       clip_id: input.draft.clip_id ?? null,
@@ -493,7 +493,7 @@ export const recordPublicClipPlayMetric = createServerFn({ method: 'POST' })
         .maybeSingle();
       if (error || !clipRow) return { success: false, error: 'Public clip not found' };
 
-      const { error: insertError } = await supabase.from('tradio_campaign_metrics').insert({
+      const { error: insertError } = await db.from('tradio_campaign_metrics').insert({
         owner_user_id: clipRow.owner_user_id,
         channel_id: clipRow.channel_id ?? null,
         clip_id: clipRow.id,

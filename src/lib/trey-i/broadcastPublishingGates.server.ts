@@ -4,9 +4,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from '@/integrations/supabase/client.server';
-
-const supabase = supabaseAdmin;
+import { db } from '@/lib/db';
 
 export interface PublishingGateResult {
   canPublish: boolean;
@@ -28,7 +26,7 @@ export async function validatePublishingGatesServer(input: {
 
   try {
     // Fetch the clip
-    const { data: clip, error: clipError } = await (supabase as any)
+    const { data: clip, error: clipError } = await db
       .from('tradio_live_highlight_clips')
       .select('*')
       .eq('id', input.clip_id)
@@ -51,7 +49,7 @@ export async function validatePublishingGatesServer(input: {
     let isAdmin = false;
     if (!isOwner) {
       // Only check admin if not owner (optimization)
-      const { data: adminCheck } = await supabase.rpc("is_admin", {
+      const { data: adminCheck } = await db.rpc("is_admin", {
         _user_id: input.verifiedUserId,
       });
       isAdmin = adminCheck === true;
@@ -88,7 +86,7 @@ export async function validatePublishingGatesServer(input: {
     }
 
     // Gate 6: Recording and consent records exist
-    const { data: recording } = await (supabase as any)
+    const { data: recording } = await db
       .from('tradio_live_recordings')
       .select('id, consent_snapshot')
       .eq('id', clip.recording_id)
@@ -170,7 +168,7 @@ export async function publishClipWithGatesServer(input: {
   // All gates passed, proceed with publish
   // If owner: require ownership match (defense in depth)
   // If admin: publish any clip after admin role verified
-  let query = (supabase as any)
+  let query = db
     .from('tradio_live_highlight_clips')
     .update({
       clip_status: 'published',

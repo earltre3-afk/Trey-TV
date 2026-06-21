@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db } from "@/lib/db";
 import { AccessToken } from "livekit-server-sdk";
 import { canCallerReceiveSpeakerTokenServer } from "./broadcastConsentEnforcement.server";
 import {
   TradioLiveMicSession,
   TradioLiveMicParticipant,
   TradioLiveCallRequest,
-} from "../../tradio/components/tradio/types/broadcastLiveMicTypes";
+} from "../tradio-broadcast/types/broadcastLiveMicTypes";
 
 const LIVEKIT_URL = process.env.LIVEKIT_URL || "";
 const LIVEKIT_API_KEY = process.env.LIVEKIT_API_KEY || "";
@@ -19,12 +19,12 @@ function isLiveKitConfigured(): boolean {
 // Helper to double-check host or admin privileges
 async function verifyHostOrAdmin(userId: string, roomId: string): Promise<boolean> {
   try {
-    const { data: adminCheck } = await supabaseAdmin.rpc("is_admin", {
+    const { data: adminCheck } = await db.rpc("is_admin", {
       _user_id: userId,
     });
     if (adminCheck) return true;
 
-    const { data: room, error: roomErr } = await (supabaseAdmin as any)
+    const { data: room, error: roomErr } = await db
       .from("tradio_live_rooms")
       .select("owner_user_id, channel_id")
       .eq("id", roomId)
@@ -33,7 +33,7 @@ async function verifyHostOrAdmin(userId: string, roomId: string): Promise<boolea
     if (roomErr || !room) return false;
     if (room.owner_user_id === userId) return true;
 
-    const { data: channel, error: chanErr } = await (supabaseAdmin as any)
+    const { data: channel, error: chanErr } = await db
       .from("tradio_broadcast_channels")
       .select("owner_user_id")
       .eq("id", room.channel_id)
@@ -73,7 +73,7 @@ export const createLiveMicSessionServer = createServerFn({ method: "POST" })
         }
 
         // Cancel previous live sessions to prevent stale rooms
-        await (supabaseAdmin as any)
+        await db
           .from("tradio_live_mic_sessions")
           .update({ session_status: "archived", ended_at: new Date().toISOString() })
           .eq("room_id", input.roomId)
@@ -96,7 +96,7 @@ export const createLiveMicSessionServer = createServerFn({ method: "POST" })
           metadata: {},
         };
 
-        const { data: newSession, error: createErr } = await (supabaseAdmin as any)
+        const { data: newSession, error: createErr } = await db
           .from("tradio_live_mic_sessions")
           .insert(insertPayload)
           .select()
@@ -127,7 +127,7 @@ export const startLiveMicSessionServer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: session, error: sessErr } = await (supabaseAdmin as any)
+      const { data: session, error: sessErr } = await db
         .from("tradio_live_mic_sessions")
         .select("*")
         .eq("id", input.sessionId)
@@ -145,7 +145,7 @@ export const startLiveMicSessionServer = createServerFn({ method: "POST" })
       if (input.micMode) updates.mic_mode = input.micMode;
       if (input.backgroundAudioMode) updates.background_audio_mode = input.backgroundAudioMode;
 
-      const { error: updateErr } = await (supabaseAdmin as any)
+      const { error: updateErr } = await db
         .from("tradio_live_mic_sessions")
         .update(updates)
         .eq("id", input.sessionId);
@@ -166,7 +166,7 @@ export const startLiveMicSessionServer = createServerFn({ method: "POST" })
         joined_at: new Date().toISOString(),
       };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .insert(hostPayload);
 
@@ -183,7 +183,7 @@ export const endLiveMicSessionServer = createServerFn({ method: "POST" })
   .inputValidator((input: { sessionId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: session, error: sessErr } = await (supabaseAdmin as any)
+      const { data: session, error: sessErr } = await db
         .from("tradio_live_mic_sessions")
         .select("*")
         .eq("id", input.sessionId)
@@ -194,7 +194,7 @@ export const endLiveMicSessionServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, session.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_sessions")
         .update({
           session_status: "ended",
@@ -203,7 +203,7 @@ export const endLiveMicSessionServer = createServerFn({ method: "POST" })
         .eq("id", input.sessionId);
 
       // Archive remaining participants
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .update({
           participant_status: "left",
@@ -224,7 +224,7 @@ export const createHostLiveMicTokenServer = createServerFn({ method: "POST" })
   .inputValidator((input: { sessionId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; token?: string; error?: string }> => {
     try {
-      const { data: session, error: sessErr } = await (supabaseAdmin as any)
+      const { data: session, error: sessErr } = await db
         .from("tradio_live_mic_sessions")
         .select("*")
         .eq("id", input.sessionId)
@@ -275,7 +275,7 @@ export const createParticipantLiveMicTokenServer = createServerFn({ method: "POS
   )
   .handler(async ({ data: input }): Promise<{ success: boolean; token?: string; error?: string }> => {
     try {
-      const { data: session, error: sessErr } = await (supabaseAdmin as any)
+      const { data: session, error: sessErr } = await db
         .from("tradio_live_mic_sessions")
         .select("*")
         .eq("id", input.sessionId)
@@ -284,7 +284,7 @@ export const createParticipantLiveMicTokenServer = createServerFn({ method: "POS
       if (sessErr || !session) return { success: false, error: "Session not found." };
 
       // Verify participant is actually invited/approved in database to speak
-      let query = (supabaseAdmin as any)
+      let query = db
         .from("tradio_live_mic_participants")
         .select("*")
         .eq("session_id", input.sessionId);
@@ -372,7 +372,7 @@ export const requestCallInServer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data: input }): Promise<{ success: boolean; request?: TradioLiveCallRequest; error?: string }> => {
     try {
-      const { data: activeSession } = await (supabaseAdmin as any)
+      const { data: activeSession } = await db
         .from("tradio_live_mic_sessions")
         .select("mic_mode")
         .eq("id", input.sessionId)
@@ -384,7 +384,7 @@ export const requestCallInServer = createServerFn({ method: "POST" })
       }
 
       // Avoid duplicates
-      let checkQuery = (supabaseAdmin as any)
+      let checkQuery = db
         .from("tradio_live_call_requests")
         .select("id")
         .eq("session_id", input.sessionId)
@@ -414,7 +414,7 @@ export const requestCallInServer = createServerFn({ method: "POST" })
         metadata: {},
       };
 
-      const { data: req, error: insErr } = await (supabaseAdmin as any)
+      const { data: req, error: insErr } = await db
         .from("tradio_live_call_requests")
         .insert(payload)
         .select()
@@ -435,7 +435,7 @@ export const approveCallInServer = createServerFn({ method: "POST" })
   .inputValidator((input: { requestId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: req, error: reqErr } = await (supabaseAdmin as any)
+      const { data: req, error: reqErr } = await db
         .from("tradio_live_call_requests")
         .select("*")
         .eq("id", input.requestId)
@@ -446,7 +446,7 @@ export const approveCallInServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, req.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_call_requests")
         .update({
           request_status: "approved",
@@ -457,7 +457,7 @@ export const approveCallInServer = createServerFn({ method: "POST" })
       // Fetch user profile details for display_name mapping if present
       let displayName = "Caller Guest";
       if (req.requester_user_id) {
-        const { data: p } = await (supabaseAdmin as any)
+        const { data: p } = await db
           .from("profiles")
           .select("display_name, username")
           .eq("id", req.requester_user_id)
@@ -481,7 +481,7 @@ export const approveCallInServer = createServerFn({ method: "POST" })
         joined_at: new Date().toISOString(),
       };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .insert(partPayload);
 
@@ -500,7 +500,7 @@ export const rejectCallInServer = createServerFn({ method: "POST" })
   )
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: req, error: reqErr } = await (supabaseAdmin as any)
+      const { data: req, error: reqErr } = await db
         .from("tradio_live_call_requests")
         .select("room_id")
         .eq("id", input.requestId)
@@ -511,7 +511,7 @@ export const rejectCallInServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, req.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_call_requests")
         .update({
           request_status: "rejected",
@@ -533,7 +533,7 @@ export const muteParticipantServer = createServerFn({ method: "POST" })
   .inputValidator((input: { participantId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: p, error: pErr } = await (supabaseAdmin as any)
+      const { data: p, error: pErr } = await db
         .from("tradio_live_mic_participants")
         .select("room_id, session_id")
         .eq("id", input.participantId)
@@ -544,7 +544,7 @@ export const muteParticipantServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, p.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .update({
           is_muted_by_host: true,
@@ -565,7 +565,7 @@ export const unmuteParticipantServer = createServerFn({ method: "POST" })
   .inputValidator((input: { participantId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: p, error: pErr } = await (supabaseAdmin as any)
+      const { data: p, error: pErr } = await db
         .from("tradio_live_mic_participants")
         .select("room_id")
         .eq("id", input.participantId)
@@ -576,7 +576,7 @@ export const unmuteParticipantServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, p.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .update({
           is_muted_by_host: false,
@@ -596,7 +596,7 @@ export const removeParticipantServer = createServerFn({ method: "POST" })
   .inputValidator((input: { participantId: string; hostUserId: string }) => input)
   .handler(async ({ data: input }): Promise<{ success: boolean; error?: string }> => {
     try {
-      const { data: p, error: pErr } = await (supabaseAdmin as any)
+      const { data: p, error: pErr } = await db
         .from("tradio_live_mic_participants")
         .select("room_id, session_id")
         .eq("id", input.participantId)
@@ -607,7 +607,7 @@ export const removeParticipantServer = createServerFn({ method: "POST" })
       const canManage = await verifyHostOrAdmin(input.hostUserId, p.room_id);
       if (!canManage) return { success: false, error: "Unauthorized." };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_participants")
         .update({
           participant_status: "removed",
@@ -652,7 +652,7 @@ export const triggerSfxDropServer = createServerFn({ method: "POST" })
         metadata: {},
       };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_sfx_events")
         .insert(payload);
 
@@ -692,7 +692,7 @@ export const logLiveMicEventServer = createServerFn({ method: "POST" })
         metadata: input.metadata || {},
       };
 
-      await (supabaseAdmin as any)
+      await db
         .from("tradio_live_mic_events")
         .insert(payload);
 

@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db } from "@/lib/db";
 import {
   TradioListeningSession,
   TradioBroadcastReaction,
   ChannelPulseSummary,
   ReactionType,
   PlaybackMode,
-} from "../../tradio/components/tradio/types/broadcastListenerTypes";
+} from "../tradio-broadcast/types/broadcastListenerTypes";
 
 /**
  * Server Function: Starts a listener session.
@@ -58,7 +58,7 @@ export const startListeningSessionServer = createServerFn({ method: "POST" })
         }
 
         // Record 'start' retention checkpoint event
-        await (supabaseAdmin as any).from("tradio_broadcast_retention_events").insert({
+        await db.from("tradio_broadcast_retention_events").insert({
           listening_session_id: session.id,
           channel_id: input.channelId,
           queue_id: input.queueId || null,
@@ -119,7 +119,7 @@ export const heartbeatListeningSessionServer = createServerFn({ method: "POST" }
         .eq("id", input.sessionId);
 
       // 3. Log a heartbeat checkpoint
-      await (supabaseAdmin as any).from("tradio_broadcast_retention_events").insert({
+      await db.from("tradio_broadcast_retention_events").insert({
         listening_session_id: input.sessionId,
         channel_id: input.channelId,
         queue_id: input.queueId || null,
@@ -166,7 +166,7 @@ export const completeListeningSessionServer = createServerFn({ method: "POST" })
         .eq("id", input.sessionId);
 
       // Log exit/complete event
-      await (supabaseAdmin as any).from("tradio_broadcast_retention_events").insert({
+      await db.from("tradio_broadcast_retention_events").insert({
         listening_session_id: input.sessionId,
         channel_id: input.channelId,
         queue_id: input.queueId || null,
@@ -318,7 +318,7 @@ export const getCreatorAnalyticsServer = createServerFn({ method: "POST" })
 
       if (channel.owner_user_id !== input.ownerUserId) {
         // Double-check admin
-        const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", {
+        const { data: isAdmin } = await db.rpc("is_admin", {
           _user_id: input.ownerUserId,
         });
         if (!isAdmin) {
