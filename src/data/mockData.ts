@@ -58,7 +58,7 @@ export const PLAYLIST_DETAIL = {
     { id: 't7', n: 7, title: 'After Hours', artist: ARTIST, time: '3:21', artwork: IMAGES.lateNight, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3' },
     { id: 't8', n: 8, title: 'Soul Therapy', artist: ARTIST, time: '4:23', artwork: IMAGES.neonCity3, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
     { id: 't9', n: 9, title: 'The Come Up', artist: ARTIST, time: '3:24', artwork: IMAGES.artist2, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3' },
-    { id: 't10', n: 10, title: 'JUNE NINETEENTH', artist: ARTIST, time: '4:33', artwork: IMAGES.neonCity1, src: '/assets/games/traptap/audio/june-nineteenth.m4a' },
+    { id: 't10', n: 10, title: 'JUNE NINETEENTH', artist: ARTIST, time: '4:33', artwork: IMAGES.neonCity1, src: '/assets/games/traptap/audio/june-nineteenth.m4a?v=2' },
   ],
 };
 
@@ -79,7 +79,7 @@ export const SAVED_ITEMS = [
 export const LIBRARY_ROWS = ['Playlists', 'Albums', 'Artists', 'Songs', 'Radios'];
 
 export const TOP_TRACKS = [
-  { id: 'tt4', title: 'JUNE NINETEENTH', artist: ARTIST, time: '4:33', image: IMAGES.neonCity1, src: '/assets/games/traptap/audio/june-nineteenth.m4a' },
+  { id: 'tt4', title: 'JUNE NINETEENTH', artist: ARTIST, time: '4:33', image: IMAGES.neonCity1, src: '/assets/games/traptap/audio/june-nineteenth.m4a?v=2' },
   { id: 'tt1', title: 'Back To Night', artist: ARTIST, time: '3:45', image: IMAGES.treyHero, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
   { id: 'tt2', title: 'No Looking Back', artist: ARTIST, time: '3:16', image: IMAGES.neonCity2, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
   { id: 'tt3', title: 'Pressure Points', artist: ARTIST, time: '2:58', image: IMAGES.neonCity4, src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
@@ -176,7 +176,7 @@ export const SPOTLIGHT_TRACK = {
   title: 'June Nineteenth',
   artist: ARTIST,
   artwork: IMAGES.treyHero,
-  src: '/assets/games/traptap/audio/june-nineteenth.m4a',
+  src: '/assets/games/traptap/audio/june-nineteenth.m4a?v=2',
 };
 
 // Spotlight queue starts with Back To Night then continues into the playlist

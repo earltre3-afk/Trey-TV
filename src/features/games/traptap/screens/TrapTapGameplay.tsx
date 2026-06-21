@@ -122,6 +122,10 @@ const TrapTapGameplay: React.FC<Props> = ({
     eng.raf = 0;
     eng.geo = null;
     eng.keyHeld = [false, false, false, false];
+    // Mobile detection for frame throttling
+    eng.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    eng.lastDrawTime = 0;
+    eng.frameInterval = eng.isMobile ? 1000 / 30 : 0; // 30fps cap on mobile
 
     // ---------- geometry (3D HIGHWAY PERSPECTIVE) ----------
     const resize = () => {
@@ -219,14 +223,17 @@ const TrapTapGameplay: React.FC<Props> = ({
       }
     };
 
+    const MAX_PARTICLES = 80; // Hard cap prevents memory pressure on mobile Safari
     const spawnParticles = (lane: number, j: Judgment) => {
       const g = eng.geo; if (!g) return;
+      // Skip if at cap — prevents unbounded growth
+      if (eng.particles.length >= MAX_PARTICLES) return;
       const x = g.botCenters[lane], y = g.hitY, col = activeLaneColors[lane];
+      const recR = g.recR;
       
-      // Spawn different types of premium effects!
-      // 1. Radial Streaks (high-velocity laser streaks shooting outwards)
-      const numStreaks = j === 'pp' ? 12 : j === 'p' ? 8 : 4;
-      for (let i = 0; i < numStreaks; i++) {
+      // Reduced particle counts for mobile perf (was 12/8/4 → 4/3/2)
+      const numStreaks = j === 'pp' ? 4 : j === 'p' ? 3 : 2;
+      for (let i = 0; i < numStreaks && eng.particles.length < MAX_PARTICLES; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 250 + Math.random() * 350;
         eng.particles.push({
@@ -242,9 +249,9 @@ const TrapTapGameplay: React.FC<Props> = ({
         });
       }
 
-      // 2. Floating Orbiters / Sparks (slower, floating sparks with deceleration/friction, no gravity)
-      const numSparks = j === 'pp' ? 14 : j === 'p' ? 9 : 5;
-      for (let i = 0; i < numSparks; i++) {
+      // Reduced sparks (was 14/9/5 → 4/3/2)
+      const numSparks = j === 'pp' ? 4 : j === 'p' ? 3 : 2;
+      for (let i = 0; i < numSparks && eng.particles.length < MAX_PARTICLES; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 100 + Math.random() * 150;
         eng.particles.push({
@@ -260,29 +267,19 @@ const TrapTapGameplay: React.FC<Props> = ({
         });
       }
 
-      // 3. Shockwave Flash Ring (expanding circular ring)
-      eng.particles.push({
-        type: 'ring',
-        x, y,
-        life: 0,
-        max: 0.28,
-        col,
-        startR: recR * 0.6,
-        endR: recR * 3.5,
-        width: 3.5
-      });
-
-      // 4. Center Lens Flare Star
-      eng.particles.push({
-        type: 'lensflare',
-        x, y,
-        life: 0,
-        max: 0.22,
-        col,
-        maxSize: recR * 2.2
-      });
-
-      if (eng.particles.length > 300) eng.particles.splice(0, eng.particles.length - 300);
+      // Ring
+      if (eng.particles.length < MAX_PARTICLES) {
+        eng.particles.push({
+          type: 'ring',
+          x, y,
+          life: 0,
+          max: 0.28,
+          col,
+          startR: recR * 0.6,
+          endR: recR * 3.5,
+          width: 3.5
+        });
+      }
     };
 
     const activateFever = () => {
@@ -375,20 +372,13 @@ const TrapTapGameplay: React.FC<Props> = ({
 
     // ---------- drawing (3D HIGHWAY) ----------
     const drawStar = (cx: number, cy: number, rx: number, ry: number, col: string) => {
-      // Outer glow shape instead of slow shadowBlur
-      ctx.fillStyle = rgba(col, 0.4);
-      ctx.beginPath();
-      ctx.arc(cx, cy, rx * 1.5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 4-pointed squircle-like star inside notes and receptor pads matching reference
+      // Simple diamond — 1 draw op instead of 2
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.moveTo(cx, cy - ry);
-      ctx.quadraticCurveTo(cx, cy, cx + rx, cy);
-      ctx.quadraticCurveTo(cx, cy, cx, cy + ry);
-      ctx.quadraticCurveTo(cx, cy, cx - rx, cy);
-      ctx.quadraticCurveTo(cx, cy, cx, cy - ry);
+      ctx.lineTo(cx + rx, cy);
+      ctx.lineTo(cx, cy + ry);
+      ctx.lineTo(cx - rx, cy);
       ctx.closePath();
       ctx.fill();
     };
@@ -416,24 +406,13 @@ const TrapTapGameplay: React.FC<Props> = ({
     
     // Scale factor: tiny far away, full size close
     const perspScale = (p: number) => 0.08 + 0.92 * perspT(p);
-    const drawDisc = (cx: number, cy: number, rx: number, squash: number, col: string, isFist: boolean) => {
-      const ry = rx * squash; // squashed top face
-      const thickness = rx * 0.35; // height of the 3D cylinder
+    // Simplified drawDisc: 5 draw ops instead of 15. Still looks 3D but won't kill mobile GPU.
+    const drawDisc = (cx: number, cy: number, rx: number, squash: number, col: string, _isFist: boolean) => {
+      const ry = rx * squash;
+      const thickness = rx * 0.3;
       
-      // 0. Ambient shadow/glow on the road beneath the disc (translucent ellipse instead of radial gradient)
-      const shadowY = cy + thickness;
-      ctx.fillStyle = rgba(col, 0.14);
-      ctx.beginPath();
-      ctx.ellipse(cx, shadowY, rx * 1.5, ry * 1.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = rgba(col, 0.35);
-      ctx.beginPath();
-      ctx.ellipse(cx, shadowY, rx * 0.75, ry * 0.75, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 1. Draw side wall (cylinder height extrusion - solid darker color instead of linear gradient)
-      ctx.fillStyle = rgba(col, 0.78);
-      
+      // 1. Side wall (cylinder extrusion)
+      ctx.fillStyle = rgba(col, 0.7);
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, rx, ry, 0, 0, Math.PI);
       ctx.lineTo(cx + rx, cy);
@@ -441,87 +420,41 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.lineTo(cx - rx, cy + thickness);
       ctx.closePath();
       ctx.fill();
-      
-      ctx.strokeStyle = rgba(col, 0.55);
-      ctx.lineWidth = Math.max(1, rx * 0.04);
-      ctx.stroke();
 
-      // 2. Draw top cap background
-      ctx.fillStyle = 'rgba(8, 4, 18, 0.96)';
+      // 2. Top cap dark background
+      ctx.fillStyle = 'rgba(8,4,18,0.95)';
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 3. Ambient face glow (layered ellipses instead of radial gradient)
-      ctx.fillStyle = rgba(col, 0.16);
+      // 3. Colored face glow
+      ctx.fillStyle = rgba(col, 0.4);
       ctx.beginPath();
-      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = rgba(col, 0.45);
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, rx * 0.75, ry * 0.75, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Bright outer glowing rim
-      ctx.strokeStyle = rgba(col, 0.98);
-      ctx.lineWidth = Math.max(2.0, rx * 0.08);
+      // 4. Outer rim
+      ctx.strokeStyle = col;
+      ctx.lineWidth = Math.max(2, rx * 0.07);
       ctx.beginPath();
       ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 5. Specular metallic sheen sweep on the face
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.lineWidth = rx * 0.07;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, rx * 0.72, ry * 0.72, Math.PI * 0.25, -Math.PI * 0.35, Math.PI * 0.15);
-      ctx.stroke();
-
-      // 6. Specular highlight accent on the top surface
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = Math.max(1, rx * 0.05);
-      ctx.beginPath();
-      ctx.ellipse(cx, cy - ry * 0.2, rx * 0.72, ry * 0.52, 0, Math.PI * 1.2, Math.PI * 1.8);
-      ctx.stroke();
-
-      // 7. Center icon / star
-      if (isFist) {
-        const fs = rx * 0.28;
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.beginPath();
-        ctx.roundRect(cx - fs * 0.4, cy - fs * 0.5, fs * 0.8, fs * 0.6, fs * 0.12);
-        ctx.fill();
-        ctx.fillRect(cx - fs * 0.2, cy + fs * 0.1, fs * 0.4, fs * 0.45);
-      } else {
-        drawStar(cx, cy, rx * 0.26, ry * 0.26, col);
-      }
+      // 5. Center diamond
+      drawStar(cx, cy, rx * 0.24, ry * 0.24, col);
     };
 
-    // Draw the big 3D cylindrical receptor pad at the hit line
+    // Simplified drawReceptor: 6 draw ops instead of 20+. Still looks good but sustainable on mobile.
     const drawReceptor = (cx: number, cy: number, R: number, col: string, fl: number, beatEnv: number) => {
-      const squash = 0.35; // flat perspective
+      const squash = 0.35;
       const ry = R * squash;
-      
-      // Pulse animation based on beat and tap flash
-      const pulse = 1 + beatEnv * 0.04 + fl * 0.12;
+      const pulse = 1 + beatEnv * 0.03 + fl * 0.1;
       const pR = R * pulse;
       const pRy = ry * pulse;
-      
-      // Receptors depress (thickness decreases) when tapped!
-      const thickness = R * 0.42 * (1 - fl * 0.22);
-      
-      // 1. Ambient glow on the road beneath the receptor (layered ellipses instead of radial gradient)
-      ctx.fillStyle = rgba(col, (0.15 + fl * 0.18));
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + thickness, pR * 2.8, pRy * 2.8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = rgba(col, (0.35 + fl * 0.35));
-      ctx.beginPath();
-      ctx.ellipse(cx, cy + thickness, pR * 1.4, pRy * 1.4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      const thickness = R * 0.38 * (1 - fl * 0.2);
 
-      // 2. Draw 3D side wall (solid color instead of linear gradient)
-      ctx.fillStyle = rgba(col, 0.65 + fl * 0.2);
-      
+      // 1. Side wall
+      ctx.fillStyle = rgba(col, 0.6 + fl * 0.2);
       ctx.beginPath();
       ctx.ellipse(cx, cy + thickness, pR, pRy, 0, 0, Math.PI);
       ctx.lineTo(cx + pR, cy);
@@ -529,99 +462,37 @@ const TrapTapGameplay: React.FC<Props> = ({
       ctx.lineTo(cx - pR, cy + thickness);
       ctx.closePath();
       ctx.fill();
-      
-      ctx.strokeStyle = rgba(col, 0.45 + fl * 0.3);
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
 
-      // 3. Top cap background
-      ctx.fillStyle = 'rgba(6, 3, 15, 0.94)';
+      // 2. Top cap dark
+      ctx.fillStyle = 'rgba(6,3,15,0.93)';
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 4. Top face circular radial glow (layered ellipses instead of radial gradient)
-      ctx.fillStyle = rgba(col, (0.16 + fl * 0.16));
+      // 3. Colored glow on face
+      ctx.fillStyle = rgba(col, 0.35 + fl * 0.3);
       ctx.beginPath();
-      ctx.ellipse(cx, cy, pR, pRy, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = rgba(col, (0.45 + fl * 0.3));
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, pR * 0.72, pRy * 0.72, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx, cy, pR * 0.7, pRy * 0.7, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // 5. Thick outer glowing rim
-      ctx.strokeStyle = rgba(col, 0.92 + fl * 0.08);
-      ctx.lineWidth = 3.5 + fl * 3;
+      // 4. Outer rim
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 3 + fl * 2.5;
       ctx.beginPath();
       ctx.ellipse(cx, cy, pR * 0.95, pRy * 0.95, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // 6. Inner concentric rings
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, pR * 0.72, pRy * 0.72, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      ctx.strokeStyle = rgba(col, 0.35);
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, pR * 0.48, pRy * 0.48, 0, 0, Math.PI * 2);
-      ctx.stroke();
+      // 5. Center icon
+      drawStar(cx, cy, pR * 0.2, pRy * 0.2, col);
 
-      // 7. Center icon
-      if (isJune) {
-        const fs = pR * 0.22;
-        ctx.fillStyle = rgba(col, 0.8 + fl * 0.2);
-        ctx.beginPath();
-        ctx.roundRect(cx - fs * 0.4, cy - fs * 0.45, fs * 0.8, fs * 0.55, fs * 0.12);
-        ctx.fill();
-        ctx.fillRect(cx - fs * 0.2, cy + fs * 0.1, fs * 0.4, fs * 0.4);
-      } else {
-        drawStar(cx, cy, pR * 0.22, pRy * 0.22, col);
-      }
-
-      // Floating hologram ring hovering above
-      const hoverY = cy - 10 - beatEnv * 6;
-      ctx.strokeStyle = rgba(col, 0.45 + beatEnv * 0.3);
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.ellipse(cx, hoverY, pR * 0.85, pRy * 0.85, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      
-      // Connecting vertical laser lines from pad to floating ring
-      ctx.strokeStyle = rgba(col, 0.2 + beatEnv * 0.2);
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(cx - pR * 0.85, cy);
-      ctx.lineTo(cx - pR * 0.85, hoverY);
-      ctx.moveTo(cx + pR * 0.85, cy);
-      ctx.lineTo(cx + pR * 0.85, hoverY);
-      ctx.stroke();
-
-      // Tap shockwave expansion
-      if (fl > 0) {
-        const ringProgress = 1.0 + (1 - fl) * 2.2;
-        // Primary glowing ring
-        ctx.strokeStyle = rgba(col, fl * 0.9);
-        ctx.lineWidth = 4 * fl;
+      // 6. Tap shockwave (only when tapped)
+      if (fl > 0.05) {
+        const ringProgress = 1.0 + (1 - fl) * 2;
+        ctx.strokeStyle = rgba(col, fl * 0.8);
+        ctx.lineWidth = 3 * fl;
         ctx.beginPath();
         ctx.ellipse(cx, cy, pR * ringProgress, pRy * ringProgress, 0, 0, Math.PI * 2);
         ctx.stroke();
-
-        // Secondary offset chromatic ring
-        const altCol = isJune ? '#FFD700' : '#00B4FF';
-        ctx.strokeStyle = rgba(altCol, fl * 0.5);
-        ctx.lineWidth = 1.5 * fl;
-        ctx.beginPath();
-        ctx.ellipse(cx - 2 * fl, cy, pR * (ringProgress * 0.9), pRy * (ringProgress * 0.9), 0, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Inner shockwave glow (layered ellipse instead of radial gradient)
-        ctx.fillStyle = rgba(col, fl * 0.08);
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, pR * ringProgress, pRy * ringProgress, 0, 0, Math.PI * 2);
-        ctx.fill();
       }
     };
 
@@ -706,124 +577,57 @@ const TrapTapGameplay: React.FC<Props> = ({
         ctx.stroke();
       }
 
-      // ── Draw lane dividers and glowing 3D tubular side rails ──
-      // All boundary lines (edges and lane dividers) are rendered as glowing tubes to stay lit up
-      const drawRail = (i: number) => {
+      // ── Lane dividers — simplified: 2 draw ops per rail instead of 4 ──
+      for (let i = 0; i <= LANE_COUNT; i++) {
         const col = i < LANE_COUNT ? activeLaneColors[i] : activeLaneColors[LANE_COUNT - 1];
         const tx = topBoundaries[i];
         const bx = botBoundaries[i];
         const pbx = tx + (bx - tx) * ((H - vanishY) / (hitY - vanishY));
         
-        // Aura glow
-        ctx.strokeStyle = rgba(col, 0.28);
-        ctx.lineWidth = 14;
+        // Glow
+        ctx.strokeStyle = rgba(col, 0.4);
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.moveTo(tx, vanishY);
         ctx.lineTo(pbx, H);
         ctx.stroke();
         
-        // Outer core
-        ctx.strokeStyle = rgba(col, 0.6);
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(tx, vanishY);
-        ctx.lineTo(pbx, H);
-        ctx.stroke();
-        
-        // Main tubular body
+        // Core
         ctx.strokeStyle = col;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(tx, vanishY);
-        ctx.lineTo(pbx, H);
-        ctx.stroke();
-        
-        // Specular highlight line
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1.0;
-        ctx.beginPath();
-        ctx.moveTo(tx, vanishY);
-        ctx.lineTo(pbx, H);
-        ctx.stroke();
-      };
-      
-      for (let i = 0; i <= LANE_COUNT; i++) {
-        drawRail(i);
-      }
-
-      // Draw center path guides down the middle of each lane
-      for (let i = 0; i < LANE_COUNT; i++) {
-        const col = activeLaneColors[i];
-        const tx = topCenters[i];
-        const bx = botCenters[i];
-        const pbx = tx + (bx - tx) * ((H - vanishY) / (hitY - vanishY));
-        
-        ctx.strokeStyle = rgba(col, 0.12);
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(tx, vanishY);
         ctx.lineTo(pbx, H);
         ctx.stroke();
       }
 
-      // ── Draw 3D side pillars / light posts zooming by ──
-      const spacing = 0.8; // seconds spacing between pillars
+      // ── Side pillars — simplified: 3 draw ops per pillar instead of 7, only 3 pillars instead of 6 ──
+      const spacing = 1.2;
       const speed = difficulty.speed * (tun.current.noteSpeedMult || 1);
-      const pillarCount = 6;
+      const pillarCount = 3;
       const tPhase = (t * speed) % spacing;
-      for (let k = -1; k < pillarCount; k++) {
-        const p = (k * spacing + tPhase) / (spacing * (pillarCount - 2)); // normalized progress 0 to 1
+      for (let k = 0; k < pillarCount; k++) {
+        const p = (k * spacing + tPhase) / (spacing * pillarCount);
         if (p < 0 || p > 1.1) continue;
         const ly = laneY(p);
         const lScale = perspScale(p);
-        
-        // Left pillar location
-        const lx = boundX(0, p) - 25 * lScale;
-        // Right pillar location
-        const rx = boundX(LANE_COUNT, p) + 25 * lScale;
-        
-        const pilH = 45 * lScale;
-        const pilW = 6 * lScale;
+        const lx = boundX(0, p) - 20 * lScale;
+        const rx = boundX(LANE_COUNT, p) + 20 * lScale;
+        const pilH = 40 * lScale;
+        const pilW = 5 * lScale;
         
         const drawPillar = (px: number, isLeft: boolean) => {
           const col = isLeft ? activeLaneColors[0] : activeLaneColors[LANE_COUNT - 1];
-          const flareCol = isJune ? '#FFD700' : '#B026FF';
-          
-          // Pillar base shadow
-          ctx.fillStyle = 'rgba(0,0,0,0.4)';
-          ctx.beginPath();
-          ctx.ellipse(px, ly, pilW * 1.8, pilW * 0.7, 0, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Glowing beam tube (solid translucent layers instead of linear gradient)
-          ctx.fillStyle = rgba(col, 0.65);
-          ctx.beginPath();
-          ctx.roundRect(px - pilW / 2, ly - pilH, pilW, pilH, pilW / 2);
-          ctx.fill();
-
-          ctx.fillStyle = rgba(flareCol, 0.9);
-          ctx.beginPath();
-          ctx.roundRect(px - pilW / 2, ly - pilH, pilW, pilH * 0.35, pilW / 2);
-          ctx.fill();
-          
-          // Specular highlight on post
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-          ctx.lineWidth = pilW * 0.25;
-          ctx.beginPath();
-          ctx.moveTo(px - pilW * 0.2, ly);
-          ctx.lineTo(px - pilW * 0.2, ly - pilH);
-          ctx.stroke();
-          
-          // Light cap aura glow (layered circles instead of radial gradient)
-          const capR = pilW * 1.6;
-          ctx.fillStyle = rgba(flareCol, 0.28);
-          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 2.8, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = rgba(flareCol, 0.6);
-          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 1.5, 0, Math.PI * 2); ctx.fill();
+          // Beam
+          ctx.fillStyle = rgba(col, 0.6);
+          ctx.fillRect(px - pilW / 2, ly - pilH, pilW, pilH);
+          // Cap glow
+          ctx.fillStyle = rgba(isJune ? '#FFD700' : '#B026FF', 0.7);
+          ctx.beginPath(); ctx.arc(px, ly - pilH, pilW * 1.5, 0, Math.PI * 2); ctx.fill();
+          // White core
           ctx.fillStyle = '#ffffff';
-          ctx.beginPath(); ctx.arc(px, ly - pilH, capR * 0.65, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(px, ly - pilH, pilW * 0.5, 0, Math.PI * 2); ctx.fill();
         };
-        
         drawPillar(lx, true);
         drawPillar(rx, false);
       }
@@ -845,7 +649,8 @@ const TrapTapGameplay: React.FC<Props> = ({
           if (pHead <= pTail) continue;
 
           const col = activeLaneColors[n.lane];
-          const numSteps = 14;
+          // Reduced from 14 steps to 6 for performance
+          const numSteps = 6;
           const leftPts: { x: number; y: number }[] = [];
           const rightPts: { x: number; y: number }[] = [];
           for (let step = 0; step <= numSteps; step++) {
@@ -859,7 +664,7 @@ const TrapTapGameplay: React.FC<Props> = ({
             rightPts.push({ x: cx + w, y: cy });
           }
 
-          // Filled trail (solid translucent instead of linear gradient)
+          // Filled trail
           ctx.beginPath();
           ctx.moveTo(leftPts[0].x, leftPts[0].y);
           for (let s = 1; s <= numSteps; s++) ctx.lineTo(leftPts[s].x, leftPts[s].y);
@@ -867,19 +672,6 @@ const TrapTapGameplay: React.FC<Props> = ({
           ctx.closePath();
           ctx.fillStyle = rgba(col, n.holdActive ? 0.45 : 0.16);
           ctx.fill();
-
-          // Techy Ladder/Mesh texture along the hold trail
-          ctx.strokeStyle = rgba('#ffffff', n.holdActive ? 0.25 : 0.08);
-          ctx.lineWidth = n.holdActive ? 2 : 1;
-          for (let s = 0; s <= numSteps; s += 2) {
-            const ly1 = leftPts[s].y;
-            const lx1 = leftPts[s].x;
-            const rx1 = rightPts[s].x;
-            ctx.beginPath();
-            ctx.moveTo(lx1, ly1);
-            ctx.lineTo(rx1, ly1);
-            ctx.stroke();
-          }
 
           // Borders
           ctx.strokeStyle = rgba(col, n.holdActive ? 0.95 : 0.55);
@@ -891,22 +683,11 @@ const TrapTapGameplay: React.FC<Props> = ({
           for (let s = 0; s <= numSteps; s++) { s === 0 ? ctx.moveTo(rightPts[s].x, rightPts[s].y) : ctx.lineTo(rightPts[s].x, rightPts[s].y); }
           ctx.stroke();
 
-          // Hold glow at hit line (layered translucency instead of radial gradient)
+          // Hold glow — simplified to 1 draw op
           if (n.holdActive) {
             const hx = botCenters[n.lane];
-            const glowPhase = (now / 120) % (Math.PI * 2);
-            const glowPulse = 0.6 + 0.4 * Math.sin(glowPhase);
-            const glowR = recR * (1.5 + glowPulse * 0.7);
-            
-            ctx.fillStyle = rgba(col, 0.14 * glowPulse);
-            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 2, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = rgba(col, 0.32 * glowPulse);
-            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 1.0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = rgba('#ffffff', 0.45 * glowPulse);
-            ctx.beginPath(); ctx.arc(hx, hitY, glowR * 0.4, 0, Math.PI * 2); ctx.fill();
-            
-            ctx.strokeStyle = rgba(col, 0.8 * glowPulse); ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.ellipse(hx, hitY, recR * (1.0 + glowPulse * 0.4), recR * 0.35 * (1.0 + glowPulse * 0.4), 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = rgba(col, 0.3);
+            ctx.beginPath(); ctx.arc(hx, hitY, recR * 1.6, 0, Math.PI * 2); ctx.fill();
           }
 
           // Tail cap (3D disc)
@@ -924,46 +705,14 @@ const TrapTapGameplay: React.FC<Props> = ({
         }
       }
 
-      // ── Hit line flare ──
+      // ── Hit line ──
       const hf = Math.max(0, 1 - (now - eng.hitFlash) / 250);
-      // Horizontal hit line
-      ctx.strokeStyle = `rgba(255,255,255,${0.08 + hf * 0.5})`;
-      ctx.lineWidth = 1.5 + hf * 4;
+      ctx.strokeStyle = `rgba(255,255,255,${0.08 + hf * 0.4})`;
+      ctx.lineWidth = 1.5 + hf * 3;
       ctx.beginPath();
       ctx.moveTo(botBoundaries[0], hitY);
       ctx.lineTo(botBoundaries[LANE_COUNT], hitY);
       ctx.stroke();
-      // Bright flare burst on hit (solid translucent bars instead of linear gradient)
-      if (hf > 0.1) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${hf * 0.14})`;
-        ctx.fillRect(botBoundaries[0], hitY - 3 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]), 6 * hf);
-        ctx.fillStyle = `rgba(255, 255, 255, ${hf * 0.35})`;
-        ctx.fillRect(botBoundaries[0] + (botBoundaries[LANE_COUNT] - botBoundaries[0]) * 0.3, hitY - 1 * hf, (botBoundaries[LANE_COUNT] - botBoundaries[0]) * 0.4, 2 * hf);
-      }
-
-      // ── Draw 3D vertical beam projection when lane is tapped ──
-      for (let i = 0; i < LANE_COUNT; i++) {
-        const fl = Math.max(0, 1 - (now - eng.laneFlash[i]) / 220);
-        if (fl > 0.02) {
-          const col = activeLaneColors[i];
-          const x = botCenters[i];
-          const tx = topCenters[i];
-          const beamW = recR * 1.4 * fl;
-          const beamH = H * 0.45 * fl;
-          
-          // Tap vertical beam (solid translucent instead of linear gradient)
-          ctx.fillStyle = rgba(col, fl * 0.18);
-          ctx.beginPath();
-          const tScale = perspScale(1 - fl * 0.45);
-          const topW = beamW * tScale;
-          ctx.moveTo(x - beamW, hitY);
-          ctx.lineTo(tx - topW, hitY - beamH);
-          ctx.lineTo(tx + topW, hitY - beamH);
-          ctx.lineTo(x + beamW, hitY);
-          ctx.closePath();
-          ctx.fill();
-        }
-      }
 
       // ── Draw 3D disc notes ──
       for (let i = eng.startIdx; i < eng.chart.length; i++) {
@@ -988,80 +737,55 @@ const TrapTapGameplay: React.FC<Props> = ({
         drawReceptor(x, y, recR, col, fl, beatEnv);
       }
 
-      // Premium Particles rendering (Streaks, Orbiters, Ring, and Flare)
+      // Particles rendering — 1 draw op per particle instead of 2-3
       for (const pt of eng.particles) {
         const a = 1 - pt.life / pt.max;
+        if (a <= 0) continue;
         
         if (pt.type === 'streak') {
-          // Draw a glowing streak line along its velocity vector
           const vel = Math.sqrt(pt.vx * pt.vx + pt.vy * pt.vy);
           if (vel === 0) continue;
           const dx = pt.vx / vel;
           const dy = pt.vy / vel;
           const len = pt.length * a;
-          
-          ctx.strokeStyle = rgba(pt.col, a * 0.9);
+          ctx.strokeStyle = rgba(pt.col, a * 0.85);
           ctx.lineWidth = pt.width * a;
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y);
           ctx.lineTo(pt.x - dx * len, pt.y - dy * len);
           ctx.stroke();
-          
-          // White core
-          ctx.strokeStyle = rgba('#ffffff', a);
-          ctx.lineWidth = pt.width * 0.4 * a;
-          ctx.beginPath();
-          ctx.moveTo(pt.x, pt.y);
-          ctx.lineTo(pt.x - dx * len * 0.6, pt.y - dy * len * 0.6);
-          ctx.stroke();
         } 
         else if (pt.type === 'spark') {
           const pr = Math.max(0, pt.r * a) || 0;
-          
-          // Draw outer glow (larger semi-transparent circle) instead of slow shadowBlur
-          ctx.fillStyle = rgba(pt.col, a * 0.25);
+          ctx.fillStyle = rgba(pt.col, a * 0.8);
           ctx.beginPath();
-          ctx.arc(pt.x, pt.y, pr * 2.5, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Draw diamond shapes
-          ctx.fillStyle = rgba(pt.col, a * 0.9);
-          ctx.beginPath();
-          ctx.moveTo(pt.x, pt.y - pr);
-          ctx.lineTo(pt.x + pr * 0.6, pt.y);
-          ctx.lineTo(pt.x, pt.y + pr);
-          ctx.lineTo(pt.x - pr * 0.6, pt.y);
-          ctx.closePath();
-          ctx.fill();
-          
-          // Core
-          ctx.fillStyle = rgba('#ffffff', a);
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, pr * 0.35, 0, Math.PI * 2);
+          ctx.arc(pt.x, pt.y, pr, 0, Math.PI * 2);
           ctx.fill();
         } 
         else if (pt.type === 'ring') {
-          // Draw expanding shockwave ring
           const currentR = Math.max(0, pt.startR + (pt.endR - pt.startR) * (pt.life / pt.max)) || 0;
-          ctx.strokeStyle = rgba(pt.col, a * 0.8);
+          ctx.strokeStyle = rgba(pt.col, a * 0.7);
           ctx.lineWidth = pt.width * a;
           ctx.beginPath();
           ctx.ellipse(pt.x, pt.y, currentR, currentR * 0.35, 0, 0, Math.PI * 2);
           ctx.stroke();
-        } 
-        else if (pt.type === 'lensflare') {
-          // Draw expanding central glowing star
-          const sz = Math.max(0, pt.maxSize * Math.sin((pt.life / pt.max) * Math.PI)) || 0;
-          drawStar(pt.x, pt.y, sz, sz * 0.35, pt.col);
         }
       }
-      ctx.shadowBlur = 0; // reset
     };
 
     // ---------- main loop ----------
     const loop = (now: number) => {
       if (!eng.running) return;
       try {
+        // On mobile, throttle to 30fps to prevent GPU overload
+        if (eng.frameInterval > 0) {
+          const elapsed = now - eng.lastDrawTime;
+          if (elapsed < eng.frameInterval) {
+            eng.raf = requestAnimationFrame(loop);
+            return;
+          }
+          eng.lastDrawTime = now - (elapsed % eng.frameInterval);
+        }
         const dt = Math.min(0.05, (now - eng.lastT) / 1000); eng.lastT = now;
         const audio = eng.audio;
         if (!audio) { eng.raf = requestAnimationFrame(loop); return; }
@@ -1100,20 +824,21 @@ const TrapTapGameplay: React.FC<Props> = ({
                 registerMiss();
               } else {
                 // Tick score
-                if (Math.random() < 0.22) {
+                if (Math.random() < 0.08) {
                   eng.score += Math.round(1.2 * comboMult() * (eng.feverActive ? 2 : 1) * difficulty.mult);
-                  const g = eng.geo;
-                  if (g) {
-                    const px = g.botCenters[n.lane] + (Math.random() - 0.5) * 20;
-                    const py = g.hitY;
-                    eng.particles.push({
-                      type: 'spark',
-                      x: px, y: py,
-                      vx: (Math.random() - 0.5) * 110,
-                      vy: -140 - Math.random() * 140,
-                      life: 0, max: 0.35 + Math.random() * 0.25,
-                      col: activeLaneColors[n.lane], r: 1.2 + Math.random() * 2.2
-                    });
+                  // Only spawn hold tick particles if under cap
+                  if (eng.particles.length < MAX_PARTICLES) {
+                    const g = eng.geo;
+                    if (g) {
+                      eng.particles.push({
+                        type: 'spark',
+                        x: g.botCenters[n.lane], y: g.hitY,
+                        vx: (Math.random() - 0.5) * 80,
+                        vy: -100 - Math.random() * 100,
+                        life: 0, max: 0.3,
+                        col: activeLaneColors[n.lane], r: 1.5
+                      });
+                    }
                   }
                 }
               }
@@ -1134,16 +859,21 @@ const TrapTapGameplay: React.FC<Props> = ({
         if (els.current.progress) (els.current.progress as HTMLElement).style.width = Math.min(100, (at / song.duration) * 100).toFixed(2) + '%';
         setText('time', formatTime(at) + ' / ' + formatTime(song.duration));
 
-        for (let i = eng.particles.length - 1; i >= 0; i--) {
+        // Swap-and-pop removal: O(1) per removal instead of O(n) splice
+        let writeIdx = 0;
+        for (let i = 0; i < eng.particles.length; i++) {
           const pt = eng.particles[i]; pt.life += dt;
-          if (pt.life >= pt.max) { eng.particles.splice(i, 1); continue; }
+          if (pt.life >= pt.max) continue; // skip dead — don't copy forward
           if (pt.drag) {
-            pt.vx *= Math.pow(pt.drag, dt * 60);
-            pt.vy *= Math.pow(pt.drag, dt * 60);
+            const dragFactor = Math.pow(pt.drag, dt * 60);
+            pt.vx *= dragFactor;
+            pt.vy *= dragFactor;
           }
           pt.x += pt.vx * dt;
           pt.y += pt.vy * dt;
+          eng.particles[writeIdx++] = pt;
         }
+        eng.particles.length = writeIdx;
 
         draw(t, now);
 
@@ -1657,10 +1387,10 @@ const TrapTapGameplay: React.FC<Props> = ({
       {/* top HUD */}
       <div className="absolute left-0 right-0 top-0" style={{ zIndex: 7, padding: 'calc(env(safe-area-inset-top) + 12px) 12px 0' }}>
         <div className="flex items-center" style={{ gap: 9 }}>
-          <button onClick={requestPause} className="flex items-center justify-center" style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)', backdropFilter: 'blur(12px)' }}>
+          <button onClick={requestPause} className="flex items-center justify-center" style={{ width: 46, height: 46, flexShrink: 0, borderRadius: 14, background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)' }}>
             <Pause size={18} />
           </button>
-          <div className="flex items-center" style={{ flex: 1, minWidth: 0, gap: 10, padding: '7px 11px 7px 7px', borderRadius: 16, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', backdropFilter: 'blur(12px)' }}>
+          <div className="flex items-center" style={{ flex: 1, minWidth: 0, gap: 10, padding: '7px 11px 7px 7px', borderRadius: 16, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)' }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg,#1a0a2e,#04121f)' }}>
               <img src={song.coverArtUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
@@ -1670,7 +1400,7 @@ const TrapTapGameplay: React.FC<Props> = ({
             </div>
             <span style={{ flexShrink: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: 9, fontWeight: 700, letterSpacing: '.08em', padding: '3px 7px', borderRadius: 7, background: diffChipBg, border: `1px solid ${diffChipBorder}`, color: diffChipColor }}>{difficulty.name.toUpperCase()}</span>
           </div>
-          <div style={{ flexShrink: 0, width: 100, padding: '8px 10px', borderRadius: 14, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ flexShrink: 0, width: 100, padding: '8px 10px', borderRadius: 14, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)' }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8.5, letterSpacing: '.18em', color: 'rgba(255,255,255,.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>{isJune ? 'POWER' : 'FEVER'}<span ref={(el) => { els.current.bolt = el; }} style={{ fontSize: 11, color: 'rgba(255,255,255,.35)' }}>{isJune ? '✊' : '⚡'}</span></div>
             <div style={{ marginTop: 6, height: 8, borderRadius: 5, background: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
               <div ref={(el) => { els.current.feverFill = el; }} style={{ height: '100%', width: '0%', borderRadius: 5, background: feverGrad, boxShadow: feverShadow }} />
@@ -1686,16 +1416,16 @@ const TrapTapGameplay: React.FC<Props> = ({
         </div>
 
         <div className="flex items-start justify-between" style={{ gap: 10, marginTop: 12 }}>
-          <div style={{ minWidth: 74, padding: '8px 12px', borderRadius: 18, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ minWidth: 74, padding: '8px 12px', borderRadius: 18, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)' }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8.5, letterSpacing: '.18em', color: 'rgba(255,255,255,.5)' }}>COMBO</div>
             <div ref={(el) => { els.current.combo = el; }} className="tt-combo" style={{ fontWeight: 900, fontSize: 26, lineHeight: 1, color: comboColor, textShadow: comboShadow }}>0</div>
             <div ref={(el) => { els.current.comboMult = el; }} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, fontWeight: 700, color: comboMultColor, marginTop: 2 }}>x1</div>
           </div>
-          <div style={{ flex: 1, textAlign: 'center', padding: '9px 14px 11px', borderRadius: '0 0 22px 22px', background: 'linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03))', border: '1px solid rgba(255,255,255,.14)', borderTop: 'none', backdropFilter: 'blur(14px)', boxShadow: '0 10px 30px rgba(0,0,0,.4)' }}>
+          <div style={{ flex: 1, textAlign: 'center', padding: '9px 14px 11px', borderRadius: '0 0 22px 22px', background: 'linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.03))', border: '1px solid rgba(255,255,255,.14)', borderTop: 'none', boxShadow: '0 10px 30px rgba(0,0,0,.4)' }}>
             <div ref={(el) => { els.current.score = el; }} style={{ fontWeight: 900, fontSize: 30, lineHeight: 1 }}>0</div>
             <div ref={(el) => { els.current.best = el; }} style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 9, letterSpacing: '.14em', color: bestColor, marginTop: 4 }}>BEST 0</div>
           </div>
-          <div style={{ minWidth: 74, textAlign: 'right', padding: '8px 12px', borderRadius: 18, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.12)', backdropFilter: 'blur(12px)' }}>
+          <div style={{ minWidth: 74, textAlign: 'right', padding: '8px 12px', borderRadius: 18, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.12)' }}>
             <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 8.5, letterSpacing: '.18em', color: 'rgba(255,255,255,.5)' }}>ACCURACY</div>
             <div ref={(el) => { els.current.acc = el; }} style={{ fontWeight: 900, fontSize: 21, lineHeight: 1.1 }}>100%</div>
             <div ref={(el) => { els.current.grade = el; }} style={{ fontWeight: 900, fontSize: 14, color: accGradeColor, textShadow: `0 0 12px ${accGradeColor}80`, marginTop: 1 }}>S+</div>

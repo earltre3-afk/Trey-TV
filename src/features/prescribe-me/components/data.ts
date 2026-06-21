@@ -328,10 +328,46 @@ const MOMENT_DURATION_HINT: Record<MomentNeed, ("short" | "medium" | "long")[]> 
   "I want music energy": ["medium", "long"],
 };
 
+function getReleasedTracksFromStorage(): any[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem('tradio.platform.data');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return parsed.releasedTracks || [];
+  } catch {
+    return [];
+  }
+}
+
 export function scoreContent(answers: PrescriptionAnswers): ScoredItem[] {
   const { moods, energy, contentTypes, momentNeeds } = answers;
 
-  return CONTENT_LIBRARY.map((item) => {
+  const customReleased = getReleasedTracksFromStorage().filter((t) => {
+    if (t.releaseType === 'instant') return true;
+    if (t.releaseDate) {
+      return new Date(t.releaseDate).getTime() <= Date.now();
+    }
+    return true;
+  });
+
+  const combinedLibrary = [
+    ...CONTENT_LIBRARY,
+    ...customReleased.map((t) => ({
+      id: t.id,
+      title: t.title,
+      description: t.vibeDescription || t.description,
+      category: 'Music' as any,
+      moods: t.moods as any[],
+      energy: t.energy as any[],
+      duration: 'medium' as const,
+      thumbnail: 'https://d64gsuwffb70l.cloudfront.net/6a05429725f8777cb511ee72_1778730889057_b6e69acc.png',
+      contentKind: 'video' as const,
+      creator: t.artistName,
+    })),
+  ];
+
+  return combinedLibrary.map((item) => {
     // Mood match
     const moodHits = moods.filter((m) => item.moods.includes(m)).length;
     const moodMatch =

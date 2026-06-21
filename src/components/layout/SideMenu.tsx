@@ -257,7 +257,7 @@ export function SideMenu({ open, onClose }: { open: boolean; onClose: () => void
                 <Link
                   key={i.label}
                   to={i.to}
-                  preload="intent"
+                  preload={i.to === "/tradio" ? "render" : "intent"}
                   onClick={onClose}
                   style={style}
                   className={className}

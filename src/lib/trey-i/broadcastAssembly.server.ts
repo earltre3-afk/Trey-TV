@@ -4,8 +4,8 @@ import { promisify } from "util";
 import fs from "fs";
 import path from "fs";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getAssemblyStoragePath, uploadEpisodeAssemblyAudioServer } from "../../tradio/components/tradio/services/broadcastAssemblyStorage";
-import { TimelineManifest, RenderSettings, EpisodeAssembly, AssemblyStatus, AssemblyType } from "../../tradio/components/tradio/types/broadcastAssemblyTypes";
+import { getAssemblyStoragePath, uploadEpisodeAssemblyAudioServer } from "../tradio-broadcast/services/broadcastAssemblyStorage";
+import { TimelineManifest, RenderSettings, EpisodeAssembly, AssemblyStatus, AssemblyType } from "../tradio-broadcast/types/broadcastAssemblyTypes";
 
 const execPromise = promisify(exec);
 

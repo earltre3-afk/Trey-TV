@@ -3,13 +3,13 @@ import { aiGenerateText } from "./aiProvider.server";
 import {
   buildRundownPrompt,
   buildScriptPrompt
-} from "../../tradio/components/tradio/services/broadcastAiPrompts";
+} from "../tradio-broadcast/services/broadcastAiPrompts";
 import {
   parseRundownJson,
   parseScriptJson,
   type ParsedRundownResponse,
   type ParsedScriptResponse
-} from "../../tradio/components/tradio/services/broadcastAiParser";
+} from "../tradio-broadcast/services/broadcastAiParser";
 
 /**
  * Server function to generate structural Rundowns.

@@ -10,7 +10,7 @@ import {
   Waves,
   Loader2,
 } from "lucide-react";
-import { GlassCard } from "../tradio/ui";
+import { GlassCard } from "@/tradio/components/PlatformPrimitives";
 import {
   PRESCRIBE_ME_QUESTION_MAP,
   getAnswerLabel,

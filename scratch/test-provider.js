@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.development" });
+// Load environment variables via Node native --env-file option
 
 import { buildGeminiClient } from "../src/lib/trey-i/aiProvider.server.ts";
 

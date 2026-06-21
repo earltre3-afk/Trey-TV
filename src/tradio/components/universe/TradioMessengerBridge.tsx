@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowUpRight, Bell, CornerUpLeft, MessageCircle, X } from "lucide-react";
-import { GlassCard } from "../tradio/ui";
+import { GlassCard } from "@/tradio/components/PlatformPrimitives";
 import {
   buildAboutLabel,
   buildDisplayContextLabel,

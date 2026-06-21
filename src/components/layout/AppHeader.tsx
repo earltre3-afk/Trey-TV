@@ -151,7 +151,6 @@ export function AppHeader({
             if (t.id === "prescribe") navigate({ to: "/prescribe-me" });
             if (t.id === "rewards") navigate({ to: "/rewards" });
             if (t.id === "games") navigate({ to: "/games" });
-            if (t.id === "tradio") navigate({ to: "/tradio" });
             if (t.id === "trance") navigate({ to: "/trance" });
             onTabChange?.(t.id);
           };
@@ -160,9 +159,11 @@ export function AppHeader({
           }`;
           if (t.id === "tradio") {
             return (
-              <button
+              <Link
                 key={t.id}
-                onClick={handleClick}
+                to="/tradio"
+                preload="intent"
+                onClick={() => onTabChange?.(t.id)}
                 className={tabClassName}
               >
                 <span className="relative size-3.5 inline-flex items-center justify-center shrink-0">
@@ -180,7 +181,7 @@ export function AppHeader({
                 {active && (
                   <span className="absolute left-3 right-3 -bottom-0.5 h-0.5 rounded-full bg-primary shadow-[0_0_8px_oklch(0.82_0.16_85_/_0.9)]" />
                 )}
-              </button>
+              </Link>
             );
           }
           return (

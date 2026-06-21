@@ -1,6 +1,10 @@
 import React from "react";
 import { ArrowUpRight, Sparkles } from "lucide-react";
-import { GlassCard, PrimaryButton, SecondaryButton } from "../tradio/ui";
+import {
+  GlassCard,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/tradio/components/PlatformPrimitives";
 import { NaturalAbilityBadge } from "./RoleBadge";
 import {
   SIGNAL_TEST_COPY,

@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { Modality } from "@google/genai";
 import { buildGeminiClient } from "./aiProvider.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getVoiceRenderStoragePath, uploadVoiceRenderAudioServer } from "../../tradio/components/tradio/services/broadcastVoiceStorage";
-import { VoiceRenderInput, VoiceRenderResult, VoiceRenderStatus } from "../../tradio/components/tradio/types/broadcastVoiceTypes";
+import { getVoiceRenderStoragePath, uploadVoiceRenderAudioServer } from "../tradio-broadcast/services/broadcastVoiceStorage";
+import { VoiceRenderInput, VoiceRenderResult, VoiceRenderStatus } from "../tradio-broadcast/types/broadcastVoiceTypes";
 
 const supabaseAdminFrom = (table: string) => (supabaseAdmin as any).from(table);
 

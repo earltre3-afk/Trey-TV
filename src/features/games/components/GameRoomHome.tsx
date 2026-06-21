@@ -510,6 +510,7 @@ export const GameRoomHome: React.FC<Props> = ({
           />
           <TrunoGameCard onClick={() => navigate({ to: "/games/truno" })} />
           <TreynounGameCard onClick={() => navigate({ to: "/games/treynoun" })} />
+          <TrapTapGameCard onClick={() => navigate({ to: "/games/traptap" })} />
         </div>
 
         {/* How it works */}
@@ -1011,6 +1012,78 @@ const TreynounGameCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
         }}
       >
         <Zap size={13} /> Play Treynoun
+      </button>
+    </div>
+  </div>
+);
+
+const TRAP_TAP_IMG =
+  "https://d64gsuwffb70l.cloudfront.net/6a317071b7acd9121b792dbf_1781758050438_c97dabac.png";
+
+export const TrapTapGameCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <div
+    onClick={onClick}
+    className="rounded-[26px] overflow-hidden border transition-all hover:-translate-y-1 group backdrop-blur-md cursor-pointer"
+    style={{
+      background: "rgba(8,17,31,0.7)",
+      borderColor: "#FF008050",
+      boxShadow: "0 0 40px #FF008020, inset 0 1px 0 rgba(255,255,255,0.05)",
+    }}
+  >
+    <div className="relative h-40 overflow-hidden">
+      <img
+        src={TRAP_TAP_IMG}
+        alt="Trap Tap"
+        className="w-full h-full object-cover opacity-70 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700"
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, transparent 0%, rgba(8,17,31,0.4) 50%, rgba(8,17,31,0.98) 100%)",
+        }}
+      />
+      <div
+        className="absolute top-3 left-3 text-[10px] tracking-[0.25em] font-black px-2.5 py-1 rounded-md backdrop-blur-md"
+        style={{ background: "#FF008025", color: "#FF4DA6", border: "1px solid #FF008060" }}
+      >
+        RHYTHM · 1P
+      </div>
+      <div
+        className="absolute top-3 right-3 text-[10px] tracking-[0.25em] font-black px-2.5 py-1 rounded-md backdrop-blur-md"
+        style={{ background: "rgba(5,7,13,0.7)", color: "#FFC857", border: "1px solid #FFC85755" }}
+      >
+        🆕 NEW
+      </div>
+      <div
+        className="absolute bottom-3 right-3 w-10 h-10 rounded-2xl flex items-center justify-center backdrop-blur-md text-lg"
+        style={{
+          background: "#B026FF20",
+          border: "1px solid #B026FF60",
+          boxShadow: "0 0 18px #B026FF40",
+          color: "#C77DFF",
+        }}
+      >
+        🎵
+      </div>
+    </div>
+    <div className="p-5">
+      <div className="flex items-start justify-between gap-2">
+        <h3 className="font-black text-2xl tracking-tight">Trap Tap</h3>
+        <div className="text-[10px] font-bold text-slate-500 mt-1.5">Solo</div>
+      </div>
+      <p className="text-xs text-slate-400 mb-4 mt-1 leading-relaxed">
+        Tap the lanes to custom Trey Trizzy tracks. Chain combos, hit PERFECT+, trigger Fever Mode.
+      </p>
+      <button
+        className="w-full text-xs font-black px-3 py-2.5 rounded-2xl transition hover:brightness-110 inline-flex items-center justify-center gap-2"
+        style={{
+          background: "linear-gradient(90deg, #FF0080, #B026FF 55%, #00B4FF)",
+          color: "#fff",
+          boxShadow: "0 0 24px #FF008055",
+        }}
+      >
+        <Zap size={13} /> Play Trap Tap
       </button>
     </div>
   </div>

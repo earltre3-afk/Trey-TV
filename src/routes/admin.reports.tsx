@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { logAdminAction } from "@/lib/admin-api";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -22,25 +22,34 @@ function ReportsAdmin() {
   const { data } = useQuery({
     queryKey: ["admin", "reports", tab],
     queryFn: async () => {
-      let userReports = supabase
+      let userQ = supabase
         .from("user_reports")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(200);
-      let groupReports = (supabase as any)
+      let groupQ = supabase
         .from("zodiac_group_reports")
-        .select("*, group:zodiac_group_threads(group_name, group_key)")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(200);
       if (tab !== "all") {
-        userReports = userReports.eq("status", tab);
-        groupReports = groupReports.eq("status", tab);
+        userQ = userQ.eq("status", tab);
+        groupQ = groupQ.eq("status", tab);
       }
-      const [users, groups] = await Promise.all([userReports, groupReports]);
+      const [users, groups] = await Promise.all([userQ, groupQ]);
+      const groupRows = (groups.data ?? []) as any[];
+      // Fetch thread metadata separately to replace the PostgREST join
+      const threadIds = [...new Set(groupRows.map((r: any) => r.group_thread_id).filter(Boolean))];
+      const threadMap: Record<string, any> = {};
+      if (threadIds.length > 0) {
+        const { data: threads } = await supabase.from("zodiac_group_threads").select("id, group_name, group_key").in("id", threadIds);
+        (threads ?? []).forEach((t: any) => { threadMap[t.id] = t; });
+      }
       return [
         ...((users.data ?? []) as any[]).map((row) => ({ ...row, report_table: "user_reports" })),
-        ...((groups.data ?? []) as any[]).map((row) => ({
+        ...groupRows.map((row) => ({
           ...row,
+          group: threadMap[row.group_thread_id] ?? null,
           report_table: "zodiac_group_reports",
           target_type: row.message_id ? "zodiac_group_message" : "zodiac_group",
           target_id: row.message_id ?? row.group_thread_id,

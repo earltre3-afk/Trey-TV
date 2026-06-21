@@ -1,0 +1,326 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - img "Trey TV" [ref=e6]
+        - generic [ref=e7]:
+          - link "Tradio" [ref=e8] [cursor=pointer]:
+            - /url: /tradio
+          - link "Log in" [ref=e9] [cursor=pointer]:
+            - /url: /login
+          - link "Sign up" [ref=e10] [cursor=pointer]:
+            - /url: /signup
+      - generic [ref=e11]:
+        - generic [ref=e12]: THE CREATOR TELEVISION NETWORK
+        - heading "Watch the future of television." [level=1] [ref=e14]:
+          - text: Watch the future
+          - text: of television.
+        - paragraph [ref=e15]: Trey TV is a premium streaming network built around creators. Original shows, live channels, AI-curated picks — all in one cinematic home.
+        - generic [ref=e16]:
+          - link "Start Watching" [ref=e17] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e18]
+            - text: Start Watching
+          - link "I have an account" [ref=e20] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e21]
+            - text: I have an account
+        - generic [ref=e23]:
+          - link "Download TV App" [ref=e24] [cursor=pointer]:
+            - /url: /downloads/trey-tv-streamingbox-debug.apk
+            - img [ref=e25]
+            - text: Download TV App
+          - paragraph [ref=e28]: Android TV / Google TV test build
+          - paragraph [ref=e29]: This is a test build for Android TV / Google TV devices. You may need to allow installs from unknown sources on your device.
+        - generic [ref=e30]:
+          - generic [ref=e31]: SCROLL TO EXPLORE
+          - img [ref=e33]
+    - generic [ref=e35]:
+      - generic [ref=e37]:
+        - heading "What is Trey TV?" [level=2] [ref=e38]
+        - paragraph [ref=e39]: A new kind of network — built by creators, designed like cinema, alive like social.
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - img [ref=e43]
+          - heading "Watch" [level=3] [ref=e46]
+          - paragraph [ref=e47]: Original shows, live channels, music videos and creator series — all premium-grade.
+        - generic [ref=e48]:
+          - img [ref=e50]
+          - heading "Discover" [level=3] [ref=e53]
+          - paragraph [ref=e54]: Trey-I, our AI host, prescribes what to watch based on your mood, mind and moment.
+        - generic [ref=e55]:
+          - img [ref=e57]
+          - heading "Connect" [level=3] [ref=e63]
+          - paragraph [ref=e64]: Follow creators, react, comment, send messages, and earn rewards for tuning in.
+        - link "CREATOR FEATURE Live Music Review Submit your original music for a live on-air review by Trey. Get discovered on the network. Apply to feature" [ref=e65] [cursor=pointer]:
+          - /url: /signup
+          - generic [ref=e68]:
+            - generic [ref=e70]:
+              - img [ref=e71]
+              - text: CREATOR FEATURE
+            - img [ref=e74]
+            - heading "Live Music Review" [level=3] [ref=e80]
+            - paragraph [ref=e81]: Submit your original music for a live on-air review by Trey. Get discovered on the network.
+            - generic [ref=e82]:
+              - text: Apply to feature
+              - img [ref=e83]
+    - generic [ref=e85]:
+      - generic [ref=e87]:
+        - heading "How Trey TV works" [level=2] [ref=e88]
+        - paragraph [ref=e89]: Four steps from sign-up to your favorite new show.
+      - list [ref=e90]:
+        - listitem [ref=e91]:
+          - generic [ref=e92]: STEP 1
+          - generic [ref=e93]: Create your free account.
+        - listitem [ref=e94]:
+          - generic [ref=e95]: STEP 2
+          - generic [ref=e96]: Pick the moods, channels, and creators you love.
+        - listitem [ref=e97]:
+          - generic [ref=e98]: STEP 3
+          - generic [ref=e99]: Trey-I builds your personalized prescription.
+        - listitem [ref=e100]:
+          - generic [ref=e101]: STEP 4
+          - generic [ref=e102]: Tune in live, save for later, or binge episodes.
+    - generic [ref=e103]:
+      - heading "Featured shows" [level=2] [ref=e106]
+      - generic [ref=e107]:
+        - generic [ref=e111]:
+          - generic [ref=e112]: Level Up Your Mindset
+          - generic [ref=e113]: Chris Horizon TV
+        - generic [ref=e117]:
+          - generic [ref=e118]: Late Night Drive
+          - generic [ref=e119]: Zay Beats Radio
+        - generic [ref=e123]:
+          - generic [ref=e124]: Creator Talk Live
+          - generic [ref=e125]: Lena Live
+        - generic [ref=e129]:
+          - generic [ref=e130]: "TREY: The Origin"
+          - generic [ref=e131]: Trey TV Originals
+    - generic [ref=e132]:
+      - heading "Trending episodes" [level=2] [ref=e135]
+      - generic [ref=e136]:
+        - generic [ref=e140]:
+          - generic [ref=e141]: Reset the Operating System
+          - generic [ref=e142]: Chris Horizon TV · S1E1
+        - generic [ref=e146]:
+          - generic [ref=e147]: Build the Calendar of a King
+          - generic [ref=e148]: Chris Horizon TV · S1E2
+        - generic [ref=e150]:
+          - img [ref=e153]
+          - generic [ref=e156]:
+            - generic [ref=e157]: How Pros Recover
+            - generic [ref=e158]: Chris Horizon TV · S1E3
+        - generic [ref=e162]:
+          - generic [ref=e163]: Side A — Neon
+          - generic [ref=e164]: Zay Beats Radio · S1E1
+        - generic [ref=e168]:
+          - generic [ref=e169]: Side B — Smoke
+          - generic [ref=e170]: Zay Beats Radio · S1E2
+        - generic [ref=e172]:
+          - img [ref=e175]
+          - generic [ref=e178]:
+            - generic [ref=e179]: Encore — Aurora
+            - generic [ref=e180]: Zay Beats Radio · S1E3
+      - link "Sign up free to unlock all episodes" [ref=e182] [cursor=pointer]:
+        - /url: /signup
+        - img [ref=e183]
+        - text: Sign up free to unlock all episodes
+    - generic [ref=e186]:
+      - generic [ref=e188]:
+        - heading "Creator channels" [level=2] [ref=e189]
+        - paragraph [ref=e190]: Every creator gets their own live channel.
+      - generic [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e195]: Chris Horizon TV
+          - generic [ref=e196]: "@chrishorizon · 284K"
+          - link "Sign up to follow" [ref=e197] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e198]
+            - text: Sign up to follow
+        - generic [ref=e201]:
+          - generic [ref=e204]: Trey-I Picks
+          - generic [ref=e205]: "@treyipicks · 412K"
+          - link "Sign up to follow" [ref=e206] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e207]
+            - text: Sign up to follow
+        - generic [ref=e210]:
+          - generic [ref=e213]: Lena Live
+          - generic [ref=e214]: "@lena · 198K"
+          - link "Sign up to follow" [ref=e215] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e216]
+            - text: Sign up to follow
+        - generic [ref=e219]:
+          - generic [ref=e222]: Zay Beats Radio
+          - generic [ref=e223]: "@zaybeats · 521K"
+          - link "Sign up to follow" [ref=e224] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e225]
+            - text: Sign up to follow
+        - generic [ref=e228]:
+          - generic [ref=e231]: Trey TV Originals
+          - generic [ref=e232]: "@trey · 1.2M"
+          - link "Sign up to follow" [ref=e233] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e234]
+            - text: Sign up to follow
+        - generic [ref=e237]:
+          - generic [ref=e240]: Night Mode
+          - generic [ref=e241]: "@nightmode · 92K"
+          - link "Sign up to follow" [ref=e242] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e243]
+            - text: Sign up to follow
+        - generic [ref=e246]:
+          - generic [ref=e249]: Punchline Plus
+          - generic [ref=e250]: "@punchline · 76K"
+          - link "Sign up to follow" [ref=e251] [cursor=pointer]:
+            - /url: /signup
+            - img [ref=e252]
+            - text: Sign up to follow
+    - generic [ref=e255]:
+      - generic [ref=e256]:
+        - generic [ref=e257]:
+          - heading "The Guide" [level=2] [ref=e258]
+          - paragraph [ref=e259]: A modern TV guide for creator programming. See what's on now and what's coming up.
+        - link "Open Guide" [ref=e260] [cursor=pointer]:
+          - /url: /guide
+          - text: Open Guide
+          - img [ref=e261]
+      - generic [ref=e264]:
+        - generic [ref=e265]:
+          - generic [ref=e269]:
+            - generic [ref=e270]: Chris Horizon TV
+            - generic [ref=e271]: Talk
+          - generic [ref=e272]:
+            - generic [ref=e273]: ON NOW
+            - generic [ref=e274]: Reset the Operating System
+        - generic [ref=e275]:
+          - generic [ref=e279]:
+            - generic [ref=e280]: Trey-I Picks
+            - generic [ref=e281]: Lifestyle
+          - generic [ref=e282]:
+            - generic [ref=e283]: ON NOW
+            - generic [ref=e284]: Daily Curate
+        - generic [ref=e285]:
+          - generic [ref=e289]:
+            - generic [ref=e290]: Lena Live
+            - generic [ref=e291]: Reality
+          - generic [ref=e292]:
+            - generic [ref=e293]: ON NOW
+            - generic [ref=e294]: Welcome to the Network
+        - generic [ref=e295]:
+          - generic [ref=e299]:
+            - generic [ref=e300]: Zay Beats Radio
+            - generic [ref=e301]: Music
+          - generic [ref=e302]:
+            - generic [ref=e303]: ON NOW
+            - generic [ref=e304]: Side A — Neon
+        - generic [ref=e305]:
+          - generic [ref=e309]:
+            - generic [ref=e310]: Trey TV Originals
+            - generic [ref=e311]: Drama
+          - generic [ref=e312]:
+            - generic [ref=e313]: ON NOW
+            - generic [ref=e314]: Pilot
+    - generic [ref=e315]:
+      - generic [ref=e317]:
+        - heading "Prescribe Me" [level=2] [ref=e318]
+        - paragraph [ref=e319]: Tell Trey-I how you feel. Get a perfect mood-mix in seconds.
+      - generic [ref=e320]:
+        - generic [ref=e321]:
+          - generic [ref=e322]: Motivated
+          - generic [ref=e323]: Chill
+          - generic [ref=e324]: Hype
+          - generic [ref=e325]: Focused
+          - generic [ref=e326]: Reflective
+          - generic [ref=e327]: Inspired
+          - generic [ref=e328]: Happy
+        - link "Sign up to unlock" [ref=e330] [cursor=pointer]:
+          - /url: /signup
+          - img [ref=e331]
+          - text: Sign up to unlock
+    - generic [ref=e334]:
+      - generic [ref=e336]:
+        - heading "Rewards" [level=2] [ref=e337]
+        - paragraph [ref=e338]: Earn points just for watching. Trade them for perks, badges, and exclusives.
+      - generic [ref=e339]:
+        - img [ref=e340]
+        - generic [ref=e343]:
+          - generic [ref=e344]: Trey TV Rewards
+          - generic [ref=e345]: Bronze · Silver · Gold · Diamond tiers.
+        - link "Join free" [ref=e346] [cursor=pointer]:
+          - /url: /signup
+    - generic [ref=e347]:
+      - generic [ref=e349]:
+        - heading "Meet Trey-I" [level=2] [ref=e350]
+        - paragraph [ref=e351]: Your AI host. Always on, always watching with you.
+      - generic [ref=e352]:
+        - img [ref=e354]
+        - generic [ref=e357]:
+          - generic [ref=e358]: "\"Hey — I noticed it's late where you are. Want a chill mix from Zay Beats?\""
+          - generic [ref=e359]: — Trey-I, your in-app host
+    - generic [ref=e363]:
+      - heading "Welcome home to Trey TV." [level=2] [ref=e364]
+      - paragraph [ref=e365]: Your free account unlocks every channel, the full Guide, Prescribe Me, and Rewards.
+      - generic [ref=e366]:
+        - link "Create free account" [ref=e367] [cursor=pointer]:
+          - /url: /signup
+          - img [ref=e368]
+          - text: Create free account
+        - link "Log in" [ref=e370] [cursor=pointer]:
+          - /url: /login
+      - generic [ref=e371]:
+        - link "Download TV App" [ref=e372] [cursor=pointer]:
+          - /url: /downloads/trey-tv-streamingbox-debug.apk
+          - img [ref=e373]
+          - text: Download TV App
+        - paragraph [ref=e376]: Android TV / Google TV test build
+        - paragraph [ref=e377]: This is a test build for Android TV / Google TV devices. You may need to allow installs from unknown sources on your device.
+  - button "Open Trey-I assistant — drag to move" [ref=e378]:
+    - img [ref=e383]
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - img
+        - generic:
+          - generic: Trey-I
+          - generic: Online · co-pilot for creators
+        - button:
+          - img
+    - generic:
+      - generic:
+        - generic: Hey 👋 I'm Trey-I — your creative co-pilot. Drag me anywhere. Ask me to draft a caption, prescribe a vibe, or remix your last drop.
+    - generic:
+      - button "Caption my last post":
+        - img
+        - text: Caption my last post
+      - button "Suggest a mood drop":
+        - img
+        - text: Suggest a mood drop
+      - button "What's trending tonight?":
+        - img
+        - text: What's trending tonight?
+      - button "Generate a thumbnail":
+        - img
+        - text: Generate a thumbnail
+    - generic:
+      - generic:
+        - button:
+          - img
+        - textbox "Ask Trey-I anything…"
+        - button [disabled]:
+          - img
+  - generic:
+    - generic:
+      - img
+    - generic:
+      - img
+    - generic:
+      - img
+    - generic:
+      - img
+  - region "Notifications alt+T"

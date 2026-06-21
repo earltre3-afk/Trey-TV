@@ -6,14 +6,12 @@ import {
 import { scanResultToProfile } from "@/tradio/lib/content-feel/contentFeelService";
 import { safeRecommendationReason } from "@/tradio/lib/content-feel/contentFeelPrivacyRules";
 import {
-  IMG,
-  ALL_STATIONS,
-  ARTIST_STATIONS,
-  BEATS,
-  DJ_MIXES,
-  RADIO_SHOWS,
-  TRACKS,
-} from "@/tradio/components/tradio/data";
+  ALL_LIVE_STATIONS,
+  IMAGES,
+  PLAYLIST_DETAIL,
+  SPOTLIGHT_TRACK,
+  TOP_TRACKS,
+} from "@/data/mockData";
 import type { ContentFeelScanInput } from "@/tradio/lib/content-feel/contentFeelTypes";
 import type {
   PrescribeMeAnswer,
@@ -24,6 +22,31 @@ import type {
   RouteMePlatformLane,
   RouteMeUniverseSurface,
 } from "./routeMeTypes";
+
+const IMG = {
+  midnightVelvet: IMAGES.neonCity2,
+  treyTrizzy: IMAGES.treyHero,
+  flowers: IMAGES.indieFolk,
+  midnightDrive: IMAGES.neonCity1,
+  outOfOrbit: IMAGES.artist4,
+  aiSphere: IMAGES.artist1,
+};
+
+const ALL_STATIONS = ALL_LIVE_STATIONS.map((station) => ({
+  title: station.name,
+  image: station.image,
+}));
+
+const ARTIST_STATIONS = [{ name: "Trey Trizzy" }];
+const BEATS = TOP_TRACKS.map((track) => ({ title: track.title, artwork: track.image }));
+const DJ_MIXES = [{ title: PLAYLIST_DETAIL.title, artwork: PLAYLIST_DETAIL.artwork }];
+const RADIO_SHOWS = [{ title: "Midnight Therapy" }];
+const TRACKS = {
+  afterHours: {
+    title: SPOTLIGHT_TRACK.title,
+    art: SPOTLIGHT_TRACK.artwork,
+  },
+};
 
 export const ROUTE_ME_DAILY_LIMIT = 2;
 

@@ -4,8 +4,8 @@ import {
   validateGeneratedShow,
   SHOW_SEGMENT_TYPES,
   type ShowBuilderFormState,
-} from "../../tradio/components/tradio/showPlan";
-import type { RadioShow } from "../../tradio/components/tradio/data";
+} from "../tradio-broadcast/showPlan";
+import type { RadioShow } from "../tradio-broadcast/showTypes";
 import {
   UserAnswer,
   Scenario,
@@ -31,6 +31,9 @@ import {
   CONTENT_LIBRARY,
   scoreContent,
   generatePrescriptionTitle,
+  ContentType,
+  Mood,
+  Energy,
 } from "../../features/prescribe-me/components/data";
 import { getSignalBlend } from "../tests/naturalAbilityResults";
 import { aiGenerateText, aiGenerateJson } from "./aiProvider.server";
@@ -261,6 +264,8 @@ export const generateAdminReviewDraft = createServerFn({ method: "POST" })
       console.error("[generateAdminReviewDraft]", err);
     }
   });
+
+
 
 // The 14 canonical Natural Abilities + 4 signal strengths. The model MUST land
 // on one of these exact values for the badge UI (keyed by ABILITY_RESULTS) to
@@ -737,13 +742,26 @@ Format output as a clean prose paragraph. No headers or bullet points.`;
   });
 
 export const curatePrescriptionWithAI = createServerFn({ method: "POST" })
-  .inputValidator((input: { answers: PrescriptionAnswers }) => input)
+  .inputValidator((input: { answers: PrescriptionAnswers; serverCustomTracks?: any[] }) => input)
   .handler(
     async ({ data }): Promise<{ title: string; explanation: string; rankedIds: string[] }> => {
-      // Destructured outside the try so the catch-block fallback can reference it
-      // (previously the fallback threw a ReferenceError on any AI failure).
       const { answers } = data;
       try {
+        const combinedLibrary = [
+          ...CONTENT_LIBRARY,
+          ...serverCustomTracks.map((ct) => ({
+            id: ct.id,
+            title: ct.title,
+            description: ct.vibeDescription || ct.description,
+            category: ct.category as ContentType,
+            moods: ct.moods as Mood[],
+            energy: ct.energy as Energy[],
+            duration: ct.duration,
+            contentKind: ct.contentKind,
+            creator: ct.artist,
+          })),
+        ];
+
         const prompt = `You are Trey-I, the recommendation engine for Trey TV.
 The user took the Vibe quiz. Here are their selections:
 - Moods: ${answers.moods.join(", ")}
@@ -752,7 +770,7 @@ The user took the Vibe quiz. Here are their selections:
 - Moment Needs: ${answers.momentNeeds.join(", ")}
 
 Here is the library of available content on Trey TV:
-${JSON.stringify(CONTENT_LIBRARY.map((item) => ({ id: item.id, title: item.title, description: item.description, category: item.category, moods: item.moods, energy: item.energy })))}
+${JSON.stringify(combinedLibrary.map((item) => ({ id: item.id, title: item.title, description: item.description, category: item.category, moods: item.moods, energy: item.energy })))}
 
 Please:
 1. Select the top 6 content item IDs that best match their vibe, ranked from best to sixth-best.
@@ -855,7 +873,7 @@ Return ONLY JSON: { "title": string, "segments": [ { "type", "title", "duration"
       const parsed = await aiGenerateJson<any>({
         prompt,
         temperature: 0.8,
-        maxTokens: 2048,
+        maxTokens: 8192,
         responseSchema: {
           type: "OBJECT",
           properties: {
@@ -1033,5 +1051,141 @@ export const coPilotSuggestSongs = createServerFn({ method: "POST" })
     } catch (err) {
       console.error("[coPilotSuggestSongs]", err);
       return { picks: [] };
+    }
+  });
+
+export interface ScannedTrack {
+  id: string;
+  title: string;
+  description: string;
+  artist: string;
+  moods: string[];
+  energy: string[];
+  vibeDescription: string;
+  category: string;
+  duration: "short" | "medium" | "long";
+  contentKind: string;
+}
+
+const globalForCustomTracks = globalThis as unknown as {
+  serverCustomTracks?: ScannedTrack[];
+};
+
+if (!globalForCustomTracks.serverCustomTracks) {
+  globalForCustomTracks.serverCustomTracks = [];
+}
+
+export const serverCustomTracks = globalForCustomTracks.serverCustomTracks;
+
+export const scanTrackWithGemini = createServerFn({ method: "POST" })
+  .inputValidator((input: { title: string; description: string; artist: string }) => ({
+    title: String(input.title || "Untitled").slice(0, 100),
+    description: String(input.description || "").slice(0, 1000),
+    artist: String(input.artist || "Unknown").slice(0, 100),
+  }))
+  .handler(async ({ data }): Promise<{
+    id: string;
+    title: string;
+    description: string;
+    artist: string;
+    moods: string[];
+    energy: string[];
+    vibeDescription: string;
+  }> => {
+    try {
+      const prompt = `Track Title: ${data.title}
+Artist: ${data.artist}
+Description/Lyrics/Notes: ${data.description}`;
+
+      const systemInstruction =
+        "You are Trey-I, scanning newly uploaded media for the 'Prescribe Me' feature. " +
+        "Analyze the song metadata and description/notes to extract mood tags, energy levels, and generate a brief vibe check. " +
+        "Return ONLY a JSON object matching this schema: " +
+        `{
+          "moods": ["Mood1", "Mood2"],
+          "energy": ["Soft" | "Balanced" | "High Energy"],
+          "vibeDescription": "A 1-sentence description summarizing the emotional/aesthetic energy of the song."
+        }
+        
+        Note:
+        - Choose 1 to 3 moods from: Happy, Chill, Romantic, Motivated, Reflective, Wild, Healing, Curious, Focused, Sad, Inspired, Bored.
+        - Choose 1 energy level from: Soft, Balanced, High Energy.`;
+
+      const parsed = await aiGenerateJson<any>({
+        prompt,
+        systemInstruction,
+        temperature: 0.7,
+        maxTokens: 256,
+        responseSchema: {
+          type: "OBJECT",
+          properties: {
+            moods: {
+              type: "ARRAY",
+              items: {
+                type: "STRING",
+                enum: ["Happy", "Chill", "Romantic", "Motivated", "Reflective", "Wild", "Healing", "Curious", "Focused", "Sad", "Inspired", "Bored"]
+              }
+            },
+            energy: {
+              type: "ARRAY",
+              items: {
+                type: "STRING",
+                enum: ["Soft", "Balanced", "High Energy"]
+              }
+            },
+            vibeDescription: { type: "STRING" }
+          },
+          required: ["moods", "energy", "vibeDescription"]
+        }
+      });
+
+      const track: ScannedTrack = {
+        id: `custom-track-${Date.now()}`,
+        title: data.title,
+        description: data.description || parsed.vibeDescription,
+        artist: data.artist,
+        moods: Array.isArray(parsed.moods) && parsed.moods.length > 0 ? parsed.moods : ["Reflective"],
+        energy: Array.isArray(parsed.energy) && parsed.energy.length > 0 ? parsed.energy : ["Balanced"],
+        vibeDescription: parsed.vibeDescription || "Fresh independent music on Tradio.",
+        category: "Music",
+        duration: "medium",
+        contentKind: "video"
+      };
+
+      serverCustomTracks.push(track);
+
+      return {
+        id: track.id,
+        title: track.title,
+        description: track.description,
+        artist: track.artist,
+        moods: track.moods,
+        energy: track.energy,
+        vibeDescription: track.vibeDescription
+      };
+    } catch (err) {
+      console.error("[scanTrackWithGemini] error, falling back:", err);
+      const track: ScannedTrack = {
+        id: `custom-track-${Date.now()}`,
+        title: data.title,
+        description: data.description || "A custom track.",
+        artist: data.artist,
+        moods: ["Reflective"],
+        energy: ["Balanced"],
+        vibeDescription: "A reflective release by " + data.artist,
+        category: "Music",
+        duration: "medium",
+        contentKind: "video"
+      };
+      serverCustomTracks.push(track);
+      return {
+        id: track.id,
+        title: track.title,
+        description: track.description,
+        artist: track.artist,
+        moods: track.moods,
+        energy: track.energy,
+        vibeDescription: track.vibeDescription
+      };
     }
   });

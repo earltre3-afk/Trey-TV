@@ -162,7 +162,12 @@ export function DesktopTopNav({ onMenuClick }: { onMenuClick?: () => void }) {
             );
 
             return (
-              <Link key={l.to} to={l.to} preload="intent" className={className}>
+              <Link
+                key={l.to}
+                to={l.to}
+                preload="intent"
+                className={className}
+              >
                 {content}
               </Link>
             );

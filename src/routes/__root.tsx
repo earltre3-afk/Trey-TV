@@ -1,47 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  Outlet,
+  HeadContent,
   Link,
+  Scripts,
   createRootRouteWithContext,
   useRouter,
   useRouterState,
-  HeadContent,
-  Scripts,
-  useNavigate,
-  useLocation,
 } from "@tanstack/react-router";
-import { Toaster } from "@/components/ui/sonner";
-import { TreyIWidget } from "@/components/ai/TreyIWidget";
-import { GlobalMediaCastButton } from "@/components/cast/GlobalMediaCastButton";
-import { BottomNav } from "@/components/layout/BottomNav";
-import { CreateBubbleArc } from "@/components/layout/CreateBubbleArc";
-import { CreateArcProvider } from "@/lib/create-arc-context";
-import { AuthProvider, useAuth } from "@/lib/auth";
-import { SupabaseSessionProvider, useSupabaseSession } from "@/lib/supabase-session";
-import { createBrowserClient } from "@/lib/supabase-browser";
-import { useEffect, useState } from "react";
-import { ActivityProvider } from "@/lib/activity-store";
-import { SubmissionsProvider } from "@/lib/submissions-store";
-import { FeedProvider } from "@/lib/feed-store";
-import { CommentsProvider } from "@/lib/comments-store";
-import { MessagesProvider } from "@/lib/messages-store";
-import { GuideProvider } from "@/lib/guide-store";
-import { MusicReviewProvider } from "@/lib/music-review-store";
-import { CurrentUserSync } from "@/components/CurrentUserSync";
-import { GiftBurstHost } from "@/components/gifts/GiftBurst";
-import { useAccentColor } from "@/hooks/use-accent-color";
-import { FollowProvider } from "@/lib/follow-store";
-import { FoldableLayoutManager } from "@/components/foldable/FoldableLayoutManager";
+import { lazy, Suspense, type ReactNode } from "react";
 import { shouldUseFoldableLayout } from "@/components/foldable/foldableRouting";
-import { PlayerProvider, usePlayer } from "@/tradio/contexts/PlayerContext";
-import { MediaInterruptionProvider, useMediaInterruption } from "@/tradio/contexts/MediaInterruptionProvider";
-import { AudioDuckingProvider, useAudioDucking } from "@/tradio/contexts/AudioDuckingProvider";
-import { MountedPlayer } from "@/tradio/components/tradio/MountedPlayer";
-import { setNotificationDuckingCallbacks } from "@/tradio/lib/notificationDuckingHelper";
-import { setMediaInterruptionCallbacks } from "@/tradio/lib/mediaInterruptionHelper";
-import { Play, Pause, Volume2, VolumeX, Music, Maximize2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
+
+const MainAppProviders = lazy(() => import("@/components/root/MainAppProviders"));
 
 function NotFoundComponent() {
   return (
@@ -113,14 +84,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+          "Trey TV - the premium creator entertainment platform for shows, seasons, and episodes.",
       },
       { name: "author", content: "Trey TV" },
       { property: "og:title", content: "Trey TV" },
       {
         property: "og:description",
         content:
-          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+          "Trey TV - the premium creator entertainment platform for shows, seasons, and episodes.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -129,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Trey TV — the premium creator entertainment platform for shows, seasons, and episodes.",
+          "Trey TV - the premium creator entertainment platform for shows, seasons, and episodes.",
       },
       { property: "og:image", content: "/trey-tv-seo-logo.png" },
       { name: "twitter:image", content: "/trey-tv-seo-logo.png" },
@@ -156,19 +127,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: React.ReactNode }) {
+function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
         <HeadContent />
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-QV9ZERGNP4" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-QV9ZERGNP4');
+              (function () {
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+                var script = document.createElement("script");
+                script.async = true;
+                script.src = "https://www.googletagmanager.com/gtag/js?id=G-QV9ZERGNP4";
+                document.head.appendChild(script);
+                window.gtag("js", new Date());
+                window.gtag("config", "G-QV9ZERGNP4");
+              })();
             `,
           }}
         />
@@ -193,8 +169,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CreateArcProvider>
-        <RootContent
+      <Suspense fallback={null}>
+        <MainAppProviders
           isImmersivePrescribeMe={isImmersivePrescribeMe}
           isImmersiveGameRoom={isImmersiveGameRoom}
           isFocusedAuthSurface={isFocusedAuthSurface}
@@ -202,487 +178,7 @@ function RootComponent() {
           isImmersiveTrance={isImmersiveTrance}
           useFoldableLayout={useFoldableLayout}
         />
-      </CreateArcProvider>
+      </Suspense>
     </QueryClientProvider>
-  );
-}
-
-function RootContent({
-  isImmersivePrescribeMe,
-  isImmersiveGameRoom,
-  isFocusedAuthSurface,
-  isImmersiveTradio,
-  isImmersiveTrance,
-  useFoldableLayout,
-}: {
-  isImmersivePrescribeMe: boolean;
-  isImmersiveGameRoom: boolean;
-  isFocusedAuthSurface: boolean;
-  isImmersiveTradio: boolean;
-  isImmersiveTrance: boolean;
-  useFoldableLayout: boolean;
-}) {
-  const [foldMode, setFoldMode] = useState<string>("standard");
-
-  useEffect(() => {
-    (window as any).__treyTvHydrated = true;
-    return () => {
-      (window as any).__treyTvHydrated = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    const checkFold = () => {
-      const saved = sessionStorage.getItem("treytv_fold_mode");
-      if (saved) {
-        setFoldMode(saved);
-        return;
-      }
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const ratio = w / h;
-      if (w >= 600 && w < 1024 && ratio >= 0.8 && ratio <= 1.4) {
-        setFoldMode("unfolded");
-      } else if (w <= 420 && h <= 450 && ratio >= 0.8 && ratio <= 1.2) {
-        setFoldMode("cover");
-      } else {
-        setFoldMode("standard");
-      }
-    };
-    window.addEventListener("resize", checkFold);
-
-    // Sync active fold mode state updates from the emulator
-    const interval = setInterval(checkFold, 500);
-
-    checkFold();
-    return () => {
-      window.removeEventListener("resize", checkFold);
-      clearInterval(interval);
-    };
-  }, []);
-
-  const hideGlobalMobileChrome =
-    isImmersivePrescribeMe ||
-    isImmersiveGameRoom ||
-    isFocusedAuthSurface ||
-    isImmersiveTradio ||
-    isImmersiveTrance ||
-    foldMode === "cover" ||
-    foldMode === "unfolded" ||
-    foldMode === "flex";
-
-  // Apply user's profile accent color globally
-  useAccentColor();
-
-  return (
-    <MediaInterruptionProvider>
-      <AudioDuckingProvider>
-        <PlayerProvider>
-          <SupabaseSessionProvider>
-            <AuthProvider>
-              <FollowProvider>
-                <CurrentUserSync />
-                <ActivityProvider>
-                  <SubmissionsProvider>
-                    <FeedProvider>
-                      <CommentsProvider>
-                        <MessagesProvider>
-                          <GuideProvider>
-                            <MusicReviewProvider>
-                              <AuthGuard>
-                                {useFoldableLayout ? (
-                                  <FoldableLayoutManager>
-                                    <Outlet />
-                                  </FoldableLayoutManager>
-                                ) : (
-                                  <Outlet />
-                                )}
-                              </AuthGuard>
-                              {!hideGlobalMobileChrome && <BottomNav />}
-                              {!hideGlobalMobileChrome && <TreyIWidget />}
-                              {!hideGlobalMobileChrome && <OPlayer />}
-                              {!hideGlobalMobileChrome && <GlobalMediaCastButton />}
-                              <GiftBurstHost />
-                              <MountedPlayer />
-                              <NotificationDuckingWirer />
-                              <MediaInterruptionWirer />
-                              <CreateBubbleArc />
-                              <Toaster />
-                            </MusicReviewProvider>
-                          </GuideProvider>
-                        </MessagesProvider>
-                      </CommentsProvider>
-                    </FeedProvider>
-                  </SubmissionsProvider>
-                </ActivityProvider>
-              </FollowProvider>
-            </AuthProvider>
-          </SupabaseSessionProvider>
-        </PlayerProvider>
-      </AudioDuckingProvider>
-    </MediaInterruptionProvider>
-  );
-}
-
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isGuest, authorizationStatus, authReady, authError, retryHydrate } = useAuth();
-  const { loading: sessionLoading, user: supaUser } = useSupabaseSession();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [loading, setLoading] = useState(true);
-  const [showRetry, setShowRetry] = useState(false);
-
-  // 1. Define public routes
-  const publicRoutes = [
-    "/login",
-    "/signup",
-    "/auth/callback",
-    "/confirm-email",
-    "/onboarding",
-    "/download-tv-app",
-    "/apk",
-    "/legal",
-    "/developers",
-    "/api",
-    "/.well-known",
-  ];
-
-  const isPublicRoute = publicRoutes.some(
-    (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
-  );
-
-  const guestAllowed = ["/", "/explore", "/guide", "/tradio", "/explore/"];
-  const isAllowedGuestPage = guestAllowed.some(
-    (route) =>
-      location.pathname === route || (route !== "/" && location.pathname.startsWith(route)),
-  );
-
-  const onboardingRoutes = [
-    "/onboarding",
-    "/auth/callback",
-    "/login",
-    "/signup",
-    "/legal",
-    "/confirm-email",
-  ];
-  const isOnboardingRoute = onboardingRoutes.some(
-    (route) => location.pathname === route || location.pathname.startsWith(route + "/"),
-  );
-  const canPaintDuringAuthLoad = location.pathname.startsWith("/tradio");
-
-  const waitingForSupabaseProfile =
-    !!supaUser &&
-    (authorizationStatus === "checking" || authorizationStatus === "logged_out" || !authReady);
-  const isAuthLoading =
-    sessionLoading || authorizationStatus === "checking" || !authReady || waitingForSupabaseProfile;
-  // Synchronous route protection checks to prevent layout flash/flicker
-  const isBlockedUser = !isAuthLoading && user && !user.onboarding_completed && !isOnboardingRoute;
-  const isBlockedGuest = !isAuthLoading && isGuest && !isPublicRoute && !isAllowedGuestPage;
-  const canRenderWhileAuthLoads = isPublicRoute || isAllowedGuestPage || canPaintDuringAuthLoad;
-  const shouldShowAuthFallback =
-    isBlockedUser || isBlockedGuest || ((loading || isAuthLoading) && !canRenderWhileAuthLoads);
-
-  useEffect(() => {
-    let cancelled = false;
-    let to: any = null;
-
-    // fail-safe: if auth stays loading too long, show retry UI
-    if (isAuthLoading) {
-      setShowRetry(false);
-      to = setTimeout(() => setShowRetry(true), 8000);
-    } else {
-      setShowRetry(false);
-    }
-
-    const checkOnboarding = async () => {
-      // While we are checking authorization, do not redirect
-      if (
-        authorizationStatus === "checking" ||
-        sessionLoading ||
-        !authReady ||
-        waitingForSupabaseProfile
-      ) {
-        if (!cancelled) setLoading(true);
-        return;
-      }
-
-      // Guest handling
-      if (authorizationStatus === "logged_out" || isGuest) {
-        if (!isPublicRoute && !isAllowedGuestPage) {
-          const authRedirectSearch =
-            typeof location.search === "string"
-              ? location.search
-              : (location.search?.toString?.() ?? "");
-          sessionStorage.setItem(
-            "treytv_post_auth_redirect",
-            location.pathname + authRedirectSearch,
-          );
-          navigate({ to: "/login" });
-        }
-        if (!cancelled) setLoading(false);
-        return;
-      }
-
-      // Signed in user handling
-      if (authorizationStatus === "needs_onboarding" && user) {
-        if (!isOnboardingRoute) {
-          const onboardingRedirectSearch =
-            typeof location.search === "string"
-              ? location.search
-              : (location.search?.toString?.() ?? "");
-          sessionStorage.setItem(
-            "treytv_post_onboarding_redirect",
-            location.pathname + onboardingRedirectSearch,
-          );
-          try {
-            const supabase = createBrowserClient() as any;
-            const { data: onboarding } = await supabase
-              .from("user_onboarding")
-              .select("selected_path, current_step, completed")
-              .eq("user_id", user.uid)
-              .maybeSingle();
-
-            if (onboarding && !onboarding.completed && onboarding.selected_path) {
-              let targetPath = "/onboarding";
-              if (onboarding.selected_path === "manual") targetPath = "/onboarding/manual";
-              else if (
-                onboarding.selected_path === "voice" ||
-                onboarding.selected_path === "trey_i"
-              )
-                targetPath = "/onboarding/voice";
-              else if (onboarding.selected_path === "import_screenshot")
-                targetPath = "/onboarding/import-screenshot";
-              navigate({ to: targetPath as any });
-            } else {
-              navigate({ to: "/onboarding" });
-            }
-          } catch (e) {
-            console.error("Failed to fetch onboarding state:", e);
-            navigate({ to: "/onboarding" });
-          }
-        }
-        if (!cancelled) setLoading(false);
-        return;
-      }
-
-      if (authorizationStatus === "authorized" && location.pathname.startsWith("/onboarding")) {
-        const redirect = sessionStorage.getItem("treytv_post_onboarding_redirect");
-        if (redirect) {
-          sessionStorage.removeItem("treytv_post_onboarding_redirect");
-          window.location.href = redirect;
-        } else {
-          navigate({ to: "/" });
-        }
-      }
-
-      if (!cancelled) setLoading(false);
-    };
-
-    checkOnboarding();
-
-    return () => {
-      cancelled = true;
-      if (to) clearTimeout(to);
-    };
-  }, [
-    authorizationStatus,
-    user,
-    isGuest,
-    isAuthLoading,
-    location.pathname,
-    location.search,
-    navigate,
-    isPublicRoute,
-    isAllowedGuestPage,
-    isOnboardingRoute,
-    canPaintDuringAuthLoad,
-    sessionLoading,
-    authReady,
-    waitingForSupabaseProfile,
-  ]);
-
-  if (authError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
-        <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
-          <p className="text-sm text-muted-foreground">
-            We had trouble loading your account. Try again.
-          </p>
-          <div className="mt-4">
-            <button
-              onClick={() => retryHydrate()}
-              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-            >
-              Retry
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (shouldShowAuthFallback) {
-    // show retry UI if auth is stuck or an authError exists
-    if (authError || showRetry) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
-          <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
-            <p className="text-sm text-muted-foreground">
-              We had trouble loading your account. Try again.
-            </p>
-            <div className="mt-4">
-              <button
-                onClick={() => retryHydrate()}
-                className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-              >
-                Retry
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#05070D] text-white">
-        <div className="rounded-3xl border border-white/10 bg-[#05070D]/95 px-10 py-8 text-center space-y-3 shadow-2xl">
-          <div className="size-6 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Checking authorization…</p>
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-}
-
-function NotificationDuckingWirer() {
-  const { beginDuck, endDuck } = useAudioDucking();
-
-  useEffect(() => {
-    setNotificationDuckingCallbacks(
-      () => beginDuck("notification"),
-      () => endDuck("notification"),
-    );
-    return () => {
-      setNotificationDuckingCallbacks(null, null);
-    };
-  }, [beginDuck, endDuck]);
-
-  return null;
-}
-
-function MediaInterruptionWirer() {
-  const { beginInterruption, endInterruption, isInterrupted } = useMediaInterruption();
-  const {
-    pause,
-    resume,
-    isPlaying,
-    isMounted,
-    wasAutoPausedByInterruption,
-    setWasAutoPausedByInterruption,
-  } = usePlayer();
-
-  useEffect(() => {
-    setMediaInterruptionCallbacks(
-      (reason) => {
-        if (isPlaying && !wasAutoPausedByInterruption) {
-          setWasAutoPausedByInterruption(true);
-          pause();
-        }
-        beginInterruption(reason);
-      },
-      (reason) => {
-        endInterruption(reason);
-      },
-    );
-    return () => {
-      setMediaInterruptionCallbacks(null, null);
-    };
-  }, [
-    beginInterruption,
-    endInterruption,
-    isPlaying,
-    pause,
-    wasAutoPausedByInterruption,
-    setWasAutoPausedByInterruption,
-  ]);
-
-  useEffect(() => {
-    if (!isInterrupted && wasAutoPausedByInterruption && isMounted) {
-      setWasAutoPausedByInterruption(false);
-      resume();
-    }
-  }, [isInterrupted, wasAutoPausedByInterruption, isMounted, resume, setWasAutoPausedByInterruption]);
-
-  return null;
-}
-
-function OPlayer() {
-  const { currentItem, isPlaying, toggle, muted, toggleMute } = usePlayer();
-  const navigate = useNavigate();
-
-  if (!currentItem) return null;
-
-  const cover = currentItem.coverUrl || currentItem.art;
-
-  return (
-    <div
-      className="fixed bottom-[calc(5rem_+_env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[45] w-[calc(100%_-_1.5rem)] max-w-md md:bottom-6 md:right-6 md:left-auto md:translate-x-0 rounded-full border border-primary/25 bg-black/80 backdrop-blur-xl p-2 flex items-center justify-between gap-3 shadow-lg"
-      style={{
-        boxShadow: "0 8px 32px rgba(168, 85, 247, 0.25), inset 0 1px 0 rgba(255,255,255,0.1)",
-      }}
-    >
-      <div
-        className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
-        onClick={() => navigate({ to: "/tradio" })}
-      >
-        <div className="relative size-10 shrink-0 rounded-full overflow-hidden border border-white/10 bg-zinc-900 flex items-center justify-center">
-          {cover ? (
-            <img
-              src={cover}
-              alt=""
-              className={`size-full object-cover rounded-full ${isPlaying ? "animate-[spin_10s_linear_infinite]" : ""}`}
-            />
-          ) : (
-            <Music className="size-4 text-purple-300" />
-          )}
-          <div className="absolute inset-0 bg-black/10 rounded-full" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-xs font-black text-white truncate pr-2">{currentItem.title}</div>
-          <div className="text-[10px] text-white/55 truncate pr-2">
-            Tradio • {currentItem.artist}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1">
-        <button
-          onClick={toggleMute}
-          aria-label={muted ? "Unmute" : "Mute"}
-          title={muted ? "Unmute" : "Mute"}
-          className="size-8 rounded-full border border-white/5 bg-white/[0.05] text-white/80 flex items-center justify-center active:scale-90 transition-transform"
-        >
-          {muted ? <VolumeX className="size-3.5 text-rose-300" /> : <Volume2 className="size-3.5" />}
-        </button>
-        <button
-          onClick={toggle}
-          aria-label={isPlaying ? "Pause" : "Play"}
-          title={isPlaying ? "Pause" : "Play"}
-          className="size-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-[0_0_10px_var(--color-primary)] active:scale-90 transition-transform"
-        >
-          {isPlaying ? <Pause className="size-3.5 fill-current" /> : <Play className="size-3.5 fill-current ml-0.5" />}
-        </button>
-        <button
-          onClick={() => navigate({ to: "/tradio" })}
-          aria-label="Maximize player"
-          title="Maximize player"
-          className="size-8 rounded-full border border-white/5 bg-white/[0.05] text-purple-200 flex items-center justify-center active:scale-90 transition-transform"
-        >
-          <Maximize2 className="size-3.5" />
-        </button>
-      </div>
-    </div>
   );
 }

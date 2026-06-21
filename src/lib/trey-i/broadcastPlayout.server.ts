@@ -1,6 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { db } from "@/lib/db";
+
+// Attaches show/episode/assembly relations to a queue item row via separate lookups.
+async function attachQueueRelations(item: any): Promise<any> {
+  if (!item) return item;
+  const [showRes, episodeRes, assemblyRes] = await Promise.all([
+    item.show_id ? db.from("tradio_shows").select("title").eq("id", item.show_id).maybeSingle() : Promise.resolve({ data: null }),
+    item.episode_id ? db.from("tradio_show_episodes").select("title, duration_seconds").eq("id", item.episode_id).maybeSingle() : Promise.resolve({ data: null }),
+    item.assembly_id ? db.from("tradio_episode_assemblies").select("output_storage_path, duration_seconds").eq("id", item.assembly_id).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  return { ...item, show: showRes.data, episode: episodeRes.data, assembly: assemblyRes.data };
+}
 import {
   TradioBroadcastChannel,
   TradioBroadcastQueueItem,
@@ -246,28 +257,30 @@ export const resolveNowPlayingServer = createServerFn({ method: "POST" })
       // 2. Fetch currently playing or scheduled queue items spanning 'now'
       const { data: currentQueueItems, error: queueErr } = await db
         .from("tradio_broadcast_queue")
-        .select("*, show:tradio_shows(title), episode:tradio_show_episodes(title, duration_seconds), assembly:tradio_episode_assemblies(output_storage_path, duration_seconds)")
+        .select("*")
         .eq("channel_id", channel.id)
         .eq("queue_status", "scheduled")
         .lte("scheduled_start_at", nowStr)
         .gte("scheduled_end_at", nowStr)
         .order("scheduled_start_at", { ascending: false });
 
-      let activeItem = currentQueueItems && currentQueueItems.length > 0 ? currentQueueItems[0] : null;
+      let activeItem = currentQueueItems && currentQueueItems.length > 0
+        ? await attachQueueRelations(currentQueueItems[0])
+        : null;
 
       // 3. Fallback: If no scheduled items are active right now, get the most recently completed/scheduled queue item
       // to play in fallback/loop mode, so playout never goes fully silent!
       if (!activeItem) {
         const { data: recentCompleted, error: completedErr } = await db
           .from("tradio_broadcast_queue")
-          .select("*, show:tradio_shows(title), episode:tradio_show_episodes(title, duration_seconds), assembly:tradio_episode_assemblies(output_storage_path, duration_seconds)")
+          .select("*")
           .eq("channel_id", channel.id)
           .in("queue_status", ["scheduled", "completed", "playing"])
           .order("created_at", { ascending: false })
           .limit(1);
 
         if (recentCompleted && recentCompleted.length > 0) {
-          activeItem = recentCompleted[0];
+          activeItem = await attachQueueRelations(recentCompleted[0]);
         }
       }
 
@@ -336,11 +349,12 @@ export const getSignedBroadcastPlaybackUrlServer = createServerFn({ method: "POS
   .inputValidator((input: { queueItemId: string }) => input)
   .handler(async ({ data: input }): Promise<{ signedUrl: string | null; error?: string }> => {
     try {
-      const { data: item, error } = await db
+      const { data: rawItem, error } = await db
         .from("tradio_broadcast_queue")
-        .select("*, assembly:tradio_episode_assemblies(output_storage_path)")
+        .select("*")
         .eq("id", input.queueItemId)
         .single();
+      const item = rawItem ? await attachQueueRelations(rawItem) : rawItem;
 
       if (error || !item) {
         return { signedUrl: null, error: "Queue item not found." };

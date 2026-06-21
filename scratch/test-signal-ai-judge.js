@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config({ path: ".env.development" });
+// Load environment variables via Node native --env-file option
 
 import { judgeSignalTest } from "../src/lib/trey-i/vertex.server.ts";
 import { SCENARIOS } from "../src/lib/tests/naturalAbilityQuestions.ts";

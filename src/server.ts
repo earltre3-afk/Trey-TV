@@ -13,6 +13,7 @@ import { renderErrorPage } from "./lib/error-page";
 import { handleFwdOAuthRequest } from "./lib/fwd/oauth-http.server";
 import { handleLiveKitToken, handleLiveKitDiagnostics } from "./lib/livekit-token.server";
 import { handleTradioCaller } from "./lib/tradio/tradioCaller.server";
+import { handleTradioStudioAi } from "./lib/tradio/tradioStudioAi.server";
 import { handlePluginApiRequest } from "./lib/plugins/registry";
 import { handlePlutoApiRequest } from "./lib/pluto/pluto-api.server";
 import { handleTrafficRequest } from "./lib/traffic-fake.server";
@@ -69,6 +70,9 @@ async function handleOAuthApiRequest(request: Request, env: unknown): Promise<Re
   }
   if (url.pathname === "/api/tradio/caller") {
     return handleTradioCaller(request, env);
+  }
+  if (url.pathname === "/api/tradio/ai") {
+    return handleTradioStudioAi(request);
   }
 
   if (url.pathname === "/oauth/token") return handleOAuthToken(request);

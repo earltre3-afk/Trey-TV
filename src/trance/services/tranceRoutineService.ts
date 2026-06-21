@@ -123,13 +123,7 @@ export const tranceRoutineService = {
       return filtered;
     }
 
-    let query = supabase.from("trance_routines").select(`
-      *,
-      count_sections:trance_count_sections(*),
-      move_hints:trance_move_hints(*),
-      direction_cues:trance_direction_cues(*),
-      scoring:trance_scoring_rules(*)
-    `);
+    let query = supabase.from("trance_routines").select("*");
 
     if (filters) {
       if (filters.query) {
@@ -154,7 +148,23 @@ export const tranceRoutineService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return (data || []).map(rowToDanceRoutine);
+    const routines = data || [];
+    if (routines.length === 0) return [];
+
+    const ids = routines.map((r: any) => r.id);
+    const [cs, mh, dc, sc] = await Promise.all([
+      supabase.from("trance_count_sections").select("*").in("routine_id", ids),
+      supabase.from("trance_move_hints").select("*").in("routine_id", ids),
+      supabase.from("trance_direction_cues").select("*").in("routine_id", ids),
+      supabase.from("trance_scoring_rules").select("*").in("routine_id", ids),
+    ]);
+    return routines.map((r: any) => rowToDanceRoutine({
+      ...r,
+      count_sections: (cs.data || []).filter((x: any) => x.routine_id === r.id),
+      move_hints: (mh.data || []).filter((x: any) => x.routine_id === r.id),
+      direction_cues: (dc.data || []).filter((x: any) => x.routine_id === r.id),
+      scoring: (sc.data || []).filter((x: any) => x.routine_id === r.id),
+    }));
   },
 
   getPublicRoutines: async (): Promise<DanceRoutine[]> => {
@@ -169,21 +179,26 @@ export const tranceRoutineService = {
 
     const { data, error } = await supabase
       .from("trance_routines")
-      .select(
-        `
-        *,
-        count_sections:trance_count_sections(*),
-        move_hints:trance_move_hints(*),
-        direction_cues:trance_direction_cues(*),
-        scoring:trance_scoring_rules(*)
-      `,
-      )
+      .select("*")
       .eq("id", routineId)
       .maybeSingle();
 
     if (error) throw error;
     if (!data) throw new Error(`Routine details not found for id: ${routineId}`);
-    return rowToDanceRoutine(data);
+
+    const [cs, mh, dc, sc] = await Promise.all([
+      supabase.from("trance_count_sections").select("*").eq("routine_id", routineId),
+      supabase.from("trance_move_hints").select("*").eq("routine_id", routineId),
+      supabase.from("trance_direction_cues").select("*").eq("routine_id", routineId),
+      supabase.from("trance_scoring_rules").select("*").eq("routine_id", routineId),
+    ]);
+    return rowToDanceRoutine({
+      ...data,
+      count_sections: cs.data || [],
+      move_hints: mh.data || [],
+      direction_cues: dc.data || [],
+      scoring: sc.data || [],
+    });
   },
 
   getRoutineById: async (id: string): Promise<DanceRoutine | undefined> => {

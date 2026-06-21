@@ -201,6 +201,38 @@ const DEFAULT_SOURCE: PlaybackSource = {
   title: "Tradio Library",
 };
 
+const PLAYER_STORAGE_KEY = "tradio.platform.player";
+
+interface PersistedPlaybackState {
+  currentItem: PlaybackItem | null;
+  currentSource: PlaybackSource | null;
+  playbackQueue: PlaybackQueue;
+  currentTime: number;
+  duration: number;
+  repeatMode: PlaybackMode;
+  shuffleMode: boolean;
+  volume: number;
+  muted: boolean;
+}
+
+function parsePersistedPlayback(raw: string | null): PersistedPlaybackState | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as PersistedPlaybackState;
+  } catch {
+    return null;
+  }
+}
+
+function readPersistedPlaybackRaw(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(PLAYER_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const buildSourceForItem = (item: PlaybackItem, override?: PlaybackSource): PlaybackSource => {
   if (override) return override;
   const type = item.sourceType || (item.isLive ? "live_show" : "song");
@@ -353,6 +385,9 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const hasRealMediaRef = useRef(false);
   const { duckLevel } = useAudioDucking();
   const webAudioEligibleRef = useRef(false);
+  const persistedPlaybackRaw = useRef(readPersistedPlaybackRaw()).current;
+  const lastPersistedPlaybackRawRef = useRef<string | null>(persistedPlaybackRaw);
+  const hasRestoredPersistedPlaybackRef = useRef(persistedPlaybackRaw === null);
 
   // --- Web Audio API DSP Song Enhancer ---
   const [enhancerPreset, setEnhancerPresetState] = useState<string>("commercial_master");
@@ -747,6 +782,82 @@ export const PlayerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const toggleMute = useCallback(() => setMuted((value) => !value), []);
   const toggleShuffle = useCallback(() => setShuffleMode((value) => !value), []);
+
+  useEffect(() => {
+    const nextState = parsePersistedPlayback(lastPersistedPlaybackRawRef.current);
+    hasRestoredPersistedPlaybackRef.current = true;
+    if (!nextState) return;
+    setCurrentItem(nextState.currentItem);
+    setCurrentSource(nextState.currentSource);
+    setPlaybackQueue(nextState.playbackQueue);
+    setCurrentTime(nextState.currentTime);
+    currentTimeRef.current = nextState.currentTime;
+    lastPushedTimeRef.current = nextState.currentTime;
+    setDuration(nextState.duration);
+    setRepeatMode(nextState.repeatMode);
+    setShuffleMode(nextState.shuffleMode);
+    setVolumeState(nextState.volume);
+    setMuted(nextState.muted);
+    setStatus(nextState.currentItem ? "paused" : "idle");
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredPersistedPlaybackRef.current) return;
+    const timer = window.setTimeout(() => {
+      const snapshot: PersistedPlaybackState = {
+        currentItem,
+        currentSource,
+        playbackQueue,
+        currentTime,
+        duration,
+        repeatMode,
+        shuffleMode,
+        volume,
+        muted,
+      };
+      const raw = JSON.stringify(snapshot);
+      if (raw === lastPersistedPlaybackRawRef.current) return;
+      try {
+        window.localStorage.setItem(PLAYER_STORAGE_KEY, raw);
+        lastPersistedPlaybackRawRef.current = raw;
+      } catch {
+        /* playback stays usable when storage is unavailable */
+      }
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [
+    currentItem,
+    currentSource,
+    currentTime,
+    duration,
+    muted,
+    playbackQueue,
+    repeatMode,
+    shuffleMode,
+    volume,
+  ]);
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== PLAYER_STORAGE_KEY) return;
+      if (event.newValue === lastPersistedPlaybackRawRef.current) return;
+      lastPersistedPlaybackRawRef.current = event.newValue;
+      const nextState = parsePersistedPlayback(event.newValue);
+      if (!nextState) return;
+      setCurrentItem(nextState.currentItem);
+      setCurrentSource(nextState.currentSource);
+      setPlaybackQueue(nextState.playbackQueue);
+      setCurrentTime(nextState.currentTime);
+      setDuration(nextState.duration);
+      setRepeatMode(nextState.repeatMode);
+      setShuffleMode(nextState.shuffleMode);
+      setVolumeState(nextState.volume);
+      setMuted(nextState.muted);
+      setStatus(nextState.currentItem ? "paused" : "idle");
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;

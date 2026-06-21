@@ -46,6 +46,7 @@ import { Route as ActivityRouteImport } from './routes/activity'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TranceIndexRouteImport } from './routes/trance.index'
+import { Route as TradioIndexRouteImport } from './routes/tradio.index'
 import { Route as LegalIndexRouteImport } from './routes/legal.index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
 import { Route as CreatorStudioIndexRouteImport } from './routes/creator-studio.index'
@@ -57,6 +58,7 @@ import { Route as TranceRewardsRouteImport } from './routes/trance.rewards'
 import { Route as TranceExploreRouteImport } from './routes/trance.explore'
 import { Route as TranceBadgesRouteImport } from './routes/trance.badges'
 import { Route as TranceAdminRouteImport } from './routes/trance.admin'
+import { Route as TradioStudioRouteImport } from './routes/tradio.studio'
 import { Route as TestsNaturalAbilityRouteImport } from './routes/tests.natural-ability'
 import { Route as SettingsVerificationRouteImport } from './routes/settings.verification'
 import { Route as SettingsConnectedAppsRouteImport } from './routes/settings.connected-apps'
@@ -74,6 +76,7 @@ import { Route as LegalDataDeletionRouteImport } from './routes/legal.data-delet
 import { Route as LegalSlugRouteImport } from './routes/legal.$slug'
 import { Route as GamesTrunoRouteImport } from './routes/games.truno'
 import { Route as GamesTreynounRouteImport } from './routes/games.treynoun'
+import { Route as GamesTraptapRouteImport } from './routes/games.traptap'
 import { Route as GamesSpadesRouteImport } from './routes/games.spades'
 import { Route as GamesInteractiveStoriesRouteImport } from './routes/games.interactive-stories'
 import { Route as GamesBullshitRouteImport } from './routes/games.bullshit'
@@ -328,6 +331,11 @@ const TranceIndexRoute = TranceIndexRouteImport.update({
   path: '/',
   getParentRoute: () => TranceRoute,
 } as any)
+const TradioIndexRoute = TradioIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TradioRoute,
+} as any)
 const LegalIndexRoute = LegalIndexRouteImport.update({
   id: '/legal/',
   path: '/legal/',
@@ -382,6 +390,11 @@ const TranceAdminRoute = TranceAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => TranceRoute,
+} as any)
+const TradioStudioRoute = TradioStudioRouteImport.update({
+  id: '/studio',
+  path: '/studio',
+  getParentRoute: () => TradioRoute,
 } as any)
 const TestsNaturalAbilityRoute = TestsNaturalAbilityRouteImport.update({
   id: '/tests/natural-ability',
@@ -467,6 +480,11 @@ const GamesTrunoRoute = GamesTrunoRouteImport.update({
 const GamesTreynounRoute = GamesTreynounRouteImport.update({
   id: '/treynoun',
   path: '/treynoun',
+  getParentRoute: () => GamesRoute,
+} as any)
+const GamesTraptapRoute = GamesTraptapRouteImport.update({
+  id: '/traptap',
+  path: '/traptap',
   getParentRoute: () => GamesRoute,
 } as any)
 const GamesSpadesRoute = GamesSpadesRouteImport.update({
@@ -860,7 +878,7 @@ export interface FileRoutesByFullPath {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
-  '/tradio': typeof TradioRoute
+  '/tradio': typeof TradioRouteWithChildren
   '/trance': typeof TranceRouteWithChildren
   '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
@@ -907,6 +925,7 @@ export interface FileRoutesByFullPath {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/traptap': typeof GamesTraptapRoute
   '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
@@ -924,6 +943,7 @@ export interface FileRoutesByFullPath {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/tradio/studio': typeof TradioStudioRoute
   '/trance/admin': typeof TranceAdminRoute
   '/trance/badges': typeof TranceBadgesRoute
   '/trance/explore': typeof TranceExploreRoute
@@ -935,6 +955,7 @@ export interface FileRoutesByFullPath {
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
+  '/tradio/': typeof TradioIndexRoute
   '/trance/': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
@@ -993,7 +1014,6 @@ export interface FileRoutesByTo {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
-  '/tradio': typeof TradioRoute
   '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
   '/admin/audit-log': typeof AdminAuditLogRoute
@@ -1038,6 +1058,7 @@ export interface FileRoutesByTo {
   '/games/blackjack': typeof GamesBlackjackRoute
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/spades': typeof GamesSpadesRoute
+  '/games/traptap': typeof GamesTraptapRoute
   '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
@@ -1055,6 +1076,7 @@ export interface FileRoutesByTo {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/tradio/studio': typeof TradioStudioRoute
   '/trance/admin': typeof TranceAdminRoute
   '/trance/badges': typeof TranceBadgesRoute
   '/trance/explore': typeof TranceExploreRoute
@@ -1066,6 +1088,7 @@ export interface FileRoutesByTo {
   '/creator-studio': typeof CreatorStudioIndexRoute
   '/games': typeof GamesIndexRoute
   '/legal': typeof LegalIndexRoute
+  '/tradio': typeof TradioIndexRoute
   '/trance': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
@@ -1127,7 +1150,7 @@ export interface FileRoutesById {
   '/rewards': typeof RewardsRoute
   '/settings': typeof SettingsRouteWithChildren
   '/signup': typeof SignupRoute
-  '/tradio': typeof TradioRoute
+  '/tradio': typeof TradioRouteWithChildren
   '/trance': typeof TranceRouteWithChildren
   '/tv': typeof TvRouteWithChildren
   '/admin/applications': typeof AdminApplicationsRoute
@@ -1174,6 +1197,7 @@ export interface FileRoutesById {
   '/games/bullshit': typeof GamesBullshitRoute
   '/games/interactive-stories': typeof GamesInteractiveStoriesRouteWithChildren
   '/games/spades': typeof GamesSpadesRoute
+  '/games/traptap': typeof GamesTraptapRoute
   '/games/treynoun': typeof GamesTreynounRoute
   '/games/truno': typeof GamesTrunoRoute
   '/legal/$slug': typeof LegalSlugRoute
@@ -1191,6 +1215,7 @@ export interface FileRoutesById {
   '/settings/connected-apps': typeof SettingsConnectedAppsRoute
   '/settings/verification': typeof SettingsVerificationRoute
   '/tests/natural-ability': typeof TestsNaturalAbilityRoute
+  '/tradio/studio': typeof TradioStudioRoute
   '/trance/admin': typeof TranceAdminRoute
   '/trance/badges': typeof TranceBadgesRoute
   '/trance/explore': typeof TranceExploreRoute
@@ -1202,6 +1227,7 @@ export interface FileRoutesById {
   '/creator-studio/': typeof CreatorStudioIndexRoute
   '/games/': typeof GamesIndexRoute
   '/legal/': typeof LegalIndexRoute
+  '/tradio/': typeof TradioIndexRoute
   '/trance/': typeof TranceIndexRoute
   '/admin/content-approval/$id': typeof AdminContentApprovalIdRoute
   '/games/interactive-stories/$storySlug': typeof GamesInteractiveStoriesStorySlugRouteWithChildren
@@ -1311,6 +1337,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/traptap'
     | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
@@ -1328,6 +1355,7 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/tradio/studio'
     | '/trance/admin'
     | '/trance/badges'
     | '/trance/explore'
@@ -1339,6 +1367,7 @@ export interface FileRouteTypes {
     | '/creator-studio/'
     | '/games/'
     | '/legal/'
+    | '/tradio/'
     | '/trance/'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
@@ -1397,7 +1426,6 @@ export interface FileRouteTypes {
     | '/rewards'
     | '/settings'
     | '/signup'
-    | '/tradio'
     | '/tv'
     | '/admin/applications'
     | '/admin/audit-log'
@@ -1442,6 +1470,7 @@ export interface FileRouteTypes {
     | '/games/blackjack'
     | '/games/bullshit'
     | '/games/spades'
+    | '/games/traptap'
     | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
@@ -1459,6 +1488,7 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/tradio/studio'
     | '/trance/admin'
     | '/trance/badges'
     | '/trance/explore'
@@ -1470,6 +1500,7 @@ export interface FileRouteTypes {
     | '/creator-studio'
     | '/games'
     | '/legal'
+    | '/tradio'
     | '/trance'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
@@ -1577,6 +1608,7 @@ export interface FileRouteTypes {
     | '/games/bullshit'
     | '/games/interactive-stories'
     | '/games/spades'
+    | '/games/traptap'
     | '/games/treynoun'
     | '/games/truno'
     | '/legal/$slug'
@@ -1594,6 +1626,7 @@ export interface FileRouteTypes {
     | '/settings/connected-apps'
     | '/settings/verification'
     | '/tests/natural-ability'
+    | '/tradio/studio'
     | '/trance/admin'
     | '/trance/badges'
     | '/trance/explore'
@@ -1605,6 +1638,7 @@ export interface FileRouteTypes {
     | '/creator-studio/'
     | '/games/'
     | '/legal/'
+    | '/tradio/'
     | '/trance/'
     | '/admin/content-approval/$id'
     | '/games/interactive-stories/$storySlug'
@@ -1666,7 +1700,7 @@ export interface RootRouteChildren {
   RewardsRoute: typeof RewardsRoute
   SettingsRoute: typeof SettingsRouteWithChildren
   SignupRoute: typeof SignupRoute
-  TradioRoute: typeof TradioRoute
+  TradioRoute: typeof TradioRouteWithChildren
   TranceRoute: typeof TranceRouteWithChildren
   TvRoute: typeof TvRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -1950,6 +1984,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TranceIndexRouteImport
       parentRoute: typeof TranceRoute
     }
+    '/tradio/': {
+      id: '/tradio/'
+      path: '/'
+      fullPath: '/tradio/'
+      preLoaderRoute: typeof TradioIndexRouteImport
+      parentRoute: typeof TradioRoute
+    }
     '/legal/': {
       id: '/legal/'
       path: '/legal'
@@ -2026,6 +2067,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trance/admin'
       preLoaderRoute: typeof TranceAdminRouteImport
       parentRoute: typeof TranceRoute
+    }
+    '/tradio/studio': {
+      id: '/tradio/studio'
+      path: '/studio'
+      fullPath: '/tradio/studio'
+      preLoaderRoute: typeof TradioStudioRouteImport
+      parentRoute: typeof TradioRoute
     }
     '/tests/natural-ability': {
       id: '/tests/natural-ability'
@@ -2144,6 +2192,13 @@ declare module '@tanstack/react-router' {
       path: '/treynoun'
       fullPath: '/games/treynoun'
       preLoaderRoute: typeof GamesTreynounRouteImport
+      parentRoute: typeof GamesRoute
+    }
+    '/games/traptap': {
+      id: '/games/traptap'
+      path: '/traptap'
+      fullPath: '/games/traptap'
+      preLoaderRoute: typeof GamesTraptapRouteImport
       parentRoute: typeof GamesRoute
     }
     '/games/spades': {
@@ -2807,6 +2862,7 @@ interface GamesRouteChildren {
   GamesBullshitRoute: typeof GamesBullshitRoute
   GamesInteractiveStoriesRoute: typeof GamesInteractiveStoriesRouteWithChildren
   GamesSpadesRoute: typeof GamesSpadesRoute
+  GamesTraptapRoute: typeof GamesTraptapRoute
   GamesTreynounRoute: typeof GamesTreynounRoute
   GamesTrunoRoute: typeof GamesTrunoRoute
   GamesIndexRoute: typeof GamesIndexRoute
@@ -2817,6 +2873,7 @@ const GamesRouteChildren: GamesRouteChildren = {
   GamesBullshitRoute: GamesBullshitRoute,
   GamesInteractiveStoriesRoute: GamesInteractiveStoriesRouteWithChildren,
   GamesSpadesRoute: GamesSpadesRoute,
+  GamesTraptapRoute: GamesTraptapRoute,
   GamesTreynounRoute: GamesTreynounRoute,
   GamesTrunoRoute: GamesTrunoRoute,
   GamesIndexRoute: GamesIndexRoute,
@@ -2865,6 +2922,19 @@ const SettingsRouteChildren: SettingsRouteChildren = {
 const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
   SettingsRouteChildren,
 )
+
+interface TradioRouteChildren {
+  TradioStudioRoute: typeof TradioStudioRoute
+  TradioIndexRoute: typeof TradioIndexRoute
+}
+
+const TradioRouteChildren: TradioRouteChildren = {
+  TradioStudioRoute: TradioStudioRoute,
+  TradioIndexRoute: TradioIndexRoute,
+}
+
+const TradioRouteWithChildren =
+  TradioRoute._addFileChildren(TradioRouteChildren)
 
 interface TranceStudiosStudioIdRouteChildren {
   TranceStudiosStudioIdRoomsRoomIdRoute: typeof TranceStudiosStudioIdRoomsRoomIdRoute
@@ -2978,7 +3048,7 @@ const rootRouteChildren: RootRouteChildren = {
   RewardsRoute: RewardsRoute,
   SettingsRoute: SettingsRouteWithChildren,
   SignupRoute: SignupRoute,
-  TradioRoute: TradioRoute,
+  TradioRoute: TradioRouteWithChildren,
   TranceRoute: TranceRouteWithChildren,
   TvRoute: TvRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,

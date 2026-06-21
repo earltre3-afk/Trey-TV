@@ -1,6 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
-export const createBrowserClient = (): ReturnType<typeof createClient> => {
-  return supabase as unknown as ReturnType<typeof createClient>;
-};
+// Returns the hybrid supabase object: Neon for DB queries, Supabase for auth/storage/realtime.
+export const createBrowserClient = () => supabase;

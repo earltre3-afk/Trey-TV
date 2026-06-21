@@ -7,7 +7,7 @@ import {
   TradioLivePollOption,
   LiveRoomPulseSummary,
   LiveRoomStatus,
-} from "../../tradio/components/tradio/types/broadcastLiveRoomTypes";
+} from "../tradio-broadcast/types/broadcastLiveRoomTypes";
 
 /**
  * Server Function: Get or Create Live Room for a Channel
