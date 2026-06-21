@@ -1,77 +1,32 @@
-import { supabase } from "@/lib/supabase";
-import { UploadAsset } from "../types";
-import { assertConfigured, shouldUseFixtures } from "./config";
+import { shouldUseFixtures } from "./config";
+import { gcsGetUploadUrl } from "@/lib/trance/gcs.server";
 
 export const tranceVideoUploadService = {
-  uploadRoutineVideo: async (
+  uploadChoreographyVideo: async (
     file: File,
-    onProgress?: (progressPct: number) => void,
-  ): Promise<UploadAsset> => {
-    assertConfigured("VideoUploadService");
-    const assetId = `as-${Math.random().toString(36).substr(2, 9)}`;
-    const mockAsset: UploadAsset = {
-      id: assetId,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type,
-      url: `mock://routines/${assetId}/${file.name}`,
-      ownerId: "u001",
-      createdAt: new Date().toISOString(),
-    };
-
-    const enableUploads = import.meta.env.VITE_TRANCE_ENABLE_UPLOADS === "true";
-    if (!enableUploads && shouldUseFixtures()) {
-      console.warn(
-        "[Video Upload] Uploads disabled by environment variables. Using fixture response.",
-      );
-      if (onProgress) onProgress(100);
-      return mockAsset;
-    }
-
+    routineId: string,
+    onProgress?: (pct: number) => void,
+  ): Promise<{ jobId: string; gcsPath: string }> => {
     if (shouldUseFixtures()) {
-      console.log("[Dev Mode] Uploading file locally:", file.name);
-      if (onProgress) {
-        let pct = 0;
-        const interval = setInterval(() => {
-          pct += 25;
-          onProgress(pct);
-          if (pct >= 100) clearInterval(interval);
-        }, 150);
-      }
-      return mockAsset;
+      onProgress?.(100);
+      return { jobId: `mock-job-${Date.now()}`, gcsPath: `videos/mock/${routineId}/${file.name}` };
     }
 
-    const filePath = `routines/${Date.now()}_${file.name}`;
+    // 1. Get a v4 signed URL from the server function (no Supabase involved).
+    const { uploadUrl, gcsPath, jobId } = await gcsGetUploadUrl({
+      data: { routineId, filename: file.name, contentType: file.type || "video/mp4" },
+    });
 
-    // Real upload to Supabase storage bucket
-    const { data, error } = await supabase.storage
-      .from("trance-routine-videos")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
+    // 2. PUT directly to GCS — large file, never touches Vercel.
+    onProgress?.(5);
+    const res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "video/mp4" },
+      body: file,
+    });
+    if (!res.ok) throw new Error(`GCS upload failed: ${res.status} ${res.statusText}`);
+    onProgress?.(100);
 
-    if (error) throw error;
-    if (onProgress) onProgress(100);
-
-    const { data: publicUrlData } = supabase.storage
-      .from("trance-routine-videos")
-      .getPublicUrl(data.path);
-
-    const authUser = await supabase.auth.getUser();
-
-    return {
-      id: assetId,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type,
-      url: publicUrlData.publicUrl,
-      ownerId: authUser.data.user?.id || "guest",
-      createdAt: new Date().toISOString(),
-    };
-  },
-
-  getUploadProgress: (): number => {
-    return 100;
+    return { jobId, gcsPath };
   },
 };
