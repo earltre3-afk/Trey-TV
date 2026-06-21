@@ -1,7 +1,7 @@
 import { useCallback } from "react";
-import { supabase, hasSupabaseConfig } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseSession } from "@/lib/supabase-session";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 export interface AuthState {
   user: User | null;
@@ -15,16 +15,8 @@ export function useAuth(): AuthState & {
   const { user, loading, signOutSupabase } = useSupabaseSession();
 
   const sendMagicLink = useCallback(async (email: string) => {
-    if (!hasSupabaseConfig || !supabase) {
-      return {
-        ok: false,
-        error: "Supabase is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      };
-    }
-
     try {
-      const client = supabase as SupabaseClient;
-      const { error } = await client.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: window.location.href },
       });
@@ -37,7 +29,6 @@ export function useAuth(): AuthState & {
   }, []);
 
   const signOut = useCallback(async () => {
-    if (!hasSupabaseConfig || !supabase) return;
     await signOutSupabase();
   }, [signOutSupabase]);
 

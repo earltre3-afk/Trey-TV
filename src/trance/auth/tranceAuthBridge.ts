@@ -2,7 +2,7 @@
 // Wraps Supabase auth + the public.trance_profiles table.
 // Maps Trey TV core profiles to TRANCE roles and identities.
 
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { TranceIdentity, DancerProfile, TranceRole, TrancePermission } from "../types";
 
 export interface TranceCapabilities {

@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/apply/creator")({
@@ -880,7 +881,7 @@ function CreatorApplication() {
     let cancelled = false;
     void (async () => {
       try {
-        const { data: auth } = await supabase.auth.getUser();
+        const { data: auth } = await supabaseAuth.auth.getUser();
         const authUserId = auth.user?.id;
         if (!authUserId) return;
 
@@ -959,7 +960,7 @@ function CreatorApplication() {
   });
 
   const upsert = async (status: "draft" | "pending") => {
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await supabaseAuth.auth.getUser();
     const authUserId = auth.user?.id;
     if (!authUserId) throw new Error("Please sign in before submitting an application.");
     const payload = buildPayload(status, authUserId);

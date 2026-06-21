@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import {
   saveOnboardingProfile,
   finalizeOnboarding,
@@ -179,7 +180,7 @@ function ManualOnboarding() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (!user) return;
 
         const { data } = await (supabase as any)
@@ -278,7 +279,7 @@ function ManualOnboarding() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (user) {
           await (supabase as any).from("user_onboarding").upsert(
             {
@@ -305,7 +306,7 @@ function ManualOnboarding() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (user) {
           await (supabase as any).from("user_onboarding").upsert(
             {

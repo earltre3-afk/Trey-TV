@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 
 export type AdminStats = {
   totalUsers: number;
@@ -71,7 +72,7 @@ export async function logAdminAction(params: {
 }) {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseAuth.auth.getUser();
   if (!user) return { error: "no session" };
   const { error } = await supabase.from("admin_audit_log").insert({
     admin_user_id: user.id,

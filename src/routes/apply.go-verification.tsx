@@ -30,6 +30,7 @@ import { CreatorPassport } from "@/components/apply/CreatorPassport";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/apply/go-verification")({
   component: GoVerificationApplication,
@@ -146,7 +147,7 @@ function GoVerificationApplication() {
   const back = () => setStep((s) => Math.max(1, s - 1));
 
   const save = async (status: "draft" | "pending") => {
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await supabaseAuth.auth.getUser();
     const authUserId = auth.user?.id;
     if (!authUserId) throw new Error("Please sign in with your Trey TV account before submitting.");
     const payload = {

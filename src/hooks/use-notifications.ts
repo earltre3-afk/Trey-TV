@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import { getNotificationDuckingCallbacks } from "@/tradio/lib/notificationDuckingHelper";
 
 export const NOTIFICATION_SOUND_URL = "/sounds/trey-notification.m4a";
@@ -259,14 +260,14 @@ export function useNotifications() {
         .subscribe();
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabaseAuth.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         fetchForUser(session.user.id);
         subscribeToRealtimeNotifications(session.user.id);
       }
     });
 
-    const { data: authSub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: authSub } = supabaseAuth.auth.onAuthStateChange((_event, sess) => {
       if (!mounted) return;
       if (sess?.user) {
         fetchForUser(sess.user.id);

@@ -5,6 +5,7 @@ import { Sparkles, Save, ShieldCheck } from "lucide-react";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin-api";
 import { calculateZodiacIdentity, type BirthTimePrecision } from "@/lib/zodiac";
 import { ZodiacBadge } from "@/components/zodiac";
@@ -69,7 +70,7 @@ function AdminZodiac() {
       toast.error("Add a correction reason first");
       return;
     }
-    const { data: auth } = await supabase.auth.getUser();
+    const { data: auth } = await supabaseAuth.auth.getUser();
     const adminUserId = auth.user?.id;
     if (!adminUserId) return;
     const now = new Date().toISOString();

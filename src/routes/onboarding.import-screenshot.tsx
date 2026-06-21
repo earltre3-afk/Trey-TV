@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import {
   startImportJob,
   extractScreenshot,
@@ -154,7 +155,7 @@ function ImportScreenshot() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (!user) return;
 
         const { data } = await (supabase as any)
@@ -200,7 +201,7 @@ function ImportScreenshot() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (user) {
           const stepNum = step === "upload" ? 0 : step === "review" ? 1 : 2;
           await (supabase as any).from("user_onboarding").upsert(

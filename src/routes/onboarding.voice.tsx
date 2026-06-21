@@ -30,6 +30,7 @@ import {
   treyICheckUsername,
 } from "@/lib/trey-i/onboarding.server";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding/voice")({
@@ -1695,7 +1696,7 @@ function VoiceOnboardingInner() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (!user) return;
 
         const { data } = await (supabase as any)
@@ -1745,7 +1746,7 @@ function VoiceOnboardingInner() {
       try {
         const {
           data: { user },
-        } = await supabase.auth.getUser();
+        } = await supabaseAuth.auth.getUser();
         if (user) {
           const stepCount = SETUP_STEPS.filter((s) => stepDone(fields, s.key)).length;
           await (supabase as any).from("user_onboarding").upsert(
@@ -1862,7 +1863,7 @@ function VoiceOnboardingInner() {
         }
 
         // Guest: trigger OAuth; callback will save the stored profile
-        const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+        const { error: oauthErr } = await supabaseAuth.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo: `${window.location.origin}/auth/callback` },
         });

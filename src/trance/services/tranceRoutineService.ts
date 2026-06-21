@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import {
   DanceRoutine,
   DanceStyle,
@@ -216,7 +217,7 @@ export const tranceRoutineService = {
     if (!shouldUseFixtures()) {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await supabaseAuth.auth.getUser();
       if (user) {
         finalChoreographerId = user.id;
 

@@ -3,6 +3,7 @@ import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 import { logAdminAction } from "@/lib/admin-api";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -93,7 +94,7 @@ function UsersAdmin() {
     const next = !u.gold_verified;
     const {
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabaseAuth.auth.getUser();
     const { error } = await supabase
       .from("profiles")
       .update({

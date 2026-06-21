@@ -1,5 +1,6 @@
 // TRUNO Supabase data layer
 import { supabase } from "@/lib/supabase";
+import { supabase as supabaseAuth } from "@/integrations/supabase/client";
 
 const TOURNAMENT_BACKEND_ENABLED = false;
 
@@ -150,7 +151,7 @@ export async function joinTournament(
 ): Promise<{ ok: boolean; error?: string }> {
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await supabaseAuth.auth.getUser();
   if (!user) return { ok: false, error: "Sign in to join a tournament." };
   const { error } = await supabase.from("truno_tournament_entries").insert({
     tournament_id: tournamentId,
