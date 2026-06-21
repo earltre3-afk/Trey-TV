@@ -87,11 +87,16 @@ const BuilderScreen: React.FC = () => {
     setAnalyzeProgress(0);
     setAiAnalysis(null);
     try {
-      const analysis = await tranceVideoAnalyzerService.analyzeChoreographyVideo({
+      const tempRoutineId = crypto.randomUUID();
+      const { jobId, gcsPath } = await tranceVideoUploadService.uploadChoreographyVideo(
         file,
-        onProgress: (p) => setAnalyzeProgress(Math.round(p * 100)),
-      });
+        tempRoutineId,
+        (pct) => setAnalyzeProgress(Math.round(pct * 0.2)),
+      );
+      setAnalyzeProgress(20);
+      const analysis = await tranceVideoAnalyzerService.analyzeChoreographyVideo({ gcsPath, jobId });
       setAiAnalysis(analysis);
+      setAnalyzeProgress(100);
       toast.success(
         `AI suggested ${analysis.suggestedCountSections.length} sections, ${analysis.suggestedDirectionCues.length} cues, ${analysis.suggestedMoveHints.length} hints — review before publishing.`,
       );
@@ -254,7 +259,6 @@ const BuilderScreen: React.FC = () => {
             <div className="grid sm:grid-cols-2 gap-3">
               <button
                 onClick={() => {
-                  tranceVideoUploadService.uploadRoutineVideo(new File([], "mock.mp4"));
                   setUploaded(true);
                 }}
                 className="rounded-2xl border-2 border-dashed border-fuchsia-400/40 bg-fuchsia-500/5 p-6 flex flex-col items-center gap-2 text-center"
