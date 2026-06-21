@@ -18,7 +18,7 @@ export const TranceDesktopSidebar: React.FC = () => {
     { icon: Compass, label: "Explore", path: TRANCE_ROUTES.explore },
     { icon: Zap, label: "Choreographer", path: TRANCE_ROUTES.builder },
     { icon: Trophy, label: "Leaderboard", path: TRANCE_ROUTES.leaderboard("rt001") },
-    { icon: User, label: "My Profile", path: TRANCE_ROUTES.profile("u001") },
+    { icon: User, label: "My Profile", path: TRANCE_ROUTES.profile(isAuthed ? me.id : "u001") },
   ];
 
   return (
@@ -297,12 +297,14 @@ export const TranceLogo: React.FC<{ size?: "sm" | "md" | "lg"; sub?: string }> =
 export const TranceBottomNav: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { profile } = useAuth();
+  const profileId = profile?.id ?? "u001";
   const items = [
     { icon: Home, label: "Home", path: TRANCE_ROUTES.home },
     { icon: Compass, label: "Explore", path: TRANCE_ROUTES.explore },
     { icon: Zap, label: "Train", path: TRANCE_ROUTES.builder, center: true },
     { icon: Trophy, label: "Ranks", path: TRANCE_ROUTES.leaderboard("rt001") },
-    { icon: User, label: "Profile", path: TRANCE_ROUTES.profile("u001") },
+    { icon: User, label: "Profile", path: TRANCE_ROUTES.profile(profileId) },
   ];
   return (
     <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md md:max-w-2xl lg:max-w-4xl px-4 pb-4 z-40 lg:hidden">
