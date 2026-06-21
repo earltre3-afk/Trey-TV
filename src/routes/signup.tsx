@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles, Check, X, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CinematicBackdrop, GoogleIcon } from "./login";
 

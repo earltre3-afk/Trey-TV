@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { z } from "zod";
 import { Mail, Sparkles, RefreshCw, ArrowLeft, CheckCircle } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/confirm-email")({
