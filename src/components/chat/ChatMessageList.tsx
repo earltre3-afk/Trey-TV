@@ -5,7 +5,7 @@
 // Per spec docs/superpowers/specs/2026-05-24-watch-party-design.md §9.2
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { AlertTriangle, Shield } from "lucide-react";
 import type { ChatKind, ChatMessageRow, PendingMessage } from "./ChatTypes";
 import { useChatProfiles } from "./useChatProfiles";

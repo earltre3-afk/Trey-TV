@@ -29,7 +29,7 @@ import {
   finalizeOnboarding,
   treyICheckUsername,
 } from "@/lib/trey-i/onboarding.server";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding/voice")({

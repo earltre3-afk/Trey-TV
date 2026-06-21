@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useSupabaseSession } from "@/lib/supabase-session";
 import { channels as treyChannels } from "@/lib/watch-data";
 import {

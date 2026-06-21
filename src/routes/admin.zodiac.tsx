@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Sparkles, Save, ShieldCheck } from "lucide-react";
 import { AdminShell } from "@/components/layout/AdminShell";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { logAdminAction } from "@/lib/admin-api";
 import { calculateZodiacIdentity, type BirthTimePrecision } from "@/lib/zodiac";
 import { ZodiacBadge } from "@/components/zodiac";

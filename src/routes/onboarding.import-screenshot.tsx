@@ -19,7 +19,7 @@ import {
   Edit3,
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   startImportJob,
   extractScreenshot,

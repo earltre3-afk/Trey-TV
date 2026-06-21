@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { getNotificationDuckingCallbacks } from "@/tradio/lib/notificationDuckingHelper";
 
 export const NOTIFICATION_SOUND_URL = "/sounds/trey-notification.m4a";

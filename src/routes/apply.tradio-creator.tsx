@@ -42,7 +42,7 @@ import {
 import { CreatorPassport } from "@/components/apply/CreatorPassport";
 import { Logo } from "@/components/brand/Logo";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/apply/tradio-creator")({
   component: TradioCreatorApplication,

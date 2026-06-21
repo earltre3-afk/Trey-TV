@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Check, X, UserPlus, Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useSupabaseSession } from "@/lib/supabase-session";
 import { hostAddMember } from "@/lib/watch-party/party.server";
 import { toast } from "sonner";

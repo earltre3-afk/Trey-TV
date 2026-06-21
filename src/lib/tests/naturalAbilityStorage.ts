@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { PrivacyMode, SignalResult, UserAnswer } from "@/types/naturalAbility";
 import {
   buildTreyTVNaturalAbilitySavePayload,
