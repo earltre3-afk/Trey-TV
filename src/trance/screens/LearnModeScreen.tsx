@@ -4,7 +4,7 @@ import { LogOut, Pause, Play, RotateCcw, Crosshair } from "lucide-react";
 import { TranceShell } from "../components/shell";
 import { cn } from "../components/primitives";
 import { PoseCameraCanvas } from "../components/PoseCameraCanvas";
-import { IMG } from "../data/devFixtures";
+import { IMG, routines as fixtureRoutines } from "../data/devFixtures";
 import { tranceRoutineService, tranceSessionService, tranceScoringService } from "../services";
 import { TRANCE_ROUTES } from "../routes/manifest";
 import { useTranceIdentity } from "../hooks/useTranceIdentity";
@@ -39,12 +39,14 @@ const LearnModeScreen: React.FC = () => {
 
   React.useEffect(() => {
     let active = true;
+    const fallback = fixtureRoutines.find((x) => x.id === routineId) ?? fixtureRoutines[0];
     async function init() {
       try {
         const details = await tranceRoutineService.getRoutineDetails(routineId || "rt001");
-        if (active && details) setR(details);
+        if (active) setR(details ?? fallback);
       } catch (err) {
         console.error("Failed to load routine details:", err);
+        if (active) setR(fallback);
       } finally {
         if (active) setLoading(false);
       }

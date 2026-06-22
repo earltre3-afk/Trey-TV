@@ -25,6 +25,7 @@ const SongReviewScreen = lazy(() => import('@/components/tradio/screens/SongRevi
 const BroadcastCreatorScreen = lazy(() => import('@/components/tradio/screens/BroadcastCreatorScreen'));
 const BattleSetupWizard = lazy(() => import('@/components/tradio/songwars/BattleSetupWizard'));
 const ReleaseScreen = lazy(() => import('@/components/tradio/screens/ReleaseScreen'));
+const MyProfileScreen = lazy(() => import('@/components/tradio/screens/MyProfileScreen'));
 
 type Screen =
   | 'home'
@@ -43,7 +44,8 @@ type Screen =
   | 'songreview'
   | 'broadcast'
   | 'battlesetup'
-  | 'release';
+  | 'release'
+  | 'myprofile';
 
 const NAV_FOR_SCREEN: Record<Screen, NavKey> = {
   home: 'Home',
@@ -57,6 +59,7 @@ const NAV_FOR_SCREEN: Record<Screen, NavKey> = {
   battlesetup: 'Explore',
   search: 'Library',
   artist: 'Profile',
+  myprofile: 'Profile',
   prescribe: 'Prescribe Me',
   showbuilder: 'Home',
   songreview: 'Home',
@@ -66,7 +69,7 @@ const NAV_FOR_SCREEN: Record<Screen, NavKey> = {
 };
 
 export default function AppLayout() {
-  const [screen, setScreen] = useState<Screen>('home');
+  const [screen, setScreen] = useState<Screen>('myprofile');
   const [songWarsFocus, setSongWarsFocus] = useState<string | undefined>(undefined);
   const [arenaWarId, setArenaWarId] = useState<string | undefined>(undefined);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -205,7 +208,7 @@ export default function AppLayout() {
       case 'Explore': setScreen('browse'); break;
       case 'Prescribe Me': setScreen('prescribe'); break;
       case 'Library': setScreen('search'); break;
-      case 'Profile': setScreen('artist'); break;
+      case 'Profile': setScreen('myprofile'); break;
       default: break;
     }
   };
@@ -303,6 +306,8 @@ export default function AppLayout() {
         return <BroadcastCreatorScreen onClose={goHome} onShowBuilder={goShowBuilder} />;
       case 'release':
         return <ReleaseScreen onClose={goHome} />;
+      case 'myprofile':
+        return <MyProfileScreen onRelease={goRelease} onSongWars={goSongWars} onBrowse={goBrowse} />;
       case 'battlesetup':
         return <BattleSetupWizard onClose={goSongWarsAdmin} />;
       case 'browse':
@@ -327,6 +332,7 @@ export default function AppLayout() {
 
   return (
     <div
+      data-tradio-screen={screen}
       // NOTE: no `transition-all` here. It animated the --tradio-dock-reserve padding change
       // on every screen swap; combined with the blurred orbs + player shadows it stalled the
       // mobile compositor and froze the UI when extending the player. Snap instead.

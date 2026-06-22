@@ -3,7 +3,14 @@ import { useState } from "react";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Sparkles, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+
+// Local-dev tester credential. Lets you log in via email/password without Supabase.
+// Configurable via env; defaults match the requested tester account. DEV-only (gated below)
+// so it can never authenticate anyone in production.
+const TESTER_EMAIL = (import.meta.env.VITE_TESTER_EMAIL || "tester@test.com").trim().toLowerCase();
+const TESTER_PASSWORD = (import.meta.env.VITE_TESTER_PASSWORD || "test1234") as string;
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -80,6 +87,7 @@ export async function postAuthRedirect(nav: ReturnType<typeof useNavigate>, user
 
 function LoginPage() {
   const nav = useNavigate();
+  const { signIn, updateUser } = useAuth();
   const search: any = useSearch({ strict: false });
   const [email, setEmail] = useState(search?.email ?? "");
   const [pw, setPw] = useState("");
@@ -96,6 +104,18 @@ function LoginPage() {
     }
     setBusy(true);
     try {
+      // Local-dev tester login (no Supabase). DEV-only so it never works in production.
+      if (
+        import.meta.env.DEV &&
+        trimEmail.toLowerCase() === TESTER_EMAIL &&
+        pw === TESTER_PASSWORD
+      ) {
+        signIn("creator");
+        updateUser({ name: "Tester", handle: "tester" });
+        toast.success("Signed in as tester (local dev)");
+        await postAuthRedirect(nav);
+        return;
+      }
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimEmail,
         password: pw,

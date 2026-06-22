@@ -45,6 +45,7 @@ const LeaderboardScreen: React.FC = () => {
       return;
     }
 
+    const fallback = routines.find((x) => x.id === routineId) || routines[0];
     async function loadData() {
       try {
         setLoading(true);
@@ -62,11 +63,15 @@ const LeaderboardScreen: React.FC = () => {
           divisionMapped as any,
         );
         if (active) {
-          setR(routineData);
-          setEntries(entriesData);
+          setR(routineData ?? fallback);
+          setEntries(entriesData.length ? entriesData : fixtureLeaderboard);
         }
       } catch (err) {
         console.error("Failed to load leaderboard data:", err);
+        if (active) {
+          setR(fallback);
+          setEntries(fixtureLeaderboard);
+        }
       } finally {
         if (active) setLoading(false);
       }

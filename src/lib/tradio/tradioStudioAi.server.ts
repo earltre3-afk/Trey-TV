@@ -65,10 +65,27 @@ export async function handleTradioStudioAi(request: Request): Promise<Response> 
           `${m.role === "assistant" || m.role === "model" ? "Assistant" : "User"}: ${String(m.content || "")}`,
       )
       .join("\n");
+    const temperature = Number(body.temperature ?? 0.4);
+
+    // The Mix Engine / stem-FX / task functions ask for a JSON object and then JSON.parse the
+    // returned text. Plain text generation can wrap JSON in prose/fences or truncate it, which
+    // breaks parsing ("Gemini not working"). When JSON is requested, use the JSON generator
+    // (responseMimeType=application/json) and return it as a clean string so JSON.parse succeeds.
+    const wantsJson = /\bjson\b/i.test(system);
+    if (wantsJson) {
+      const obj = await aiGenerateJson<unknown>({
+        prompt: convo || "Generate the requested JSON.",
+        systemInstruction: system,
+        temperature,
+        maxTokens: 4096,
+      });
+      return json({ text: JSON.stringify(obj), provider: "vertex-adc", model: "gemini-2.5-flash" });
+    }
+
     const { text } = await aiGenerateText({
       prompt: convo || "Hello",
       systemInstruction: system,
-      temperature: Number(body.temperature ?? 0.4),
+      temperature,
       maxTokens: 2048,
     });
     return json({ text, provider: "vertex-adc", model: "gemini-2.5-flash" });

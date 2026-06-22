@@ -33,16 +33,21 @@ const RoutineDetailScreen: React.FC = () => {
       return;
     }
 
+    const fallback = fixtureRoutines.find((x) => x.id === id) || fixtureRoutines[0];
     async function loadData() {
       try {
         const details = await tranceRoutineService.getRoutineDetails(id || "rt001");
         const board = await tranceLeaderboardService.getLeaderboard(id || "rt001");
         if (active) {
-          setR(details);
-          setDbLeaderboard(board);
+          setR(details ?? fallback);
+          setDbLeaderboard(board.length ? board : fixtureLeaderboard);
         }
       } catch (err) {
         console.error("Failed to load routine details:", err);
+        if (active) {
+          setR(fallback);
+          setDbLeaderboard(fixtureLeaderboard);
+        }
       } finally {
         if (active) setLoading(false);
       }
