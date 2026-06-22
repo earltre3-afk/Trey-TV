@@ -22,10 +22,11 @@ function StatusDot({ ok }: { ok: boolean | undefined }) {
 }
 
 export function CameraSetupStep({ pose, onReady }: CameraSetupStepProps) {
-  React.useEffect(() => {
-    void pose.start();
-    // pose.stop() is called by CalibrationOverlay when leaving step 1
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // No auto-start here: PoseCameraCanvas renders its own consent screen (explanation +
+  // "Enable camera" button) while status is "idle", and only calls pose.start() on that
+  // explicit click. Auto-starting here used to fire the native permission prompt the
+  // instant this step mounted, before the user ever saw why camera access was needed.
+  // pose.stop() is called by CalibrationOverlay when leaving step 1.
 
   const bodyVisible = pose.confidence?.fullBodyInFrame;
   const lightingOk = pose.confidence?.lightingOk;
@@ -52,8 +53,9 @@ export function CameraSetupStep({ pose, onReady }: CameraSetupStepProps) {
     );
   }
 
+  // "idle" is excluded here: PoseCameraCanvas shows its own consent screen for that status,
+  // and a "Starting camera…" spinner on top of it would hide the "Enable camera" button.
   const isLoading =
-    pose.status === "idle" ||
     pose.status === "requesting_permission" ||
     pose.status === "camera_ready";
 
