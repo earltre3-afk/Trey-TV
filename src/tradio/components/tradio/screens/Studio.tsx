@@ -10,6 +10,7 @@ import type { SignalTestState } from '@/tradio/lib/universe/signalTest';
 import { useTradioIdentity } from '../auth/useTradioIdentity';
 import { can, canRequestBroadcastAccess, MODE_LABELS } from '../auth/roleUtils';
 import type { TradioCapability, TradioMode } from '../auth/types';
+import TradioDawStudio from './TradioDawStudio';
 
 // Signal Test lives in the Trey TV parent. This Tradio surface only exposes the
 // discoverability card; `onStart` is wired by the parent to route to /signal-test.
@@ -166,6 +167,8 @@ export const StudioScreen: React.FC<{
           </GlassCard>
         ))}
       </div>
+
+      <TradioDawStudio />
 
       <div className="px-4 sm:px-6 lg:px-10">
         <div className="mb-3 flex items-center justify-between">
